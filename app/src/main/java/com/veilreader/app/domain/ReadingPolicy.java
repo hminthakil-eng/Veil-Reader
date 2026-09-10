@@ -1,0 +1,62 @@
+package com.veilreader.app.domain;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+/** Dependency-free reading rules shared by Android and the executable regression suite. */
+public final class ReadingPolicy {
+    private ReadingPolicy() {}
+    public static double fontSizePercent(double scale) {
+        if (!Double.isFinite(scale)) return 100.0;
+        return Math.max(.75, Math.min(1.8, scale)) * 100.0;
+    }
+    public static int ritualTarget(String path, int rank) {
+        int r = Math.max(0, Math.min(5, rank));
+        switch (path) {
+            case "dreamwalker": return 30 + r * 15;
+            case "vanguard": return 30 + r * 15;
+            case "nocturne": return 20 + r * 10;
+            case "archivist": case "artificer": return 3 + r;
+            default: return 5 + r * 2;
+        }
+    }
+    public static String ritualDescription(String path, int rank) {
+        int n = ritualTarget(path, rank);
+        switch (path) {
+            case "dreamwalker": return "Explore your worlds for " + n + " active reading minutes.";
+            case "vanguard": return "Read " + n + " paced pages. Fast tapping does not count.";
+            case "nocturne": return "Read for " + n + " minutes between 8 PM and 6 AM, in your device's local time.";
+            case "archivist": return "Write " + n + " new passage notes of at least 40 characters.";
+            case "artificer": return "Capture " + n + " new concept notes of at least 40 characters.";
+            default: return "Highlight " + n + " new passages that reveal clues, themes or hidden structure.";
+        }
+    }
+    public static boolean acceptsEvent(String path, String event) {
+        switch (path) {
+            case "dreamwalker": return event.equals("minute");
+            case "vanguard": return event.equals("page");
+            case "nocturne": return event.equals("nightMinute");
+            case "archivist": case "artificer": return event.equals("note");
+            default: return event.equals("highlight");
+        }
+    }
+    public static boolean isNight(int hour) { return hour >= 0 && hour < 24 && (hour >= 20 || hour < 6); }
+    public static boolean qualifiesNote(String note) { return note != null && note.trim().length() >= 40; }
+
+    /** Per-session uniqueness plus dwell time, with a daily budget tied to reading minutes. */
+    public static final class PageGate {
+        private final Set<String> seen = new LinkedHashSet<>();
+        private long lastSeenAt = -1;
+        public boolean visit(String key, long elapsedMs, int todayPages, int todayMinutes) {
+            if (key == null || key.isEmpty() || elapsedMs < 0) return false;
+            boolean first = lastSeenAt < 0;
+            long dwell = first ? 0 : elapsedMs - lastSeenAt;
+            boolean unique = seen.add(key);
+            lastSeenAt = elapsedMs;
+            if (seen.size() > 2048) seen.remove(seen.iterator().next());
+            long budget = (long) Math.max(0, todayMinutes) * 6L + 6L;
+            return !first && unique && dwell >= 8_000 && todayPages < budget;
+        }
+        public void pause() { lastSeenAt = -1; }
+    }
+}

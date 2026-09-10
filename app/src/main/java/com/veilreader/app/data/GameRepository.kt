@@ -1,0 +1,226 @@
+package com.veilreader.app.data
+
+import android.content.Context
+import android.os.SystemClock
+import java.time.LocalTime
+import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.domain.GamificationEngine
+import com.veilreader.app.domain.Quest
+import com.veilreader.app.domain.ReaderProfile
+import java.time.LocalDate
+import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+/** Persistent, offline-first reading progression.
+ *
+ * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
+ * the important rule that advancement cannot be farmed with raw points alone.
+ */
+class GameRepository(context: Context) {
+    private val prefs = context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE)
+    private val pageGate = ReadingPolicy.PageGate()
+    private var totalXp = prefs.getInt("totalXp", 0)
+    private var todayMinutes = prefs.getInt("todayMinutes", 0)
+    private var todayPages = prefs.getInt("todayPages", 0)
+    private var todayHighlights = prefs.getInt("todayHighlights", 0)
+    private var dayKey = prefs.getString("dayKey", "") ?: ""
+
+    private val _profile = MutableStateFlow(buildProfile())
+    val profile: StateFlow<ReaderProfile> = _profile
+
+    private val _quests = MutableStateFlow(buildQuests())
+    val quests: StateFlow<List<Quest>> = _quests
+
+    init {
+        // Old builds counted every highlight for every Path. Preserve Oracle progress only.
+        if (prefs.getInt("ritualVersion", 1) < 2) {
+            val editor = prefs.edit().putInt("ritualVersion", 2)
+            if (prefs.getString("pathId", "oracle") != "oracle") editor.putInt("ritualProgress", 0)
+            editor.apply()
+        }
+        rollDayIfNeeded()
+        publish()
+    }
+
+    fun syncExistingHighlights(count: Int) {
+        if (count > prefs.getInt("totalHighlights", 0)) prefs.edit().putInt("totalHighlights", count).apply()
+        publish()
+    }
+
+    fun refresh() { rollDayIfNeeded(); publish() }
+    fun pauseReading() { pageGate.pause() }
+
+    private fun recordRitualEvent(event: String) {
+        val profile = buildProfile()
+        if (!ReadingPolicy.acceptsEvent(profile.path.id, event)) return
+        prefs.edit().putInt("ritualProgress", (profile.ritualProgress + 1).coerceAtMost(profile.ritualTarget)).apply()
+    }
+
+    fun recordNote(id: String, note: String) {
+        if (!ReadingPolicy.qualifiesNote(note)) return
+        if (!ReadingPolicy.acceptsEvent(buildProfile().path.id, "note")) return
+        val credited = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().toMutableSet()
+        if (!credited.add(id)) return
+        prefs.edit().putStringSet("creditedNotes", credited).apply()
+        recordRitualEvent("note")
+        publish()
+    }
+
+    fun recordReadingMinute() {
+        rollDayIfNeeded()
+        totalXp += GamificationEngine.XP_PER_MINUTE
+        todayMinutes += 1
+        recordRitualEvent("minute")
+        if (ReadingPolicy.isNight(LocalTime.now().hour)) recordRitualEvent("nightMinute")
+        val previousMinutes = prefs.getInt("minutesRead", 0)
+        prefs.edit().putInt("minutesRead", previousMinutes + 1).apply()
+        touchReadingDay()
+        awardCompletedQuestRewards()
+        persistCounters()
+        publish()
+    }
+
+    fun recordPageTurn(locationKey: String) {
+        rollDayIfNeeded()
+        if (!pageGate.visit(locationKey, SystemClock.elapsedRealtime(), todayPages, todayMinutes)) return
+        recordRitualEvent("page")
+        totalXp += GamificationEngine.XP_PER_PAGE
+        todayPages += 1
+        prefs.edit().putInt("pagesRead", prefs.getInt("pagesRead", 0) + 1).apply()
+        touchReadingDay()
+        awardCompletedQuestRewards()
+        persistCounters()
+        publish()
+    }
+
+    fun recordHighlight() {
+        rollDayIfNeeded()
+        todayHighlights += 1
+        prefs.edit().putInt("totalHighlights", prefs.getInt("totalHighlights", 0) + 1).apply()
+        recordRitualEvent("highlight")
+        touchReadingDay()
+        awardCompletedQuestRewards()
+        persistCounters()
+        publish()
+    }
+
+    fun recordBookFinished() {
+        totalXp += GamificationEngine.BOOK_FINISH_BONUS
+        prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).apply()
+        persistCounters()
+        publish()
+    }
+
+    fun advanceRank(): Boolean {
+        val current = buildProfile()
+        if (!GamificationEngine.canAdvanceRank(current)) return false
+        prefs.edit()
+            .putInt("rankIndex", current.rankIndex + 1)
+            .putInt("ritualProgress", 0)
+            .apply()
+        publish()
+        return true
+    }
+
+    /** Change Paths only before the first rank advancement. Ritual progress resets on attunement. */
+    fun choosePath(pathId: String): Boolean {
+        val currentRank = prefs.getInt("rankIndex", 0)
+        if (currentRank > 0) return false
+        if (prefs.getString("pathId", "oracle") == pathId) return true
+        if (SampleData.paths.none { it.id == pathId }) return false
+        prefs.edit()
+            .putString("pathId", pathId)
+            .putInt("ritualProgress", 0)
+            .apply()
+        publish()
+        return true
+    }
+
+    private fun touchReadingDay() {
+        val today = LocalDate.now()
+        val todayString = today.toString()
+        val last = prefs.getString("lastReadDate", null)?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        if (last == today) return
+
+        val streak = when {
+            last == null -> 1
+            ChronoUnit.DAYS.between(last, today) == 1L -> prefs.getInt("streakDays", 0) + 1
+            else -> 1
+        }
+        prefs.edit().putString("lastReadDate", todayString).putInt("streakDays", streak).apply()
+    }
+
+    private fun rollDayIfNeeded() {
+        val today = LocalDate.now().toString()
+        if (dayKey == today) return
+        dayKey = today
+        todayMinutes = 0
+        todayPages = 0
+        todayHighlights = 0
+        prefs.edit().remove("claimedQuestIds").apply()
+        persistCounters()
+    }
+
+
+    private fun awardCompletedQuestRewards() {
+        val claimed = prefs.getStringSet("claimedQuestIds", emptySet()).orEmpty().toMutableSet()
+        val newlyCompleted = buildQuests().filter { it.progress >= it.target && it.id !in claimed }
+        if (newlyCompleted.isEmpty()) return
+        totalXp += newlyCompleted.sumOf { it.xpReward }
+        claimed += newlyCompleted.map { it.id }
+        prefs.edit().putStringSet("claimedQuestIds", claimed).apply()
+    }
+
+    private fun persistCounters() {
+        prefs.edit()
+            .putInt("totalXp", totalXp)
+            .putString("dayKey", dayKey)
+            .putInt("todayMinutes", todayMinutes)
+            .putInt("todayPages", todayPages)
+            .putInt("todayHighlights", todayHighlights)
+            .apply()
+    }
+
+    private fun publish() {
+        val earned = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toMutableSet()
+        val p = buildProfile()
+        if (p.minutesRead >= 60) earned.add("first_hour")
+        if (prefs.getInt("totalHighlights", 0) >= 10) earned.add("passage_keeper")
+        if (prefs.getInt("streakDays", 0) >= 7) earned.add("seven_days")
+        if (p.booksFinished >= 10) earned.add("ten_tomes")
+        if (p.rankIndex >= 1) earned.add("first_threshold")
+        prefs.edit().putStringSet("earnedSigils", earned).apply()
+        _profile.value = buildProfile()
+        _quests.value = buildQuests()
+    }
+
+    private fun buildProfile(): ReaderProfile {
+        val (inside, needed) = GamificationEngine.progressInsideLevel(totalXp)
+        val path = SampleData.paths.firstOrNull { it.id == prefs.getString("pathId", SampleData.currentPath.id) }
+            ?: SampleData.currentPath
+        return ReaderProfile(
+            level = GamificationEngine.levelFor(totalXp),
+            xp = inside,
+            xpForNextLevel = needed,
+            streakDays = prefs.getString("lastReadDate", null)?.let { raw ->
+                val date = runCatching { LocalDate.parse(raw) }.getOrNull()
+                if (date != null && ChronoUnit.DAYS.between(date, LocalDate.now()) in 0L..1L) prefs.getInt("streakDays", 0) else 0
+            } ?: 0,
+            pagesRead = prefs.getInt("pagesRead", 0),
+            minutesRead = prefs.getInt("minutesRead", 0),
+            booksFinished = prefs.getInt("booksFinished", 0),
+            path = path,
+            rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex),
+            ritualProgress = prefs.getInt("ritualProgress", 0),
+            ritualTarget = ReadingPolicy.ritualTarget(path.id, prefs.getInt("rankIndex", 0)),
+            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet()
+        )
+    }
+
+    private fun buildQuests(): List<Quest> = listOf(
+        Quest("read", "Read for 20 minutes", todayMinutes.coerceAtMost(20), 20, 90),
+        Quest("pages", "Read 15 paced pages", todayPages.coerceAtMost(15), 15, 120),
+        Quest("mark", "Mark 3 intriguing passages", todayHighlights.coerceAtMost(3), 3, 75)
+    )
+}
