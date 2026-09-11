@@ -26,7 +26,9 @@ Veil Reader 0.6.0 turns the 0.5 reader prototype into a build-verified Android r
 - Search, filter, sort, favorites, metadata editing, and named collections.
 - Hidden Archive across highlights and notes.
 - Open a saved passage back at its locator.
-- ZIP backup export and Markdown notebook export.
+- ZIP backup export and validated in-app restore.
+- Restore stages and validates the archive, blocks unsafe ZIP paths/oversized payloads, rewrites publication URIs, and rolls preferences back if a commit fails.
+- Markdown notebook export.
 
 ### Paths and progression
 - Six original reading Paths with rank progression and Path-specific rituals.
@@ -48,4 +50,4 @@ This release must pass the repository Android workflow before merge:
 4. Debug APK assembly.
 5. APK artifact upload.
 
-Physical-device behavior, accessibility review, and store-release signing remain separate release gates and must not be inferred from a green CI build.
+Physical-device behavior, accessibility review, backup round-trip on a real device/document provider, and store-release signing remain separate release gates and must not be inferred from a green CI build.
