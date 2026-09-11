@@ -17,7 +17,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -36,7 +35,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
-import com.veilreader.app.data.ReadingSessionRepository
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -74,14 +72,13 @@ fun ReaderScreen(
     val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
         "Veil Reader requires a FragmentActivity host."
     }
-    val appContext = LocalContext.current.applicationContext
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val readerViewModel: ReaderViewModel = viewModel(
         key = "veil-reader-state",
-        factory = remember(library, game, appContext) {
-            ReaderViewModel.factory(library, game, ReadingSessionRepository(appContext))
+        factory = remember(library, game) {
+            ReaderViewModel.factory(library, game)
         }
     )
     val readerState by readerViewModel.uiState.collectAsStateWithLifecycle()
