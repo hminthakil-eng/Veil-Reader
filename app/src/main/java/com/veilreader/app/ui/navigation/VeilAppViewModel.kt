@@ -35,28 +35,50 @@ class VeilAppViewModel(
     val route: StateFlow<VeilRouteState> = _route.asStateFlow()
 
     fun selectTab(tab: VeilTab) = update {
-        copy(selectedTab = tab, showArchive = false, activeChamber = null)
+        copy(
+            selectedTab = tab,
+            showArchive = false,
+            activeChamber = null,
+            activeBookId = null,
+            locatorOverrideJson = null
+        )
     }
 
     fun openArchive() = update {
-        copy(showArchive = true, activeChamber = null)
+        copy(
+            showArchive = true,
+            activeChamber = null,
+            activeBookId = null,
+            locatorOverrideJson = null
+        )
     }
 
     fun closeArchive() = update { copy(showArchive = false) }
 
-    fun openChamber(chamberId: String) = update {
-        copy(activeChamber = chamberId, showArchive = false)
+    fun openChamber(chamberId: String) {
+        if (chamberId !in RESTORABLE_CHAMBERS) return
+        update {
+            copy(
+                activeChamber = chamberId,
+                showArchive = false,
+                activeBookId = null,
+                locatorOverrideJson = null
+            )
+        }
     }
 
     fun closeChamber() = update { copy(activeChamber = null) }
 
-    fun requestBook(bookId: String, locatorOverrideJson: String? = null) = update {
-        copy(
-            activeBookId = bookId,
-            locatorOverrideJson = locatorOverrideJson,
-            showArchive = false,
-            activeChamber = null
-        )
+    fun requestBook(bookId: String, locatorOverrideJson: String? = null) {
+        if (bookId.isBlank()) return
+        update {
+            copy(
+                activeBookId = bookId,
+                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
+                showArchive = false,
+                activeChamber = null
+            )
+        }
     }
 
     /** The explicit locator has been handed to Readium and is now persisted by the library. */
@@ -81,8 +103,12 @@ class VeilAppViewModel(
     }
 
     private fun update(transform: VeilRouteState.() -> VeilRouteState) {
-        val next = _route.value.transform()
+        val next = _route.value.transform().normalized()
         _route.value = next
+        persist(next)
+    }
+
+    private fun persist(next: VeilRouteState) {
         savedStateHandle[KEY_TAB] = next.selectedTab.name
         savedStateHandle[KEY_ARCHIVE] = next.showArchive
         if (next.activeChamber == null) savedStateHandle.remove<String>(KEY_CHAMBER)
@@ -97,16 +123,31 @@ class VeilAppViewModel(
         val tab = savedStateHandle.get<String>(KEY_TAB)
             ?.let { raw -> runCatching { VeilTab.valueOf(raw) }.getOrNull() }
             ?: VeilTab.READING
-        val chamber = savedStateHandle.get<String>(KEY_CHAMBER)
-            ?.takeIf { it in RESTORABLE_CHAMBERS }
-        val bookId = savedStateHandle.get<String>(KEY_BOOK)?.takeIf(String::isNotBlank)
         return VeilRouteState(
             selectedTab = tab,
             showArchive = savedStateHandle.get<Boolean>(KEY_ARCHIVE) == true,
-            activeChamber = chamber,
-            activeBookId = bookId,
+            activeChamber = savedStateHandle.get<String>(KEY_CHAMBER),
+            activeBookId = savedStateHandle.get<String>(KEY_BOOK),
             locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR)
-                ?.takeIf { it.isNotBlank() && bookId != null }
+        ).normalized()
+    }
+
+    private fun VeilRouteState.normalized(): VeilRouteState {
+        val cleanBookId = activeBookId?.takeIf(String::isNotBlank)
+        if (cleanBookId != null) {
+            return copy(
+                showArchive = false,
+                activeChamber = null,
+                activeBookId = cleanBookId,
+                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank)
+            )
+        }
+        val cleanChamber = activeChamber?.takeIf { it in RESTORABLE_CHAMBERS }
+        return copy(
+            showArchive = showArchive && cleanChamber == null,
+            activeChamber = cleanChamber,
+            activeBookId = null,
+            locatorOverrideJson = null
         )
     }
 
