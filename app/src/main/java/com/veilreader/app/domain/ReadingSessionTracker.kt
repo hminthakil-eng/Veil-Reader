@@ -93,9 +93,10 @@ class ReadingSessionTracker(
     }
 }
 
+/** Durable/portable representation. bookId can be null after the source book is deleted. */
 data class ReadingSessionSnapshot(
     val id: String,
-    val bookId: String,
+    val bookId: String?,
     val startedAtEpochMs: Long,
     val endedAtEpochMs: Long,
     val activeMillis: Long,
