@@ -1,6 +1,7 @@
 package com.veilreader.app.data
 
 import android.content.Context
+import android.net.Uri
 import androidx.room.withTransaction
 import com.veilreader.app.data.db.BookCollectionCrossRef
 import com.veilreader.app.data.db.CollectionEntity
@@ -12,11 +13,14 @@ import com.veilreader.app.data.db.toSnapshot
 import com.veilreader.app.data.migration.LegacyLibraryMigrator
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import java.io.File
 import java.nio.charset.StandardCharsets
+import java.util.Locale
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
@@ -29,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Runtime bookshelf repository.
@@ -127,14 +132,31 @@ class LocalLibraryRepository internal constructor(
         enqueue { settings.saveReaderAppearance(value) }
     }
 
-    fun addImportedBook(book: Book) {
-        val existing = _books.value.firstOrNull { it.sourceUri == book.sourceUri }
-        val stored = if (existing != null) book.copy(id = existing.id) else book
-        _books.value = listOf(stored) + _books.value.filterNot { it.id == stored.id }
-        enqueue {
-            upsertBookPreservingExtendedMetadata(stored)
-            setCollectionsInternal(stored.id, setOf(stored.collection))
+    /**
+     * Commits an inspected publication through the same serialized queue as every other library
+     * write. A matching SHA-256 returns the existing book and removes the just-created temporary
+     * publication/cover files, so concurrent duplicate imports cannot create duplicate records.
+     */
+    suspend fun addImportedBook(book: Book): BookImportResult {
+        val result = orderedWrite {
+            val duplicate = book.contentFingerprint
+                ?.takeIf { it.isNotBlank() }
+                ?.let { database.books().findByFingerprint(it)?.toDomain() }
+            if (duplicate != null) {
+                BookImportResult(book = duplicate, duplicate = true)
+            } else {
+                database.withTransaction {
+                    database.books().upsert(book.toEntity())
+                    setCollectionsInternal(book.id, book.allCollections.toSet())
+                }
+                BookImportResult(book = book, duplicate = false)
+            }
         }
+
+        if (result.duplicate) discardImportedArtifacts(book)
+        val committed = result.book
+        _books.value = listOf(committed) + _books.value.filterNot { it.id == committed.id }
+        return result
     }
 
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
@@ -145,34 +167,52 @@ class LocalLibraryRepository internal constructor(
      */
     fun updateCoverCachePath(id: String, path: String) {
         val updated = updateBookCached(id) { it.copy(coverCachePath = path) } ?: return
-        enqueue { upsertBookPreservingExtendedMetadata(updated) }
+        enqueue { database.books().upsert(updated.toEntity()) }
     }
 
-    fun editMetadata(id: String, title: String, author: String, collection: String) {
-        require(title.isNotBlank()) { "A book title cannot be empty." }
-        val updated = updateBookCached(id) {
-            it.copy(
-                title = title.trim(),
-                author = author.trim().ifEmpty { "Unknown author" },
-                collection = collection.trim()
+    /** Backfills the derived duplicate-detection fingerprint for pre-0.8 library entries. */
+    fun updateContentFingerprint(id: String, fingerprint: String) {
+        if (fingerprint.isBlank()) return
+        val updated = updateBookCached(id) { current ->
+            if (!current.contentFingerprint.isNullOrBlank()) current
+            else current.copy(contentFingerprint = fingerprint.lowercase(Locale.ROOT))
+        } ?: return
+        enqueue { database.books().upsert(updated.toEntity()) }
+    }
+
+    fun editMetadata(update: BookMetadataUpdate) {
+        require(update.title.isNotBlank()) { "A book title cannot be empty." }
+        val cleanCollections = update.collections
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinctBy { it.lowercase(Locale.ROOT) }
+        val updated = updateBookCached(update.bookId) { current ->
+            current.copy(
+                title = update.title.trim(),
+                author = update.author.trim().ifEmpty { "Unknown author" },
+                seriesName = update.seriesName?.trim()?.takeIf { it.isNotEmpty() },
+                seriesIndex = update.seriesIndex?.takeIf { it.isFinite() },
+                language = update.language?.trim()?.takeIf { it.isNotEmpty() },
+                collection = cleanCollections.firstOrNull().orEmpty(),
+                collections = cleanCollections
             )
         } ?: return
         enqueue {
             database.withTransaction {
-                upsertBookPreservingExtendedMetadata(updated)
-                setCollectionsInternal(id, setOf(updated.collection))
+                database.books().upsert(updated.toEntity())
+                setCollectionsInternal(update.bookId, cleanCollections.toSet())
             }
         }
     }
 
     fun toggleFavorite(id: String) {
         val updated = updateBookCached(id) { it.copy(favorite = !it.favorite) } ?: return
-        enqueue { upsertBookPreservingExtendedMetadata(updated) }
+        enqueue { database.books().upsert(updated.toEntity()) }
     }
 
     fun markOpened(id: String) {
         val updated = updateBookCached(id) { it.copy(lastOpenedAtEpochMs = System.currentTimeMillis()) } ?: return
-        enqueue { upsertBookPreservingExtendedMetadata(updated) }
+        enqueue { database.books().upsert(updated.toEntity()) }
     }
 
     /** Returns true when this update completed the book for the first time. */
@@ -193,7 +233,7 @@ class LocalLibraryRepository internal constructor(
             finished = current.finished || finishedNow
         )
         replaceBookCached(updated)
-        enqueue { upsertBookPreservingExtendedMetadata(updated) }
+        enqueue { database.books().upsert(updated.toEntity()) }
         return newlyFinished
     }
 
@@ -236,67 +276,48 @@ class LocalLibraryRepository internal constructor(
 
     /** Returns one point-in-time database snapshot ordered with all normal reader writes. */
     suspend fun snapshot(): LibrarySnapshot {
-        initialized.await()
-        val result = CompletableDeferred<LibrarySnapshot>()
-        writes.send {
-            try {
-                storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
-                val databaseState = database.withTransaction {
-                    DatabaseLibraryState(
-                        books = database.books().listAllWithCollections().map { it.toDomain() },
-                        highlights = database.highlights().listAll().map { it.toDomain() },
-                        bookmarks = database.bookmarks().listAll().map { it.toDomain() },
-                        readingSessions = database.readingSessions().listAll().map { it.toSnapshot() }
-                    )
-                }
-                val appearance = settings.settings.first().readerAppearance
-                result.complete(
-                    LibrarySnapshot(
-                        books = databaseState.books,
-                        highlights = databaseState.highlights,
-                        bookmarks = databaseState.bookmarks,
-                        appearance = appearance,
-                        readingSessions = databaseState.readingSessions
-                    )
+        return orderedWrite {
+            val databaseState = database.withTransaction {
+                DatabaseLibraryState(
+                    books = database.books().listAllWithCollections().map { it.toDomain() },
+                    highlights = database.highlights().listAll().map { it.toDomain() },
+                    bookmarks = database.bookmarks().listAll().map { it.toDomain() },
+                    readingSessions = database.readingSessions().listAll().map { it.toSnapshot() }
                 )
-            } catch (error: Throwable) {
-                result.completeExceptionally(error)
             }
+            val appearance = settings.settings.first().readerAppearance
+            LibrarySnapshot(
+                books = databaseState.books,
+                highlights = databaseState.highlights,
+                bookmarks = databaseState.bookmarks,
+                appearance = appearance,
+                readingSessions = databaseState.readingSessions
+            )
         }
-        return result.await()
     }
 
     /** Transactional replacement used by backup restore, serialized with normal reader writes. */
     suspend fun replaceAll(snapshot: LibrarySnapshot) {
-        initialized.await()
-        val done = CompletableDeferred<Unit>()
-        writes.send {
-            try {
-                storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
-                database.withTransaction {
-                    database.highlights().deleteAll()
-                    database.bookmarks().deleteAll()
-                    database.collections().clearAllLinks()
-                    database.books().deleteAll()
-                    database.collections().deleteAll()
-                    database.readingSessions().deleteAll()
+        orderedWrite {
+            database.withTransaction {
+                database.highlights().deleteAll()
+                database.bookmarks().deleteAll()
+                database.collections().clearAllLinks()
+                database.books().deleteAll()
+                database.collections().deleteAll()
+                database.readingSessions().deleteAll()
 
-                    if (snapshot.books.isNotEmpty()) database.books().upsertAll(snapshot.books.map { it.toEntity() })
-                    for (book in snapshot.books) setCollectionsInternal(book.id, setOf(book.collection))
-                    if (snapshot.highlights.isNotEmpty()) database.highlights().upsertAll(snapshot.highlights.map { it.toEntity() })
-                    if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
-                    if (snapshot.readingSessions.isNotEmpty()) {
-                        database.readingSessions().upsertAll(snapshot.readingSessions.map { it.toEntity() })
-                    }
+                if (snapshot.books.isNotEmpty()) database.books().upsertAll(snapshot.books.map { it.toEntity() })
+                for (book in snapshot.books) setCollectionsInternal(book.id, book.allCollections.toSet())
+                if (snapshot.highlights.isNotEmpty()) database.highlights().upsertAll(snapshot.highlights.map { it.toEntity() })
+                if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
+                if (snapshot.readingSessions.isNotEmpty()) {
+                    database.readingSessions().upsertAll(snapshot.readingSessions.map { it.toEntity() })
                 }
-                settings.saveReaderAppearance(snapshot.appearance)
-                _appearance.value = snapshot.appearance
-                done.complete(Unit)
-            } catch (error: Throwable) {
-                done.completeExceptionally(error)
             }
+            settings.saveReaderAppearance(snapshot.appearance)
+            _appearance.value = snapshot.appearance
         }
-        done.await()
     }
 
     private fun enqueue(block: suspend () -> Unit) {
@@ -308,6 +329,24 @@ class LocalLibraryRepository internal constructor(
         check(writes.trySend(guarded).isSuccess) { "Veil Reader storage queue is unavailable." }
     }
 
+    private suspend fun <T> orderedWrite(block: suspend () -> T): T {
+        initialized.await()
+        val result = CompletableDeferred<T>()
+        writes.send {
+            try {
+                storageFailure.get()?.let { throw IllegalStateException("A previous library write failed.", it) }
+                result.complete(block())
+            } catch (cancelled: CancellationException) {
+                result.cancel(cancelled)
+                throw cancelled
+            } catch (error: Throwable) {
+                result.completeExceptionally(error)
+                throw error
+            }
+        }
+        return result.await()
+    }
+
     private fun updateBookCached(id: String, transform: (Book) -> Book): Book? {
         val current = getBook(id) ?: return null
         val updated = transform(current)
@@ -317,21 +356,6 @@ class LocalLibraryRepository internal constructor(
 
     private fun replaceBookCached(book: Book) {
         _books.value = _books.value.map { if (it.id == book.id) book else it }
-    }
-
-    private suspend fun upsertBookPreservingExtendedMetadata(book: Book) {
-        val existing = database.books().findEntity(book.id)
-        val base = book.toEntity()
-        database.books().upsert(
-            base.copy(
-                // A non-null domain value (including the empty no-cover sentinel) is deliberate.
-                coverCachePath = book.coverCachePath ?: existing?.coverCachePath,
-                contentFingerprint = existing?.contentFingerprint,
-                seriesName = existing?.seriesName,
-                seriesIndex = existing?.seriesIndex,
-                language = existing?.language
-            )
-        )
     }
 
     private suspend fun setCollectionsInternal(bookId: String, names: Set<String>) {
@@ -347,7 +371,32 @@ class LocalLibraryRepository internal constructor(
             database.collections().attach(BookCollectionCrossRef(bookId, collection.id))
         }
     }
+
+    private suspend fun discardImportedArtifacts(book: Book) = withContext(Dispatchers.IO) {
+        deleteAppPrivateFile(book.sourceUri, "publications")
+        book.coverCachePath?.takeIf { it.isNotBlank() }?.let { path ->
+            deleteAppPrivatePath(path, "covers")
+        }
+    }
+
+    private fun deleteAppPrivateFile(uriText: String?, child: String) {
+        val path = uriText?.let(Uri::parse)?.takeIf { it.scheme == "file" }?.path ?: return
+        deleteAppPrivatePath(path, child)
+    }
+
+    private fun deleteAppPrivatePath(path: String, child: String) {
+        runCatching {
+            val root = File(appContext.filesDir, child).canonicalFile
+            val candidate = File(path).canonicalFile
+            if (candidate.toPath().startsWith(root.toPath()) && candidate.isFile) candidate.delete()
+        }
+    }
 }
+
+data class BookImportResult(
+    val book: Book,
+    val duplicate: Boolean
+)
 
 data class LibrarySnapshot(
     val books: List<Book>,

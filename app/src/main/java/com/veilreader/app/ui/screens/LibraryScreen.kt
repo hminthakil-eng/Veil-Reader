@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -21,6 +22,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookMetadataUpdate
+import java.util.Locale
 
 @Composable
 fun LibraryScreen(
@@ -29,7 +32,7 @@ fun LibraryScreen(
     onImportUri: (Uri) -> Unit,
     onOpenBook: (Book) -> Unit,
     onFavorite: (String) -> Unit,
-    onEditMetadata: (String, String, String, String) -> Unit
+    onEditMetadata: (BookMetadataUpdate) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
@@ -40,19 +43,36 @@ fun LibraryScreen(
     var editing by remember { mutableStateOf<Book?>(null) }
     var title by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
-    var collectionName by remember { mutableStateOf("") }
+    var collectionNames by remember { mutableStateOf("") }
+    var seriesName by remember { mutableStateOf("") }
+    var seriesIndex by remember { mutableStateOf("") }
+    var language by remember { mutableStateOf("") }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImportUri)
     }
-    val collections = books.map { it.collection }.filter { it.isNotBlank() }.distinct().sorted()
+    val collections = books
+        .flatMap { it.allCollections }
+        .distinctBy { it.lowercase(Locale.ROOT) }
+        .sortedWith(String.CASE_INSENSITIVE_ORDER)
     LaunchedEffect(collections) {
-        if (collection.isNotEmpty() && collection !in collections) collection = ""
+        if (collection.isNotEmpty() && collections.none { it.equals(collection, ignoreCase = true) }) {
+            collection = ""
+        }
     }
 
+    val trimmedQuery = query.trim()
     val filtered = books.filter { book ->
-        val matchesQuery = query.isBlank() || listOf(book.title, book.author, book.collection)
-            .any { it.contains(query.trim(), ignoreCase = true) }
+        val searchable = buildList {
+            add(book.title)
+            add(book.author)
+            book.seriesName?.let(::add)
+            book.language?.let(::add)
+            addAll(book.allCollections)
+        }
+        val matchesQuery = trimmedQuery.isBlank() || searchable.any {
+            it.contains(trimmedQuery, ignoreCase = true)
+        }
         val matchesShelf = when (shelf) {
             "Reading" -> !book.finished && book.progress > 0f
             "Unread" -> !book.finished && book.progress == 0f
@@ -60,12 +80,20 @@ fun LibraryScreen(
             "Favorites" -> book.favorite
             else -> true
         }
-        matchesQuery && matchesShelf && (collection.isEmpty() || book.collection == collection)
+        val matchesCollection = collection.isEmpty() || book.allCollections.any {
+            it.equals(collection, ignoreCase = true)
+        }
+        matchesQuery && matchesShelf && matchesCollection
     }.let { list ->
         when (sort) {
-            "Title" -> list.sortedBy { it.title.lowercase() }
-            "Author" -> list.sortedBy { it.author.lowercase() }
+            "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
+            "Author" -> list.sortedBy { it.author.lowercase(Locale.ROOT) }
             "Progress" -> list.sortedByDescending { it.progress }
+            "Series" -> list.sortedWith(
+                compareBy<Book> { it.seriesName?.lowercase(Locale.ROOT) ?: "\uffff" }
+                    .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
+                    .thenBy { it.title.lowercase(Locale.ROOT) }
+            )
             else -> list.sortedByDescending { maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs) }
         }
     }
@@ -121,7 +149,7 @@ fun LibraryScreen(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
-            placeholder = { Text("Search books, authors, collections") },
+            placeholder = { Text("Search books, authors, series, collections") },
             leadingIcon = { Text("⌕", fontSize = 20.sp) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
@@ -188,7 +216,7 @@ fun LibraryScreen(
             Box {
                 TextButton(onClick = { sortMenu = true }) { Text("$sort ▾") }
                 DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
-                    listOf("Recent", "Title", "Author", "Progress").forEach { label ->
+                    listOf("Recent", "Title", "Author", "Series", "Progress").forEach { label ->
                         DropdownMenuItem(
                             text = { Text(label) },
                             onClick = { sort = label; sortMenu = false }
@@ -247,7 +275,10 @@ fun LibraryScreen(
                             editing = book
                             title = book.title
                             author = book.author
-                            collectionName = book.collection
+                            collectionNames = book.allCollections.joinToString(", ")
+                            seriesName = book.seriesName.orEmpty()
+                            seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
+                            language = book.language.orEmpty()
                         }
                     )
                 }
@@ -256,26 +287,57 @@ fun LibraryScreen(
     }
 
     editing?.let { book ->
+        val parsedSeriesIndex = seriesIndex.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+        val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
         AlertDialog(
             onDismissRequest = { editing = null },
             title = { Text("Book details") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = title.isBlank())
                     OutlinedTextField(author, { author = it }, label = { Text("Author") })
-                    OutlinedTextField(collectionName, { collectionName = it }, label = { Text("Collection (optional)") })
-                    Text(
-                        "Use the same collection name on several books to group them.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    OutlinedTextField(
+                        collectionNames,
+                        { collectionNames = it },
+                        label = { Text("Collections") },
+                        supportingText = { Text("Separate multiple collections with commas.") }
+                    )
+                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text("Series (optional)") })
+                    OutlinedTextField(
+                        seriesIndex,
+                        { seriesIndex = it },
+                        label = { Text("Series number (optional)") },
+                        isError = seriesIndexInvalid,
+                        supportingText = {
+                            if (seriesIndexInvalid) Text("Use a number such as 1 or 2.5.")
+                        }
+                    )
+                    OutlinedTextField(
+                        language,
+                        { language = it },
+                        label = { Text("Language tag (optional)") },
+                        supportingText = { Text("BCP-47, for example en, fa, tr, or en-US.") }
                     )
                 }
             },
             confirmButton = {
                 TextButton(
-                    enabled = title.isNotBlank(),
+                    enabled = title.isNotBlank() && !seriesIndexInvalid,
                     onClick = {
-                        onEditMetadata(book.id, title, author, collectionName)
+                        onEditMetadata(
+                            BookMetadataUpdate(
+                                bookId = book.id,
+                                title = title,
+                                author = author,
+                                collections = parseCollectionNames(collectionNames),
+                                seriesName = seriesName.trim().takeIf { it.isNotEmpty() },
+                                seriesIndex = parsedSeriesIndex,
+                                language = language.trim().takeIf { it.isNotEmpty() }
+                            )
+                        )
                         editing = null
                     }
                 ) { Text("Save") }
@@ -365,6 +427,18 @@ private fun BookLibraryTile(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                    Text(
+                        buildString {
+                            append(series)
+                            book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                        },
+                        color = MaterialTheme.colorScheme.secondary,
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
             TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
                 Text("•••", fontSize = 14.sp)
@@ -393,9 +467,12 @@ private fun BookLibraryTile(
                 fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            book.collection.takeIf { it.isNotBlank() }?.let {
+            val bookCollections = book.allCollections
+            if (bookCollections.isNotEmpty()) {
+                val label = if (bookCollections.size == 1) bookCollections.first()
+                else "${bookCollections.first()} +${bookCollections.size - 1}"
                 Text(
-                    it,
+                    label,
                     fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.secondary,
                     maxLines = 1,
@@ -405,3 +482,12 @@ private fun BookLibraryTile(
         }
     }
 }
+
+private fun parseCollectionNames(value: String): List<String> = value
+    .split(',')
+    .map(String::trim)
+    .filter(String::isNotEmpty)
+    .distinctBy { it.lowercase(Locale.ROOT) }
+
+private fun formatSeriesIndex(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

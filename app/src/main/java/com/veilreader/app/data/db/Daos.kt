@@ -23,6 +23,10 @@ interface BookDao {
     @Query("SELECT * FROM books WHERE id = :id LIMIT 1")
     suspend fun findEntity(id: String): BookEntity?
 
+    @Transaction
+    @Query("SELECT * FROM books WHERE contentFingerprint = :fingerprint LIMIT 1")
+    suspend fun findByFingerprint(fingerprint: String): BookWithCollections?
+
     @Upsert suspend fun upsert(book: BookEntity)
     @Upsert suspend fun upsertAll(books: List<BookEntity>)
     @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)

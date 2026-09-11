@@ -1,56 +1,67 @@
-# Veil Reader 0.5.0
+# Veil Reader 0.8.0
 
-An Android EPUB/PDF reader with a quiet mystery-RPG layer: your reading grows a personal Castle. Original paths and lore; books stay the focus.
+Veil Reader is a premium, offline-first Android EPUB/PDF reader with an optional mystery-RPG progression layer. Reading remains the primary experience; Paths, rituals and the Castle grow from real reading activity without sitting on top of the page.
 
-**Status: source alpha, not a production release.** The dependency-free reading-policy suite passes 39 checks. The Android app, UI, persistence and exports still require compilation and device verification. No APK is included.
+**Status: release candidate / active development.** GitHub CI compiles the Android app, runs policy and unit tests, verifies the committed Room schema, runs Android lint, assembles a debug APK, and uploads verification artifacts. Storage-sensitive changes also run Room/migration/backup tests on an Android emulator. Physical-device QA, accessibility sign-off and Play signing are still required before calling the app production-ready.
 
-## This release
+## Current capabilities
 
-- Search books by title, author and collection; filter reading/unread/finished/favorites.
-- Sort by recency, title, author or progress. Edit metadata and group books into named collections.
-- Adaptive library grid and functional system light/dark appearance.
-- Reader contents, nested chapters, EPUB/PDF bookmarks, highlights and editable notes.
-- Cross-book searchable Hidden Archive, with direct navigation back to a passage.
-- Correct Readium font-size percentages; distinct OLED/dusk backgrounds; reserved space for reader controls; scrollable appearance controls.
-- Six Path-specific rituals, increasing targets by rank, persistent earned sigils, and Castle shortcuts to working features.
-- Page XP rate limits, session revisit rejection, a daily page allowance tied to reading time, and suspension of minute rewards after five minutes without a location change.
-- Notebook Markdown export and ZIP export containing imported book files plus annotation/progression metadata.
-- Existing v0.4.0 books, highlights, settings and bookmarks retain their storage keys; new metadata fields have defaults.
+### Reader
+- Real EPUB and PDF import, parsing and navigation through Readium Kotlin Toolkit 3.3.0.
+- Durable reading position and process/configuration restoration without serializing live Readium objects.
+- Table of contents, in-book search, EPUB highlights and notes, EPUB/PDF bookmarks, and a cross-book Hidden Archive.
+- Paper, sepia, dusk and OLED reading themes; font size, line height, page margins, scroll mode and publisher-style controls for EPUB.
+- Animated page navigation plus compact reader chrome.
+- Lifecycle-aware engaged-reading sessions; background/idle time is excluded from reading rewards.
 
-## Verify
+### Grand Library
+- Room-backed library with real EPUB/PDF cover extraction and app-private thumbnail caching.
+- Search/filter/sort by reading state, favorites, author, title, series and collections.
+- Rich metadata: multiple collections, series name/index and language tag.
+- SHA-256 duplicate detection: importing the same publication reuses the existing library record instead of keeping a second private copy.
+- Favorites and metadata editing.
 
-With a Java 17 JDK:
+### Data durability
+- Room is the structured source of truth; DataStore owns reader preferences.
+- Automatic migration from the earlier SharedPreferences library format.
+- User-controlled ZIP backup and transactional restore for books, annotations, bookmarks, reader settings, game state and reading sessions.
+- Older schema-1 and schema-2 backups remain readable.
+- Publication cover thumbnails and content fingerprints are regenerable cache metadata and are not trusted across restore.
+- Android implicit app backup is disabled so imported books/notes are not silently copied outside Veil Reader's explicit backup flow.
+
+### Progression
+- Six original Reading Paths: Oracle, Dreamwalker, Archivist, Vanguard, Nocturne and Artificer.
+- XP, streaks, daily quests, achievements/sigils, rank rituals and Castle progression.
+- Castle rooms: Grand Library, Ritual Chamber, Observatory, Hidden Archive, Treasury and Inner Sanctum.
+- Rank advancement requires the Path ritual; XP alone cannot advance rank.
+
+## Build and verify
+
+Requirements: JDK 17, Gradle 9.6 and Android SDK 37.
 
 ```sh
 sh tools/test-policy.sh
-```
-
-With Gradle 9.6 and Android SDK 37:
-
-```sh
 gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
-The GitHub Actions workflow runs the policy checks, Kotlin unit tests, lint and APK assembly, and uploads reports and a debug APK on success. The inherited Android dependency versions still need resolution in a real build. There is no Gradle wrapper in this source distribution; CI installs the specified Gradle version.
+For storage/migration changes, CI additionally runs:
 
-## On your phone
+```sh
+gradle :app:connectedDebugAndroidTest
+```
 
-1. Connect a dedicated Veil Reader GitHub repository. Put the extracted project files at its root, including `.github/workflows/android.yml`; uploading just the ZIP does not build the project.
-2. Run Actions → Android Debug APK → Run workflow.
-3. Download the APK artifact only after all gates succeed.
-4. Install on a test device and import `qa/fixtures/veil-smoke.epub` from this package.
-5. Follow `MANUAL_QA.md` before relying on this app for your only copy of reading data.
+The repository workflows upload a debug APK and verification reports after successful runs.
 
-No connected GitHub repositories were visible during this delivery, so no remote build was launched.
+## Backup privacy
 
-## Backup scope
+Profile → Export library backup writes a local ZIP containing imported publications and reading data. The ZIP is **not encrypted**; store it somewhere you trust. Restore validates archive paths and sizes before replacing current state and rolls back if the replacement cannot be committed.
 
-Profile → Export library backup writes a ZIP with `books/`, `manifest.json`, and recovery instructions. Books can be extracted and re-imported; **automatic restoration of annotations and progression is not implemented yet**. The manifest preserves that information for future restoration and inspection. Markdown export is a readable copy of all saved quotes and notes.
+## Engineering documents
 
-## Release documents
+- `ENGINEERING_BLUEPRINT_1.0.md` — architecture, dependency order and 1.0 plan.
+- `DELIVERY_ROADMAP_1.0.md` — implementation sequence.
+- `MANUAL_QA.md` — physical-device verification checklist.
+- `WORLD_CLASS_RELEASE_GATES.md` — requirements before production release.
+- `RELEASE_NOTES_0.8.0.md` — this release candidate's scope and remaining gates.
 
-- `RELEASE_NOTES_0.5.0.md`: changes, validation evidence and known limitations.
-- `WORLD_CLASS_RELEASE_GATES.md`: requirements before calling this production-ready.
-- `MANUAL_QA.md`: concrete device checks, including upgrade and backup tests.
-
-No accounts, external AI processing, advertising SDKs, cloud sync or paid services were added.
+No account, advertising SDK, cloud sync, external AI processing or paid service is required by the current app.

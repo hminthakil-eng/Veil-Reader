@@ -66,13 +66,24 @@ fun VeilApp(
     val highlights by library.highlights.collectAsState()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
 
-    // Existing 0.7 libraries and restored backups have no cached covers. Process one book at a time
+    // Existing libraries and restored backups may have no cached covers. Process one book at a time
     // so each Room update naturally advances this effect to the next pending publication.
     val nextCoverBook = books.firstOrNull { it.isImported && it.coverCachePath == null }
     LaunchedEffect(nextCoverBook?.id) {
         val book = nextCoverBook ?: return@LaunchedEffect
         val cachedPath = readerEngine.extractAndCacheCover(book).getOrDefault("")
         library.updateCoverCachePath(book.id, cachedPath)
+    }
+
+    // Fingerprints are derived cache metadata too. Backfill old/restored books incrementally so
+    // importing the same file later resolves to the existing record instead of making a duplicate.
+    val nextFingerprintBook = books.firstOrNull { it.isImported && it.contentFingerprint.isNullOrBlank() }
+    LaunchedEffect(nextFingerprintBook?.id, nextFingerprintBook?.sourceUri) {
+        val book = nextFingerprintBook ?: return@LaunchedEffect
+        readerEngine.computeContentFingerprint(book)
+            .getOrNull()
+            ?.takeIf { it.isNotBlank() }
+            ?.let { library.updateContentFingerprint(book.id, it) }
     }
 
     val profile by game.profile.collectAsState()
@@ -149,16 +160,24 @@ fun VeilApp(
         isImporting = true
         scope.launch {
             try {
-                readerEngine.inspectAndCreateBook(uri)
-                    .onSuccess { book ->
-                        library.addImportedBook(book)
-                        routeViewModel.selectTab(VeilTab.LIBRARY)
-                        routeViewModel.requestBook(book.id)
-                    }
-                    .onFailure {
-                        if (it is CancellationException) throw it
-                        errorMessage = it.message ?: "Could not import this publication."
-                    }
+                val inspected = readerEngine.inspectAndCreateBook(uri)
+                val inspectionError = inspected.exceptionOrNull()
+                if (inspectionError != null) {
+                    if (inspectionError is CancellationException) throw inspectionError
+                    errorMessage = inspectionError.message ?: "Could not import this publication."
+                    return@launch
+                }
+
+                val commit = library.addImportedBook(inspected.getOrThrow())
+                routeViewModel.selectTab(VeilTab.LIBRARY)
+                routeViewModel.requestBook(commit.book.id)
+                if (commit.duplicate) {
+                    errorMessage = "${commit.book.title} is already in your Grand Library. I opened the existing copy."
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                errorMessage = error.message ?: "Could not import this publication."
             } finally {
                 isImporting = false
             }
@@ -179,8 +198,6 @@ fun VeilApp(
         val currentlyOpened = openedPublication
         if (currentlyOpened != null) {
             if (currentlyOpened.book.id == targetId) return@LaunchedEffect
-            // Let ReaderFragmentHost dispose the old publication, then this effect will restart
-            // because openedPublication.book.id is one of its keys.
             openedPublication = null
             return@LaunchedEffect
         }
@@ -200,9 +217,6 @@ fun VeilApp(
                     opened.close()
                     return@onSuccess
                 }
-                // Persist an explicit archive/bookmark jump before clearing the transient override.
-                // The override stays in SavedStateHandle until the queued Room write is durable,
-                // so an immediate recreation cannot fall back to the previous reading position.
                 if (locatorOverride != null) {
                     library.saveProgress(targetId, book.progress.toDouble(), locatorOverride)
                 }
