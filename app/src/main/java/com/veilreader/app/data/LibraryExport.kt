@@ -3,6 +3,12 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.Bookmark
+import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderTheme
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -18,11 +24,11 @@ import org.json.JSONObject
 /** User-initiated local backup/export. No server or account is involved. */
 class LibraryExport(private val context: Context, private val library: LocalLibraryRepository) {
     suspend fun writeNotebook(destination: Uri) {
-        val books = library.books.value.associateBy { it.id }
-        val highlights = library.highlights.value.toList()
+        val snapshot = library.snapshot()
+        val books = snapshot.books.associateBy { it.id }
         val text = buildString {
             appendLine("# Veil Reader notebook")
-            highlights.groupBy { it.bookId }.forEach { (id, passages) ->
+            snapshot.highlights.groupBy { it.bookId }.forEach { (id, passages) ->
                 appendLine(); appendLine("## ${books[id]?.title ?: "Unknown book"}")
                 appendLine(books[id]?.author.orEmpty())
                 passages.forEach { passage ->
@@ -32,7 +38,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                     appendLine(); appendLine("---")
                 }
             }
-            if (highlights.isEmpty()) appendLine("No highlights saved yet.")
+            if (snapshot.highlights.isEmpty()) appendLine("No highlights saved yet.")
         }
         withContext(Dispatchers.IO) {
             val output = context.contentResolver.openOutputStream(destination, "wt")
@@ -42,11 +48,10 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
     }
 
     suspend fun writeBackup(destination: Uri) {
-        val books = library.books.value.toList()
-        val libraryPrefs = JSONObject(context.getSharedPreferences(LIBRARY_PREFS, Context.MODE_PRIVATE).all)
-        val gamePrefs = JSONObject(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE).all)
+        val snapshot = library.snapshot()
+        val gamePrefs = preferencesToJson(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE))
         withContext(Dispatchers.IO) {
-            val files = books.filter { it.isImported }.mapIndexed { index, book ->
+            val files = snapshot.books.filter { it.isImported }.mapIndexed { index, book ->
                 val uri = Uri.parse(requireNotNull(book.sourceUri))
                 require(uri.scheme == "file") { "Cannot back up ${book.title}: unsupported file location." }
                 val file = File(requireNotNull(uri.path)).canonicalFile
@@ -57,10 +62,10 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 Triple(book, file, "books/${index + 1}.${book.format.name.lowercase()}")
             }
             val manifest = JSONObject().apply {
-                put("schemaVersion", BACKUP_SCHEMA)
-                put("appVersion", "0.6.0")
+                put("schemaVersion", CURRENT_BACKUP_SCHEMA)
+                put("appVersion", "0.7.0-dev")
                 put("createdAtEpochMs", System.currentTimeMillis())
-                put("libraryPreferences", libraryPrefs)
+                put("library", snapshot.toJson())
                 put("gamePreferences", gamePrefs)
                 put("publications", JSONArray().apply {
                     files.forEach { (book, _, path) -> put(JSONObject().apply {
@@ -78,8 +83,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 zip.write(manifest.toString(2).toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
                 zip.putNextEntry(ZipEntry("README.txt"))
-                val readme = "Veil Reader 0.6 backup. Restore it from Profile > Your data > Restore library backup. " +
-                    "The archive can contain private books, highlights, and notes; keep it private.\n"
+                val readme = "Veil Reader local backup. Restore it from Profile > Your data > Restore library backup. " +
+                    "The archive can contain private books, highlights, notes and reading state; keep it private.\n"
                 zip.write(readme.toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
                 files.forEach { (_, file, path) ->
@@ -91,11 +96,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         }
     }
 
-    /**
-     * Restores a schema-1 Veil Reader backup after validating and staging it.
-     * Existing preferences are replaced only after the archive has been fully checked and all
-     * referenced publications have been copied into app-private storage.
-     */
+    /** Restores both current schema-2 backups and older 0.6 schema-1 backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-${UUID.randomUUID()}").apply { mkdirs() }
         var installedRoot: File? = null
@@ -105,16 +106,73 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             require(manifestFile.isFile) { "This archive has no Veil Reader manifest." }
             require(manifestFile.length() <= MAX_MANIFEST_BYTES) { "The backup manifest is unexpectedly large." }
             val manifest = JSONObject(manifestFile.readText(Charsets.UTF_8))
-            require(manifest.optInt("schemaVersion", -1) == BACKUP_SCHEMA) {
+            val schema = manifest.optInt("schemaVersion", -1)
+            require(schema in SUPPORTED_BACKUP_SCHEMAS) {
                 "This backup version is not supported by this Veil Reader build."
             }
 
-            val libraryPreferences = JSONObject(manifest.getJSONObject("libraryPreferences").toString())
+            val incoming = when (schema) {
+                1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
+                CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
+                else -> error("Unsupported backup schema.")
+            }
             val gamePreferences = JSONObject(manifest.getJSONObject("gamePreferences").toString())
-            val publicationRecords = manifest.optJSONArray("publications") ?: JSONArray()
-            val archivedByBookId = mutableMapOf<String, File>()
-            for (index in 0 until publicationRecords.length()) {
-                val record = publicationRecords.getJSONObject(index)
+            val archivedByBookId = stagedPublications(manifest, stagingRoot)
+
+            val publicationsRoot = File(context.filesDir, "publications").apply { mkdirs() }.canonicalFile
+            installedRoot = File(publicationsRoot, "restore-${UUID.randomUUID()}").apply { mkdirs() }.canonicalFile
+            require(installedRoot.toPath().startsWith(publicationsRoot.toPath())) { "Invalid restore location." }
+
+            var restoredBooks = 0
+            val restoredBookModels = incoming.books.map { book ->
+                val archived = archivedByBookId[book.id]
+                if (book.isImported) requireNotNull(archived) {
+                    "The backup is missing the publication file for ${book.title}."
+                }
+                if (archived == null) return@map book.copy(sourceUri = null)
+                val format = book.format.name.lowercase()
+                require(format == "epub" || format == "pdf") { "Unsupported publication format in backup." }
+                val target = File(installedRoot, "${UUID.randomUUID()}.$format")
+                archived.inputStream().use { input -> target.outputStream().use { output -> input.copyTo(output) } }
+                require(target.length() > 0) { "A restored publication is empty." }
+                restoredBooks += 1
+                book.copy(sourceUri = Uri.fromFile(target).toString())
+            }
+            val restoredSnapshot = incoming.copy(books = restoredBookModels)
+
+            val gamePrefs = context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE)
+            val oldLibrary = library.snapshot()
+            val oldGame = gamePrefs.all.toMap()
+
+            try {
+                library.replaceAll(restoredSnapshot)
+                if (!replacePreferences(gamePrefs, gamePreferences)) {
+                    error("Could not commit restored progression data.")
+                }
+            } catch (error: Throwable) {
+                runCatching { library.replaceAll(oldLibrary) }
+                restorePreferencesSnapshot(gamePrefs, oldGame)
+                throw IllegalStateException("Restore could not be committed. Your previous data was kept.", error)
+            }
+
+            publicationsRoot.listFiles()?.forEach { child ->
+                if (child.canonicalFile != installedRoot) child.deleteRecursively()
+            }
+
+            BackupRestoreResult(restoredBooks, restoredSnapshot.highlights.size)
+        } catch (error: Throwable) {
+            installedRoot?.deleteRecursively()
+            throw error
+        } finally {
+            stagingRoot.deleteRecursively()
+        }
+    }
+
+    private fun stagedPublications(manifest: JSONObject, stagingRoot: File): Map<String, File> {
+        val records = manifest.optJSONArray("publications") ?: JSONArray()
+        return buildMap {
+            for (index in 0 until records.length()) {
+                val record = records.getJSONObject(index)
                 val bookId = record.getString("bookId")
                 val archivePath = requireSafeArchivePath(record.getString("archivePath"))
                 require(archivePath.startsWith("books/")) { "A publication is stored outside books/." }
@@ -122,58 +180,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 require(staged.toPath().startsWith(stagingRoot.canonicalFile.toPath()) && staged.isFile) {
                     "A publication referenced by the manifest is missing."
                 }
-                archivedByBookId[bookId] = staged
+                require(put(bookId, staged) == null) { "The backup contains duplicate publication records." }
             }
-
-            val books = JSONArray(libraryPreferences.optString("books", "[]"))
-            val publicationsRoot = File(context.filesDir, "publications").apply { mkdirs() }.canonicalFile
-            installedRoot = File(publicationsRoot, "restore-${UUID.randomUUID()}").apply { mkdirs() }.canonicalFile
-            require(installedRoot.toPath().startsWith(publicationsRoot.toPath())) { "Invalid restore location." }
-
-            var restoredBooks = 0
-            for (index in 0 until books.length()) {
-                val book = books.getJSONObject(index)
-                val id = book.getString("id")
-                val archived = archivedByBookId[id]
-                if (archived == null) {
-                    book.put("sourceUri", JSONObject.NULL)
-                    continue
-                }
-                val format = book.optString("format", "EPUB").lowercase()
-                require(format == "epub" || format == "pdf") { "Unsupported publication format in backup." }
-                val target = File(installedRoot, "${UUID.randomUUID()}.$format")
-                archived.inputStream().use { input -> target.outputStream().use { output -> input.copyTo(output) } }
-                require(target.length() > 0) { "A restored publication is empty." }
-                book.put("sourceUri", Uri.fromFile(target).toString())
-                restoredBooks += 1
-            }
-            libraryPreferences.put("books", books.toString())
-
-            val libraryPrefs = context.getSharedPreferences(LIBRARY_PREFS, Context.MODE_PRIVATE)
-            val gamePrefs = context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE)
-            val oldLibrary = libraryPrefs.all.toMap()
-            val oldGame = gamePrefs.all.toMap()
-
-            require(replacePreferences(libraryPrefs, libraryPreferences)) { "Could not commit restored library data." }
-            if (!replacePreferences(gamePrefs, gamePreferences)) {
-                restorePreferencesSnapshot(libraryPrefs, oldLibrary)
-                restorePreferencesSnapshot(gamePrefs, oldGame)
-                error("Could not commit restored progression data. Your previous data was kept.")
-            }
-
-            publicationsRoot.listFiles()?.forEach { child ->
-                if (child.canonicalFile != installedRoot) child.deleteRecursively()
-            }
-
-            val restoredHighlights = runCatching {
-                JSONArray(libraryPreferences.optString("highlights", "[]")).length()
-            }.getOrDefault(0)
-            BackupRestoreResult(restoredBooks, restoredHighlights)
-        } catch (error: Throwable) {
-            installedRoot?.deleteRecursively()
-            throw error
-        } finally {
-            stagingRoot.deleteRecursively()
         }
     }
 
@@ -228,6 +236,15 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         return copied
     }
 
+    private fun preferencesToJson(prefs: SharedPreferences): JSONObject = JSONObject().apply {
+        prefs.all.forEach { (key, value) ->
+            put(key, when (value) {
+                is Set<*> -> JSONArray(value.filterIsInstance<String>())
+                else -> value
+            })
+        }
+    }
+
     private fun replacePreferences(target: SharedPreferences, source: JSONObject): Boolean {
         val editor = target.edit().clear()
         source.keys().forEach { key -> putJsonPreference(editor, key, source.get(key)) }
@@ -246,8 +263,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             is JSONArray -> editor.putStringSet(
                 key,
                 buildSet { for (i in 0 until value.length()) add(value.optString(i)) }
-                    .filter { it.isNotBlank() }
-                    .toSet()
+                    .filter { it.isNotBlank() }.toSet()
             )
             else -> error("Unsupported preference value in backup: $key")
         }
@@ -269,9 +285,9 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
     }
 
     companion object {
-        private const val LIBRARY_PREFS = "veil_library_v1"
         private const val GAME_PREFS = "veil_game_v1"
-        private const val BACKUP_SCHEMA = 1
+        private const val CURRENT_BACKUP_SCHEMA = 2
+        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
@@ -279,3 +295,93 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 }
 
 data class BackupRestoreResult(val booksRestored: Int, val highlightsRestored: Int)
+
+private fun LibrarySnapshot.toJson(): JSONObject = JSONObject().apply {
+    put("books", JSONArray().apply { books.forEach { put(it.toJson()) } })
+    put("highlights", JSONArray().apply { highlights.forEach { put(it.toJson()) } })
+    put("bookmarks", JSONArray().apply { bookmarks.forEach { put(it.toJson()) } })
+    put("appearance", appearance.toJson())
+}
+
+private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapshot = LibrarySnapshot(
+    books = json.getJSONArray("books").mapObjects(::bookFromJson),
+    highlights = json.optJSONArray("highlights")?.mapObjects(::highlightFromJson).orEmpty(),
+    bookmarks = json.optJSONArray("bookmarks")?.mapObjects(::bookmarkFromJson).orEmpty(),
+    appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject())
+)
+
+private val LibrarySnapshot.Companion: LibrarySnapshotCompanion get() = LibrarySnapshotCompanion
+private object LibrarySnapshotCompanion
+
+private fun parseLegacySchemaOne(prefs: JSONObject): LibrarySnapshot = LibrarySnapshot(
+    books = JSONArray(prefs.optString("books", "[]")).mapObjects(::bookFromJson),
+    highlights = JSONArray(prefs.optString("highlights", "[]")).mapObjects(::highlightFromJson),
+    bookmarks = JSONArray(prefs.optString("bookmarks", "[]")).mapObjects(::bookmarkFromJson),
+    appearance = appearanceFromJson(JSONObject(prefs.optString("appearance", "{}")))
+)
+
+private fun Book.toJson(): JSONObject = JSONObject().apply {
+    put("id", id); put("title", title); put("author", author); put("progress", progress.toDouble())
+    put("currentChapter", currentChapter); put("totalPages", totalPages); put("pagesRead", pagesRead)
+    put("format", format.name); put("sourceUri", sourceUri); put("mediaType", mediaType); put("locatorJson", locatorJson)
+    put("addedAt", addedAtEpochMs); put("lastOpenedAt", lastOpenedAtEpochMs); put("finished", finished)
+    put("favorite", favorite); put("collection", collection)
+}
+
+private fun Highlight.toJson(): JSONObject = JSONObject().apply {
+    put("id", id); put("bookId", bookId); put("quote", quote); put("locatorJson", locatorJson)
+    put("note", note); put("createdAt", createdAtEpochMs)
+}
+
+private fun Bookmark.toJson(): JSONObject = JSONObject().apply {
+    put("id", id); put("bookId", bookId); put("label", label); put("locatorJson", locatorJson); put("createdAt", createdAtEpochMs)
+}
+
+private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
+    put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
+    put("scroll", scroll); put("publisherStyles", publisherStyles)
+}
+
+private fun bookFromJson(o: JSONObject): Book = Book(
+    id = o.getString("id"),
+    title = o.getString("title"),
+    author = o.optString("author", "Unknown author"),
+    progress = o.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f),
+    currentChapter = o.optString("currentChapter", "Not started"),
+    totalPages = o.optInt("totalPages", 0).coerceAtLeast(0),
+    pagesRead = o.optInt("pagesRead", 0).coerceAtLeast(0),
+    format = runCatching { BookFormat.valueOf(o.optString("format", "EPUB")) }.getOrDefault(BookFormat.EPUB),
+    sourceUri = o.optNullableString("sourceUri"),
+    mediaType = o.optNullableString("mediaType"),
+    locatorJson = o.optNullableString("locatorJson"),
+    addedAtEpochMs = o.optLong("addedAt", 0L),
+    lastOpenedAtEpochMs = o.optLong("lastOpenedAt", 0L),
+    finished = o.optBoolean("finished", false),
+    favorite = o.optBoolean("favorite", false),
+    collection = o.optString("collection", "")
+)
+
+private fun highlightFromJson(o: JSONObject): Highlight = Highlight(
+    id = o.getString("id"), bookId = o.getString("bookId"), quote = o.optString("quote"),
+    locatorJson = o.getString("locatorJson"), note = o.optString("note"), createdAtEpochMs = o.optLong("createdAt", 0L)
+)
+
+private fun bookmarkFromJson(o: JSONObject): Bookmark = Bookmark(
+    id = o.getString("id"), bookId = o.getString("bookId"), label = o.optString("label", "Bookmark"),
+    locatorJson = o.getString("locatorJson"), createdAtEpochMs = o.optLong("createdAt", 0L)
+)
+
+private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearance(
+    theme = runCatching { ReaderTheme.valueOf(o.optString("theme", "DUSK")) }.getOrDefault(ReaderTheme.DUSK),
+    fontScale = (o.optDouble("fontScale", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.75, 1.8),
+    lineHeight = (o.optDouble("lineHeight", 1.45).takeIf { it.isFinite() } ?: 1.45).coerceIn(1.1, 2.0),
+    pageMargins = (o.optDouble("pageMargins", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.5, 2.0),
+    scroll = o.optBoolean("scroll", false), publisherStyles = o.optBoolean("publisherStyles", true)
+)
+
+private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = buildList {
+    for (i in 0 until length()) add(transform(getJSONObject(i)))
+}
+
+private fun JSONObject.optNullableString(key: String): String? =
+    if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() && it != "null" }
