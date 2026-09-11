@@ -11,6 +11,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -46,25 +47,76 @@ fun MysteryCard(
     }
 }
 
+/**
+ * Deterministic placeholder cover used until real publication thumbnails are extracted.
+ * Each title receives its own restrained palette so a shelf reads like a collection of books
+ * instead of repeated generic tiles.
+ */
 @Composable
-fun BookCover(title: String, modifier: Modifier = Modifier) {
-    val gradient = Brush.verticalGradient(
-        listOf(Color(0xFF4D315F), Color(0xFF17101E), Color(0xFF0A090C))
-    )
+fun BookCover(
+    title: String,
+    modifier: Modifier = Modifier,
+    subtitle: String? = null
+) {
+    val hue = ((title.hashCode().ushr(1) % 300) + 18).toFloat()
+    val accent = Color.hsv(hue, 0.48f, 0.60f)
+    val mid = Color.hsv((hue + 16f) % 360f, 0.58f, 0.34f)
+    val deep = Color.hsv((hue + 28f) % 360f, 0.62f, 0.13f)
+    val gradient = Brush.linearGradient(listOf(accent, mid, deep))
+
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(14.dp))
+            .clip(RoundedCornerShape(18.dp))
             .background(gradient)
-            .padding(12.dp),
-        contentAlignment = Alignment.BottomStart
     ) {
-        Text(
-            title,
-            color = Color.White,
-            fontWeight = FontWeight.SemiBold,
-            fontSize = 13.sp,
-            lineHeight = 15.sp,
-            maxLines = 3
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .width(7.dp)
+                .background(Color.Black.copy(alpha = 0.18f))
+                .align(Alignment.CenterStart)
         )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(Color.White.copy(alpha = 0.16f))
+                .align(Alignment.TopCenter)
+        )
+
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(start = 18.dp, end = 14.dp, top = 16.dp, bottom = 16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                "VEIL LIBRARY",
+                color = Color.White.copy(alpha = 0.72f),
+                fontSize = 8.sp,
+                letterSpacing = 1.6.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    title,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 15.sp,
+                    lineHeight = 17.sp,
+                    maxLines = 4,
+                    overflow = TextOverflow.Ellipsis
+                )
+                subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Text(
+                        it,
+                        color = Color.White.copy(alpha = 0.74f),
+                        fontSize = 10.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
     }
 }
