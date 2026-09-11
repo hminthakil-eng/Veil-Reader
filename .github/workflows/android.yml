@@ -34,6 +34,9 @@ jobs:
       - name: Unit tests
         run: gradle :app:testDebugUnitTest --stacktrace
 
+      - name: Verify committed Room schema
+        run: git diff --exit-code -- app/schemas/
+
       - name: Android lint
         run: gradle :app:lintDebug --stacktrace
 
