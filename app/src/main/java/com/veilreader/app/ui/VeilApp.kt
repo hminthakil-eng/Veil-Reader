@@ -190,14 +190,34 @@ fun VeilApp(
                     opened.close()
                     return@onSuccess
                 }
-                // Persist an explicit archive/bookmark jump before clearing the transient override,
-                // so a rotation in the next frame still reopens at the requested location.
+                // Persist an explicit archive/bookmark jump before clearing the transient override.
+                // The override stays in SavedStateHandle until the queued Room write is durable,
+                // so an immediate recreation cannot fall back to the previous reading position.
                 if (locatorOverride != null) {
                     library.saveProgress(targetId, book.progress.toDouble(), locatorOverride)
                 }
                 library.markOpened(targetId)
                 openedPublication = opened
-                routeViewModel.readerOpened(targetId)
+                if (locatorOverride == null) {
+                    routeViewModel.readerOpened(targetId)
+                } else {
+                    scope.launch {
+                        try {
+                            library.flushWrites()
+                            val currentRoute = routeViewModel.route.value
+                            if (
+                                currentRoute.activeBookId == targetId &&
+                                currentRoute.locatorOverrideJson == locatorOverride
+                            ) {
+                                routeViewModel.readerOpened(targetId)
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
+                        }
+                    }
+                }
             }
             .onFailure { error ->
                 if (error is CancellationException) throw error
