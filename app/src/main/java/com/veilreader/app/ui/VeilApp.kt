@@ -38,6 +38,8 @@ import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
+import com.veilreader.app.ui.screens.SanctumScreen
+import com.veilreader.app.ui.screens.TreasuryScreen
 import kotlinx.coroutines.launch
 
 enum class VeilTab(val label: String, val glyph: String) {
@@ -64,6 +66,9 @@ fun VeilApp(
     androidx.compose.runtime.LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
     val profile by game.profile.collectAsState()
     val quests by game.quests.collectAsState()
+    val dailyGoalMinutes by game.dailyGoalMinutes.collectAsState()
+    val equippedSigil by game.equippedSigil.collectAsState()
+    val castleTitle by game.castleTitle.collectAsState()
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -74,6 +79,7 @@ fun VeilApp(
         onDispose { lifecycle.removeObserver(observer) }
     }
     var showArchive by remember { mutableStateOf(false) }
+    var activeChamber by remember { mutableStateOf<String?>(null) }
     var exporting by remember { mutableStateOf(false) }
     var isOpening by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(VeilTab.READING) }
@@ -148,8 +154,31 @@ fun VeilApp(
             }
         )
     } else if (showArchive) {
-        ArchiveScreen(books, highlights, onClose = { showArchive = false },
-            onOpenPassage = { book, locator -> openBook(book, locator) })
+        ArchiveScreen(
+            books,
+            highlights,
+            onClose = { showArchive = false },
+            onOpenPassage = { book, locator -> openBook(book, locator) }
+        )
+    } else if (activeChamber == "treasury") {
+        TreasuryScreen(
+            profile = profile,
+            equippedSigil = equippedSigil,
+            onEquip = { id ->
+                if (!game.equipSigil(id)) errorMessage = "That sigil has not awakened yet."
+            },
+            onClose = { activeChamber = null }
+        )
+    } else if (activeChamber == "sanctum") {
+        SanctumScreen(
+            profile = profile,
+            castleTitle = castleTitle,
+            availableTitles = game.availableCastleTitles(),
+            onSelectTitle = { title ->
+                if (!game.selectCastleTitle(title)) errorMessage = "That Castle title is still sealed."
+            },
+            onClose = { activeChamber = null }
+        )
     } else {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -197,6 +226,7 @@ fun VeilApp(
                                 "ritual" -> selected = VeilTab.PATH
                                 "observatory" -> selected = VeilTab.PROFILE
                                 "archive" -> showArchive = true
+                                "treasury", "sanctum" -> activeChamber = room
                             }
                         },
                         onAdvanceRank = {
@@ -224,6 +254,10 @@ fun VeilApp(
                         profile = profile,
                         highlightCount = highlights.size,
                         exporting = exporting,
+                        dailyGoalMinutes = dailyGoalMinutes,
+                        castleTitle = castleTitle,
+                        equippedSigilName = equippedSigil?.let(::sigilDisplayName),
+                        onSetDailyGoal = game::setDailyGoal,
                         onExportBackup = { exportData(it, true) },
                         onExportNotes = { exportData(it, false) },
                         onOpenArchive = { showArchive = true }
@@ -243,4 +277,13 @@ fun VeilApp(
             }
         )
     }
+}
+
+private fun sigilDisplayName(id: String): String = when (id) {
+    "first_hour" -> "Quiet Hour"
+    "passage_keeper" -> "Passage Keeper"
+    "seven_days" -> "Seven-Day Lantern"
+    "ten_tomes" -> "Ten Tomes"
+    "first_threshold" -> "First Threshold"
+    else -> "Unknown Sigil"
 }
