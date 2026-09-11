@@ -9,13 +9,13 @@ import com.veilreader.app.data.db.BookmarkEntity
 import com.veilreader.app.data.db.CollectionEntity
 import com.veilreader.app.data.db.HighlightEntity
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.db.normalizeCollectionName
 import com.veilreader.app.data.db.toEntity
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import java.nio.charset.StandardCharsets
-import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.flow.first
 
@@ -102,12 +102,13 @@ internal fun buildLegacyImportPlan(
     books.forEach { book ->
         val cleanName = book.collection.trim()
         if (cleanName.isEmpty()) return@forEach
-        val key = cleanName.lowercase(Locale.ROOT)
+        val key = normalizeCollectionName(cleanName)
         val collection = collectionByKey.getOrPut(key) {
             CollectionEntity(
                 id = stableCollectionId(key),
                 name = cleanName,
-                createdAtEpochMs = book.addedAtEpochMs
+                createdAtEpochMs = book.addedAtEpochMs,
+                normalizedName = key
             )
         }
         links += BookCollectionCrossRef(book.id, collection.id)
