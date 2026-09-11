@@ -133,9 +133,10 @@ class GameRepository(context: Context) {
         publish()
     }
 
-    fun recordPageTurn(locationKey: String) {
+    /** Returns true only when the paced-page policy accepts this navigation event. */
+    fun recordPageTurn(locationKey: String): Boolean {
         rollDayIfNeeded()
-        if (!pageGate.visit(locationKey, SystemClock.elapsedRealtime(), todayPages, todayMinutes)) return
+        if (!pageGate.visit(locationKey, SystemClock.elapsedRealtime(), todayPages, todayMinutes)) return false
         recordRitualEvent("page")
         totalXp += GamificationEngine.XP_PER_PAGE
         todayPages += 1
@@ -144,6 +145,7 @@ class GameRepository(context: Context) {
         awardCompletedQuestRewards()
         persistCounters()
         publish()
+        return true
     }
 
     fun recordHighlight() {
