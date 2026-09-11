@@ -184,6 +184,19 @@ fun VeilApp(
         }
     }
 
+    fun deleteBooks(ids: Set<String>) {
+        if (restoring || ids.isEmpty()) return
+        scope.launch {
+            try {
+                library.deleteBooks(ids)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                errorMessage = "Could not remove the selected books. Your library was kept consistent. ${error.message.orEmpty()}"
+            }
+        }
+    }
+
     val targetBook = route.activeBookId?.let { id -> books.firstOrNull { it.id == id } }
     LaunchedEffect(
         route.activeBookId,
@@ -329,7 +342,10 @@ fun VeilApp(
                         onImportUri = ::importBook,
                         onOpenBook = { requestOpenBook(it) },
                         onFavorite = library::toggleFavorite,
-                        onEditMetadata = library::editMetadata
+                        onEditMetadata = library::editMetadata,
+                        onBulkFavorite = library::setFavorite,
+                        onBulkAddCollection = library::addCollection,
+                        onBulkDelete = ::deleteBooks
                     )
 
                     VeilTab.CASTLE -> CastleScreen(
