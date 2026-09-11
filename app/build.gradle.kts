@@ -13,8 +13,8 @@ android {
         applicationId = "com.veilreader.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 7
-        versionName = "0.7.0"
+        versionCode = 8
+        versionName = "0.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,7 +40,6 @@ room {
 
 dependencies {
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.3.0.
-    // Using unreleased/future BOM coordinates caused CI dependency resolution failures.
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation("androidx.compose.ui:ui:1.10.5")
