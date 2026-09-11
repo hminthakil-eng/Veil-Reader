@@ -113,8 +113,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.addHighlight("backup-book", "Preserve me", "{\"href\":\"chapter.xhtml\"}")
         repository.addBookmark("backup-book", "Saved place", "{\"href\":\"chapter.xhtml\"}")
         repository.saveAppearance(ReaderAppearance(theme = ReaderTheme.OLED, lineHeight = 1.7))
-        repository.flushWrites()
-        ReadingSessionRepository(db).save(
+        repository.saveReadingSession(
             ReadingSessionSnapshot(
                 id = "session-backup",
                 bookId = "backup-book",
@@ -126,6 +125,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
                 noteCount = 1
             )
         )
+        repository.flushWrites()
 
         val backupFile = File(context.cacheDir, "veil-roundtrip-${UUID.randomUUID()}.zip")
         val exporter = LibraryExport(context, repository)
