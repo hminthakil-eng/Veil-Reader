@@ -40,6 +40,7 @@ room {
 
 dependencies {
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.3.0.
+    // Using unreleased/future BOM coordinates caused CI dependency resolution failures.
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation("androidx.compose.ui:ui:1.10.5")
@@ -66,4 +67,9 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
     testImplementation("junit:junit:4.13.2")
+
+    // Real Room verification runs on an Android emulator for data-layer changes.
+    androidTestImplementation("androidx.test:core:1.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.room:room-testing:2.8.5")
 }
