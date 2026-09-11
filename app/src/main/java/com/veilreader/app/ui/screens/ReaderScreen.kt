@@ -4,6 +4,7 @@ import android.graphics.Color as AndroidColor
 import android.view.View
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -16,7 +17,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
@@ -39,6 +39,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
@@ -59,7 +60,7 @@ import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
-@OptIn(ExperimentalReadiumApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalReadiumApi::class, ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
 fun ReaderScreen(
     opened: OpenedPublication,
@@ -67,7 +68,9 @@ fun ReaderScreen(
     game: GameRepository,
     onClose: () -> Unit
 ) {
-    val activity = LocalContext.current as FragmentActivity
+    val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
+        "Veil Reader requires a FragmentActivity host."
+    }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
