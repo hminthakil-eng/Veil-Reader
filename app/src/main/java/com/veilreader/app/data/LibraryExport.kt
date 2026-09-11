@@ -13,6 +13,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipInputStream
@@ -64,7 +65,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.7.0")
+                put("appVersion", "0.8.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("gamePreferences", gamePrefs)
@@ -137,7 +138,13 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 archived.inputStream().use { input -> target.outputStream().use { output -> input.copyTo(output) } }
                 require(target.length() > 0) { "A restored publication is empty." }
                 restoredBooks += 1
-                book.copy(sourceUri = Uri.fromFile(target).toString())
+                // Cover paths and content fingerprints are derived cache metadata. Restores regenerate
+                // both from the restored private publication instead of trusting stale filesystem data.
+                book.copy(
+                    sourceUri = Uri.fromFile(target).toString(),
+                    coverCachePath = null,
+                    contentFingerprint = null
+                )
             }
             val restoredSnapshot = incoming.copy(books = restoredBookModels)
 
@@ -327,7 +334,12 @@ private fun Book.toJson(): JSONObject = JSONObject().apply {
     put("currentChapter", currentChapter); put("totalPages", totalPages); put("pagesRead", pagesRead)
     put("format", format.name); put("sourceUri", sourceUri); put("mediaType", mediaType); put("locatorJson", locatorJson)
     put("addedAt", addedAtEpochMs); put("lastOpenedAt", lastOpenedAtEpochMs); put("finished", finished)
-    put("favorite", favorite); put("collection", collection)
+    put("favorite", favorite)
+    put("collection", allCollections.firstOrNull().orEmpty())
+    put("collections", JSONArray(allCollections))
+    put("seriesName", seriesName ?: JSONObject.NULL)
+    put("seriesIndex", seriesIndex ?: JSONObject.NULL)
+    put("language", language ?: JSONObject.NULL)
 }
 
 private fun Highlight.toJson(): JSONObject = JSONObject().apply {
@@ -355,24 +367,39 @@ private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("scroll", scroll); put("publisherStyles", publisherStyles)
 }
 
-private fun bookFromJson(o: JSONObject): Book = Book(
-    id = o.getString("id"),
-    title = o.getString("title"),
-    author = o.optString("author", "Unknown author"),
-    progress = o.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f),
-    currentChapter = o.optString("currentChapter", "Not started"),
-    totalPages = o.optInt("totalPages", 0).coerceAtLeast(0),
-    pagesRead = o.optInt("pagesRead", 0).coerceAtLeast(0),
-    format = runCatching { BookFormat.valueOf(o.optString("format", "EPUB")) }.getOrDefault(BookFormat.EPUB),
-    sourceUri = o.optNullableString("sourceUri"),
-    mediaType = o.optNullableString("mediaType"),
-    locatorJson = o.optNullableString("locatorJson"),
-    addedAtEpochMs = o.optLong("addedAt", 0L),
-    lastOpenedAtEpochMs = o.optLong("lastOpenedAt", 0L),
-    finished = o.optBoolean("finished", false),
-    favorite = o.optBoolean("favorite", false),
-    collection = o.optString("collection", "")
-)
+private fun bookFromJson(o: JSONObject): Book {
+    val collectionNames = buildList {
+        o.optJSONArray("collections")?.let { array ->
+            for (index in 0 until array.length()) {
+                array.optString(index).trim().takeIf { it.isNotEmpty() }?.let(::add)
+            }
+        }
+        o.optString("collection", "").trim().takeIf { it.isNotEmpty() }?.let(::add)
+    }.distinctBy { it.lowercase(Locale.ROOT) }
+
+    return Book(
+        id = o.getString("id"),
+        title = o.getString("title"),
+        author = o.optString("author", "Unknown author"),
+        progress = o.optDouble("progress", 0.0).toFloat().coerceIn(0f, 1f),
+        currentChapter = o.optString("currentChapter", "Not started"),
+        totalPages = o.optInt("totalPages", 0).coerceAtLeast(0),
+        pagesRead = o.optInt("pagesRead", 0).coerceAtLeast(0),
+        format = runCatching { BookFormat.valueOf(o.optString("format", "EPUB")) }.getOrDefault(BookFormat.EPUB),
+        sourceUri = o.optNullableString("sourceUri"),
+        mediaType = o.optNullableString("mediaType"),
+        locatorJson = o.optNullableString("locatorJson"),
+        addedAtEpochMs = o.optLong("addedAt", 0L),
+        lastOpenedAtEpochMs = o.optLong("lastOpenedAt", 0L),
+        finished = o.optBoolean("finished", false),
+        favorite = o.optBoolean("favorite", false),
+        seriesName = o.optNullableString("seriesName"),
+        seriesIndex = o.optFiniteDouble("seriesIndex"),
+        language = o.optNullableString("language"),
+        collection = collectionNames.firstOrNull().orEmpty(),
+        collections = collectionNames
+    )
+}
 
 private fun highlightFromJson(o: JSONObject): Highlight = Highlight(
     id = o.getString("id"), bookId = o.getString("bookId"), quote = o.optString("quote"),
@@ -409,3 +436,6 @@ private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = bu
 
 private fun JSONObject.optNullableString(key: String): String? =
     if (!has(key) || isNull(key)) null else optString(key).takeIf { it.isNotBlank() && it != "null" }
+
+private fun JSONObject.optFiniteDouble(key: String): Double? =
+    if (!has(key) || isNull(key)) null else optDouble(key, Double.NaN).takeIf { it.isFinite() }
