@@ -8,12 +8,14 @@ import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.db.normalizeCollectionName
 import com.veilreader.app.data.db.toDomain
 import com.veilreader.app.data.db.toEntity
+import com.veilreader.app.data.db.toSnapshot
 import com.veilreader.app.data.migration.LegacyLibraryMigrator
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicReference
@@ -225,15 +227,24 @@ class LocalLibraryRepository internal constructor(
         writes.send {
             try {
                 storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
-                val (books, highlights, bookmarks) = database.withTransaction {
-                    Triple(
-                        database.books().listAllWithCollections().map { it.toDomain() },
-                        database.highlights().listAll().map { it.toDomain() },
-                        database.bookmarks().listAll().map { it.toDomain() }
+                val databaseState = database.withTransaction {
+                    DatabaseLibraryState(
+                        books = database.books().listAllWithCollections().map { it.toDomain() },
+                        highlights = database.highlights().listAll().map { it.toDomain() },
+                        bookmarks = database.bookmarks().listAll().map { it.toDomain() },
+                        readingSessions = database.readingSessions().listAll().map { it.toSnapshot() }
                     )
                 }
                 val appearance = settings.settings.first().readerAppearance
-                result.complete(LibrarySnapshot(books, highlights, bookmarks, appearance))
+                result.complete(
+                    LibrarySnapshot(
+                        books = databaseState.books,
+                        highlights = databaseState.highlights,
+                        bookmarks = databaseState.bookmarks,
+                        appearance = appearance,
+                        readingSessions = databaseState.readingSessions
+                    )
+                )
             } catch (error: Throwable) {
                 result.completeExceptionally(error)
             }
@@ -260,6 +271,9 @@ class LocalLibraryRepository internal constructor(
                     for (book in snapshot.books) setCollectionsInternal(book.id, setOf(book.collection))
                     if (snapshot.highlights.isNotEmpty()) database.highlights().upsertAll(snapshot.highlights.map { it.toEntity() })
                     if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
+                    if (snapshot.readingSessions.isNotEmpty()) {
+                        database.readingSessions().upsertAll(snapshot.readingSessions.map { it.toEntity() })
+                    }
                 }
                 settings.saveReaderAppearance(snapshot.appearance)
                 _appearance.value = snapshot.appearance
@@ -324,10 +338,18 @@ data class LibrarySnapshot(
     val books: List<Book>,
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
-    val appearance: ReaderAppearance
+    val appearance: ReaderAppearance,
+    val readingSessions: List<ReadingSessionSnapshot> = emptyList()
 ) {
     companion object
 }
+
+private data class DatabaseLibraryState(
+    val books: List<Book>,
+    val highlights: List<Highlight>,
+    val bookmarks: List<Bookmark>,
+    val readingSessions: List<ReadingSessionSnapshot>
+)
 
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
