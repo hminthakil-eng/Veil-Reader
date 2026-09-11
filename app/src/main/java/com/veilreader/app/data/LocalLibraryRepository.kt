@@ -33,9 +33,9 @@ import kotlinx.coroutines.launch
 /**
  * Runtime bookshelf repository.
  *
- * Room is the structured source of truth and DataStore owns reader preferences. The public API is
- * intentionally kept compatible with the 0.6 Compose screens during Phase 1B; Phase 2 will move
- * these synchronous UI callbacks behind ViewModels/use-cases.
+ * Room is the structured source of truth and DataStore owns reader preferences. All durable writes
+ * share one queue so progress, annotations, derived metadata and backup snapshots have deterministic
+ * ordering.
  */
 class LocalLibraryRepository internal constructor(
     private val appContext: Context,
@@ -138,6 +138,15 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
+
+    /**
+     * Stores a derived app-private cover thumbnail path. An empty string is a terminal sentinel
+     * meaning extraction was attempted but this publication has no usable cover.
+     */
+    fun updateCoverCachePath(id: String, path: String) {
+        val updated = updateBookCached(id) { it.copy(coverCachePath = path) } ?: return
+        enqueue { upsertBookPreservingExtendedMetadata(updated) }
+    }
 
     fun editMetadata(id: String, title: String, author: String, collection: String) {
         require(title.isNotBlank()) { "A book title cannot be empty." }
@@ -315,7 +324,8 @@ class LocalLibraryRepository internal constructor(
         val base = book.toEntity()
         database.books().upsert(
             base.copy(
-                coverCachePath = existing?.coverCachePath,
+                // A non-null domain value (including the empty no-cover sentinel) is deliberate.
+                coverCachePath = book.coverCachePath ?: existing?.coverCachePath,
                 contentFingerprint = existing?.contentFingerprint,
                 seriesName = existing?.seriesName,
                 seriesIndex = existing?.seriesIndex,

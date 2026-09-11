@@ -16,9 +16,12 @@ data class Book(
     val lastOpenedAtEpochMs: Long = 0L,
     val finished: Boolean = false,
     val favorite: Boolean = false,
+    /** Absolute app-private thumbnail path. Empty means cover extraction was attempted but unavailable. */
+    val coverCachePath: String? = null,
     val collection: String = ""
 ) {
     val isImported: Boolean get() = sourceUri != null
+    val hasCachedCover: Boolean get() = !coverCachePath.isNullOrBlank()
 }
 
 enum class BookFormat { EPUB, PDF, AUDIO, COMIC }

@@ -1,19 +1,29 @@
 package com.veilreader.app.ui.screens
 
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
@@ -48,16 +58,40 @@ fun MysteryCard(
 }
 
 /**
- * Deterministic placeholder cover used until real publication thumbnails are extracted.
- * Each title receives its own restrained palette so a shelf reads like a collection of books
- * instead of repeated generic tiles.
+ * Renders the publication's cached Readium cover when available, otherwise a deterministic
+ * generated fallback. Decoding stays off the main thread and a missing/corrupt cache never breaks
+ * the shelf.
  */
 @Composable
 fun BookCover(
     title: String,
     modifier: Modifier = Modifier,
-    subtitle: String? = null
+    subtitle: String? = null,
+    imagePath: String? = null
 ) {
+    val cachedBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = imagePath) {
+        value = withContext(Dispatchers.IO) {
+            imagePath
+                ?.takeIf { it.isNotBlank() }
+                ?.let(::File)
+                ?.takeIf { it.isFile && it.length() > 0L }
+                ?.let { file -> BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+        }
+    }
+
+    val shape = RoundedCornerShape(18.dp)
+    if (cachedBitmap != null) {
+        Image(
+            bitmap = requireNotNull(cachedBitmap),
+            contentDescription = "Cover of $title",
+            contentScale = ContentScale.Crop,
+            modifier = modifier
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        )
+        return
+    }
+
     val hue = ((title.hashCode().ushr(1) % 300) + 18).toFloat()
     val accent = Color.hsv(hue, 0.48f, 0.60f)
     val mid = Color.hsv((hue + 16f) % 360f, 0.58f, 0.34f)
@@ -66,7 +100,7 @@ fun BookCover(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
+            .clip(shape)
             .background(gradient)
     ) {
         Box(

@@ -1,11 +1,14 @@
 package com.veilreader.app.data
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.util.Size
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import java.io.File
+import java.nio.charset.StandardCharsets
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -15,6 +18,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.Publication
 import org.readium.r2.shared.publication.allAreHtml
+import org.readium.r2.shared.publication.services.coverFitting
 import org.readium.r2.shared.publication.services.isRestricted
 import org.readium.r2.shared.publication.services.protectionError
 import org.readium.r2.shared.util.asset.AssetRetriever
@@ -46,6 +50,7 @@ class ReadiumEngine(context: Context) {
      */
     suspend fun inspectAndCreateBook(uri: Uri): Result<Book> = runCatching {
         val localUri = materializeImport(uri)
+        var cachedCoverPath: String? = null
         try {
             val publication = openPublication(localUri, allowUserInteraction = false)
             try {
@@ -58,9 +63,11 @@ class ReadiumEngine(context: Context) {
                     ?.takeIf { it.isNotBlank() }
                     ?: displayName(uri)?.substringBeforeLast('.')?.takeIf { it.isNotBlank() }
                     ?: "Untitled"
+                val bookId = UUID.randomUUID().toString()
+                cachedCoverPath = cacheCover(publication, bookId)
 
                 Book(
-                    id = UUID.randomUUID().toString(),
+                    id = bookId,
                     title = title,
                     author = author,
                     progress = 0f,
@@ -70,13 +77,15 @@ class ReadiumEngine(context: Context) {
                         BookFormat.EPUB -> "application/epub+zip"
                         BookFormat.PDF -> "application/pdf"
                         else -> "application/octet-stream"
-                    }
+                    },
+                    coverCachePath = cachedCoverPath
                 )
             } finally {
                 publication.close()
             }
         } catch (t: Throwable) {
             localUri.path?.let(::File)?.takeIf { it.exists() }?.delete()
+            cachedCoverPath?.takeIf { it.isNotBlank() }?.let(::File)?.delete()
             throw t
         }
     }
@@ -95,6 +104,55 @@ class ReadiumEngine(context: Context) {
             format = format,
             initialLocator = initialLocator
         )
+    }
+
+    /**
+     * Regenerates a derived cover thumbnail for an existing imported publication.
+     * The empty string is a successful terminal result meaning Readium found no usable cover.
+     */
+    suspend fun extractAndCacheCover(book: Book): Result<String> = runCatching {
+        if (!book.isImported) return@runCatching ""
+        book.coverCachePath?.let { cached ->
+            if (cached.isBlank() || File(cached).isFile) return@runCatching cached
+        }
+
+        val uri = requireNotNull(book.sourceUri).let(Uri::parse)
+        val publication = openPublication(uri, allowUserInteraction = false)
+        try {
+            cacheCover(publication, book.id)
+        } finally {
+            publication.close()
+        }
+    }
+
+    private suspend fun cacheCover(publication: Publication, bookId: String): String {
+        val bitmap = runCatching { publication.coverFitting(COVER_MAX_SIZE) }.getOrNull()
+            ?: return ""
+        val coversDir = File(appContext.filesDir, "covers").apply { mkdirs() }
+        val safeName = UUID.nameUUIDFromBytes(
+            "veil-cover:$bookId".toByteArray(StandardCharsets.UTF_8)
+        ).toString()
+        val target = File(coversDir, "$safeName.jpg")
+        val temporary = File(coversDir, "$safeName.tmp")
+
+        return withContext(Dispatchers.IO) {
+            try {
+                temporary.outputStream().buffered().use { output ->
+                    check(bitmap.compress(Bitmap.CompressFormat.JPEG, COVER_JPEG_QUALITY, output)) {
+                        "Android could not encode the publication cover."
+                    }
+                }
+                check(temporary.length() > 0L) { "The generated cover thumbnail is empty." }
+                if (target.exists() && !target.delete()) {
+                    error("Could not replace the existing cover thumbnail.")
+                }
+                check(temporary.renameTo(target)) { "Could not install the cover thumbnail." }
+                target.absolutePath
+            } catch (_: Throwable) {
+                temporary.delete()
+                ""
+            }
+        }
     }
 
     private suspend fun materializeImport(source: Uri): Uri = withContext(Dispatchers.IO) {
@@ -158,6 +216,11 @@ class ReadiumEngine(context: Context) {
         publication.conformsTo(Publication.Profile.EPUB) || publication.readingOrder.allAreHtml -> BookFormat.EPUB
         publication.conformsTo(Publication.Profile.PDF) -> BookFormat.PDF
         else -> throw ReaderException("Veil Reader currently supports EPUB and PDF files.")
+    }
+
+    companion object {
+        private val COVER_MAX_SIZE = Size(600, 900)
+        private const val COVER_JPEG_QUALITY = 88
     }
 }
 
