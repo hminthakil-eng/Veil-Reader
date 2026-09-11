@@ -1,6 +1,7 @@
 package com.veilreader.app.ui
 
 import android.net.Uri
+import androidx.activity.compose.LocalActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -56,6 +57,7 @@ fun VeilApp(
     onExternalOpenUriConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
+    val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
@@ -81,6 +83,7 @@ fun VeilApp(
     var showArchive by remember { mutableStateOf(false) }
     var activeChamber by remember { mutableStateOf<String?>(null) }
     var exporting by remember { mutableStateOf(false) }
+    var restoring by remember { mutableStateOf(false) }
     var isOpening by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(VeilTab.READING) }
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
@@ -88,7 +91,7 @@ fun VeilApp(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     fun exportData(uri: Uri, backup: Boolean) {
-        if (exporting) return
+        if (exporting || restoring) return
         exporting = true
         scope.launch {
             try {
@@ -103,8 +106,29 @@ fun VeilApp(
         }
     }
 
+    fun restoreData(uri: Uri) {
+        if (restoring || exporting) return
+        restoring = true
+        scope.launch {
+            try {
+                val result = LibraryExport(context, library).restoreBackup(uri)
+                // Recreate so repository StateFlows are rebuilt from the restored preferences and
+                // no pre-restore in-memory object can overwrite them later in the session.
+                if (activity != null) {
+                    activity.recreate()
+                } else {
+                    errorMessage = "Restored ${result.booksRestored} books and ${result.highlightsRestored} highlights. Reopen Veil Reader to load them."
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                errorMessage = "Restore failed. Your existing local data was kept. ${error.message.orEmpty()}"
+            } finally { restoring = false }
+        }
+    }
+
     fun openBook(book: Book, locatorOverride: String? = null) {
-        if (isOpening) return
+        if (isOpening || restoring) return
         if (!book.isImported) {
             errorMessage = "This sample entry has no source file. Import an EPUB or PDF from Android Files."
             return
@@ -121,7 +145,7 @@ fun VeilApp(
     }
 
     fun importBook(uri: Uri) {
-        if (isImporting) return
+        if (isImporting || restoring) return
         isImporting = true
         scope.launch {
             try {
@@ -254,11 +278,13 @@ fun VeilApp(
                         profile = profile,
                         highlightCount = highlights.size,
                         exporting = exporting,
+                        restoring = restoring,
                         dailyGoalMinutes = dailyGoalMinutes,
                         castleTitle = castleTitle,
                         equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                         onSetDailyGoal = game::setDailyGoal,
                         onExportBackup = { exportData(it, true) },
+                        onRestoreBackup = ::restoreData,
                         onExportNotes = { exportData(it, false) },
                         onOpenArchive = { showArchive = true }
                     )
