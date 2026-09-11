@@ -204,68 +204,78 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.TopCenter).onSizeChanged { topBarPx = it.height }
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                shadowElevation = 8.dp
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                shadowElevation = 4.dp,
+                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
             ) {
-                Column(Modifier.fillMaxWidth().statusBarsPadding().padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                ) {
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        TextButton(onClick = { closeReader() }) { Text("‹ Library", fontSize = 15.sp) }
-                        Column(Modifier.weight(1f)) {
+                        TextButton(
+                            onClick = { closeReader() },
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text("‹", fontSize = 28.sp, lineHeight = 28.sp)
+                        }
+                        Column(
+                            Modifier.weight(1f),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
                                 opened.book.title,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
+                                fontSize = 14.sp
                             )
                             Text(
                                 "${(progress * 100).toInt()}% · ${opened.format.name}",
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 11.sp
+                                fontSize = 10.sp
                             )
                         }
-                        TextButton(onClick = {
-                            readerViewModel.onUserInteraction()
-                            controlsVisible = false
-                        }) { Text("Hide") }
-                    }
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        TextButton(onClick = {
-                            readerViewModel.onUserInteraction()
-                            showNotebook = true
-                        }) { Text("Contents & notes") }
-                        TextButton(onClick = {
-                            readerViewModel.onUserInteraction()
-                            val locator = navigator?.currentLocator?.value
-                            if (locator != null) {
-                                val added = library.addBookmark(
-                                    opened.book.id,
-                                    "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                    locator.toJSON().toString()
-                                )
-                                readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
-                            }
-                        }, enabled = navigator != null) { Text("Bookmark +") }
+                        TextButton(
+                            onClick = {
+                                readerViewModel.onUserInteraction()
+                                controlsVisible = false
+                            },
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text("•••", fontSize = 17.sp)
+                        }
                     }
                     LinearProgressIndicator(
                         progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(2.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 8.dp)
+                            .height(2.dp)
                     )
                 }
             }
         }
 
         if (!controlsVisible) {
-            TextButton(
+            FilledTonalButton(
                 onClick = {
                     readerViewModel.onUserInteraction()
                     controlsVisible = true
                 },
-                modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
-            ) { Text("•••") }
+                shape = RoundedCornerShape(18.dp),
+                contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .statusBarsPadding()
+                    .padding(10.dp)
+            ) { Text("•••", fontSize = 16.sp) }
         }
 
         AnimatedVisibility(
@@ -273,20 +283,33 @@ fun ReaderScreen(
             modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomBarPx = it.height }
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                shadowElevation = 12.dp,
-                shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 10.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+                shadowElevation = 14.dp,
+                shape = RoundedCornerShape(28.dp)
             ) {
                 Row(
-                    Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = 14.dp, vertical = 12.dp),
+                    Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 7.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ReaderControl("‹", "Previous") {
+                    ReaderControl("‹", "Previous", Modifier.weight(1f)) {
                         readerViewModel.onUserInteraction()
                         (navigator as? OverflowableNavigator)?.goBackward(animated = true)
                     }
-                    ReaderControl("✦", "Highlight", enabled = opened.format == BookFormat.EPUB) {
+                    ReaderControl("≡", "Contents", Modifier.weight(1f)) {
+                        readerViewModel.onUserInteraction()
+                        showNotebook = true
+                    }
+                    ReaderControl(
+                        "✦",
+                        "Highlight",
+                        Modifier.weight(1f),
+                        enabled = opened.format == BookFormat.EPUB
+                    ) {
                         scope.launch {
                             val selectable = navigator as? SelectableNavigator
                             val selection = selectable?.currentSelection()
@@ -311,11 +334,28 @@ fun ReaderScreen(
                             readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
                         }
                     }
-                    ReaderControl("Aa", "Appearance", enabled = opened.format == BookFormat.EPUB) {
+                    ReaderControl("◇", "Bookmark", Modifier.weight(1f), enabled = navigator != null) {
+                        readerViewModel.onUserInteraction()
+                        val locator = navigator?.currentLocator?.value
+                        if (locator != null) {
+                            val added = library.addBookmark(
+                                opened.book.id,
+                                "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
+                                locator.toJSON().toString()
+                            )
+                            readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
+                        }
+                    }
+                    ReaderControl(
+                        "Aa",
+                        "Appearance",
+                        Modifier.weight(1f),
+                        enabled = opened.format == BookFormat.EPUB
+                    ) {
                         readerViewModel.onUserInteraction()
                         showAppearance = true
                     }
-                    ReaderControl("›", "Next") {
+                    ReaderControl("›", "Next", Modifier.weight(1f)) {
                         readerViewModel.onUserInteraction()
                         (navigator as? OverflowableNavigator)?.goForward(animated = true)
                     }
@@ -452,13 +492,19 @@ private fun ReaderFragmentHost(
 private fun ReaderControl(
     glyph: String,
     label: String,
+    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    TextButton(onClick = onClick, enabled = enabled) {
+    TextButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 50.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp)
+    ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(glyph, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
-            Text(label, fontSize = 10.sp)
+            Text(glyph, fontSize = 18.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
+            Text(label, fontSize = 9.sp, maxLines = 1)
         }
     }
 }
@@ -470,10 +516,21 @@ private fun AppearancePanel(
     onDone: () -> Unit
 ) {
     Column(
-        Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 22.dp).padding(bottom = 32.dp),
+        Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 22.dp)
+            .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Tune the page without leaving the book.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
 
         Text("Theme", fontWeight = FontWeight.SemiBold)
         Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -485,6 +542,8 @@ private fun AppearancePanel(
                 )
             }
         }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
         Slider(
@@ -500,10 +559,23 @@ private fun AppearancePanel(
             valueRange = 1.1f..2.0f
         )
 
+        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
+        Slider(
+            value = appearance.pageMargins.toFloat(),
+            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
+            valueRange = .5f..2.0f
+        )
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text("Off uses paginated reading with animated page turns.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Off uses paginated reading with animated page turns.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Switch(checked = appearance.scroll, onCheckedChange = { onChange(appearance.copy(scroll = it)) })
         }
@@ -511,7 +583,11 @@ private fun AppearancePanel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text("Publisher styling", fontWeight = FontWeight.SemiBold)
-                Text("Keep the book's original typography when possible.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(
+                    "Keep the book's original typography when possible.",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
             Switch(
                 checked = appearance.publisherStyles,
