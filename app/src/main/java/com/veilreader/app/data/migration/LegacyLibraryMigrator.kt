@@ -2,7 +2,6 @@ package com.veilreader.app.data.migration
 
 import android.content.Context
 import androidx.room.withTransaction
-import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.db.BookCollectionCrossRef
 import com.veilreader.app.data.db.BookEntity
 import com.veilreader.app.data.db.BookmarkEntity
@@ -38,14 +37,7 @@ data class LegacyMigrationResult(
     val skippedOrphans: Int = 0
 )
 
-/**
- * Imports the 0.x SharedPreferences bookshelf into Room without deleting legacy state.
- *
- * All Room writes happen in one transaction. The DataStore completion marker is written only
- * after that transaction and reader appearance copy succeed. If the process dies between those
- * steps, re-running is safe because stable primary keys and cross-reference keys make the import
- * idempotent.
- */
+/** Imports the pre-Room 0.x bookshelf without deleting its rollback copy. */
 class LegacyLibraryMigrator(
     private val context: Context,
     private val database: VeilDatabase = VeilDatabase.get(context),
@@ -56,11 +48,11 @@ class LegacyLibraryMigrator(
             return LegacyMigrationResult(alreadyMigrated = true)
         }
 
-        val legacy = LocalLibraryRepository(context)
+        val legacy = LegacyLibrarySnapshotReader(context)
         val plan = buildLegacyImportPlan(
-            books = legacy.books.value,
-            highlights = legacy.highlights.value,
-            bookmarks = legacy.bookmarks.value
+            books = legacy.books,
+            highlights = legacy.highlights,
+            bookmarks = legacy.bookmarks
         )
 
         database.withTransaction {
@@ -71,9 +63,7 @@ class LegacyLibraryMigrator(
             if (plan.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(plan.bookmarks)
         }
 
-        // Settings are copied after the Room transaction; if this fails, the migration marker is
-        // not written and the Room upserts can be safely repeated on next launch.
-        settingsStore.saveReaderAppearance(legacy.loadAppearance())
+        settingsStore.saveReaderAppearance(legacy.appearance())
         settingsStore.markLegacyLibraryImported()
 
         return LegacyMigrationResult(
