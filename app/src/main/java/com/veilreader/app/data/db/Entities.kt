@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import java.util.Locale
 
 @Entity(tableName = "books")
 data class BookEntity(
@@ -67,15 +68,25 @@ data class BookmarkEntity(
     val createdAtEpochMs: Long
 )
 
+/**
+ * Collections have a user-facing name and a locale-stable normalized key.
+ *
+ * The normalized key owns the UNIQUE constraint so `Fantasy`, `fantasy`, and ` FANTASY ` cannot
+ * become separate shelves through different write paths. This is a database invariant rather
+ * than a convention left to repository callers.
+ */
 @Entity(
     tableName = "collections",
-    indices = [Index(value = ["name"], unique = true)]
+    indices = [Index(value = ["normalizedName"], unique = true)]
 )
 data class CollectionEntity(
     @PrimaryKey val id: String,
     val name: String,
-    val createdAtEpochMs: Long
+    val createdAtEpochMs: Long,
+    val normalizedName: String = normalizeCollectionName(name)
 )
+
+internal fun normalizeCollectionName(name: String): String = name.trim().lowercase(Locale.ROOT)
 
 @Entity(
     tableName = "book_collection",
