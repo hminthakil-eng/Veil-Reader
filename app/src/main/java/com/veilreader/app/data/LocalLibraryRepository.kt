@@ -274,7 +274,9 @@ data class LibrarySnapshot(
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
     val appearance: ReaderAppearance
-)
+) {
+    companion object
+}
 
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
