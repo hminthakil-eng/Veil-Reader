@@ -21,7 +21,8 @@ fun Book.toEntity(): BookEntity = BookEntity(
     addedAtEpochMs = addedAtEpochMs,
     lastOpenedAtEpochMs = lastOpenedAtEpochMs,
     finished = finished,
-    favorite = favorite
+    favorite = favorite,
+    coverCachePath = coverCachePath
 )
 
 fun BookWithCollections.toDomain(): Book = Book(
@@ -40,6 +41,7 @@ fun BookWithCollections.toDomain(): Book = Book(
     lastOpenedAtEpochMs = book.lastOpenedAtEpochMs,
     finished = book.finished,
     favorite = book.favorite,
+    coverCachePath = book.coverCachePath,
     collection = collections.firstOrNull()?.name.orEmpty()
 )
 
