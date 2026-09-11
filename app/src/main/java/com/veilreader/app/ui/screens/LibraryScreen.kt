@@ -311,6 +311,7 @@ private fun BookLibraryTile(
             BookCover(
                 title = book.title,
                 subtitle = book.author,
+                imagePath = book.coverCachePath,
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(0.70f)
