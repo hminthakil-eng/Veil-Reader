@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -40,8 +42,14 @@ fun TreasuryScreen(
     onEquip: (String?) -> Unit,
     onClose: () -> Unit
 ) {
+    BackHandler { onClose() }
+
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
+        Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         OutlinedButton(onClick = onClose) { Text("‹ Castle") }
@@ -108,13 +116,19 @@ fun SanctumScreen(
     onSelectTitle: (String) -> Unit,
     onClose: () -> Unit
 ) {
+    BackHandler { onClose() }
+
     val finalRank = profile.path.ranks.lastIndex
     val rankProgress = if (finalRank == 0) 1f else profile.rankIndex.toFloat() / finalRank.toFloat()
     val sigilProgress = (profile.earnedSigils.size.coerceAtMost(5) / 5f)
     val sovereignReady = profile.rankIndex >= finalRank && profile.earnedSigils.size >= 5
 
     Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 24.dp),
+        Modifier
+            .fillMaxSize()
+            .systemBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         OutlinedButton(onClick = onClose) { Text("‹ Castle") }
