@@ -4,6 +4,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.ReadingSessionSnapshot
 
 fun Book.toEntity(): BookEntity = BookEntity(
     id = id,
@@ -74,4 +75,26 @@ fun BookmarkEntity.toDomain(): Bookmark = Bookmark(
     label = label,
     locatorJson = locatorJson,
     createdAtEpochMs = createdAtEpochMs
+)
+
+fun ReadingSessionSnapshot.toEntity(): ReadingSessionEntity = ReadingSessionEntity(
+    id = id,
+    bookId = bookId,
+    startedAtEpochMs = startedAtEpochMs,
+    endedAtEpochMs = endedAtEpochMs,
+    activeMillis = activeMillis,
+    pacedPageTurns = pacedPageTurns,
+    highlightCount = highlightCount,
+    noteCount = noteCount
+)
+
+fun ReadingSessionEntity.toSnapshot(): ReadingSessionSnapshot = ReadingSessionSnapshot(
+    id = id,
+    bookId = bookId,
+    startedAtEpochMs = startedAtEpochMs,
+    endedAtEpochMs = endedAtEpochMs ?: startedAtEpochMs,
+    activeMillis = activeMillis,
+    pacedPageTurns = pacedPageTurns,
+    highlightCount = highlightCount,
+    noteCount = noteCount
 )
