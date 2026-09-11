@@ -211,6 +211,11 @@ class LocalLibraryRepository internal constructor(
         enqueue { database.highlights().deleteById(id) }
     }
 
+    /** Session writes share the library queue so backup snapshots cannot pass an unfinished close. */
+    fun saveReadingSession(snapshot: ReadingSessionSnapshot) {
+        enqueue { database.readingSessions().upsert(snapshot.toEntity()) }
+    }
+
     /** Ensures migration and all writes queued before this call have reached durable storage. */
     suspend fun flushWrites() {
         initialized.await()
