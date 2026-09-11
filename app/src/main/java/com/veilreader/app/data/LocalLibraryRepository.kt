@@ -16,6 +16,8 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +25,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -48,6 +51,7 @@ class LocalLibraryRepository internal constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
+    private val storageFailure = AtomicReference<Throwable?>(null)
 
     private val _books = MutableStateFlow<List<Book>>(emptyList())
     val books: StateFlow<List<Book>> = _books
@@ -61,7 +65,17 @@ class LocalLibraryRepository internal constructor(
     private val _appearance = MutableStateFlow(ReaderAppearance())
 
     init {
-        scope.launch { for (write in writes) write() }
+        scope.launch {
+            for (write in writes) {
+                try {
+                    write()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Throwable) {
+                    storageFailure.compareAndSet(null, error)
+                }
+            }
+        }
         if (runLegacyMigration) {
             scope.launch {
                 runCatching { LegacyLibraryMigrator(appContext, database, settings).migrateIfNeeded() }
@@ -195,48 +209,72 @@ class LocalLibraryRepository internal constructor(
         enqueue { database.highlights().deleteById(id) }
     }
 
-    /** Ensures migration and queued UI writes have reached Room/DataStore before export/destructive work. */
+    /** Ensures migration and all writes queued before this call have reached durable storage. */
     suspend fun flushWrites() {
         initialized.await()
         val done = CompletableDeferred<Unit>()
         writes.send { done.complete(Unit) }
         done.await()
+        storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
     }
 
+    /** Returns one point-in-time database snapshot ordered with all normal reader writes. */
     suspend fun snapshot(): LibrarySnapshot {
-        flushWrites()
-        return LibrarySnapshot(
-            books = _books.value.toList(),
-            highlights = _highlights.value.toList(),
-            bookmarks = _bookmarks.value.toList(),
-            appearance = _appearance.value
-        )
+        initialized.await()
+        val result = CompletableDeferred<LibrarySnapshot>()
+        writes.send {
+            try {
+                storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
+                val (books, highlights, bookmarks) = database.withTransaction {
+                    Triple(
+                        database.books().listAllWithCollections().map { it.toDomain() },
+                        database.highlights().listAll().map { it.toDomain() },
+                        database.bookmarks().listAll().map { it.toDomain() }
+                    )
+                }
+                val appearance = settings.settings.first().readerAppearance
+                result.complete(LibrarySnapshot(books, highlights, bookmarks, appearance))
+            } catch (error: Throwable) {
+                result.completeExceptionally(error)
+            }
+        }
+        return result.await()
     }
 
-    /** Transactional replacement used by backup restore. */
+    /** Transactional replacement used by backup restore, serialized with normal reader writes. */
     suspend fun replaceAll(snapshot: LibrarySnapshot) {
         initialized.await()
-        flushWrites()
-        database.withTransaction {
-            database.highlights().deleteAll()
-            database.bookmarks().deleteAll()
-            database.collections().clearAllLinks()
-            database.books().deleteAll()
-            database.collections().deleteAll()
-            database.readingSessions().deleteAll()
+        val done = CompletableDeferred<Unit>()
+        writes.send {
+            try {
+                storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
+                database.withTransaction {
+                    database.highlights().deleteAll()
+                    database.bookmarks().deleteAll()
+                    database.collections().clearAllLinks()
+                    database.books().deleteAll()
+                    database.collections().deleteAll()
+                    database.readingSessions().deleteAll()
 
-            if (snapshot.books.isNotEmpty()) database.books().upsertAll(snapshot.books.map { it.toEntity() })
-            for (book in snapshot.books) setCollectionsInternal(book.id, setOf(book.collection))
-            if (snapshot.highlights.isNotEmpty()) database.highlights().upsertAll(snapshot.highlights.map { it.toEntity() })
-            if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
+                    if (snapshot.books.isNotEmpty()) database.books().upsertAll(snapshot.books.map { it.toEntity() })
+                    for (book in snapshot.books) setCollectionsInternal(book.id, setOf(book.collection))
+                    if (snapshot.highlights.isNotEmpty()) database.highlights().upsertAll(snapshot.highlights.map { it.toEntity() })
+                    if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
+                }
+                settings.saveReaderAppearance(snapshot.appearance)
+                _appearance.value = snapshot.appearance
+                done.complete(Unit)
+            } catch (error: Throwable) {
+                done.completeExceptionally(error)
+            }
         }
-        settings.saveReaderAppearance(snapshot.appearance)
-        _appearance.value = snapshot.appearance
+        done.await()
     }
 
     private fun enqueue(block: suspend () -> Unit) {
         val guarded: suspend () -> Unit = {
             initialized.await()
+            storageFailure.get()?.let { throw IllegalStateException("A previous library write failed.", it) }
             block()
         }
         check(writes.trySend(guarded).isSuccess) { "Veil Reader storage queue is unavailable." }
