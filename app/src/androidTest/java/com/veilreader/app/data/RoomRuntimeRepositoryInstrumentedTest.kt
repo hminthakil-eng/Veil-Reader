@@ -42,6 +42,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     fun tearDown() {
         db.close()
         File(context.filesDir, "publications").deleteRecursively()
+        File(context.filesDir, "covers").deleteRecursively()
     }
 
     @Test
@@ -63,6 +64,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.addHighlight("runtime-book", "A durable passage", "{\"href\":\"c1.xhtml\"}")
         assertTrue(repository.addBookmark("runtime-book", "Opening", "{\"href\":\"c1.xhtml\"}"))
         repository.saveProgress("runtime-book", 0.5, "{\"href\":\"c2.xhtml\"}")
+        repository.updateCoverCachePath("runtime-book", "/covers/runtime.jpg")
         repository.saveAppearance(ReaderAppearance(theme = ReaderTheme.SEPIA, fontScale = 1.2))
         repository.flushWrites()
 
@@ -70,6 +72,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals("Runtime Tome", stored.book.title)
         assertEquals(0.5f, stored.book.progress)
         assertEquals(100, stored.book.pagesRead)
+        assertEquals("/covers/runtime.jpg", stored.book.coverCachePath)
         assertEquals(listOf("Science Fiction"), stored.collections.map { it.name })
         assertEquals(1, db.highlights().observeAll().first().size)
         assertEquals(1, db.bookmarks().observeAll().first().size)
@@ -88,6 +91,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         val restored = db.books().findWithCollections("runtime-book") ?: error("restored book missing")
         assertEquals("Runtime Tome", restored.book.title)
         assertEquals("Test Reader", restored.book.author)
+        assertEquals("/covers/runtime.jpg", restored.book.coverCachePath)
         assertEquals(listOf("Science Fiction"), restored.collections.map { it.name })
         assertEquals(1, db.highlights().observeAll().first().size)
         assertEquals(1, db.bookmarks().observeAll().first().size)
