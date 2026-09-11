@@ -2,7 +2,6 @@ package com.veilreader.app.ui.screens
 
 import android.graphics.Color as AndroidColor
 import android.view.View
-import android.os.SystemClock
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -17,10 +16,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
-import org.readium.r2.navigator.preferences.Color as ReadiumColor
-import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,15 +30,19 @@ import androidx.fragment.app.FragmentContainerView
 import androidx.fragment.app.FragmentFactory
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
+import com.veilreader.app.data.ReadingSessionRepository
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -55,6 +57,7 @@ import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
+import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -71,12 +74,21 @@ fun ReaderScreen(
     val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
         "Veil Reader requires a FragmentActivity host."
     }
+    val appContext = LocalContext.current.applicationContext
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
+    val readerViewModel: ReaderViewModel = viewModel(
+        key = "veil-reader-state",
+        factory = remember(library, game, appContext) {
+            ReaderViewModel.factory(library, game, ReadingSessionRepository(appContext))
+        }
+    )
+    val readerState by readerViewModel.uiState.collectAsStateWithLifecycle()
+    val progress = if (readerState.bookId == opened.book.id) readerState.progress else opened.book.progress
+
     var topBarPx by remember { mutableIntStateOf(0) }
     var bottomBarPx by remember { mutableIntStateOf(0) }
-
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember { mutableStateOf(true) }
     var showAppearance by remember { mutableStateOf(false) }
@@ -84,17 +96,25 @@ fun ReaderScreen(
     var showNotebook by remember { mutableStateOf(false) }
     val highlights by library.highlights.collectAsState()
     val bookmarks by library.bookmarks.collectAsState()
-    var progress by remember { mutableFloatStateOf(opened.book.progress) }
     var readerMessage by remember { mutableStateOf<String?>(null) }
-    var lastActivityAt by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    var isResumed by remember { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
+
+    LaunchedEffect(opened.book.id) {
+        readerViewModel.openBook(opened.book.id, opened.book.progress)
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume()
+    }
 
     fun closeReader() {
         navigator?.currentLocator?.value?.let { locator ->
-            val completed = library.saveProgress(opened.book.id,
-                locator.locations.totalProgression ?: progress.toDouble(), locator.toJSON().toString())
-            if (completed) game.recordBookFinished()
+            val json = locator.toJSON().toString()
+            readerViewModel.onLocatorChanged(
+                bookId = opened.book.id,
+                progression = locator.locations.totalProgression ?: readerViewModel.uiState.value.progress.toDouble(),
+                locatorJson = json,
+                locationKey = "${opened.book.id}:$json",
+                countPageTurn = false
+            )
         }
+        readerViewModel.closeBook()
         onClose()
     }
     BackHandler(enabled = !showNotebook && !showAppearance) { closeReader() }
@@ -103,23 +123,18 @@ fun ReaderScreen(
         createReaderFactory(opened, appearance)
     }
 
-    DisposableEffect(lifecycle) {
+    DisposableEffect(lifecycle, readerViewModel) {
         val observer = LifecycleEventObserver { _, event ->
-            isResumed = when (event) {
-                Lifecycle.Event.ON_RESUME -> { lastActivityAt = SystemClock.elapsedRealtime(); true }
-                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> { game.pauseReading(); false }
-                else -> isResumed
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> readerViewModel.onResume()
+                Lifecycle.Event.ON_PAUSE, Lifecycle.Event.ON_STOP, Lifecycle.Event.ON_DESTROY -> readerViewModel.onPause()
+                else -> Unit
             }
         }
         lifecycle.addObserver(observer)
-        onDispose { game.pauseReading(); lifecycle.removeObserver(observer) }
-    }
-
-    // Real reading minutes are awarded only while this screen is resumed.
-    LaunchedEffect(isResumed, opened.book.id) {
-        while (isResumed) {
-            delay(60_000)
-            if (isResumed && SystemClock.elapsedRealtime() - lastActivityAt <= 300_000) game.recordReadingMinute()
+        onDispose {
+            readerViewModel.onPause()
+            lifecycle.removeObserver(observer)
         }
     }
 
@@ -128,16 +143,14 @@ fun ReaderScreen(
         nav.currentLocator
             .debounce(500)
             .collect { locator ->
-                lastActivityAt = SystemClock.elapsedRealtime()
-                if (isResumed) game.recordPageTurn("${opened.book.id}:${locator.toJSON()}")
-                val p = locator.locations.totalProgression?.toFloat()?.coerceIn(0f, 1f)
-                if (p != null) progress = p
-                val completed = library.saveProgress(
-                    opened.book.id,
-                    progression = p?.toDouble() ?: progress.toDouble(),
-                    locatorJson = locator.toJSON().toString()
+                val json = locator.toJSON().toString()
+                readerViewModel.onLocatorChanged(
+                    bookId = opened.book.id,
+                    progression = locator.locations.totalProgression
+                        ?: readerViewModel.uiState.value.progress.toDouble(),
+                    locatorJson = json,
+                    locationKey = "${opened.book.id}:$json"
                 )
-                if (completed) game.recordBookFinished()
             }
     }
 
@@ -153,6 +166,7 @@ fun ReaderScreen(
 
     LaunchedEffect(navigator, appearance) {
         game.pauseReading()
+        readerViewModel.onUserInteraction()
         val epub = navigator as? EpubNavigatorFragment ?: return@LaunchedEffect
         epub.submitPreferences(appearance.toEpubPreferences())
     }
@@ -216,16 +230,25 @@ fun ReaderScreen(
                                 fontSize = 11.sp
                             )
                         }
-                        TextButton(onClick = { controlsVisible = false }) { Text("Hide") }
+                        TextButton(onClick = {
+                            readerViewModel.onUserInteraction()
+                            controlsVisible = false
+                        }) { Text("Hide") }
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-                        TextButton(onClick = { showNotebook = true }) { Text("Contents & notes") }
                         TextButton(onClick = {
+                            readerViewModel.onUserInteraction()
+                            showNotebook = true
+                        }) { Text("Contents & notes") }
+                        TextButton(onClick = {
+                            readerViewModel.onUserInteraction()
                             val locator = navigator?.currentLocator?.value
                             if (locator != null) {
-                                val added = library.addBookmark(opened.book.id,
+                                val added = library.addBookmark(
+                                    opened.book.id,
                                     "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                    locator.toJSON().toString())
+                                    locator.toJSON().toString()
+                                )
                                 readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
                             }
                         }, enabled = navigator != null) { Text("Bookmark +") }
@@ -240,7 +263,10 @@ fun ReaderScreen(
 
         if (!controlsVisible) {
             TextButton(
-                onClick = { controlsVisible = true },
+                onClick = {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = true
+                },
                 modifier = Modifier.align(Alignment.TopEnd).statusBarsPadding().padding(8.dp)
             ) { Text("•••") }
         }
@@ -260,6 +286,7 @@ fun ReaderScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ReaderControl("‹", "Previous") {
+                        readerViewModel.onUserInteraction()
                         (navigator as? OverflowableNavigator)?.goBackward(animated = true)
                     }
                     ReaderControl("✦", "Highlight", enabled = opened.format == BookFormat.EPUB) {
@@ -282,15 +309,17 @@ fun ReaderScreen(
                                 locatorJson = selection.locator.toJSON().toString()
                             )
                             val isNew = library.highlightsFor(opened.book.id).size > countBefore
-                            if (isNew) game.recordHighlight()
+                            if (isNew) readerViewModel.onHighlightAdded() else readerViewModel.onUserInteraction()
                             selectable.clearSelection()
                             readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
                         }
                     }
                     ReaderControl("Aa", "Appearance", enabled = opened.format == BookFormat.EPUB) {
+                        readerViewModel.onUserInteraction()
                         showAppearance = true
                     }
                     ReaderControl("›", "Next") {
+                        readerViewModel.onUserInteraction()
                         (navigator as? OverflowableNavigator)?.goForward(animated = true)
                     }
                 }
@@ -322,19 +351,21 @@ fun ReaderScreen(
             bookmarks = bookmarks.filter { it.bookId == opened.book.id },
             onDismiss = { showNotebook = false },
             onGo = { json ->
+                readerViewModel.onUserInteraction()
                 game.pauseReading()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
                 if (locator != null && navigator?.go(locator, animated = true) == true) showNotebook = false
                 else { showNotebook = false; readerMessage = "That saved location could not be opened." }
             },
             onChapter = { link ->
+                readerViewModel.onUserInteraction()
                 game.pauseReading()
                 if (navigator?.go(link, animated = true) == true) showNotebook = false
                 else { showNotebook = false; readerMessage = "This chapter could not be opened." }
             },
             onSaveNote = { id, note ->
                 library.updateHighlightNote(id, note)
-                game.recordNote(id, note)
+                readerViewModel.onNoteSaved(id, note)
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
@@ -345,7 +376,11 @@ fun ReaderScreen(
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
             AppearancePanel(
                 appearance = appearance,
-                onChange = { appearance = it; library.saveAppearance(it) },
+                onChange = {
+                    readerViewModel.onUserInteraction()
+                    appearance = it
+                    library.saveAppearance(it)
+                },
                 onDone = { showAppearance = false }
             )
         }
