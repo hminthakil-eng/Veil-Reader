@@ -95,6 +95,7 @@ interface ReadingSessionDao {
     fun observeForBook(bookId: String): Flow<List<ReadingSessionEntity>>
 
     @Upsert suspend fun upsert(session: ReadingSessionEntity)
+    @Upsert suspend fun upsertAll(sessions: List<ReadingSessionEntity>)
     @Query("DELETE FROM reading_sessions") suspend fun deleteAll()
     @Query("SELECT COALESCE(SUM(activeMillis), 0) FROM reading_sessions")
     suspend fun totalActiveMillis(): Long
