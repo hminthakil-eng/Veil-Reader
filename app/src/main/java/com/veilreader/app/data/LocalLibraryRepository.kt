@@ -3,12 +3,12 @@ package com.veilreader.app.data
 import android.content.Context
 import androidx.room.withTransaction
 import com.veilreader.app.data.db.BookCollectionCrossRef
-import com.veilreader.app.data.db.BookEntity
 import com.veilreader.app.data.db.CollectionEntity
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.db.normalizeCollectionName
 import com.veilreader.app.data.db.toDomain
 import com.veilreader.app.data.db.toEntity
+import com.veilreader.app.data.migration.LegacyLibraryMigrator
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
@@ -38,6 +38,7 @@ class LocalLibraryRepository(context: Context) {
     private val settings = SettingsStore(appContext)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
+    private val initialized = CompletableDeferred<Unit>()
 
     private val _books = MutableStateFlow<List<Book>>(emptyList())
     val books: StateFlow<List<Book>> = _books
@@ -52,6 +53,11 @@ class LocalLibraryRepository(context: Context) {
 
     init {
         scope.launch { for (write in writes) write() }
+        scope.launch {
+            runCatching { LegacyLibraryMigrator(appContext, database, settings).migrateIfNeeded() }
+                .onSuccess { initialized.complete(Unit) }
+                .onFailure { initialized.completeExceptionally(it) }
+        }
         scope.launch {
             database.books().observeAll().collect { rows -> _books.value = rows.map { it.toDomain() } }
         }
@@ -176,8 +182,9 @@ class LocalLibraryRepository(context: Context) {
         enqueue { database.highlights().deleteById(id) }
     }
 
-    /** Ensures queued UI writes have reached Room/DataStore before export or destructive work. */
+    /** Ensures migration and queued UI writes have reached Room/DataStore before export/destructive work. */
     suspend fun flushWrites() {
+        initialized.await()
         val done = CompletableDeferred<Unit>()
         writes.send { done.complete(Unit) }
         done.await()
@@ -195,6 +202,7 @@ class LocalLibraryRepository(context: Context) {
 
     /** Transactional replacement used by backup restore. */
     suspend fun replaceAll(snapshot: LibrarySnapshot) {
+        initialized.await()
         flushWrites()
         database.withTransaction {
             database.highlights().deleteAll()
@@ -214,7 +222,11 @@ class LocalLibraryRepository(context: Context) {
     }
 
     private fun enqueue(block: suspend () -> Unit) {
-        check(writes.trySend(block).isSuccess) { "Veil Reader storage queue is unavailable." }
+        val guarded: suspend () -> Unit = {
+            initialized.await()
+            block()
+        }
+        check(writes.trySend(guarded).isSuccess) { "Veil Reader storage queue is unavailable." }
     }
 
     private fun updateBookCached(id: String, transform: (Book) -> Book): Book? {
