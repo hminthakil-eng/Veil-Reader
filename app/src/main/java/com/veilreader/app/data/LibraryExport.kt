@@ -9,6 +9,7 @@ import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -303,13 +304,15 @@ private fun LibrarySnapshot.toJson(): JSONObject = JSONObject().apply {
     put("highlights", JSONArray().apply { highlights.forEach { put(it.toJson()) } })
     put("bookmarks", JSONArray().apply { bookmarks.forEach { put(it.toJson()) } })
     put("appearance", appearance.toJson())
+    put("readingSessions", JSONArray().apply { readingSessions.forEach { put(it.toJson()) } })
 }
 
 private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapshot = LibrarySnapshot(
     books = json.getJSONArray("books").mapObjects(::bookFromJson),
     highlights = json.optJSONArray("highlights")?.mapObjects(::highlightFromJson).orEmpty(),
     bookmarks = json.optJSONArray("bookmarks")?.mapObjects(::bookmarkFromJson).orEmpty(),
-    appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject())
+    appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject()),
+    readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty()
 )
 
 private fun parseLegacySchemaOne(prefs: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -334,6 +337,17 @@ private fun Highlight.toJson(): JSONObject = JSONObject().apply {
 
 private fun Bookmark.toJson(): JSONObject = JSONObject().apply {
     put("id", id); put("bookId", bookId); put("label", label); put("locatorJson", locatorJson); put("createdAt", createdAtEpochMs)
+}
+
+private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
+    put("id", id)
+    put("bookId", bookId ?: JSONObject.NULL)
+    put("startedAt", startedAtEpochMs)
+    put("endedAt", endedAtEpochMs)
+    put("activeMillis", activeMillis)
+    put("pacedPageTurns", pacedPageTurns)
+    put("highlightCount", highlightCount)
+    put("noteCount", noteCount)
 }
 
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
@@ -368,6 +382,17 @@ private fun highlightFromJson(o: JSONObject): Highlight = Highlight(
 private fun bookmarkFromJson(o: JSONObject): Bookmark = Bookmark(
     id = o.getString("id"), bookId = o.getString("bookId"), label = o.optString("label", "Bookmark"),
     locatorJson = o.getString("locatorJson"), createdAtEpochMs = o.optLong("createdAt", 0L)
+)
+
+private fun readingSessionFromJson(o: JSONObject): ReadingSessionSnapshot = ReadingSessionSnapshot(
+    id = o.getString("id"),
+    bookId = o.optNullableString("bookId"),
+    startedAtEpochMs = o.optLong("startedAt", 0L),
+    endedAtEpochMs = o.optLong("endedAt", o.optLong("startedAt", 0L)),
+    activeMillis = o.optLong("activeMillis", 0L).coerceAtLeast(0L),
+    pacedPageTurns = o.optInt("pacedPageTurns", 0).coerceAtLeast(0),
+    highlightCount = o.optInt("highlightCount", 0).coerceAtLeast(0),
+    noteCount = o.optInt("noteCount", 0).coerceAtLeast(0)
 )
 
 private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearance(

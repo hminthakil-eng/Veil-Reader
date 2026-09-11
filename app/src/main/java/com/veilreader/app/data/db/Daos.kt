@@ -88,10 +88,14 @@ interface ReadingSessionDao {
     @Query("SELECT * FROM reading_sessions ORDER BY startedAtEpochMs DESC")
     fun observeAll(): Flow<List<ReadingSessionEntity>>
 
+    @Query("SELECT * FROM reading_sessions ORDER BY startedAtEpochMs DESC")
+    suspend fun listAll(): List<ReadingSessionEntity>
+
     @Query("SELECT * FROM reading_sessions WHERE bookId = :bookId ORDER BY startedAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<ReadingSessionEntity>>
 
     @Upsert suspend fun upsert(session: ReadingSessionEntity)
+    @Upsert suspend fun upsertAll(sessions: List<ReadingSessionEntity>)
     @Query("DELETE FROM reading_sessions") suspend fun deleteAll()
     @Query("SELECT COALESCE(SUM(activeMillis), 0) FROM reading_sessions")
     suspend fun totalActiveMillis(): Long

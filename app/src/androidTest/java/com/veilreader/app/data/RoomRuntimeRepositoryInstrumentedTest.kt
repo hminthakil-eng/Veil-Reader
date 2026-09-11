@@ -11,6 +11,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
 import java.util.UUID
 import kotlinx.coroutines.flow.first
@@ -93,7 +94,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun backupV2_roundTripsRoomState_andPublicationFile() = runBlocking {
+    fun backupV2_roundTripsRoomState_publicationFile_andReadingSessions() = runBlocking {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val publication = File(publications, "roundtrip.epub").apply { writeBytes("test publication".toByteArray()) }
@@ -112,6 +113,18 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.addHighlight("backup-book", "Preserve me", "{\"href\":\"chapter.xhtml\"}")
         repository.addBookmark("backup-book", "Saved place", "{\"href\":\"chapter.xhtml\"}")
         repository.saveAppearance(ReaderAppearance(theme = ReaderTheme.OLED, lineHeight = 1.7))
+        repository.saveReadingSession(
+            ReadingSessionSnapshot(
+                id = "session-backup",
+                bookId = "backup-book",
+                startedAtEpochMs = 100L,
+                endedAtEpochMs = 200L,
+                activeMillis = 90_000L,
+                pacedPageTurns = 4,
+                highlightCount = 1,
+                noteCount = 1
+            )
+        )
         repository.flushWrites()
 
         val backupFile = File(context.cacheDir, "veil-roundtrip-${UUID.randomUUID()}.zip")
@@ -123,6 +136,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.deleteHighlight(repository.highlights.value.single().id)
         repository.deleteBookmark(repository.bookmarks.value.single().id)
         repository.flushWrites()
+        db.readingSessions().deleteAll()
 
         val result = exporter.restoreBackup(Uri.fromFile(backupFile))
 
@@ -137,6 +151,14 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(1, db.highlights().observeAll().first().size)
         assertEquals(1, db.bookmarks().observeAll().first().size)
         assertEquals(ReaderTheme.OLED, settings.settings.first().readerAppearance.theme)
+
+        val restoredSession = db.readingSessions().listAll().single()
+        assertEquals("session-backup", restoredSession.id)
+        assertEquals("backup-book", restoredSession.bookId)
+        assertEquals(90_000L, restoredSession.activeMillis)
+        assertEquals(4, restoredSession.pacedPageTurns)
+        assertEquals(1, restoredSession.highlightCount)
+        assertEquals(1, restoredSession.noteCount)
         backupFile.delete()
     }
 
