@@ -6,13 +6,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
-import com.veilreader.app.data.ReadingSessionRepository
-import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.ReadingSessionTracker
 import java.util.UUID
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,8 +17,7 @@ import kotlinx.coroutines.launch
 data class ReaderUiState(
     val bookId: String? = null,
     val progress: Float = 0f,
-    val activeMillis: Long = 0L,
-    val sessionStorageHealthy: Boolean = true
+    val activeMillis: Long = 0L
 )
 
 /**
@@ -34,8 +28,7 @@ data class ReaderUiState(
  */
 class ReaderViewModel(
     private val library: LocalLibraryRepository,
-    private val game: GameRepository,
-    private val sessions: ReadingSessionRepository
+    private val game: GameRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ReaderUiState())
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
@@ -43,20 +36,8 @@ class ReaderViewModel(
     private var tracker: ReadingSessionTracker? = null
     private var resumed = false
     private var uncreditedActiveMillis = 0L
-    private val sessionWrites = Channel<ReadingSessionSnapshot>(Channel.UNLIMITED)
 
     init {
-        viewModelScope.launch(Dispatchers.IO) {
-            for (snapshot in sessionWrites) {
-                try {
-                    sessions.save(snapshot)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Throwable) {
-                    _uiState.value = _uiState.value.copy(sessionStorageHealthy = false)
-                }
-            }
-        }
         viewModelScope.launch {
             while (true) {
                 delay(HEARTBEAT_MS)
@@ -170,7 +151,7 @@ class ReaderViewModel(
         resumed = false
         game.pauseReading()
         publishActiveMillis()
-        sessionWrites.trySend(current.snapshot(System.currentTimeMillis()))
+        library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
         tracker = null
         uncreditedActiveMillis = 0L
     }
@@ -191,7 +172,7 @@ class ReaderViewModel(
 
     private fun persistSession() {
         val current = tracker ?: return
-        sessionWrites.trySend(current.snapshot(System.currentTimeMillis()))
+        library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
     }
 
     companion object {
@@ -200,13 +181,12 @@ class ReaderViewModel(
 
         fun factory(
             library: LocalLibraryRepository,
-            game: GameRepository,
-            sessions: ReadingSessionRepository
+            game: GameRepository
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(ReaderViewModel::class.java))
-                return ReaderViewModel(library, game, sessions) as T
+                return ReaderViewModel(library, game) as T
             }
         }
     }
