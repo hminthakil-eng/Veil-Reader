@@ -13,6 +13,10 @@ interface BookDao {
     fun observeAll(): Flow<List<BookWithCollections>>
 
     @Transaction
+    @Query("SELECT * FROM books ORDER BY lastOpenedAtEpochMs DESC, addedAtEpochMs DESC")
+    suspend fun listAllWithCollections(): List<BookWithCollections>
+
+    @Transaction
     @Query("SELECT * FROM books WHERE id = :id LIMIT 1")
     suspend fun findWithCollections(id: String): BookWithCollections?
 
@@ -31,6 +35,9 @@ interface HighlightDao {
     @Query("SELECT * FROM highlights ORDER BY createdAtEpochMs DESC")
     fun observeAll(): Flow<List<HighlightEntity>>
 
+    @Query("SELECT * FROM highlights ORDER BY createdAtEpochMs DESC")
+    suspend fun listAll(): List<HighlightEntity>
+
     @Query("SELECT * FROM highlights WHERE bookId = :bookId ORDER BY createdAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<HighlightEntity>>
 
@@ -44,6 +51,9 @@ interface HighlightDao {
 interface BookmarkDao {
     @Query("SELECT * FROM bookmarks ORDER BY createdAtEpochMs DESC")
     fun observeAll(): Flow<List<BookmarkEntity>>
+
+    @Query("SELECT * FROM bookmarks ORDER BY createdAtEpochMs DESC")
+    suspend fun listAll(): List<BookmarkEntity>
 
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId ORDER BY createdAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<BookmarkEntity>>
