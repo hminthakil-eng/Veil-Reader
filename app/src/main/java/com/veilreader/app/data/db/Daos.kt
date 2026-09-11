@@ -13,6 +13,10 @@ interface BookDao {
     fun observeAll(): Flow<List<BookWithCollections>>
 
     @Transaction
+    @Query("SELECT * FROM books ORDER BY lastOpenedAtEpochMs DESC, addedAtEpochMs DESC")
+    suspend fun listAllWithCollections(): List<BookWithCollections>
+
+    @Transaction
     @Query("SELECT * FROM books WHERE id = :id LIMIT 1")
     suspend fun findWithCollections(id: String): BookWithCollections?
 
@@ -22,6 +26,7 @@ interface BookDao {
     @Upsert suspend fun upsert(book: BookEntity)
     @Upsert suspend fun upsertAll(books: List<BookEntity>)
     @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)
+    @Query("DELETE FROM books") suspend fun deleteAll()
     @Query("SELECT COUNT(*) FROM books") suspend fun count(): Int
 }
 
@@ -30,12 +35,16 @@ interface HighlightDao {
     @Query("SELECT * FROM highlights ORDER BY createdAtEpochMs DESC")
     fun observeAll(): Flow<List<HighlightEntity>>
 
+    @Query("SELECT * FROM highlights ORDER BY createdAtEpochMs DESC")
+    suspend fun listAll(): List<HighlightEntity>
+
     @Query("SELECT * FROM highlights WHERE bookId = :bookId ORDER BY createdAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<HighlightEntity>>
 
     @Upsert suspend fun upsert(highlight: HighlightEntity)
     @Upsert suspend fun upsertAll(highlights: List<HighlightEntity>)
     @Query("DELETE FROM highlights WHERE id = :id") suspend fun deleteById(id: String)
+    @Query("DELETE FROM highlights") suspend fun deleteAll()
 }
 
 @Dao
@@ -43,12 +52,16 @@ interface BookmarkDao {
     @Query("SELECT * FROM bookmarks ORDER BY createdAtEpochMs DESC")
     fun observeAll(): Flow<List<BookmarkEntity>>
 
+    @Query("SELECT * FROM bookmarks ORDER BY createdAtEpochMs DESC")
+    suspend fun listAll(): List<BookmarkEntity>
+
     @Query("SELECT * FROM bookmarks WHERE bookId = :bookId ORDER BY createdAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<BookmarkEntity>>
 
     @Upsert suspend fun upsert(bookmark: BookmarkEntity)
     @Upsert suspend fun upsertAll(bookmarks: List<BookmarkEntity>)
     @Query("DELETE FROM bookmarks WHERE id = :id") suspend fun deleteById(id: String)
+    @Query("DELETE FROM bookmarks") suspend fun deleteAll()
 }
 
 @Dao
@@ -66,6 +79,8 @@ interface CollectionDao {
     @Query("DELETE FROM book_collection WHERE bookId = :bookId AND collectionId = :collectionId")
     suspend fun detach(bookId: String, collectionId: String)
     @Query("DELETE FROM book_collection WHERE bookId = :bookId") suspend fun clearBook(bookId: String)
+    @Query("DELETE FROM book_collection") suspend fun clearAllLinks()
+    @Query("DELETE FROM collections") suspend fun deleteAll()
 }
 
 @Dao
@@ -77,6 +92,7 @@ interface ReadingSessionDao {
     fun observeForBook(bookId: String): Flow<List<ReadingSessionEntity>>
 
     @Upsert suspend fun upsert(session: ReadingSessionEntity)
+    @Query("DELETE FROM reading_sessions") suspend fun deleteAll()
     @Query("SELECT COALESCE(SUM(activeMillis), 0) FROM reading_sessions")
     suspend fun totalActiveMillis(): Long
 }
