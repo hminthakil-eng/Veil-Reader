@@ -5,6 +5,7 @@ on:
     paths:
       - "app/src/main/java/com/veilreader/app/data/**"
       - "app/src/androidTest/**"
+      - "app/schemas/**"
       - "app/build.gradle.kts"
       - "build.gradle.kts"
       - ".github/workflows/storage-instrumentation.yml"
