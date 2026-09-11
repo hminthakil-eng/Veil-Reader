@@ -24,7 +24,8 @@ fun ReadingNowScreen(
     onOpenLibrary: () -> Unit,
     onOpenCastle: () -> Unit
 ) {
-    val current = books.filterNot { it.finished }.ifEmpty { books }.maxByOrNull { it.lastOpenedAtEpochMs.takeIf { time -> time > 0L } ?: it.addedAtEpochMs }
+    val current = books.filterNot { it.finished }.ifEmpty { books }
+        .maxByOrNull { it.lastOpenedAtEpochMs.takeIf { time -> time > 0L } ?: it.addedAtEpochMs }
 
     Column(
         Modifier
@@ -54,7 +55,12 @@ fun ReadingNowScreen(
         } else {
             MysteryCard(Modifier.fillMaxWidth()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(18.dp)) {
-                    BookCover(current.title, Modifier.width(116.dp).height(168.dp))
+                    BookCover(
+                        title = current.title,
+                        subtitle = current.author,
+                        imagePath = current.coverCachePath,
+                        modifier = Modifier.width(116.dp).height(168.dp)
+                    )
                     Column(
                         Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -88,7 +94,11 @@ fun ReadingNowScreen(
                     Text("${profile.path.name} · ${profile.rankName}", fontWeight = FontWeight.SemiBold)
                     Text("Advancement ritual", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                 }
-                Text("${profile.ritualProgress}/${profile.ritualTarget}", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+                Text(
+                    "${profile.ritualProgress}/${profile.ritualTarget}",
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Bold
+                )
             }
             Spacer(Modifier.height(12.dp))
             LinearProgressIndicator(
