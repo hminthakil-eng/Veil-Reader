@@ -9,6 +9,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import java.io.File
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -52,17 +53,21 @@ class ReadiumEngine(context: Context) {
         val localUri = materializeImport(uri)
         var cachedCoverPath: String? = null
         try {
+            val localFile = requireNotNull(localUri.path).let(::File)
+            val fingerprint = sha256(localFile)
             val publication = openPublication(localUri, allowUserInteraction = false)
             try {
                 val format = formatOf(publication)
-                val author = publication.metadata.authors
+                val metadata = publication.metadata
+                val author = metadata.authors
                     .firstOrNull { it.name.isNotBlank() }
                     ?.name
                     ?: "Unknown author"
-                val title = publication.metadata.title
+                val title = metadata.title
                     ?.takeIf { it.isNotBlank() }
                     ?: displayName(uri)?.substringBeforeLast('.')?.takeIf { it.isNotBlank() }
                     ?: "Untitled"
+                val series = metadata.belongsToSeries.firstOrNull()
                 val bookId = UUID.randomUUID().toString()
                 cachedCoverPath = cacheCover(publication, bookId)
 
@@ -71,6 +76,7 @@ class ReadiumEngine(context: Context) {
                     title = title,
                     author = author,
                     progress = 0f,
+                    totalPages = metadata.numberOfPages ?: 0,
                     format = format,
                     sourceUri = localUri.toString(),
                     mediaType = when (format) {
@@ -78,7 +84,11 @@ class ReadiumEngine(context: Context) {
                         BookFormat.PDF -> "application/pdf"
                         else -> "application/octet-stream"
                     },
-                    coverCachePath = cachedCoverPath
+                    coverCachePath = cachedCoverPath,
+                    contentFingerprint = fingerprint,
+                    seriesName = series?.name?.trim()?.takeIf { it.isNotEmpty() },
+                    seriesIndex = series?.position?.takeIf { it.isFinite() },
+                    language = metadata.languages.firstOrNull()?.trim()?.takeIf { it.isNotEmpty() }
                 )
             } finally {
                 publication.close()
@@ -153,6 +163,19 @@ class ReadiumEngine(context: Context) {
                 ""
             }
         }
+    }
+
+    private suspend fun sha256(file: File): String = withContext(Dispatchers.IO) {
+        val digest = MessageDigest.getInstance("SHA-256")
+        file.inputStream().buffered().use { input ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = input.read(buffer)
+                if (read < 0) break
+                if (read > 0) digest.update(buffer, 0, read)
+            }
+        }
+        digest.digest().joinToString("") { byte -> "%02x".format(byte.toInt() and 0xff) }
     }
 
     private suspend fun materializeImport(source: Uri): Uri = withContext(Dispatchers.IO) {
