@@ -42,7 +42,6 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
     }
 
     suspend fun writeBackup(destination: Uri) {
-        // Snapshot flows and preferences before leaving the main dispatcher.
         val books = library.books.value.toList()
         val libraryPrefs = JSONObject(context.getSharedPreferences(LIBRARY_PREFS, Context.MODE_PRIVATE).all)
         val gamePrefs = JSONObject(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE).all)
@@ -79,11 +78,9 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 zip.write(manifest.toString(2).toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
                 zip.putNextEntry(ZipEntry("README.txt"))
-                zip.write(
-                    "Veil Reader 0.6 backup. Restore it from Profile > Your data > Restore library backup. " +
-                        "The archive can contain private books, highlights, and notes; keep it private.\n"
-                        .toByteArray(Charsets.UTF_8)
-                )
+                val readme = "Veil Reader 0.6 backup. Restore it from Profile > Your data > Restore library backup. " +
+                    "The archive can contain private books, highlights, and notes; keep it private.\n"
+                zip.write(readme.toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
                 files.forEach { (_, file, path) ->
                     zip.putNextEntry(ZipEntry(path))
@@ -139,8 +136,6 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 val id = book.getString("id")
                 val archived = archivedByBookId[id]
                 if (archived == null) {
-                    // Demo/missing publications remain visible as metadata, but never retain stale
-                    // absolute file URIs from another installation.
                     book.put("sourceUri", JSONObject.NULL)
                     continue
                 }
@@ -156,11 +151,16 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val libraryPrefs = context.getSharedPreferences(LIBRARY_PREFS, Context.MODE_PRIVATE)
             val gamePrefs = context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE)
-            require(replacePreferences(libraryPrefs, libraryPreferences)) { "Could not commit restored library data." }
-            require(replacePreferences(gamePrefs, gamePreferences)) { "Could not commit restored progression data." }
+            val oldLibrary = libraryPrefs.all.toMap()
+            val oldGame = gamePrefs.all.toMap()
 
-            // Preferences now point only at the newly staged restore directory. Remove old
-            // publication payloads to avoid silently retaining private orphaned books.
+            require(replacePreferences(libraryPrefs, libraryPreferences)) { "Could not commit restored library data." }
+            if (!replacePreferences(gamePrefs, gamePreferences)) {
+                restorePreferencesSnapshot(libraryPrefs, oldLibrary)
+                restorePreferencesSnapshot(gamePrefs, oldGame)
+                error("Could not commit restored progression data. Your previous data was kept.")
+            }
+
             publicationsRoot.listFiles()?.forEach { child ->
                 if (child.canonicalFile != installedRoot) child.deleteRecursively()
             }
@@ -191,8 +191,6 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                     zip.closeEntry()
                     continue
                 }
-                // Schema 1 only needs the manifest and books payloads. Unknown entries are ignored
-                // rather than written to disk.
                 if (safePath != "manifest.json" && !safePath.startsWith("books/")) {
                     zip.closeEntry()
                     continue
@@ -232,23 +230,42 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     private fun replacePreferences(target: SharedPreferences, source: JSONObject): Boolean {
         val editor = target.edit().clear()
-        source.keys().forEach { key ->
-            when (val value = source.get(key)) {
-                JSONObject.NULL -> Unit
+        source.keys().forEach { key -> putJsonPreference(editor, key, source.get(key)) }
+        return editor.commit()
+    }
+
+    private fun putJsonPreference(editor: SharedPreferences.Editor, key: String, value: Any?) {
+        when (value) {
+            null, JSONObject.NULL -> Unit
+            is Boolean -> editor.putBoolean(key, value)
+            is Int -> editor.putInt(key, value)
+            is Long -> editor.putLong(key, value)
+            is Float -> editor.putFloat(key, value)
+            is Double -> editor.putFloat(key, value.toFloat())
+            is String -> editor.putString(key, value)
+            is JSONArray -> editor.putStringSet(
+                key,
+                buildSet { for (i in 0 until value.length()) add(value.optString(i)) }
+                    .filter { it.isNotBlank() }
+                    .toSet()
+            )
+            else -> error("Unsupported preference value in backup: $key")
+        }
+    }
+
+    private fun restorePreferencesSnapshot(target: SharedPreferences, snapshot: Map<String, *>) {
+        val editor = target.edit().clear()
+        snapshot.forEach { (key, value) ->
+            when (value) {
                 is Boolean -> editor.putBoolean(key, value)
                 is Int -> editor.putInt(key, value)
                 is Long -> editor.putLong(key, value)
                 is Float -> editor.putFloat(key, value)
-                is Double -> editor.putFloat(key, value.toFloat())
                 is String -> editor.putString(key, value)
-                is JSONArray -> editor.putStringSet(
-                    key,
-                    buildSet { for (i in 0 until value.length()) add(value.optString(i)) }.filter { it.isNotBlank() }.toSet()
-                )
-                else -> error("Unsupported preference value in backup: $key")
+                is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
             }
         }
-        return editor.commit()
+        editor.commit()
     }
 
     companion object {
