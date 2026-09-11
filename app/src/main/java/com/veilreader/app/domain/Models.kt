@@ -1,5 +1,7 @@
 package com.veilreader.app.domain
 
+import java.util.Locale
+
 data class Book(
     val id: String,
     val title: String,
@@ -18,10 +20,27 @@ data class Book(
     val favorite: Boolean = false,
     /** Absolute app-private thumbnail path. Empty means cover extraction was attempted but unavailable. */
     val coverCachePath: String? = null,
-    val collection: String = ""
+    /** SHA-256 of the app-private publication copy. Derived metadata used for duplicate detection. */
+    val contentFingerprint: String? = null,
+    val seriesName: String? = null,
+    val seriesIndex: Double? = null,
+    /** Primary BCP-47 language tag when supplied by the publication. */
+    val language: String? = null,
+    /**
+     * Compatibility field for older UI/backup code. New code should use [collections].
+     * When both are present, [allCollections] merges them case-insensitively.
+     */
+    val collection: String = "",
+    /** Every user collection this book belongs to. */
+    val collections: List<String> = emptyList()
 ) {
     val isImported: Boolean get() = sourceUri != null
     val hasCachedCover: Boolean get() = !coverCachePath.isNullOrBlank()
+    val allCollections: List<String>
+        get() = (collections + collection)
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinctBy { it.lowercase(Locale.ROOT) }
 }
 
 enum class BookFormat { EPUB, PDF, AUDIO, COMIC }
