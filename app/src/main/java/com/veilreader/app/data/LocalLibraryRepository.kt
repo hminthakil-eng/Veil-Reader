@@ -201,6 +201,7 @@ class LocalLibraryRepository internal constructor(
             database.withTransaction {
                 database.books().upsert(updated.toEntity())
                 setCollectionsInternal(update.bookId, cleanCollections.toSet())
+                database.collections().deleteOrphans()
             }
         }
     }
@@ -208,6 +209,73 @@ class LocalLibraryRepository internal constructor(
     fun toggleFavorite(id: String) {
         val updated = updateBookCached(id) { it.copy(favorite = !it.favorite) } ?: return
         enqueue { database.books().upsert(updated.toEntity()) }
+    }
+
+    /** Applies one favorite state to every selected book with a single durable database update. */
+    fun setFavorite(ids: Set<String>, favorite: Boolean) {
+        val cleanIds = ids.filterTo(linkedSetOf()) { id -> _books.value.any { it.id == id } }
+        if (cleanIds.isEmpty()) return
+        _books.value = _books.value.map { book ->
+            if (book.id in cleanIds) book.copy(favorite = favorite) else book
+        }
+        enqueue { database.books().setFavorite(cleanIds.toList(), favorite) }
+    }
+
+    /** Adds one collection to each selected book without replacing any existing memberships. */
+    fun addCollection(ids: Set<String>, name: String) {
+        val cleanName = name.trim()
+        require(cleanName.isNotEmpty()) { "A collection name cannot be empty." }
+        val cleanIds = ids.filterTo(linkedSetOf()) { id -> _books.value.any { it.id == id } }
+        if (cleanIds.isEmpty()) return
+
+        _books.value = _books.value.map { book ->
+            if (book.id !in cleanIds) return@map book
+            val updatedCollections = (book.allCollections + cleanName)
+                .distinctBy { it.lowercase(Locale.ROOT) }
+            book.copy(
+                collection = updatedCollections.firstOrNull().orEmpty(),
+                collections = updatedCollections
+            )
+        }
+
+        enqueue {
+            database.withTransaction {
+                val targetCollection = getOrCreateCollectionInternal(cleanName)
+                database.collections().attachAll(
+                    cleanIds.map { bookId -> BookCollectionCrossRef(bookId, targetCollection.id) }
+                )
+            }
+        }
+    }
+
+    /**
+     * Removes books as one serialized database command, then cleans derived/private files.
+     *
+     * Foreign keys intentionally cascade highlights, bookmarks and collection links. Reading
+     * sessions use SET NULL, preserving lifetime reading history after a book leaves the library.
+     * Database deletion happens before file cleanup so a cleanup failure cannot leave a durable
+     * book row pointing at a missing publication.
+     */
+    suspend fun deleteBooks(ids: Set<String>): Int {
+        val cleanIds = ids.filterTo(linkedSetOf()) { it.isNotBlank() }
+        if (cleanIds.isEmpty()) return 0
+        val deletedBooks = _books.value.filter { it.id in cleanIds }
+
+        val deletedCount = orderedWrite {
+            database.withTransaction {
+                val count = database.books().deleteByIds(cleanIds.toList())
+                database.collections().deleteOrphans()
+                count
+            }
+        }
+
+        if (deletedCount > 0) {
+            _books.value = _books.value.filterNot { it.id in cleanIds }
+            _highlights.value = _highlights.value.filterNot { it.bookId in cleanIds }
+            _bookmarks.value = _bookmarks.value.filterNot { it.bookId in cleanIds }
+            deletedBooks.forEach { discardImportedArtifacts(it) }
+        }
+        return deletedCount
     }
 
     fun markOpened(id: String) {
@@ -360,16 +428,24 @@ class LocalLibraryRepository internal constructor(
 
     private suspend fun setCollectionsInternal(bookId: String, names: Set<String>) {
         database.collections().clearBook(bookId)
-        names.map(String::trim).filter(String::isNotEmpty).distinctBy(::normalizeCollectionName).forEach { name ->
-            val normalized = normalizeCollectionName(name)
-            val collection = database.collections().findByNormalizedName(normalized) ?: CollectionEntity(
-                id = stableCollectionId(normalized),
-                name = name,
-                createdAtEpochMs = System.currentTimeMillis(),
-                normalizedName = normalized
-            ).also { database.collections().upsert(it) }
-            database.collections().attach(BookCollectionCrossRef(bookId, collection.id))
-        }
+        names.map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinctBy(::normalizeCollectionName)
+            .forEach { name ->
+                val collection = getOrCreateCollectionInternal(name)
+                database.collections().attach(BookCollectionCrossRef(bookId, collection.id))
+            }
+    }
+
+    private suspend fun getOrCreateCollectionInternal(name: String): CollectionEntity {
+        val cleanName = name.trim()
+        val normalized = normalizeCollectionName(cleanName)
+        return database.collections().findByNormalizedName(normalized) ?: CollectionEntity(
+            id = stableCollectionId(normalized),
+            name = cleanName,
+            createdAtEpochMs = System.currentTimeMillis(),
+            normalizedName = normalized
+        ).also { database.collections().upsert(it) }
     }
 
     private suspend fun discardImportedArtifacts(book: Book) = withContext(Dispatchers.IO) {
