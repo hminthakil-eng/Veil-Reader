@@ -63,7 +63,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.7.0-dev")
+                put("appVersion", "0.7.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("gamePreferences", gamePrefs)
@@ -189,12 +189,14 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         val input = context.contentResolver.openInputStream(source) ?: error("Could not read the selected backup.")
         var totalBytes = 0L
         var entryCount = 0
+        val seenEntries = mutableSetOf<String>()
         ZipInputStream(input.buffered()).use { zip ->
             while (true) {
                 val entry = zip.nextEntry ?: break
                 entryCount += 1
                 require(entryCount <= MAX_ENTRIES) { "The backup contains too many files." }
                 val safePath = requireSafeArchivePath(entry.name)
+                require(seenEntries.add(safePath)) { "The backup contains duplicate file entries." }
                 if (entry.isDirectory) {
                     zip.closeEntry()
                     continue
@@ -309,9 +311,6 @@ private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapsho
     bookmarks = json.optJSONArray("bookmarks")?.mapObjects(::bookmarkFromJson).orEmpty(),
     appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject())
 )
-
-private val LibrarySnapshot.Companion: LibrarySnapshotCompanion get() = LibrarySnapshotCompanion
-private object LibrarySnapshotCompanion
 
 private fun parseLegacySchemaOne(prefs: JSONObject): LibrarySnapshot = LibrarySnapshot(
     books = JSONArray(prefs.optString("books", "[]")).mapObjects(::bookFromJson),
