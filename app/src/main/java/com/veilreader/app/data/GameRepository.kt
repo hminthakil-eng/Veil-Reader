@@ -61,9 +61,14 @@ class GameRepository(context: Context) {
     fun pauseReading() { pageGate.pause() }
 
     fun setDailyGoal(minutes: Int) {
+        rollDayIfNeeded()
         val safe = minutes.coerceIn(5, 180)
         prefs.edit().putInt("dailyGoalMinutes", safe).apply()
         _dailyGoalMinutes.value = safe
+        // A lower goal can make today's reading quest complete immediately. Award it now instead
+        // of waiting for another reading event, while claimedQuestIds still prevents duplicates.
+        awardCompletedQuestRewards()
+        persistCounters()
         publish()
     }
 
