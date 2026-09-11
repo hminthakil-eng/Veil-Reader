@@ -32,10 +32,19 @@ import kotlinx.coroutines.launch
  * intentionally kept compatible with the 0.6 Compose screens during Phase 1B; Phase 2 will move
  * these synchronous UI callbacks behind ViewModels/use-cases.
  */
-class LocalLibraryRepository(context: Context) {
-    private val appContext = context.applicationContext
-    private val database = VeilDatabase.get(appContext)
-    private val settings = SettingsStore(appContext)
+class LocalLibraryRepository internal constructor(
+    private val appContext: Context,
+    private val database: VeilDatabase,
+    private val settings: SettingsStore,
+    private val runLegacyMigration: Boolean
+) {
+    constructor(context: Context) : this(
+        appContext = context.applicationContext,
+        database = VeilDatabase.get(context.applicationContext),
+        settings = SettingsStore(context.applicationContext),
+        runLegacyMigration = true
+    )
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
@@ -53,10 +62,14 @@ class LocalLibraryRepository(context: Context) {
 
     init {
         scope.launch { for (write in writes) write() }
-        scope.launch {
-            runCatching { LegacyLibraryMigrator(appContext, database, settings).migrateIfNeeded() }
-                .onSuccess { initialized.complete(Unit) }
-                .onFailure { initialized.completeExceptionally(it) }
+        if (runLegacyMigration) {
+            scope.launch {
+                runCatching { LegacyLibraryMigrator(appContext, database, settings).migrateIfNeeded() }
+                    .onSuccess { initialized.complete(Unit) }
+                    .onFailure { initialized.completeExceptionally(it) }
+            }
+        } else {
+            initialized.complete(Unit)
         }
         scope.launch {
             database.books().observeAll().collect { rows -> _books.value = rows.map { it.toDomain() } }
