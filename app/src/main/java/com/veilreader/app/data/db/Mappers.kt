@@ -22,28 +22,43 @@ fun Book.toEntity(): BookEntity = BookEntity(
     lastOpenedAtEpochMs = lastOpenedAtEpochMs,
     finished = finished,
     favorite = favorite,
-    coverCachePath = coverCachePath
+    coverCachePath = coverCachePath,
+    contentFingerprint = contentFingerprint,
+    seriesName = seriesName,
+    seriesIndex = seriesIndex,
+    language = language
 )
 
-fun BookWithCollections.toDomain(): Book = Book(
-    id = book.id,
-    title = book.title,
-    author = book.author,
-    progress = book.progress,
-    currentChapter = book.currentChapter,
-    totalPages = book.totalPages,
-    pagesRead = book.pagesRead,
-    format = runCatching { BookFormat.valueOf(book.format) }.getOrDefault(BookFormat.EPUB),
-    sourceUri = book.sourceUri,
-    mediaType = book.mediaType,
-    locatorJson = book.locatorJson,
-    addedAtEpochMs = book.addedAtEpochMs,
-    lastOpenedAtEpochMs = book.lastOpenedAtEpochMs,
-    finished = book.finished,
-    favorite = book.favorite,
-    coverCachePath = book.coverCachePath,
-    collection = collections.firstOrNull()?.name.orEmpty()
-)
+fun BookWithCollections.toDomain(): Book {
+    val collectionNames = collections
+        .map { it.name.trim() }
+        .filter { it.isNotEmpty() }
+        .sortedWith(String.CASE_INSENSITIVE_ORDER)
+    return Book(
+        id = book.id,
+        title = book.title,
+        author = book.author,
+        progress = book.progress,
+        currentChapter = book.currentChapter,
+        totalPages = book.totalPages,
+        pagesRead = book.pagesRead,
+        format = runCatching { BookFormat.valueOf(book.format) }.getOrDefault(BookFormat.EPUB),
+        sourceUri = book.sourceUri,
+        mediaType = book.mediaType,
+        locatorJson = book.locatorJson,
+        addedAtEpochMs = book.addedAtEpochMs,
+        lastOpenedAtEpochMs = book.lastOpenedAtEpochMs,
+        finished = book.finished,
+        favorite = book.favorite,
+        coverCachePath = book.coverCachePath,
+        contentFingerprint = book.contentFingerprint,
+        seriesName = book.seriesName,
+        seriesIndex = book.seriesIndex,
+        language = book.language,
+        collection = collectionNames.firstOrNull().orEmpty(),
+        collections = collectionNames
+    )
+}
 
 fun Highlight.toEntity(): HighlightEntity = HighlightEntity(
     id = id,
