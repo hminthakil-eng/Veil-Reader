@@ -32,7 +32,10 @@ fun LibraryScreen(
     onImportUri: (Uri) -> Unit,
     onOpenBook: (Book) -> Unit,
     onFavorite: (String) -> Unit,
-    onEditMetadata: (BookMetadataUpdate) -> Unit
+    onEditMetadata: (BookMetadataUpdate) -> Unit,
+    onBulkFavorite: (Set<String>, Boolean) -> Unit,
+    onBulkAddCollection: (Set<String>, String) -> Unit,
+    onBulkDelete: (Set<String>) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
@@ -48,6 +51,12 @@ fun LibraryScreen(
     var seriesIndex by remember { mutableStateOf("") }
     var language by remember { mutableStateOf("") }
 
+    var selectionMode by rememberSaveable { mutableStateOf(false) }
+    var selectedIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var bulkCollectionDialog by remember { mutableStateOf(false) }
+    var bulkCollectionName by remember { mutableStateOf("") }
+    var deleteSelectionDialog by remember { mutableStateOf(false) }
+
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImportUri)
     }
@@ -55,10 +64,16 @@ fun LibraryScreen(
         .flatMap { it.allCollections }
         .distinctBy { it.lowercase(Locale.ROOT) }
         .sortedWith(String.CASE_INSENSITIVE_ORDER)
+
     LaunchedEffect(collections) {
         if (collection.isNotEmpty() && collections.none { it.equals(collection, ignoreCase = true) }) {
             collection = ""
         }
+    }
+    LaunchedEffect(books.map { it.id }) {
+        val validIds = books.mapTo(mutableSetOf()) { it.id }
+        selectedIds = selectedIds.filterTo(linkedSetOf()) { it in validIds }
+        if (books.isEmpty()) selectionMode = false
     }
 
     val trimmedQuery = query.trim()
@@ -97,6 +112,8 @@ fun LibraryScreen(
             else -> list.sortedByDescending { maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs) }
         }
     }
+    val shownIds = filtered.mapTo(linkedSetOf()) { it.id }
+    val allShownSelected = shownIds.isNotEmpty() && shownIds.all { it in selectedIds }
 
     Column(
         Modifier
@@ -107,7 +124,7 @@ fun LibraryScreen(
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Column(Modifier.weight(1f)) {
                 Text(
@@ -124,11 +141,23 @@ fun LibraryScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            FilledTonalButton(
-                onClick = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                enabled = !isImporting
-            ) {
-                Text(if (isImporting) "Importing…" else "+ Import")
+            if (books.isNotEmpty()) {
+                TextButton(
+                    onClick = {
+                        selectionMode = !selectionMode
+                        if (!selectionMode) selectedIds = emptySet()
+                    }
+                ) {
+                    Text(if (selectionMode) "Done" else "Select")
+                }
+            }
+            if (!selectionMode) {
+                FilledTonalButton(
+                    onClick = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    enabled = !isImporting
+                ) {
+                    Text(if (isImporting) "Importing…" else "+ Import")
+                }
             }
         }
 
@@ -226,6 +255,66 @@ fun LibraryScreen(
             }
         }
 
+        if (selectionMode && books.isNotEmpty()) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                shape = RoundedCornerShape(18.dp)
+            ) {
+                Column(Modifier.padding(horizontal = 12.dp, vertical = 10.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "${selectedIds.size} selected",
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            enabled = shownIds.isNotEmpty(),
+                            onClick = {
+                                selectedIds = if (allShownSelected) selectedIds - shownIds else selectedIds + shownIds
+                            }
+                        ) {
+                            Text(if (allShownSelected) "Unselect shown" else "Select shown")
+                        }
+                        if (selectedIds.isNotEmpty()) {
+                            TextButton(onClick = { selectedIds = emptySet() }) { Text("Clear") }
+                        }
+                    }
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilledTonalButton(
+                            enabled = selectedIds.isNotEmpty(),
+                            onClick = { onBulkFavorite(selectedIds, true) }
+                        ) { Text("★ Favorite") }
+                        FilledTonalButton(
+                            enabled = selectedIds.isNotEmpty(),
+                            onClick = { onBulkFavorite(selectedIds, false) }
+                        ) { Text("☆ Unfavorite") }
+                        FilledTonalButton(
+                            enabled = selectedIds.isNotEmpty(),
+                            onClick = {
+                                bulkCollectionName = ""
+                                bulkCollectionDialog = true
+                            }
+                        ) { Text("+ Collection") }
+                        OutlinedButton(
+                            enabled = selectedIds.isNotEmpty(),
+                            onClick = { deleteSelectionDialog = true }
+                        ) { Text("Remove") }
+                    }
+                }
+            }
+        }
+
         if (filtered.isEmpty()) {
             MysteryCard(Modifier.fillMaxWidth()) {
                 Text("✦", fontSize = 32.sp, color = MaterialTheme.colorScheme.secondary)
@@ -269,7 +358,12 @@ fun LibraryScreen(
                 items(filtered, key = { it.id }) { book ->
                     BookLibraryTile(
                         book = book,
+                        selectionMode = selectionMode,
+                        selected = book.id in selectedIds,
                         onOpen = { onOpenBook(book) },
+                        onToggleSelected = {
+                            selectedIds = if (book.id in selectedIds) selectedIds - book.id else selectedIds + book.id
+                        },
                         onFavorite = { onFavorite(book.id) },
                         onEdit = {
                             editing = book
@@ -345,6 +439,59 @@ fun LibraryScreen(
             dismissButton = { TextButton(onClick = { editing = null }) { Text("Cancel") } }
         )
     }
+
+    if (bulkCollectionDialog) {
+        AlertDialog(
+            onDismissRequest = { bulkCollectionDialog = false },
+            title = { Text("Add to collection") },
+            text = {
+                OutlinedTextField(
+                    value = bulkCollectionName,
+                    onValueChange = { bulkCollectionName = it },
+                    singleLine = true,
+                    label = { Text("Collection name") },
+                    supportingText = { Text("Existing collection names are reused automatically.") }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = bulkCollectionName.isNotBlank() && selectedIds.isNotEmpty(),
+                    onClick = {
+                        onBulkAddCollection(selectedIds, bulkCollectionName)
+                        bulkCollectionDialog = false
+                        bulkCollectionName = ""
+                    }
+                ) { Text("Add") }
+            },
+            dismissButton = { TextButton(onClick = { bulkCollectionDialog = false }) { Text("Cancel") } }
+        )
+    }
+
+    if (deleteSelectionDialog) {
+        AlertDialog(
+            onDismissRequest = { deleteSelectionDialog = false },
+            title = { Text("Remove ${selectedIds.size} ${if (selectedIds.size == 1) "book" else "books"}?") },
+            text = {
+                Text(
+                    "The selected local publications, cached covers, highlights and bookmarks will be removed. " +
+                        "Your lifetime reading-session history stays in your stats. This cannot be undone."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = selectedIds.isNotEmpty(),
+                    onClick = {
+                        val deleting = selectedIds
+                        deleteSelectionDialog = false
+                        selectedIds = emptySet()
+                        selectionMode = false
+                        onBulkDelete(deleting)
+                    }
+                ) { Text("Remove") }
+            },
+            dismissButton = { TextButton(onClick = { deleteSelectionDialog = false }) { Text("Cancel") } }
+        )
+    }
 }
 
 @Composable
@@ -364,7 +511,10 @@ private fun LibraryStat(label: String, count: Int, modifier: Modifier = Modifier
 @Composable
 private fun BookLibraryTile(
     book: Book,
+    selectionMode: Boolean,
+    selected: Boolean,
     onOpen: () -> Unit,
+    onToggleSelected: () -> Unit,
     onFavorite: () -> Unit,
     onEdit: () -> Unit
 ) {
@@ -377,7 +527,10 @@ private fun BookLibraryTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(0.70f)
-                    .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen)
+                    .clickable(
+                        onClickLabel = if (selectionMode) "Select ${book.title}" else "Read ${book.title}",
+                        onClick = if (selectionMode) onToggleSelected else onOpen
+                    )
             )
             Surface(
                 modifier = Modifier
@@ -393,20 +546,38 @@ private fun BookLibraryTile(
                     fontWeight = FontWeight.SemiBold
                 )
             }
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(7.dp)
-                    .clickable(onClickLabel = if (book.favorite) "Remove favorite" else "Add favorite", onClick = onFavorite),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Text(
-                    if (book.favorite) "★" else "☆",
-                    Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                    fontSize = 16.sp,
-                    color = if (book.favorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (selectionMode) {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(7.dp)
+                        .clickable(onClickLabel = if (selected) "Unselect" else "Select", onClick = onToggleSelected),
+                    color = if (selected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+                    shape = RoundedCornerShape(14.dp)
+                ) {
+                    Text(
+                        if (selected) "✓" else "○",
+                        Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        fontSize = 16.sp,
+                        color = if (selected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Surface(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(7.dp)
+                        .clickable(onClickLabel = if (book.favorite) "Remove favorite" else "Add favorite", onClick = onFavorite),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        if (book.favorite) "★" else "☆",
+                        Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
+                        fontSize = 16.sp,
+                        color = if (book.favorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
@@ -440,8 +611,10 @@ private fun BookLibraryTile(
                     )
                 }
             }
-            TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
-                Text("•••", fontSize = 14.sp)
+            if (!selectionMode) {
+                TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
+                    Text("•••", fontSize = 14.sp)
+                }
             }
         }
 
