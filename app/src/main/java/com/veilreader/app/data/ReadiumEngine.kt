@@ -54,10 +54,14 @@ class ReadiumEngine(context: Context) {
                     .firstOrNull { it.name.isNotBlank() }
                     ?.name
                     ?: "Unknown author"
+                val title = publication.metadata.title
+                    ?.takeIf { it.isNotBlank() }
+                    ?: displayName(uri)?.substringBeforeLast('.')?.takeIf { it.isNotBlank() }
+                    ?: "Untitled"
 
                 Book(
                     id = UUID.randomUUID().toString(),
-                    title = publication.metadata.title.ifBlank { displayName(uri)?.substringBeforeLast('.') ?: "Untitled" },
+                    title = title,
                     author = author,
                     progress = 0f,
                     format = format,
