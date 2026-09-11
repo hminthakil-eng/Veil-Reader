@@ -29,7 +29,16 @@ interface BookDao {
 
     @Upsert suspend fun upsert(book: BookEntity)
     @Upsert suspend fun upsertAll(books: List<BookEntity>)
-    @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)
+
+    @Query("UPDATE books SET favorite = :favorite WHERE id IN (:ids)")
+    suspend fun setFavorite(ids: List<String>, favorite: Boolean): Int
+
+    @Query("DELETE FROM books WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("DELETE FROM books WHERE id IN (:ids)")
+    suspend fun deleteByIds(ids: List<String>): Int
+
     @Query("DELETE FROM books") suspend fun deleteAll()
     @Query("SELECT COUNT(*) FROM books") suspend fun count(): Int
 }
@@ -80,10 +89,19 @@ interface CollectionDao {
     @Upsert suspend fun upsertAll(collections: List<CollectionEntity>)
     @Upsert suspend fun attach(crossRef: BookCollectionCrossRef)
     @Upsert suspend fun attachAll(crossRefs: List<BookCollectionCrossRef>)
+
     @Query("DELETE FROM book_collection WHERE bookId = :bookId AND collectionId = :collectionId")
     suspend fun detach(bookId: String, collectionId: String)
-    @Query("DELETE FROM book_collection WHERE bookId = :bookId") suspend fun clearBook(bookId: String)
-    @Query("DELETE FROM book_collection") suspend fun clearAllLinks()
+
+    @Query("DELETE FROM book_collection WHERE bookId = :bookId")
+    suspend fun clearBook(bookId: String)
+
+    @Query("DELETE FROM book_collection")
+    suspend fun clearAllLinks()
+
+    @Query("DELETE FROM collections WHERE id NOT IN (SELECT DISTINCT collectionId FROM book_collection)")
+    suspend fun deleteOrphans(): Int
+
     @Query("DELETE FROM collections") suspend fun deleteAll()
 }
 
