@@ -2,13 +2,6 @@ package com.veilreader.app.ui
 
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.compose.runtime.DisposableEffect
-import com.veilreader.app.data.LibraryExport
-import com.veilreader.app.ui.screens.ArchiveScreen
-import kotlinx.coroutines.CancellationException
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
@@ -19,6 +12,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,11 +23,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.veilreader.app.data.GameRepository
+import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.navigation.VeilAppViewModel
+import com.veilreader.app.ui.navigation.VeilTab
+import com.veilreader.app.ui.screens.ArchiveScreen
 import com.veilreader.app.ui.screens.CastleScreen
 import com.veilreader.app.ui.screens.LibraryScreen
 import com.veilreader.app.ui.screens.PathScreen
@@ -41,15 +45,8 @@ import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-
-enum class VeilTab(val label: String, val glyph: String) {
-    READING("Reading", "◉"),
-    LIBRARY("Library", "▦"),
-    CASTLE("Castle", "♜"),
-    PATH("Path", "✦"),
-    PROFILE("Profile", "◎")
-}
 
 @Composable
 fun VeilApp(
@@ -62,10 +59,12 @@ fun VeilApp(
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
     val readerEngine = remember(context) { ReadiumEngine(context) }
+    val routeViewModel: VeilAppViewModel = viewModel()
+    val route by routeViewModel.route.collectAsStateWithLifecycle()
 
     val books by library.books.collectAsState()
     val highlights by library.highlights.collectAsState()
-    androidx.compose.runtime.LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
+    LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
     val profile by game.profile.collectAsState()
     val quests by game.quests.collectAsState()
     val dailyGoalMinutes by game.dailyGoalMinutes.collectAsState()
@@ -80,12 +79,9 @@ fun VeilApp(
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    var showArchive by remember { mutableStateOf(false) }
-    var activeChamber by remember { mutableStateOf<String?>(null) }
+
     var exporting by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
-    var isOpening by remember { mutableStateOf(false) }
-    var selected by remember { mutableStateOf(VeilTab.READING) }
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
     var isImporting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -102,7 +98,9 @@ fun VeilApp(
                 throw cancelled
             } catch (error: Exception) {
                 errorMessage = "Export failed. The destination may contain an incomplete file. ${error.message.orEmpty()}"
-            } finally { exporting = false }
+            } finally {
+                exporting = false
+            }
         }
     }
 
@@ -112,8 +110,6 @@ fun VeilApp(
         scope.launch {
             try {
                 val result = LibraryExport(context, library).restoreBackup(uri)
-                // Recreate so repository StateFlows are rebuilt from the restored preferences and
-                // no pre-restore in-memory object can overwrite them later in the session.
                 if (activity != null) {
                     activity.recreate()
                 } else {
@@ -123,25 +119,19 @@ fun VeilApp(
                 throw cancelled
             } catch (error: Exception) {
                 errorMessage = "Restore failed. Your existing local data was kept. ${error.message.orEmpty()}"
-            } finally { restoring = false }
+            } finally {
+                restoring = false
+            }
         }
     }
 
-    fun openBook(book: Book, locatorOverride: String? = null) {
-        if (isOpening || restoring) return
+    fun requestOpenBook(book: Book, locatorOverride: String? = null) {
+        if (restoring) return
         if (!book.isImported) {
             errorMessage = "This sample entry has no source file. Import an EPUB or PDF from Android Files."
             return
         }
-        isOpening = true
-        scope.launch {
-            try {
-                val latest = library.getBook(book.id) ?: book
-                readerEngine.openBook(if (locatorOverride == null) latest else latest.copy(locatorJson = locatorOverride))
-                    .onSuccess { library.markOpened(book.id); openedPublication = it }
-                    .onFailure { if (it is CancellationException) throw it; errorMessage = it.message ?: "Could not open this book." }
-            } finally { isOpening = false }
-        }
+        routeViewModel.requestBook(book.id, locatorOverride)
     }
 
     fun importBook(uri: Uri) {
@@ -152,15 +142,91 @@ fun VeilApp(
                 readerEngine.inspectAndCreateBook(uri)
                     .onSuccess { book ->
                         library.addImportedBook(book)
-                        selected = VeilTab.LIBRARY
-                        openBook(book)
+                        routeViewModel.selectTab(VeilTab.LIBRARY)
+                        routeViewModel.requestBook(book.id)
                     }
-                    .onFailure { if (it is CancellationException) throw it; errorMessage = it.message ?: "Could not import this publication." }
-            } finally { isImporting = false }
+                    .onFailure {
+                        if (it is CancellationException) throw it
+                        errorMessage = it.message ?: "Could not import this publication."
+                    }
+            } finally {
+                isImporting = false
+            }
         }
     }
 
-    androidx.compose.runtime.LaunchedEffect(externalOpenUri) {
+    val targetBook = route.activeBookId?.let { id -> books.firstOrNull { it.id == id } }
+    LaunchedEffect(
+        route.activeBookId,
+        route.locatorOverrideJson,
+        targetBook?.id,
+        openedPublication?.book?.id,
+        restoring
+    ) {
+        val targetId = route.activeBookId ?: return@LaunchedEffect
+        if (restoring) return@LaunchedEffect
+
+        val currentlyOpened = openedPublication
+        if (currentlyOpened != null) {
+            if (currentlyOpened.book.id == targetId) return@LaunchedEffect
+            // Let ReaderFragmentHost dispose the old publication, then this effect will restart
+            // because openedPublication.book.id is one of its keys.
+            openedPublication = null
+            return@LaunchedEffect
+        }
+
+        val book = library.getBook(targetId) ?: targetBook ?: return@LaunchedEffect
+        if (!book.isImported) {
+            routeViewModel.bookOpenFailed(targetId)
+            errorMessage = "This book no longer has a local publication file."
+            return@LaunchedEffect
+        }
+
+        val locatorOverride = route.locatorOverrideJson
+        val candidate = if (locatorOverride == null) book else book.copy(locatorJson = locatorOverride)
+        readerEngine.openBook(candidate)
+            .onSuccess { opened ->
+                if (routeViewModel.route.value.activeBookId != targetId) {
+                    opened.close()
+                    return@onSuccess
+                }
+                // Persist an explicit archive/bookmark jump before clearing the transient override.
+                // The override stays in SavedStateHandle until the queued Room write is durable,
+                // so an immediate recreation cannot fall back to the previous reading position.
+                if (locatorOverride != null) {
+                    library.saveProgress(targetId, book.progress.toDouble(), locatorOverride)
+                }
+                library.markOpened(targetId)
+                openedPublication = opened
+                if (locatorOverride == null) {
+                    routeViewModel.readerOpened(targetId)
+                } else {
+                    scope.launch {
+                        try {
+                            library.flushWrites()
+                            val currentRoute = routeViewModel.route.value
+                            if (
+                                currentRoute.activeBookId == targetId &&
+                                currentRoute.locatorOverrideJson == locatorOverride
+                            ) {
+                                routeViewModel.readerOpened(targetId)
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
+                        }
+                    }
+                }
+            }
+            .onFailure { error ->
+                if (error is CancellationException) throw error
+                routeViewModel.bookOpenFailed(targetId)
+                errorMessage = error.message ?: "Could not open this book."
+            }
+    }
+
+    LaunchedEffect(externalOpenUri) {
         val uri = externalOpenUri ?: return@LaunchedEffect
         importBook(uri)
         onExternalOpenUriConsumed()
@@ -174,26 +240,26 @@ fun VeilApp(
             game = game,
             onClose = {
                 openedPublication = null
-                selected = VeilTab.LIBRARY
+                routeViewModel.closeReader()
             }
         )
-    } else if (showArchive) {
+    } else if (route.showArchive) {
         ArchiveScreen(
             books,
             highlights,
-            onClose = { showArchive = false },
-            onOpenPassage = { book, locator -> openBook(book, locator) }
+            onClose = routeViewModel::closeArchive,
+            onOpenPassage = { book, locator -> requestOpenBook(book, locator) }
         )
-    } else if (activeChamber == "treasury") {
+    } else if (route.activeChamber == "treasury") {
         TreasuryScreen(
             profile = profile,
             equippedSigil = equippedSigil,
             onEquip = { id ->
                 if (!game.equipSigil(id)) errorMessage = "That sigil has not awakened yet."
             },
-            onClose = { activeChamber = null }
+            onClose = routeViewModel::closeChamber
         )
-    } else if (activeChamber == "sanctum") {
+    } else if (route.activeChamber == "sanctum") {
         SanctumScreen(
             profile = profile,
             castleTitle = castleTitle,
@@ -201,7 +267,7 @@ fun VeilApp(
             onSelectTitle = { title ->
                 if (!game.selectCastleTitle(title)) errorMessage = "That Castle title is still sealed."
             },
-            onClose = { activeChamber = null }
+            onClose = routeViewModel::closeChamber
         )
     } else {
         Scaffold(
@@ -213,8 +279,8 @@ fun VeilApp(
                 ) {
                     VeilTab.entries.forEach { tab ->
                         NavigationBarItem(
-                            selected = selected == tab,
-                            onClick = { selected = tab },
+                            selected = route.selectedTab == tab,
+                            onClick = { routeViewModel.selectTab(tab) },
                             icon = { Text(tab.glyph) },
                             label = { Text(tab.label) }
                         )
@@ -223,21 +289,21 @@ fun VeilApp(
             }
         ) { padding ->
             Box(Modifier.padding(padding)) {
-                when (selected) {
+                when (route.selectedTab) {
                     VeilTab.READING -> ReadingNowScreen(
                         books = books,
                         profile = profile,
                         quests = quests,
-                        onOpenBook = { openBook(it) },
-                        onOpenLibrary = { selected = VeilTab.LIBRARY },
-                        onOpenCastle = { selected = VeilTab.CASTLE }
+                        onOpenBook = { requestOpenBook(it) },
+                        onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
+                        onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
                     )
 
                     VeilTab.LIBRARY -> LibraryScreen(
                         books = books,
                         isImporting = isImporting,
                         onImportUri = ::importBook,
-                        onOpenBook = { openBook(it) },
+                        onOpenBook = { requestOpenBook(it) },
                         onFavorite = library::toggleFavorite,
                         onEditMetadata = library::editMetadata
                     )
@@ -246,11 +312,11 @@ fun VeilApp(
                         profile = profile,
                         onOpenRoom = { room ->
                             when (room) {
-                                "library" -> selected = VeilTab.LIBRARY
-                                "ritual" -> selected = VeilTab.PATH
-                                "observatory" -> selected = VeilTab.PROFILE
-                                "archive" -> showArchive = true
-                                "treasury", "sanctum" -> activeChamber = room
+                                "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
+                                "ritual" -> routeViewModel.selectTab(VeilTab.PATH)
+                                "observatory" -> routeViewModel.selectTab(VeilTab.PROFILE)
+                                "archive" -> routeViewModel.openArchive()
+                                "treasury", "sanctum" -> routeViewModel.openChamber(room)
                             }
                         },
                         onAdvanceRank = {
@@ -286,7 +352,7 @@ fun VeilApp(
                         onExportBackup = { exportData(it, true) },
                         onRestoreBackup = ::restoreData,
                         onExportNotes = { exportData(it, false) },
-                        onOpenArchive = { showArchive = true }
+                        onOpenArchive = routeViewModel::openArchive
                     )
                 }
             }
