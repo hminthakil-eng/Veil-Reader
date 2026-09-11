@@ -65,6 +65,16 @@ fun VeilApp(
     val books by library.books.collectAsState()
     val highlights by library.highlights.collectAsState()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
+
+    // Existing 0.7 libraries and restored backups have no cached covers. Process one book at a time
+    // so each Room update naturally advances this effect to the next pending publication.
+    val nextCoverBook = books.firstOrNull { it.isImported && it.coverCachePath == null }
+    LaunchedEffect(nextCoverBook?.id) {
+        val book = nextCoverBook ?: return@LaunchedEffect
+        val cachedPath = readerEngine.extractAndCacheCover(book).getOrDefault("")
+        library.updateCoverCachePath(book.id, cachedPath)
+    }
+
     val profile by game.profile.collectAsState()
     val quests by game.quests.collectAsState()
     val dailyGoalMinutes by game.dailyGoalMinutes.collectAsState()
