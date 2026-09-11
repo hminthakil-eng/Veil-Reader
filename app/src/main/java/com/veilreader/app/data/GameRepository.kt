@@ -32,6 +32,15 @@ class GameRepository(context: Context) {
     private val _quests = MutableStateFlow(buildQuests())
     val quests: StateFlow<List<Quest>> = _quests
 
+    private val _dailyGoalMinutes = MutableStateFlow(readDailyGoal())
+    val dailyGoalMinutes: StateFlow<Int> = _dailyGoalMinutes
+
+    private val _equippedSigil = MutableStateFlow(prefs.getString("equippedSigil", null))
+    val equippedSigil: StateFlow<String?> = _equippedSigil
+
+    private val _castleTitle = MutableStateFlow(prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil")
+    val castleTitle: StateFlow<String> = _castleTitle
+
     init {
         // Old builds counted every highlight for every Path. Preserve Oracle progress only.
         if (prefs.getInt("ritualVersion", 1) < 2) {
@@ -50,6 +59,49 @@ class GameRepository(context: Context) {
 
     fun refresh() { rollDayIfNeeded(); publish() }
     fun pauseReading() { pageGate.pause() }
+
+    fun setDailyGoal(minutes: Int) {
+        rollDayIfNeeded()
+        val safe = minutes.coerceIn(5, 180)
+        prefs.edit().putInt("dailyGoalMinutes", safe).apply()
+        _dailyGoalMinutes.value = safe
+        // A lower goal can make today's reading quest complete immediately. Award it now instead
+        // of waiting for another reading event, while claimedQuestIds still prevents duplicates.
+        awardCompletedQuestRewards()
+        persistCounters()
+        publish()
+    }
+
+    /** Equip an already-earned sigil in the Treasury. Pass null to clear the display slot. */
+    fun equipSigil(sigilId: String?): Boolean {
+        if (sigilId != null && sigilId !in buildProfile().earnedSigils) return false
+        if (sigilId == null) prefs.edit().remove("equippedSigil").apply()
+        else prefs.edit().putString("equippedSigil", sigilId).apply()
+        _equippedSigil.value = sigilId
+        return true
+    }
+
+    /** Titles are earned from durable milestones and selected in the Inner Sanctum. */
+    fun availableCastleTitles(): List<String> {
+        val p = buildProfile()
+        return buildList {
+            add("Reader of the Veil")
+            if ("first_threshold" in p.earnedSigils) add("Threshold Walker")
+            if ("first_hour" in p.earnedSigils) add("Keeper of the Quiet Hour")
+            if ("passage_keeper" in p.earnedSigils) add("Warden of Passages")
+            if ("seven_days" in p.earnedSigils) add("Lantern of Seven Nights")
+            if ("ten_tomes" in p.earnedSigils) add("Keeper of Ten Tomes")
+            if (p.rankIndex >= p.path.ranks.lastIndex) add("Veilbound ${p.path.ranks.last()}")
+            if (p.rankIndex >= p.path.ranks.lastIndex && p.earnedSigils.size >= 5) add("Sovereign of the Living Library")
+        }.distinct()
+    }
+
+    fun selectCastleTitle(title: String): Boolean {
+        if (title !in availableCastleTitles()) return false
+        prefs.edit().putString("castleTitle", title).apply()
+        _castleTitle.value = title
+        return true
+    }
 
     private fun recordRitualEvent(event: String) {
         val profile = buildProfile()
@@ -162,6 +214,7 @@ class GameRepository(context: Context) {
         persistCounters()
     }
 
+    private fun readDailyGoal(): Int = prefs.getInt("dailyGoalMinutes", 20).coerceIn(5, 180)
 
     private fun awardCompletedQuestRewards() {
         val claimed = prefs.getStringSet("claimedQuestIds", emptySet()).orEmpty().toMutableSet()
@@ -193,6 +246,18 @@ class GameRepository(context: Context) {
         prefs.edit().putStringSet("earnedSigils", earned).apply()
         _profile.value = buildProfile()
         _quests.value = buildQuests()
+        _dailyGoalMinutes.value = readDailyGoal()
+
+        // A title is never allowed to point at a milestone the current profile cannot own.
+        val allowedTitles = availableCastleTitles()
+        val selectedTitle = prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil"
+        if (selectedTitle !in allowedTitles) {
+            prefs.edit().putString("castleTitle", "Reader of the Veil").apply()
+            _castleTitle.value = "Reader of the Veil"
+        } else {
+            _castleTitle.value = selectedTitle
+        }
+        _equippedSigil.value = prefs.getString("equippedSigil", null)
     }
 
     private fun buildProfile(): ReaderProfile {
@@ -218,9 +283,12 @@ class GameRepository(context: Context) {
         )
     }
 
-    private fun buildQuests(): List<Quest> = listOf(
-        Quest("read", "Read for 20 minutes", todayMinutes.coerceAtMost(20), 20, 90),
-        Quest("pages", "Read 15 paced pages", todayPages.coerceAtMost(15), 15, 120),
-        Quest("mark", "Mark 3 intriguing passages", todayHighlights.coerceAtMost(3), 3, 75)
-    )
+    private fun buildQuests(): List<Quest> {
+        val goal = readDailyGoal()
+        return listOf(
+            Quest("read", "Read for $goal minutes", todayMinutes.coerceAtMost(goal), goal, 90),
+            Quest("pages", "Read 15 paced pages", todayPages.coerceAtMost(15), 15, 120),
+            Quest("mark", "Mark 3 intriguing passages", todayHighlights.coerceAtMost(3), 3, 75)
+        )
+    }
 }

@@ -24,7 +24,7 @@ fun CastleScreen(profile: ReaderProfile, onAdvanceRank: () -> Unit, onOpenRoom: 
         ScreenHeader(
             eyebrow = "The Castle",
             title = "A home built by reading",
-            subtitle = "Rooms awaken as your Path advances."
+            subtitle = "Rooms awaken as your Path advances. Every awakened room now has a purpose."
         )
 
         MysteryCard(Modifier.fillMaxWidth()) {
@@ -68,8 +68,13 @@ fun CastleScreen(profile: ReaderProfile, onAdvanceRank: () -> Unit, onOpenRoom: 
                         color = MaterialTheme.colorScheme.secondary
                     )
                 }
-                if (unlocked && room.id in setOf("library", "ritual", "observatory", "archive")) {
-                    TextButton(onClick = { onOpenRoom(room.id) }, modifier = Modifier.padding(horizontal = 14.dp)) { Text("Enter ${room.name}") }
+                if (unlocked) {
+                    TextButton(
+                        onClick = { onOpenRoom(room.id) },
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                    ) {
+                        Text("Enter ${room.name}")
+                    }
                 }
             }
         }

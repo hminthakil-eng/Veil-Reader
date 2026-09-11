@@ -1,6 +1,7 @@
 package com.veilreader.app.ui
 
 import android.net.Uri
+import androidx.activity.compose.LocalActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -38,6 +39,8 @@ import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
+import com.veilreader.app.ui.screens.SanctumScreen
+import com.veilreader.app.ui.screens.TreasuryScreen
 import kotlinx.coroutines.launch
 
 enum class VeilTab(val label: String, val glyph: String) {
@@ -54,6 +57,7 @@ fun VeilApp(
     onExternalOpenUriConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
+    val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
@@ -64,6 +68,9 @@ fun VeilApp(
     androidx.compose.runtime.LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
     val profile by game.profile.collectAsState()
     val quests by game.quests.collectAsState()
+    val dailyGoalMinutes by game.dailyGoalMinutes.collectAsState()
+    val equippedSigil by game.equippedSigil.collectAsState()
+    val castleTitle by game.castleTitle.collectAsState()
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -74,7 +81,9 @@ fun VeilApp(
         onDispose { lifecycle.removeObserver(observer) }
     }
     var showArchive by remember { mutableStateOf(false) }
+    var activeChamber by remember { mutableStateOf<String?>(null) }
     var exporting by remember { mutableStateOf(false) }
+    var restoring by remember { mutableStateOf(false) }
     var isOpening by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf(VeilTab.READING) }
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
@@ -82,7 +91,7 @@ fun VeilApp(
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     fun exportData(uri: Uri, backup: Boolean) {
-        if (exporting) return
+        if (exporting || restoring) return
         exporting = true
         scope.launch {
             try {
@@ -97,8 +106,29 @@ fun VeilApp(
         }
     }
 
+    fun restoreData(uri: Uri) {
+        if (restoring || exporting) return
+        restoring = true
+        scope.launch {
+            try {
+                val result = LibraryExport(context, library).restoreBackup(uri)
+                // Recreate so repository StateFlows are rebuilt from the restored preferences and
+                // no pre-restore in-memory object can overwrite them later in the session.
+                if (activity != null) {
+                    activity.recreate()
+                } else {
+                    errorMessage = "Restored ${result.booksRestored} books and ${result.highlightsRestored} highlights. Reopen Veil Reader to load them."
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                errorMessage = "Restore failed. Your existing local data was kept. ${error.message.orEmpty()}"
+            } finally { restoring = false }
+        }
+    }
+
     fun openBook(book: Book, locatorOverride: String? = null) {
-        if (isOpening) return
+        if (isOpening || restoring) return
         if (!book.isImported) {
             errorMessage = "This sample entry has no source file. Import an EPUB or PDF from Android Files."
             return
@@ -115,7 +145,7 @@ fun VeilApp(
     }
 
     fun importBook(uri: Uri) {
-        if (isImporting) return
+        if (isImporting || restoring) return
         isImporting = true
         scope.launch {
             try {
@@ -148,8 +178,31 @@ fun VeilApp(
             }
         )
     } else if (showArchive) {
-        ArchiveScreen(books, highlights, onClose = { showArchive = false },
-            onOpenPassage = { book, locator -> openBook(book, locator) })
+        ArchiveScreen(
+            books,
+            highlights,
+            onClose = { showArchive = false },
+            onOpenPassage = { book, locator -> openBook(book, locator) }
+        )
+    } else if (activeChamber == "treasury") {
+        TreasuryScreen(
+            profile = profile,
+            equippedSigil = equippedSigil,
+            onEquip = { id ->
+                if (!game.equipSigil(id)) errorMessage = "That sigil has not awakened yet."
+            },
+            onClose = { activeChamber = null }
+        )
+    } else if (activeChamber == "sanctum") {
+        SanctumScreen(
+            profile = profile,
+            castleTitle = castleTitle,
+            availableTitles = game.availableCastleTitles(),
+            onSelectTitle = { title ->
+                if (!game.selectCastleTitle(title)) errorMessage = "That Castle title is still sealed."
+            },
+            onClose = { activeChamber = null }
+        )
     } else {
         Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
@@ -197,6 +250,7 @@ fun VeilApp(
                                 "ritual" -> selected = VeilTab.PATH
                                 "observatory" -> selected = VeilTab.PROFILE
                                 "archive" -> showArchive = true
+                                "treasury", "sanctum" -> activeChamber = room
                             }
                         },
                         onAdvanceRank = {
@@ -224,7 +278,13 @@ fun VeilApp(
                         profile = profile,
                         highlightCount = highlights.size,
                         exporting = exporting,
+                        restoring = restoring,
+                        dailyGoalMinutes = dailyGoalMinutes,
+                        castleTitle = castleTitle,
+                        equippedSigilName = equippedSigil?.let(::sigilDisplayName),
+                        onSetDailyGoal = game::setDailyGoal,
                         onExportBackup = { exportData(it, true) },
+                        onRestoreBackup = ::restoreData,
                         onExportNotes = { exportData(it, false) },
                         onOpenArchive = { showArchive = true }
                     )
@@ -243,4 +303,13 @@ fun VeilApp(
             }
         )
     }
+}
+
+private fun sigilDisplayName(id: String): String = when (id) {
+    "first_hour" -> "Quiet Hour"
+    "passage_keeper" -> "Passage Keeper"
+    "seven_days" -> "Seven-Day Lantern"
+    "ten_tomes" -> "Ten Tomes"
+    "first_threshold" -> "First Threshold"
+    else -> "Unknown Sigil"
 }
