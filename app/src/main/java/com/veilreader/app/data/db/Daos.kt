@@ -56,8 +56,8 @@ interface CollectionDao {
     @Query("SELECT * FROM collections ORDER BY name COLLATE NOCASE")
     fun observeAll(): Flow<List<CollectionEntity>>
 
-    @Query("SELECT * FROM collections WHERE name = :name COLLATE NOCASE LIMIT 1")
-    suspend fun findByName(name: String): CollectionEntity?
+    @Query("SELECT * FROM collections WHERE normalizedName = :normalizedName LIMIT 1")
+    suspend fun findByNormalizedName(normalizedName: String): CollectionEntity?
 
     @Upsert suspend fun upsert(collection: CollectionEntity)
     @Upsert suspend fun upsertAll(collections: List<CollectionEntity>)
