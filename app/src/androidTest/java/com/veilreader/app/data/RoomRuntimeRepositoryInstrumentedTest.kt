@@ -9,6 +9,7 @@ import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
@@ -18,6 +19,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -57,7 +60,12 @@ class RoomRuntimeRepositoryInstrumentedTest {
             sourceUri = "file:///runtime.epub",
             mediaType = "application/epub+zip",
             addedAtEpochMs = 10L,
-            collection = "Science Fiction"
+            contentFingerprint = "fingerprint-runtime",
+            seriesName = "Veil Cycle",
+            seriesIndex = 2.0,
+            language = "en",
+            collection = "Science Fiction",
+            collections = listOf("Science Fiction", "Research")
         )
 
         repository.addImportedBook(book)
@@ -73,13 +81,27 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(0.5f, stored.book.progress)
         assertEquals(100, stored.book.pagesRead)
         assertEquals("/covers/runtime.jpg", stored.book.coverCachePath)
-        assertEquals(listOf("Science Fiction"), stored.collections.map { it.name })
+        assertEquals("fingerprint-runtime", stored.book.contentFingerprint)
+        assertEquals("Veil Cycle", stored.book.seriesName)
+        assertEquals(2.0, stored.book.seriesIndex)
+        assertEquals("en", stored.book.language)
+        assertEquals(listOf("Research", "Science Fiction"), stored.collections.map { it.name }.sorted())
         assertEquals(1, db.highlights().observeAll().first().size)
         assertEquals(1, db.bookmarks().observeAll().first().size)
         assertEquals(ReaderTheme.SEPIA, settings.settings.first().readerAppearance.theme)
 
         val snapshot = repository.snapshot()
-        repository.editMetadata("runtime-book", "Changed", "Different", "Temporary")
+        repository.editMetadata(
+            BookMetadataUpdate(
+                bookId = "runtime-book",
+                title = "Changed",
+                author = "Different",
+                collections = listOf("Temporary"),
+                seriesName = "Changed Series",
+                seriesIndex = 4.0,
+                language = "tr"
+            )
+        )
         repository.deleteHighlight(snapshot.highlights.single().id)
         repository.deleteBookmark(snapshot.bookmarks.single().id)
         repository.flushWrites()
@@ -92,13 +114,55 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals("Runtime Tome", restored.book.title)
         assertEquals("Test Reader", restored.book.author)
         assertEquals("/covers/runtime.jpg", restored.book.coverCachePath)
-        assertEquals(listOf("Science Fiction"), restored.collections.map { it.name })
+        assertEquals("fingerprint-runtime", restored.book.contentFingerprint)
+        assertEquals("Veil Cycle", restored.book.seriesName)
+        assertEquals(2.0, restored.book.seriesIndex)
+        assertEquals("en", restored.book.language)
+        assertEquals(listOf("Research", "Science Fiction"), restored.collections.map { it.name }.sorted())
         assertEquals(1, db.highlights().observeAll().first().size)
         assertEquals(1, db.bookmarks().observeAll().first().size)
     }
 
     @Test
-    fun backupV2_roundTripsRoomState_publicationFile_andReadingSessions() = runBlocking {
+    fun duplicateFingerprint_returnsExistingBook_andDeletesTransientImportArtifacts() = runBlocking {
+        val repository = repository()
+        val publications = File(context.filesDir, "publications").apply { mkdirs() }
+        val covers = File(context.filesDir, "covers").apply { mkdirs() }
+        val firstFile = File(publications, "first.epub").apply { writeText("same book") }
+        val duplicateFile = File(publications, "duplicate.epub").apply { writeText("same book") }
+        val duplicateCover = File(covers, "duplicate.jpg").apply { writeText("cover") }
+
+        val first = Book(
+            id = "first-book",
+            title = "One Copy",
+            author = "Author",
+            sourceUri = Uri.fromFile(firstFile).toString(),
+            contentFingerprint = "same-sha256"
+        )
+        val duplicate = Book(
+            id = "duplicate-book",
+            title = "One Copy",
+            author = "Author",
+            sourceUri = Uri.fromFile(duplicateFile).toString(),
+            coverCachePath = duplicateCover.absolutePath,
+            contentFingerprint = "same-sha256"
+        )
+
+        val firstResult = repository.addImportedBook(first)
+        val duplicateResult = repository.addImportedBook(duplicate)
+        repository.flushWrites()
+
+        assertFalse(firstResult.duplicate)
+        assertTrue(duplicateResult.duplicate)
+        assertEquals("first-book", duplicateResult.book.id)
+        assertEquals(1, db.books().count())
+        assertTrue(firstFile.isFile)
+        assertFalse(duplicateFile.exists())
+        assertFalse(duplicateCover.exists())
+    }
+
+    @Test
+    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions() = runBlocking {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val publication = File(publications, "roundtrip.epub").apply { writeBytes("test publication".toByteArray()) }
@@ -111,7 +175,13 @@ class RoomRuntimeRepositoryInstrumentedTest {
             sourceUri = Uri.fromFile(publication).toString(),
             mediaType = "application/epub+zip",
             addedAtEpochMs = 50L,
-            collection = "Archive"
+            coverCachePath = File(context.filesDir, "covers/backup.jpg").absolutePath,
+            contentFingerprint = "derived-before-backup",
+            seriesName = "Archive Cycle",
+            seriesIndex = 1.5,
+            language = "fa",
+            collection = "Archive",
+            collections = listOf("Archive", "Reference")
         )
         repository.addImportedBook(book)
         repository.addHighlight("backup-book", "Preserve me", "{\"href\":\"chapter.xhtml\"}")
@@ -136,7 +206,14 @@ class RoomRuntimeRepositoryInstrumentedTest {
         exporter.writeBackup(Uri.fromFile(backupFile))
         assertTrue(backupFile.isFile && backupFile.length() > 0)
 
-        repository.editMetadata("backup-book", "Mutated", "Changed", "Temporary")
+        repository.editMetadata(
+            BookMetadataUpdate(
+                bookId = "backup-book",
+                title = "Mutated",
+                author = "Changed",
+                collections = listOf("Temporary")
+            )
+        )
         repository.deleteHighlight(repository.highlights.value.single().id)
         repository.deleteBookmark(repository.bookmarks.value.single().id)
         repository.flushWrites()
@@ -149,7 +226,12 @@ class RoomRuntimeRepositoryInstrumentedTest {
         val restored = db.books().findWithCollections("backup-book") ?: error("backup book missing")
         assertEquals("Backup Tome", restored.book.title)
         assertEquals("Archivist", restored.book.author)
-        assertEquals(listOf("Archive"), restored.collections.map { it.name })
+        assertEquals("Archive Cycle", restored.book.seriesName)
+        assertEquals(1.5, restored.book.seriesIndex)
+        assertEquals("fa", restored.book.language)
+        assertNull(restored.book.coverCachePath)
+        assertNull(restored.book.contentFingerprint)
+        assertEquals(listOf("Archive", "Reference"), restored.collections.map { it.name }.sorted())
         val restoredFile = File(requireNotNull(Uri.parse(restored.book.sourceUri).path))
         assertTrue(restoredFile.isFile && restoredFile.readBytes().contentEquals("test publication".toByteArray()))
         assertEquals(1, db.highlights().observeAll().first().size)
