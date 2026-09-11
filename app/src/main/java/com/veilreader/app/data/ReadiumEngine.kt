@@ -135,6 +135,19 @@ class ReadiumEngine(context: Context) {
         }
     }
 
+    /** Computes SHA-256 for an existing app-private publication without reopening Readium. */
+    suspend fun computeContentFingerprint(book: Book): Result<String> = runCatching {
+        if (!book.isImported) return@runCatching ""
+        val uri = requireNotNull(book.sourceUri).let(Uri::parse)
+        require(uri.scheme == "file") { "Only app-private publication files can be fingerprinted." }
+        val file = File(requireNotNull(uri.path)).canonicalFile
+        val publicationsRoot = File(appContext.filesDir, "publications").canonicalFile
+        require(file.toPath().startsWith(publicationsRoot.toPath()) && file.isFile) {
+            "The imported publication file is missing."
+        }
+        sha256(file)
+    }
+
     private suspend fun cacheCover(publication: Publication, bookId: String): String {
         val bitmap = runCatching { publication.coverFitting(COVER_MAX_SIZE) }.getOrNull()
             ?: return ""
