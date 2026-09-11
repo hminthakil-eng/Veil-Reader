@@ -38,6 +38,7 @@ class DatabaseFoundationInstrumentedTest {
 
     @Test
     fun legacyPlan_roundTripsIntoRoom_andCanBeAppliedTwice() = runBlocking {
+        val locator = "{\"href\":\"chapter7.xhtml\",\"locations\":{\"progression\":0.42}}"
         val books = listOf(
             Book(
                 id = "epub-a",
@@ -50,7 +51,7 @@ class DatabaseFoundationInstrumentedTest {
                 format = BookFormat.EPUB,
                 sourceUri = "file:///data/user/0/com.veilreader.app/files/publications/a.epub",
                 mediaType = "application/epub+zip",
-                locatorJson = "{\"href\":\"chapter7.xhtml\",\"locations\":{\"progression\":0.42}}",
+                locatorJson = locator,
                 addedAtEpochMs = 1000L,
                 lastOpenedAtEpochMs = 9000L,
                 favorite = true,
@@ -109,7 +110,7 @@ class DatabaseFoundationInstrumentedTest {
         assertEquals(0.42f, stored.book.progress)
         assertEquals(9000L, stored.book.lastOpenedAtEpochMs)
         assertEquals(true, stored.book.favorite)
-        assertEquals("chapter7.xhtml", stored.book.locatorJson?.substringAfter("href\\\":\\\"")?.substringBefore("\\\""))
+        assertEquals(locator, stored.book.locatorJson)
         assertEquals(listOf("Mystery"), stored.collections.map { it.name })
 
         val storedHighlight = db.highlights().observeForBook("epub-a").first().single()
