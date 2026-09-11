@@ -43,6 +43,16 @@ data class Book(
             .distinctBy { it.lowercase(Locale.ROOT) }
 }
 
+data class BookMetadataUpdate(
+    val bookId: String,
+    val title: String,
+    val author: String,
+    val collections: List<String> = emptyList(),
+    val seriesName: String? = null,
+    val seriesIndex: Double? = null,
+    val language: String? = null
+)
+
 enum class BookFormat { EPUB, PDF, AUDIO, COMIC }
 
 data class ReadingPath(
