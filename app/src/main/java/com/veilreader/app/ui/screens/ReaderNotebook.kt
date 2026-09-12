@@ -29,7 +29,7 @@ fun ReaderNotebook(
     onDismiss: () -> Unit,
     onGo: (String) -> Unit,
     onChapter: (Link) -> Unit,
-    onSaveNote: (String, String) -> Unit,
+    onSaveNote: suspend (String, String) -> Unit,
     onDeleteHighlight: (String) -> Unit,
     onDeleteBookmark: (String) -> Unit
 ) {
@@ -47,6 +47,8 @@ fun ReaderNotebook(
     var query by remember { mutableStateOf("") }
     var editing by remember { mutableStateOf<Highlight?>(null) }
     var note by remember { mutableStateOf("") }
+    var savingNote by remember { mutableStateOf(false) }
+    var noteSaveError by remember { mutableStateOf<String?>(null) }
     var deleting by remember { mutableStateOf<Highlight?>(null) }
     var bookSearchQuery by remember { mutableStateOf("") }
     var bookSearchResults by remember { mutableStateOf<List<Locator>>(emptyList()) }
@@ -180,7 +182,11 @@ fun ReaderNotebook(
                                     if (highlight.note.isNotBlank()) Text(highlight.note, color = MaterialTheme.colorScheme.primary)
                                     Row {
                                         TextButton(onClick = { onGo(highlight.locatorJson) }) { Text("Go") }
-                                        TextButton(onClick = { editing = highlight; note = highlight.note }) {
+                                        TextButton(onClick = {
+                                            editing = highlight
+                                            note = highlight.note
+                                            noteSaveError = null
+                                        }) {
                                             Text(if (highlight.note.isBlank()) "Add note" else "Edit note")
                                         }
                                         TextButton(onClick = { deleting = highlight }) { Text("Delete") }
@@ -214,19 +220,47 @@ fun ReaderNotebook(
 
     editing?.let { highlight ->
         AlertDialog(
-            onDismissRequest = { editing = null },
+            onDismissRequest = { if (!savingNote) editing = null },
             title = { Text("Passage note") },
             text = {
-                OutlinedTextField(
-                    value = note,
-                    onValueChange = { note = it },
-                    label = { Text("Your thoughts") },
-                    minLines = 4,
-                    maxLines = 8
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = note,
+                        onValueChange = { note = it },
+                        label = { Text("Your thoughts") },
+                        minLines = 4,
+                        maxLines = 8,
+                        enabled = !savingNote
+                    )
+                    noteSaveError?.let { message ->
+                        Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             },
-            confirmButton = { TextButton(onClick = { onSaveNote(highlight.id, note); editing = null }) { Text("Save") } },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text("Cancel") } }
+            confirmButton = {
+                TextButton(
+                    enabled = !savingNote,
+                    onClick = {
+                        scope.launch {
+                            savingNote = true
+                            noteSaveError = null
+                            try {
+                                onSaveNote(highlight.id, note)
+                                editing = null
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (error: Exception) {
+                                noteSaveError = error.message ?: "Could not save this note."
+                            } finally {
+                                savingNote = false
+                            }
+                        }
+                    }
+                ) { Text(if (savingNote) "Saving…" else "Save") }
+            },
+            dismissButton = {
+                TextButton(enabled = !savingNote, onClick = { editing = null }) { Text("Cancel") }
+            }
         )
     }
     deleting?.let { highlight ->
