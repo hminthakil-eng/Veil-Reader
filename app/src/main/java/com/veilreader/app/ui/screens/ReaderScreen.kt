@@ -7,15 +7,14 @@ import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -94,10 +93,24 @@ fun ReaderScreen(
     val highlights by library.highlights.collectAsState()
     val bookmarks by library.bookmarks.collectAsState()
     var readerMessage by remember { mutableStateOf<String?>(null) }
+    var locationTitle by remember(opened.book.id) {
+        mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
+    }
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(opened.book.id) {
         readerViewModel.openBook(opened.book.id, opened.book.progress)
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume()
+    }
+
+    LaunchedEffect(readerMessage) {
+        val message = readerMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(
+            message = message,
+            withDismissAction = true,
+            duration = SnackbarDuration.Short
+        )
+        if (readerMessage == message) readerMessage = null
     }
 
     fun closeReader() {
@@ -140,6 +153,7 @@ fun ReaderScreen(
         nav.currentLocator
             .debounce(500)
             .collect { locator ->
+                locationTitle = locator.title?.trim().orEmpty()
                 val json = locator.toJSON().toString()
                 readerViewModel.onLocatorChanged(
                     bookId = opened.book.id,
@@ -193,71 +207,78 @@ fun ReaderScreen(
             tag = "reader-${opened.book.id}",
             onNavigatorReady = { navigator = it },
             onDisposePublication = { opened.close() },
-            modifier = Modifier.fillMaxSize().padding(
-                top = with(density) { (if (controlsVisible) topBarPx else 0).toDp() },
-                bottom = with(density) { (if (controlsVisible) bottomBarPx else 0).toDp() }
-            )
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(
+                    top = with(density) { (if (controlsVisible) topBarPx else 0).toDp() },
+                    bottom = with(density) { (if (controlsVisible) bottomBarPx else 0).toDp() }
+                )
         )
 
         AnimatedVisibility(
-            controlsVisible,
-            modifier = Modifier.align(Alignment.TopCenter).onSizeChanged { topBarPx = it.height }
+            visible = controlsVisible,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .onSizeChanged { topBarPx = it.height }
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                shadowElevation = 4.dp,
-                shape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                tonalElevation = 2.dp,
+                shadowElevation = 2.dp,
+                shape = RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp)
             ) {
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .statusBarsPadding()
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                        .padding(horizontal = 12.dp, vertical = 8.dp)
                 ) {
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        TextButton(
-                            onClick = { closeReader() },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-                        ) {
-                            Text("‹", fontSize = 28.sp, lineHeight = 28.sp)
-                        }
-                        Column(
-                            Modifier.weight(1f),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
+                        ReaderChromeButton("‹", "Close reader") { closeReader() }
+                        Column(Modifier.weight(1f)) {
                             Text(
                                 opened.book.title,
+                                style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                fontSize = 14.sp
+                                overflow = TextOverflow.Ellipsis
                             )
                             Text(
-                                "${(progress * 100).toInt()}% · ${opened.format.name}",
+                                locationTitle.ifBlank { opened.book.author },
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                fontSize = 10.sp
+                                style = MaterialTheme.typography.bodySmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
-                        TextButton(
-                            onClick = {
-                                readerViewModel.onUserInteraction()
-                                controlsVisible = false
-                            },
-                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f),
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            shape = RoundedCornerShape(999.dp)
                         ) {
-                            Text("•••", fontSize = 17.sp)
+                            Text(
+                                "${(progress * 100).toInt()}%",
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                        ReaderChromeButton("⌄", "Hide reading controls") {
+                            readerViewModel.onUserInteraction()
+                            controlsVisible = false
                         }
                     }
                     LinearProgressIndicator(
                         progress = { progress },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 8.dp)
-                            .height(2.dp)
+                            .padding(top = 8.dp)
+                            .height(2.dp),
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                     )
                 }
             }
@@ -269,116 +290,128 @@ fun ReaderScreen(
                     readerViewModel.onUserInteraction()
                     controlsVisible = true
                 },
-                shape = RoundedCornerShape(18.dp),
-                contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
+                shape = RoundedCornerShape(999.dp),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .statusBarsPadding()
                     .padding(10.dp)
-            ) { Text("•••", fontSize = 16.sp) }
+            ) {
+                Text("•••", fontSize = 14.sp, letterSpacing = 1.sp)
+            }
         }
 
         AnimatedVisibility(
-            controlsVisible,
-            modifier = Modifier.align(Alignment.BottomCenter).onSizeChanged { bottomBarPx = it.height }
+            visible = controlsVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .onSizeChanged { bottomBarPx = it.height }
         ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
                     .padding(horizontal = 10.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
-                shadowElevation = 14.dp,
-                shape = RoundedCornerShape(28.dp)
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                tonalElevation = 4.dp,
+                shadowElevation = 10.dp,
+                shape = RoundedCornerShape(26.dp)
             ) {
-                Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ReaderControl("‹", "Previous", Modifier.weight(1f)) {
-                        readerViewModel.onUserInteraction()
-                        (navigator as? OverflowableNavigator)?.goBackward(animated = true)
-                    }
-                    ReaderControl("≡", "Contents", Modifier.weight(1f)) {
-                        readerViewModel.onUserInteraction()
-                        showNotebook = true
-                    }
-                    ReaderControl(
-                        "✦",
-                        "Highlight",
-                        Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
+                Column(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 5.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        scope.launch {
-                            val selectable = navigator as? SelectableNavigator
-                            val selection = selectable?.currentSelection()
-                            if (selection == null) {
-                                readerMessage = "Select some text first, then tap Highlight."
-                                return@launch
+                        ReaderControl("‹", "Previous", Modifier.weight(1f)) {
+                            readerViewModel.onUserInteraction()
+                            (navigator as? OverflowableNavigator)?.goBackward(animated = true)
+                        }
+                        ReaderControl("≡", "Contents", Modifier.weight(1f)) {
+                            readerViewModel.onUserInteraction()
+                            showNotebook = true
+                        }
+                        ReaderControl(
+                            "✦",
+                            "Highlight",
+                            Modifier.weight(1f),
+                            enabled = opened.format == BookFormat.EPUB
+                        ) {
+                            scope.launch {
+                                val selectable = navigator as? SelectableNavigator
+                                val selection = selectable?.currentSelection()
+                                if (selection == null) {
+                                    readerMessage = "Select some text first, then tap Highlight."
+                                    return@launch
+                                }
+                                val quote = selection.locator.text.highlight.orEmpty().trim()
+                                if (quote.isBlank()) {
+                                    readerMessage = "I couldn't capture that selection. Try selecting the text again."
+                                    return@launch
+                                }
+                                val countBefore = library.highlightsFor(opened.book.id).size
+                                library.addHighlight(
+                                    bookId = opened.book.id,
+                                    quote = quote,
+                                    locatorJson = selection.locator.toJSON().toString()
+                                )
+                                val isNew = library.highlightsFor(opened.book.id).size > countBefore
+                                if (isNew) readerViewModel.onHighlightAdded() else readerViewModel.onUserInteraction()
+                                selectable.clearSelection()
+                                readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
                             }
-                            val quote = selection.locator.text.highlight.orEmpty().trim()
-                            if (quote.isBlank()) {
-                                readerMessage = "I couldn't capture that selection. Try selecting the text again."
-                                return@launch
+                        }
+                        ReaderControl("◇", "Bookmark", Modifier.weight(1f), enabled = navigator != null) {
+                            readerViewModel.onUserInteraction()
+                            val locator = navigator?.currentLocator?.value
+                            if (locator != null) {
+                                val added = library.addBookmark(
+                                    opened.book.id,
+                                    "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
+                                    locator.toJSON().toString()
+                                )
+                                readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
                             }
-                            val countBefore = library.highlightsFor(opened.book.id).size
-                            library.addHighlight(
-                                bookId = opened.book.id,
-                                quote = quote,
-                                locatorJson = selection.locator.toJSON().toString()
-                            )
-                            val isNew = library.highlightsFor(opened.book.id).size > countBefore
-                            if (isNew) readerViewModel.onHighlightAdded() else readerViewModel.onUserInteraction()
-                            selectable.clearSelection()
-                            readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
+                        }
+                        ReaderControl(
+                            "Aa",
+                            "Appearance",
+                            Modifier.weight(1f),
+                            enabled = opened.format == BookFormat.EPUB
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            showAppearance = true
+                        }
+                        ReaderControl("›", "Next", Modifier.weight(1f)) {
+                            readerViewModel.onUserInteraction()
+                            (navigator as? OverflowableNavigator)?.goForward(animated = true)
                         }
                     }
-                    ReaderControl("◇", "Bookmark", Modifier.weight(1f), enabled = navigator != null) {
-                        readerViewModel.onUserInteraction()
-                        val locator = navigator?.currentLocator?.value
-                        if (locator != null) {
-                            val added = library.addBookmark(
-                                opened.book.id,
-                                "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                locator.toJSON().toString()
-                            )
-                            readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
-                        }
-                    }
-                    ReaderControl(
-                        "Aa",
-                        "Appearance",
-                        Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
-                    ) {
-                        readerViewModel.onUserInteraction()
-                        showAppearance = true
-                    }
-                    ReaderControl("›", "Next", Modifier.weight(1f)) {
-                        readerViewModel.onUserInteraction()
-                        (navigator as? OverflowableNavigator)?.goForward(animated = true)
-                    }
+                    Text(
+                        if (opened.format == BookFormat.EPUB) {
+                            "Tap the page to turn · select text to highlight"
+                        } else {
+                            "Swipe or use the arrows to move through the document"
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(top = 1.dp, bottom = 2.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.labelSmall
+                    )
                 }
             }
         }
 
-        readerMessage?.let { message ->
-            Surface(
-                modifier = Modifier.align(Alignment.Center).padding(24.dp),
-                shape = RoundedCornerShape(18.dp),
-                color = MaterialTheme.colorScheme.inverseSurface.copy(alpha = .94f)
-            ) {
-                Row(
-                    Modifier.padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(message, color = MaterialTheme.colorScheme.inverseOnSurface, modifier = Modifier.weight(1f))
-                    TextButton(onClick = { readerMessage = null }) { Text("OK") }
-                }
-            }
-        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 18.dp)
+                .padding(
+                    bottom = with(density) {
+                        (if (controlsVisible) bottomBarPx else 0).toDp()
+                    } + 12.dp
+                )
+        )
     }
 
     if (showNotebook) {
@@ -392,13 +425,19 @@ fun ReaderScreen(
                 game.pauseReading()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
                 if (locator != null && navigator?.go(locator, animated = true) == true) showNotebook = false
-                else { showNotebook = false; readerMessage = "That saved location could not be opened." }
+                else {
+                    showNotebook = false
+                    readerMessage = "That saved location could not be opened."
+                }
             },
             onChapter = { link ->
                 readerViewModel.onUserInteraction()
                 game.pauseReading()
                 if (navigator?.go(link, animated = true) == true) showNotebook = false
-                else { showNotebook = false; readerMessage = "This chapter could not be opened." }
+                else {
+                    showNotebook = false
+                    readerMessage = "This chapter could not be opened."
+                }
             },
             onSaveNote = { id, note ->
                 library.updateHighlightNote(id, note)
@@ -489,6 +528,21 @@ private fun ReaderFragmentHost(
 }
 
 @Composable
+private fun ReaderChromeButton(
+    glyph: String,
+    accessibilityLabel: String,
+    onClick: () -> Unit
+) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+        modifier = Modifier.defaultMinSize(minWidth = 42.dp, minHeight = 42.dp)
+    ) {
+        Text(glyph, fontSize = 24.sp, lineHeight = 24.sp)
+    }
+}
+
+@Composable
 private fun ReaderControl(
     glyph: String,
     label: String,
@@ -499,12 +553,17 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 50.dp),
-        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 4.dp)
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 48.dp),
+        contentPadding = PaddingValues(horizontal = 1.dp, vertical = 3.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(glyph, fontSize = 18.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
-            Text(label, fontSize = 9.sp, maxLines = 1)
+            Text(glyph, fontSize = 17.sp, lineHeight = 19.sp, fontWeight = FontWeight.SemiBold)
+            Text(
+                label,
+                fontSize = 8.sp,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -524,16 +583,84 @@ private fun AppearancePanel(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("Page & light", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "Tune the page without leaving the book.",
+                "Shape the page for this moment. Your choice stays local and follows you between books.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
+        Text("Quick atmosphere", fontWeight = FontWeight.SemiBold)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            AssistChip(
+                onClick = {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.PAPER,
+                            fontScale = 1.0,
+                            lineHeight = 1.45,
+                            pageMargins = 1.0,
+                            scroll = false,
+                            publisherStyles = true
+                        )
+                    )
+                },
+                label = { Text("Book") }
+            )
+            AssistChip(
+                onClick = {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.SEPIA,
+                            fontScale = 1.08,
+                            lineHeight = 1.6,
+                            pageMargins = 1.15,
+                            scroll = false,
+                            publisherStyles = false
+                        )
+                    )
+                },
+                label = { Text("Comfort") }
+            )
+            AssistChip(
+                onClick = {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.DUSK,
+                            fontScale = 1.05,
+                            lineHeight = 1.55,
+                            pageMargins = 1.1,
+                            publisherStyles = false
+                        )
+                    )
+                },
+                label = { Text("Night") }
+            )
+            AssistChip(
+                onClick = {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.OLED,
+                            fontScale = 1.05,
+                            lineHeight = 1.55,
+                            pageMargins = 1.1,
+                            publisherStyles = false
+                        )
+                    )
+                },
+                label = { Text("OLED") }
+            )
+        }
+
         Text("Theme", fontWeight = FontWeight.SemiBold)
-        Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             ReaderTheme.entries.forEach { theme ->
                 FilterChip(
                     selected = appearance.theme == theme,
@@ -595,7 +722,7 @@ private fun AppearancePanel(
             )
         }
 
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Done") }
+        Button(onClick = onDone, modifier = Modifier.fillMaxWidth()) { Text("Return to reading") }
     }
 }
 
