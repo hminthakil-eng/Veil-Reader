@@ -39,6 +39,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.reader.ReaderViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
@@ -349,16 +350,27 @@ fun ReaderScreen(
                                     readerMessage = "I couldn't capture that selection. Try selecting the text again."
                                     return@launch
                                 }
-                                val countBefore = library.highlightsFor(opened.book.id).size
-                                library.addHighlight(
-                                    bookId = opened.book.id,
-                                    quote = quote,
-                                    locatorJson = selection.locator.toJSON().toString()
-                                )
-                                val isNew = library.highlightsFor(opened.book.id).size > countBefore
-                                if (isNew) readerViewModel.onHighlightAdded() else readerViewModel.onUserInteraction()
-                                selectable.clearSelection()
-                                readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
+                                try {
+                                    val countBefore = library.highlightsFor(opened.book.id).size
+                                    library.addHighlight(
+                                        bookId = opened.book.id,
+                                        quote = quote,
+                                        locatorJson = selection.locator.toJSON().toString()
+                                    )
+                                    val isNew = library.highlightsFor(opened.book.id).size > countBefore
+                                    if (isNew) {
+                                        library.flushWrites()
+                                        readerViewModel.onHighlightAdded()
+                                    } else {
+                                        readerViewModel.onUserInteraction()
+                                    }
+                                    selectable.clearSelection()
+                                    readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    readerMessage = error.message ?: "Highlight could not be saved."
+                                }
                             }
                         }
                         ReaderControl("◇", "Bookmark", Modifier.weight(1f), enabled = navigator != null) {
@@ -441,7 +453,9 @@ fun ReaderScreen(
             },
             onSaveNote = { id, note ->
                 library.updateHighlightNote(id, note)
+                library.flushWrites()
                 readerViewModel.onNoteSaved(id, note)
+                readerMessage = "Note saved"
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
