@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,10 +25,8 @@ import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.theme.VeilSpacing
 
 /**
- * The Threshold is the doorway into reading, not a dashboard.
- *
- * The current book owns the visual hierarchy. Progression remains present but quiet: Path state and
- * quests live below the book and never compete with the primary continue-reading action.
+ * Home is deliberately practical: current book first, useful progress second, game/lore third.
+ * The Castle can feel mysterious without forcing the reader to decode the UI.
  */
 @Composable
 fun ReadingNowScreen(
@@ -38,109 +37,134 @@ fun ReadingNowScreen(
     onOpenLibrary: () -> Unit,
     onOpenCastle: () -> Unit
 ) {
-    val current = books.filterNot { it.finished }.ifEmpty { books }
+    val current = books
+        .filterNot { it.finished }
+        .ifEmpty { books }
         .maxByOrNull { it.lastOpenedAtEpochMs.takeIf { time -> time > 0L } ?: it.addedAtEpochMs }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
+            .padding(horizontal = VeilSpacing.lg)
+            .padding(top = VeilSpacing.xl, bottom = VeilSpacing.xl),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
     ) {
         ScreenHeader(
-            eyebrow = "The Threshold",
-            title = if (current == null) "Your library waits" else "Return beyond the veil",
+            eyebrow = "Veil Reader",
+            title = if (current == null) "Start your library" else "Continue reading",
             subtitle = if (current == null) {
-                "Bring a book into Veil Reader and the first door will open."
+                "Import an EPUB or PDF. Your books and reading data stay on this device."
             } else {
-                "One quiet step returns you to where the story left you."
+                "Your current book, reading progress, and Path—without getting in the way."
             }
         )
 
         if (current == null) {
-            EmptyThreshold(onOpenLibrary)
+            EmptyReadingState(onOpenLibrary)
         } else {
-            ThresholdBookHero(current = current, onOpenBook = onOpenBook)
+            ContinueReadingHero(
+                current = current,
+                onOpenBook = onOpenBook,
+                onOpenLibrary = onOpenLibrary
+            )
         }
 
-        PathWhisper(profile = profile)
+        QuickStats(profile)
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            OutlinedButton(
+                onClick = onOpenLibrary,
+                modifier = Modifier.weight(1f).heightIn(min = 50.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+            ) {
+                Text("Library")
+            }
+            FilledTonalButton(
+                onClick = onOpenCastle,
+                modifier = Modifier.weight(1f).heightIn(min = 50.dp)
+            ) {
+                Text("Castle")
+            }
+        }
+
+        PathProgressCard(profile)
 
         if (quests.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
                 SectionTitle(
-                    eyebrow = "Quiet traces",
-                    title = "What today has revealed"
+                    eyebrow = "Today",
+                    title = "Small goals, no pressure"
                 )
-                quests.take(3).forEach { quest ->
-                    QuestTrace(quest)
-                }
+                quests.take(3).forEach { quest -> QuestRow(quest) }
             }
-        }
-
-        OutlinedButton(
-            onClick = onOpenCastle,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-        ) {
-            Text("Walk deeper into the Castle")
         }
     }
 }
 
 @Composable
-private fun ThresholdBookHero(current: Book, onOpenBook: (Book) -> Unit) {
+private fun ContinueReadingHero(
+    current: Book,
+    onOpenBook: (Book) -> Unit,
+    onOpenLibrary: () -> Unit
+) {
     val colors = MaterialTheme.colorScheme
+    val progress = current.progress.coerceIn(0f, 1f)
+    val progressPercent = (progress * 100).toInt()
     val shape = MaterialTheme.shapes.extraLarge
-    val progressPercent = (current.progress.coerceIn(0f, 1f) * 100).toInt()
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(
-                Brush.radialGradient(
-                    colors = listOf(
-                        colors.primary.copy(alpha = 0.20f),
-                        colors.surfaceVariant.copy(alpha = 0.88f),
+                Brush.linearGradient(
+                    listOf(
+                        colors.primaryContainer.copy(alpha = 0.72f),
+                        colors.surfaceVariant.copy(alpha = 0.86f),
                         colors.surface.copy(alpha = 0.98f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.75f)),
+                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.72f)),
                 shape
             )
             .padding(VeilSpacing.xl)
     ) {
-        val wide = maxWidth >= 560.dp
+        val wide = maxWidth >= 590.dp
         if (wide) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                ThresholdCover(current)
-                ThresholdBookDetails(
+                HeroCover(current)
+                HeroDetails(
                     current = current,
                     progressPercent = progressPercent,
+                    progress = progress,
                     onOpenBook = onOpenBook,
+                    onOpenLibrary = onOpenLibrary,
                     modifier = Modifier.weight(1f)
                 )
             }
         } else {
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ThresholdCover(current)
-                ThresholdBookDetails(
+                HeroCover(current)
+                HeroDetails(
                     current = current,
                     progressPercent = progressPercent,
+                    progress = progress,
                     onOpenBook = onOpenBook,
+                    onOpenLibrary = onOpenLibrary,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -149,12 +173,12 @@ private fun ThresholdBookHero(current: Book, onOpenBook: (Book) -> Unit) {
 }
 
 @Composable
-private fun ThresholdCover(current: Book) {
+private fun HeroCover(current: Book) {
     Box(contentAlignment = Alignment.Center) {
         Box(
             Modifier
-                .size(width = 164.dp, height = 220.dp)
-                .clip(MaterialTheme.shapes.large)
+                .size(width = 190.dp, height = 250.dp)
+                .clip(MaterialTheme.shapes.extraLarge)
                 .background(
                     Brush.radialGradient(
                         listOf(
@@ -168,38 +192,31 @@ private fun ThresholdCover(current: Book) {
             title = current.title,
             subtitle = current.author,
             imagePath = current.coverCachePath,
-            modifier = Modifier
-                .width(142.dp)
-                .height(206.dp)
+            modifier = Modifier.width(152.dp).height(222.dp)
         )
     }
 }
 
 @Composable
-private fun ThresholdBookDetails(
+private fun HeroDetails(
     current: Book,
     progressPercent: Int,
+    progress: Float,
     onOpenBook: (Book) -> Unit,
+    onOpenLibrary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
-            verticalAlignment = Alignment.CenterVertically
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.66f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f))
         ) {
-            Box(
-                Modifier
-                    .size(7.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.tertiary)
-            )
             Text(
-                if (current.progress > 0f) "PASSAGE OPEN" else "UNOPENED VOLUME",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.tertiary
+                if (progress > 0f) "$progressPercent% READ" else "NEW BOOK",
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.8.sp),
+                color = MaterialTheme.colorScheme.secondary
             )
         }
 
@@ -218,158 +235,234 @@ private fun ThresholdBookDetails(
             overflow = TextOverflow.Ellipsis
         )
 
-        Spacer(Modifier.height(VeilSpacing.xs))
-
+        Spacer(Modifier.height(2.dp))
         LinearProgressIndicator(
-            progress = { current.progress.coerceIn(0f, 1f) },
-            modifier = Modifier.fillMaxWidth(),
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
             color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
         )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                when {
-                    current.finished -> "Journey complete"
-                    current.progress <= 0f -> "The first page awaits"
-                    else -> "$progressPercent% through the journey"
-                },
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                current.format.name,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.secondary
-            )
-        }
+        Text(
+            when {
+                current.finished -> "Finished"
+                progress <= 0f -> "Ready to begin"
+                current.currentChapter.isNotBlank() && current.currentChapter != "Not started" -> current.currentChapter
+                else -> "$progressPercent% complete"
+            },
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
 
-        Button(
-            onClick = { onOpenBook(current) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp)
-                .padding(top = VeilSpacing.xs)
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.xs),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
-            Text(if (current.progress > 0f) "Cross the Threshold" else "Open the first page")
+            Button(
+                onClick = { onOpenBook(current) },
+                modifier = Modifier.weight(1f).heightIn(min = 52.dp)
+            ) {
+                Text(if (progress > 0f) "Continue" else "Start reading")
+            }
+            TextButton(
+                onClick = onOpenLibrary,
+                modifier = Modifier.heightIn(min = 52.dp)
+            ) {
+                Text("Library")
+            }
         }
     }
 }
 
 @Composable
-private fun PathWhisper(profile: ReaderProfile) {
+private fun QuickStats(profile: ReaderProfile) {
+    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+        SectionTitle(eyebrow = "Reading life", title = "At a glance")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
+            StatTile(
+                value = "${profile.streakDays}",
+                label = "day streak",
+                modifier = Modifier.weight(1f)
+            )
+            StatTile(
+                value = formatReadingTime(profile.minutesRead),
+                label = "read",
+                modifier = Modifier.weight(1f)
+            )
+            StatTile(
+                value = "${profile.booksFinished}",
+                label = "finished",
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun StatTile(value: String, label: String, modifier: Modifier = Modifier) {
+    Surface(
+        modifier = modifier.heightIn(min = 84.dp),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.80f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                value,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun PathProgressCard(profile: ReaderProfile) {
     val target = profile.ritualTarget.coerceAtLeast(1)
-    val progress = (profile.ritualProgress.toFloat() / target).coerceIn(0f, 1f)
+    val ritualProgress = (profile.ritualProgress.toFloat() / target).coerceIn(0f, 1f)
+    val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
+    val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
 
     MysteryCard(Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "${profile.path.name} · ${profile.rankName}",
-                    style = MaterialTheme.typography.titleLarge
+                    profile.path.name,
+                    style = MaterialTheme.typography.titleLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    "Your Path remembers the reading you have done.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    profile.rankName,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.secondary
                 )
             }
-            Text(
-                "${profile.ritualProgress}/$target",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.secondary
-            )
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.66f)
+            ) {
+                Text(
+                    "Lv ${profile.level}",
+                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
         }
 
+        Spacer(Modifier.height(VeilSpacing.xs))
+        ProgressLabel("Ritual", "${profile.ritualProgress}/$target")
         LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = VeilSpacing.xs),
+            progress = { ritualProgress },
+            modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
             color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
         )
         Text(
             ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Spacer(Modifier.height(VeilSpacing.xs))
+        ProgressLabel("Experience", "${profile.xp}/$xpTarget XP")
+        LinearProgressIndicator(
+            progress = { xpProgress },
+            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+            color = MaterialTheme.colorScheme.primary,
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
         )
     }
 }
 
 @Composable
-private fun QuestTrace(quest: Quest) {
+private fun ProgressLabel(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun QuestRow(quest: Quest) {
     val target = quest.target.coerceAtLeast(1)
     val complete = quest.progress >= target
     val progress = (quest.progress.toFloat() / target).coerceIn(0f, 1f)
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.76f))
-            .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
-                MaterialTheme.shapes.medium
-            )
-            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f))
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 Text(
                     quest.title,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Spacer(Modifier.width(VeilSpacing.sm))
                 Text(
-                    if (complete) "REVEALED" else "+${quest.xpReward} XP",
-                    style = MaterialTheme.typography.labelMedium,
+                    if (complete) "DONE" else "+${quest.xpReward} XP",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
                     color = if (complete) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
                 )
             }
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
                 color = if (complete) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.36f)
+                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
             )
         }
     }
 }
 
 @Composable
-private fun EmptyThreshold(onOpenLibrary: () -> Unit) {
+private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
     MysteryCard(Modifier.fillMaxWidth()) {
+        Text("Your first book is one tap away", style = MaterialTheme.typography.titleLarge)
         Text(
-            "✦",
-            fontSize = 38.sp,
-            color = MaterialTheme.colorScheme.secondary
-        )
-        Text("The first door is still sealed", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "Import an EPUB or PDF. Nothing else is required: your books remain local, and reading works offline.",
+            "Veil Reader supports EPUB and PDF now. Import a book and it will appear here for quick return.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Button(
             onClick = onOpenLibrary,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp)
-                .padding(top = VeilSpacing.xs)
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(top = VeilSpacing.xs)
         ) {
-            Text("Choose a book from the Grand Library")
+            Text("Open Library")
         }
     }
 }
@@ -379,9 +472,15 @@ private fun SectionTitle(eyebrow: String, title: String) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
             eyebrow.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
+            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
             color = MaterialTheme.colorScheme.secondary
         )
         Text(title, style = MaterialTheme.typography.titleLarge)
     }
+}
+
+private fun formatReadingTime(minutes: Int): String = when {
+    minutes >= 6000 -> "${minutes / 60}h"
+    minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
+    else -> "${minutes}m"
 }
