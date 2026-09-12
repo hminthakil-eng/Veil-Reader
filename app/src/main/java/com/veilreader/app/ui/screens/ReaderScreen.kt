@@ -4,6 +4,7 @@ import android.graphics.Color as AndroidColor
 import android.animation.ValueAnimator
 import android.view.ActionMode
 import android.view.View
+import android.widget.FrameLayout
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -358,12 +359,8 @@ fun ReaderScreen(
             },
             tag = "reader-${opened.book.id}",
             onNavigatorReady = { navigator = it },
+            onCurlReady = { curlView = it },
             onDisposePublication = { opened.close() },
-            modifier = Modifier.fillMaxSize()
-        )
-
-        AndroidView(
-            factory = { context -> PageCurlView(context).also { curlView = it } },
             modifier = Modifier.fillMaxSize()
         )
 
@@ -643,12 +640,22 @@ private fun ReaderFragmentHost(
     fragmentClassName: String,
     tag: String,
     onNavigatorReady: (Navigator) -> Unit,
+    onCurlReady: (PageCurlView) -> Unit,
     onDisposePublication: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val containerId = remember(tag) { View.generateViewId() }
     AndroidView(
-        factory = { context -> FragmentContainerView(context).apply { id = containerId } },
+        factory = { context ->
+            // Keep the overlay in the same native ViewGroup as the publication. A separate
+            // full-screen AndroidView above the host can steal Compose sibling hit testing.
+            FrameLayout(context).apply {
+                addView(FragmentContainerView(context).apply { id = containerId },
+                    FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+                addView(PageCurlView(context).also(onCurlReady),
+                    FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT))
+            }
+        },
         modifier = modifier
     )
 
