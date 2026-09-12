@@ -2,13 +2,14 @@ package com.veilreader.app.ui
 
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationRail
+import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,9 +21,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -256,6 +260,75 @@ fun VeilApp(
         onExternalOpenUriConsumed()
     }
 
+    val mainContent: @Composable () -> Unit = {
+        when (route.selectedTab) {
+            VeilTab.READING -> ReadingNowScreen(
+                books = books,
+                profile = profile,
+                quests = quests,
+                onOpenBook = { requestOpenBook(it) },
+                onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
+                onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
+            )
+
+            VeilTab.LIBRARY -> LibraryScreen(
+                books = books,
+                isImporting = isImporting,
+                onImportUri = ::importBook,
+                onOpenBook = { requestOpenBook(it) },
+                onFavorite = library::toggleFavorite,
+                onEditMetadata = library::editMetadata
+            )
+
+            VeilTab.CASTLE -> CastleScreen(
+                profile = profile,
+                onOpenRoom = { room ->
+                    when (room) {
+                        "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
+                        "ritual" -> routeViewModel.selectTab(VeilTab.PATH)
+                        "observatory" -> routeViewModel.selectTab(VeilTab.PROFILE)
+                        "archive" -> routeViewModel.openArchive()
+                        "treasury", "sanctum" -> routeViewModel.openChamber(room)
+                    }
+                },
+                onAdvanceRank = {
+                    if (!game.advanceRank()) {
+                        errorMessage = "Complete the current advancement ritual first."
+                    }
+                }
+            )
+
+            VeilTab.PATH -> PathScreen(
+                profile = profile,
+                onAdvanceRank = {
+                    if (!game.advanceRank()) {
+                        errorMessage = "Complete the current advancement ritual first."
+                    }
+                },
+                onChoosePath = { pathId ->
+                    if (!game.choosePath(pathId)) {
+                        errorMessage = "Your Path is sealed after the first rank advancement."
+                    }
+                }
+            )
+
+            VeilTab.PROFILE -> ProfileScreen(
+                profile = profile,
+                highlightCount = highlights.size,
+                exporting = exporting,
+                restoring = restoring,
+                dailyGoalMinutes = dailyGoalMinutes,
+                castleTitle = castleTitle,
+                equippedSigilName = equippedSigil?.let(::sigilDisplayName),
+                onSetDailyGoal = game::setDailyGoal,
+                onExportBackup = { exportData(it, true) },
+                onRestoreBackup = ::restoreData,
+                onExportNotes = { exportData(it, false) },
+                onOpenArchive = routeViewModel::openArchive
+            )
+        }
+    }
+
     val opened = openedPublication
     if (opened != null) {
         ReaderScreen(
@@ -294,90 +367,86 @@ fun VeilApp(
             onClose = routeViewModel::closeChamber
         )
     } else {
-        Scaffold(
-            containerColor = MaterialTheme.colorScheme.background,
-            bottomBar = {
-                NavigationBar(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                    tonalElevation = 0.dp
-                ) {
-                    VeilTab.entries.forEach { tab ->
-                        NavigationBarItem(
-                            selected = route.selectedTab == tab,
-                            onClick = { routeViewModel.selectTab(tab) },
-                            icon = { Text(tab.glyph) },
-                            label = { Text(tab.label) }
-                        )
+        BoxWithConstraints(Modifier.fillMaxSize()) {
+            val wideLayout = maxWidth >= 840.dp
+
+            if (wideLayout) {
+                Row(Modifier.fillMaxSize()) {
+                    NavigationRail(
+                        modifier = Modifier.fillMaxHeight(),
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                        header = {
+                            Column(
+                                modifier = Modifier.padding(top = 22.dp, bottom = 18.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "V",
+                                    style = MaterialTheme.typography.headlineSmall,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    "VEIL",
+                                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    ) {
+                        VeilTab.entries.forEach { tab ->
+                            NavigationRailItem(
+                                selected = route.selectedTab == tab,
+                                onClick = { routeViewModel.selectTab(tab) },
+                                icon = { Text(tab.glyph, fontSize = 18.sp) },
+                                label = { Text(tab.label) },
+                                alwaysShowLabel = false
+                            )
+                        }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .fillMaxWidth()
+                                .widthIn(max = 1180.dp)
+                        ) {
+                            mainContent()
+                        }
                     }
                 }
-            }
-        ) { padding ->
-            Box(Modifier.padding(padding)) {
-                when (route.selectedTab) {
-                    VeilTab.READING -> ReadingNowScreen(
-                        books = books,
-                        profile = profile,
-                        quests = quests,
-                        onOpenBook = { requestOpenBook(it) },
-                        onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
-                        onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
-                    )
-
-                    VeilTab.LIBRARY -> LibraryScreen(
-                        books = books,
-                        isImporting = isImporting,
-                        onImportUri = ::importBook,
-                        onOpenBook = { requestOpenBook(it) },
-                        onFavorite = library::toggleFavorite,
-                        onEditMetadata = library::editMetadata
-                    )
-
-                    VeilTab.CASTLE -> CastleScreen(
-                        profile = profile,
-                        onOpenRoom = { room ->
-                            when (room) {
-                                "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
-                                "ritual" -> routeViewModel.selectTab(VeilTab.PATH)
-                                "observatory" -> routeViewModel.selectTab(VeilTab.PROFILE)
-                                "archive" -> routeViewModel.openArchive()
-                                "treasury", "sanctum" -> routeViewModel.openChamber(room)
-                            }
-                        },
-                        onAdvanceRank = {
-                            if (!game.advanceRank()) {
-                                errorMessage = "Complete the current advancement ritual first."
+            } else {
+                Scaffold(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    bottomBar = {
+                        NavigationBar(
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                            tonalElevation = 0.dp
+                        ) {
+                            VeilTab.entries.forEach { tab ->
+                                NavigationBarItem(
+                                    selected = route.selectedTab == tab,
+                                    onClick = { routeViewModel.selectTab(tab) },
+                                    icon = { Text(tab.glyph) },
+                                    label = { Text(tab.label) }
+                                )
                             }
                         }
-                    )
-
-                    VeilTab.PATH -> PathScreen(
-                        profile = profile,
-                        onAdvanceRank = {
-                            if (!game.advanceRank()) {
-                                errorMessage = "Complete the current advancement ritual first."
-                            }
-                        },
-                        onChoosePath = { pathId ->
-                            if (!game.choosePath(pathId)) {
-                                errorMessage = "Your Path is sealed after the first rank advancement."
-                            }
-                        }
-                    )
-
-                    VeilTab.PROFILE -> ProfileScreen(
-                        profile = profile,
-                        highlightCount = highlights.size,
-                        exporting = exporting,
-                        restoring = restoring,
-                        dailyGoalMinutes = dailyGoalMinutes,
-                        castleTitle = castleTitle,
-                        equippedSigilName = equippedSigil?.let(::sigilDisplayName),
-                        onSetDailyGoal = game::setDailyGoal,
-                        onExportBackup = { exportData(it, true) },
-                        onRestoreBackup = ::restoreData,
-                        onExportNotes = { exportData(it, false) },
-                        onOpenArchive = routeViewModel::openArchive
-                    )
+                    }
+                ) { padding ->
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(padding)
+                    ) {
+                        mainContent()
+                    }
                 }
             }
         }
