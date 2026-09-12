@@ -58,8 +58,8 @@ Profile → Export library backup writes a local ZIP containing imported publica
 
 ## Engineering documents
 
-- `ENGINEERING_BLUEPRINT_1.0.md` — architecture, dependency order and 1.0 plan.
-- `DELIVERY_ROADMAP_1.0.md` — implementation sequence.
+- `ROADMAP_0.9_TO_1.0.md` — current product/engineering sequence from the working 0.8 baseline through the first world-class 1.0 release.
+- `ENGINEERING_BLUEPRINT_1.0.md` — architecture principles and earlier 1.0 foundation plan; some baseline sections predate the Room/DataStore work completed by 0.8.
 - `MANUAL_QA.md` — physical-device verification checklist.
 - `WORLD_CLASS_RELEASE_GATES.md` — requirements before production release.
 - `RELEASE_NOTES_0.8.0.md` — this release candidate's scope and remaining gates.
