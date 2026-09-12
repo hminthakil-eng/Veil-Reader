@@ -3,12 +3,19 @@ package com.veilreader.app.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items as lazyItems
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -21,9 +28,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -31,13 +41,11 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
+import kotlin.math.cos
+import kotlin.math.sin
 
-/**
- * The Grand Library is the reader's long-lived archive, not a file manager.
- *
- * Search, filtering, collections and metadata stay practical and scalable. Atmosphere is concentrated
- * in the archive overview and recent-reading shelf so large libraries remain fast and legible.
- */
+private enum class LibraryViewMode { GRID, LIST }
+
 @Composable
 fun LibraryScreen(
     books: List<Book>,
@@ -51,6 +59,8 @@ fun LibraryScreen(
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf("Recent") }
+    var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GRID.name) }
+    val viewMode = runCatching { LibraryViewMode.valueOf(viewModeName) }.getOrDefault(LibraryViewMode.GRID)
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Book?>(null) }
@@ -68,6 +78,7 @@ fun LibraryScreen(
         .flatMap { it.allCollections }
         .distinctBy { it.lowercase(Locale.ROOT) }
         .sortedWith(String.CASE_INSENSITIVE_ORDER)
+
     LaunchedEffect(collections) {
         if (collection.isNotEmpty() && collections.none { it.equals(collection, ignoreCase = true) }) {
             collection = ""
@@ -110,6 +121,7 @@ fun LibraryScreen(
             else -> list.sortedByDescending { maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs) }
         }
     }
+
     val recentReading = books
         .asSequence()
         .filter { !it.finished && it.progress > 0f }
@@ -130,21 +142,21 @@ fun LibraryScreen(
         ) {
             Box(Modifier.weight(1f)) {
                 ScreenHeader(
-                    eyebrow = "Grand Library",
-                    title = "The living archive",
+                    eyebrow = "Library",
+                    title = "Your books",
                     subtitle = if (books.isEmpty()) {
-                        "A quiet chamber waiting for its first story."
+                        "Import an EPUB or PDF to begin. Everything stays local on this device."
                     } else {
-                        "${books.size} ${if (books.size == 1) "volume" else "volumes"} kept privately on this device."
+                        "${books.size} ${if (books.size == 1) "book" else "books"} · search, filter, organize, and continue reading."
                     }
                 )
             }
-            FilledTonalButton(
+            Button(
                 onClick = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
                 enabled = !isImporting,
                 modifier = Modifier.heightIn(min = 48.dp)
             ) {
-                Text(if (isImporting) "Importing…" else "+ Import")
+                Text(if (isImporting) "Importing…" else "Import")
             }
         }
 
@@ -164,14 +176,12 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibrarySectionHeading(
-                    eyebrow = "Open passages",
-                    title = "Stories still in motion",
+                    eyebrow = "Continue",
+                    title = "In progress",
                     trailing = "${recentReading.size} active"
                 )
                 Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     recentReading.forEach { book ->
@@ -185,8 +195,8 @@ fun LibraryScreen(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
-            placeholder = { Text("Search title, author, series, collection") },
-            leadingIcon = { Text("⌕", fontSize = 20.sp) },
+            placeholder = { Text("Search books, authors, series, collections") },
+            leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     TextButton(onClick = { query = "" }, contentPadding = PaddingValues(horizontal = 8.dp)) {
@@ -195,9 +205,7 @@ fun LibraryScreen(
                 }
             },
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = VeilSpacing.lg)
+            modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
         )
 
         Row(
@@ -220,10 +228,11 @@ fun LibraryScreen(
             Modifier
                 .fillMaxWidth()
                 .padding(top = VeilSpacing.xs, bottom = VeilSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             Text(
-                "${filtered.size} ${if (filtered.size == 1) "volume" else "volumes"} shown",
+                "${filtered.size} shown",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.weight(1f)
@@ -232,7 +241,7 @@ fun LibraryScreen(
             if (collections.isNotEmpty()) {
                 Box {
                     TextButton(onClick = { collectionMenu = true }) {
-                        Text(if (collection.isBlank()) "Collections ▾" else "$collection ▾")
+                        Text(if (collection.isBlank()) "Collections" else collection, maxLines = 1)
                     }
                     DropdownMenu(expanded = collectionMenu, onDismissRequest = { collectionMenu = false }) {
                         DropdownMenuItem(
@@ -250,7 +259,7 @@ fun LibraryScreen(
             }
 
             Box {
-                TextButton(onClick = { sortMenu = true }) { Text("$sort ▾") }
+                TextButton(onClick = { sortMenu = true }) { Text(sort) }
                 DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
                     listOf("Recent", "Title", "Author", "Series", "Progress").forEach { label ->
                         DropdownMenuItem(
@@ -260,64 +269,78 @@ fun LibraryScreen(
                     }
                 }
             }
+
+            ViewModeToggle(
+                mode = viewMode,
+                onChange = { viewModeName = it.name }
+            )
         }
 
         if (filtered.isEmpty()) {
-            MysteryCard(Modifier.fillMaxWidth()) {
-                Text("◇", fontSize = 34.sp, color = MaterialTheme.colorScheme.secondary)
-                Text(
-                    if (books.isEmpty()) "The first shelf is empty" else "No volume answers that call",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Text(
-                    if (books.isEmpty()) {
-                        "Import an EPUB or PDF. Veil Reader keeps its reading state, annotations and cached publication data locally."
-                    } else {
-                        "Change the search, shelf or collection to reveal more of the archive."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (books.isEmpty()) {
-                    Button(
-                        onClick = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                        enabled = !isImporting,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = VeilSpacing.xs)
-                    ) { Text(if (isImporting) "Importing…" else "Bring in the first book") }
-                } else {
-                    OutlinedButton(
-                        onClick = { query = ""; shelf = "All"; collection = "" },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = VeilSpacing.xs)
-                    ) { Text("Reveal the whole archive") }
-                }
-            }
+            LibraryEmptyState(
+                hasBooks = books.isNotEmpty(),
+                isImporting = isImporting,
+                onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                onReset = { query = ""; shelf = "All"; collection = "" }
+            )
         } else {
-            LazyVerticalGrid(
-                columns = GridCells.Adaptive(148.dp),
-                modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
-                contentPadding = PaddingValues(bottom = 30.dp)
-            ) {
-                items(filtered, key = { it.id }) { book ->
-                    BookLibraryTile(
-                        book = book,
-                        onOpen = { onOpenBook(book) },
-                        onFavorite = { onFavorite(book.id) },
-                        onEdit = {
-                            editing = book
-                            title = book.title
-                            author = book.author
-                            collectionNames = book.allCollections.joinToString(", ")
-                            seriesName = book.seriesName.orEmpty()
-                            seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
-                            language = book.language.orEmpty()
+            AnimatedContent(
+                targetState = viewMode,
+                transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
+                label = "library-layout",
+                modifier = Modifier.weight(1f)
+            ) { mode ->
+                when (mode) {
+                    LibraryViewMode.GRID -> {
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(148.dp),
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
+                            contentPadding = PaddingValues(bottom = 30.dp)
+                        ) {
+                            items(filtered, key = { it.id }) { book ->
+                                BookLibraryTile(
+                                    book = book,
+                                    onOpen = { onOpenBook(book) },
+                                    onFavorite = { onFavorite(book.id) },
+                                    onEdit = {
+                                        editing = book
+                                        title = book.title
+                                        author = book.author
+                                        collectionNames = book.allCollections.joinToString(", ")
+                                        seriesName = book.seriesName.orEmpty()
+                                        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
+                                        language = book.language.orEmpty()
+                                    }
+                                )
+                            }
                         }
-                    )
+                    }
+                    LibraryViewMode.LIST -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                            contentPadding = PaddingValues(bottom = 30.dp)
+                        ) {
+                            lazyItems(filtered, key = { it.id }) { book ->
+                                BookLibraryRow(
+                                    book = book,
+                                    onOpen = { onOpenBook(book) },
+                                    onFavorite = { onFavorite(book.id) },
+                                    onEdit = {
+                                        editing = book
+                                        title = book.title
+                                        author = book.author
+                                        collectionNames = book.allCollections.joinToString(", ")
+                                        seriesName = book.seriesName.orEmpty()
+                                        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
+                                        language = book.language.orEmpty()
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -348,9 +371,7 @@ fun LibraryScreen(
                         { seriesIndex = it },
                         label = { Text("Series number (optional)") },
                         isError = seriesIndexInvalid,
-                        supportingText = {
-                            if (seriesIndexInvalid) Text("Use a number such as 1 or 2.5.")
-                        }
+                        supportingText = { if (seriesIndexInvalid) Text("Use a number such as 1 or 2.5.") }
                     )
                     OutlinedTextField(
                         language,
@@ -400,13 +421,13 @@ private fun ArchiveOverview(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.78f),
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.54f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.74f),
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                     )
                 )
             )
-            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.7f)), shape)
+            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.66f)), shape)
             .padding(VeilSpacing.lg)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
@@ -422,15 +443,15 @@ private fun ArchiveOverview(
                         .background(MaterialTheme.colorScheme.tertiary)
                 )
                 Column(Modifier.weight(1f)) {
-                    Text("ARCHIVE AWAKE", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
-                    Text("Every finished story leaves a trace.", style = MaterialTheme.typography.bodyMedium)
+                    Text("LIBRARY READY", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+                    Text("Your collection stays private and available offline.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
-                ArchiveStat("Volumes", total, Modifier.weight(1f))
+                ArchiveStat("Books", total, Modifier.weight(1f))
                 ArchiveStat("Reading", reading, Modifier.weight(1f))
                 ArchiveStat("Finished", finished, Modifier.weight(1f))
                 ArchiveStat("Collections", collections, Modifier.weight(1f))
@@ -458,7 +479,7 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.4.sp),
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
                 color = MaterialTheme.colorScheme.secondary
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
@@ -480,9 +501,7 @@ private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
             title = book.title,
             subtitle = book.author,
             imagePath = book.coverCachePath,
-            modifier = Modifier
-                .width(112.dp)
-                .height(160.dp)
+            modifier = Modifier.width(112.dp).height(160.dp)
         )
         Spacer(Modifier.height(VeilSpacing.xs))
         Text(
@@ -518,10 +537,8 @@ private fun BookLibraryTile(
                     .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen)
             )
             Surface(
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.91f),
                 shape = MaterialTheme.shapes.extraSmall
             ) {
                 Text(
@@ -536,13 +553,11 @@ private fun BookLibraryTile(
                     .padding(7.dp)
                     .clickable(onClickLabel = if (book.favorite) "Remove favorite" else "Add favorite", onClick = onFavorite),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                shape = MaterialTheme.shapes.small
+                shape = CircleShape
             ) {
-                Text(
-                    if (book.favorite) "★" else "☆",
-                    Modifier.padding(horizontal = 9.dp, vertical = 5.dp),
-                    fontSize = 16.sp,
-                    color = if (book.favorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+                FavoriteIcon(
+                    favorite = book.favorite,
+                    modifier = Modifier.padding(8.dp).size(18.dp)
                 )
             }
         }
@@ -576,47 +591,266 @@ private fun BookLibraryTile(
                     )
                 }
             }
-            TextButton(onClick = onEdit, contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp)) {
-                Text("•••", fontSize = 14.sp)
+            IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
         Spacer(Modifier.height(6.dp))
-        LinearProgressIndicator(
-            progress = { book.progress.coerceIn(0f, 1f) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(3.dp),
-            color = if (book.finished) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-        )
+        BookProgress(book)
+    }
+}
+
+@Composable
+private fun BookLibraryRow(
+    book: Book,
+    onOpen: () -> Unit,
+    onFavorite: () -> Unit,
+    onEdit: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f))
+    ) {
         Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(top = 5.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+            Modifier.padding(VeilSpacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                when {
-                    book.finished -> "Finished"
-                    book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
-                    else -> "Unopened"
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            BookCover(
+                title = book.title,
+                subtitle = book.author,
+                imagePath = book.coverCachePath,
+                modifier = Modifier.width(68.dp).height(98.dp)
             )
-            val bookCollections = book.allCollections
-            if (bookCollections.isNotEmpty()) {
-                val label = if (bookCollections.size == 1) bookCollections.first()
-                else "${bookCollections.first()} +${bookCollections.size - 1}"
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(book.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
-                    label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary,
+                    book.author.ifBlank { "Unknown author" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                    Text(
+                        series,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.secondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                BookProgress(book)
             }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                IconButton(onClick = onFavorite) {
+                    FavoriteIcon(book.favorite, Modifier.size(20.dp))
+                }
+                IconButton(onClick = onEdit) {
+                    EllipsisIcon(Modifier.size(19.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookProgress(book: Book) {
+    LinearProgressIndicator(
+        progress = { book.progress.coerceIn(0f, 1f) },
+        modifier = Modifier.fillMaxWidth().height(3.dp),
+        color = if (book.finished) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary,
+        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+    )
+    Row(
+        Modifier.fillMaxWidth().padding(top = 5.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(
+            when {
+                book.finished -> "Finished"
+                book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
+                else -> "Unopened"
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        val bookCollections = book.allCollections
+        if (bookCollections.isNotEmpty()) {
+            val label = if (bookCollections.size == 1) bookCollections.first()
+            else "${bookCollections.first()} +${bookCollections.size - 1}"
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun LibraryEmptyState(
+    hasBooks: Boolean,
+    isImporting: Boolean,
+    onImport: () -> Unit,
+    onReset: () -> Unit
+) {
+    MysteryCard(Modifier.fillMaxWidth()) {
+        Box(
+            Modifier
+                .size(54.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f)),
+            contentAlignment = Alignment.Center
+        ) {
+            ShelfIcon(Modifier.size(28.dp), MaterialTheme.colorScheme.secondary)
+        }
+        Text(
+            if (hasBooks) "No books match" else "Your library is empty",
+            style = MaterialTheme.typography.titleLarge
+        )
+        Text(
+            if (hasBooks) {
+                "Try another search, shelf, or collection filter."
+            } else {
+                "Import an EPUB or PDF. Reading state, notes, and cached publication data stay on this device."
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (hasBooks) {
+            OutlinedButton(onClick = onReset, modifier = Modifier.fillMaxWidth()) { Text("Clear filters") }
+        } else {
+            Button(onClick = onImport, enabled = !isImporting, modifier = Modifier.fillMaxWidth()) {
+                Text(if (isImporting) "Importing…" else "Import a book")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
+    Surface(
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f)
+    ) {
+        Row(Modifier.padding(2.dp)) {
+            IconButton(
+                onClick = { onChange(LibraryViewMode.GRID) },
+                modifier = Modifier.size(34.dp)
+            ) {
+                GridIcon(
+                    Modifier.size(17.dp),
+                    if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(
+                onClick = { onChange(LibraryViewMode.LIST) },
+                modifier = Modifier.size(34.dp)
+            ) {
+                ListIcon(
+                    Modifier.size(17.dp),
+                    if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchIcon(modifier: Modifier, tint: Color) {
+    Canvas(modifier) {
+        val width = 1.8.dp.toPx()
+        drawCircle(tint, size.minDimension * .29f, Offset(size.width * .43f, size.height * .43f), style = Stroke(width))
+        drawLine(
+            tint,
+            Offset(size.width * .64f, size.height * .64f),
+            Offset(size.width * .88f, size.height * .88f),
+            width,
+            StrokeCap.Round
+        )
+    }
+}
+
+@Composable
+private fun FavoriteIcon(favorite: Boolean, modifier: Modifier = Modifier) {
+    val tint = if (favorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
+    Canvas(modifier) {
+        val outer = size.minDimension * .46f
+        val inner = outer * .44f
+        val path = Path()
+        repeat(10) { index ->
+            val radius = if (index % 2 == 0) outer else inner
+            val angle = Math.toRadians((-90.0 + index * 36.0))
+            val x = size.width / 2f + cos(angle).toFloat() * radius
+            val y = size.height / 2f + sin(angle).toFloat() * radius
+            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        if (favorite) drawPath(path, tint) else drawPath(path, tint, style = Stroke(1.5.dp.toPx()))
+    }
+}
+
+@Composable
+private fun EllipsisIcon(modifier: Modifier, tint: Color) {
+    Canvas(modifier) {
+        val r = size.minDimension * .08f
+        drawCircle(tint, r, Offset(size.width * .26f, size.height * .50f))
+        drawCircle(tint, r, Offset(size.width * .50f, size.height * .50f))
+        drawCircle(tint, r, Offset(size.width * .74f, size.height * .50f))
+    }
+}
+
+@Composable
+private fun GridIcon(modifier: Modifier, tint: Color) {
+    Canvas(modifier) {
+        val width = 1.6.dp.toPx()
+        val stroke = Stroke(width)
+        val cell = size.minDimension * .30f
+        val gap = size.minDimension * .12f
+        val start = size.minDimension * .13f
+        drawRect(tint, Offset(start, start), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
+        drawRect(tint, Offset(start + cell + gap, start), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
+        drawRect(tint, Offset(start, start + cell + gap), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
+        drawRect(tint, Offset(start + cell + gap, start + cell + gap), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
+    }
+}
+
+@Composable
+private fun ListIcon(modifier: Modifier, tint: Color) {
+    Canvas(modifier) {
+        val width = 1.7.dp.toPx()
+        repeat(3) { i ->
+            val y = size.height * (.24f + i * .26f)
+            drawCircle(tint, size.minDimension * .035f, Offset(size.width * .14f, y))
+            drawLine(tint, Offset(size.width * .28f, y), Offset(size.width * .88f, y), width, StrokeCap.Round)
+        }
+    }
+}
+
+@Composable
+private fun ShelfIcon(modifier: Modifier, tint: Color) {
+    Canvas(modifier) {
+        val width = 1.7.dp.toPx()
+        val stroke = Stroke(width)
+        repeat(3) { i ->
+            val left = size.width * (.12f + i * .27f)
+            drawRoundRect(
+                tint,
+                topLeft = Offset(left, size.height * (.20f + if (i == 1) .08f else 0f)),
+                size = androidx.compose.ui.geometry.Size(size.width * .20f, size.height * (.62f - if (i == 1) .08f else 0f)),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
+                style = stroke
+            )
         }
     }
 }
