@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.graphics.Color as AndroidColor
+import android.view.ActionMode
 import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -17,6 +18,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -53,6 +56,9 @@ import org.readium.r2.navigator.SelectableNavigator
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
+import org.readium.r2.navigator.html.HtmlDecorationTemplates
+import org.readium.r2.navigator.input.InputListener
+import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
@@ -87,17 +93,61 @@ fun ReaderScreen(
     var topBarPx by remember { mutableIntStateOf(0) }
     var bottomBarPx by remember { mutableIntStateOf(0) }
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
-    var controlsVisible by remember { mutableStateOf(true) }
+    var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
     var appearance by remember { mutableStateOf(library.loadAppearance()) }
     var showNotebook by remember { mutableStateOf(false) }
     val highlights by library.highlights.collectAsState()
     val bookmarks by library.bookmarks.collectAsState()
     var readerMessage by remember { mutableStateOf<String?>(null) }
+    var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
+    var pendingNoteText by remember { mutableStateOf("") }
+    var noteSaving by remember { mutableStateOf(false) }
     var locationTitle by remember(opened.book.id) {
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
     val snackbarHostState = remember { SnackbarHostState() }
+
+    val selectionActionModeCallback = remember(opened.book.id, library, readerViewModel, scope) {
+        ReaderSelectionActionModeCallback(
+            coroutineScope = scope,
+            navigatorProvider = { navigator as? SelectableNavigator },
+            onAction = { action, locator, quote ->
+                try {
+                    val locatorJson = locator.toJSON().toString()
+                    val existing = library.highlightsFor(opened.book.id).firstOrNull {
+                        it.locatorJson == locatorJson && it.quote == quote
+                    }
+                    val highlight = existing ?: library.addHighlight(
+                        bookId = opened.book.id,
+                        quote = quote,
+                        locatorJson = locatorJson
+                    )
+                    val isNew = existing == null
+                    if (isNew) {
+                        library.flushWrites()
+                        readerViewModel.onHighlightAdded()
+                    } else {
+                        readerViewModel.onUserInteraction()
+                    }
+
+                    when (action) {
+                        ReaderSelectionAction.HIGHLIGHT -> {
+                            readerMessage = if (isNew) "Highlighted" else "Already highlighted"
+                        }
+                        ReaderSelectionAction.NOTE -> {
+                            pendingNoteHighlightId = highlight.id
+                            pendingNoteText = highlight.note
+                        }
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    readerMessage = error.message ?: "That passage could not be saved."
+                }
+            }
+        )
+    }
 
     LaunchedEffect(opened.book.id) {
         readerViewModel.openBook(opened.book.id, opened.book.progress)
@@ -130,8 +180,8 @@ fun ReaderScreen(
     }
     BackHandler(enabled = !showNotebook && !showAppearance) { closeReader() }
 
-    val fragmentFactory = remember(opened.book.id) {
-        createReaderFactory(opened, appearance)
+    val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
+        createReaderFactory(opened, appearance, selectionActionModeCallback)
     }
 
     DisposableEffect(lifecycle, readerViewModel) {
@@ -173,6 +223,15 @@ fun ReaderScreen(
                 navigator = nav,
                 animatedTransition = true
             )
+        )
+        nav.addInputListener(
+            object : InputListener {
+                override fun onTap(event: TapEvent): Boolean {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = !controlsVisible
+                    return true
+                }
+            }
         )
     }
 
@@ -223,10 +282,9 @@ fun ReaderScreen(
                 .onSizeChanged { topBarPx = it.height }
         ) {
             Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                tonalElevation = 2.dp,
-                shadowElevation = 2.dp,
-                shape = RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp)
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.93f),
+                tonalElevation = 1.dp,
+                shadowElevation = 1.dp
             ) {
                 Column(
                     Modifier
@@ -256,49 +314,22 @@ fun ReaderScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.72f),
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                            shape = RoundedCornerShape(999.dp)
-                        ) {
-                            Text(
-                                "${(progress * 100).toInt()}%",
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                        }
-                        ReaderChromeButton("⌄", "Hide reading controls") {
-                            readerViewModel.onUserInteraction()
-                            controlsVisible = false
-                        }
+                        Text(
+                            "${(progress * 100).toInt()}%",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(horizontal = 6.dp)
+                        )
                     }
                     LinearProgressIndicator(
                         progress = { progress },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = 8.dp)
+                            .padding(top = 7.dp)
                             .height(2.dp),
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
                     )
                 }
-            }
-        }
-
-        if (!controlsVisible) {
-            FilledTonalButton(
-                onClick = {
-                    readerViewModel.onUserInteraction()
-                    controlsVisible = true
-                },
-                shape = RoundedCornerShape(999.dp),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .statusBarsPadding()
-                    .padding(10.dp)
-            ) {
-                Text("•••", fontSize = 14.sp, letterSpacing = 1.sp)
             }
         }
 
@@ -311,104 +342,44 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 10.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                tonalElevation = 4.dp,
-                shadowElevation = 10.dp,
-                shape = RoundedCornerShape(26.dp)
+                    .navigationBarsPadding(),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                tonalElevation = 2.dp,
+                shadowElevation = 3.dp,
+                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
             ) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 5.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        ReaderControl("‹", "Previous", Modifier.weight(1f)) {
-                            readerViewModel.onUserInteraction()
-                            (navigator as? OverflowableNavigator)?.goBackward(animated = true)
-                        }
-                        ReaderControl("≡", "Contents", Modifier.weight(1f)) {
-                            readerViewModel.onUserInteraction()
-                            showNotebook = true
-                        }
-                        ReaderControl(
-                            "✦",
-                            "Highlight",
-                            Modifier.weight(1f),
-                            enabled = opened.format == BookFormat.EPUB
-                        ) {
-                            scope.launch {
-                                val selectable = navigator as? SelectableNavigator
-                                val selection = selectable?.currentSelection()
-                                if (selection == null) {
-                                    readerMessage = "Select some text first, then tap Highlight."
-                                    return@launch
-                                }
-                                val quote = selection.locator.text.highlight.orEmpty().trim()
-                                if (quote.isBlank()) {
-                                    readerMessage = "I couldn't capture that selection. Try selecting the text again."
-                                    return@launch
-                                }
-                                try {
-                                    val countBefore = library.highlightsFor(opened.book.id).size
-                                    library.addHighlight(
-                                        bookId = opened.book.id,
-                                        quote = quote,
-                                        locatorJson = selection.locator.toJSON().toString()
-                                    )
-                                    val isNew = library.highlightsFor(opened.book.id).size > countBefore
-                                    if (isNew) {
-                                        library.flushWrites()
-                                        readerViewModel.onHighlightAdded()
-                                    } else {
-                                        readerViewModel.onUserInteraction()
-                                    }
-                                    selectable.clearSelection()
-                                    readerMessage = if (isNew) "Highlight saved" else "This passage is already highlighted"
-                                } catch (cancelled: CancellationException) {
-                                    throw cancelled
-                                } catch (error: Exception) {
-                                    readerMessage = error.message ?: "Highlight could not be saved."
-                                }
-                            }
-                        }
-                        ReaderControl("◇", "Bookmark", Modifier.weight(1f), enabled = navigator != null) {
-                            readerViewModel.onUserInteraction()
-                            val locator = navigator?.currentLocator?.value
-                            if (locator != null) {
-                                val added = library.addBookmark(
-                                    opened.book.id,
-                                    "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                    locator.toJSON().toString()
-                                )
-                                readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
-                            }
-                        }
-                        ReaderControl(
-                            "Aa",
-                            "Appearance",
-                            Modifier.weight(1f),
-                            enabled = opened.format == BookFormat.EPUB
-                        ) {
-                            readerViewModel.onUserInteraction()
-                            showAppearance = true
-                        }
-                        ReaderControl("›", "Next", Modifier.weight(1f)) {
-                            readerViewModel.onUserInteraction()
-                            (navigator as? OverflowableNavigator)?.goForward(animated = true)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ReaderControl("≡", "Notebook", Modifier.weight(1f)) {
+                        readerViewModel.onUserInteraction()
+                        showNotebook = true
+                    }
+                    ReaderControl("◇", "Bookmark", Modifier.weight(1f), enabled = navigator != null) {
+                        readerViewModel.onUserInteraction()
+                        val locator = navigator?.currentLocator?.value
+                        if (locator != null) {
+                            val added = library.addBookmark(
+                                opened.book.id,
+                                "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
+                                locator.toJSON().toString()
+                            )
+                            readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
                         }
                     }
-                    Text(
-                        if (opened.format == BookFormat.EPUB) {
-                            "Tap the page to turn · select text to highlight"
-                        } else {
-                            "Swipe or use the arrows to move through the document"
-                        },
-                        modifier = Modifier.fillMaxWidth().padding(top = 1.dp, bottom = 2.dp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.labelSmall
-                    )
+                    ReaderControl(
+                        "Aa",
+                        "Appearance",
+                        Modifier.weight(1f),
+                        enabled = opened.format == BookFormat.EPUB
+                    ) {
+                        readerViewModel.onUserInteraction()
+                        showAppearance = true
+                    }
                 }
             }
         }
@@ -423,6 +394,62 @@ fun ReaderScreen(
                         (if (controlsVisible) bottomBarPx else 0).toDp()
                     } + 12.dp
                 )
+        )
+    }
+
+    pendingNoteHighlightId?.let { highlightId ->
+        AlertDialog(
+            onDismissRequest = {
+                if (!noteSaving) {
+                    pendingNoteHighlightId = null
+                    pendingNoteText = ""
+                }
+            },
+            title = { Text("Note on this passage") },
+            text = {
+                OutlinedTextField(
+                    value = pendingNoteText,
+                    onValueChange = { pendingNoteText = it },
+                    enabled = !noteSaving,
+                    label = { Text("Your note") },
+                    minLines = 4,
+                    maxLines = 8,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !noteSaving,
+                    onClick = {
+                        scope.launch {
+                            noteSaving = true
+                            try {
+                                library.updateHighlightNote(highlightId, pendingNoteText)
+                                library.flushWrites()
+                                readerViewModel.onNoteSaved(highlightId, pendingNoteText)
+                                pendingNoteHighlightId = null
+                                pendingNoteText = ""
+                                readerMessage = "Note saved"
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (error: Exception) {
+                                readerMessage = error.message ?: "Note could not be saved."
+                            } finally {
+                                noteSaving = false
+                            }
+                        }
+                    }
+                ) { Text(if (noteSaving) "Saving…" else "Save") }
+            },
+            dismissButton = {
+                TextButton(
+                    enabled = !noteSaving,
+                    onClick = {
+                        pendingNoteHighlightId = null
+                        pendingNoteText = ""
+                    }
+                ) { Text("Cancel") }
+            }
         )
     }
 
@@ -480,7 +507,8 @@ fun ReaderScreen(
 @OptIn(ExperimentalReadiumApi::class)
 private fun createReaderFactory(
     opened: OpenedPublication,
-    appearance: ReaderAppearance
+    appearance: ReaderAppearance,
+    selectionActionModeCallback: ActionMode.Callback
 ): FragmentFactory = when (opened.format) {
     BookFormat.EPUB -> EpubNavigatorFactory(opened.publication)
         .createFragmentFactory(
@@ -488,6 +516,11 @@ private fun createReaderFactory(
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
                 disablePageTurnsWhileScrolling = false
+                this.selectionActionModeCallback = selectionActionModeCallback
+                decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
+                    alpha = 1.0,
+                    experimentalPositioning = true
+                )
             }
         )
 
@@ -550,7 +583,9 @@ private fun ReaderChromeButton(
     TextButton(
         onClick = onClick,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
-        modifier = Modifier.defaultMinSize(minWidth = 42.dp, minHeight = 42.dp)
+        modifier = Modifier
+            .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
+            .semantics { contentDescription = accessibilityLabel }
     ) {
         Text(glyph, fontSize = 24.sp, lineHeight = 24.sp)
     }
@@ -567,14 +602,14 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 48.dp),
-        contentPadding = PaddingValues(horizontal = 1.dp, vertical = 3.dp)
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 52.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 5.dp)
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(glyph, fontSize = 17.sp, lineHeight = 19.sp, fontWeight = FontWeight.SemiBold)
+            Text(glyph, fontSize = 18.sp, lineHeight = 20.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 label,
-                fontSize = 8.sp,
+                fontSize = 10.sp,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
