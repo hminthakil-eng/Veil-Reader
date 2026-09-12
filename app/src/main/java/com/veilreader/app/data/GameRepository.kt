@@ -5,6 +5,13 @@ import android.os.SystemClock
 import java.time.LocalTime
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
+import com.veilreader.app.domain.EstateCampaign
+import com.veilreader.app.domain.EstateState
+import com.veilreader.app.domain.EstatePalette
+import com.veilreader.app.domain.EstateGrounds
+import com.veilreader.app.domain.EstateSky
+import org.json.JSONArray
+import org.json.JSONObject
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import java.time.LocalDate
@@ -41,6 +48,71 @@ class GameRepository(context: Context) {
     private val _castleTitle = MutableStateFlow(prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil")
     val castleTitle: StateFlow<String> = _castleTitle
 
+    private val _estate = MutableStateFlow(readEstate())
+    val estate: StateFlow<EstateState> = _estate
+
+    @Synchronized
+    fun buildEstate(): Boolean {
+        val next = EstateCampaign.build(readEstate(), buildProfile().minutesRead) ?: return false
+        saveEstate(next)
+        return true
+    }
+
+    @Synchronized
+    fun claimStoryChapter(id: String): Boolean {
+        val next = EstateCampaign.claim(readEstate(), buildProfile().minutesRead, id) ?: return false
+        saveEstate(next)
+        return true
+    }
+
+    @Synchronized
+    fun designEstate(name: String, palette: EstatePalette, grounds: EstateGrounds, sky: EstateSky): Boolean {
+        val current = readEstate()
+        if (!EstateCampaign.groundsUnlocked(grounds, current.stage)) return false
+        val safeName = name.trim().filterNot { it.isISOControl() }.take(32)
+        if (safeName.isBlank()) return false
+        saveEstate(current.copy(name = safeName, palette = palette, grounds = grounds, sky = sky))
+        return true
+    }
+
+    private fun readEstate(): EstateState {
+        val json = runCatching { JSONObject(prefs.getString("estateCampaignV1", "{}") ?: "{}") }
+            .getOrElse { JSONObject() }
+        val stage = json.optInt("stage", 0).coerceIn(0, EstateCampaign.stages.lastIndex)
+        val known = EstateCampaign.chapters.map { it.id }.toSet()
+        val claimed = json.optJSONArray("chapters")
+        val grounds = runCatching { EstateGrounds.valueOf(json.optString("grounds")) }
+            .getOrDefault(EstateGrounds.WILDFLOWERS)
+        return EstateState(
+            stage = stage,
+            spent = json.optInt("spent", 0).coerceAtLeast(0),
+            claimedChapters = buildSet {
+                if (claimed != null) for (i in 0 until claimed.length()) {
+                    val id = claimed.optString(i)
+                    if (id in known) add(id)
+                }
+            },
+            name = json.optString("name", "The Lantern House").trim().take(32)
+                .ifBlank { "The Lantern House" },
+            palette = runCatching { EstatePalette.valueOf(json.optString("palette")) }
+                .getOrDefault(EstatePalette.MOONSTONE),
+            grounds = grounds.takeIf { EstateCampaign.groundsUnlocked(it, stage) } ?: EstateGrounds.WILDFLOWERS,
+            sky = runCatching { EstateSky.valueOf(json.optString("sky")) }.getOrDefault(EstateSky.MOONLIT)
+        )
+    }
+
+    private fun saveEstate(state: EstateState) {
+        // One value keeps spending, construction and one-time claims atomic within this subsystem.
+        val json = JSONObject().apply {
+            put("stage", state.stage); put("spent", state.spent)
+            put("chapters", JSONArray(state.claimedChapters.sorted()))
+            put("name", state.name); put("palette", state.palette.name)
+            put("grounds", state.grounds.name); put("sky", state.sky.name)
+        }
+        prefs.edit().putString("estateCampaignV1", json.toString()).apply()
+        _estate.value = state
+    }
+
     init {
         // Old builds counted every highlight for every Path. Preserve Oracle progress only.
         if (prefs.getInt("ritualVersion", 1) < 2) {
@@ -57,7 +129,17 @@ class GameRepository(context: Context) {
         publish()
     }
 
-    fun refresh() { rollDayIfNeeded(); publish() }
+    fun refresh() {
+        // Restore can replace preferences while this repository remains alive.
+        totalXp = prefs.getInt("totalXp", 0)
+        todayMinutes = prefs.getInt("todayMinutes", 0)
+        todayPages = prefs.getInt("todayPages", 0)
+        todayHighlights = prefs.getInt("todayHighlights", 0)
+        dayKey = prefs.getString("dayKey", "").orEmpty()
+        _estate.value = readEstate()
+        rollDayIfNeeded()
+        publish()
+    }
     fun pauseReading() { pageGate.pause() }
 
     fun setDailyGoal(minutes: Int) {
@@ -294,3 +376,4 @@ class GameRepository(context: Context) {
         )
     }
 }
+

@@ -87,6 +87,7 @@ fun VeilApp(
     val dailyGoalMinutes by game.dailyGoalMinutes.collectAsState()
     val equippedSigil by game.equippedSigil.collectAsState()
     val castleTitle by game.castleTitle.collectAsState()
+    val estate by game.estate.collectAsStateWithLifecycle()
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -274,6 +275,10 @@ fun VeilApp(
 
             VeilTab.CASTLE -> CastleScreen(
                 profile = profile,
+                estate = estate,
+                onBuild = game::buildEstate,
+                onClaim = game::claimStoryChapter,
+                onDesign = { game.designEstate(it.name, it.palette, it.grounds, it.sky) },
                 onOpenRoom = { room ->
                     when (room) {
                         "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
@@ -433,3 +438,4 @@ private fun sigilDisplayName(id: String): String = when (id) {
     "first_threshold" -> "First Threshold"
     else -> "Unknown Sigil"
 }
+

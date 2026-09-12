@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.graphics.Color as AndroidColor
+import android.animation.ValueAnimator
 import android.view.ActionMode
 import android.view.View
 import androidx.activity.compose.BackHandler
@@ -53,8 +54,11 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.ReaderFont
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.reader.PageCurlView
 import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -73,11 +77,17 @@ import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.TapEvent
+import org.readium.r2.navigator.input.DragEvent
+import org.readium.r2.navigator.input.Key
+import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Theme
-import org.readium.r2.navigator.util.DirectionalNavigationAdapter
+import org.readium.r2.navigator.preferences.ReadingProgression
+import org.readium.r2.navigator.preferences.FontFamily as ReadiumFontFamily
+import org.readium.r2.navigator.preferences.TextAlign
+import kotlin.math.abs
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
@@ -102,10 +112,31 @@ fun ReaderScreen(
     val progress = if (readerState.bookId == opened.book.id) readerState.progress else opened.book.progress
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
+    var curlView by remember(opened.book.id) { mutableStateOf<PageCurlView?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
     var appearance by remember { mutableStateOf(library.loadAppearance()) }
+    val latestAppearance by rememberUpdatedState(appearance)
     var showNotebook by remember { mutableStateOf(false) }
+
+    DisposableEffect(activity, appearance.keepScreenOn) {
+        val decor = activity.window.decorView
+        val previous = decor.keepScreenOn
+        decor.keepScreenOn = appearance.keepScreenOn
+        onDispose { decor.keepScreenOn = previous }
+    }
+    DisposableEffect(curlView, lifecycle) {
+        val view = curlView
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE) view?.cancelTurn()
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer); view?.release() }
+    }
+    LaunchedEffect(appearance, showAppearance, showNotebook) { curlView?.cancelTurn() }
+    LaunchedEffect(navigator, curlView) {
+        navigator?.currentLocator?.collect { curlView?.onLocationChanged(it.toJSON().toString()) }
+    }
     val highlights by library.highlights.collectAsState()
     val bookmarks by library.bookmarks.collectAsState()
     var readerMessage by remember { mutableStateOf<String?>(null) }
@@ -233,23 +264,66 @@ fun ReaderScreen(
             }
     }
 
-    LaunchedEffect(navigator, opened.book.id) {
-        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        nav.addInputListener(
-            DirectionalNavigationAdapter(
-                navigator = nav,
-                animatedTransition = true
-            )
-        )
-        nav.addInputListener(
-            object : InputListener {
-                override fun onTap(event: TapEvent): Boolean {
-                    readerViewModel.onUserInteraction()
-                    controlsVisible = !controlsVisible
-                    return true
+    DisposableEffect(navigator, opened.book.id, curlView) {
+        val nav = navigator as? OverflowableNavigator
+        val listener = object : InputListener {
+            private fun turn(right: Boolean): Boolean {
+                val reader = nav ?: return false
+                if (curlView?.isTurning == true) return true
+                readerViewModel.onUserInteraction()
+                val prefs = latestAppearance
+                val forward = right == (reader.overflow.value.readingProgression == ReadingProgression.LTR)
+                val motion = !prefs.reduceMotion && ValueAnimator.areAnimatorsEnabled()
+                val animate = motion && prefs.pageTurnStyle == PageTurnStyle.SLIDE
+                val go = { if (forward) reader.goForward(animated = animate) else reader.goBackward(animated = animate) }
+                val result = if (motion && prefs.pageTurnStyle == PageTurnStyle.CURL &&
+                    opened.format == BookFormat.EPUB && !reader.overflow.value.scroll) {
+                    curlView?.turn(reader.publicationView, reader.currentLocator.value.toJSON().toString(), right, go) ?: go()
+                } else go()
+                // Consume edge taps even at the beginning/end, so the chrome does not flash.
+                if (!result) readerMessage = if (forward) "End of the book" else "Beginning of the book"
+                return true
+            }
+
+            override fun onTap(event: TapEvent): Boolean {
+                val reader = nav ?: return false
+                readerViewModel.onUserInteraction()
+                if (!reader.overflow.value.scroll) {
+                    val width = reader.publicationView.width
+                    if (event.point.x < width * .22f) return turn(false)
+                    if (event.point.x > width * .78f) return turn(true)
+                }
+                controlsVisible = !controlsVisible
+                return true
+            }
+
+            override fun onDrag(event: DragEvent): Boolean {
+                val reader = nav ?: return false
+                val prefs = latestAppearance
+                if (opened.format != BookFormat.EPUB || reader.overflow.value.scroll ||
+                    (prefs.pageTurnStyle == PageTurnStyle.SLIDE && !prefs.reduceMotion && ValueAnimator.areAnimatorsEnabled())) return false
+                if (event.type == DragEvent.Type.End) {
+                    val dx = event.offset.x
+                    val threshold = 48 * activity.resources.displayMetrics.density
+                    if (abs(dx) > threshold && abs(dx) > abs(event.offset.y) * 1.3f) turn(dx < 0)
+                }
+                return true
+            }
+
+            override fun onKey(event: KeyEvent): Boolean {
+                if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) return false
+                val rightIsForward = nav?.overflow?.value?.readingProgression == ReadingProgression.LTR
+                return when (event.key) {
+                    Key.ArrowRight -> turn(true)
+                    Key.ArrowLeft -> turn(false)
+                    Key.ArrowDown, Key.Space -> turn(rightIsForward)
+                    Key.ArrowUp -> turn(!rightIsForward)
+                    else -> false
                 }
             }
-        )
+        }
+        nav?.addInputListener(listener)
+        onDispose { nav?.removeInputListener(listener) }
     }
 
     LaunchedEffect(navigator, appearance) {
@@ -285,6 +359,11 @@ fun ReaderScreen(
             tag = "reader-${opened.book.id}",
             onNavigatorReady = { navigator = it },
             onDisposePublication = { opened.close() },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        AndroidView(
+            factory = { context -> PageCurlView(context).also { curlView = it } },
             modifier = Modifier.fillMaxSize()
         )
 
@@ -486,7 +565,7 @@ fun ReaderScreen(
                 readerViewModel.onUserInteraction()
                 game.pauseReading()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
-                if (locator != null && navigator?.go(locator, animated = true) == true) {
+                if (locator != null && navigator?.go(locator, animated = !appearance.reduceMotion && ValueAnimator.areAnimatorsEnabled()) == true) {
                     showNotebook = false
                 } else {
                     showNotebook = false
@@ -496,7 +575,7 @@ fun ReaderScreen(
             onChapter = { link ->
                 readerViewModel.onUserInteraction()
                 game.pauseReading()
-                if (navigator?.go(link, animated = true) == true) {
+                if (navigator?.go(link, animated = !appearance.reduceMotion && ValueAnimator.areAnimatorsEnabled()) == true) {
                     showNotebook = false
                 } else {
                     showNotebook = false
@@ -540,7 +619,7 @@ private fun createReaderFactory(
             initialLocator = opened.initialLocator,
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
-                disablePageTurnsWhileScrolling = false
+                disablePageTurnsWhileScrolling = true
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
                     alpha = 1.0,
@@ -608,7 +687,7 @@ private fun ReaderChromeButton(
     FilledTonalIconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(46.dp)
+            .size(48.dp)
             .semantics { contentDescription = accessibilityLabel }
     ) {
         ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSecondaryContainer)
@@ -640,9 +719,9 @@ private fun ReaderControl(
             )
             Text(
                 label,
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -717,6 +796,9 @@ private fun AppearancePanel(
                 style = MaterialTheme.typography.bodyMedium
             )
         }
+
+        Text("Reading mode", style = MaterialTheme.typography.titleLarge)
+        ReaderModeChoices(appearance, onChange)
 
         Text("Presets", fontWeight = FontWeight.SemiBold)
         Row(
@@ -796,16 +878,22 @@ private fun AppearancePanel(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Turn this off for paginated reading with animated page turns.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+        Text("Typeface", style = MaterialTheme.typography.titleLarge)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ReaderFont.entries.forEach { font ->
+                FilterChip(selected = appearance.font == font,
+                    onClick = { onChange(appearance.copy(font = font, publisherStyles = font == ReaderFont.ORIGINAL)) },
+                    label = { Text(font.label) }, modifier = Modifier.heightIn(min = 48.dp))
             }
-            Switch(checked = appearance.scroll, onCheckedChange = { onChange(appearance.copy(scroll = it)) })
+        }
+        ReaderOption("Justified text", "Align both edges, where the book supports it.", appearance.justified) {
+            onChange(appearance.copy(justified = it, publisherStyles = false))
+        }
+        ReaderOption("Keep the screen awake", "While this book is open.", appearance.keepScreenOn) {
+            onChange(appearance.copy(keepScreenOn = it))
+        }
+        ReaderOption("Reduce page motion", "Use instant turns. Android’s animation setting is also respected.", appearance.reduceMotion) {
+            onChange(appearance.copy(reduceMotion = it))
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -854,7 +942,15 @@ private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferen
     lineHeight = lineHeight,
     pageMargins = pageMargins,
     scroll = scroll,
+    fontFamily = when (font) {
+        ReaderFont.ORIGINAL -> null
+        ReaderFont.SERIF -> ReadiumFontFamily("serif")
+        ReaderFont.SANS -> ReadiumFontFamily("sans-serif")
+        ReaderFont.MONO -> ReadiumFontFamily("monospace")
+    },
+    textAlign = if (justified) TextAlign.JUSTIFY else TextAlign.START,
     publisherStyles = publisherStyles
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
+

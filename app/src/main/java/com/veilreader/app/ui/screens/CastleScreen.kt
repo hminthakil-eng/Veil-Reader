@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.GamificationEngine
+import com.veilreader.app.domain.EstateState
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -46,160 +47,21 @@ import com.veilreader.app.ui.theme.VeilSpacing
 @Composable
 fun CastleScreen(
     profile: ReaderProfile,
+    estate: EstateState,
+    onBuild: () -> Boolean,
+    onClaim: (String) -> Boolean,
+    onDesign: (EstateState) -> Boolean,
     onAdvanceRank: () -> Unit,
     onOpenRoom: (String) -> Unit
 ) {
-    val canAdvance = GamificationEngine.canAdvanceRank(profile)
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
-    ) {
-        ScreenHeader(
-            eyebrow = "Castle",
-            title = "Your reading world",
-            subtitle = "The Castle grows with real reading progress. Every awakened room opens a useful part of Veil Reader."
-        )
-
-        CastleKeep(profile = profile, canAdvance = canAdvance, onAdvanceRank = onAdvanceRank)
-
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                "CHAMBERS",
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp),
-                color = MaterialTheme.colorScheme.secondary
-            )
-            Text("Explore the Castle", style = MaterialTheme.typography.titleLarge)
-            Text(
-                "Tap an awakened room. Sealed rooms show the rank that unlocks them.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        CastleMap(rankIndex = profile.rankIndex, onOpenRoom = onOpenRoom)
-
-        Surface(
-            shape = MaterialTheme.shapes.medium,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.58f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f))
-        ) {
-            Text(
-                "Nothing here is sold or time-gated. Rooms awaken through lasting reading progress on your Path.",
-                modifier = Modifier.padding(VeilSpacing.md),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun CastleKeep(
-    profile: ReaderProfile,
-    canAdvance: Boolean,
-    onAdvanceRank: () -> Unit
-) {
-    val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
-    val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
-    val castleProgress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(650),
-        label = "castle-tier-progress"
-    )
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraLarge)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.70f)),
-                MaterialTheme.shapes.extraLarge
-            )
-            .padding(VeilSpacing.xl)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(72.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f))
-                        .border(
-                            BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.42f)),
-                            CircleShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CastleCrest(
-                        modifier = Modifier.size(38.dp),
-                        tint = MaterialTheme.colorScheme.secondary
-                    )
-                }
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        "Castle Tier ${profile.rankIndex + 1}",
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    Text(
-                        "${profile.path.name} · ${profile.rankName}",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    Text(
-                        "${profile.booksFinished} finished ${if (profile.booksFinished == 1) "book" else "books"}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+    EstateScreen(profile, estate, onBuild, onClaim, onDesign) {
+        Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+            Text("Path chambers", style = MaterialTheme.typography.titleLarge)
+            Text("Your reading Path unlocks these chambers independently of your home. Your library and notes are always available.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (GamificationEngine.canAdvanceRank(profile)) {
+                Button(onClick = onAdvanceRank, modifier = Modifier.fillMaxWidth()) { Text("Advance your Path rank") }
             }
-
-            LinearProgressIndicator(
-                progress = { castleProgress },
-                modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-                color = MaterialTheme.colorScheme.secondary,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    "Castle growth",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    "${profile.rankIndex + 1}/${profile.path.ranks.size} tiers",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
-
-            if (canAdvance) {
-                Button(
-                    onClick = onAdvanceRank,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-                ) {
-                    Text("Advance your rank")
-                }
-            }
+            CastleMap(rankIndex = profile.rankIndex, onOpenRoom = onOpenRoom)
         }
     }
 }
@@ -507,3 +369,4 @@ private fun CastleRoomIcon(id: String, unlocked: Boolean, modifier: Modifier = M
         }
     }
 }
+

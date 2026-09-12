@@ -1,4 +1,4 @@
-# Veil Reader 0.8.0
+# Veil Reader 0.11.0 — A Home Between Pages
 
 Veil Reader is a premium, offline-first Android EPUB/PDF reader with an optional mystery-RPG progression layer. Reading remains the primary experience; Paths, rituals and the Castle grow from real reading activity without sitting on top of the page.
 
@@ -29,6 +29,15 @@ Veil Reader is a premium, offline-first Android EPUB/PDF reader with an optional
 - Publication cover thumbnails and content fingerprints are regenerable cache metadata and are not trusted across restore.
 - Android implicit app backup is disabled so imported books/notes are not silently copied outside Veil Reader's explicit backup flow.
 
+### A home between pages (0.11 candidate)
+- A permanent shack → cottage → lodge → manor → keep → castle → citadel construction campaign.
+- Lorestones earned from existing engaged-reading minutes, with one-time story rewards.
+- Ten authored quests, five residents with contextual dialogue, and an unlockable original lore journal.
+- A native illustrated estate with saved name, three material palettes, three ground treatments and three skies.
+- No missed-day penalties, construction countdowns, paid currency, or game overlays on the book.
+- Explicit EPUB Slide / 3D curl (beta) / Instant / Scroll choices, saved typeface and alignment, keep-awake and reduced page motion.
+- 3D curl is a bounded snapshot effect over Readium’s live page. Physical-device rendering, RTL gestures, chapter boundaries and frame pacing remain acceptance gates; Slide is the default.
+
 ### Progression
 - Six original Reading Paths: Oracle, Dreamwalker, Archivist, Vanguard, Nocturne and Artificer.
 - XP, streaks, daily quests, achievements/sigils, rank rituals and Castle progression.
@@ -58,10 +67,13 @@ Profile → Export library backup writes a local ZIP containing imported publica
 
 ## Engineering documents
 
-- `ROADMAP_0.9_TO_1.0.md` — current product/engineering sequence from the working 0.8 baseline through the first world-class 1.0 release.
+- `docs/PRODUCT_PLAN.md` — current product priorities, campaign economy, reader modes, full feature roadmap and measurable acceptance gates.
+- `docs/RELEASE_0.11.md` — current implementation scope and verification status.
+- `ROADMAP_0.9_TO_1.0.md` — earlier sequence from the 0.8 baseline; preserved as project history.
 - `ENGINEERING_BLUEPRINT_1.0.md` — architecture principles and earlier 1.0 foundation plan; some baseline sections predate the Room/DataStore work completed by 0.8.
 - `MANUAL_QA.md` — physical-device verification checklist.
 - `WORLD_CLASS_RELEASE_GATES.md` — requirements before production release.
 - `RELEASE_NOTES_0.8.0.md` — this release candidate's scope and remaining gates.
 
 No account, advertising SDK, cloud sync, external AI processing or paid service is required by the current app.
+

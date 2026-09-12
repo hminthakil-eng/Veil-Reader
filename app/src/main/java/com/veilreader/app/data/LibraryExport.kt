@@ -8,6 +8,8 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.ReaderFont
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
@@ -65,7 +67,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.8.0")
+                put("appVersion", "0.11.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("gamePreferences", gamePrefs)
@@ -365,6 +367,8 @@ private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
     put("scroll", scroll); put("publisherStyles", publisherStyles)
+    put("pageTurnStyle", pageTurnStyle.name); put("font", font.name)
+    put("justified", justified); put("keepScreenOn", keepScreenOn); put("reduceMotion", reduceMotion)
 }
 
 private fun bookFromJson(o: JSONObject): Book {
@@ -427,7 +431,12 @@ private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearan
     fontScale = (o.optDouble("fontScale", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.75, 1.8),
     lineHeight = (o.optDouble("lineHeight", 1.45).takeIf { it.isFinite() } ?: 1.45).coerceIn(1.1, 2.0),
     pageMargins = (o.optDouble("pageMargins", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.5, 2.0),
-    scroll = o.optBoolean("scroll", false), publisherStyles = o.optBoolean("publisherStyles", true)
+    scroll = o.optBoolean("scroll", false), publisherStyles = o.optBoolean("publisherStyles", true),
+    pageTurnStyle = runCatching { PageTurnStyle.valueOf(o.optString("pageTurnStyle")) }.getOrDefault(PageTurnStyle.SLIDE),
+    font = runCatching { ReaderFont.valueOf(o.optString("font")) }.getOrDefault(ReaderFont.ORIGINAL),
+    justified = o.optBoolean("justified", false),
+    keepScreenOn = o.optBoolean("keepScreenOn", false),
+    reduceMotion = o.optBoolean("reduceMotion", false)
 )
 
 private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = buildList {
@@ -439,3 +448,4 @@ private fun JSONObject.optNullableString(key: String): String? =
 
 private fun JSONObject.optFiniteDouble(key: String): Double? =
     if (!has(key) || isNull(key)) null else optDouble(key, Double.NaN).takeIf { it.isFinite() }
+

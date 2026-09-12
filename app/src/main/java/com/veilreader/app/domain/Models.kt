@@ -106,6 +106,8 @@ data class Highlight(
 )
 
 enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
+enum class PageTurnStyle { SLIDE, CURL, INSTANT }
+enum class ReaderFont(val label: String) { ORIGINAL("Book default"), SERIF("Serif"), SANS("Sans serif"), MONO("Monospace") }
 
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
@@ -113,7 +115,12 @@ data class ReaderAppearance(
     val lineHeight: Double = 1.45,
     val pageMargins: Double = 1.0,
     val scroll: Boolean = false,
-    val publisherStyles: Boolean = true
+    val publisherStyles: Boolean = true,
+    val pageTurnStyle: PageTurnStyle = PageTurnStyle.SLIDE,
+    val font: ReaderFont = ReaderFont.ORIGINAL,
+    val justified: Boolean = false,
+    val keepScreenOn: Boolean = false,
+    val reduceMotion: Boolean = false
 )
 
 /** A saved reading location, independent of text selection (also supports PDF). */
@@ -124,3 +131,4 @@ data class Bookmark(
     val locatorJson: String,
     val createdAtEpochMs: Long = System.currentTimeMillis()
 )
+
