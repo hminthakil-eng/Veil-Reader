@@ -11,6 +11,7 @@ import com.veilreader.app.domain.*
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -78,6 +79,13 @@ class EstatePersistenceInstrumentedTest {
             assertEquals(expectedAppearance, settings.settings.first().readerAppearance)
             assertFalse(game.claimStoryChapter("first_light"))
         } finally { backup.delete() }
+    }
+
+    @Test fun savedAppearanceArrivingAfterStartupReachesTheReaderFlow() = runBlocking {
+        val library = LocalLibraryRepository(context, database, settings, runLegacyMigration = false)
+        val expected = ReaderAppearance(pageTurnStyle = PageTurnStyle.INSTANT, font = ReaderFont.SERIF)
+        settings.saveReaderAppearance(expected)
+        assertEquals(expected, withTimeout(5000) { library.appearance.first { it == expected } })
     }
 
     @Test fun continuousScrollSurvivesSettingsReloadWithDefaultPageStyle() = runBlocking {

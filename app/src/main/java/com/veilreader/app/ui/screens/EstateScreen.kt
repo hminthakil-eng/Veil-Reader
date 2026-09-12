@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import android.animation.ValueAnimator
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -266,9 +270,43 @@ private fun EstateDesigner(estate: EstateState, onSave: (EstateState) -> Unit) {
 
 @Composable
 private fun ResidentPortrait(id: String, name: String, unlocked: Boolean) {
-    val color = when (id) { "mara" -> Color(0xFFD8BD7C); "oren" -> Color(0xFFC9A69B); "sable" -> Color(0xFFA1BACF); "iona" -> Color(0xFFA4C7AF); else -> Color(0xFFC1A9D1) }
-    Surface(modifier = Modifier.size(60.dp), shape = CircleShape, color = color.copy(alpha = if (unlocked) .18f else .06f), border = BorderStroke(1.dp, color.copy(alpha = .3f))) {
-        Box(contentAlignment = Alignment.Center) { Text(name.take(1), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface) }
+    val accent = when (id) { "mara" -> Color(0xFFD8BD7C); "oren" -> Color(0xFFC9A69B); "sable" -> Color(0xFFA1BACF); "iona" -> Color(0xFFA4C7AF); else -> Color(0xFFC1A9D1) }
+    Surface(modifier = Modifier.size(64.dp), shape = CircleShape, color = accent.copy(alpha = .14f), border = BorderStroke(1.dp, accent.copy(alpha = .35f))) {
+        if (!unlocked) {
+            Box(contentAlignment = Alignment.Center) { Text(name.take(1), style = MaterialTheme.typography.headlineMedium) }
+        } else Canvas(Modifier.fillMaxSize()) {
+            val w = size.width; val h = size.height
+            val skin = when (id) { "oren" -> Color(0xFFC18F73); "sable" -> Color(0xFF9C6D58); "iona" -> Color(0xFFD8AD91); else -> Color(0xFFCEAA92) }
+            val hair = when (id) { "mara" -> Color(0xFFBAB6B1); "oren" -> Color(0xFF6B5144); "sable" -> Color(0xFF302F38); "iona" -> Color(0xFF80524A); else -> Color(0xFFDBD8D1) }
+            drawOval(accent.copy(alpha = .6f), Offset(w * .1f, h * .67f), Size(w * .8f, h * .6f))
+            drawOval(hair, Offset(w * .24f, h * .17f), Size(w * .52f, h * .64f))
+            drawRect(skin, Offset(w * .43f, h * .59f), Size(w * .14f, h * .17f))
+            drawOval(skin, Offset(w * .31f, h * .26f), Size(w * .38f, h * .4f))
+            val fringe = Path().apply { moveTo(w * .27f, h * .39f); lineTo(w * .3f, h * .22f); lineTo(w * .6f, h * .16f); lineTo(w * .74f, h * .34f); lineTo(w * .6f, h * .31f); lineTo(w * .47f, h * .24f); close() }
+            drawPath(fringe, hair)
+            drawCircle(Color(0xFF38323A), w * .014f, Offset(w * .42f, h * .44f))
+            drawCircle(Color(0xFF38323A), w * .014f, Offset(w * .59f, h * .44f))
+            drawLine(Color(0xFF986A61), Offset(w * .47f, h * .57f), Offset(w * .56f, h * .56f), w * .015f)
+            if (id == "oren") {
+                val beard = Path().apply { moveTo(w * .31f, h * .5f); lineTo(w * .5f, h * .59f); lineTo(w * .7f, h * .5f); lineTo(w * .63f, h * .68f); lineTo(w * .47f, h * .73f); lineTo(w * .34f, h * .64f); close() }
+                drawPath(beard, hair)
+                drawOval(Color(0xFF817A72), Offset(w * .22f, h * .16f), Size(w * .57f, h * .15f))
+            }
+            if (id == "iona") repeat(4) { i ->
+                drawCircle(accent, w * .055f, Offset(w * (.28f + i * .09f), h * .23f))
+                drawCircle(Color(0xFFF7DF9C), w * .02f, Offset(w * (.28f + i * .09f), h * .23f))
+            }
+            if (id == "mara") {
+                drawCircle(Color(0xFFFFCF7F).copy(alpha = .18f), w * .17f, Offset(w * .74f, h * .8f))
+                drawRect(Color(0xFFF9D897), Offset(w * .7f, h * .71f), Size(w * .1f, h * .16f))
+            }
+            if (id == "sable") drawRect(Color(0xFFD2BF9E), Offset(w * .23f, h * .78f), Size(w * .24f, h * .19f))
+            if (id == "vesper") {
+                drawLine(accent, Offset(w * .34f, h * .44f), Offset(w * .67f, h * .44f), w * .012f)
+                drawCircle(accent.copy(alpha = .4f), w * .052f, Offset(w * .41f, h * .45f))
+                drawCircle(accent.copy(alpha = .4f), w * .052f, Offset(w * .59f, h * .45f))
+            }
+        }
     }
 }
 

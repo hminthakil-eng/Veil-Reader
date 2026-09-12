@@ -33,6 +33,7 @@ class PageCurlView(context: Context) : View(context) {
     private var towardLeft = true
     private var sourceLocator: String? = null
     private var destinationScheduled = false
+    private var generation = 0
     var isTurning: Boolean = false
         private set
     private val expiry = Runnable { cancelTurn() }
@@ -88,8 +89,9 @@ class PageCurlView(context: Context) : View(context) {
     fun onLocationChanged(locator: String) {
         if (!isTurning || locator == sourceLocator || destinationScheduled) return
         destinationScheduled = true
+        val turnGeneration = generation
         // Locators may be emitted before the WebView has submitted its next frame.
-        postOnAnimation { postOnAnimation { if (isTurning) animateTurn() } }
+        postOnAnimation { postOnAnimation { if (isTurning && generation == turnGeneration) animateTurn() } }
     }
 
     private fun animateTurn() {
@@ -137,6 +139,7 @@ class PageCurlView(context: Context) : View(context) {
     }
 
     fun cancelTurn() {
+        generation++
         removeCallbacks(expiry)
         val running = animator
         animator = null

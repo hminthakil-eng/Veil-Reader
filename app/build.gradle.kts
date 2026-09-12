@@ -15,8 +15,17 @@ android {
         targetSdk = 37
         versionCode = 11
         versionName = "0.11.0"
+        manifestPlaceholders["appLabel"] = "Veil Reader"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        getByName("debug") {
+            applicationIdSuffix = ".preview"
+            versionNameSuffix = "-preview"
+            manifestPlaceholders["appLabel"] = "Veil Reader Preview"
+        }
     }
 
     buildFeatures {

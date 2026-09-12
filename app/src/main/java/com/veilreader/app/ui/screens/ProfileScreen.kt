@@ -143,7 +143,7 @@ fun ProfileScreen(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             StatCard("✦", "$highlightCount", "highlights", Modifier.weight(1f))
-            StatCard("♜", "${p.rankIndex + 1}", "castle tier", Modifier.weight(1f))
+            StatCard("♜", "${p.rankIndex + 1}", "Path rank", Modifier.weight(1f))
         }
 
         ProfileSectionHeading(
@@ -400,3 +400,4 @@ private fun StatCard(symbol: String, value: String, label: String, modifier: Mod
         Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
     }
 }
+

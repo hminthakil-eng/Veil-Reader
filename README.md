@@ -61,6 +61,12 @@ gradle :app:connectedDebugAndroidTest
 
 The repository workflows upload a debug APK and verification reports after successful runs.
 
+## Try the preview on Android
+
+The CI debug APK installs as **Veil Reader Preview** alongside the existing app. Download `veil-reader-debug-apk` from this branch’s successful Android workflow, extract the ZIP and open `app-debug.apk` on the phone.
+
+To bring over your books and progress, export a library backup from the existing Veil Reader, then restore that ZIP from Profile in Veil Reader Preview. Its saved library is separate. Production signing remains a release gate; this is a test build.
+
 ## Backup privacy
 
 Profile → Export library backup writes a local ZIP containing imported publications and reading data. The ZIP is **not encrypted**; store it somewhere you trust. Restore validates archive paths and sizes before replacing current state and rolls back if the replacement cannot be committed.

@@ -70,6 +70,7 @@ class LocalLibraryRepository internal constructor(
     val bookmarks: StateFlow<List<Bookmark>> = _bookmarks
 
     private val _appearance = MutableStateFlow(ReaderAppearance())
+    val appearance: StateFlow<ReaderAppearance> = _appearance
 
     init {
         scope.launch {
@@ -418,3 +419,4 @@ private data class DatabaseLibraryState(
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
 ).toString()
+

@@ -4,7 +4,7 @@
         android:allowBackup="false"
         android:icon="@drawable/ic_veil_reader_icon"
         android:roundIcon="@drawable/ic_veil_reader_icon"
-        android:label="Veil Reader"
+        android:label="${appLabel}"
         android:supportsRtl="true"
         android:theme="@style/Theme.VeilReader">
         <activity
@@ -24,3 +24,4 @@
         </activity>
     </application>
 </manifest>
+

@@ -116,7 +116,7 @@ fun ReaderScreen(
     var curlView by remember(opened.book.id) { mutableStateOf<PageCurlView?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
-    var appearance by remember { mutableStateOf(library.loadAppearance()) }
+    val appearance by library.appearance.collectAsStateWithLifecycle()
     val latestAppearance by rememberUpdatedState(appearance)
     var showNotebook by remember { mutableStateOf(false) }
 
@@ -596,7 +596,6 @@ fun ReaderScreen(
                 appearance = appearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
-                    appearance = it
                     library.saveAppearance(it)
                 },
                 onDone = { showAppearance = false }
