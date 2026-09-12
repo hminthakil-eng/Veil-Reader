@@ -516,6 +516,7 @@ private fun AdvancementCeremonyDialog(
 
 @Composable
 private fun PathIcon(pathId: String, tint: Color, modifier: Modifier = Modifier) {
+    val cutout = MaterialTheme.colorScheme.surface
     Canvas(modifier) {
         val stroke = Stroke(1.8.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
         val w = size.width
@@ -533,7 +534,7 @@ private fun PathIcon(pathId: String, tint: Color, modifier: Modifier = Modifier)
             }
             "dreamwalker" -> {
                 drawCircle(tint, w * .31f, Offset(w * .45f, h * .47f), style = stroke)
-                drawCircle(MaterialTheme.colorScheme.surface, w * .29f, Offset(w * .57f, h * .39f))
+                drawCircle(cutout, w * .29f, Offset(w * .57f, h * .39f))
                 drawCircle(tint, w * .04f, Offset(w * .74f, h * .24f))
             }
             "archivist" -> {
@@ -555,7 +556,7 @@ private fun PathIcon(pathId: String, tint: Color, modifier: Modifier = Modifier)
             }
             "nocturne" -> {
                 drawCircle(tint, w * .31f, Offset(w * .45f, h * .47f), style = stroke)
-                drawCircle(MaterialTheme.colorScheme.surface, w * .28f, Offset(w * .60f, h * .38f))
+                drawCircle(cutout, w * .28f, Offset(w * .60f, h * .38f))
             }
             "artificer" -> {
                 drawCircle(tint, w * .25f, Offset(w * .50f, h * .50f), style = stroke)
