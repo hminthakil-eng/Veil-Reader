@@ -50,7 +50,7 @@ jobs:
           disable-animations: true
           script: bash tools/run-instrumentation.sh
 
-      - name: Screenshot review payloads
+      - name: Test summaries and screenshot review payloads
         if: always()
         run: python3 tools/emit-ui-previews.py
 

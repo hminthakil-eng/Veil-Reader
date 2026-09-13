@@ -17,7 +17,7 @@ This candidate extends the tested 0.11 preview. The castle campaign, residents, 
 
 Run policy/unit/lint/APK and emulator workflows for the exact commit. New coverage includes settings route recreation, quiet-mode navigation without losing a reader locator, preference reload, estate accrual while quiet, complete preference/estate ZIP round trip and older-backup compatibility.
 
-Compose interaction tests exercise setup selection, quiet/theme switches, scroll/curl selection, restore confirmation and reachable controls at 200% text. Synthetic native screenshots of welcome, settings, typography and large text are attached to the instrumentation report. These are component rendering/interaction checks, not a physical-device reading session or full TalkBack audit. Test setup follows the [Android Compose testing guide](https://developer.android.com/develop/ui/compose/testing).
+Compose interaction tests exercise setup selection, quiet/theme switches, scroll/curl selection, restore confirmation and reachable controls at 200% text. The real MainActivity is also exercised through setup, quiet-mode persistence, settings recreation and re-enabling the world. Synthetic native screenshots of welcome, settings, typography and large text are attached to the instrumentation report. These are component rendering/interaction checks, not a physical-device reading session or full TalkBack audit. Test setup follows the [Android Compose testing guide](https://developer.android.com/develop/ui/compose/testing).
 
 Initial candidate: local 39-check reading-policy suite and whitespace checks passed; Android CI pending. Exact CI and screenshot results are recorded on PR #39 after the run.
 

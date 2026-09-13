@@ -3,5 +3,6 @@
 set +e
 gradle :app:connectedDebugAndroidTest --stacktrace
 veil_test_exit_code=$?
+adb logcat -d -b crash
 adb pull /sdcard/Android/data/com.veilreader.app.preview/files/ui-screenshots app/build/ui-screenshots
 exit "$veil_test_exit_code"

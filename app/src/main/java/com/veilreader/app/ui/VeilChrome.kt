@@ -26,6 +26,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.activity.compose.LocalActivity
+import androidx.core.view.WindowCompat
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +50,18 @@ import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilSpacing
+
+/** Follow explicit app/paper themes as well as Android's system theme. */
+@Composable
+internal fun VeilSystemBars(darkBackground: Boolean) {
+    val activity = LocalActivity.current ?: return
+    SideEffect {
+        WindowCompat.getInsetsController(activity.window, activity.window.decorView).apply {
+            isAppearanceLightStatusBars = !darkBackground
+            isAppearanceLightNavigationBars = !darkBackground
+        }
+    }
+}
 
 /**
  * Calm world chrome for everything around the actual publication.
@@ -428,4 +443,3 @@ private fun VeilTabIcon(
         }
     }
 }
-

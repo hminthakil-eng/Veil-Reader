@@ -31,6 +31,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -61,6 +62,7 @@ import com.veilreader.app.domain.ReaderFont
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.reader.PageCurlView
+import com.veilreader.app.ui.VeilSystemBars
 import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -121,6 +123,14 @@ fun ReaderScreen(
     val appearance by library.appearance.collectAsStateWithLifecycle()
     val latestAppearance by rememberUpdatedState(appearance)
     var showNotebook by remember { mutableStateOf(false) }
+
+    VeilSystemBars(
+        darkBackground = if (controlsVisible || showAppearance || showNotebook) {
+            MaterialTheme.colorScheme.background.luminance() < 0.5f
+        } else {
+            opened.format == BookFormat.EPUB && appearance.theme in listOf(ReaderTheme.DUSK, ReaderTheme.OLED)
+        }
+    )
 
     DisposableEffect(activity, appearance.keepScreenOn) {
         val decor = activity.window.decorView
@@ -809,4 +819,3 @@ private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferen
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
-

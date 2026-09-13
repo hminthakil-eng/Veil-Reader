@@ -1,4 +1,4 @@
-# Veil Reader 0.11.0 — A Home Between Pages
+# Veil Reader 0.12 Preview — A Reader That Feels Like You
 
 Veil Reader is a premium, offline-first Android EPUB/PDF reader with an optional mystery-RPG progression layer. Reading remains the primary experience; Paths, rituals and the Castle grow from real reading activity without sitting on top of the page.
 
@@ -29,7 +29,16 @@ Veil Reader is a premium, offline-first Android EPUB/PDF reader with an optional
 - Publication cover thumbnails and content fingerprints are regenerable cache metadata and are not trusted across restore.
 - Android implicit app backup is disabled so imported books/notes are not silently copied outside Veil Reader's explicit backup flow.
 
-### A home between pages (0.11 candidate)
+### Setup and comfort (0.12 preview)
+- Optional welcome guide with quiet reading or a reading world; existing populated libraries skip setup.
+- Settings center with General, Reading, and Backups & data sections.
+- Quiet mode hides world screens while preserving the castle and engaged-reading progress.
+- Independent app light/dark/system themes and a live EPUB typography preview.
+- Shared reduced-motion behavior, PDF comfort controls, and navigation that adapts to large text and landscape.
+- App preferences included in ZIP backups; older archives retain current app preferences.
+- Native Compose interaction, activity-recreation and 200% text checks accompany the storage suite.
+
+### A home between pages (0.11 preview)
 - A permanent shack → cottage → lodge → manor → keep → castle → citadel construction campaign.
 - Lorestones earned from existing engaged-reading minutes, with one-time story rewards.
 - Ten authored quests, five residents with contextual dialogue, and an unlockable original lore journal.
@@ -65,7 +74,7 @@ The repository workflows upload a debug APK and verification reports after succe
 
 The CI debug APK installs as **Veil Reader Preview** alongside the existing app. Download `veil-reader-debug-apk` from this branch’s successful Android workflow, extract the ZIP and open `app-debug.apk` on the phone.
 
-To bring over your books and progress, export a library backup from the existing Veil Reader, then restore that ZIP from Profile in Veil Reader Preview. Its saved library is separate. Production signing remains a release gate; this is a test build.
+To bring over your books and progress, export a library backup from the existing Veil Reader, then restore that ZIP from Profile → Settings & reading comfort → Backups & data in Veil Reader Preview. Its saved library is separate. Export a backup before replacing or reinstalling a preview; CI debug signing keys may change between builds. Production signing remains a release gate; this is a test build.
 
 ## Backup privacy
 
