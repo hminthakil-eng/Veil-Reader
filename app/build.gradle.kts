@@ -13,8 +13,8 @@ android {
         applicationId = "com.veilreader.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 11
-        versionName = "0.11.0"
+        versionCode = 12
+        versionName = "0.12.0"
         manifestPlaceholders["appLabel"] = "Veil Reader"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -76,11 +76,12 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.5")
     testImplementation("junit:junit:4.13.2")
 
     // Real Room verification runs on an Android emulator for data-layer changes.
     androidTestImplementation("androidx.test:core:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.room:room-testing:2.8.5")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
 }
-

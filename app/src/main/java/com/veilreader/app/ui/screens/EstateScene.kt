@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.theme.LocalVeilMotion
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
@@ -23,9 +24,10 @@ import com.veilreader.app.domain.*
 /** Vector artwork drawn from durable construction state, with no network or bitmap cache. */
 @Composable
 fun EstateScene(estate: EstateState, modifier: Modifier = Modifier, reduceMotion: Boolean = false) {
+    val motion = LocalVeilMotion.current
     Crossfade(
         targetState = estate,
-        animationSpec = tween(if (reduceMotion) 0 else 650),
+        animationSpec = tween(if (reduceMotion) 0 else motion.duration(650)),
         label = "estate-construction",
         modifier = modifier.fillMaxWidth().aspectRatio(1.36f).semantics {
             contentDescription = "${estate.name}: ${EstateCampaign.stages[estate.stage].name}, ${estate.palette.label}, ${estate.grounds.label}, ${estate.sky.label}"

@@ -14,9 +14,13 @@ enum class VeilTab(val label: String, val glyph: String) {
     PROFILE("Profile", "◎")
 }
 
+fun visibleTabs(gameVisible: Boolean): List<VeilTab> =
+    VeilTab.entries.filter { gameVisible || it !in setOf(VeilTab.CASTLE, VeilTab.PATH) }
+
 data class VeilRouteState(
     val selectedTab: VeilTab = VeilTab.READING,
     val showArchive: Boolean = false,
+    val settingsSection: String? = null,
     val activeChamber: String? = null,
     val activeBookId: String? = null,
     val locatorOverrideJson: String? = null
@@ -37,6 +41,7 @@ class VeilAppViewModel(
     fun selectTab(tab: VeilTab) = update {
         copy(
             selectedTab = tab,
+            settingsSection = null,
             showArchive = false,
             activeChamber = null,
             activeBookId = null,
@@ -47,6 +52,7 @@ class VeilAppViewModel(
     fun openArchive() = update {
         copy(
             showArchive = true,
+            settingsSection = null,
             activeChamber = null,
             activeBookId = null,
             locatorOverrideJson = null
@@ -55,11 +61,28 @@ class VeilAppViewModel(
 
     fun closeArchive() = update { copy(showArchive = false) }
 
+    fun openSettings(section: String = "general") = update {
+        copy(settingsSection = section.takeIf { it in SETTINGS_SECTIONS } ?: "general",
+            showArchive = false, activeChamber = null, activeBookId = null, locatorOverrideJson = null)
+    }
+
+    fun closeSettings() = update { copy(settingsSection = null) }
+
+    /** Hide world destinations without interrupting an active book, notes, or settings. */
+    fun applyGameVisibility(visible: Boolean) {
+        if (visible) return
+        update {
+            copy(selectedTab = selectedTab.takeIf { it in visibleTabs(false) } ?: VeilTab.READING,
+                activeChamber = null)
+        }
+    }
+
     fun openChamber(chamberId: String) {
         if (chamberId !in RESTORABLE_CHAMBERS) return
         update {
             copy(
                 activeChamber = chamberId,
+                settingsSection = null,
                 showArchive = false,
                 activeBookId = null,
                 locatorOverrideJson = null
@@ -74,6 +97,7 @@ class VeilAppViewModel(
         update {
             copy(
                 activeBookId = bookId,
+                settingsSection = null,
                 locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
                 showArchive = false,
                 activeChamber = null
@@ -95,6 +119,7 @@ class VeilAppViewModel(
     fun closeReader() = update {
         copy(
             selectedTab = VeilTab.LIBRARY,
+            settingsSection = null,
             activeBookId = null,
             locatorOverrideJson = null,
             showArchive = false,
@@ -111,6 +136,8 @@ class VeilAppViewModel(
     private fun persist(next: VeilRouteState) {
         savedStateHandle[KEY_TAB] = next.selectedTab.name
         savedStateHandle[KEY_ARCHIVE] = next.showArchive
+        if (next.settingsSection == null) savedStateHandle.remove<String>(KEY_SETTINGS)
+        else savedStateHandle[KEY_SETTINGS] = next.settingsSection
         if (next.activeChamber == null) savedStateHandle.remove<String>(KEY_CHAMBER)
         else savedStateHandle[KEY_CHAMBER] = next.activeChamber
         if (next.activeBookId == null) savedStateHandle.remove<String>(KEY_BOOK)
@@ -126,6 +153,7 @@ class VeilAppViewModel(
         return VeilRouteState(
             selectedTab = tab,
             showArchive = savedStateHandle.get<Boolean>(KEY_ARCHIVE) == true,
+            settingsSection = savedStateHandle.get<String>(KEY_SETTINGS),
             activeChamber = savedStateHandle.get<String>(KEY_CHAMBER),
             activeBookId = savedStateHandle.get<String>(KEY_BOOK),
             locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR)
@@ -137,15 +165,18 @@ class VeilAppViewModel(
         if (cleanBookId != null) {
             return copy(
                 showArchive = false,
+                settingsSection = null,
                 activeChamber = null,
                 activeBookId = cleanBookId,
                 locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank)
             )
         }
         val cleanChamber = activeChamber?.takeIf { it in RESTORABLE_CHAMBERS }
+        val cleanSettings = settingsSection?.takeIf { it in SETTINGS_SECTIONS }
         return copy(
-            showArchive = showArchive && cleanChamber == null,
-            activeChamber = cleanChamber,
+            showArchive = showArchive && cleanChamber == null && cleanSettings == null,
+            settingsSection = cleanSettings,
+            activeChamber = cleanChamber.takeIf { cleanSettings == null },
             activeBookId = null,
             locatorOverrideJson = null
         )
@@ -154,9 +185,11 @@ class VeilAppViewModel(
     companion object {
         private const val KEY_TAB = "veil.route.tab"
         private const val KEY_ARCHIVE = "veil.route.archive"
+        private const val KEY_SETTINGS = "veil.route.settings"
         private const val KEY_CHAMBER = "veil.route.chamber"
         private const val KEY_BOOK = "veil.route.book"
         private const val KEY_LOCATOR = "veil.route.locator"
         private val RESTORABLE_CHAMBERS = setOf("treasury", "sanctum")
+        private val SETTINGS_SECTIONS = setOf("general", "reading", "data")
     }
 }

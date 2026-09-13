@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.theme.LocalVeilMotion
 import android.graphics.Color as AndroidColor
 import android.animation.ValueAnimator
 import android.view.ActionMode
@@ -100,6 +101,7 @@ fun ReaderScreen(
     game: GameRepository,
     onClose: () -> Unit
 ) {
+    val motion = LocalVeilMotion.current
     val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
         "Veil Reader requires a FragmentActivity host."
     }
@@ -150,7 +152,7 @@ fun ReaderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarBottom by animateDpAsState(
         targetValue = if (controlsVisible) 104.dp else 16.dp,
-        animationSpec = tween(220),
+        animationSpec = tween(motion.duration(220)),
         label = "reader-snackbar-offset"
     )
 
@@ -367,8 +369,8 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
-            enter = fadeIn(tween(170)) + slideInVertically(tween(220)) { -it / 2 },
-            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { -it / 2 }
+            enter = fadeIn(tween(motion.duration(170))) + slideInVertically(tween(motion.duration(220))) { -it / 2 },
+            exit = fadeOut(tween(motion.duration(120))) + slideOutVertically(tween(motion.duration(180))) { -it / 2 }
         ) {
             Surface(
                 modifier = Modifier
@@ -431,8 +433,8 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = fadeIn(tween(170)) + slideInVertically(tween(220)) { it / 2 },
-            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { it / 2 }
+            enter = fadeIn(tween(motion.duration(170))) + slideInVertically(tween(motion.duration(220))) { it / 2 },
+            exit = fadeOut(tween(motion.duration(120))) + slideOutVertically(tween(motion.duration(180))) { it / 2 }
         ) {
             Surface(
                 modifier = Modifier
@@ -477,8 +479,7 @@ fun ReaderScreen(
                     ReaderControl(
                         action = ReaderAction.APPEARANCE,
                         label = "Appearance",
-                        modifier = Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
+                        modifier = Modifier.weight(1f)
                     ) {
                         readerViewModel.onUserInteraction()
                         showAppearance = true
@@ -592,7 +593,8 @@ fun ReaderScreen(
 
     if (showAppearance) {
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
-            AppearancePanel(
+            ReaderAppearancePanel(
+                reflowable = opened.format == BookFormat.EPUB,
                 appearance = appearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
@@ -780,158 +782,6 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
     }
 }
 
-@Composable
-private fun AppearancePanel(
-    appearance: ReaderAppearance,
-    onChange: (ReaderAppearance) -> Unit,
-    onDone: () -> Unit
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 22.dp)
-            .padding(bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                "Tune the page once, then get back to the book. These choices stay on your device.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Text("Reading mode", style = MaterialTheme.typography.titleLarge)
-        ReaderModeChoices(appearance, onChange)
-
-        Text("Presets", fontWeight = FontWeight.SemiBold)
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.PAPER,
-                        fontScale = 1.0,
-                        lineHeight = 1.45,
-                        pageMargins = 1.0,
-                        scroll = false,
-                        publisherStyles = true
-                    )
-                )
-            }
-            AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.SEPIA,
-                        fontScale = 1.08,
-                        lineHeight = 1.6,
-                        pageMargins = 1.15,
-                        scroll = false,
-                        publisherStyles = false
-                    )
-                )
-            }
-            AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.DUSK,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
-                    )
-                )
-            }
-            AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.OLED,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
-                    )
-                )
-            }
-        }
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.fontScale.toFloat(),
-            onValueChange = { onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false)) },
-            valueRange = .75f..1.8f
-        )
-
-        Text("Line height · ${"%.2f".format(appearance.lineHeight)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.lineHeight.toFloat(),
-            onValueChange = { onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
-            valueRange = 1.1f..2.0f
-        )
-
-        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.pageMargins.toFloat(),
-            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
-            valueRange = .5f..2.0f
-        )
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Text("Typeface", style = MaterialTheme.typography.titleLarge)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            ReaderFont.entries.forEach { font ->
-                FilterChip(selected = appearance.font == font,
-                    onClick = { onChange(appearance.copy(font = font, publisherStyles = font == ReaderFont.ORIGINAL)) },
-                    label = { Text(font.label) }, modifier = Modifier.heightIn(min = 48.dp))
-            }
-        }
-        ReaderOption("Justified text", "Align both edges, where the book supports it.", appearance.justified) {
-            onChange(appearance.copy(justified = it, publisherStyles = false))
-        }
-        ReaderOption("Keep the screen awake", "While this book is open.", appearance.keepScreenOn) {
-            onChange(appearance.copy(keepScreenOn = it))
-        }
-        ReaderOption("Reduce page motion", "Use instant turns. Android’s animation setting is also respected.", appearance.reduceMotion) {
-            onChange(appearance.copy(reduceMotion = it))
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Publisher styling", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Keep the book's original typography and layout when possible.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) }
-            )
-        }
-
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Text("Back to reading")
-        }
-    }
-}
-
-@Composable
-private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) }
-    )
-}
-
 @OptIn(ExperimentalReadiumApi::class)
 private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
     theme = when (theme) {
@@ -954,7 +804,7 @@ private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferen
         ReaderFont.SANS -> ReadiumFontFamily("sans-serif")
         ReaderFont.MONO -> ReadiumFontFamily("monospace")
     },
-    textAlign = if (justified) TextAlign.JUSTIFY else TextAlign.START,
+    textAlign = if (publisherStyles) null else if (justified) TextAlign.JUSTIFY else TextAlign.START,
     publisherStyles = publisherStyles
 )
 

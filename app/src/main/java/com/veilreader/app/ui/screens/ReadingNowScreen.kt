@@ -33,6 +33,8 @@ fun ReadingNowScreen(
     books: List<Book>,
     profile: ReaderProfile,
     quests: List<Quest>,
+    gameVisible: Boolean,
+    onOpenSettings: () -> Unit,
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenCastle: () -> Unit
@@ -56,7 +58,7 @@ fun ReadingNowScreen(
             subtitle = if (current == null) {
                 "Import an EPUB or PDF. Your books and reading data stay on this device."
             } else {
-                "Your current book, reading progress, and Path—without getting in the way."
+                if (gameVisible) "Your next chapter is waiting. Make a little room for it." else "Just you, your books, and a little time to read."
             }
         )
 
@@ -84,16 +86,16 @@ fun ReadingNowScreen(
                 Text("Library")
             }
             FilledTonalButton(
-                onClick = onOpenCastle,
+                onClick = if (gameVisible) onOpenCastle else onOpenSettings,
                 modifier = Modifier.weight(1f).heightIn(min = 50.dp)
             ) {
-                Text("Castle")
+                Text(if (gameVisible) "Castle" else "Settings")
             }
         }
 
-        PathProgressCard(profile)
+        if (gameVisible) PathProgressCard(profile)
 
-        if (quests.isNotEmpty()) {
+        if (gameVisible && quests.isNotEmpty()) {
             Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
                 SectionTitle(
                     eyebrow = "Today",
@@ -484,3 +486,4 @@ private fun formatReadingTime(minutes: Int): String = when {
     minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
     else -> "${minutes}m"
 }
+

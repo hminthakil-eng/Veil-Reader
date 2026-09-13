@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,6 +18,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
@@ -25,6 +27,10 @@ import com.veilreader.app.domain.ReaderAppearance
 internal fun ReaderModeChoices(appearance: ReaderAppearance, onChange: (ReaderAppearance) -> Unit) {
     val labels = listOf("Slide", "3D curl", "Instant", "Scroll")
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        if (appearance.reduceMotion && !appearance.scroll) {
+            Text("Reduced motion is on: EPUB pages turn instantly. Your selected style is kept for later.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+        }
         for (row in 0..1) {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 for (index in row * 2..row * 2 + 1) {
@@ -76,11 +82,14 @@ private fun PageModeGlyph(mode: Int, tint: Color) {
 
 @Composable
 internal fun ReaderOption(title: String, detail: String, checked: Boolean, onChange: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp)
+        .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+        .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(title, style = MaterialTheme.typography.titleMedium)
             Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked, onChange)
+        Switch(checked = checked, onCheckedChange = null, modifier = Modifier.clearAndSetSemantics {})
     }
 }

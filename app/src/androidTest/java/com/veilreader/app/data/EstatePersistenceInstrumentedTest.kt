@@ -64,6 +64,8 @@ class EstatePersistenceInstrumentedTest {
             pageTurnStyle = PageTurnStyle.CURL, font = ReaderFont.SANS, justified = true,
             keepScreenOn = true, reduceMotion = true)
         library.saveAppearance(expectedAppearance)
+        val expectedPreferences = AppPreferences(AppTheme.DARK, gameVisible = false, onboardingCompleted = true)
+        library.saveAppPreferences(expectedPreferences)
         library.flushWrites()
         val backup = File(context.cacheDir, "estate-roundtrip.zip")
         try {
@@ -71,12 +73,14 @@ class EstatePersistenceInstrumentedTest {
             exporter.writeBackup(Uri.fromFile(backup))
             context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE).edit().clear().commit()
             library.saveAppearance(ReaderAppearance())
+            library.saveAppPreferences(AppPreferences())
             library.flushWrites()
             exporter.restoreBackup(Uri.fromFile(backup))
             game.refresh()
             assertEquals(expectedEstate, game.estate.value)
             assertEquals(15, game.profile.value.minutesRead)
             assertEquals(expectedAppearance, settings.settings.first().readerAppearance)
+            assertEquals(expectedPreferences, settings.settings.first().appPreferences)
             assertFalse(game.claimStoryChapter("first_light"))
         } finally { backup.delete() }
     }

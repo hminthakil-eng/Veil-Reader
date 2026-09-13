@@ -5,6 +5,8 @@ on:
     paths:
       - "app/src/main/java/com/veilreader/app/data/**"
       - "app/src/androidTest/**"
+      - "app/src/main/java/com/veilreader/app/ui/**"
+      - "app/src/main/java/com/veilreader/app/domain/**"
       - "app/schemas/**"
       - "app/build.gradle.kts"
       - "build.gradle.kts"
@@ -39,14 +41,18 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run Room instrumentation tests
+      - name: Run storage and Compose interaction tests
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: gradle :app:connectedDebugAndroidTest --stacktrace
+          script: bash tools/run-instrumentation.sh
+
+      - name: Screenshot review payloads
+        if: always()
+        run: python3 tools/emit-ui-previews.py
 
       - name: Upload instrumentation reports
         if: always()
@@ -56,4 +62,5 @@ jobs:
           path: |
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
+            app/build/ui-screenshots/
           if-no-files-found: ignore

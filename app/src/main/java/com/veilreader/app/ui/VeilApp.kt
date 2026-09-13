@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,6 +32,12 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.AppPreferences
+import com.veilreader.app.domain.AppTheme
+import com.veilreader.app.ui.theme.VeilTheme
+import com.veilreader.app.ui.navigation.visibleTabs
+import com.veilreader.app.ui.screens.SettingsScreen
+import com.veilreader.app.ui.screens.WelcomeScreen
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
@@ -50,15 +58,43 @@ fun VeilApp(
     onExternalOpenUriConsumed: () -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
+    val library = remember(context) { LocalLibraryRepository(context) }
+    val preferences by library.appPreferences.collectAsStateWithLifecycle()
+    val appearance by library.appearance.collectAsStateWithLifecycle()
+    VeilTheme(appTheme = preferences?.theme ?: AppTheme.SYSTEM, reduceMotion = appearance.reduceMotion) {
+        VeilAppContent(library, preferences, externalOpenUri, onExternalOpenUriConsumed)
+    }
+}
+
+@Composable
+private fun VeilAppContent(
+    library: LocalLibraryRepository,
+    preferences: AppPreferences?,
+    externalOpenUri: Uri?,
+    onExternalOpenUriConsumed: () -> Unit
+) {
+    val context = LocalContext.current.applicationContext
     val activity = LocalActivity.current
     val scope = rememberCoroutineScope()
-    val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
     val readerEngine = remember(context) { ReadiumEngine(context) }
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
 
     val books by library.books.collectAsState()
+    val booksLoaded by library.booksLoaded.collectAsStateWithLifecycle()
+    val startupFailure by library.startupFailure.collectAsStateWithLifecycle()
+    val appearance by library.appearance.collectAsStateWithLifecycle()
+    val gameVisible = preferences?.gameVisible ?: true
+    val tabs = visibleTabs(gameVisible)
+    val selectedTab = route.selectedTab.takeIf { it in tabs } ?: VeilTab.READING
+    var replayWelcome by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(gameVisible) { routeViewModel.applyGameVisibility(gameVisible) }
+    LaunchedEffect(booksLoaded, books.isNotEmpty(), preferences?.onboardingCompleted) {
+        if (booksLoaded && books.isNotEmpty() && preferences != null && !preferences.onboardingCompleted) {
+            library.saveAppPreferences(preferences.copy(onboardingCompleted = true))
+        }
+    }
     val highlights by library.highlights.collectAsState()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
 
@@ -259,6 +295,8 @@ fun VeilApp(
                 books = books,
                 profile = profile,
                 quests = quests,
+                gameVisible = gameVisible,
+                onOpenSettings = { routeViewModel.openSettings() },
                 onOpenBook = { requestOpenBook(it) },
                 onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
                 onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
@@ -312,22 +350,31 @@ fun VeilApp(
             VeilTab.PROFILE -> ProfileScreen(
                 profile = profile,
                 highlightCount = highlights.size,
-                exporting = exporting,
-                restoring = restoring,
+                gameVisible = gameVisible,
                 dailyGoalMinutes = dailyGoalMinutes,
                 castleTitle = castleTitle,
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
-                onExportBackup = { exportData(it, true) },
-                onRestoreBackup = ::restoreData,
-                onExportNotes = { exportData(it, false) },
+                onOpenSettings = routeViewModel::openSettings,
                 onOpenArchive = routeViewModel::openArchive
             )
         }
     }
 
     val opened = openedPublication
-    if (opened != null) {
+    if (startupFailure != null) {
+        VeilWorldBackdrop {
+            Column(Modifier.align(Alignment.Center).padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Text("Could not open Veil Reader")
+                Text(startupFailure.orEmpty())
+                Button(onClick = { activity?.recreate() }) { Text("Try again") }
+            }
+        }
+    } else if (preferences == null || !booksLoaded) {
+        VeilWorldBackdrop {
+            CircularProgressIndicator(Modifier.align(Alignment.Center))
+        }
+    } else if (opened != null) {
         ReaderScreen(
             opened = opened,
             library = library,
@@ -337,6 +384,39 @@ fun VeilApp(
                 routeViewModel.closeReader()
             }
         )
+    } else if (route.settingsSection != null) {
+        SettingsScreen(
+            preferences = preferences,
+            appearance = appearance,
+            section = route.settingsSection!!,
+            dailyGoalMinutes = dailyGoalMinutes,
+            exporting = exporting,
+            restoring = restoring,
+            onSection = routeViewModel::openSettings,
+            onPreferences = library::saveAppPreferences,
+            onAppearance = library::saveAppearance,
+            onDailyGoal = game::setDailyGoal,
+            onExportBackup = { exportData(it, true) },
+            onRestoreBackup = ::restoreData,
+            onExportNotes = { exportData(it, false) },
+            onShowWelcome = { routeViewModel.closeSettings(); replayWelcome = true },
+            onClose = routeViewModel::closeSettings
+        )
+    } else if ((replayWelcome || (!preferences.onboardingCompleted && books.isEmpty())) &&
+        route.activeBookId == null && !isImporting && externalOpenUri == null) {
+        WelcomeScreen(
+            gameVisible = gameVisible,
+            onStart = { world ->
+                library.saveAppPreferences(preferences.copy(gameVisible = world, onboardingCompleted = true))
+                replayWelcome = false
+                routeViewModel.selectTab(VeilTab.LIBRARY)
+            },
+            onSkip = {
+                library.saveAppPreferences(preferences.copy(onboardingCompleted = true))
+                replayWelcome = false
+            },
+            onRestore = { replayWelcome = false; routeViewModel.openSettings("data") }
+        )
     } else if (route.showArchive) {
         ArchiveScreen(
             books,
@@ -344,7 +424,7 @@ fun VeilApp(
             onClose = routeViewModel::closeArchive,
             onOpenPassage = { book, locator -> requestOpenBook(book, locator) }
         )
-    } else if (route.activeChamber == "treasury") {
+    } else if (gameVisible && route.activeChamber == "treasury") {
         TreasuryScreen(
             profile = profile,
             equippedSigil = equippedSigil,
@@ -353,7 +433,7 @@ fun VeilApp(
             },
             onClose = routeViewModel::closeChamber
         )
-    } else if (route.activeChamber == "sanctum") {
+    } else if (gameVisible && route.activeChamber == "sanctum") {
         SanctumScreen(
             profile = profile,
             castleTitle = castleTitle,
@@ -366,7 +446,7 @@ fun VeilApp(
     } else {
         VeilWorldBackdrop {
             BoxWithConstraints(Modifier.fillMaxSize()) {
-                val wideLayout = maxWidth >= 840.dp
+                val wideLayout = maxWidth >= 840.dp || (maxWidth >= 600.dp && maxHeight < 480.dp)
 
                 if (wideLayout) {
                     Row(
@@ -375,7 +455,8 @@ fun VeilApp(
                             .systemBarsPadding()
                     ) {
                         VeilNavigationRail(
-                            selected = route.selectedTab,
+                            selected = selectedTab,
+                            tabs = tabs,
                             onSelect = routeViewModel::selectTab
                         )
                         Box(
@@ -386,7 +467,7 @@ fun VeilApp(
                             contentAlignment = Alignment.TopCenter
                         ) {
                             VeilAnimatedTabHost(
-                                selectedTab = route.selectedTab,
+                                selectedTab = selectedTab,
                                 modifier = Modifier
                                     .fillMaxHeight()
                                     .fillMaxWidth()
@@ -397,20 +478,15 @@ fun VeilApp(
                         }
                     }
                 } else {
-                    Box(Modifier.fillMaxSize()) {
+                    Column(Modifier.fillMaxSize().statusBarsPadding()) {
                         VeilAnimatedTabHost(
-                            selectedTab = route.selectedTab,
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .statusBarsPadding()
-                                .padding(bottom = 88.dp)
-                        ) { tab ->
-                            mainContent(tab)
-                        }
+                            selectedTab = selectedTab,
+                            modifier = Modifier.weight(1f).fillMaxWidth()
+                        ) { tab -> mainContent(tab) }
                         VeilBottomDock(
-                            selected = route.selectedTab,
-                            onSelect = routeViewModel::selectTab,
-                            modifier = Modifier.align(Alignment.BottomCenter)
+                            selected = selectedTab,
+                            tabs = tabs,
+                            onSelect = routeViewModel::selectTab
                         )
                     }
                 }
@@ -438,4 +514,3 @@ private fun sigilDisplayName(id: String): String = when (id) {
     "first_threshold" -> "First Threshold"
     else -> "Unknown Sigil"
 }
-

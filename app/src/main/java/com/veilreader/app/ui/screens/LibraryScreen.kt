@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.theme.LocalVeilMotion
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -56,6 +57,7 @@ fun LibraryScreen(
     onFavorite: (String) -> Unit,
     onEditMetadata: (BookMetadataUpdate) -> Unit
 ) {
+    val motion = LocalVeilMotion.current
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
@@ -287,7 +289,7 @@ fun LibraryScreen(
         } else {
             AnimatedContent(
                 targetState = viewMode,
-                transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
+                transitionSpec = { fadeIn(tween(motion.duration(180))) togetherWith fadeOut(tween(motion.duration(120))) },
                 label = "library-layout",
                 modifier = Modifier.weight(1f)
             ) { mode ->
@@ -864,3 +866,4 @@ private fun parseCollectionNames(value: String): List<String> = value
 
 private fun formatSeriesIndex(value: Double): String =
     if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+

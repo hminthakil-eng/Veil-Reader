@@ -13,6 +13,7 @@ import com.veilreader.app.data.db.toSnapshot
 import com.veilreader.app.data.migration.LegacyLibraryMigrator
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.AppPreferences
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
@@ -32,6 +33,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -72,6 +74,13 @@ class LocalLibraryRepository internal constructor(
     private val _appearance = MutableStateFlow(ReaderAppearance())
     val appearance: StateFlow<ReaderAppearance> = _appearance
 
+    private val _appPreferences = MutableStateFlow<AppPreferences?>(null)
+    val appPreferences: StateFlow<AppPreferences?> = _appPreferences
+    private val _booksLoaded = MutableStateFlow(false)
+    val booksLoaded: StateFlow<Boolean> = _booksLoaded
+    private val _startupFailure = MutableStateFlow<String?>(null)
+    val startupFailure: StateFlow<String?> = _startupFailure
+
     init {
         scope.launch {
             for (write in writes) {
@@ -88,13 +97,22 @@ class LocalLibraryRepository internal constructor(
             scope.launch {
                 runCatching { LegacyLibraryMigrator(appContext, database, settings).migrateIfNeeded() }
                     .onSuccess { initialized.complete(Unit) }
-                    .onFailure { initialized.completeExceptionally(it) }
+                    .onFailure {
+                        _startupFailure.value = "Your saved library could not be opened. Please reopen Veil and try again."
+                        initialized.completeExceptionally(it)
+                    }
             }
         } else {
             initialized.complete(Unit)
         }
         scope.launch {
-            database.books().observeAll().collect { rows -> _books.value = rows.map { it.toDomain() } }
+            if (runCatching { initialized.await() }.isFailure) return@launch
+            database.books().observeAll().catch {
+                _startupFailure.value = "Your saved library could not be opened. Please reopen Veil and try again."
+            }.collect { rows ->
+                _books.value = rows.map { it.toDomain() }
+                _booksLoaded.value = true
+            }
         }
         scope.launch {
             database.highlights().observeAll().collect { rows -> _highlights.value = rows.map { it.toDomain() } }
@@ -103,7 +121,13 @@ class LocalLibraryRepository internal constructor(
             database.bookmarks().observeAll().collect { rows -> _bookmarks.value = rows.map { it.toDomain() } }
         }
         scope.launch {
-            settings.settings.collect { _appearance.value = it.readerAppearance }
+            if (runCatching { initialized.await() }.isFailure) return@launch
+            settings.settings.catch {
+                _startupFailure.value = "Your saved settings could not be opened. Please reopen Veil and try again."
+            }.collect {
+                _appearance.value = it.readerAppearance
+                _appPreferences.value = it.appPreferences
+            }
         }
     }
 
@@ -131,6 +155,11 @@ class LocalLibraryRepository internal constructor(
     fun saveAppearance(value: ReaderAppearance) {
         _appearance.value = value
         enqueue { settings.saveReaderAppearance(value) }
+    }
+
+    fun saveAppPreferences(value: AppPreferences) {
+        _appPreferences.value = value
+        enqueue { settings.saveAppPreferences(value) }
     }
 
     /**
@@ -286,12 +315,13 @@ class LocalLibraryRepository internal constructor(
                     readingSessions = database.readingSessions().listAll().map { it.toSnapshot() }
                 )
             }
-            val appearance = settings.settings.first().readerAppearance
+            val savedSettings = settings.settings.first()
             LibrarySnapshot(
                 books = databaseState.books,
                 highlights = databaseState.highlights,
                 bookmarks = databaseState.bookmarks,
-                appearance = appearance,
+                appearance = savedSettings.readerAppearance,
+                appPreferences = savedSettings.appPreferences,
                 readingSessions = databaseState.readingSessions
             )
         }
@@ -316,8 +346,9 @@ class LocalLibraryRepository internal constructor(
                     database.readingSessions().upsertAll(snapshot.readingSessions.map { it.toEntity() })
                 }
             }
-            settings.saveReaderAppearance(snapshot.appearance)
+            settings.restorePreferences(snapshot.appearance, snapshot.appPreferences)
             _appearance.value = snapshot.appearance
+            snapshot.appPreferences?.let { _appPreferences.value = it }
         }
     }
 
@@ -404,6 +435,7 @@ data class LibrarySnapshot(
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
     val appearance: ReaderAppearance,
+    val appPreferences: AppPreferences? = null,
     val readingSessions: List<ReadingSessionSnapshot> = emptyList()
 ) {
     companion object
@@ -419,4 +451,3 @@ private data class DatabaseLibraryState(
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
 ).toString()
-

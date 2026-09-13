@@ -9,6 +9,45 @@ import org.junit.Test
 
 class VeilAppViewModelTest {
     @Test
+    fun settingsRestoresItsSectionAndBackReturnsToTheOriginalTab() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+        model.selectTab(VeilTab.PROFILE)
+        model.openSettings("reading")
+        val recreated = VeilAppViewModel(handle)
+        assertEquals("reading", recreated.route.value.settingsSection)
+        recreated.closeSettings()
+        assertNull(recreated.route.value.settingsSection)
+        assertEquals(VeilTab.PROFILE, recreated.route.value.selectedTab)
+        recreated.openSettings("invalid")
+        assertEquals("general", recreated.route.value.settingsSection)
+        recreated.openArchive()
+        assertNull(recreated.route.value.settingsSection)
+        assertTrue(recreated.route.value.showArchive)
+    }
+
+    @Test
+    fun quietModeRemovesWorldRoutesAndKeepsActiveReaderAndSettings() {
+        val model = VeilAppViewModel(SavedStateHandle())
+        model.selectTab(VeilTab.CASTLE)
+        model.openChamber("treasury")
+        model.applyGameVisibility(false)
+        assertEquals(VeilTab.READING, model.route.value.selectedTab)
+        assertNull(model.route.value.activeChamber)
+        assertEquals(listOf(VeilTab.READING, VeilTab.LIBRARY, VeilTab.PROFILE), visibleTabs(false))
+        model.requestBook("book", "locator")
+        model.applyGameVisibility(false)
+        assertEquals("book", model.route.value.activeBookId)
+        assertEquals("locator", model.route.value.locatorOverrideJson)
+        model.closeReader()
+        model.openSettings("data")
+        model.applyGameVisibility(false)
+        assertEquals("data", model.route.value.settingsSection)
+        model.applyGameVisibility(true)
+        assertEquals(5, visibleTabs(true).size)
+    }
+
+    @Test
     fun activeReaderRoute_survivesViewModelRecreation_thenClosesToLibrary() {
         val handle = SavedStateHandle()
         val first = VeilAppViewModel(handle)

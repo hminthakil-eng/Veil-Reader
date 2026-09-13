@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.theme.LocalVeilMotion
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -68,6 +69,7 @@ fun CastleScreen(
 
 @Composable
 private fun CastleMap(rankIndex: Int, onOpenRoom: (String) -> Unit) {
+    val motion = LocalVeilMotion.current
     val rooms = SampleData.rooms
     var revealed by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { revealed = true }
@@ -92,7 +94,7 @@ private fun CastleMap(rankIndex: Int, onOpenRoom: (String) -> Unit) {
     ) {
         AnimatedVisibility(
             visible = revealed,
-            enter = fadeIn(tween(360)) + expandVertically(tween(420), expandFrom = Alignment.Top)
+            enter = fadeIn(tween(motion.duration(360))) + expandVertically(tween(motion.duration(420)), expandFrom = Alignment.Top)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),

@@ -29,3 +29,13 @@ Outstanding baseline risks: fast page navigation can still award XP; every path 
 20. Switch Android system light/dark mode. Compare paper, sepia, dusk and OLED reader themes. Verify text is not hidden by either toolbar and appearance controls scroll in landscape/large text.
 
 Remaining risks listed earlier should be read with 0.5.0 changes: page farming now has bounds and the six rituals are distinct. Device verification, configuration-change restoration and large-library persistence remain outstanding.
+
+
+# 0.12 Preview checks
+
+21. Fresh install: choose Quiet reading and open the library. No Castle or Path tabs; no quests on Reading. Restart, revisit Settings, and re-enable the world. Reading minutes and home design must remain. Existing populated libraries skip setup.
+22. Change app theme in Settings. Book paper color stays independent. Change EPUB typography and check the live sample, then open a real book and inspect the same choices. Check Book preset returns to publisher font/alignment.
+23. Open PDF Appearance. Comfort switches work; no EPUB-only typography or page styles are offered. Keep-awake stops on reader exit.
+24. Enable reduced motion and visit all tabs, switch library layout, change the estate and open an EPUB. App decorative transitions and EPUB turns are instant.
+25. At 200% text size on a small phone and in landscape, read every navigation label and reach all settings actions. Use TalkBack to check switch names, states, tabs, focus and restore cancellation.
+26. Export a ZIP with quiet mode and app theme changed. Restore it after changing preferences. Both return, alongside annotations, locators and the castle. A pre-0.12 ZIP keeps the device’s app choices.

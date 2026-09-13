@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.theme.LocalVeilMotion
 import android.graphics.BitmapFactory
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
@@ -69,6 +70,7 @@ fun MysteryCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val motion = LocalVeilMotion.current
     val shape = MaterialTheme.shapes.large
     val colors = MaterialTheme.colorScheme
     val panelBrush = Brush.verticalGradient(
@@ -80,7 +82,7 @@ fun MysteryCard(
 
     Box(
         modifier = modifier
-            .animateContentSize(tween(VeilMotion.STANDARD_MS))
+            .animateContentSize(tween(motion.duration(VeilMotion.STANDARD_MS)))
             .clip(shape)
             .background(panelBrush)
             .border(
@@ -114,6 +116,7 @@ fun BookCover(
     subtitle: String? = null,
     imagePath: String? = null
 ) {
+    val motion = LocalVeilMotion.current
     val cachedBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = imagePath) {
         value = withContext(Dispatchers.IO) {
             imagePath
@@ -125,7 +128,7 @@ fun BookCover(
     }
     val imageAlpha by animateFloatAsState(
         targetValue = if (cachedBitmap == null) 0f else 1f,
-        animationSpec = tween(280),
+        animationSpec = tween(motion.duration(280)),
         label = "cover-fade"
     )
 
@@ -222,3 +225,4 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
         }
     }
 }
+

@@ -10,7 +10,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
 import com.veilreader.app.ui.VeilApp
-import com.veilreader.app.ui.theme.VeilTheme
 
 class MainActivity : FragmentActivity() {
     private var externalOpenUri by mutableStateOf<Uri?>(null)
@@ -21,12 +20,10 @@ class MainActivity : FragmentActivity() {
         externalOpenUri = if (savedInstanceState == null) viewUriFrom(intent) else null
 
         setContent {
-            VeilTheme {
-                VeilApp(
-                    externalOpenUri = externalOpenUri,
-                    onExternalOpenUriConsumed = { externalOpenUri = null }
-                )
-            }
+            VeilApp(
+                externalOpenUri = externalOpenUri,
+                onExternalOpenUriConsumed = { externalOpenUri = null }
+            )
         }
     }
 
@@ -39,3 +36,4 @@ class MainActivity : FragmentActivity() {
     private fun viewUriFrom(intent: Intent?): Uri? =
         intent?.takeIf { it.action == Intent.ACTION_VIEW }?.data
 }
+

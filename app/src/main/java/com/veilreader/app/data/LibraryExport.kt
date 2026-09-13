@@ -67,7 +67,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.11.0")
+                put("appVersion", "0.12.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("gamePreferences", gamePrefs)
@@ -313,6 +313,13 @@ private fun LibrarySnapshot.toJson(): JSONObject = JSONObject().apply {
     put("highlights", JSONArray().apply { highlights.forEach { put(it.toJson()) } })
     put("bookmarks", JSONArray().apply { bookmarks.forEach { put(it.toJson()) } })
     put("appearance", appearance.toJson())
+    appPreferences?.let { app ->
+        put("appPreferences", JSONObject().apply {
+            put("theme", app.theme.name)
+            put("gameVisible", app.gameVisible)
+            put("onboardingCompleted", app.onboardingCompleted)
+        })
+    }
     put("readingSessions", JSONArray().apply { readingSessions.forEach { put(it.toJson()) } })
 }
 
@@ -321,6 +328,14 @@ private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapsho
     highlights = json.optJSONArray("highlights")?.mapObjects(::highlightFromJson).orEmpty(),
     bookmarks = json.optJSONArray("bookmarks")?.mapObjects(::bookmarkFromJson).orEmpty(),
     appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject()),
+    appPreferences = json.optJSONObject("appPreferences")?.let { app ->
+        com.veilreader.app.domain.AppPreferences(
+            theme = runCatching { com.veilreader.app.domain.AppTheme.valueOf(app.optString("theme")) }
+                .getOrDefault(com.veilreader.app.domain.AppTheme.SYSTEM),
+            gameVisible = app.optBoolean("gameVisible", true),
+            onboardingCompleted = app.optBoolean("onboardingCompleted", true)
+        )
+    },
     readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty()
 )
 
@@ -448,4 +463,3 @@ private fun JSONObject.optNullableString(key: String): String? =
 
 private fun JSONObject.optFiniteDouble(key: String): Double? =
     if (!has(key) || isNull(key)) null else optDouble(key, Double.NaN).takeIf { it.isFinite() }
-

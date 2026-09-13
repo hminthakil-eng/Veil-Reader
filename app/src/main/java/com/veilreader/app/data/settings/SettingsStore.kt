@@ -6,11 +6,14 @@ import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.preferencesDataStore
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderFont
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.AppPreferences
+import com.veilreader.app.domain.AppTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -20,9 +23,14 @@ data class AppSettings(
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
+    val appTheme: AppTheme = AppTheme.SYSTEM,
+    val onboardingCompleted: Boolean = false,
     val legacyLibraryImported: Boolean = false,
     val legacyGameImported: Boolean = false
-)
+) {
+    val appPreferences: AppPreferences
+        get() = AppPreferences(appTheme, gameVisible, onboardingCompleted)
+}
 
 class SettingsStore(private val context: Context) {
     private object Keys {
@@ -39,6 +47,8 @@ class SettingsStore(private val context: Context) {
         val reduceMotion = booleanPreferencesKey("reader_reduce_motion")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
+        val appTheme = stringPreferencesKey("app_theme")
+        val onboardingCompleted = booleanPreferencesKey("onboarding_completed")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
         val legacyGameImported = booleanPreferencesKey("legacy_game_imported")
     }
@@ -62,25 +72,48 @@ class SettingsStore(private val context: Context) {
             ),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
+            appTheme = runCatching { AppTheme.valueOf(prefs[Keys.appTheme].orEmpty()) }.getOrDefault(AppTheme.SYSTEM),
+            onboardingCompleted = prefs[Keys.onboardingCompleted] ?: false,
             legacyLibraryImported = prefs[Keys.legacyLibraryImported] ?: false,
             legacyGameImported = prefs[Keys.legacyGameImported] ?: false
         )
     }
 
     suspend fun saveReaderAppearance(value: ReaderAppearance) {
-        context.veilSettingsDataStore.edit { prefs ->
-            prefs[Keys.theme] = value.theme.name
-            prefs[Keys.fontScale] = value.fontScale
-            prefs[Keys.lineHeight] = value.lineHeight
-            prefs[Keys.pageMargins] = value.pageMargins
-            prefs[Keys.scroll] = value.scroll
-            prefs[Keys.publisherStyles] = value.publisherStyles
-            prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
-            prefs[Keys.font] = value.font.name
-            prefs[Keys.justified] = value.justified
-            prefs[Keys.keepScreenOn] = value.keepScreenOn
-            prefs[Keys.reduceMotion] = value.reduceMotion
+        context.veilSettingsDataStore.edit { it.putAppearance(value) }
+    }
+
+    suspend fun saveAppPreferences(value: AppPreferences) {
+        context.veilSettingsDataStore.edit { it.putAppPreferences(value) }
+    }
+
+    /** One atomic DataStore edit; older backups retain this device's app choices. */
+    suspend fun restorePreferences(appearance: ReaderAppearance, app: AppPreferences?) {
+        context.veilSettingsDataStore.edit {
+            it.putAppearance(appearance)
+            if (app != null) it.putAppPreferences(app)
         }
+    }
+
+    private fun MutablePreferences.putAppPreferences(value: AppPreferences) {
+        this[Keys.appTheme] = value.theme.name
+        this[Keys.gameVisible] = value.gameVisible
+        this[Keys.onboardingCompleted] = value.onboardingCompleted
+    }
+
+    private fun MutablePreferences.putAppearance(value: ReaderAppearance) {
+        val prefs = this
+        prefs[Keys.theme] = value.theme.name
+        prefs[Keys.fontScale] = value.fontScale
+        prefs[Keys.lineHeight] = value.lineHeight
+        prefs[Keys.pageMargins] = value.pageMargins
+        prefs[Keys.scroll] = value.scroll
+        prefs[Keys.publisherStyles] = value.publisherStyles
+        prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
+        prefs[Keys.font] = value.font.name
+        prefs[Keys.justified] = value.justified
+        prefs[Keys.keepScreenOn] = value.keepScreenOn
+        prefs[Keys.reduceMotion] = value.reduceMotion
     }
 
     suspend fun setDailyGoal(minutes: Int) {
@@ -99,4 +132,3 @@ class SettingsStore(private val context: Context) {
         context.veilSettingsDataStore.edit { it[Keys.legacyGameImported] = true }
     }
 }
-

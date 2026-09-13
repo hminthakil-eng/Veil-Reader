@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.ui.theme.LocalVeilMotion
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -62,6 +63,7 @@ fun PathScreen(
     onAdvanceRank: () -> Unit,
     onChoosePath: (String) -> Unit
 ) {
+    val motion = LocalVeilMotion.current
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
     var showCeremony by rememberSaveable { mutableStateOf(false) }
@@ -83,7 +85,7 @@ fun PathScreen(
 
         AnimatedVisibility(
             visible = reveal,
-            enter = fadeIn(tween(360)) + slideInVertically(tween(420)) { it / 6 }
+            enter = fadeIn(tween(motion.duration(360))) + slideInVertically(tween(motion.duration(420))) { it / 6 }
         ) {
             PathIdentityPanel(profile)
         }
@@ -142,6 +144,7 @@ fun PathScreen(
 
 @Composable
 private fun PathIdentityPanel(profile: ReaderProfile) {
+    val motion = LocalVeilMotion.current
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
     val shape = MaterialTheme.shapes.extraLarge
@@ -149,7 +152,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
         targetValue = xpTargetProgress,
-        animationSpec = tween(650),
+        animationSpec = tween(motion.duration(650)),
         label = "path-xp-progress"
     )
 
@@ -251,11 +254,12 @@ private fun RitualPanel(
     nextRank: String?,
     onPrepareCeremony: () -> Unit
 ) {
+    val motion = LocalVeilMotion.current
     val target = profile.ritualTarget.coerceAtLeast(1)
     val targetProgress = (profile.ritualProgress.toFloat() / target).coerceIn(0f, 1f)
     val progress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(700),
+        animationSpec = tween(motion.duration(700)),
         label = "ritual-progress"
     )
 
@@ -595,3 +599,4 @@ private fun SectionHeading(eyebrow: String, title: String) {
         Text(title, style = MaterialTheme.typography.titleLarge)
     }
 }
+

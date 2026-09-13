@@ -7,6 +7,9 @@ import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
+import com.veilreader.app.domain.AppTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
@@ -47,6 +50,12 @@ object VeilMotion {
     const val STANDARD_MS = 250
     const val CEREMONIAL_MS = 480
 }
+
+data class VeilMotionPolicy(val reduceMotion: Boolean = false) {
+    fun duration(milliseconds: Int): Int = if (reduceMotion) 0 else milliseconds
+}
+
+val LocalVeilMotion = staticCompositionLocalOf { VeilMotionPolicy() }
 
 private val VeilDarkColors = darkColorScheme(
     primary = VeilPalette.Amethyst,
@@ -176,11 +185,22 @@ private val VeilShapes = Shapes(
 )
 
 @Composable
-fun VeilTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) VeilDarkColors else VeilLightColors,
+fun VeilTheme(
+    appTheme: AppTheme = AppTheme.SYSTEM,
+    reduceMotion: Boolean = false,
+    content: @Composable () -> Unit
+) {
+    val dark = when (appTheme) {
+        AppTheme.SYSTEM -> isSystemInDarkTheme()
+        AppTheme.LIGHT -> false
+        AppTheme.DARK -> true
+    }
+    CompositionLocalProvider(LocalVeilMotion provides VeilMotionPolicy(reduceMotion)) {
+      MaterialTheme(
+        colorScheme = if (dark) VeilDarkColors else VeilLightColors,
         typography = VeilTypography,
         shapes = VeilShapes,
         content = content
-    )
+      )
+    }
 }
