@@ -9,6 +9,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.MainActivity
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.settings.SettingsStore
+import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.AppPreferences
 import com.veilreader.app.domain.AppTheme
 import com.veilreader.app.domain.ReaderAppearance
@@ -38,20 +39,20 @@ class VeilSetupFlowTest {
                 compose.waitUntil(10_000) { compose.onAllNodesWithText("Skip setup").fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithText("Quiet reading").performScrollTo().performClick()
                 compose.onNodeWithText("Open my library").performScrollTo().performClick()
-                withTimeout(5000) { store.settings.first { it.onboardingCompleted && !it.gameVisible } }
+                awaitSaved(store, "quiet setup") { it.onboardingCompleted && !it.gameVisible }
                 compose.onNodeWithText("Castle").assertDoesNotExist()
                 compose.onNodeWithText("Path").assertDoesNotExist()
                 compose.onNodeWithText("Profile").performClick()
                 compose.onNodeWithText("Settings & reading comfort").performScrollTo().performClick()
                 compose.onNodeWithText("Quiet mode").performScrollTo().assertIsOn()
                 compose.onNodeWithText("Dark").performScrollTo().performClick()
-                withTimeout(5000) { store.settings.first { it.appTheme == AppTheme.DARK } }
+                awaitSaved(store, "dark theme") { it.appTheme == AppTheme.DARK }
                 activity.recreate()
                 compose.waitUntil(10_000) { compose.onAllNodesWithText("Quiet mode").fetchSemanticsNodes().isNotEmpty() }
                 compose.onNodeWithText("Quiet mode").performScrollTo().assertIsOn()
                 compose.onNodeWithText("Dark").performScrollTo().assertIsSelected()
                 compose.onNodeWithText("Quiet mode").performScrollTo().performClick()
-                withTimeout(5000) { store.settings.first { it.gameVisible } }
+                awaitSaved(store, "world re-enabled") { it.gameVisible }
                 compose.onNodeWithText("Back").performClick()
                 compose.onNodeWithText("Castle").assertIsDisplayed()
                 compose.onNodeWithText("Path").assertIsDisplayed()
@@ -60,6 +61,17 @@ class VeilSetupFlowTest {
         } finally {
             store.restorePreferences(original.readerAppearance, original.appPreferences)
             database.clearAllTables()
+        }
+    }
+
+    private suspend fun awaitSaved(store: SettingsStore, stage: String, predicate: (AppSettings) -> Boolean) {
+        // A pointer action can return before Compose dispatches its click coroutine. Advance the
+        // UI clock before waiting on IO, then require the durable DataStore value, not UI optimism.
+        compose.waitForIdle()
+        try {
+            withTimeout(5000) { store.settings.first(predicate) }
+        } catch (error: kotlinx.coroutines.TimeoutCancellationException) {
+            throw AssertionError("Preference save timed out after $stage. Saved: ${store.settings.first().appPreferences}", error)
         }
     }
 }

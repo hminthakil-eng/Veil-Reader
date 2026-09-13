@@ -1,7 +1,27 @@
 """Expose only synthetic Compose-test screenshots for review through text-only CI clients."""
-from base64 import b64encode
+from base64 import b64encode, b64decode
 from pathlib import Path
 import xml.etree.ElementTree as ET
+import re
+
+log = Path("app/build/ui-capture.log")
+if log.exists():
+    folder = Path("app/build/ui-screenshots")
+    folder.mkdir(parents=True, exist_ok=True)
+    name, chunks = None, []
+    for line in log.read_text(errors="replace").splitlines():
+        marker = re.search(r"VEIL_SCREENSHOT_(BEGIN|DATA|END) (.+)", line)
+        if not marker:
+            continue
+        kind, value = marker.groups()
+        if kind == "BEGIN":
+            name, chunks = value, []
+        elif kind == "DATA" and name:
+            chunks.append(value)
+        elif kind == "END" and value == name:
+            if re.fullmatch(r"[a-z-]+", name):
+                (folder / f"{name}.png").write_bytes(b64decode("".join(chunks), validate=True))
+            name, chunks = None, []
 
 for report in sorted(Path("app/build/outputs/androidTest-results").rglob("*.xml")):
     try:

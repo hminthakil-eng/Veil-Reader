@@ -2,6 +2,7 @@ package com.veilreader.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -196,11 +197,14 @@ fun VeilTheme(
         AppTheme.DARK -> true
     }
     CompositionLocalProvider(LocalVeilMotion provides VeilMotionPolicy(reduceMotion)) {
-      MaterialTheme(
-        colorScheme = if (dark) VeilDarkColors else VeilLightColors,
-        typography = VeilTypography,
-        shapes = VeilShapes,
-        content = content
-      )
+        MaterialTheme(
+            colorScheme = if (dark) VeilDarkColors else VeilLightColors,
+            typography = VeilTypography,
+            shapes = VeilShapes
+        ) {
+            CompositionLocalProvider(LocalContentColor provides MaterialTheme.colorScheme.onBackground) {
+                content()
+            }
+        }
     }
 }

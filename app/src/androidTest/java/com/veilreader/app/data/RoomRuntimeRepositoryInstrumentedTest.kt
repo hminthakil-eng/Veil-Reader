@@ -162,7 +162,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions() = runBlocking {
+    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions(): Unit = runBlocking {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val publication = File(publications, "roundtrip.epub").apply { writeBytes("test publication".toByteArray()) }

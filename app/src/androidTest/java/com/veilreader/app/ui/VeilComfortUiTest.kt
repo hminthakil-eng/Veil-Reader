@@ -2,6 +2,8 @@ package com.veilreader.app.ui
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.util.Base64
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -20,6 +22,7 @@ import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.WelcomeScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
+import java.io.ByteArrayOutputStream
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -110,10 +113,16 @@ class VeilComfortUiTest {
     }
 
     private fun capture(name: String) {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val folder = File(context.getExternalFilesDir(null), "ui-screenshots").apply { mkdirs() }
-        File(folder, "$name.png").outputStream().use {
-            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, it)
+        val bytes = ByteArrayOutputStream().use { output ->
+            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
+            output.toByteArray()
         }
+        // AGP uninstalls the test app before returning. The emulator's log buffer survives that;
+        // capture only this test's synthetic content, never a real reader's library.
+        Log.i("VeilPreview", "VEIL_SCREENSHOT_BEGIN $name")
+        Base64.encodeToString(bytes, Base64.NO_WRAP).chunked(2000).forEach {
+            Log.i("VeilPreview", "VEIL_SCREENSHOT_DATA $it")
+        }
+        Log.i("VeilPreview", "VEIL_SCREENSHOT_END $name")
     }
 }
