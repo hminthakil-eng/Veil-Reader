@@ -1,6 +1,5 @@
 package com.veilreader.app.ui
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.layout.*
@@ -11,7 +10,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.domain.*
 import com.veilreader.app.ui.navigation.VeilTab
@@ -19,7 +17,8 @@ import com.veilreader.app.ui.navigation.visibleTabs
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.WelcomeScreen
 import com.veilreader.app.ui.theme.VeilTheme
-import java.io.File
+import java.io.ByteArrayOutputStream
+import android.os.Build
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Rule
@@ -111,24 +110,27 @@ class VeilComfortUiTest {
     }
 
     private fun capture(name: String) {
+        if (Build.VERSION.SDK_INT < 31) return // Older devices still run every interaction assertion.
         compose.waitForIdle()
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         instrumentation.waitForIdleSync()
         val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot()) { "Device screenshot unavailable: $name" }
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val file = File(context.filesDir, "veil-preview-$name.png")
-        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        val bytes = ByteArrayOutputStream().use { output ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+            output.toByteArray()
+        }
         bitmap.recycle()
         fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(
             instrumentation.uiAutomation.executeShellCommand(command)
         ).bufferedReader().use { it.readText() }
-        // AGP removes the app after testing. Copy only our synthetic screenshot to the emulator's
-        // shell-owned test directory before uninstall; no storage permission is added to the app.
+        // Preserve only synthetic test captures outside the app's uninstall lifetime. The API's
+        // stdin/stdout descriptors transfer exact bytes without log truncation or shell quoting.
         shell("mkdir -p /data/local/tmp/veil-ui-previews")
         val destination = "/data/local/tmp/veil-ui-previews/$name.png"
-        shell("sh -c 'run-as ${context.packageName} cat ${file.absolutePath} > $destination'")
+        val pipes = instrumentation.uiAutomation.executeShellCommandRw("dd of=$destination")
+        ParcelFileDescriptor.AutoCloseOutputStream(pipes[1]).use { it.write(bytes) }
+        ParcelFileDescriptor.AutoCloseInputStream(pipes[0]).use { it.readBytes() }
         val copiedBytes = shell("wc -c $destination").trim().substringBefore(' ').toLong()
-        assertEquals("Screenshot copy must be complete", file.length(), copiedBytes)
-        file.delete()
+        assertEquals("Screenshot copy must be complete", bytes.size.toLong(), copiedBytes)
     }
 }
