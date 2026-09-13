@@ -2,12 +2,10 @@ package com.veilreader.app.ui
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.util.Base64
-import android.util.Log
+import android.os.ParcelFileDescriptor
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -22,7 +20,7 @@ import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.WelcomeScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
-import java.io.ByteArrayOutputStream
+import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -113,16 +111,24 @@ class VeilComfortUiTest {
     }
 
     private fun capture(name: String) {
-        val bytes = ByteArrayOutputStream().use { output ->
-            compose.onRoot().captureToImage().asAndroidBitmap().compress(Bitmap.CompressFormat.PNG, 100, output)
-            output.toByteArray()
-        }
-        // AGP uninstalls the test app before returning. The emulator's log buffer survives that;
-        // capture only this test's synthetic content, never a real reader's library.
-        Log.i("VeilPreview", "VEIL_SCREENSHOT_BEGIN $name")
-        Base64.encodeToString(bytes, Base64.NO_WRAP).chunked(2000).forEach {
-            Log.i("VeilPreview", "VEIL_SCREENSHOT_DATA $it")
-        }
-        Log.i("VeilPreview", "VEIL_SCREENSHOT_END $name")
+        compose.waitForIdle()
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        instrumentation.waitForIdleSync()
+        val bitmap = requireNotNull(instrumentation.uiAutomation.takeScreenshot()) { "Device screenshot unavailable: $name" }
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val file = File(context.filesDir, "veil-preview-$name.png")
+        file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        bitmap.recycle()
+        fun shell(command: String): String = ParcelFileDescriptor.AutoCloseInputStream(
+            instrumentation.uiAutomation.executeShellCommand(command)
+        ).bufferedReader().use { it.readText() }
+        // AGP removes the app after testing. Copy only our synthetic screenshot to the emulator's
+        // shell-owned test directory before uninstall; no storage permission is added to the app.
+        shell("mkdir -p /data/local/tmp/veil-ui-previews")
+        val destination = "/data/local/tmp/veil-ui-previews/$name.png"
+        shell("sh -c 'run-as ${context.packageName} cat ${file.absolutePath} > $destination'")
+        val copiedBytes = shell("wc -c $destination").trim().substringBefore(' ').toLong()
+        assertEquals("Screenshot copy must be complete", file.length(), copiedBytes)
+        file.delete()
     }
 }
