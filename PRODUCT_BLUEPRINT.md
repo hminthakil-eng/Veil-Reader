@@ -1,72 +1,89 @@
-# Veil Reader — Product Blueprint
+# Veil Reader — Product Blueprint 2.0
 
 ## Identity
 
-A refined Android reading app where the user's library becomes a mysterious personal world. The reader itself stays calm and distraction-free. Game systems live around the book, not on top of the text.
+Veil Reader is a premium Android **reading RPG**: a serious universal reader for books, manga and webtoons where real reading drives a persistent role-playing world. The reader remains calm while the world around it becomes deep, coherent and game-like.
 
-## Design principles
+## Three product pillars
 
-1. **Reading first.** Never interrupt an active reading session with confetti, ads, forced streak warnings, or quests.
-2. **Mystery, not imitation.** Original lore, terminology, art, progression, and iconography.
-3. **Progress must mean something.** Rank advancement requires behaviors connected to the chosen Path, not only XP.
-4. **The Castle remembers.** Finished books, annotations, streaks, genre exploration, and achievements visibly change the hub.
-5. **Respect the reader.** No punishment mechanics for missing a day. Streak repair should be earned, not monetized.
+1. **Universal Reader** — EPUB, PDF, CBZ/CBR/image chapters, manga right-to-left, webtoon vertical scroll, local/imported libraries and later compatible online source adapters.
+2. **Living RPG World** — character identity, Path/class, attributes, quests, factions, companions, discoveries, Castle evolution, rituals and narrative progression tied to genuine reading behavior.
+3. **Source Layer** — a replaceable provider architecture inspired by modern manga readers, with clear trust/security boundaries. Official builds should favor user-owned, licensed, open or explicitly connected sources; third-party source adapters must be separable from the core reader.
 
-## Paths
+## Reading-first rule
 
-### Oracle
-Mystery and deduction. Behaviors: predictions, clue annotations, rereading reveals.
+Game systems may motivate entering or returning to a book, but must never cover pages, interrupt an active chapter, punish a missed day, require repetitive tapping, or reward fake page-turning. Reading progress must be based on durable session evidence rather than raw taps.
 
-### Dreamwalker
-Fantasy and imagination. Behaviors: world exploration, series completion, lore maps.
+## Core reading modes
 
-### Archivist
-Nonfiction and knowledge. Behaviors: notes, summaries, recall checks, topic diversity.
+- Reflowable EPUB with typography, pagination, highlights, notes and search.
+- PDF with robust large-file handling.
+- Manga/comic mode with single page, double page, RTL/LTR direction, fit modes, preloading and image quality controls.
+- Webtoon mode with continuous vertical scrolling and efficient image loading.
+- Local CBZ/CBR/image folders and imported archives.
+- Future source-provider mode for catalog/search/chapter retrieval without coupling source logic to the reader engine.
 
-### Vanguard
-Action and progression. Behaviors: chapter consistency, long sessions, series momentum.
+## RPG framework
 
-### Nocturne
-Horror / gothic / dark fantasy. Behaviors: night sessions, atmosphere notes, theme collections.
+### Player identity
+The user creates a persistent reader-character with an Origin, Path, rank, traits, inventory and Chronicle. Cosmetic identity should be expressive without affecting reading access.
 
-### Artificer
-Science / technology / hard SF. Behaviors: concept notes, glossary building, cross-book connections.
+### Paths
+Oracle, Dreamwalker, Archivist, Vanguard, Nocturne and Artificer remain, but now function as true RPG classes. Each Path gets distinct quests, progression evidence, rituals, abilities and world reactions rather than only themed XP labels.
 
-## Castle rooms
+### Attributes
+Progression can develop attributes such as Insight, Resolve, Memory, Curiosity, Discipline and Imagination. Attributes are earned from meaningful reading patterns: finishing chapters/books, annotating, recalling, exploring genres, returning to difficult works and completing long-form journeys.
 
-- **Grand Library:** collections and reading history.
-- **Ritual Chamber:** rank advancement.
-- **Observatory:** reading analytics and predictions.
-- **Hidden Archive:** notes, highlights, character/entity index, maps.
-- **Treasury:** themes, sigils, frames, shelf styles, page effects.
-- **Inner Sanctum:** high-rank challenges and endgame Castle customization.
+### Quests
+- Story quests advance Veil lore.
+- Reading quests are generated from the user's actual library and current books.
+- Path quests express class identity.
+- Exploration quests encourage healthy discovery without forcing daily engagement.
+- Boss/ritual encounters represent major milestones and require evidence of reading, not combat grinding.
 
-## Ethical gamification
+### World state
+The Castle is the persistent hub, but it expands into a living world. Rooms, NPCs, factions, artifacts, environmental states and narrative branches react to the user's reading history. Books become journeys that leave permanent traces in the world.
 
-Avoid dark patterns. XP should reward healthy reading, not compulsive tapping. Daily goals can be paused. Missing a streak never deletes progress. Leaderboards are optional and off by default. No paid XP boosters.
+### Companions and NPCs
+NPC relationships progress through reading milestones and choices made outside the active reader. Companions can specialize in discovery, recall, statistics, recommendations or lore, but cannot interrupt reading sessions.
 
-## Monetization direction
+## Manga source architecture
 
-Free core reader + optional premium subscription for cross-device sync, advanced statistics, AI tools, and expanded Castle cosmetics. Do not lock basic EPUB/PDF reading, bookmarks, themes, or accessibility behind a subscription.
+The core app owns reader UI, library, downloads, history, tracking state and RPG progression. Source implementations sit behind a `ContentProvider` boundary that can expose catalogue search, metadata, chapter lists and page streams.
 
-## AI layer (later)
+Source providers must be removable without corrupting the library. The system should support trust levels, per-provider permissions, network-domain visibility, versioning, health status, rate-limit handling and clear user control. The official app must not depend on any single scraping implementation to remain functional.
 
-- Ask-this-book, restricted to user-owned/imported content and permitted excerpts.
-- Character/entity index generated locally or with explicit consent.
-- Spoiler-safe summaries based only on current reading location.
-- Prediction journal that never reveals future text.
-- Semantic search over notes/highlights.
+Research must compare three approaches before production integration: separate extension APKs, signed in-app provider packages, and declarative/remote adapters. Security, Play distribution, maintainability, licensing and source breakage are release gates.
 
-## Release phases
+## Castle and world
 
-### Alpha
-Compose shell, library import, EPUB reading, progress persistence, one Path, basic Castle.
+- Grand Library — personal collection, history, shelves and completed journeys.
+- Ritual Chamber — Path advancement and milestone ceremonies.
+- Observatory — reading analytics, prediction journal and long-term patterns.
+- Hidden Archive — notes, highlights, entities, maps and discovered lore.
+- Treasury — earned cosmetics, artifacts and environmental upgrades.
+- Guild Hall — factions, NPC relationships and quest chains.
+- Gatehouse — manga/source discovery and connected catalogues.
+- Inner Sanctum — late-rank challenges and long-term mastery.
 
-### Beta
-All six Paths, rituals, highlights/notes, stats, themes, achievements, Castle upgrades.
+## Ethical progression
 
-### 1.0
-EPUB/PDF polish, accessibility, backup/export, onboarding, stable migration model.
+No paid XP, loot boxes, streak deletion, FOMO timers or mandatory daily quests. Progress cannot be purchased. The game rewards reading quality, consistency and exploration while allowing Quiet Mode to hide all RPG surfaces without weakening the reader.
 
-### 1.5+
-Manga/webtoon mode, audiobooks, optional cloud sync, social reading circles, AI layer.
+## AI layer
+
+Later AI features may include book-grounded Q&A, spoiler-safe summaries, entity indexing, recall challenges, recommendation reasoning and Chronicle narration. AI must remain grounded in user-owned/permitted text and the user's current reading position.
+
+## Release direction
+
+### 0.9 — Foundation of the Reading RPG
+Unify design system, reader quality, measurable performance, persistent RPG data model, Castle/world prototype and manga/comic rendering foundation.
+
+### 1.0 — Universal Reader + RPG Core
+Production-grade EPUB/PDF/CBZ/manga/webtoon reading; coherent Path/class progression; quests, rituals, Chronicle and evolving Castle; accessibility, backup/restore and physical-device QA.
+
+### 1.1 — Source Provider Platform
+Provider SDK/boundary, source manager, trust/permission model, online catalogue UX, chapter update/download flow and at least one safe reference provider implementation.
+
+### Later
+Optional sync, tracking services, richer world/NPC systems, audiobooks/TTS, spoiler-safe AI and social reading systems.
