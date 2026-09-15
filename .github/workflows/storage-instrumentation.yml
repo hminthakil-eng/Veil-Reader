@@ -14,6 +14,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: storage-instrumentation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   room-on-android:
     runs-on: ubuntu-latest
@@ -48,8 +52,8 @@ jobs:
           disable-animations: true
           script: gradle :app:connectedDebugAndroidTest --stacktrace
 
-      - name: Upload instrumentation reports
-        if: always()
+      - name: Upload instrumentation reports on failure only
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: veil-reader-storage-instrumentation
@@ -57,3 +61,4 @@ jobs:
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
           if-no-files-found: ignore
+          retention-days: 1
