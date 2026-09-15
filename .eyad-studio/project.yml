@@ -1,4 +1,4 @@
-schema_version: 4
+schema_version: 5
 studio: Eyad Studio
 portfolio_id: ES-SW-001
 project: Veil Reader
@@ -11,6 +11,7 @@ approved_product_direction:
   pillars:
     - universal_reader
     - living_rpg_world
+    - settlement_reclamation
     - manga_source_provider_layer
   core_formats:
     - epub
@@ -28,11 +29,25 @@ approved_product_direction:
     - rituals
     - chronicle
     - persistent_world_state
+    - settlement_progression
+    - economy_resources
+  settlement_arc:
+    - wasteland
+    - camp
+    - water_source
+    - farmland
+    - shack
+    - hamlet
+    - village
+    - fortified_settlement
+    - castle
+    - city
   source_policy: core_reader_independent_from_third_party_providers
 
 command_model:
   executive_sponsor: user
   operating_lead: chatgpt
+  owner_intent: seed_idea_management_grows_system
   management_team_owns:
     - mission_intake
     - prioritization
@@ -43,6 +58,19 @@ command_model:
     - evidence_review
     - quality_gates
     - progress_reporting
+    - internal_product_ideation
+    - proposal_acceptance
+    - reversible_scope_expansion
+  team_idea_policy:
+    teams_may_propose: true
+    management_may_execute_without_owner_reapproval_when:
+      - aligned_with_approved_product_direction
+      - reversible
+      - no_new_spend
+      - no_external_credential_action
+      - no_publication_or_store_release
+      - no_destructive_remote_change
+      - no_major_product_pivot
   user_approval_required_for:
     - publishing_or_store_release
     - spending_or_paid_services
@@ -52,10 +80,12 @@ command_model:
 
 lifecycle:
   - research
+  - concept
   - plan
   - design
   - build
   - test
+  - balance
   - qa
   - release
 
@@ -64,6 +94,10 @@ management_team:
   roles:
     - product_manager
     - research_director
+    - creative_director
+    - game_director
+    - narrative_director
+    - economy_systems_lead
     - development_director
     - design_lead
     - software_architect
@@ -71,6 +105,7 @@ management_team:
   routing_policy: management_assigns_all_missions
   execution_policy: parallelize_when_dependencies_allow
   evidence_policy: no_claim_without_verification
+  innovation_policy: teams_can_pitch_management_can_greenlight_within_guardrails
 
 execution_groups:
   research:
@@ -81,29 +116,54 @@ execution_groups:
     lead_agent: design_lead
     mandate: translate_evidence_into_experience
     outputs: [ux_spec, interaction_prototype, design_tokens, accessibility_notes]
+  game_systems:
+    lead_agent: game_director
+    mandate: unify_rpg_progression_quests_classes_rewards_and_world_rules
+    outputs: [systems_bible, progression_model, quest_rules, balance_spec]
+  settlement_economy:
+    lead_agent: economy_systems_lead
+    mandate: turn_reading_into_fair_resources_and_wasteland_to_city_growth
+    outputs: [economy_model, building_tree, resource_sinks, anti_grind_rules]
+  world_narrative:
+    lead_agent: narrative_director
+    mandate: build_lore_npcs_factions_events_and_coherent_world_consequences
+    outputs: [world_bible, narrative_arcs, npc_faction_matrix, event_catalog]
+  reader_platform:
+    lead_agent: development_director
+    mandate: deliver_epub_pdf_manga_webtoon_reader_quality
+    outputs: [reader_vertical_slice, navigation_modes, performance_evidence, durable_progress]
+  source_platform:
+    lead_agent: software_architect
+    mandate: define_safe_replaceable_manga_content_provider_ecosystem
+    outputs: [provider_contract, trust_model, source_manager_spec, reference_adapter]
   development:
     lead_agent: development_director
     mandate: build_integrate_verify
     outputs: [vertical_slice, automated_tests, benchmark_evidence, release_candidate]
-  qa_release:
+  qa_balance_release:
     lead_agent: qa_lead
-    mandate: verify_regression_accessibility_release_readiness
-    outputs: [qa_report, regression_matrix, release_gate_result]
+    mandate: verify_regression_accessibility_balance_exploit_resistance_and_release_readiness
+    outputs: [qa_report, economy_balance_report, regression_matrix, release_gate_result]
 
 handoff_policy:
   research_to_product_design:
     requires: [problem_statement, evidence_summary, recommendation, known_risks]
+  game_or_narrative_to_development:
+    requires: [system_goal, canonical_rules, edge_cases, acceptance_criteria]
   product_design_to_development:
     requires: [user_goal, interaction_spec, acceptance_criteria, accessibility_requirements]
   development_to_qa:
     requires: [implementation_summary, tests, benchmark_or_perf_notes, known_limitations]
   any_team_to_management:
-    trigger_on: [blocked_dependency, unresolved_uncertainty, benchmark_regression, accessibility_risk, scope_conflict]
+    trigger_on: [blocked_dependency, unresolved_uncertainty, benchmark_regression, accessibility_risk, balance_risk, scope_conflict]
 
 shared_services:
   - product_strategy
   - engineering
-  - design
+  - game_design
+  - narrative_design
+  - economy_balance
+  - visual_design
   - qa
   - operations
   - marketing_brand
