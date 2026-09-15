@@ -1,10 +1,11 @@
-schema_version: 1
+schema_version: 2
 studio: Eyad Studio
 portfolio_id: ES-SW-001
 project: Veil Reader
 division: Software
 status: active_flagship
 lifecycle:
+  - research
   - plan
   - build
   - test
@@ -17,9 +18,42 @@ shared_services:
   - qa
   - operations
   - marketing_brand
+departments:
+  research:
+    lead_agent: research_director
+    mandate: discover_validate_de-risk
+    outputs:
+      - evidence_brief
+      - experiment_result
+      - prototype_recommendation
+      - go_no_go_decision
+  development:
+    lead_agent: development_director
+    mandate: build_integrate_verify
+    outputs:
+      - vertical_slice
+      - automated_tests
+      - benchmark_evidence
+      - release_candidate
+handoff_policy:
+  research_to_development:
+    requires:
+      - problem_statement
+      - evidence_summary
+      - recommended_decision
+      - acceptance_criteria
+      - known_risks
+  development_to_research:
+    trigger_on:
+      - unresolved_product_uncertainty
+      - unproven_technical_assumption
+      - benchmark_regression
+      - accessibility_or_usability_risk
 primary_agents:
   - chief_of_staff
   - product_manager
+  - research_director
+  - development_director
   - software_architect
   - android_engineer
   - ux_designer
