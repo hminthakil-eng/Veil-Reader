@@ -1,0 +1,28 @@
+schema_version: 1
+studio: Eyad Studio
+portfolio_id: ES-SW-001
+project: Veil Reader
+division: Software
+status: active_flagship
+lifecycle:
+  - plan
+  - build
+  - test
+  - qa
+  - release
+shared_services:
+  - product_strategy
+  - engineering
+  - design
+  - qa
+  - operations
+  - marketing_brand
+primary_agents:
+  - chief_of_staff
+  - product_manager
+  - software_architect
+  - android_engineer
+  - ux_designer
+  - qa_engineer
+release_gate: explicit
+reuse_first: true
