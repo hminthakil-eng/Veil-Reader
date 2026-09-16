@@ -1,0 +1,134 @@
+schema_version: 1
+studio: Eyad Studio
+project: Veil Reader
+registry_status: pilot
+source:
+  repository: curiositech/some_claude_skills
+  source_commit: 6713fc7a6451c8dee5903b98cd2063ff4cbf7317
+  reviewed_at: 2026-09-16
+policy:
+  bulk_install: false
+  pin_source_commit: true
+  default_mode: reference_only
+  production_changes_require_review: true
+  release_actions_require_explicit_gate: true
+  credentials_must_not_be_committed: true
+  third_party_mcp_default: disabled
+  write_or_bash_tools_default: restricted
+  android_first_adaptation: true
+  notes:
+    - Vendor or adapt only the specific instructions we need; do not copy the whole marketplace.
+    - Remove irrelevant framework assumptions and unsafe tool permissions before activation.
+    - Keep third-party skill updates manual until the pinned version is re-audited.
+skills:
+  - id: code-review-checklist
+    priority: P0
+    decision: adopt
+    risk: low
+    upstream_tools: [Read, Grep, Glob]
+    veil_mode: read_only
+    rationale: Context-aware PR review checklist with no write or shell permission.
+
+  - id: task-decomposer
+    priority: P0
+    decision: adopt
+    risk: low
+    upstream_tools: [Read, Grep, Glob]
+    veil_mode: planning_only
+    rationale: Useful for breaking product and engineering work into dependency-aware tasks without executing them.
+
+  - id: research-analyst
+    priority: P0
+    decision: adopt
+    risk: medium
+    upstream_tools: [Read, Grep, Glob, WebSearch, WebFetch]
+    veil_mode: research_only
+    rationale: Matches Eyad Studio's market-research priority; web access remains read-only.
+
+  - id: competitive-cartographer
+    priority: P0
+    decision: adapt
+    risk: medium
+    upstream_tools: [Read, Write, WebSearch, WebFetch]
+    veil_mode: research_only
+    restrictions:
+      - Disable Write by default.
+      - Use for competitor maps and differentiation research, not autonomous product decisions.
+    rationale: Strong fit for competitive intelligence, but upstream Write permission is unnecessary for normal analysis.
+
+  - id: code-architecture
+    priority: P0
+    decision: adapt
+    risk: medium
+    upstream_tools: [Read, Write, Edit, Bash, Grep, Glob]
+    veil_mode: architecture_review
+    restrictions:
+      - Read-only by default.
+      - Any Edit or Bash action must run on a feature branch.
+      - Rewrite examples for Kotlin, Jetpack Compose, Room, coroutines, and Android modularization.
+    rationale: Strong architecture guidance, but upstream examples are web/TypeScript-heavy and permissions are broader than needed.
+
+  - id: github-actions-pipeline-builder
+    priority: P1
+    decision: adapt
+    risk: high
+    upstream_tools: [Read, Write, Edit, Bash]
+    veil_mode: branch_only
+    restrictions:
+      - Never deploy to production automatically.
+      - No secret creation or modification by the skill.
+      - Workflow changes require PR review and existing release gate.
+    rationale: Directly useful because Veil Reader already uses GitHub Actions, but CI/CD writes have a large blast radius.
+
+  - id: security-auditor
+    priority: P1
+    decision: adapt
+    risk: medium
+    upstream_tools: [Read, Write, Edit, Bash, Grep, Glob]
+    veil_mode: audit_first
+    restrictions:
+      - Replace npm/pip assumptions with Android/Gradle dependency and secret scanning.
+      - Findings may be written to reports; source fixes require separate review.
+    rationale: Valuable pre-release security layer once made Android-aware.
+
+  - id: test-automation-expert
+    priority: P1
+    decision: adapt
+    risk: medium
+    upstream_tools: [Read, Write, Edit, Bash, Grep, Glob]
+    veil_mode: test_branch
+    restrictions:
+      - Adapt Jest/Vitest/Playwright examples to JUnit, Android instrumented tests, Compose UI tests, and Gradle.
+      - Test edits remain on feature branches until CI passes.
+    rationale: Testing methodology is useful, but the upstream toolchain is web/Python-oriented rather than Android-native.
+
+  - id: database-design-patterns
+    priority: P1
+    decision: adapt
+    risk: medium
+    upstream_tools: [Read, Write, Edit, Grep, Glob]
+    veil_mode: design_review
+    restrictions:
+      - Translate PostgreSQL/server assumptions to Room/SQLite where applicable.
+      - Preserve migration compatibility with existing VeilDatabase schemas.
+    rationale: Schema and migration principles are useful for Veil Reader, but examples require mobile-local database adaptation.
+
+  - id: design-system-creator
+    priority: P2
+    decision: reference_only
+    risk: medium_high
+    upstream_tools: [Read, Write, Edit, Glob, third_party_MCPs]
+    veil_mode: design_reference
+    restrictions:
+      - Do not enable upstream image/search MCP integrations.
+      - Extract token, component taxonomy, dark-mode, and documentation methodology only.
+      - Implement natively with Compose rather than CSS.
+    rationale: Good design-system methodology, but it is CSS/web-centric and requests extra MCP integrations.
+
+excluded_after_audit:
+  - id: native-app-designer
+    reason: Upstream is iOS/SwiftUI/React-centric and not Android/Compose-specific; use only as aesthetic inspiration, not as an installed Veil Reader skill.
+  - id: site-reliability-engineer
+    reason: Upstream is specifically for Docusaurus/MDX build health and does not fit the Android app.
+  - id: code-necromancer
+    reason: Intended for dormant/legacy codebases; Veil Reader is an active, documented project, so activation would be misleading.
