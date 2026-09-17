@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +25,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.window.core.layout.WindowHeightSizeClass
+import androidx.window.core.layout.WindowWidthSizeClass
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
@@ -359,55 +362,62 @@ fun VeilApp(
             onClose = routeViewModel::closeChamber
         )
     } else {
-        VeilWorldBackdrop {
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                val wideLayout = maxWidth >= 840.dp
+        val adaptiveInfo = currentWindowAdaptiveInfoV2()
+        val widthSizeClass = adaptiveInfo.windowSizeClass.windowWidthSizeClass
+        val heightSizeClass = adaptiveInfo.windowSizeClass.windowHeightSizeClass
 
-                if (wideLayout) {
-                    Row(
-                        Modifier
-                            .fillMaxSize()
-                            .systemBarsPadding()
+        // Prefer the branded rail once there is enough persistent horizontal space, but keep the
+        // compact dock on short landscape windows where a rail would compete with reading content.
+        val useRail = heightSizeClass != WindowHeightSizeClass.COMPACT &&
+            (widthSizeClass == WindowWidthSizeClass.MEDIUM ||
+                widthSizeClass == WindowWidthSizeClass.EXPANDED)
+        val contentMaxWidth = if (widthSizeClass == WindowWidthSizeClass.EXPANDED) 1280.dp else 1040.dp
+
+        VeilWorldBackdrop {
+            if (useRail) {
+                Row(
+                    Modifier
+                        .fillMaxSize()
+                        .systemBarsPadding()
+                ) {
+                    VeilNavigationRail(
+                        selected = route.selectedTab,
+                        onSelect = routeViewModel::selectTab
+                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .padding(horizontal = 12.dp),
+                        contentAlignment = Alignment.TopCenter
                     ) {
-                        VeilNavigationRail(
-                            selected = route.selectedTab,
-                            onSelect = routeViewModel::selectTab
-                        )
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight()
-                                .padding(horizontal = 12.dp),
-                            contentAlignment = Alignment.TopCenter
-                        ) {
-                            VeilAnimatedTabHost(
-                                selectedTab = route.selectedTab,
-                                modifier = Modifier
-                                    .fillMaxHeight()
-                                    .fillMaxWidth()
-                                    .widthIn(max = 1180.dp)
-                            ) { tab ->
-                                mainContent(tab)
-                            }
-                        }
-                    }
-                } else {
-                    Box(Modifier.fillMaxSize()) {
                         VeilAnimatedTabHost(
                             selectedTab = route.selectedTab,
                             modifier = Modifier
-                                .fillMaxSize()
-                                .statusBarsPadding()
-                                .padding(bottom = 88.dp)
+                                .fillMaxHeight()
+                                .fillMaxWidth()
+                                .widthIn(max = contentMaxWidth)
                         ) { tab ->
                             mainContent(tab)
                         }
-                        VeilBottomDock(
-                            selected = route.selectedTab,
-                            onSelect = routeViewModel::selectTab,
-                            modifier = Modifier.align(Alignment.BottomCenter)
-                        )
                     }
+                }
+            } else {
+                Box(Modifier.fillMaxSize()) {
+                    VeilAnimatedTabHost(
+                        selectedTab = route.selectedTab,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .statusBarsPadding()
+                            .padding(bottom = 88.dp)
+                    ) { tab ->
+                        mainContent(tab)
+                    }
+                    VeilBottomDock(
+                        selected = route.selectedTab,
+                        onSelect = routeViewModel::selectTab,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
                 }
             }
         }
