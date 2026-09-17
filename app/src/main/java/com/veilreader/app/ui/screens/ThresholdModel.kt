@@ -12,9 +12,12 @@ fun buildThresholdSnapshot(
     books: List<Book>,
     recentLimit: Int = 5
 ): ThresholdSnapshot {
-    if (books.isEmpty()) return ThresholdSnapshot(hero = null, recent = emptyList())
+    val readableBooks = books.filter { it.isImported }
+    if (readableBooks.isEmpty()) {
+        return ThresholdSnapshot(hero = null, recent = emptyList())
+    }
 
-    val ordered = books.sortedByDescending(::bookRecency)
+    val ordered = readableBooks.sortedByDescending(::bookRecency)
     val hero = ordered.firstOrNull { !it.finished } ?: ordered.first()
     val recent = ordered
         .asSequence()
