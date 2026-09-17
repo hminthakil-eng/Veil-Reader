@@ -35,6 +35,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -136,30 +139,11 @@ fun LibraryScreen(
             .padding(horizontal = VeilSpacing.lg)
             .padding(top = VeilSpacing.lg)
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Top,
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-        ) {
-            Box(Modifier.weight(1f)) {
-                ScreenHeader(
-                    eyebrow = "Library",
-                    title = "Your books",
-                    subtitle = if (books.isEmpty()) {
-                        "Import an EPUB or PDF to begin. Everything stays local on this device."
-                    } else {
-                        "${books.size} ${if (books.size == 1) "book" else "books"} · search, filter, organize, and continue reading."
-                    }
-                )
-            }
-            Button(
-                onClick = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                enabled = !isImporting,
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) {
-                Text(if (isImporting) "Importing…" else "Import")
-            }
-        }
+        LibraryHeader(
+            bookCount = books.size,
+            isImporting = isImporting,
+            onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) }
+        )
 
         if (books.isNotEmpty()) {
             ArchiveOverview(
@@ -196,7 +180,8 @@ fun LibraryScreen(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
-            placeholder = { Text("Search books, authors, series, collections") },
+            label = { Text("Search library") },
+            placeholder = { Text("Title, author, series, or collection") },
             leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
@@ -220,7 +205,8 @@ fun LibraryScreen(
                 FilterChip(
                     selected = shelf == label,
                     onClick = { shelf = label },
-                    label = { Text(label) }
+                    label = { Text(label) },
+                    modifier = Modifier.heightIn(min = 48.dp)
                 )
             }
         }
@@ -407,6 +393,60 @@ fun LibraryScreen(
 }
 
 @Composable
+private fun LibraryHeader(
+    bookCount: Int,
+    isImporting: Boolean,
+    onImport: () -> Unit
+) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val compact = maxWidth < 520.dp
+        val subtitle = if (bookCount == 0) {
+            "Import an EPUB or PDF to begin. Everything stays local on this device."
+        } else {
+            "$bookCount ${if (bookCount == 1) "book" else "books"} · search, filter, organize, and continue reading."
+        }
+
+        if (compact) {
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+                ScreenHeader(
+                    eyebrow = "Library",
+                    title = "Your books",
+                    subtitle = subtitle
+                )
+                Button(
+                    onClick = onImport,
+                    enabled = !isImporting,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(if (isImporting) "Importing…" else "Import")
+                }
+            }
+        } else {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            ) {
+                Box(Modifier.weight(1f)) {
+                    ScreenHeader(
+                        eyebrow = "Library",
+                        title = "Your books",
+                        subtitle = subtitle
+                    )
+                }
+                Button(
+                    onClick = onImport,
+                    enabled = !isImporting,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text(if (isImporting) "Importing…" else "Import")
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ArchiveOverview(
     total: Int,
     reading: Int,
@@ -448,14 +488,36 @@ private fun ArchiveOverview(
                     Text("Your collection stays private and available offline.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-            ) {
-                ArchiveStat("Books", total, Modifier.weight(1f))
-                ArchiveStat("Reading", reading, Modifier.weight(1f))
-                ArchiveStat("Finished", finished, Modifier.weight(1f))
-                ArchiveStat("Collections", collections, Modifier.weight(1f))
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val compact = maxWidth < 480.dp
+                if (compact) {
+                    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                        ) {
+                            ArchiveStat("Books", total, Modifier.weight(1f))
+                            ArchiveStat("Reading", reading, Modifier.weight(1f))
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                        ) {
+                            ArchiveStat("Finished", finished, Modifier.weight(1f))
+                            ArchiveStat("Collections", collections, Modifier.weight(1f))
+                        }
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    ) {
+                        ArchiveStat("Books", total, Modifier.weight(1f))
+                        ArchiveStat("Reading", reading, Modifier.weight(1f))
+                        ArchiveStat("Finished", finished, Modifier.weight(1f))
+                        ArchiveStat("Collections", collections, Modifier.weight(1f))
+                    }
+                }
             }
         }
     }
@@ -468,8 +530,7 @@ private fun ArchiveStat(label: String, count: Int, modifier: Modifier = Modifier
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -551,15 +612,28 @@ private fun BookLibraryTile(
             Surface(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(7.dp)
-                    .clickable(onClickLabel = if (book.favorite) "Remove favorite" else "Add favorite", onClick = onFavorite),
+                    .padding(4.dp)
+                    .size(48.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
                 shape = CircleShape
             ) {
-                FavoriteIcon(
-                    favorite = book.favorite,
-                    modifier = Modifier.padding(8.dp).size(18.dp)
-                )
+                IconButton(
+                    onClick = onFavorite,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .semantics {
+                            contentDescription = if (book.favorite) {
+                                "Remove ${book.title} from favorites"
+                            } else {
+                                "Add ${book.title} to favorites"
+                            }
+                        }
+                ) {
+                    FavoriteIcon(
+                        favorite = book.favorite,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
 
@@ -592,7 +666,12 @@ private fun BookLibraryTile(
                     )
                 }
             }
-            IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+            IconButton(
+                onClick = onEdit,
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics { contentDescription = "Edit details for ${book.title}" }
+            ) {
                 EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -649,10 +728,22 @@ private fun BookLibraryRow(
                 BookProgress(book)
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(onClick = onFavorite) {
+                IconButton(
+                    onClick = onFavorite,
+                    modifier = Modifier.semantics {
+                        contentDescription = if (book.favorite) {
+                            "Remove ${book.title} from favorites"
+                        } else {
+                            "Add ${book.title} to favorites"
+                        }
+                    }
+                ) {
                     FavoriteIcon(book.favorite, Modifier.size(20.dp))
                 }
-                IconButton(onClick = onEdit) {
+                IconButton(
+                    onClick = onEdit,
+                    modifier = Modifier.semantics { contentDescription = "Edit details for ${book.title}" }
+                ) {
                     EllipsisIcon(Modifier.size(19.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
@@ -727,9 +818,15 @@ private fun LibraryEmptyState(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         if (hasBooks) {
-            OutlinedButton(onClick = onReset, modifier = Modifier.fillMaxWidth()) { Text("Clear filters") }
+            OutlinedButton(onClick = onReset, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                Text("Clear filters")
+            }
         } else {
-            Button(onClick = onImport, enabled = !isImporting, modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = onImport,
+                enabled = !isImporting,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
                 Text(if (isImporting) "Importing…" else "Import a book")
             }
         }
@@ -739,26 +836,36 @@ private fun LibraryEmptyState(
 @Composable
 private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
     Surface(
-        shape = CircleShape,
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f)
     ) {
         Row(Modifier.padding(2.dp)) {
             IconButton(
                 onClick = { onChange(LibraryViewMode.GRID) },
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics {
+                        contentDescription = "Grid view"
+                        selected = mode == LibraryViewMode.GRID
+                    }
             ) {
                 GridIcon(
-                    Modifier.size(17.dp),
+                    Modifier.size(18.dp),
                     if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             IconButton(
                 onClick = { onChange(LibraryViewMode.LIST) },
-                modifier = Modifier.size(34.dp)
+                modifier = Modifier
+                    .size(48.dp)
+                    .semantics {
+                        contentDescription = "List view"
+                        selected = mode == LibraryViewMode.LIST
+                    }
             ) {
                 ListIcon(
-                    Modifier.size(17.dp),
+                    Modifier.size(18.dp),
                     if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.primary
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
