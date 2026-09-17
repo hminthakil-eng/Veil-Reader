@@ -297,6 +297,7 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 760.dp)
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
@@ -331,6 +332,9 @@ fun ReaderScreen(
                             )
                         }
                         Surface(
+                            modifier = Modifier.semantics {
+                                contentDescription = "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
+                            },
                             shape = CircleShape,
                             color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
                         ) {
@@ -361,6 +365,7 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .widthIn(max = 560.dp)
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
@@ -608,7 +613,7 @@ private fun ReaderChromeButton(
     FilledTonalIconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(46.dp)
+            .size(48.dp)
             .semantics { contentDescription = accessibilityLabel }
     ) {
         ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSecondaryContainer)
@@ -640,7 +645,7 @@ private fun ReaderControl(
             )
             Text(
                 label,
-                fontSize = 10.sp,
+                style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -805,7 +810,11 @@ private fun AppearancePanel(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Switch(checked = appearance.scroll, onCheckedChange = { onChange(appearance.copy(scroll = it)) })
+            Switch(
+                checked = appearance.scroll,
+                onCheckedChange = { onChange(appearance.copy(scroll = it)) },
+                modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
+            )
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -819,7 +828,8 @@ private fun AppearancePanel(
             }
             Switch(
                 checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) }
+                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
+                modifier = Modifier.semantics { contentDescription = "Publisher styling" }
             )
         }
 
@@ -834,7 +844,8 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) }
+        label = { Text(label) },
+        modifier = Modifier.heightIn(min = 48.dp)
     )
 }
 
