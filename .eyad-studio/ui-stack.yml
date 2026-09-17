@@ -1,0 +1,38 @@
+schema_version: 1
+project: Veil Reader
+owner: Eyad Studio
+platform:
+  type: native_android
+  language: Kotlin
+  ui: Jetpack Compose
+  design_system: Material 3
+
+design_intelligence:
+  provider: ui-ux-pro-max
+  source: nextlevelbuilder/ui-ux-pro-max-skill
+  pinned_commit: 15de38fb70bc80ae9276fa7703b48ae861a672e6
+  stack: jetpack-compose
+  policy: pinned_reviewed_reference
+
+pattern_sources:
+  - name: 21st.dev
+    mode: visual_pattern_reference_only
+    rule: never_copy_react_code_into_android_runtime
+    adaptation_target: Jetpack Compose
+
+quality_gates:
+  - accessibility
+  - touch_targets
+  - dark_light_contrast
+  - adaptive_layout
+  - rtl_readiness
+  - reduced_motion
+  - typography_readability
+  - reader_focus
+
+implementation_rules:
+  - preserve_existing_veil_identity
+  - native_compose_only
+  - no_web_runtime_dependency
+  - reuse_before_rebuild
+  - validate_against_design-system/veil-reader/MASTER.md
