@@ -61,6 +61,32 @@ class ThresholdModelTest {
     }
 
     @Test
+    fun `sample placeholders never displace readable imported books`() {
+        val imported = book(id = "imported", lastOpened = 100L, added = 10L)
+        val sample = book(
+            id = "sample",
+            lastOpened = 1000L,
+            added = 1000L,
+            sourceUri = null
+        )
+
+        val snapshot = buildThresholdSnapshot(listOf(sample, imported))
+
+        assertEquals("imported", snapshot.hero?.id)
+        assertEquals(emptyList<Book>(), snapshot.recent)
+    }
+
+    @Test
+    fun `sample only library behaves like an empty threshold`() {
+        val snapshot = buildThresholdSnapshot(
+            listOf(book(id = "sample", lastOpened = 1000L, added = 1000L, sourceUri = null))
+        )
+
+        assertNull(snapshot.hero)
+        assertEquals(emptyList<Book>(), snapshot.recent)
+    }
+
+    @Test
     fun `empty library produces no hero and no recent books`() {
         val snapshot = buildThresholdSnapshot(emptyList())
 
@@ -72,11 +98,13 @@ class ThresholdModelTest {
         id: String,
         lastOpened: Long,
         added: Long,
-        finished: Boolean = false
+        finished: Boolean = false,
+        sourceUri: String? = "content://$id"
     ) = Book(
         id = id,
         title = id,
         author = "Author",
+        sourceUri = sourceUri,
         lastOpenedAtEpochMs = lastOpened,
         addedAtEpochMs = added,
         finished = finished
