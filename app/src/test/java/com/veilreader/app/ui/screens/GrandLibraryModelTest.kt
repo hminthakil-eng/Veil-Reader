@@ -52,7 +52,7 @@ class GrandLibraryModelTest {
         val shelves = buildSmartShelves(books)
         val collectionShelves = shelves.filter { it.kind == SmartShelfKind.COLLECTION }
 
-        assertEquals(listOf("Favorites", "Fantasy", "Science"), collectionShelves.map { it.title })
+        assertEquals(listOf("Fantasy", "Favorites", "Science"), collectionShelves.map { it.title })
         assertEquals(listOf("two", "one"), shelves.byId("collection:fantasy").books.map { it.id })
     }
 
