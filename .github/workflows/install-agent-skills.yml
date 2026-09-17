@@ -1,0 +1,54 @@
+name: Install agent skill stack
+
+on:
+  push:
+    branches:
+      - chore/install-agent-skill-stack
+    paths:
+      - .github/workflows/install-agent-skills.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  install-skills:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Install Find Skills for Codex and Claude Code
+        run: npx -y skills@latest add vercel-labs/skills --skill find-skills -a codex -a claude-code --copy -y
+
+      - name: Install all Superpowers skills for Codex and Claude Code
+        run: npx -y skills@latest add obra/superpowers --skill '*' -a codex -a claude-code --copy -y
+
+      - name: Install Task Observer for Codex and Claude Code
+        run: npx -y skills@latest add rebelytics/one-skill-to-rule-them-all --skill task-observer -a codex -a claude-code --copy -y
+
+      - name: Install Impeccable with native project hooks
+        run: npx -y impeccable@latest install --providers=claude,codex --scope=project
+
+      - name: Commit generated project-level installation
+        shell: bash
+        run: |
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No generated changes to commit."
+            exit 0
+          fi
+          git commit -m "Install Codex and Claude agent skill stack [skill-install]"
+          git push origin HEAD:chore/install-agent-skill-stack
