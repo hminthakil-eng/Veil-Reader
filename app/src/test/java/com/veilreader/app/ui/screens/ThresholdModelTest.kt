@@ -61,6 +61,20 @@ class ThresholdModelTest {
     }
 
     @Test
+    fun `equal recency uses stable id tie break regardless of input order`() {
+        val beta = book(id = "beta", lastOpened = 500L, added = 20L)
+        val alpha = book(id = "alpha", lastOpened = 500L, added = 20L)
+
+        val first = buildThresholdSnapshot(listOf(beta, alpha))
+        val second = buildThresholdSnapshot(listOf(alpha, beta))
+
+        assertEquals("alpha", first.hero?.id)
+        assertEquals("alpha", second.hero?.id)
+        assertEquals(listOf("beta"), first.recent.map { it.id })
+        assertEquals(listOf("beta"), second.recent.map { it.id })
+    }
+
+    @Test
     fun `sample placeholders never displace readable imported books`() {
         val imported = book(id = "imported", lastOpened = 100L, added = 10L)
         val sample = book(
