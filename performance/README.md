@@ -39,27 +39,44 @@ If a budget changes because the product itself changed, record the reason in the
 updates `performance/budgets.json`.
 
 
-## Performance history and PR deltas
+## Performance history, dashboard and PR deltas
 
-Every successful performance run on `main` publishes a normalized `current-smoke.json` artifact as
-`veil-reader-performance-baseline`. Pull requests download the latest successful main baseline,
-run the same benchmark journey, create a new normalized snapshot, and apply
-`performance/delta-budgets.json`.
+Successful performance runs on `main` persist normalized smoke history on the dedicated
+`performance-history` branch. This avoids depending on GitHub Actions artifact storage for the
+baseline itself. The branch stores:
+
+- `performance/history/smoke-history.json` — up to 30 normalized snapshots.
+- `performance/history/dashboard-smoke.md` — the latest human-readable trend dashboard.
+- `performance/history/dashboard-smoke.json` — machine-readable trend status.
+
+Pull requests load that persisted history, run the same benchmark journey, append the current
+snapshot in-memory, and then apply both absolute and relative checks. The persisted history is only
+updated after a successful performance run on `main`.
 
 The delta gate is intentionally separate from the absolute budget gate:
 
 - Absolute budgets answer: "Is this build still within Veil Reader's acceptable envelope?"
 - Delta budgets answer: "Did this PR make an already-good build meaningfully worse?"
+- Trend detection answers: "Is performance drifting in the wrong direction across several runs even
+  before a hard budget or PR delta is crossed?"
 
 For timing metrics where percentage change is stable, the delta policy uses
 `maxRegressionPercent`. For `frameOverrunMs`, which can be negative or cross zero, it uses an
 absolute `maxIncrease` in milliseconds instead.
 
-If no successful main baseline exists yet, a PR still has to pass all absolute smoke budgets. The
-relative gate is skipped with an explicit job-summary notice; the next successful main performance
-run seeds the baseline automatically.
+Trend detection uses `performance/trend-policy.json`. It requires multiple recent points and a
+sustained worsening sequence before emitting a **watch** warning. Emulator trend warnings are
+informational rather than hard failures because hosted-emulator timing is noisy. Absolute smoke
+budgets and PR delta budgets remain the enforced CI gates.
 
-Physical-device snapshots use the same normalized format and delta checker:
+If no persisted main history exists yet, a PR still has to pass all absolute smoke budgets. The
+relative gate is skipped with an explicit job-summary notice; the next successful main performance
+run seeds the `performance-history` branch automatically.
+
+Raw trace/report upload remains best-effort only. If GitHub Actions artifact storage is full, the
+performance gates, persisted history and dashboard can still function.
+
+Physical-device snapshots use the same normalized format, delta checker and dashboard builder:
 
 ```bash
 python3 tools/snapshot_performance.py \
@@ -72,8 +89,15 @@ python3 tools/check_performance_delta.py \
   --mode physical \
   --baseline /path/to/previous-physical.json \
   --current performance/current-physical.json
+
+python3 tools/build_performance_dashboard.py \
+  --history /path/to/physical-history.json \
+  --snapshot performance/current-physical.json \
+  --output-history performance/updated-physical-history.json \
+  --markdown performance/dashboard-physical.md \
+  --json performance/dashboard-physical.json
 ```
 
-A baseline must come from the same benchmark journey and a stable representative device class. Do
-not compare physical-device results across materially different hardware as if they were a code-only
+A physical baseline and history must come from the same benchmark journey and a stable representative
+device class. Do not compare materially different hardware as if the change were a code-only
 regression.
