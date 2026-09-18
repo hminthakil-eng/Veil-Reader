@@ -136,4 +136,3 @@ A new internal build requires:
 - #109 Project NOMAD Offline Company Continuity Node pilot
 - #110 NOMAD auth / Docker-socket / update trust challenge
 - #111 offline backup / restore / resync challenge
-- #113 Offline Company Continuity Node execution benchmark
