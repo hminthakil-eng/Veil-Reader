@@ -1,0 +1,141 @@
+package com.veilreader.app.benchmark
+
+import android.net.Uri
+import android.os.Bundle
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.lifecycleScope
+import com.veilreader.app.data.GameRepository
+import com.veilreader.app.data.LocalLibraryRepository
+import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.ui.screens.ReaderScreen
+import com.veilreader.app.ui.theme.VeilTheme
+import java.io.File
+import java.util.zip.CRC32
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.launch
+
+/**
+ * Benchmark-build-only entry point that opens a deterministic local EPUB in the real Readium
+ * reader. This activity is absent from debug/release builds and never ships to users.
+ */
+class BenchmarkReaderActivity : FragmentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+
+        lifecycleScope.launch {
+            val context = applicationContext
+            val library = LocalLibraryRepository(context)
+            val engine = ReadiumEngine(context)
+            val game = GameRepository(context)
+
+            val inspected = engine.inspectAndCreateBook(Uri.fromFile(ensureFixture())).getOrThrow()
+            val committed = library.addImportedBook(inspected).book
+            library.flushWrites()
+            val opened = engine.openBook(committed).getOrThrow()
+
+            setContent {
+                VeilTheme {
+                    ReaderScreen(
+                        opened = opened,
+                        library = library,
+                        game = game,
+                        onClose = ::finish
+                    )
+                }
+            }
+        }
+    }
+
+    private fun ensureFixture(): File {
+        val target = File(cacheDir, "veil-reader-benchmark.epub")
+        if (target.isFile && target.length() > 0L) return target
+
+        ZipOutputStream(target.outputStream().buffered()).use { zip ->
+            zip.writeEntry("mimetype", "application/epub+zip", stored = true)
+            zip.writeEntry(
+                "META-INF/container.xml",
+                """<?xml version="1.0"?>
+                <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+                  <rootfiles>
+                    <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
+                  </rootfiles>
+                </container>""".trimIndent()
+            )
+
+            val chapters = (1..6).joinToString("") { index ->
+                """<item id="c$index" href="c$index.xhtml" media-type="application/xhtml+xml"/>"""
+            }
+            val spine = (1..6).joinToString("") { index ->
+                """<itemref idref="c$index"/>"""
+            }
+            val navEntries = (1..6).joinToString("") { index ->
+                """<li><a href="c$index.xhtml">Chapter $index</a></li>"""
+            }
+
+            zip.writeEntry(
+                "OEBPS/content.opf",
+                """<?xml version="1.0" encoding="UTF-8"?>
+                <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="id">
+                  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <dc:identifier id="id">veil-reader-benchmark</dc:identifier>
+                    <dc:title>Veil Benchmark Book</dc:title>
+                    <dc:creator>Eyad Studio</dc:creator>
+                    <dc:language>en</dc:language>
+                    <meta property="dcterms:modified">2026-09-18T00:00:00Z</meta>
+                  </metadata>
+                  <manifest>
+                    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+                    $chapters
+                  </manifest>
+                  <spine>$spine</spine>
+                </package>""".trimIndent()
+            )
+
+            zip.writeEntry(
+                "OEBPS/nav.xhtml",
+                """<?xml version="1.0" encoding="utf-8"?>
+                <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+                  <head><title>Contents</title></head>
+                  <body><nav epub:type="toc"><ol>$navEntries</ol></nav></body>
+                </html>""".trimIndent()
+            )
+
+            repeat(6) { zeroBased ->
+                val index = zeroBased + 1
+                val paragraph = buildString {
+                    repeat(40) {
+                        append("Veil Reader performance fixture. Turn the page smoothly through the archive and continue reading. ")
+                    }
+                }
+                zip.writeEntry(
+                    "OEBPS/c$index.xhtml",
+                    """<?xml version="1.0" encoding="utf-8"?>
+                    <html xmlns="http://www.w3.org/1999/xhtml">
+                      <head><title>Chapter $index</title></head>
+                      <body><h1>Chapter $index</h1><p>$paragraph</p></body>
+                    </html>""".trimIndent()
+                )
+            }
+        }
+        return target
+    }
+}
+
+private fun ZipOutputStream.writeEntry(path: String, text: String, stored: Boolean = false) {
+    val bytes = text.toByteArray(Charsets.UTF_8)
+    val entry = ZipEntry(path)
+    if (stored) {
+        val crc = CRC32().apply { update(bytes) }
+        entry.method = ZipEntry.STORED
+        entry.size = bytes.size.toLong()
+        entry.compressedSize = bytes.size.toLong()
+        entry.crc = crc.value
+    }
+    putNextEntry(entry)
+    write(bytes)
+    closeEntry()
+}
