@@ -33,17 +33,12 @@ android {
         }
     }
 
-    // Share the deterministic reader fixture between the explicit benchmark build and the
-    // Baseline Profile plugin's generated nonMinifiedRelease target. Normal debug/release builds
-    // do not include this source set or its exported benchmark-only activity.
+    // The Baseline Profile plugin creates nonMinifiedRelease for profile capture. Keep the
+    // deterministic reader fixture in that conventional source set, then reuse only its Kotlin
+    // sources from the explicit benchmark build. Each performance variant has its own manifest.
     sourceSets {
         getByName("benchmark") {
-            java.srcDir("src/performance/java")
-            manifest.srcFile("src/performance/AndroidManifest.xml")
-        }
-        maybeCreate("nonMinifiedRelease").apply {
-            java.srcDir("src/performance/java")
-            manifest.srcFile("src/performance/AndroidManifest.xml")
+            java.srcDir("src/nonMinifiedRelease/java")
         }
     }
 
