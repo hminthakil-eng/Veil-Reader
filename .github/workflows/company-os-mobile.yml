@@ -1,0 +1,76 @@
+name: Company OS Mobile Command
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Command to run from the mobile control plane"
+        required: true
+        type: choice
+        default: status
+        options:
+          - status
+          - unit-tests
+          - full-ci
+      runner:
+        description: "Execution target. Prefer self-hosted to avoid hosted-runner quota."
+        required: true
+        type: choice
+        default: self-hosted
+        options:
+          - self-hosted
+          - ubuntu-latest
+
+permissions:
+  contents: read
+
+concurrency:
+  group: company-os-mobile-${{ github.ref }}-${{ inputs.command }}
+  cancel-in-progress: false
+
+jobs:
+  command:
+    name: "${{ inputs.command }} on ${{ inputs.runner }}"
+    runs-on: ${{ inputs.runner }}
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: '9.6.0'
+
+      - name: Run Company OS command
+        run: bash tools/company-os-mobile-command.sh "${{ inputs.command }}"
+
+      - name: Mobile result summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Eyad Studio Mobile Command"
+            echo ""
+            echo "- Project: Veil Reader"
+            echo "- Command: \`${{ inputs.command }}\`"
+            echo "- Runner: \`${{ inputs.runner }}\`"
+            echo "- Result: \`${{ job.status }}\`"
+            echo "- Commit: \`${{ github.sha }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload debug APK for manual full-ci runs
+        if: success() && inputs.command == 'full-ci'
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-mobile-command-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 1
