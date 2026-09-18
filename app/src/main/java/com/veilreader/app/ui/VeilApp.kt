@@ -61,19 +61,21 @@ fun VeilApp(
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
 
-    // While Readium owns the screen, avoid parent-level subscriptions that would recompose the
-    // entire reader for every progress/game-state write. The latest values remain available
-    // synchronously and subscriptions resume as soon as the reader closes.
-    val books = if (openedPublication == null) {
-        library.books.collectAsStateWithLifecycle().value
+    // While Readium owns the screen, remove these collectors from composition entirely so
+    // progress/game writes cannot invalidate the app shell. StateFlow immediately supplies its
+    // latest value when these collectors re-enter after the reader closes.
+    val booksState = if (openedPublication == null) {
+        library.books.collectAsStateWithLifecycle()
     } else {
-        library.books.value
+        null
     }
-    val highlights = if (openedPublication == null) {
-        library.highlights.collectAsStateWithLifecycle().value
+    val highlightsState = if (openedPublication == null) {
+        library.highlights.collectAsStateWithLifecycle()
     } else {
-        library.highlights.value
+        null
     }
+    val books = booksState?.value.orEmpty()
+    val highlights = highlightsState?.value.orEmpty()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
 
     // Existing libraries and restored backups may have no cached covers. Process one book at a time
@@ -96,31 +98,36 @@ fun VeilApp(
             ?.let { library.updateContentFingerprint(book.id, it) }
     }
 
-    val profile = if (openedPublication == null) {
-        game.profile.collectAsStateWithLifecycle().value
+    val profileState = if (openedPublication == null) {
+        game.profile.collectAsStateWithLifecycle()
     } else {
-        game.profile.value
+        null
     }
-    val quests = if (openedPublication == null) {
-        game.quests.collectAsStateWithLifecycle().value
+    val questsState = if (openedPublication == null) {
+        game.quests.collectAsStateWithLifecycle()
     } else {
-        game.quests.value
+        null
     }
-    val dailyGoalMinutes = if (openedPublication == null) {
-        game.dailyGoalMinutes.collectAsStateWithLifecycle().value
+    val dailyGoalState = if (openedPublication == null) {
+        game.dailyGoalMinutes.collectAsStateWithLifecycle()
     } else {
-        game.dailyGoalMinutes.value
+        null
     }
-    val equippedSigil = if (openedPublication == null) {
-        game.equippedSigil.collectAsStateWithLifecycle().value
+    val equippedSigilState = if (openedPublication == null) {
+        game.equippedSigil.collectAsStateWithLifecycle()
     } else {
-        game.equippedSigil.value
+        null
     }
-    val castleTitle = if (openedPublication == null) {
-        game.castleTitle.collectAsStateWithLifecycle().value
+    val castleTitleState = if (openedPublication == null) {
+        game.castleTitle.collectAsStateWithLifecycle()
     } else {
-        game.castleTitle.value
+        null
     }
+    val profile = profileState?.value
+    val quests = questsState?.value.orEmpty()
+    val dailyGoalMinutes = dailyGoalState?.value
+    val equippedSigil = equippedSigilState?.value
+    val castleTitle = castleTitleState?.value
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
@@ -289,7 +296,7 @@ fun VeilApp(
         when (tab) {
             VeilTab.READING -> ReadingNowScreen(
                 books = books,
-                profile = profile,
+                profile = requireNotNull(profile),
                 quests = quests,
                 onOpenBook = { requestOpenBook(it) },
                 onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
@@ -306,7 +313,7 @@ fun VeilApp(
             )
 
             VeilTab.CASTLE -> CastleScreen(
-                profile = profile,
+                profile = requireNotNull(profile),
                 onOpenRoom = { room ->
                     when (room) {
                         "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
@@ -324,7 +331,7 @@ fun VeilApp(
             )
 
             VeilTab.PATH -> PathScreen(
-                profile = profile,
+                profile = requireNotNull(profile),
                 onAdvanceRank = {
                     if (!game.advanceRank()) {
                         errorMessage = "Complete the current advancement ritual first."
@@ -338,12 +345,12 @@ fun VeilApp(
             )
 
             VeilTab.PROFILE -> ProfileScreen(
-                profile = profile,
+                profile = requireNotNull(profile),
                 highlightCount = highlights.size,
                 exporting = exporting,
                 restoring = restoring,
-                dailyGoalMinutes = dailyGoalMinutes,
-                castleTitle = castleTitle,
+                dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
+                castleTitle = requireNotNull(castleTitle),
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
                 onExportBackup = { exportData(it, true) },
@@ -374,7 +381,7 @@ fun VeilApp(
         )
     } else if (route.activeChamber == "treasury") {
         TreasuryScreen(
-            profile = profile,
+            profile = requireNotNull(profile),
             equippedSigil = equippedSigil,
             onEquip = { id ->
                 if (!game.equipSigil(id)) errorMessage = "That sigil has not awakened yet."
@@ -383,8 +390,8 @@ fun VeilApp(
         )
     } else if (route.activeChamber == "sanctum") {
         SanctumScreen(
-            profile = profile,
-            castleTitle = castleTitle,
+            profile = requireNotNull(profile),
+            castleTitle = requireNotNull(castleTitle),
             availableTitles = game.availableCastleTitles(),
             onSelectTitle = { title ->
                 if (!game.selectCastleTitle(title)) errorMessage = "That Castle title is still sealed."
