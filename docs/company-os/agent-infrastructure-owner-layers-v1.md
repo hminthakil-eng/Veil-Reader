@@ -72,15 +72,6 @@ If a provider cannot be replaced without changing Company OS policy semantics, t
 - irreversible exclusive data formats without export
 - agent execution routing
 
-### Project N.O.M.A.D. / ContinuityNodeProvider must not own
-
-- Company Knowledge historical truth
-- project priority or governance
-- canonical decision history
-- unrestricted LAN/public access policy
-- production secret authority
-- bidirectional synchronization semantics unless Company OS explicitly defines them
-
 ### ArcBox must not own
 
 - agent governance
