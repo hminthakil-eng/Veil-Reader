@@ -77,6 +77,7 @@ class ReaderViewModel(
         val current = tracker ?: return
         library.flushProgress(current.bookId)
         if (!resumed) {
+            library.flushReadingSession(current.sessionId)
             game.pauseReading()
             return
         }
