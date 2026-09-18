@@ -1,6 +1,6 @@
 # Offline Company Continuity Node — Controlled Pilot Matrix v1
 
-Parent: #109
+Parent pilot / benchmark: #109
 Challenges: #110 #111
 Date: 2026-09-18
 
