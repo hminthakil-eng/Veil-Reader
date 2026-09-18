@@ -142,8 +142,9 @@ A new internal build requires:
 - #104 ArcBox portability/security challenge
 - #105 Orca remote/mobile challenge
 - #107 ExecutionSandboxProvider benchmark
-- #112 Project N.O.M.A.D. continuity/security challenge
-- #113 Offline Company Continuity Node benchmark
+- #109 Project N.O.M.A.D. controlled pilot
+- #110 N.O.M.A.D. auth/Docker/update trust-boundary challenge
+- #111 Offline backup/restore/resync challenge
 - #109 Project NOMAD Offline Company Continuity Node pilot
 - #110 NOMAD auth / Docker-socket / update trust challenge
 - #111 offline backup / restore / resync challenge
