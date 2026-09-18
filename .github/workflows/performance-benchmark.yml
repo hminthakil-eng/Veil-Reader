@@ -78,7 +78,9 @@ jobs:
           disable-animations: true
           script: |
             gradle :app:generateBaselineProfile --stacktrace
-            gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
+            gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace \
+              -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark \
+              -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
 
       - name: Print benchmark instrumentation failures
         if: failure()
