@@ -72,6 +72,15 @@ If a provider cannot be replaced without changing Company OS policy semantics, t
 - irreversible exclusive data formats without export
 - agent execution routing
 
+### Project N.O.M.A.D. / ContinuityNodeProvider must not own
+
+- Company Knowledge historical truth
+- project priority or governance
+- canonical decision history
+- unrestricted LAN/public access policy
+- production secret authority
+- bidirectional synchronization semantics unless Company OS explicitly defines them
+
 ### ArcBox must not own
 
 - agent governance
@@ -133,6 +142,8 @@ A new internal build requires:
 - #104 ArcBox portability/security challenge
 - #105 Orca remote/mobile challenge
 - #107 ExecutionSandboxProvider benchmark
+- #112 Project N.O.M.A.D. continuity/security challenge
+- #113 Offline Company Continuity Node benchmark
 - #109 Project NOMAD Offline Company Continuity Node pilot
 - #110 NOMAD auth / Docker-socket / update trust challenge
 - #111 offline backup / restore / resync challenge
