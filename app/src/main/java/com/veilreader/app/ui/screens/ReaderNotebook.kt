@@ -1,8 +1,10 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -18,6 +20,13 @@ import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.services.search.isSearchable
 import org.readium.r2.shared.publication.services.search.search
+
+private enum class ReaderNotebookTab(val label: String) {
+    CONTENTS("Contents"),
+    BOOKMARKS("Bookmarks"),
+    NOTES("Notes"),
+    SEARCH("Search")
+}
 
 /** Reading tools stay in a dismissible sheet, away from the reading surface. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalReadiumApi::class)
@@ -37,13 +46,13 @@ fun ReaderNotebook(
     val searchable = remember(opened.book.id) { opened.publication.isSearchable }
     val tabs = remember(searchable) {
         buildList {
-            add("Contents")
-            add("Bookmarks")
-            add("Notes")
-            if (searchable) add("Search")
+            add(ReaderNotebookTab.CONTENTS)
+            add(ReaderNotebookTab.BOOKMARKS)
+            add(ReaderNotebookTab.NOTES)
+            if (searchable) add(ReaderNotebookTab.SEARCH)
         }
     }
-    var tab by remember { mutableIntStateOf(0) }
+    var tab by remember(opened.book.id, searchable) { mutableStateOf(ReaderNotebookTab.CONTENTS) }
     var query by remember { mutableStateOf("") }
     var editing by remember { mutableStateOf<Highlight?>(null) }
     var note by remember { mutableStateOf("") }
@@ -96,15 +105,37 @@ fun ReaderNotebook(
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(Modifier.fillMaxWidth().fillMaxHeight(.85f).padding(horizontal = 20.dp)) {
-            Text("Your reading notebook", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(opened.book.title, style = MaterialTheme.typography.bodySmall)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                tabs.forEachIndexed { index, title ->
-                    FilterChip(selected = tab == index, onClick = { tab = index }, label = { Text(title) })
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(.85f)
+                .padding(horizontal = 20.dp)
+        ) {
+            Text("Reading tools", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                opened.book.title,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                tabs.forEach { item ->
+                    FilterChip(
+                        selected = tab == item,
+                        onClick = { tab = item },
+                        label = { Text(item.label) },
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    )
                 }
             }
-            if (tab == 2) {
+
+            if (tab == ReaderNotebookTab.NOTES) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
@@ -113,7 +144,8 @@ fun ReaderNotebook(
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 )
             }
-            if (searchable && tab == 3) {
+
+            if (tab == ReaderNotebookTab.SEARCH) {
                 Row(
                     Modifier.fillMaxWidth().padding(bottom = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -128,7 +160,7 @@ fun ReaderNotebook(
                     Button(
                         onClick = ::runBookSearch,
                         enabled = bookSearchQuery.trim().length >= 2 && !searchingBook,
-                        modifier = Modifier.padding(top = 8.dp)
+                        modifier = Modifier.padding(top = 8.dp).heightIn(min = 48.dp)
                     ) { Text(if (searchingBook) "…" else "Find") }
                 }
             }
@@ -139,36 +171,45 @@ fun ReaderNotebook(
                 contentPadding = PaddingValues(bottom = 28.dp)
             ) {
                 when (tab) {
-                    0 -> {
+                    ReaderNotebookTab.CONTENTS -> {
                         if (chapters.isEmpty()) item { Text("This book has no chapter list.") }
                         items(chapters) { (link, depth) ->
                             TextButton(
                                 onClick = { onChapter(link) },
-                                modifier = Modifier.fillMaxWidth().padding(start = (depth.coerceAtMost(4) * 12).dp)
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp)
+                                    .padding(start = (depth.coerceAtMost(4) * 12).dp)
                             ) {
                                 Text(link.title ?: "Untitled section", modifier = Modifier.fillMaxWidth())
                             }
                         }
                     }
 
-                    1 -> {
+                    ReaderNotebookTab.BOOKMARKS -> {
                         if (bookmarks.isEmpty()) item {
-                            Text("Save a place using Bookmark + in the reader. Your bookmarks will appear here.")
+                            Text("Save a place using Bookmark in the reader. Your bookmarks will appear here.")
                         }
                         items(bookmarks, key = { it.id }) { bookmark ->
                             Card(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(14.dp)) {
                                     Text(bookmark.label, fontWeight = FontWeight.SemiBold)
-                                    Row {
-                                        TextButton(onClick = { onGo(bookmark.locatorJson) }) { Text("Go to place") }
-                                        TextButton(onClick = { onDeleteBookmark(bookmark.id) }) { Text("Remove") }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        TextButton(
+                                            onClick = { onGo(bookmark.locatorJson) },
+                                            modifier = Modifier.heightIn(min = 48.dp)
+                                        ) { Text("Go to place") }
+                                        TextButton(
+                                            onClick = { onDeleteBookmark(bookmark.id) },
+                                            modifier = Modifier.heightIn(min = 48.dp)
+                                        ) { Text("Remove") }
                                     }
                                 }
                             }
                         }
                     }
 
-                    2 -> {
+                    ReaderNotebookTab.NOTES -> {
                         if (matchingHighlights.isEmpty()) item {
                             Text(
                                 if (query.isBlank()) "Highlight a passage to start your notebook. EPUB text highlights are supported; PDF bookmarks are available in the Bookmarks tab."
@@ -179,36 +220,61 @@ fun ReaderNotebook(
                             Card(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(highlight.quote, style = MaterialTheme.typography.bodyLarge)
-                                    if (highlight.note.isNotBlank()) Text(highlight.note, color = MaterialTheme.colorScheme.primary)
-                                    Row {
-                                        TextButton(onClick = { onGo(highlight.locatorJson) }) { Text("Go") }
-                                        TextButton(onClick = {
-                                            editing = highlight
-                                            note = highlight.note
-                                            noteSaveError = null
-                                        }) {
+                                    if (highlight.note.isNotBlank()) {
+                                        Text(highlight.note, color = MaterialTheme.colorScheme.primary)
+                                    }
+                                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                        TextButton(
+                                            onClick = { onGo(highlight.locatorJson) },
+                                            modifier = Modifier.heightIn(min = 48.dp)
+                                        ) { Text("Go") }
+                                        TextButton(
+                                            onClick = {
+                                                editing = highlight
+                                                note = highlight.note
+                                                noteSaveError = null
+                                            },
+                                            modifier = Modifier.heightIn(min = 48.dp)
+                                        ) {
                                             Text(if (highlight.note.isBlank()) "Add note" else "Edit note")
                                         }
-                                        TextButton(onClick = { deleting = highlight }) { Text("Delete") }
+                                        TextButton(
+                                            onClick = { deleting = highlight },
+                                            modifier = Modifier.heightIn(min = 48.dp)
+                                        ) { Text("Delete") }
                                     }
                                 }
                             }
                         }
                     }
 
-                    else -> {
-                        bookSearchError?.let { message -> item { Text(message, color = MaterialTheme.colorScheme.error) } }
+                    ReaderNotebookTab.SEARCH -> {
+                        bookSearchError?.let { message ->
+                            item { Text(message, color = MaterialTheme.colorScheme.error) }
+                        }
                         if (!searchingBook && bookSearchError == null && bookSearchQuery.isNotBlank() && bookSearchResults.isEmpty()) {
-                            item { Text("No matches found in this book.", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            item {
+                                Text(
+                                    "No matches found in this book.",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                         items(bookSearchResults) { locator ->
                             Card(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     locator.title?.takeIf { it.isNotBlank() }?.let {
-                                        Text(it, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                                        Text(
+                                            it,
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
                                     }
                                     Text(searchSnippet(locator), style = MaterialTheme.typography.bodyMedium)
-                                    TextButton(onClick = { onGo(locator.toJSON().toString()) }) { Text("Go to match") }
+                                    TextButton(
+                                        onClick = { onGo(locator.toJSON().toString()) },
+                                        modifier = Modifier.heightIn(min = 48.dp)
+                                    ) { Text("Go to match") }
                                 }
                             }
                         }
@@ -263,12 +329,15 @@ fun ReaderNotebook(
             }
         )
     }
+
     deleting?.let { highlight ->
         AlertDialog(
             onDismissRequest = { deleting = null },
             title = { Text("Delete this highlight?") },
             text = { Text("Its attached note will also be removed.") },
-            confirmButton = { TextButton(onClick = { onDeleteHighlight(highlight.id); deleting = null }) { Text("Delete") } },
+            confirmButton = {
+                TextButton(onClick = { onDeleteHighlight(highlight.id); deleting = null }) { Text("Delete") }
+            },
             dismissButton = { TextButton(onClick = { deleting = null }) { Text("Keep") } }
         )
     }
