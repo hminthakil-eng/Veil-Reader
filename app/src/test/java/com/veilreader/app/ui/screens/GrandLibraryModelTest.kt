@@ -57,6 +57,37 @@ class GrandLibraryModelTest {
     }
 
     @Test
+    fun `equal recency ordering is stable regardless of input order`() {
+        val beta = book("beta", added = 20L, opened = 500L, progress = 0.4f, favorite = true)
+        val alpha = book("alpha", added = 20L, opened = 500L, progress = 0.4f, favorite = true)
+
+        val first = buildSmartShelves(listOf(beta, alpha))
+        val second = buildSmartShelves(listOf(alpha, beta))
+
+        assertEquals(listOf("alpha", "beta"), first.byId("continue-reading").books.map { it.id })
+        assertEquals(listOf("alpha", "beta"), second.byId("continue-reading").books.map { it.id })
+        assertEquals(listOf("alpha", "beta"), first.byId("favorites").books.map { it.id })
+        assertEquals(listOf("alpha", "beta"), second.byId("favorites").books.map { it.id })
+    }
+
+    @Test
+    fun `collection matching trims whitespace and keeps one deterministic case variant`() {
+        val books = listOf(
+            book("one", added = 10L, collections = listOf(" Fantasy ")),
+            book("two", added = 20L, collections = listOf("fantasy")),
+            book("three", added = 30L, collections = listOf("FANTASY"))
+        )
+
+        val first = buildSmartShelves(books)
+        val second = buildSmartShelves(books.reversed())
+
+        assertEquals(listOf("FANTASY"), first.filter { it.kind == SmartShelfKind.COLLECTION }.map { it.title })
+        assertEquals(listOf("FANTASY"), second.filter { it.kind == SmartShelfKind.COLLECTION }.map { it.title })
+        assertEquals(listOf("three", "two", "one"), first.byId("collection:fantasy").books.map { it.id })
+        assertEquals(listOf("three", "two", "one"), second.byId("collection:fantasy").books.map { it.id })
+    }
+
+    @Test
     fun `empty library produces no smart shelves`() {
         assertTrue(buildSmartShelves(emptyList()).isEmpty())
     }
