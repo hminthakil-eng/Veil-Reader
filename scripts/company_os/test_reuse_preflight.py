@@ -19,8 +19,8 @@ distinct = mod.score(
     "Redesign EPUB typography controls for reader appearance",
 )
 partial = mod.score(
-    "Build Company OS duplicate work prevention registry",
-    "Company work reuse gate to prevent duplicate implementation",
+    "Company duplicate work prevention registry",
+    "Duplicate work prevention gate and registry",
 )
 
 assert same > 0.50, same
