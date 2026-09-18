@@ -51,6 +51,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
+import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -64,6 +65,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
+import org.readium.adapter.pdfium.navigator.PdfiumDefaults
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.Navigator
@@ -150,7 +152,7 @@ fun ReaderScreen(
             navigatorProvider = { navigator as? SelectableNavigator },
             onAction = { action, locator, quote ->
                 try {
-                    val locatorJson = locator.toJSON().toString()
+                    val locatorJson = locator.toVeilPersistedJson(opened.format)
                     val existing = library.highlightsFor(opened.book.id).firstOrNull {
                         it.locatorJson == locatorJson && it.quote == quote
                     }
@@ -202,7 +204,7 @@ fun ReaderScreen(
 
     fun closeReader() {
         navigator?.currentLocator?.value?.let { locator ->
-            val json = locator.toJSON().toString()
+            val json = locator.toVeilPersistedJson(opened.format)
             readerViewModel.onLocatorChanged(
                 bookId = opened.book.id,
                 progression = locator.locations.totalProgression ?: readerViewModel.uiState.value.progress.toDouble(),
@@ -250,7 +252,7 @@ fun ReaderScreen(
             .debounce(500)
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
-                val json = locator.toJSON().toString()
+                val json = locator.toVeilPersistedJson(opened.format)
                 readerViewModel.onLocatorChanged(
                     bookId = opened.book.id,
                     progression = locator.locations.totalProgression
@@ -426,7 +428,7 @@ fun ReaderScreen(
                             val added = library.addBookmark(
                                 opened.book.id,
                                 "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                locator.toJSON().toString()
+                                locator.toVeilPersistedJson(opened.format)
                             )
                             readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
                         }
@@ -584,7 +586,9 @@ private fun createReaderFactory(
 
     BookFormat.PDF -> PdfNavigatorFactory(
         publication = opened.publication,
-        pdfEngineProvider = PdfiumEngineProvider()
+        pdfEngineProvider = PdfiumEngineProvider(
+            defaults = PdfiumDefaults(scroll = true)
+        )
     ).createFragmentFactory(initialLocator = opened.initialLocator)
 
     else -> error("Unsupported reader format")
