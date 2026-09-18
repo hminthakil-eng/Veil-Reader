@@ -1,0 +1,16 @@
+name: Actions Minimal Diagnostic
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - diag/actions-minimal
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Runner alive
+        run: |
+          echo "runner-ok"
+          uname -a
