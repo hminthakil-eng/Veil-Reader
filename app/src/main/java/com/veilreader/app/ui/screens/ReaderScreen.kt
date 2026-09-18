@@ -128,7 +128,7 @@ fun ReaderScreen(
         initialValue = library.highlightsFor(opened.book.id)
     )
     val bookBookmarks by bookBookmarksFlow.collectAsStateWithLifecycle(
-        initialValue = library.bookmarks.value.filter { it.bookId == opened.book.id }
+        initialValue = emptyList()
     )
     var readerMessage by remember { mutableStateOf<String?>(null) }
     var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
