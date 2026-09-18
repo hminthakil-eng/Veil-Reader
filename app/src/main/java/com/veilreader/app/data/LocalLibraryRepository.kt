@@ -211,8 +211,13 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun markOpened(id: String) {
-        val updated = updateBookCached(id) { it.copy(lastOpenedAtEpochMs = System.currentTimeMillis()) } ?: return
-        enqueue { database.books().upsert(updated.toEntity()) }
+        val openedAtEpochMs = System.currentTimeMillis()
+        updateBookCached(id) { it.copy(lastOpenedAtEpochMs = openedAtEpochMs) } ?: return
+        enqueue {
+            check(database.books().updateLastOpened(id, openedAtEpochMs) == 1) {
+                "Book disappeared before its opened timestamp could be persisted: $id"
+            }
+        }
     }
 
     /** Returns true when this update completed the book for the first time. */
@@ -233,7 +238,20 @@ class LocalLibraryRepository internal constructor(
             finished = current.finished || finishedNow
         )
         replaceBookCached(updated)
-        enqueue { database.books().upsert(updated.toEntity()) }
+        enqueue {
+            check(
+                database.books().updateProgress(
+                    id = id,
+                    progress = updated.progress,
+                    pagesRead = updated.pagesRead,
+                    locatorJson = locatorJson,
+                    lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
+                    finished = updated.finished
+                ) == 1
+            ) {
+                "Book disappeared before its progress could be persisted: $id"
+            }
+        }
         return newlyFinished
     }
 
