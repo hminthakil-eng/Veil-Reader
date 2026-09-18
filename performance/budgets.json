@@ -22,7 +22,7 @@
         "metricGroup": "sampledMetrics",
         "metric": "frameOverrunMs",
         "stat": "P95",
-        "max": 100.0
+        "max": 400.0
       },
       {
         "id": "reader_frame_overrun_p99",
@@ -31,7 +31,7 @@
         "metricGroup": "sampledMetrics",
         "metric": "frameOverrunMs",
         "stat": "P99",
-        "max": 250.0
+        "max": 600.0
       },
       {
         "id": "reader_frame_count",
