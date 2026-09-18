@@ -249,6 +249,70 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun pdfiumLocatorMigration_rewritesOnlyMatchingBookState_transactionally() = runBlocking {
+        val repository = repository()
+        val pdf = Book(
+            id = "pdf-book",
+            title = "Legacy PDF",
+            author = "Reader",
+            format = BookFormat.PDF,
+            sourceUri = "file:///legacy.pdf",
+            mediaType = "application/pdf"
+        )
+        val other = Book(
+            id = "other-book",
+            title = "Other",
+            author = "Reader",
+            format = BookFormat.PDF,
+            sourceUri = "file:///other.pdf",
+            mediaType = "application/pdf"
+        )
+        repository.addImportedBook(pdf)
+        repository.addImportedBook(other)
+
+        val oldProgress = """{"href":"document.pdf","type":"application/pdf","locations":{"position":3}}"""
+        val newProgress = """{"href":"document.pdf","type":"application/pdf","locations":{"position":2,"veilPdfiumLocatorVersion":1}}"""
+        val oldBookmark = """{"href":"document.pdf","type":"application/pdf","locations":{"position":5}}"""
+        val newBookmark = """{"href":"document.pdf","type":"application/pdf","locations":{"position":4,"veilPdfiumLocatorVersion":1}}"""
+        val oldHighlight = """{"href":"document.pdf","type":"application/pdf","locations":{"position":7}}"""
+        val newHighlight = """{"href":"document.pdf","type":"application/pdf","locations":{"position":6,"veilPdfiumLocatorVersion":1}}"""
+        val untouched = """{"href":"other.pdf","type":"application/pdf","locations":{"position":9}}"""
+
+        repository.saveProgress("pdf-book", 0.4, oldProgress)
+        repository.addBookmark("pdf-book", "Legacy bookmark", oldBookmark)
+        repository.addHighlight("pdf-book", "Legacy highlight", oldHighlight)
+        repository.addBookmark("other-book", "Other bookmark", untouched)
+        repository.flushWrites()
+
+        repository.applyPdfiumLocatorMigrations(
+            bookId = "pdf-book",
+            migrations = mapOf(
+                oldProgress to newProgress,
+                oldBookmark to newBookmark,
+                oldHighlight to newHighlight
+            )
+        )
+
+        assertEquals(newProgress, db.books().findEntity("pdf-book")?.locatorJson)
+        assertEquals(
+            newBookmark,
+            db.bookmarks().listAll().first { it.bookId == "pdf-book" }.locatorJson
+        )
+        assertEquals(
+            newHighlight,
+            db.highlights().listAll().first { it.bookId == "pdf-book" }.locatorJson
+        )
+        assertEquals(
+            untouched,
+            db.bookmarks().listAll().first { it.bookId == "other-book" }.locatorJson
+        )
+        assertEquals(
+            setOf(newProgress, newBookmark, newHighlight),
+            repository.locatorJsonsForBook("pdf-book")
+        )
+    }
+
+    @Test
     fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking {
         val repository = repository()
         val book = Book(
