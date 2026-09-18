@@ -124,8 +124,12 @@ fun ReaderScreen(
             .map { items -> items.filter { it.bookId == opened.book.id } }
             .distinctUntilChanged()
     }
-    val bookHighlights by bookHighlightsFlow.collectAsStateWithLifecycle(initialValue = emptyList())
-    val bookBookmarks by bookBookmarksFlow.collectAsStateWithLifecycle(initialValue = emptyList())
+    val bookHighlights by bookHighlightsFlow.collectAsStateWithLifecycle(
+        initialValue = library.highlightsFor(opened.book.id)
+    )
+    val bookBookmarks by bookBookmarksFlow.collectAsStateWithLifecycle(
+        initialValue = library.bookmarks.value.filter { it.bookId == opened.book.id }
+    )
     var readerMessage by remember { mutableStateOf<String?>(null) }
     var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
     var pendingNoteText by remember { mutableStateOf("") }
@@ -216,6 +220,12 @@ fun ReaderScreen(
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
         createReaderFactory(opened, appearance, selectionActionModeCallback)
     }
+    val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
+        { ready -> navigator = ready }
+    }
+    val onDisposePublication = remember(opened.book.id) {
+        { opened.close() }
+    }
 
     DisposableEffect(lifecycle, readerViewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -301,8 +311,8 @@ fun ReaderScreen(
                 else -> error("Unsupported reader format")
             },
             tag = "reader-${opened.book.id}",
-            onNavigatorReady = { navigator = it },
-            onDisposePublication = { opened.close() },
+            onNavigatorReady = onNavigatorReady,
+            onDisposePublication = onDisposePublication,
             modifier = Modifier.fillMaxSize()
         )
 
