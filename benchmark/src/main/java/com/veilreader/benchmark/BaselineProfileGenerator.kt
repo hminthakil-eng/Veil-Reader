@@ -13,16 +13,16 @@ class BaselineProfileGenerator {
     @get:Rule
     val baselineProfileRule = BaselineProfileRule()
 
+    /**
+     * The Baseline Profile Gradle plugin generates this against nonMinifiedRelease.
+     * Keep this journey on production-visible entry points only. The deterministic
+     * reader fixture is benchmark-build-only and is exercised by ReaderFrameBenchmark.
+     */
     @Test
     fun generate() = baselineProfileRule.collect(
         packageName = TARGET_PACKAGE
     ) {
         startActivityAndWait()
-        pressHome()
-
-        startActivityAndWait(readerIntent())
         device.waitForIdle()
-        Thread.sleep(1_000)
-        turnReaderPages()
     }
 }
