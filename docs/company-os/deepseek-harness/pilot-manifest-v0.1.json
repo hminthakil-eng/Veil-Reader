@@ -1,0 +1,47 @@
+{
+  "pilot": "deepseek-harness-agent-runtime",
+  "version": "0.1",
+  "status": "CONTROLLED_PILOT",
+  "production_authorized": false,
+  "upstream": {
+    "repository": "deepseek-ai/deepseek-harness",
+    "version": "0.1.6-alpha.2",
+    "commit": "ddefc45fbc7f8e46dd73185e68295696d1297887",
+    "license": "MIT",
+    "developer_preview": true
+  },
+  "runtime": {
+    "node": "^22.19.0 || >=24.0.0",
+    "package_manager": "pnpm@11.7.0"
+  },
+  "architecture_rule": {
+    "execution_substrate": "DeepSeek Harness / Cordis",
+    "control_plane": "Eyad Company OS",
+    "browser_policy_owner": "Eyad Browser Execution Router",
+    "fork_allowed": false
+  },
+  "data_policy": {
+    "synthetic_or_public_only": true,
+    "real_secrets_allowed": false,
+    "production_credentials_allowed": false,
+    "production_mounts_allowed": false
+  },
+  "network": {
+    "default": "DENY",
+    "allowlist_required": true
+  },
+  "plugins": {
+    "default": "DENY",
+    "allowlist_required": true,
+    "third_party_unreviewed_allowed": false,
+    "dynamic_model_written_packages_allowed": false
+  },
+  "required_workstreams": [
+    87,
+    88,
+    89,
+    90,
+    91,
+    92
+  ]
+}

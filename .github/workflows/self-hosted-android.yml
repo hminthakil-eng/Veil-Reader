@@ -1,0 +1,52 @@
+name: Self-hosted Android Verification
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or commit to verify"
+        required: false
+        default: "upgrade/readium-3-4"
+
+permissions:
+  contents: read
+
+jobs:
+  windows-verify:
+    runs-on: [self-hosted, Windows, X64, veil-reader]
+    timeout-minutes: 45
+    steps:
+      - name: Checkout requested ref
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android platform and build tools
+        shell: powershell
+        run: |
+          sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
+
+      - name: Unit tests
+        shell: powershell
+        run: .\gradlew.bat :app:testDebugUnitTest --stacktrace
+
+      - name: Android lint
+        shell: powershell
+        run: .\gradlew.bat :app:lintDebug --stacktrace
+
+      - name: Build debug APK
+        shell: powershell
+        run: .\gradlew.bat :app:assembleDebug --stacktrace
+
+      - name: Compile performance harness
+        shell: powershell
+        run: .\gradlew.bat :benchmark:assembleBenchmarkBenchmark --stacktrace

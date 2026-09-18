@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eyad.studio/schemas/challenge-v1.json",
+  "title": "Eyad Studio Challenge v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "challenge_id",
+    "project",
+    "category",
+    "severity",
+    "status",
+    "impact",
+    "evidence",
+    "owner",
+    "triage_route"
+  ],
+  "properties": {
+    "challenge_id": {"type":"string","minLength":1},
+    "project": {"type":"string","minLength":1},
+    "category": {
+      "enum":["TECHNICAL","PRODUCT","UX","SECURITY","QUALITY","PROCESS","TOOLING","DEPENDENCY","COST","DELIVERY","COMPLIANCE","UNKNOWN"]
+    },
+    "severity": {"enum":["CH0","CH1","CH2","CH3"]},
+    "status": {
+      "enum":["REPORTED","TRIAGED","RESEARCHING","DECIDED","IN_EXECUTION","VERIFYING","RESOLVED","LEARNED","DUPLICATE","BLOCKED","HOLD","REJECTED","REOPENED"]
+    },
+    "impact": {"type":"string","minLength":1},
+    "evidence": {"type":"array","items":{"type":"string"}},
+    "reproduction_frequency": {"type":["string","null"]},
+    "workaround": {"type":["string","null"]},
+    "suspected_cause": {"type":["string","null"]},
+    "research_question": {"type":["string","null"]},
+    "owner": {"type":"string","minLength":1},
+    "research_owner": {"type":["string","null"]},
+    "triage_route": {"enum":["ROUTE_A_KNOWN_SOLUTION","ROUTE_B_RESEARCH","ROUTE_C_RISK_RADAR","ROUTE_D_DUPLICATE"]},
+    "related_work_ids": {"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "related_challenge_ids": {"type":"array","items":{"type":"string"},"uniqueItems":true},
+    "risk_radar_ref": {"type":["string","null"]},
+    "research_findings": {"type":["string","null"]},
+    "decision": {"type":["string","null"]},
+    "resolution": {"type":["string","null"]},
+    "verification_evidence": {"type":"array","items":{"type":"string"}},
+    "recurrence_count": {"type":"integer","minimum":0},
+    "recurrence_prevention": {"type":["string","null"]},
+    "learned_artifacts": {"type":"array","items":{"type":"string"}}
+  }
+}
