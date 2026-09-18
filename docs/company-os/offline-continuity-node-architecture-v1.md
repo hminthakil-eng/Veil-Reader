@@ -1,8 +1,8 @@
 # Eyad Studio Company OS — Offline Continuity Node Architecture v1
 
 Status: Controlled Pilot Architecture
-Parent: #113
-Canonical Challenge: #112
+Parent: #109
+Canonical Challenges: #110 #111
 Date: 2026-09-18
 
 ## Purpose
@@ -139,4 +139,4 @@ Pilot records:
 
 ## Build-new gate
 
-Do not build an Eyad-specific offline appliance until #113 proves that neither N.O.M.A.D. nor a modular reusable stack meets the contract with acceptable integration effort.
+Do not build an Eyad-specific offline appliance until #109 proves that neither N.O.M.A.D. nor a modular reusable stack meets the contract with acceptable integration effort.
