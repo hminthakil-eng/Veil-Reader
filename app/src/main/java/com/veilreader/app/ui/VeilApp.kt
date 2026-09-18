@@ -10,7 +10,6 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,9 +59,21 @@ fun VeilApp(
     val readerEngine = remember(context) { ReadiumEngine(context) }
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
+    var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
 
-    val books by library.books.collectAsState()
-    val highlights by library.highlights.collectAsState()
+    // While Readium owns the screen, avoid parent-level subscriptions that would recompose the
+    // entire reader for every progress/game-state write. The latest values remain available
+    // synchronously and subscriptions resume as soon as the reader closes.
+    val books = if (openedPublication == null) {
+        library.books.collectAsStateWithLifecycle().value
+    } else {
+        library.books.value
+    }
+    val highlights = if (openedPublication == null) {
+        library.highlights.collectAsStateWithLifecycle().value
+    } else {
+        library.highlights.value
+    }
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
 
     // Existing libraries and restored backups may have no cached covers. Process one book at a time
@@ -85,11 +96,31 @@ fun VeilApp(
             ?.let { library.updateContentFingerprint(book.id, it) }
     }
 
-    val profile by game.profile.collectAsState()
-    val quests by game.quests.collectAsState()
-    val dailyGoalMinutes by game.dailyGoalMinutes.collectAsState()
-    val equippedSigil by game.equippedSigil.collectAsState()
-    val castleTitle by game.castleTitle.collectAsState()
+    val profile = if (openedPublication == null) {
+        game.profile.collectAsStateWithLifecycle().value
+    } else {
+        game.profile.value
+    }
+    val quests = if (openedPublication == null) {
+        game.quests.collectAsStateWithLifecycle().value
+    } else {
+        game.quests.value
+    }
+    val dailyGoalMinutes = if (openedPublication == null) {
+        game.dailyGoalMinutes.collectAsStateWithLifecycle().value
+    } else {
+        game.dailyGoalMinutes.value
+    }
+    val equippedSigil = if (openedPublication == null) {
+        game.equippedSigil.collectAsStateWithLifecycle().value
+    } else {
+        game.equippedSigil.value
+    }
+    val castleTitle = if (openedPublication == null) {
+        game.castleTitle.collectAsStateWithLifecycle().value
+    } else {
+        game.castleTitle.value
+    }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     DisposableEffect(lifecycle) {
