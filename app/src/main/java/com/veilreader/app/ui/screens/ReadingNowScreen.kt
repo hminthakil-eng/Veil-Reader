@@ -237,20 +237,19 @@ private fun HeroDetails(
             overflow = TextOverflow.Ellipsis
         )
 
-        Row(
+        Column(
             modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.xs),
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
-            verticalAlignment = Alignment.CenterVertically
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             Button(
                 onClick = { onOpenBook(current) },
-                modifier = Modifier.weight(1f).heightIn(min = 52.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
                 Text(if (progress > 0f && !current.finished) "Continue" else "Open book")
             }
             TextButton(
                 onClick = onOpenLibrary,
-                modifier = Modifier.heightIn(min = 52.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
                 Text("Library")
             }
@@ -277,8 +276,17 @@ private fun RecentBooksShelf(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Recent books", style = MaterialTheme.typography.titleLarge)
-            TextButton(onClick = onOpenLibrary) { Text("View all") }
+            Text(
+                "Recent books",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            TextButton(
+                onClick = onOpenLibrary,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) { Text("View all") }
         }
 
         Row(
@@ -344,14 +352,31 @@ private fun ReadingPulse(profile: ReaderProfile) {
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f))
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
-            verticalAlignment = Alignment.CenterVertically
+        BoxWithConstraints(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md)
         ) {
-            ReadingPulseValue("${profile.streakDays}", "day streak", Modifier.weight(1f))
-            ReadingPulseValue(formatReadingTime(profile.minutesRead), "reading", Modifier.weight(1f))
-            ReadingPulseValue("${profile.booksFinished}", "finished", Modifier.weight(1f))
+            if (maxWidth < 420.dp) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    ReadingPulseValue("${profile.streakDays}", "day streak", Modifier.fillMaxWidth())
+                    ReadingPulseValue(formatReadingTime(profile.minutesRead), "reading", Modifier.fillMaxWidth())
+                    ReadingPulseValue("${profile.booksFinished}", "finished", Modifier.fillMaxWidth())
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ReadingPulseValue("${profile.streakDays}", "day streak", Modifier.weight(1f))
+                    ReadingPulseValue(formatReadingTime(profile.minutesRead), "reading", Modifier.weight(1f))
+                    ReadingPulseValue("${profile.booksFinished}", "finished", Modifier.weight(1f))
+                }
+            }
         }
     }
 }
@@ -370,7 +395,8 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
             label,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
