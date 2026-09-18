@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://eyad.studio/schemas/registry-item-v0.1.json",
+  "title": "Eyad Prompt & Skill Registry Item v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "upstream",
+    "content_type",
+    "content_hash",
+    "provenance_status",
+    "license",
+    "requested_capabilities",
+    "risk_class",
+    "approval_state",
+    "test_status"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "upstream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "source_url", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "project": { "type": "string" },
+        "source_url": { "type": "string", "format": "uri" },
+        "version": { "type": "string" },
+        "commit": { "type": ["string", "null"] }
+      }
+    },
+    "content_type": {
+      "enum": ["PROMPT", "SKILL", "TEMPLATE", "WORKFLOW", "TOOL_DESCRIPTOR"]
+    },
+    "content_hash": { "type": "string", "minLength": 16 },
+    "provenance_status": {
+      "enum": ["VERIFIED", "PARTIAL", "UNKNOWN"]
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "spdx": { "type": ["string", "null"] },
+        "status": {
+          "enum": ["COMPATIBLE", "REVIEW_REQUIRED", "INCOMPATIBLE", "UNKNOWN"]
+        },
+        "evidence_url": { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "requested_capabilities": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "shell_exec",
+        "network_access",
+        "package_install",
+        "filesystem_read",
+        "filesystem_write",
+        "secret_access",
+        "credential_access",
+        "external_tool_call",
+        "code_execution",
+        "browser_automation",
+        "persistent_memory_write",
+        "outbound_webhook",
+        "data_export"
+      ],
+      "properties": {
+        "shell_exec": { "type": "boolean" },
+        "network_access": { "type": "boolean" },
+        "package_install": { "type": "boolean" },
+        "filesystem_read": { "type": "boolean" },
+        "filesystem_write": { "type": "boolean" },
+        "secret_access": { "type": "boolean" },
+        "credential_access": { "type": "boolean" },
+        "external_tool_call": { "type": "boolean" },
+        "code_execution": { "type": "boolean" },
+        "browser_automation": { "type": "boolean" },
+        "persistent_memory_write": { "type": "boolean" },
+        "outbound_webhook": { "type": "boolean" },
+        "data_export": { "type": "boolean" }
+      }
+    },
+    "risk_class": {
+      "enum": ["SAFE", "RESTRICTED", "QUARANTINED", "REJECTED"]
+    },
+    "approval_state": {
+      "enum": [
+        "DISCOVERED",
+        "SCANNED",
+        "TESTING",
+        "APPROVED",
+        "PUBLISHED",
+        "SUSPENDED",
+        "DEPRECATED",
+        "QUARANTINED",
+        "REJECTED"
+      ]
+    },
+    "test_status": {
+      "enum": ["NOT_TESTED", "PASS", "FAIL", "PARTIAL"]
+    },
+    "supported_models": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "intended_projects": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "dependency_manifest": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "rollback_version": {
+      "type": ["string", "null"]
+    },
+    "notes": {
+      "type": ["string", "null"]
+    }
+  }
+}
