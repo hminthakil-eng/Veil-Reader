@@ -248,6 +248,42 @@ class RoomRuntimeRepositoryInstrumentedTest {
         backupFile.delete()
     }
 
+    @Test
+    fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking {
+        val repository = repository()
+        val book = Book(
+            id = "hot-path-book",
+            title = "Stable Metadata",
+            author = "Reader",
+            totalPages = 100,
+            sourceUri = "file:///hot-path.epub",
+            contentFingerprint = "hot-path-fingerprint",
+            seriesName = "Performance Cycle",
+            seriesIndex = 3.0,
+            language = "en"
+        )
+
+        repository.addImportedBook(book)
+        assertFalse(repository.saveProgress("hot-path-book", 0.4, "{\"href\":\"c4.xhtml\"}"))
+        repository.markOpened("hot-path-book")
+        assertTrue(repository.saveProgress("hot-path-book", 0.999, "{\"href\":\"final.xhtml\"}"))
+        assertFalse(repository.saveProgress("hot-path-book", 1.0, "{\"href\":\"final.xhtml\"}"))
+        repository.flushWrites()
+
+        val stored = db.books().findEntity("hot-path-book") ?: error("hot-path book missing")
+        assertEquals("Stable Metadata", stored.title)
+        assertEquals("Reader", stored.author)
+        assertEquals("hot-path-fingerprint", stored.contentFingerprint)
+        assertEquals("Performance Cycle", stored.seriesName)
+        assertEquals(3.0, stored.seriesIndex)
+        assertEquals("en", stored.language)
+        assertEquals(1.0f, stored.progress)
+        assertEquals(100, stored.pagesRead)
+        assertEquals("{\"href\":\"final.xhtml\"}", stored.locatorJson)
+        assertTrue(stored.finished)
+        assertTrue(stored.lastOpenedAtEpochMs > 0L)
+    }
+
     private fun repository(): LocalLibraryRepository = LocalLibraryRepository(
         appContext = context,
         database = db,
