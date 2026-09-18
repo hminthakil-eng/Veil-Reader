@@ -2,9 +2,27 @@ name: Performance Benchmarks
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "app/**"
+      - "benchmark/**"
+      - "performance/**"
+      - "tools/check_performance_*.py"
+      - "tools/snapshot_performance.py"
+      - ".github/workflows/performance-benchmark.yml"
+  push:
+    branches: [ "main" ]
+    paths:
+      - "app/**"
+      - "benchmark/**"
+      - "performance/**"
+      - "tools/check_performance_*.py"
+      - "tools/snapshot_performance.py"
+      - ".github/workflows/performance-benchmark.yml"
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: performance-benchmark-${{ github.ref }}
@@ -13,7 +31,7 @@ concurrency:
 jobs:
   benchmark-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,6 +46,30 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
+
+      - name: Download latest successful main baseline
+        id: baseline
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p performance/baseline
+          BASELINE_RUN_ID="$(gh run list             --workflow performance-benchmark.yml             --branch main             --event push             --status success             --limit 1             --json databaseId             --jq '.[0].databaseId // empty')"
+
+          if [ -z "$BASELINE_RUN_ID" ]; then
+            echo "No successful main performance baseline exists yet."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if gh run download "$BASELINE_RUN_ID"             --name veil-reader-performance-baseline             --dir performance/baseline             && [ -f performance/baseline/current-smoke.json ]; then
+            echo "Using baseline from run $BASELINE_RUN_ID."
+            echo "available=true" >> "$GITHUB_OUTPUT"
+            echo "run_id=$BASELINE_RUN_ID" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Main run $BASELINE_RUN_ID has no usable performance baseline artifact."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Enable KVM
         run: |
@@ -49,17 +91,51 @@ jobs:
       - name: Enforce emulator smoke budgets
         run: python3 tools/check_performance_budget.py --mode smoke benchmark/build
 
-      - name: Upload benchmark traces and reports
+      - name: Snapshot normalized performance history
+        env:
+          VEIL_PERF_DEVICE: github-actions-api35-x86_64
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          COMMIT_SHA="$GITHUB_SHA"
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ -n "$PR_HEAD_SHA" ]; then
+            COMMIT_SHA="$PR_HEAD_SHA"
+          fi
+          python3 tools/snapshot_performance.py             --mode smoke             --commit "$COMMIT_SHA"             --device "$VEIL_PERF_DEVICE"             --output performance/current-smoke.json             benchmark/build
+
+      - name: Enforce PR delta against main baseline
+        if: github.event_name == 'pull_request' && steps.baseline.outputs.available == 'true'
+        run: |
+          python3 tools/check_performance_delta.py             --mode smoke             --baseline performance/baseline/current-smoke.json             --current performance/current-smoke.json
+
+      - name: Record missing delta baseline
+        if: github.event_name == 'pull_request' && steps.baseline.outputs.available != 'true'
+        run: |
+          echo "## Veil Reader PR performance delta" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "No successful main baseline artifact exists yet, so the relative delta gate was skipped." >> "$GITHUB_STEP_SUMMARY"
+          echo "Absolute smoke budgets still passed before this step." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish main performance baseline
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: veil-reader-performance-baseline
+          path: performance/current-smoke.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload benchmark traces, reports and snapshot
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: veil-reader-performance-smoke
+          name: veil-reader-performance-${{ github.run_id }}
           path: |
             benchmark/build/outputs/
             benchmark/build/reports/
             app/src/**/generated/baselineProfiles/
+            performance/current-smoke.json
           if-no-files-found: warn
-          retention-days: 7
+          retention-days: 14
 
-      # Emulator metrics are useful as a regression smoke signal only. Device-grade performance
-      # decisions must be based on the same Macrobenchmarks run on a representative physical device.
+      # Emulator metrics are regression smoke signals only. Product performance decisions use the
+      # physical-device budget and delta policies against a stable representative device.
