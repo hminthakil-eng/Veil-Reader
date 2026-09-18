@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - "app/**"
+      - "benchmark/**"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle.properties"
@@ -17,6 +18,7 @@ on:
   pull_request:
     paths:
       - "app/**"
+      - "benchmark/**"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - "gradle.properties"
@@ -68,6 +70,9 @@ jobs:
 
       - name: Build debug APK
         run: gradle :app:assembleDebug --stacktrace
+
+      - name: Compile performance harness
+        run: gradle :benchmark:assembleBenchmark --stacktrace
 
       - name: Upload APK for manual runs only
         if: github.event_name == 'workflow_dispatch'
