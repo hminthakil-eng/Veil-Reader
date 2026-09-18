@@ -247,43 +247,60 @@ fun VeilApp(
 
         val locatorOverride = route.locatorOverrideJson
         val candidate = if (locatorOverride == null) book else book.copy(locatorJson = locatorOverride)
-        readerEngine.openBook(candidate)
-            .onSuccess { opened ->
-                if (routeViewModel.route.value.activeBookId != targetId) {
-                    opened.close()
-                    return@onSuccess
-                }
-                if (locatorOverride != null) {
-                    library.saveProgress(targetId, book.progress.toDouble(), locatorOverride)
-                }
-                library.markOpened(targetId)
-                openedPublication = opened
-                if (locatorOverride == null) {
-                    routeViewModel.readerOpened(targetId)
-                } else {
-                    scope.launch {
-                        try {
-                            library.flushWrites()
-                            val currentRoute = routeViewModel.route.value
-                            if (
-                                currentRoute.activeBookId == targetId &&
-                                currentRoute.locatorOverrideJson == locatorOverride
-                            ) {
-                                routeViewModel.readerOpened(targetId)
-                            }
-                        } catch (cancelled: CancellationException) {
-                            throw cancelled
-                        } catch (error: Exception) {
-                            errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
-                        }
-                    }
-                }
-            }
-            .onFailure { error ->
+        val opened = readerEngine.openBook(
+            book = candidate,
+            persistedLocatorJsons = library.locatorJsonsForBook(targetId)
+        ).fold(
+            onSuccess = { it },
+            onFailure = { error ->
                 if (error is CancellationException) throw error
                 routeViewModel.bookOpenFailed(targetId)
                 errorMessage = error.message ?: "Could not open this book."
+                return@LaunchedEffect
             }
+        )
+
+        if (routeViewModel.route.value.activeBookId != targetId) {
+            opened.close()
+            return@LaunchedEffect
+        }
+
+        try {
+            library.applyPdfiumLocatorMigrations(targetId, opened.locatorMigrations)
+        } catch (cancelled: CancellationException) {
+            opened.close()
+            throw cancelled
+        } catch (error: Exception) {
+            errorMessage = "The book opened, but older PDF reading positions could not be upgraded yet. ${error.message.orEmpty()}"
+        }
+
+        if (locatorOverride != null) {
+            val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: locatorOverride
+            library.saveProgress(targetId, book.progress.toDouble(), persistedLocator)
+        }
+        library.markOpened(targetId)
+        openedPublication = opened
+
+        if (locatorOverride == null) {
+            routeViewModel.readerOpened(targetId)
+        } else {
+            scope.launch {
+                try {
+                    library.flushWrites()
+                    val currentRoute = routeViewModel.route.value
+                    if (
+                        currentRoute.activeBookId == targetId &&
+                        currentRoute.locatorOverrideJson == locatorOverride
+                    ) {
+                        routeViewModel.readerOpened(targetId)
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
+                }
+            }
+        }
     }
 
     LaunchedEffect(externalOpenUri) {
