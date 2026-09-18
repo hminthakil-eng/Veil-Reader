@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import importlib.util
+import sys
 from pathlib import Path
 
 MODULE = Path(__file__).with_name("reuse_preflight.py")
 spec = importlib.util.spec_from_file_location("reuse_preflight", MODULE)
 mod = importlib.util.module_from_spec(spec)
 assert spec.loader is not None
+sys.modules[spec.name] = mod
 spec.loader.exec_module(mod)
 
 same = mod.score(
