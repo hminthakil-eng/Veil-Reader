@@ -332,6 +332,83 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertFalse(stored.finished)
     }
 
+    @Test
+    fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "session-book",
+                title = "Session Tome",
+                author = "Performance",
+                sourceUri = "file:///session.epub"
+            )
+        )
+        repository.saveReadingSession(
+            ReadingSessionSnapshot(
+                id = "session-coalesce",
+                bookId = "session-book",
+                startedAtEpochMs = 100L,
+                endedAtEpochMs = 100L,
+                activeMillis = 0L,
+                pacedPageTurns = 0,
+                highlightCount = 0,
+                noteCount = 0
+            )
+        )
+        repository.flushWrites()
+
+        val sqlite = db.openHelper.writableDatabase
+        sqlite.execSQL("CREATE TABLE session_write_probe (writes INTEGER NOT NULL)")
+        sqlite.execSQL("INSERT INTO session_write_probe(writes) VALUES (0)")
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER session_write_counter_insert
+            AFTER INSERT ON reading_sessions
+            BEGIN
+                UPDATE session_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER session_write_counter_update
+            AFTER UPDATE ON reading_sessions
+            BEGIN
+                UPDATE session_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+
+        repeat(20) { index ->
+            repository.saveReadingSession(
+                ReadingSessionSnapshot(
+                    id = "session-coalesce",
+                    bookId = "session-book",
+                    startedAtEpochMs = 100L,
+                    endedAtEpochMs = 200L + index,
+                    activeMillis = index * 1_000L,
+                    pacedPageTurns = index,
+                    highlightCount = index / 2,
+                    noteCount = index / 3
+                )
+            )
+        }
+        repository.flushReadingSession("session-coalesce")
+        repository.flushWrites()
+
+        sqlite.query("SELECT writes FROM session_write_probe").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+        }
+
+        val stored = db.readingSessions().listAll().single { it.id == "session-coalesce" }
+        assertEquals(19_000L, stored.activeMillis)
+        assertEquals(19, stored.pacedPageTurns)
+        assertEquals(9, stored.highlightCount)
+        assertEquals(6, stored.noteCount)
+        assertEquals(219L, stored.endedAtEpochMs)
+    }
+
     private fun repository(): LocalLibraryRepository = LocalLibraryRepository(
         appContext = context,
         database = db,
