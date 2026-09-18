@@ -278,6 +278,61 @@ class LocalLibraryRepository internal constructor(
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
 
+    fun locatorJsonsForBook(bookId: String): Set<String> = buildSet {
+        getBook(bookId)?.locatorJson?.let(::add)
+        _bookmarks.value.filter { it.bookId == bookId }.forEach { add(it.locatorJson) }
+        _highlights.value.filter { it.bookId == bookId }.forEach { add(it.locatorJson) }
+    }
+
+    /**
+     * Rewrites only locators that Readium 3.4 identified as legacy PDFium values.
+     *
+     * Every migrated locator carries its own compatibility marker, so this transaction is safe to
+     * retry after process death and restored backups do not need a separate schema flag.
+     */
+    suspend fun applyPdfiumLocatorMigrations(bookId: String, migrations: Map<String, String>) {
+        if (migrations.isEmpty()) return
+        flushProgress(bookId)
+
+        val currentBook = getBook(bookId)
+        val migratedBook = currentBook?.locatorJson
+            ?.let(migrations::get)
+            ?.let { currentBook.copy(locatorJson = it) }
+
+        val migratedBookmarks = _bookmarks.value.mapNotNull { bookmark ->
+            if (bookmark.bookId != bookId) return@mapNotNull null
+            migrations[bookmark.locatorJson]?.let { bookmark.copy(locatorJson = it) }
+        }
+        val migratedHighlights = _highlights.value.mapNotNull { highlight ->
+            if (highlight.bookId != bookId) return@mapNotNull null
+            migrations[highlight.locatorJson]?.let { highlight.copy(locatorJson = it) }
+        }
+
+        if (migratedBook == null && migratedBookmarks.isEmpty() && migratedHighlights.isEmpty()) return
+
+        orderedWrite {
+            database.withTransaction {
+                migratedBook?.let { database.books().upsert(it.toEntity()) }
+                if (migratedBookmarks.isNotEmpty()) {
+                    database.bookmarks().upsertAll(migratedBookmarks.map { it.toEntity() })
+                }
+                if (migratedHighlights.isNotEmpty()) {
+                    database.highlights().upsertAll(migratedHighlights.map { it.toEntity() })
+                }
+            }
+        }
+
+        migratedBook?.let(::replaceBookCached)
+        if (migratedBookmarks.isNotEmpty()) {
+            val byId = migratedBookmarks.associateBy { it.id }
+            _bookmarks.value = _bookmarks.value.map { byId[it.id] ?: it }
+        }
+        if (migratedHighlights.isNotEmpty()) {
+            val byId = migratedHighlights.associateBy { it.id }
+            _highlights.value = _highlights.value.map { byId[it.id] ?: it }
+        }
+    }
+
     fun deleteHighlight(id: String) {
         _highlights.value = _highlights.value.filterNot { it.id == id }
         enqueue { database.highlights().deleteById(id) }
