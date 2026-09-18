@@ -278,10 +278,16 @@ class LocalLibraryRepository internal constructor(
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
 
-    fun locatorJsonsForBook(bookId: String): Set<String> = buildSet {
-        getBook(bookId)?.locatorJson?.let(::add)
-        _bookmarks.value.filter { it.bookId == bookId }.forEach { add(it.locatorJson) }
-        _highlights.value.filter { it.bookId == bookId }.forEach { add(it.locatorJson) }
+    suspend fun locatorJsonsForBook(bookId: String): Set<String> = orderedWrite {
+        buildSet {
+            database.books().findWithCollections(bookId)?.book?.locatorJson?.let(::add)
+            database.bookmarks().listAll()
+                .filter { it.bookId == bookId }
+                .forEach { add(it.locatorJson) }
+            database.highlights().listAll()
+                .filter { it.bookId == bookId }
+                .forEach { add(it.locatorJson) }
+        }
     }
 
     /**
@@ -294,31 +300,31 @@ class LocalLibraryRepository internal constructor(
         if (migrations.isEmpty()) return
         flushProgress(bookId)
 
-        val currentBook = getBook(bookId)
-        val migratedBook = currentBook?.locatorJson
-            ?.let(migrations::get)
-            ?.let { currentBook.copy(locatorJson = it) }
-
-        val migratedBookmarks = _bookmarks.value.mapNotNull { bookmark ->
-            if (bookmark.bookId != bookId) return@mapNotNull null
-            migrations[bookmark.locatorJson]?.let { bookmark.copy(locatorJson = it) }
-        }
-        val migratedHighlights = _highlights.value.mapNotNull { highlight ->
-            if (highlight.bookId != bookId) return@mapNotNull null
-            migrations[highlight.locatorJson]?.let { highlight.copy(locatorJson = it) }
-        }
-
-        if (migratedBook == null && migratedBookmarks.isEmpty() && migratedHighlights.isEmpty()) return
-
-        orderedWrite {
+        val (migratedBook, migratedBookmarks, migratedHighlights) = orderedWrite {
             database.withTransaction {
-                migratedBook?.let { database.books().upsert(it.toEntity()) }
-                if (migratedBookmarks.isNotEmpty()) {
-                    database.bookmarks().upsertAll(migratedBookmarks.map { it.toEntity() })
+                val currentBook = database.books().findWithCollections(bookId)?.toDomain()
+                val bookUpdate = currentBook?.locatorJson
+                    ?.let(migrations::get)
+                    ?.let { currentBook.copy(locatorJson = it) }
+
+                val bookmarkUpdates = database.bookmarks().listAll().mapNotNull { entity ->
+                    if (entity.bookId != bookId) return@mapNotNull null
+                    migrations[entity.locatorJson]?.let { entity.toDomain().copy(locatorJson = it) }
                 }
-                if (migratedHighlights.isNotEmpty()) {
-                    database.highlights().upsertAll(migratedHighlights.map { it.toEntity() })
+                val highlightUpdates = database.highlights().listAll().mapNotNull { entity ->
+                    if (entity.bookId != bookId) return@mapNotNull null
+                    migrations[entity.locatorJson]?.let { entity.toDomain().copy(locatorJson = it) }
                 }
+
+                bookUpdate?.let { database.books().upsert(it.toEntity()) }
+                if (bookmarkUpdates.isNotEmpty()) {
+                    database.bookmarks().upsertAll(bookmarkUpdates.map { it.toEntity() })
+                }
+                if (highlightUpdates.isNotEmpty()) {
+                    database.highlights().upsertAll(highlightUpdates.map { it.toEntity() })
+                }
+
+                Triple(bookUpdate, bookmarkUpdates, highlightUpdates)
             }
         }
 
