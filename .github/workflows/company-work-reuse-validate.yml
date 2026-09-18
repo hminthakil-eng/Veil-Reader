@@ -1,0 +1,23 @@
+name: Company Work Reuse Validation
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/company_os/**'
+      - '.github/workflows/company-work-reuse-*.yml'
+      - '.github/ISSUE_TEMPLATE/company-work-item.md'
+      - 'docs/company-os/work-*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile duplicate scanner
+        run: python3 -m py_compile scripts/company_os/reuse_preflight.py
+      - name: Run duplicate scanner tests
+        run: python3 scripts/company_os/test_reuse_preflight.py
