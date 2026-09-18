@@ -133,7 +133,6 @@ fun VeilApp(
 
     var exporting by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
-    var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
     var isImporting by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
