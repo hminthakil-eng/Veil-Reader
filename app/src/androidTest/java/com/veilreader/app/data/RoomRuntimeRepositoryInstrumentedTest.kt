@@ -313,6 +313,49 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun backupV2_preservesStampedPdfiumLocators() = runBlocking {
+        val repository = repository()
+        val publications = File(context.filesDir, "publications").apply { mkdirs() }
+        val publication = File(publications, "locator-roundtrip.pdf").apply {
+            writeBytes("pdf fixture".toByteArray())
+        }
+        val stampedProgress = """{"href":"document.pdf","type":"application/pdf","locations":{"position":2,"veilPdfiumLocatorVersion":1}}"""
+        val stampedBookmark = """{"href":"document.pdf","type":"application/pdf","locations":{"position":4,"veilPdfiumLocatorVersion":1}}"""
+
+        repository.addImportedBook(
+            Book(
+                id = "pdf-backup",
+                title = "Migrated PDF",
+                author = "Reader",
+                format = BookFormat.PDF,
+                sourceUri = Uri.fromFile(publication).toString(),
+                mediaType = "application/pdf",
+                locatorJson = stampedProgress
+            )
+        )
+        repository.addBookmark("pdf-backup", "Migrated bookmark", stampedBookmark)
+        repository.flushWrites()
+
+        val backupFile = File(context.cacheDir, "veil-pdf-locator-${UUID.randomUUID()}.zip")
+        val exporter = LibraryExport(context, repository)
+        exporter.writeBackup(Uri.fromFile(backupFile))
+
+        repository.replaceAll(
+            LibrarySnapshot(
+                books = emptyList(),
+                highlights = emptyList(),
+                bookmarks = emptyList(),
+                appearance = ReaderAppearance()
+            )
+        )
+        exporter.restoreBackup(Uri.fromFile(backupFile))
+
+        assertEquals(stampedProgress, db.books().findEntity("pdf-backup")?.locatorJson)
+        assertEquals(stampedBookmark, db.bookmarks().listAll().single().locatorJson)
+        backupFile.delete()
+    }
+
+    @Test
     fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking {
         val repository = repository()
         val book = Book(
