@@ -2,7 +2,7 @@ workflows:
   veil-reader-cloud-verify:
     name: Veil Reader Cloud Verify
     instance_type: mac_mini_m2
-    max_build_duration: 60
+    max_build_duration: 45
     triggering:
       events:
         - push
@@ -62,53 +62,16 @@ workflows:
         script: |
           ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
 
-      - name: Run Android instrumentation tests
+      - name: Prepare device-cloud test artifacts
         script: |
           set -e
-          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
-          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
-
-          AVD_NAME="$(emulator -list-avds | head -n 1 || true)"
-          if [ -z "$AVD_NAME" ]; then
-            yes | sdkmanager --licenses >/dev/null || true
-            sdkmanager \
-              "platform-tools" \
-              "emulator" \
-              "platforms;android-35" \
-              "system-images;android-35;google_apis;arm64-v8a"
-            echo "no" | avdmanager create avd \
-              --force \
-              --name veil_ci \
-              --package "system-images;android-35;google_apis;arm64-v8a" \
-              --device "pixel_6"
-            AVD_NAME="veil_ci"
-          fi
-
-          emulator \
-            -avd "$AVD_NAME" \
-            -no-window \
-            -no-audio \
-            -no-snapshot \
-            -no-boot-anim \
-            -gpu swiftshader_indirect \
-            > "$CM_BUILD_DIR/emulator.log" 2>&1 &
-
-          adb wait-for-device
-          BOOT_COMPLETED=""
-          for _ in $(seq 1 180); do
-            BOOT_COMPLETED="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')"
-            [ "$BOOT_COMPLETED" = "1" ] && break
-            sleep 2
-          done
-          [ "$BOOT_COMPLETED" = "1" ]
-
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
-
-          ./gradlew :app:connectedDebugAndroidTest --stacktrace
-          adb logcat -d > "$CM_BUILD_DIR/android-logcat.txt" || true
-        test_report: app/build/outputs/androidTest-results/connected/**/*.xml
+          cd "$CM_BUILD_DIR"
+          test -f app/build/outputs/apk/debug/app-debug.apk
+          TEST_APK="$(find app/build/outputs/apk/androidTest -name '*androidTest*.apk' -o -name '*androidTest*.APK' | head -n 1)"
+          test -n "$TEST_APK"
+          echo "App APK: app/build/outputs/apk/debug/app-debug.apk"
+          echo "Test APK: $TEST_APK"
+          echo "Instrumentation execution is intentionally delegated to a device-cloud provider; Android emulators are not supported on Codemagic Apple-silicon workers."
 
       - name: Compile performance harness
         script: ./gradlew :benchmark:assembleBenchmarkBenchmark --stacktrace
@@ -120,5 +83,3 @@ workflows:
       - app/build/reports/**
       - app/build/test-results/**
       - app/build/outputs/androidTest-results/**
-      - emulator.log
-      - android-logcat.txt
