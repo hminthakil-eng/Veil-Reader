@@ -80,7 +80,7 @@ jobs:
         run: gradle :app:assembleDebug --stacktrace
 
       - name: Compile performance harness
-        run: gradle :benchmark:assembleBenchmark --stacktrace
+        run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
       - name: Upload APK for manual runs only
         if: github.event_name == 'workflow_dispatch'
