@@ -29,6 +29,34 @@ interface BookDao {
 
     @Upsert suspend fun upsert(book: BookEntity)
     @Upsert suspend fun upsertAll(books: List<BookEntity>)
+
+    /**
+     * Hot-path reader persistence. Keep progress writes narrow so locator changes do not upsert
+     * immutable book metadata on every page/scroll event.
+     */
+    @Query(
+        """
+        UPDATE books
+        SET progress = :progress,
+            pagesRead = :pagesRead,
+            locatorJson = :locatorJson,
+            lastOpenedAtEpochMs = :lastOpenedAtEpochMs,
+            finished = :finished
+        WHERE id = :id
+        """
+    )
+    suspend fun updateProgress(
+        id: String,
+        progress: Float,
+        pagesRead: Int,
+        locatorJson: String,
+        lastOpenedAtEpochMs: Long,
+        finished: Boolean
+    ): Int
+
+    @Query("UPDATE books SET lastOpenedAtEpochMs = :openedAtEpochMs WHERE id = :id")
+    suspend fun updateLastOpened(id: String, openedAtEpochMs: Long): Int
+
     @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)
     @Query("DELETE FROM books") suspend fun deleteAll()
     @Query("SELECT COUNT(*) FROM books") suspend fun count(): Int
