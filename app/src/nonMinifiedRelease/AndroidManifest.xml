@@ -2,8 +2,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <profileable android:shell="true" />
-        <activity
-            android:name=".benchmark.BenchmarkReaderActivity"
-            android:exported="true" />
     </application>
 </manifest>

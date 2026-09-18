@@ -19,8 +19,8 @@ import kotlinx.coroutines.launch
 
 /**
  * Performance-only entry point that opens a deterministic local EPUB in the real Readium
- * reader. It lives in the Baseline Profile plugin's nonMinifiedRelease source set and is reused
- * by the benchmark build; normal debug/release builds never compile or declare it.
+ * reader. It is compiled and declared only by the explicit benchmark build; normal debug,
+ * release, and Baseline Profile target variants never include this test-only entry point.
  */
 class BenchmarkReaderActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -33,15 +33,6 @@ android {
         }
     }
 
-    // The Baseline Profile plugin creates nonMinifiedRelease for profile capture. Keep the
-    // deterministic reader fixture in that conventional source set, then reuse only its Kotlin
-    // sources from the explicit benchmark build. Each performance variant has its own manifest.
-    sourceSets {
-        getByName("benchmark") {
-            java.srcDir("src/nonMinifiedRelease/java")
-        }
-    }
-
     buildFeatures {
         compose = true
     }
