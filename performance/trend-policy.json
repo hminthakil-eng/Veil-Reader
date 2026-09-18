@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "window": 5,
+  "minPoints": 3,
+  "modes": {
+    "smoke": [
+      {
+        "id": "startup_ttid_median",
+        "warnRegressionPercent": 15.0
+      },
+      {
+        "id": "reader_frame_overrun_p95",
+        "warnIncrease": 10.0
+      },
+      {
+        "id": "reader_frame_overrun_p99",
+        "warnIncrease": 20.0
+      }
+    ],
+    "physical": [
+      {
+        "id": "startup_ttid_median",
+        "warnRegressionPercent": 5.0
+      },
+      {
+        "id": "reader_frame_overrun_p95",
+        "warnIncrease": 1.0
+      },
+      {
+        "id": "reader_frame_overrun_p99",
+        "warnIncrease": 2.0
+      },
+      {
+        "id": "reader_cpu_frame_p95",
+        "warnRegressionPercent": 5.0
+      },
+      {
+        "id": "reader_cpu_frame_p99",
+        "warnRegressionPercent": 8.0
+      }
+    ]
+  }
+}
