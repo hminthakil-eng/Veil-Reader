@@ -1,0 +1,34 @@
+workflows:
+  veil-reader-cloud-verify:
+    name: Veil Reader Cloud Verify
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+    scripts:
+      - name: Configure Android SDK
+        script: |
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          chmod +x gradlew
+      - name: Policy and performance parser checks
+        script: |
+          sh tools/test-policy.sh
+          python3 tools/test_performance_budget.py
+          python3 tools/test_performance_delta.py
+          python3 tools/test_performance_dashboard.py
+      - name: Unit tests
+        script: ./gradlew :app:testDebugUnitTest --stacktrace
+        test_report: app/build/test-results/**/*.xml
+      - name: Android lint
+        script: ./gradlew :app:lintDebug --stacktrace
+      - name: Build debug and instrumentation APKs
+        script: |
+          ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - name: Compile performance harness
+        script: ./gradlew :benchmark:assembleBenchmarkBenchmark --stacktrace
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/outputs/apk/androidTest/**/*.apk
+      - benchmark/build/outputs/**/*.apk
+      - app/build/reports/**
+      - app/build/test-results/**
