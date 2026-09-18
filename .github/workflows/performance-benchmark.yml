@@ -9,6 +9,7 @@ on:
       - "performance/**"
       - "tools/check_performance_*.py"
       - "tools/snapshot_performance.py"
+      - "tools/build_performance_dashboard.py"
       - ".github/workflows/performance-benchmark.yml"
   push:
     branches: [ "main" ]
@@ -18,10 +19,11 @@ on:
       - "performance/**"
       - "tools/check_performance_*.py"
       - "tools/snapshot_performance.py"
+      - "tools/build_performance_dashboard.py"
       - ".github/workflows/performance-benchmark.yml"
 
 permissions:
-  contents: read
+  contents: write
   actions: read
 
 concurrency:
@@ -47,28 +49,18 @@ jobs:
         with:
           gradle-version: '9.6.0'
 
-      - name: Download latest successful main baseline
-        id: baseline
-        if: github.event_name == 'pull_request'
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Load persisted performance history
         run: |
-          mkdir -p performance/baseline
-          BASELINE_RUN_ID="$(gh run list             --workflow performance-benchmark.yml             --branch main             --event push             --status success             --limit 1             --json databaseId             --jq '.[0].databaseId // empty')"
-
-          if [ -z "$BASELINE_RUN_ID" ]; then
-            echo "No successful main performance baseline exists yet."
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if gh run download "$BASELINE_RUN_ID"             --name veil-reader-performance-baseline             --dir performance/baseline             && [ -f performance/baseline/current-smoke.json ]; then
-            echo "Using baseline from run $BASELINE_RUN_ID."
-            echo "available=true" >> "$GITHUB_OUTPUT"
-            echo "run_id=$BASELINE_RUN_ID" >> "$GITHUB_OUTPUT"
+          mkdir -p performance/history-input
+          if git fetch --no-tags --depth=1 origin             performance-history:refs/remotes/origin/performance-history; then
+            if git show               refs/remotes/origin/performance-history:performance/history/smoke-history.json               > performance/history-input/smoke-history.json; then
+              echo "Loaded persisted smoke history."
+            else
+              echo "Performance history branch exists but has no smoke history yet."
+              rm -f performance/history-input/smoke-history.json
+            fi
           else
-            echo "::warning::Main run $BASELINE_RUN_ID has no usable performance baseline artifact."
-            echo "available=false" >> "$GITHUB_OUTPUT"
+            echo "No performance-history branch exists yet; this run will seed it after main succeeds."
           fi
 
       - name: Enable KVM
@@ -91,7 +83,7 @@ jobs:
       - name: Enforce emulator smoke budgets
         run: python3 tools/check_performance_budget.py --mode smoke benchmark/build
 
-      - name: Snapshot normalized performance history
+      - name: Snapshot normalized performance
         env:
           VEIL_PERF_DEVICE: github-actions-api35-x86_64
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -102,30 +94,69 @@ jobs:
           fi
           python3 tools/snapshot_performance.py             --mode smoke             --commit "$COMMIT_SHA"             --device "$VEIL_PERF_DEVICE"             --output performance/current-smoke.json             benchmark/build
 
-      - name: Enforce PR delta against main baseline
-        if: github.event_name == 'pull_request' && steps.baseline.outputs.available == 'true'
+      - name: Build dashboard and detect gradual drift
+        id: dashboard
+        run: |
+          python3 tools/build_performance_dashboard.py             --history performance/history-input/smoke-history.json             --snapshot performance/current-smoke.json             --output-history performance/updated-smoke-history.json             --baseline-output performance/baseline/current-smoke.json             --markdown performance/dashboard-smoke.md             --json performance/dashboard-smoke.json
+
+          if [ -f performance/baseline/current-smoke.json ]; then
+            echo "baseline_available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "baseline_available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Enforce PR delta against persisted main baseline
+        if: github.event_name == 'pull_request' && steps.dashboard.outputs.baseline_available == 'true'
         run: |
           python3 tools/check_performance_delta.py             --mode smoke             --baseline performance/baseline/current-smoke.json             --current performance/current-smoke.json
 
       - name: Record missing delta baseline
-        if: github.event_name == 'pull_request' && steps.baseline.outputs.available != 'true'
+        if: github.event_name == 'pull_request' && steps.dashboard.outputs.baseline_available != 'true'
         run: |
           echo "## Veil Reader PR performance delta" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "No successful main baseline artifact exists yet, so the relative delta gate was skipped." >> "$GITHUB_STEP_SUMMARY"
+          echo "No persisted main baseline exists yet, so the relative delta gate was skipped." >> "$GITHUB_STEP_SUMMARY"
           echo "Absolute smoke budgets still passed before this step." >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Publish main performance baseline
+      - name: Persist main history and dashboard
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: veil-reader-performance-baseline
-          path: performance/current-smoke.json
-          if-no-files-found: error
-          retention-days: 90
+        run: |
+          HISTORY_DIR="/tmp/veil-performance-history"
+          rm -rf "$HISTORY_DIR"
 
-      - name: Upload benchmark traces, reports and snapshot
+          if git ls-remote --exit-code --heads origin performance-history >/dev/null 2>&1; then
+            git fetch --no-tags --depth=1 origin performance-history
+            git worktree add --detach "$HISTORY_DIR" origin/performance-history
+          else
+            git worktree add --detach "$HISTORY_DIR" HEAD
+            (
+              cd "$HISTORY_DIR"
+              git checkout --orphan performance-history
+              git rm -rf .
+            )
+          fi
+
+          mkdir -p "$HISTORY_DIR/performance/history"
+          cp performance/updated-smoke-history.json "$HISTORY_DIR/performance/history/smoke-history.json"
+          cp performance/dashboard-smoke.md "$HISTORY_DIR/performance/history/dashboard-smoke.md"
+          cp performance/dashboard-smoke.json "$HISTORY_DIR/performance/history/dashboard-smoke.json"
+
+          (
+            cd "$HISTORY_DIR"
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add performance/history/
+            if git diff --cached --quiet; then
+              echo "Performance history is already current."
+            else
+              git commit -m "perf(history): record $GITHUB_SHA"
+              git push origin HEAD:performance-history
+            fi
+          )
+
+      - name: Upload benchmark traces and reports when quota permits
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: veil-reader-performance-${{ github.run_id }}
@@ -134,8 +165,11 @@ jobs:
             benchmark/build/reports/
             app/src/**/generated/baselineProfiles/
             performance/current-smoke.json
+            performance/dashboard-smoke.md
+            performance/dashboard-smoke.json
           if-no-files-found: warn
-          retention-days: 14
+          retention-days: 3
 
-      # Emulator metrics are regression smoke signals only. Product performance decisions use the
-      # physical-device budget and delta policies against a stable representative device.
+      # Emulator metrics are regression smoke signals only. The dashboard emits early warnings but
+      # does not hard-fail on gradual drift. Absolute budgets and PR delta budgets remain the gates.
+      # Product performance decisions use the physical-device policy on a stable device class.
