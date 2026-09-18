@@ -284,6 +284,54 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertTrue(stored.lastOpenedAtEpochMs > 0L)
     }
 
+    @Test
+    fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "coalesce-book",
+                title = "Coalesced Reader",
+                author = "Performance",
+                totalPages = 100,
+                sourceUri = "file:///coalesce.epub"
+            )
+        )
+
+        val sqlite = db.openHelper.writableDatabase
+        sqlite.execSQL("CREATE TABLE progress_write_probe (writes INTEGER NOT NULL)")
+        sqlite.execSQL("INSERT INTO progress_write_probe(writes) VALUES (0)")
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER progress_write_counter
+            AFTER UPDATE OF progress, pagesRead, locatorJson, finished ON books
+            BEGIN
+                UPDATE progress_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+
+        repeat(20) { index ->
+            repository.saveProgress(
+                "coalesce-book",
+                index / 20.0,
+                "{\"href\":\"chapter-$index.xhtml\"}"
+            )
+        }
+        repository.flushProgress("coalesce-book")
+        repository.flushWrites()
+
+        sqlite.query("SELECT writes FROM progress_write_probe").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+        }
+
+        val stored = db.books().findEntity("coalesce-book") ?: error("coalesced book missing")
+        assertEquals(0.95f, stored.progress)
+        assertEquals(95, stored.pagesRead)
+        assertEquals("{\"href\":\"chapter-19.xhtml\"}", stored.locatorJson)
+        assertFalse(stored.finished)
+    }
+
     private fun repository(): LocalLibraryRepository = LocalLibraryRepository(
         appContext = context,
         database = db,
