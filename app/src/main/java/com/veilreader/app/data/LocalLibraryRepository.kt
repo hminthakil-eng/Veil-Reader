@@ -351,44 +351,42 @@ class LocalLibraryRepository internal constructor(
     private fun queueProgressWrite(value: PendingProgressWrite, immediate: Boolean) {
         synchronized(progressLock) {
             pendingProgress[value.id] = value
-            if (!immediate && progressFlushJobs[value.id]?.isActive == true) return@synchronized
 
-            progressFlushJobs.remove(value.id)?.cancel()
-            if (!immediate) {
+            if (immediate) {
+                progressFlushJobs.remove(value.id)?.cancel()
+                pendingProgress.remove(value.id)?.let(::enqueueProgressWrite)
+            } else if (progressFlushJobs[value.id]?.isActive != true) {
                 progressFlushJobs[value.id] = scope.launch {
                     delay(PROGRESS_WRITE_INTERVAL_MS)
-                    val pending = synchronized(progressLock) {
+                    synchronized(progressLock) {
                         progressFlushJobs.remove(value.id)
-                        pendingProgress.remove(value.id)
+                        pendingProgress.remove(value.id)?.let(::enqueueProgressWrite)
                     }
-                    pending?.let(::enqueueProgressWrite)
                 }
             }
         }
-        if (immediate) flushProgress(value.id)
     }
 
     /** Enqueues the latest pending progress for one book immediately. Safe to call from lifecycle hooks. */
     fun flushProgress(bookId: String) {
-        val pending = synchronized(progressLock) {
+        synchronized(progressLock) {
             progressFlushJobs.remove(bookId)?.cancel()
-            pendingProgress.remove(bookId)
+            pendingProgress.remove(bookId)?.let(::enqueueProgressWrite)
         }
-        pending?.let(::enqueueProgressWrite)
     }
 
     private fun flushAllProgress() {
-        val pending = synchronized(progressLock) {
-            progressFlushJobs.values.forEach(Job::cancel)
+        synchronized(progressLock) {
+            progressFlushJobs.values.forEach { it.cancel() }
             progressFlushJobs.clear()
-            pendingProgress.values.toList().also { pendingProgress.clear() }
+            pendingProgress.values.forEach(::enqueueProgressWrite)
+            pendingProgress.clear()
         }
-        pending.forEach(::enqueueProgressWrite)
     }
 
     private fun discardAllPendingProgress() {
         synchronized(progressLock) {
-            progressFlushJobs.values.forEach(Job::cancel)
+            progressFlushJobs.values.forEach { it.cancel() }
             progressFlushJobs.clear()
             pendingProgress.clear()
         }
