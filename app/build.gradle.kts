@@ -52,6 +52,11 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
+baselineProfile {
+    saveInSrc = true
+    automaticGenerationDuringBuild = false
+}
+
 dependencies {
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.3.0.
     implementation("androidx.activity:activity-compose:1.13.0")
