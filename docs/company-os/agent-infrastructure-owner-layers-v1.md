@@ -22,6 +22,7 @@ External projects are implementations, adapters, references, or providers beneat
 | Agent runtime / sessions / subagents | AgentRuntimeProvider contract | DeepSeek Harness candidate | runtime cannot own company governance |
 | Prompt / Skill governance | Eyad Prompt & Skill Registry | approved HumanLayer/public skills | no direct public skill execution |
 | Company knowledge / temporal memory | CompanyKnowledgeProvider contract | Utopia candidate | provider does not own truth/policy semantics |
+| Offline business-continuity appliance / local fallback | OfflineContinuityNodeProvider contract | Project NOMAD candidate | node is not authoritative company memory and must remain replaceable |
 | Execution isolation | ExecutionSandboxProvider contract | ArcBox + portable baseline providers | no single-provider lock-in |
 | Browser backend selection | Browser Execution Router | Eyad router | browser backend does not choose policy |
 | DOM fast path | browser backend | Jev candidate | fast path must fall back safely |
@@ -86,6 +87,15 @@ If a provider cannot be replaced without changing Company OS policy semantics, t
 - Company OS policy
 - global agent identity or secret authority
 
+### Project NOMAD / Offline Continuity Node must not own
+
+- authoritative Company Knowledge history
+- ontology/provenance semantics
+- Company OS governance or approval
+- production secret authority
+- secure execution isolation policy
+- bidirectional resync policy without explicit reconciliation rules
+
 ### DeepSeek Harness must not own
 
 - Company OS governance
@@ -123,3 +133,9 @@ A new internal build requires:
 - #104 ArcBox portability/security challenge
 - #105 Orca remote/mobile challenge
 - #107 ExecutionSandboxProvider benchmark
+- #109 Project N.O.M.A.D. controlled pilot
+- #110 N.O.M.A.D. auth/Docker/update trust-boundary challenge
+- #111 Offline backup/restore/resync challenge
+- #109 Project NOMAD Offline Company Continuity Node pilot
+- #110 NOMAD auth / Docker-socket / update trust challenge
+- #111 offline backup / restore / resync challenge
