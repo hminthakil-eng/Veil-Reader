@@ -146,21 +146,21 @@ fun ReaderNotebook(
             }
 
             if (tab == ReaderNotebookTab.SEARCH) {
-                Row(
+                Column(
                     Modifier.fillMaxWidth().padding(bottom = 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     OutlinedTextField(
                         value = bookSearchQuery,
                         onValueChange = { bookSearchQuery = it },
                         label = { Text("Search inside this book") },
                         singleLine = true,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.fillMaxWidth()
                     )
                     Button(
                         onClick = ::runBookSearch,
                         enabled = bookSearchQuery.trim().length >= 2 && !searchingBook,
-                        modifier = Modifier.padding(top = 8.dp).heightIn(min = 48.dp)
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
                     ) { Text(if (searchingBook) "…" else "Find") }
                 }
             }
@@ -194,7 +194,10 @@ fun ReaderNotebook(
                             Card(Modifier.fillMaxWidth()) {
                                 Column(Modifier.padding(14.dp)) {
                                     Text(bookmark.label, fontWeight = FontWeight.SemiBold)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    Row(
+                                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
                                         TextButton(
                                             onClick = { onGo(bookmark.locatorJson) },
                                             modifier = Modifier.heightIn(min = 48.dp)
@@ -223,7 +226,10 @@ fun ReaderNotebook(
                                     if (highlight.note.isNotBlank()) {
                                         Text(highlight.note, color = MaterialTheme.colorScheme.primary)
                                     }
-                                    Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Row(
+                                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                    ) {
                                         TextButton(
                                             onClick = { onGo(highlight.locatorJson) },
                                             modifier = Modifier.heightIn(min = 48.dp)
