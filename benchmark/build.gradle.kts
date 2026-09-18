@@ -1,7 +1,6 @@
 plugins {
     id("com.android.test")
     id("androidx.baselineprofile")
-    id("androidx.benchmark")
 }
 
 android {
