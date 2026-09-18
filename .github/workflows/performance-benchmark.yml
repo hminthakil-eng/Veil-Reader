@@ -4,7 +4,13 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - "app/**"
+      - "app/src/main/java/com/veilreader/app/ui/VeilApp.kt"
+      - "app/src/main/java/com/veilreader/app/ui/reader/**"
+      - "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt"
+      - "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt"
+      - "app/src/main/java/com/veilreader/app/data/**"
+      - "app/src/main/AndroidManifest.xml"
+      - "app/build.gradle.kts"
       - "benchmark/**"
       - "performance/**"
       - "tools/check_performance_*.py"
@@ -14,7 +20,13 @@ on:
   push:
     branches: [ "main" ]
     paths:
-      - "app/**"
+      - "app/src/main/java/com/veilreader/app/ui/VeilApp.kt"
+      - "app/src/main/java/com/veilreader/app/ui/reader/**"
+      - "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt"
+      - "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt"
+      - "app/src/main/java/com/veilreader/app/data/**"
+      - "app/src/main/AndroidManifest.xml"
+      - "app/build.gradle.kts"
       - "benchmark/**"
       - "performance/**"
       - "tools/check_performance_*.py"
