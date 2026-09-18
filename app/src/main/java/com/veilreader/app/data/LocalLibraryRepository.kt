@@ -27,8 +27,10 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -59,6 +61,9 @@ class LocalLibraryRepository internal constructor(
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
     private val storageFailure = AtomicReference<Throwable?>(null)
+    private val progressLock = Any()
+    private val pendingProgress = mutableMapOf<String, PendingProgressWrite>()
+    private val progressFlushJobs = mutableMapOf<String, Job>()
 
     private val _books = MutableStateFlow<List<Book>>(emptyList())
     val books: StateFlow<List<Book>> = _books
@@ -211,6 +216,7 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun markOpened(id: String) {
+        flushProgress(id)
         val openedAtEpochMs = System.currentTimeMillis()
         updateBookCached(id) { it.copy(lastOpenedAtEpochMs = openedAtEpochMs) } ?: return
         enqueue {
@@ -238,20 +244,17 @@ class LocalLibraryRepository internal constructor(
             finished = current.finished || finishedNow
         )
         replaceBookCached(updated)
-        enqueue {
-            check(
-                database.books().updateProgress(
-                    id = id,
-                    progress = updated.progress,
-                    pagesRead = updated.pagesRead,
-                    locatorJson = locatorJson,
-                    lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
-                    finished = updated.finished
-                ) == 1
-            ) {
-                "Book disappeared before its progress could be persisted: $id"
-            }
-        }
+        queueProgressWrite(
+            PendingProgressWrite(
+                id = id,
+                progress = updated.progress,
+                pagesRead = updated.pagesRead,
+                locatorJson = locatorJson,
+                lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
+                finished = updated.finished
+            ),
+            immediate = newlyFinished
+        )
         return newlyFinished
     }
 
@@ -286,6 +289,7 @@ class LocalLibraryRepository internal constructor(
     /** Ensures migration and all writes queued before this call have reached durable storage. */
     suspend fun flushWrites() {
         initialized.await()
+        flushAllProgress()
         val done = CompletableDeferred<Unit>()
         writes.send { done.complete(Unit) }
         done.await()
@@ -294,6 +298,7 @@ class LocalLibraryRepository internal constructor(
 
     /** Returns one point-in-time database snapshot ordered with all normal reader writes. */
     suspend fun snapshot(): LibrarySnapshot {
+        flushAllProgress()
         return orderedWrite {
             val databaseState = database.withTransaction {
                 DatabaseLibraryState(
@@ -316,6 +321,7 @@ class LocalLibraryRepository internal constructor(
 
     /** Transactional replacement used by backup restore, serialized with normal reader writes. */
     suspend fun replaceAll(snapshot: LibrarySnapshot) {
+        discardAllPendingProgress()
         orderedWrite {
             database.withTransaction {
                 database.highlights().deleteAll()
@@ -335,6 +341,73 @@ class LocalLibraryRepository internal constructor(
             }
             settings.saveReaderAppearance(snapshot.appearance)
             _appearance.value = snapshot.appearance
+        }
+    }
+
+    /**
+     * Coalesces locator churn into at most one durable progress write per interval. The in-memory
+     * book state still updates immediately, so UI and completion semantics remain synchronous.
+     */
+    private fun queueProgressWrite(value: PendingProgressWrite, immediate: Boolean) {
+        synchronized(progressLock) {
+            pendingProgress[value.id] = value
+            if (!immediate && progressFlushJobs[value.id]?.isActive == true) return@synchronized
+
+            progressFlushJobs.remove(value.id)?.cancel()
+            if (!immediate) {
+                progressFlushJobs[value.id] = scope.launch {
+                    delay(PROGRESS_WRITE_INTERVAL_MS)
+                    val pending = synchronized(progressLock) {
+                        progressFlushJobs.remove(value.id)
+                        pendingProgress.remove(value.id)
+                    }
+                    pending?.let(::enqueueProgressWrite)
+                }
+            }
+        }
+        if (immediate) flushProgress(value.id)
+    }
+
+    /** Enqueues the latest pending progress for one book immediately. Safe to call from lifecycle hooks. */
+    fun flushProgress(bookId: String) {
+        val pending = synchronized(progressLock) {
+            progressFlushJobs.remove(bookId)?.cancel()
+            pendingProgress.remove(bookId)
+        }
+        pending?.let(::enqueueProgressWrite)
+    }
+
+    private fun flushAllProgress() {
+        val pending = synchronized(progressLock) {
+            progressFlushJobs.values.forEach(Job::cancel)
+            progressFlushJobs.clear()
+            pendingProgress.values.toList().also { pendingProgress.clear() }
+        }
+        pending.forEach(::enqueueProgressWrite)
+    }
+
+    private fun discardAllPendingProgress() {
+        synchronized(progressLock) {
+            progressFlushJobs.values.forEach(Job::cancel)
+            progressFlushJobs.clear()
+            pendingProgress.clear()
+        }
+    }
+
+    private fun enqueueProgressWrite(value: PendingProgressWrite) {
+        enqueue {
+            check(
+                database.books().updateProgress(
+                    id = value.id,
+                    progress = value.progress,
+                    pagesRead = value.pagesRead,
+                    locatorJson = value.locatorJson,
+                    lastOpenedAtEpochMs = value.lastOpenedAtEpochMs,
+                    finished = value.finished
+                ) == 1
+            ) {
+                "Book disappeared before its progress could be persisted: ${value.id}"
+            }
         }
     }
 
@@ -432,6 +505,17 @@ private data class DatabaseLibraryState(
     val bookmarks: List<Bookmark>,
     val readingSessions: List<ReadingSessionSnapshot>
 )
+
+private data class PendingProgressWrite(
+    val id: String,
+    val progress: Float,
+    val pagesRead: Int,
+    val locatorJson: String,
+    val lastOpenedAtEpochMs: Long,
+    val finished: Boolean
+)
+
+private const val PROGRESS_WRITE_INTERVAL_MS = 250L
 
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
