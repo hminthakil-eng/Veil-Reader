@@ -17,7 +17,10 @@ fun buildThresholdSnapshot(
         return ThresholdSnapshot(hero = null, recent = emptyList())
     }
 
-    val ordered = readableBooks.sortedByDescending(::bookRecency)
+    val ordered = readableBooks.sortedWith(
+        compareByDescending<Book> { bookRecency(it) }
+            .thenBy { it.id }
+    )
     val hero = ordered.firstOrNull { !it.finished } ?: ordered.first()
     val recent = ordered
         .asSequence()
