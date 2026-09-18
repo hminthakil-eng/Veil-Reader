@@ -58,7 +58,7 @@ baselineProfile {
 }
 
 dependencies {
-    // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.3.0.
+    // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
     implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation("androidx.compose.ui:ui:1.10.5")
@@ -81,10 +81,10 @@ dependencies {
     implementation("androidx.profileinstaller:profileinstaller:1.4.1")
 
     // Readium powers real EPUB/PDF parsing and navigation.
-    implementation("org.readium.kotlin-toolkit:readium-shared:3.3.0")
-    implementation("org.readium.kotlin-toolkit:readium-streamer:3.3.0")
-    implementation("org.readium.kotlin-toolkit:readium-navigator:3.3.0")
-    implementation("org.readium.kotlin-toolkit:readium-adapter-pdfium:3.3.0")
+    implementation("org.readium.kotlin-toolkit:readium-shared:3.4.0")
+    implementation("org.readium.kotlin-toolkit:readium-streamer:3.4.0")
+    implementation("org.readium.kotlin-toolkit:readium-navigator:3.4.0")
+    implementation("org.readium.kotlin-toolkit:readium-adapter-pdfium:3.4.0")
 
     baselineProfile(project(":benchmark"))
 
