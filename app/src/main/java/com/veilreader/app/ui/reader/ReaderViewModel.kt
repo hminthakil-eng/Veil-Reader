@@ -61,7 +61,7 @@ class ReaderViewModel(
         resumed = false
         uncreditedActiveMillis = 0L
         _uiState.value = ReaderUiState(bookId = bookId, progress = initialProgress.coerceIn(0f, 1f))
-        persistSession()
+        persistSession(immediate = true)
     }
 
     fun onResume() {
@@ -75,7 +75,9 @@ class ReaderViewModel(
 
     fun onPause() {
         val current = tracker ?: return
+        library.flushProgress(current.bookId)
         if (!resumed) {
+            library.flushReadingSession(current.sessionId)
             game.pauseReading()
             return
         }
@@ -83,7 +85,7 @@ class ReaderViewModel(
         resumed = false
         game.pauseReading()
         publishActiveMillis()
-        persistSession()
+        persistSession(immediate = true)
     }
 
     fun onUserInteraction() {
@@ -151,7 +153,9 @@ class ReaderViewModel(
         resumed = false
         game.pauseReading()
         publishActiveMillis()
+        library.flushProgress(current.bookId)
         library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
+        library.flushReadingSession(current.sessionId)
         tracker = null
         uncreditedActiveMillis = 0L
     }
@@ -170,9 +174,10 @@ class ReaderViewModel(
         _uiState.value = _uiState.value.copy(activeMillis = current.activeMillis)
     }
 
-    private fun persistSession() {
+    private fun persistSession(immediate: Boolean = false) {
         val current = tracker ?: return
         library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
+        if (immediate) library.flushReadingSession(current.sessionId)
     }
 
     companion object {

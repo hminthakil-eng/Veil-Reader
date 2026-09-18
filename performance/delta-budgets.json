@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "notes": {
+    "smoke": "Relative emulator regression guardrails. Absolute smoke budgets still apply first.",
+    "physical": "Relative regression limits for the stable representative physical-device lane."
+  },
+  "modes": {
+    "smoke": [
+      {
+        "id": "startup_ttid_median",
+        "maxRegressionPercent": 25.0
+      },
+      {
+        "id": "reader_frame_overrun_p95",
+        "maxIncrease": 25.0
+      },
+      {
+        "id": "reader_frame_overrun_p99",
+        "maxIncrease": 50.0
+      }
+    ],
+    "physical": [
+      {
+        "id": "startup_ttid_median",
+        "maxRegressionPercent": 10.0
+      },
+      {
+        "id": "reader_frame_overrun_p95",
+        "maxIncrease": 2.0
+      },
+      {
+        "id": "reader_frame_overrun_p99",
+        "maxIncrease": 4.0
+      },
+      {
+        "id": "reader_cpu_frame_p95",
+        "maxRegressionPercent": 10.0
+      },
+      {
+        "id": "reader_cpu_frame_p99",
+        "maxRegressionPercent": 12.5
+      }
+    ]
+  }
+}

@@ -59,6 +59,8 @@ import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
@@ -98,16 +100,36 @@ fun ReaderScreen(
         key = "veil-reader-state",
         factory = remember(library, game) { ReaderViewModel.factory(library, game) }
     )
-    val readerState by readerViewModel.uiState.collectAsStateWithLifecycle()
-    val progress = if (readerState.bookId == opened.book.id) readerState.progress else opened.book.progress
+    val progressFlow = remember(readerViewModel, opened.book.id, opened.book.progress) {
+        readerViewModel.uiState
+            .map { state ->
+                if (state.bookId == opened.book.id) state.progress else opened.book.progress
+            }
+            .distinctUntilChanged()
+    }
+    val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
     var appearance by remember { mutableStateOf(library.loadAppearance()) }
     var showNotebook by remember { mutableStateOf(false) }
-    val highlights by library.highlights.collectAsState()
-    val bookmarks by library.bookmarks.collectAsState()
+    val bookHighlightsFlow = remember(library, opened.book.id) {
+        library.highlights
+            .map { items -> items.filter { it.bookId == opened.book.id } }
+            .distinctUntilChanged()
+    }
+    val bookBookmarksFlow = remember(library, opened.book.id) {
+        library.bookmarks
+            .map { items -> items.filter { it.bookId == opened.book.id } }
+            .distinctUntilChanged()
+    }
+    val bookHighlights by bookHighlightsFlow.collectAsStateWithLifecycle(
+        initialValue = library.highlightsFor(opened.book.id)
+    )
+    val bookBookmarks by bookBookmarksFlow.collectAsStateWithLifecycle(
+        initialValue = emptyList()
+    )
     var readerMessage by remember { mutableStateOf<String?>(null) }
     var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
     var pendingNoteText by remember { mutableStateOf("") }
@@ -198,6 +220,12 @@ fun ReaderScreen(
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
         createReaderFactory(opened, appearance, selectionActionModeCallback)
     }
+    val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
+        { ready -> navigator = ready }
+    }
+    val onDisposePublication = remember(opened.book.id) {
+        { opened.close() }
+    }
 
     DisposableEffect(lifecycle, readerViewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -259,9 +287,9 @@ fun ReaderScreen(
         epub.submitPreferences(appearance.toEpubPreferences())
     }
 
-    LaunchedEffect(navigator, opened.book.id, highlights) {
+    LaunchedEffect(navigator, opened.book.id, bookHighlights) {
         val decorable = navigator as? DecorableNavigator ?: return@LaunchedEffect
-        val decorations = library.highlightsFor(opened.book.id).mapNotNull { item ->
+        val decorations = bookHighlights.mapNotNull { item ->
             val locator = runCatching { Locator.fromJSON(JSONObject(item.locatorJson)) }.getOrNull()
                 ?: return@mapNotNull null
             Decoration(
@@ -283,8 +311,8 @@ fun ReaderScreen(
                 else -> error("Unsupported reader format")
             },
             tag = "reader-${opened.book.id}",
-            onNavigatorReady = { navigator = it },
-            onDisposePublication = { opened.close() },
+            onNavigatorReady = onNavigatorReady,
+            onDisposePublication = onDisposePublication,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -484,8 +512,8 @@ fun ReaderScreen(
     if (showNotebook) {
         ReaderNotebook(
             opened = opened,
-            highlights = highlights.filter { it.bookId == opened.book.id },
-            bookmarks = bookmarks.filter { it.bookId == opened.book.id },
+            highlights = bookHighlights,
+            bookmarks = bookBookmarks,
             onDismiss = { showNotebook = false },
             onGo = { json ->
                 readerViewModel.onUserInteraction()

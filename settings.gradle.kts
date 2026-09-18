@@ -19,3 +19,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "VeilReader"
 include(":app")
+include(":benchmark")

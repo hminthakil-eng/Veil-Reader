@@ -248,6 +248,167 @@ class RoomRuntimeRepositoryInstrumentedTest {
         backupFile.delete()
     }
 
+    @Test
+    fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking {
+        val repository = repository()
+        val book = Book(
+            id = "hot-path-book",
+            title = "Stable Metadata",
+            author = "Reader",
+            totalPages = 100,
+            sourceUri = "file:///hot-path.epub",
+            contentFingerprint = "hot-path-fingerprint",
+            seriesName = "Performance Cycle",
+            seriesIndex = 3.0,
+            language = "en"
+        )
+
+        repository.addImportedBook(book)
+        assertFalse(repository.saveProgress("hot-path-book", 0.4, "{\"href\":\"c4.xhtml\"}"))
+        repository.markOpened("hot-path-book")
+        assertTrue(repository.saveProgress("hot-path-book", 0.999, "{\"href\":\"final.xhtml\"}"))
+        assertFalse(repository.saveProgress("hot-path-book", 1.0, "{\"href\":\"final.xhtml\"}"))
+        repository.flushWrites()
+
+        val stored = db.books().findEntity("hot-path-book") ?: error("hot-path book missing")
+        assertEquals("Stable Metadata", stored.title)
+        assertEquals("Reader", stored.author)
+        assertEquals("hot-path-fingerprint", stored.contentFingerprint)
+        assertEquals("Performance Cycle", stored.seriesName)
+        assertEquals(3.0, stored.seriesIndex)
+        assertEquals("en", stored.language)
+        assertEquals(1.0f, stored.progress)
+        assertEquals(100, stored.pagesRead)
+        assertEquals("{\"href\":\"final.xhtml\"}", stored.locatorJson)
+        assertTrue(stored.finished)
+        assertTrue(stored.lastOpenedAtEpochMs > 0L)
+    }
+
+    @Test
+    fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "coalesce-book",
+                title = "Coalesced Reader",
+                author = "Performance",
+                totalPages = 100,
+                sourceUri = "file:///coalesce.epub"
+            )
+        )
+
+        val sqlite = db.openHelper.writableDatabase
+        sqlite.execSQL("CREATE TABLE progress_write_probe (writes INTEGER NOT NULL)")
+        sqlite.execSQL("INSERT INTO progress_write_probe(writes) VALUES (0)")
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER progress_write_counter
+            AFTER UPDATE OF progress, pagesRead, locatorJson, finished ON books
+            BEGIN
+                UPDATE progress_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+
+        repeat(20) { index ->
+            repository.saveProgress(
+                "coalesce-book",
+                index / 20.0,
+                "{\"href\":\"chapter-$index.xhtml\"}"
+            )
+        }
+        repository.flushProgress("coalesce-book")
+        repository.flushWrites()
+
+        sqlite.query("SELECT writes FROM progress_write_probe").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+        }
+
+        val stored = db.books().findEntity("coalesce-book") ?: error("coalesced book missing")
+        assertEquals(0.95f, stored.progress)
+        assertEquals(95, stored.pagesRead)
+        assertEquals("{\"href\":\"chapter-19.xhtml\"}", stored.locatorJson)
+        assertFalse(stored.finished)
+    }
+
+    @Test
+    fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "session-book",
+                title = "Session Tome",
+                author = "Performance",
+                sourceUri = "file:///session.epub"
+            )
+        )
+        repository.saveReadingSession(
+            ReadingSessionSnapshot(
+                id = "session-coalesce",
+                bookId = "session-book",
+                startedAtEpochMs = 100L,
+                endedAtEpochMs = 100L,
+                activeMillis = 0L,
+                pacedPageTurns = 0,
+                highlightCount = 0,
+                noteCount = 0
+            )
+        )
+        repository.flushWrites()
+
+        val sqlite = db.openHelper.writableDatabase
+        sqlite.execSQL("CREATE TABLE session_write_probe (writes INTEGER NOT NULL)")
+        sqlite.execSQL("INSERT INTO session_write_probe(writes) VALUES (0)")
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER session_write_counter_insert
+            AFTER INSERT ON reading_sessions
+            BEGIN
+                UPDATE session_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+        sqlite.execSQL(
+            """
+            CREATE TRIGGER session_write_counter_update
+            AFTER UPDATE ON reading_sessions
+            BEGIN
+                UPDATE session_write_probe SET writes = writes + 1;
+            END
+            """.trimIndent()
+        )
+
+        repeat(20) { index ->
+            repository.saveReadingSession(
+                ReadingSessionSnapshot(
+                    id = "session-coalesce",
+                    bookId = "session-book",
+                    startedAtEpochMs = 100L,
+                    endedAtEpochMs = 200L + index,
+                    activeMillis = index * 1_000L,
+                    pacedPageTurns = index,
+                    highlightCount = index / 2,
+                    noteCount = index / 3
+                )
+            )
+        }
+        repository.flushReadingSession("session-coalesce")
+        repository.flushWrites()
+
+        sqlite.query("SELECT writes FROM session_write_probe").use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(1L, cursor.getLong(0))
+        }
+
+        val stored = db.readingSessions().listAll().single { it.id == "session-coalesce" }
+        assertEquals(19_000L, stored.activeMillis)
+        assertEquals(19, stored.pacedPageTurns)
+        assertEquals(9, stored.highlightCount)
+        assertEquals(6, stored.noteCount)
+        assertEquals(219L, stored.endedAtEpochMs)
+    }
+
     private fun repository(): LocalLibraryRepository = LocalLibraryRepository(
         appContext = context,
         database = db,
