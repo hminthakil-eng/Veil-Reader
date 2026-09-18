@@ -1,0 +1,21 @@
+name: Company Work Reuse Preflight
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  reuse-preflight:
+    if: startsWith(github.event.issue.title, '[WORK]') || contains(github.event.issue.body, 'Preflight:')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Scan company work for possible duplicates
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/company_os/reuse_preflight.py
