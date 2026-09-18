@@ -44,28 +44,31 @@ fun buildSmartShelves(
         kind = SmartShelfKind.CONTINUE_READING,
         candidates = imported
             .filter { !it.finished && it.progress > 0f }
-            .sortedByDescending(::bookRecency)
+            .sortedWith(recencyComparator())
     )
 
     addShelf(
         id = "recently-added",
         title = "Recently Added",
         kind = SmartShelfKind.RECENTLY_ADDED,
-        candidates = imported.sortedByDescending { it.addedAtEpochMs }
+        candidates = imported.sortedWith(
+            compareByDescending<Book> { it.addedAtEpochMs }
+                .thenBy { it.id }
+        )
     )
 
     addShelf(
         id = "finished",
         title = "Finished",
         kind = SmartShelfKind.FINISHED,
-        candidates = imported.filter { it.finished }.sortedByDescending(::bookRecency)
+        candidates = imported.filter { it.finished }.sortedWith(recencyComparator())
     )
 
     addShelf(
         id = "favorites",
         title = "Favorites",
         kind = SmartShelfKind.FAVORITES,
-        candidates = imported.filter { it.favorite }.sortedByDescending(::bookRecency)
+        candidates = imported.filter { it.favorite }.sortedWith(recencyComparator())
     )
 
     addShelf(
@@ -78,6 +81,7 @@ fun buildSmartShelves(
                 compareBy<Book> { it.seriesName.orEmpty().lowercase(Locale.ROOT) }
                     .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
                     .thenBy { it.title.lowercase(Locale.ROOT) }
+                    .thenBy { it.id }
             )
     )
 
@@ -86,7 +90,12 @@ fun buildSmartShelves(
         .map(String::trim)
         .filter(String::isNotEmpty)
         .groupBy { it.lowercase(Locale.ROOT) }
-        .mapValues { (_, names) -> names.first() }
+        .mapValues { (_, names) ->
+            names.sortedWith(
+                compareBy<String> { it.lowercase(Locale.ROOT) }
+                    .thenBy { it }
+            ).first()
+        }
         .toSortedMap(String.CASE_INSENSITIVE_ORDER)
 
     collectionNames.forEach { (normalized, displayName) ->
@@ -95,8 +104,12 @@ fun buildSmartShelves(
             title = displayName,
             kind = SmartShelfKind.COLLECTION,
             candidates = imported
-                .filter { book -> book.allCollections.any { it.equals(displayName, ignoreCase = true) } }
-                .sortedByDescending(::bookRecency)
+                .filter { book ->
+                    book.allCollections.any { collection ->
+                        collection.trim().lowercase(Locale.ROOT) == normalized
+                    }
+                }
+                .sortedWith(recencyComparator())
         )
     }
 
@@ -105,3 +118,7 @@ fun buildSmartShelves(
 
 private fun bookRecency(book: Book): Long =
     book.lastOpenedAtEpochMs.takeIf { it > 0L } ?: book.addedAtEpochMs
+
+private fun recencyComparator(): Comparator<Book> =
+    compareByDescending<Book> { bookRecency(it) }
+        .thenBy { it.id }
