@@ -75,6 +75,7 @@ class ReaderViewModel(
 
     fun onPause() {
         val current = tracker ?: return
+        library.flushProgress(current.bookId)
         if (!resumed) {
             game.pauseReading()
             return
@@ -151,6 +152,7 @@ class ReaderViewModel(
         resumed = false
         game.pauseReading()
         publishActiveMillis()
+        library.flushProgress(current.bookId)
         library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
         tracker = null
         uncreditedActiveMillis = 0L
