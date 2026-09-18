@@ -46,6 +46,9 @@ jobs:
             gradle :app:generateBaselineProfile --stacktrace
             gradle :benchmark:connectedBenchmarkAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
 
+      - name: Enforce emulator smoke budgets
+        run: python3 tools/check_performance_budget.py --mode smoke benchmark/build
+
       - name: Upload benchmark traces and reports
         if: always()
         uses: actions/upload-artifact@v4
