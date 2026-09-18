@@ -77,22 +77,15 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            dump_benchmark_failures() {
-              echo "=== Benchmark instrumentation results ==="
-              find benchmark/build/outputs/androidTest-results -type f \( -name '*.xml' -o -name '*.txt' \) -print -exec cat {} \; 2>/dev/null || true
-              echo "=== End benchmark instrumentation results ==="
-            }
+            gradle :app:generateBaselineProfile --stacktrace
+            gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
 
-            gradle :app:generateBaselineProfile --stacktrace || {
-              dump_benchmark_failures
-              exit 1
-            }
-
-            gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace \
-              -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR || {
-              dump_benchmark_failures
-              exit 1
-            }
+      - name: Print benchmark instrumentation failures
+        if: failure()
+        run: |
+          echo "=== Benchmark instrumentation results ==="
+          find benchmark/build/outputs/androidTest-results -type f \( -name '*.xml' -o -name '*.txt' \) -print -exec cat {} \; 2>/dev/null || true
+          echo "=== End benchmark instrumentation results ==="
 
       - name: Enforce emulator smoke budgets
         run: python3 tools/check_performance_budget.py --mode smoke benchmark/build
