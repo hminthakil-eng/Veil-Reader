@@ -1,0 +1,103 @@
+{
+  "schemaVersion": 1,
+  "notes": {
+    "smoke": "Emulator-only guardrails. These thresholds catch catastrophic regressions but are not product performance claims.",
+    "physical": "Initial Veil Reader product budgets for a representative physical device. Re-baseline only after an intentional performance review."
+  },
+  "modes": {
+    "smoke": [
+      {
+        "id": "startup_ttid_median",
+        "classSuffix": ".StartupBenchmark",
+        "benchmarkNameSuffix": "coldStartupBaselineProfile",
+        "metricGroup": "metrics",
+        "metric": "timeToInitialDisplayMs",
+        "stat": "median",
+        "max": 5000.0
+      },
+      {
+        "id": "reader_frame_overrun_p95",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "sampledMetrics",
+        "metric": "frameOverrunMs",
+        "stat": "P95",
+        "max": 100.0
+      },
+      {
+        "id": "reader_frame_overrun_p99",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "sampledMetrics",
+        "metric": "frameOverrunMs",
+        "stat": "P99",
+        "max": 250.0
+      },
+      {
+        "id": "reader_frame_count",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "metrics",
+        "metric": "frameCount",
+        "stat": "median",
+        "min": 20.0
+      }
+    ],
+    "physical": [
+      {
+        "id": "startup_ttid_median",
+        "classSuffix": ".StartupBenchmark",
+        "benchmarkNameSuffix": "coldStartupBaselineProfile",
+        "metricGroup": "metrics",
+        "metric": "timeToInitialDisplayMs",
+        "stat": "median",
+        "max": 600.0
+      },
+      {
+        "id": "reader_frame_overrun_p95",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "sampledMetrics",
+        "metric": "frameOverrunMs",
+        "stat": "P95",
+        "max": 0.0
+      },
+      {
+        "id": "reader_frame_overrun_p99",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "sampledMetrics",
+        "metric": "frameOverrunMs",
+        "stat": "P99",
+        "max": 8.0
+      },
+      {
+        "id": "reader_cpu_frame_p95",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "sampledMetrics",
+        "metric": "frameDurationCpuMs",
+        "stat": "P95",
+        "max": 16.7
+      },
+      {
+        "id": "reader_cpu_frame_p99",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "sampledMetrics",
+        "metric": "frameDurationCpuMs",
+        "stat": "P99",
+        "max": 24.0
+      },
+      {
+        "id": "reader_frame_count",
+        "classSuffix": ".ReaderFrameBenchmark",
+        "benchmarkNameSuffix": "pageTurns",
+        "metricGroup": "metrics",
+        "metric": "frameCount",
+        "stat": "median",
+        "min": 20.0
+      }
+    ]
+  }
+}
