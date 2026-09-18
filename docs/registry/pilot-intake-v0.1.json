@@ -1,0 +1,21 @@
+{
+  "pilot": "eyad-registry-v0.1",
+  "date": "2026-09-18",
+  "status": "CONDITIONAL_PASS",
+  "production_authorized": false,
+  "candidates": [
+    {"id":"C01","name":"Code Review Agent Role","risk":"SAFE","decision":"APPROVE_FOR_TESTING","duplicate_group":"code-review","canonical":true},
+    {"id":"C02","name":"Code Reviewer Agent Role","risk":"SAFE","decision":"HOLD_AS_NEAR_DUPLICATE","duplicate_group":"code-review","canonical":false},
+    {"id":"C03","name":"Tool Evaluator Agent Role","risk":"RESTRICTED","decision":"APPROVE_FOR_SANDBOX_TESTING","duplicate_group":null,"canonical":true},
+    {"id":"C04","name":"Brainstorming Technically Grounded Product Ideas","risk":"SAFE","decision":"APPROVE_FOR_TESTING","duplicate_group":null,"canonical":true},
+    {"id":"C05","name":"PRD","risk":"SAFE","decision":"APPROVE_FOR_TESTING","duplicate_group":"requirements-docs","canonical":true},
+    {"id":"C06","name":"requirement-analysis-and-planning-agent","risk":"SAFE","decision":"CONDITIONAL_TEST","duplicate_group":"requirements-docs","canonical":true},
+    {"id":"C07","name":"Idea Reality Check","risk":"RESTRICTED","decision":"CONDITIONAL_TEST","duplicate_group":"research-skeptic","canonical":true},
+    {"id":"C08","name":"Claim Autopsy","risk":"RESTRICTED","decision":"CONDITIONAL_TEST","duplicate_group":"research-skeptic","canonical":true}
+  ],
+  "runtime_cross_model": {
+    "codex": "PENDING_RUNTIME_EXECUTION",
+    "claude": "PENDING_PROVIDER_ACCESS",
+    "gemini": "PENDING_PROVIDER_ACCESS"
+  }
+}
