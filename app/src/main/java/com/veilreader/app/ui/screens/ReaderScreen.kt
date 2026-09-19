@@ -551,13 +551,17 @@ fun ReaderScreen(
 
     if (showAppearance) {
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
-            AppearancePanel(
+            ReadingAppearanceControls(
                 appearance = appearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
                     appearance = it
                     library.saveAppearance(it)
                 },
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp)
+                    .padding(bottom = 32.dp),
                 onDone = { showAppearance = false }
             )
         }
@@ -730,155 +734,6 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
             ReaderAction.APPEARANCE -> Unit
         }
     }
-}
-
-@Composable
-private fun AppearancePanel(
-    appearance: ReaderAppearance,
-    onChange: (ReaderAppearance) -> Unit,
-    onDone: () -> Unit
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 22.dp)
-            .padding(bottom = 32.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                "Tune the page once, then get back to the book. These choices stay on your device.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
-        }
-
-        Text("Presets", fontWeight = FontWeight.SemiBold)
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.PAPER,
-                        fontScale = 1.0,
-                        lineHeight = 1.45,
-                        pageMargins = 1.0,
-                        scroll = false,
-                        publisherStyles = true
-                    )
-                )
-            }
-            AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.SEPIA,
-                        fontScale = 1.08,
-                        lineHeight = 1.6,
-                        pageMargins = 1.15,
-                        scroll = false,
-                        publisherStyles = false
-                    )
-                )
-            }
-            AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.DUSK,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
-                    )
-                )
-            }
-            AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.OLED,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
-                    )
-                )
-            }
-        }
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.fontScale.toFloat(),
-            onValueChange = { onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false)) },
-            valueRange = .75f..1.8f
-        )
-
-        Text("Line height · ${"%.2f".format(appearance.lineHeight)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.lineHeight.toFloat(),
-            onValueChange = { onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
-            valueRange = 1.1f..2.0f
-        )
-
-        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.pageMargins.toFloat(),
-            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
-            valueRange = .5f..2.0f
-        )
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Turn this off for paginated reading with animated page turns.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = appearance.scroll,
-                onCheckedChange = { onChange(appearance.copy(scroll = it)) },
-                modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
-            )
-        }
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Publisher styling", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Keep the book's original typography and layout when possible.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
-                modifier = Modifier.semantics { contentDescription = "Publisher styling" }
-            )
-        }
-
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Text("Back to reading")
-        }
-    }
-}
-
-@Composable
-private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        modifier = Modifier.heightIn(min = 48.dp)
-    )
 }
 
 @OptIn(ExperimentalReadiumApi::class)
