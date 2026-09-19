@@ -1,4 +1,3 @@
-# P7 verification branch trigger
 workflows:
   veil-reader-cloud-verify:
     name: Veil Reader Cloud Verify
@@ -9,9 +8,6 @@ workflows:
         - push
       branch_patterns:
         - pattern: 'upgrade/readium-3-4'
-          include: true
-          source: true
-        - pattern: 'fix/threshold-progress-presentation'
           include: true
           source: true
       cancel_previous_builds: true
