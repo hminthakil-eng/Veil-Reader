@@ -213,9 +213,12 @@ private val VeilShapes = Shapes(
 )
 
 @Composable
-fun VeilTheme(content: @Composable () -> Unit) {
+fun VeilTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) VeilDarkColors else VeilLightColors,
+        colorScheme = if (darkTheme) VeilDarkColors else VeilLightColors,
         typography = VeilTypography,
         shapes = VeilShapes
     ) {

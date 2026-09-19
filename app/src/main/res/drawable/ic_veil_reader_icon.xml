@@ -4,19 +4,44 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+
     <path
-        android:fillColor="#15111D"
+        android:fillColor="#0D0C12"
         android:pathData="M0,0H108V108H0Z" />
+
     <path
-        android:fillColor="#2B2138"
-        android:pathData="M54,11A43,43 0,1 0,54 97A43,43 0,1 0,54 11" />
+        android:fillColor="#211A2A"
+        android:pathData="M54,10A44,44 0,1 0,54 98A44,44 0,1 0,54 10" />
+
     <path
-        android:fillColor="#E7C979"
-        android:pathData="M54,24L61,36L75,39L65,49L67,64L54,57L41,64L43,49L33,39L47,36Z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#D8C2FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M24,34C34,28 44,30 54,42L54,79C44,69 34,66 24,70" />
+
     <path
-        android:fillColor="#F4E7C4"
-        android:pathData="M27,67C36,64 45,66 54,72C63,66 72,64 81,67L81,84C72,81 63,82 54,88C45,82 36,81 27,84ZM31,71V79C39,77 46,79 52,82V76C45,71 38,69 31,71ZM77,71C70,69 63,71 56,76V82C62,79 69,77 77,79Z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#D8C2FF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M84,34C74,28 64,30 54,42L54,79C64,69 74,66 84,70" />
+
     <path
-        android:fillColor="#E7C979"
-        android:pathData="M52,72H56V89H52Z" />
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="#E4C66D"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M42,34C45,27 50,23 57,23C64,23 69,27 71,33" />
+
+    <path
+        android:fillColor="#E4C66D"
+        android:pathData="M54,25A3,3 0,1 0,54 31A3,3 0,1 0,54 25" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.08"
+        android:pathData="M20,18C34,10 49,8 64,12C51,13 39,18 30,28C24,34 20,41 18,49C15,37 16,27 20,18Z" />
 </vector>

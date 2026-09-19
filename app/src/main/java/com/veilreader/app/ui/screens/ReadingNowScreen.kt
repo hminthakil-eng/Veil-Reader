@@ -22,6 +22,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.VeilBrandMark
 import com.veilreader.app.ui.theme.VeilSpacing
 
 /**
@@ -83,25 +84,37 @@ fun ReadingNowScreen(
 
 @Composable
 private fun ThresholdHeader(hasCurrentBook: Boolean) {
-    Column(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f)
+        )
     ) {
-        Text(
-            text = if (hasCurrentBook) "Return to your book" else "Build your private library",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = if (hasCurrentBook) {
-                "Continue in one tap. Your library and the world around it can wait until you are ready."
-            } else {
-                "Import an EPUB or PDF. Your books, notes, and reading progress stay on this device."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.widthIn(max = 680.dp)
-        )
+        Column(
+            modifier = Modifier.padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            VeilBrandMark(showWordmark = true)
+            Spacer(Modifier.height(2.dp))
+            Text(
+                text = if (hasCurrentBook) "Return to your book" else "Start your library",
+                style = MaterialTheme.typography.headlineMedium,
+                color = MaterialTheme.colorScheme.onBackground
+            )
+            Text(
+                text = if (hasCurrentBook) {
+                    "Continue in one tap. Everything else can wait until you are ready."
+                } else {
+                    "Import an EPUB or PDF. Your books, notes and reading progress stay on this device."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.widthIn(max = 680.dp)
+            )
+        }
     }
 }
 
@@ -493,15 +506,22 @@ private fun QuestRow(quest: Quest) {
 @Composable
 private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
     MysteryCard(Modifier.fillMaxWidth()) {
-        Text("Your first book is one tap away", style = MaterialTheme.typography.titleLarge)
         Text(
-            "Open the Library to import an EPUB or PDF. Once you begin reading, this screen becomes your fastest way back in.",
+            "Start with a book",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            "Import an EPUB or PDF from your Library. Veil keeps reading progress and notes on this device.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Button(
             onClick = onOpenLibrary,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(top = VeilSpacing.xs)
+            modifier = Modifier
+                .widthIn(min = 168.dp, max = 220.dp)
+                .heightIn(min = 46.dp)
+                .padding(top = 4.dp)
         ) {
             Text("Open Library")
         }

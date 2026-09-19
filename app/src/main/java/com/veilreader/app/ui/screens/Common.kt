@@ -10,9 +10,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -95,11 +97,18 @@ fun MysteryCard(
                 .background(Color.White.copy(alpha = 0.055f))
                 .align(Alignment.TopCenter)
         )
-        Column(
-            modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
-            content = content
-        )
+        CompositionLocalProvider(
+            LocalContentColor provides colors.onSurface
+        ) {
+            Column(
+                modifier = Modifier.padding(
+                    horizontal = VeilSpacing.lg,
+                    vertical = VeilSpacing.md
+                ),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+                content = content
+            )
+        }
     }
 }
 

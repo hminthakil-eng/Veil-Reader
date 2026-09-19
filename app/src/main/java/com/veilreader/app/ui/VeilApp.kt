@@ -31,6 +31,7 @@ import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.data.settings.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
@@ -50,7 +51,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun VeilApp(
     externalOpenUri: Uri? = null,
-    onExternalOpenUriConsumed: () -> Unit = {}
+    onExternalOpenUriConsumed: () -> Unit = {},
+    appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    onAppThemeModeChange: (AppThemeMode) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
     val activity = LocalActivity.current
@@ -389,9 +392,11 @@ fun VeilApp(
     } else if (route.showSettings) {
         SettingsScreen(
             initialAppearance = library.loadAppearance(),
+            appThemeMode = appThemeMode,
             exporting = exporting,
             restoring = restoring,
             onAppearanceChange = library::saveAppearance,
+            onAppThemeModeChange = onAppThemeModeChange,
             onExportBackup = { exportData(it, true) },
             onRestoreBackup = ::restoreData,
             onExportNotes = { exportData(it, false) },
@@ -444,7 +449,8 @@ fun VeilApp(
                 ) {
                     VeilNavigationRail(
                         selected = route.selectedTab,
-                        onSelect = routeViewModel::selectTab
+                        onSelect = routeViewModel::selectTab,
+                        onOpenSettings = routeViewModel::openSettings
                     )
                     Box(
                         modifier = Modifier
@@ -478,6 +484,7 @@ fun VeilApp(
                     VeilBottomDock(
                         selected = route.selectedTab,
                         onSelect = routeViewModel::selectTab,
+                        onOpenSettings = routeViewModel::openSettings,
                         modifier = Modifier.align(Alignment.BottomCenter)
                     )
                 }

@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.ui.VeilBrandMark
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
 import kotlin.math.cos
@@ -398,48 +399,79 @@ private fun LibraryHeader(
     isImporting: Boolean,
     onImport: () -> Unit
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val compact = maxWidth < 520.dp
-        val subtitle = if (bookCount == 0) {
-            "Import an EPUB or PDF to begin. Everything stays local on this device."
-        } else {
-            "$bookCount ${if (bookCount == 1) "book" else "books"} · search, filter, organize, and continue reading."
-        }
+    val subtitle = if (bookCount == 0) {
+        "Import an EPUB or PDF to begin. Everything stays local on this device."
+    } else {
+        bookCount.toString() + " " + (if (bookCount == 1) "book" else "books") +
+            " · private, searchable and ready offline."
+    }
 
-        if (compact) {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-                ScreenHeader(
-                    eyebrow = "Library",
-                    title = "Your books",
-                    subtitle = subtitle
-                )
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                ) {
-                    Text(if (isImporting) "Importing…" else "Import")
-                }
-            }
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                Box(Modifier.weight(1f)) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.90f),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
+        ),
+        shadowElevation = 8.dp
+    ) {
+        BoxWithConstraints(
+            Modifier
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg)
+        ) {
+            val compact = maxWidth < 560.dp
+
+            if (compact) {
+                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+                    VeilBrandMark(showWordmark = true)
                     ScreenHeader(
                         eyebrow = "Library",
                         title = "Your books",
                         subtitle = subtitle
                     )
+                    Button(
+                        onClick = onImport,
+                        enabled = !isImporting,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp)
+                    ) {
+                        Text(if (isImporting) "Importing…" else "Import book")
+                    }
                 }
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    modifier = Modifier.heightIn(min = 48.dp)
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
                 ) {
-                    Text(if (isImporting) "Importing…" else "Import")
+                    VeilBrandMark(showWordmark = true)
+                    Column(
+                        Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            "LIBRARY",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Text(
+                            "Your books",
+                            style = MaterialTheme.typography.headlineLarge
+                        )
+                        Text(
+                            subtitle,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Button(
+                        onClick = onImport,
+                        enabled = !isImporting,
+                        modifier = Modifier.heightIn(min = 50.dp)
+                    ) {
+                        Text(if (isImporting) "Importing…" else "Import book")
+                    }
                 }
             }
         }

@@ -134,26 +134,27 @@ fun VeilAnimatedTabHost(
 fun VeilBottomDock(
     selected: VeilTab,
     onSelect: (VeilTab) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(28.dp),
+            .padding(horizontal = 18.dp, vertical = 6.dp),
+        shape = RoundedCornerShape(24.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 16.dp,
-        tonalElevation = 1.dp,
+        shadowElevation = 10.dp,
+        tonalElevation = 0.dp,
         border = BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.68f)
         )
     ) {
         Row(
-            modifier = Modifier.padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(1.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             VeilTab.entries.forEach { tab ->
@@ -164,6 +165,11 @@ fun VeilBottomDock(
                     modifier = Modifier.weight(1f)
                 )
             }
+            Spacer(Modifier.width(2.dp))
+            VeilSettingsButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.size(42.dp)
+            )
         }
     }
 }
@@ -175,41 +181,43 @@ private fun VeilDockItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.94f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "dock-scale"
-    )
-    val background = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f)
-    } else {
-        Color.Transparent
-    }
     val foreground = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        MaterialTheme.colorScheme.primary
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Column(
         modifier = modifier
-            .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(21.dp))
-            .background(background)
+            .heightIn(min = 50.dp)
+            .clip(RoundedCornerShape(16.dp))
             .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 7.dp)
-            .scale(scale),
+            .padding(horizontal = 2.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.height(3.dp))
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .clip(RoundedCornerShape(13.dp))
+                .background(
+                    if (selected) {
+                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)
+                    } else {
+                        Color.Transparent
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.height(2.dp))
         Text(
             tab.label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 10.sp,
-                letterSpacing = 0.1.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 9.sp,
+                letterSpacing = 0.05.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
             ),
             color = foreground,
             maxLines = 1
@@ -221,6 +229,7 @@ private fun VeilDockItem(
 fun VeilNavigationRail(
     selected: VeilTab,
     onSelect: (VeilTab) -> Unit,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -281,32 +290,148 @@ fun VeilNavigationRail(
                     }
                 }
             }
+            Spacer(Modifier.height(VeilSpacing.sm))
+            VeilSettingsButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.size(52.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun VeilBrandMark() {
-    Box(
-        modifier = Modifier
-            .size(52.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.88f)
+fun VeilBrandMark(
+    modifier: Modifier = Modifier,
+    showWordmark: Boolean = false
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(52.dp)
+                .clip(RoundedCornerShape(17.dp))
+                .background(
+                    Brush.linearGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer,
+                            MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    )
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            val primary = MaterialTheme.colorScheme.primary
+            val secondary = MaterialTheme.colorScheme.secondary
+            Canvas(Modifier.size(34.dp)) {
+                val stroke = Stroke(
+                    width = 2.15.dp.toPx(),
+                    cap = StrokeCap.Round,
+                    join = StrokeJoin.Round
+                )
+                val leftPage = Path().apply {
+                    moveTo(size.width * .12f, size.height * .22f)
+                    quadraticBezierTo(
+                        size.width * .34f,
+                        size.height * .12f,
+                        size.width * .50f,
+                        size.height * .34f
+                    )
+                    lineTo(size.width * .50f, size.height * .82f)
+                    quadraticBezierTo(
+                        size.width * .31f,
+                        size.height * .66f,
+                        size.width * .12f,
+                        size.height * .72f
+                    )
+                }
+                val rightPage = Path().apply {
+                    moveTo(size.width * .88f, size.height * .22f)
+                    quadraticBezierTo(
+                        size.width * .66f,
+                        size.height * .12f,
+                        size.width * .50f,
+                        size.height * .34f
+                    )
+                    lineTo(size.width * .50f, size.height * .82f)
+                    quadraticBezierTo(
+                        size.width * .69f,
+                        size.height * .66f,
+                        size.width * .88f,
+                        size.height * .72f
+                    )
+                }
+                drawPath(leftPage, primary, style = stroke)
+                drawPath(rightPage, primary, style = stroke)
+                drawArc(
+                    color = secondary,
+                    startAngle = 205f,
+                    sweepAngle = 130f,
+                    useCenter = false,
+                    topLeft = Offset(size.width * .31f, size.height * .18f),
+                    size = androidx.compose.ui.geometry.Size(size.width * .38f, size.height * .38f),
+                    style = Stroke(width = 1.55.dp.toPx(), cap = StrokeCap.Round)
+                )
+                drawCircle(
+                    color = secondary,
+                    radius = 1.55.dp.toPx(),
+                    center = Offset(size.width * .50f, size.height * .29f)
+                )
+            }
+        }
+        if (showWordmark) {
+            Column(verticalArrangement = Arrangement.spacedBy(1.dp)) {
+                Text(
+                    "VEIL",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 2.2.sp
                     )
                 )
-            ),
+                Text(
+                    "READER",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun VeilSettingsButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val tint = MaterialTheme.colorScheme.onSurfaceVariant
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(19.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
+            .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(
-            "V",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
-        )
+        Canvas(Modifier.size(23.dp)) {
+            val stroke = Stroke(width = 1.8.dp.toPx(), cap = StrokeCap.Round)
+            drawCircle(
+                color = tint,
+                radius = size.minDimension * .20f,
+                center = center,
+                style = stroke
+            )
+            repeat(8) { index ->
+                val angle = Math.toRadians(index * 45.0)
+                val inner = size.minDimension * .34f
+                val outer = size.minDimension * .46f
+                val sx = center.x + kotlin.math.cos(angle).toFloat() * inner
+                val sy = center.y + kotlin.math.sin(angle).toFloat() * inner
+                val ex = center.x + kotlin.math.cos(angle).toFloat() * outer
+                val ey = center.y + kotlin.math.sin(angle).toFloat() * outer
+                drawLine(tint, Offset(sx, sy), Offset(ex, ey), stroke.width, StrokeCap.Round)
+            }
+        }
     }
 }
 
