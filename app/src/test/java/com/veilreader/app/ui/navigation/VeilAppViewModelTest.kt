@@ -9,7 +9,7 @@ import org.junit.Test
 
 class VeilAppViewModelTest {
     @Test
-    fun activeReaderRoute_survivesViewModelRecreation_thenClosesToLibrary() {
+    fun activeReaderRoute_survivesViewModelRecreation_thenReturnsToOriginTab() {
         val handle = SavedStateHandle()
         val first = VeilAppViewModel(handle)
 
@@ -31,7 +31,7 @@ class VeilAppViewModelTest {
         assertEquals("book-42", recreated.route.value.activeBookId)
 
         recreated.closeReader()
-        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
+        assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
         assertNull(recreated.route.value.activeBookId)
         assertNull(recreated.route.value.activeChamber)
         assertFalse(recreated.route.value.showArchive)
@@ -46,13 +46,13 @@ class VeilAppViewModelTest {
         first.selectTab(VeilTab.LIBRARY)
         first.openSettings()
 
-        assertEquals(VeilTab.PROFILE, first.route.value.selectedTab)
+        assertEquals(VeilTab.LIBRARY, first.route.value.selectedTab)
         assertTrue(first.route.value.showSettings)
         assertFalse(first.route.value.showArchive)
         assertNull(first.route.value.activeBookId)
 
         val recreated = VeilAppViewModel(handle)
-        assertEquals(VeilTab.PROFILE, recreated.route.value.selectedTab)
+        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
         assertTrue(recreated.route.value.showSettings)
 
         recreated.openArchive()
@@ -62,7 +62,7 @@ class VeilAppViewModelTest {
         recreated.openSettings()
         recreated.closeSettings()
         assertFalse(recreated.route.value.showSettings)
-        assertEquals(VeilTab.PROFILE, recreated.route.value.selectedTab)
+        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
     }
 
     @Test

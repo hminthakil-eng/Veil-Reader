@@ -6,12 +6,12 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class VeilTab(val label: String, val glyph: String) {
-    READING("Reading", "◉"),
-    LIBRARY("Library", "▦"),
-    CASTLE("Castle", "♜"),
-    PATH("Path", "✦"),
-    PROFILE("Profile", "◎")
+enum class VeilTab(val label: String) {
+    READING("Reading"),
+    LIBRARY("Library"),
+    CASTLE("Castle"),
+    PATH("Path"),
+    PROFILE("Profile")
 }
 
 data class VeilRouteState(
@@ -60,7 +60,6 @@ class VeilAppViewModel(
 
     fun openSettings() = update {
         copy(
-            selectedTab = VeilTab.PROFILE,
             showSettings = true,
             showArchive = false,
             activeChamber = null,
@@ -112,7 +111,6 @@ class VeilAppViewModel(
 
     fun closeReader() = update {
         copy(
-            selectedTab = VeilTab.LIBRARY,
             activeBookId = null,
             locatorOverrideJson = null,
             showArchive = false,
@@ -166,7 +164,6 @@ class VeilAppViewModel(
         }
         if (showSettings) {
             return copy(
-                selectedTab = VeilTab.PROFILE,
                 showArchive = false,
                 showSettings = true,
                 activeChamber = null,
