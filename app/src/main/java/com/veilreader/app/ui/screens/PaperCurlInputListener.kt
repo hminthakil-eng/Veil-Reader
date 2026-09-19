@@ -17,6 +17,8 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
     private val state: PaperCurlState,
+    private val gpu: GpuPaperCurlBridge,
+    private val backPageColor: () -> Int,
     private val scope: CoroutineScope,
     private val onInteraction: () -> Unit,
     private val onCommittedTurn: () -> Unit
@@ -29,24 +31,38 @@ internal class PaperCurlInputListener(
         if (navigator.overflow.value.scroll) return false
         if (state.active) return true
         val spec = resolveTurn(event.point.x) ?: return false
-        if (!state.begin(navigator.publicationView, spec.side, spec.direction)) {
+        if (!state.begin(
+                navigator.publicationView,
+                spec.side,
+                spec.direction
+            )) {
             return false
         }
+        gpu.begin(
+            snapshot = state.snapshot,
+            side = spec.side,
+            startY = event.point.y,
+            backColor = backPageColor()
+        )
 
         onInteraction()
         scope.launch {
             delay(FRAME_DELAY_MS)
             val moved = navigate(spec.direction)
             if (!moved) {
-                state.animateBoundaryBounce()
+                if (gpu.active) gpu.animateBoundaryBounce()
+                else state.animateBoundaryBounce()
                 state.clear()
+                gpu.end()
                 return@launch
             }
 
             delay(PAGE_REVEAL_DELAY_MS)
-            state.animateTapTurn()
+            if (gpu.active) gpu.animateTapTurn()
+            else state.animateTapTurn()
             onCommittedTurn()
             state.clear()
+            gpu.end()
         }
         return true
     }
@@ -67,12 +83,29 @@ internal class PaperCurlInputListener(
         if (!isMostlyHorizontal(event)) return false
         if (!isMovingInward(spec.side, event.offset.x)) return false
 
-        if (!state.begin(navigator.publicationView, spec.side, spec.direction)) {
+        if (!state.begin(
+                navigator.publicationView,
+                spec.side,
+                spec.direction
+            )) {
             return false
         }
         activeDrag = spec
         navigationSucceeded = false
         state.updateDrag(event.start, event.offset)
+        gpu.begin(
+            snapshot = state.snapshot,
+            side = spec.side,
+            startY = event.start.y,
+            backColor = backPageColor()
+        )
+        gpu.updateDrag(
+            startX = event.start.x,
+            startY = event.start.y,
+            offsetX = event.offset.x,
+            offsetY = event.offset.y,
+            curlProgress = state.dragProgress()
+        )
         onInteraction()
 
         navigationJob = scope.launch {
@@ -85,6 +118,13 @@ internal class PaperCurlInputListener(
     private fun onDragMove(event: DragEvent): Boolean {
         if (activeDrag == null || !state.active) return false
         state.updateDrag(event.start, event.offset)
+        gpu.updateDrag(
+            startX = event.start.x,
+            startY = event.start.y,
+            offsetX = event.offset.x,
+            offsetY = event.offset.y,
+            curlProgress = state.dragProgress()
+        )
         return true
     }
 
@@ -105,28 +145,40 @@ internal class PaperCurlInputListener(
             curlProgress = state.dragProgress()
         )
 
+        gpu.updateDrag(
+            startX = event.start.x,
+            startY = event.start.y,
+            offsetX = event.offset.x,
+            offsetY = event.offset.y,
+            curlProgress = state.dragProgress()
+        )
+
         scope.launch {
             navigationJob?.join()
 
             when {
                 commit && navigationSucceeded -> {
-                    state.animateComplete()
+                    if (gpu.active) gpu.animateComplete()
+                    else state.animateComplete()
                     onCommittedTurn()
                 }
 
                 navigationSucceeded -> {
                     navigate(opposite(spec.direction))
                     delay(PAGE_REVEAL_DELAY_MS)
-                    state.animateCancel()
+                    if (gpu.active) gpu.animateCancel()
+                    else state.animateCancel()
                 }
 
                 else -> {
-                    state.animateCancel()
+                    if (gpu.active) gpu.animateCancel()
+                    else state.animateCancel()
                 }
             }
 
             resetDrag()
             state.clear()
+            gpu.end()
         }
         return true
     }

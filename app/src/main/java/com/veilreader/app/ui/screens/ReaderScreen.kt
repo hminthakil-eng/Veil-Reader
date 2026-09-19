@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -115,6 +116,7 @@ fun ReaderScreen(
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
+    val gpuPaperCurl = remember(opened.book.id) { GpuPaperCurlBridge() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
     val appearance by library.appearance.collectAsStateWithLifecycle(
@@ -309,6 +311,8 @@ fun ReaderScreen(
                 PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
+                    gpu = gpuPaperCurl,
+                    backPageColor = { paperCurlConfig.backPageColor.toArgb() },
                     scope = scope,
                     onInteraction = {
                         readerViewModel.onUserInteraction()
@@ -383,8 +387,9 @@ fun ReaderScreen(
         )
 
         if (opened.format == BookFormat.EPUB) {
-            PaperCurlOverlay(
+            AdaptivePaperCurlOverlay(
                 state = paperCurlState,
+                gpu = gpuPaperCurl,
                 config = paperCurlConfig,
                 modifier = Modifier.fillMaxSize()
             )
