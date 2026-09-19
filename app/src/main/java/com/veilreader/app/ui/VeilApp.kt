@@ -41,6 +41,7 @@ import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
+import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
 import kotlinx.coroutines.CancellationException
@@ -364,15 +365,11 @@ fun VeilApp(
             VeilTab.PROFILE -> ProfileScreen(
                 profile = requireNotNull(profile),
                 highlightCount = highlights.size,
-                exporting = exporting,
-                restoring = restoring,
                 dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
                 castleTitle = requireNotNull(castleTitle),
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
-                onExportBackup = { exportData(it, true) },
-                onRestoreBackup = ::restoreData,
-                onExportNotes = { exportData(it, false) },
+                onOpenSettings = routeViewModel::openSettings,
                 onOpenArchive = routeViewModel::openArchive
             )
         }
@@ -388,6 +385,17 @@ fun VeilApp(
                 openedPublication = null
                 routeViewModel.closeReader()
             }
+        )
+    } else if (route.showSettings) {
+        SettingsScreen(
+            initialAppearance = library.loadAppearance(),
+            exporting = exporting,
+            restoring = restoring,
+            onAppearanceChange = library::saveAppearance,
+            onExportBackup = { exportData(it, true) },
+            onRestoreBackup = ::restoreData,
+            onExportNotes = { exportData(it, false) },
+            onBack = routeViewModel::closeSettings
         )
     } else if (route.showArchive) {
         ArchiveScreen(

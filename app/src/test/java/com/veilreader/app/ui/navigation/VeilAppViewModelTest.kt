@@ -35,6 +35,34 @@ class VeilAppViewModelTest {
         assertNull(recreated.route.value.activeBookId)
         assertNull(recreated.route.value.activeChamber)
         assertFalse(recreated.route.value.showArchive)
+        assertFalse(recreated.route.value.showSettings)
+    }
+
+    @Test
+    fun settingsRoute_survivesRecreation_andRemainsExclusive() {
+        val handle = SavedStateHandle()
+        val first = VeilAppViewModel(handle)
+
+        first.selectTab(VeilTab.LIBRARY)
+        first.openSettings()
+
+        assertEquals(VeilTab.PROFILE, first.route.value.selectedTab)
+        assertTrue(first.route.value.showSettings)
+        assertFalse(first.route.value.showArchive)
+        assertNull(first.route.value.activeBookId)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(VeilTab.PROFILE, recreated.route.value.selectedTab)
+        assertTrue(recreated.route.value.showSettings)
+
+        recreated.openArchive()
+        assertFalse(recreated.route.value.showSettings)
+        assertTrue(recreated.route.value.showArchive)
+
+        recreated.openSettings()
+        recreated.closeSettings()
+        assertFalse(recreated.route.value.showSettings)
+        assertEquals(VeilTab.PROFILE, recreated.route.value.selectedTab)
     }
 
     @Test
@@ -43,6 +71,7 @@ class VeilAppViewModelTest {
             mapOf(
                 "veil.route.tab" to "NOT_A_TAB",
                 "veil.route.archive" to true,
+                "veil.route.settings" to false,
                 "veil.route.chamber" to "unknown-room",
                 "veil.route.book" to "   ",
                 "veil.route.locator" to "orphan-locator"
