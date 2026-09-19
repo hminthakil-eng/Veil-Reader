@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 
@@ -122,7 +123,7 @@ internal fun ReadingAppearanceControls(
             Column(Modifier.weight(1f)) {
                 Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Turn this off for paginated reading with animated page turns.",
+                    "Turn this off for paginated reading with page-turn gestures.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -132,6 +133,38 @@ internal fun ReadingAppearanceControls(
                 onCheckedChange = { onChange(appearance.copy(scroll = it)) },
                 modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
             )
+        }
+
+        if (!appearance.scroll) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Page turn", fontWeight = FontWeight.SemiBold)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = appearance.pageTurnStyle == PageTurnStyle.PAPER,
+                        onClick = {
+                            onChange(appearance.copy(pageTurnStyle = PageTurnStyle.PAPER))
+                        },
+                        label = { Text("Paper curl") },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    )
+                    FilterChip(
+                        selected = appearance.pageTurnStyle == PageTurnStyle.SLIDE,
+                        onClick = {
+                            onChange(appearance.copy(pageTurnStyle = PageTurnStyle.SLIDE))
+                        },
+                        label = { Text("Simple slide") },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    )
+                }
+                Text(
+                    "Paper curl follows the page edge. Simple slide is a lighter compatibility option.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
@@ -14,8 +15,11 @@ import kotlinx.coroutines.flow.map
 
 private val Context.veilSettingsDataStore by preferencesDataStore(name = "veil_settings")
 
+enum class AppThemeMode { SYSTEM, LIGHT, DARK }
+
 data class AppSettings(
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
+    val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
     val legacyLibraryImported: Boolean = false,
@@ -30,6 +34,8 @@ class SettingsStore(private val context: Context) {
         val pageMargins = doublePreferencesKey("reader_page_margins")
         val scroll = booleanPreferencesKey("reader_scroll")
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
+        val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
+        val appThemeMode = stringPreferencesKey("app_theme_mode")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
@@ -46,8 +52,16 @@ class SettingsStore(private val context: Context) {
                 lineHeight = (prefs[Keys.lineHeight] ?: 1.45).coerceIn(1.1, 2.0),
                 pageMargins = (prefs[Keys.pageMargins] ?: 1.0).coerceIn(0.5, 2.0),
                 scroll = prefs[Keys.scroll] ?: false,
-                publisherStyles = prefs[Keys.publisherStyles] ?: true
+                publisherStyles = prefs[Keys.publisherStyles] ?: true,
+                pageTurnStyle = runCatching {
+                    PageTurnStyle.valueOf(
+                        prefs[Keys.pageTurnStyle] ?: PageTurnStyle.PAPER.name
+                    )
+                }.getOrDefault(PageTurnStyle.PAPER)
             ),
+            appThemeMode = runCatching {
+                AppThemeMode.valueOf(prefs[Keys.appThemeMode] ?: AppThemeMode.SYSTEM.name)
+            }.getOrDefault(AppThemeMode.SYSTEM),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
             legacyLibraryImported = prefs[Keys.legacyLibraryImported] ?: false,
@@ -63,7 +77,12 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.pageMargins] = value.pageMargins
             prefs[Keys.scroll] = value.scroll
             prefs[Keys.publisherStyles] = value.publisherStyles
+            prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
         }
+    }
+
+    suspend fun setAppThemeMode(mode: AppThemeMode) {
+        context.veilSettingsDataStore.edit { it[Keys.appThemeMode] = mode.name }
     }
 
     suspend fun setDailyGoal(minutes: Int) {

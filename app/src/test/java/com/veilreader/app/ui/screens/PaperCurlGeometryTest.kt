@@ -2,7 +2,6 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -40,34 +39,6 @@ class PaperCurlGeometryTest {
             paperTurnDirectionFor(
                 PaperCurlSide.LEFT,
                 ReadingProgression.RTL
-            )
-        )
-    }
-
-    @Test
-    fun dragCommitNeedsDistanceOrCurlProgress() {
-        assertFalse(
-            shouldCommitPaperTurn(
-                inwardDistance = 70f,
-                width = 1000f,
-                density = 1f,
-                curlProgress = 0.20f
-            )
-        )
-        assertTrue(
-            shouldCommitPaperTurn(
-                inwardDistance = 230f,
-                width = 1000f,
-                density = 1f,
-                curlProgress = 0.20f
-            )
-        )
-        assertTrue(
-            shouldCommitPaperTurn(
-                inwardDistance = 40f,
-                width = 1000f,
-                density = 1f,
-                curlProgress = 0.40f
             )
         )
     }

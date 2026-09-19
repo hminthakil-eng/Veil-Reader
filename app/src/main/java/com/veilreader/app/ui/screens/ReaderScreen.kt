@@ -53,6 +53,7 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
@@ -120,6 +121,7 @@ fun ReaderScreen(
     val appearance by library.appearance.collectAsStateWithLifecycle(
         initialValue = library.loadAppearance()
     )
+    val latestAppearance = rememberUpdatedState(appearance)
     val paperCurlConfig = remember(appearance.theme) {
         when (appearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
@@ -295,9 +297,10 @@ fun ReaderScreen(
                         ?: readerViewModel.uiState.value.progress.toDouble(),
                     locatorJson = json,
                     locationKey = "${opened.book.id}:$json",
-                    // EPUB paper turns are counted only after the curl commits.
-                    // Transient reveal/cancel navigation must not affect stats.
-                    countPageTurn = opened.format != BookFormat.EPUB
+                    // Paper curl counts only after its animation commits.
+                    // Slide mode uses the normal locator transition as the committed turn.
+                    countPageTurn = opened.format != BookFormat.EPUB ||
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
                 )
             }
     }
@@ -309,6 +312,10 @@ fun ReaderScreen(
                 PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
+                    isEnabled = {
+                        !latestAppearance.value.scroll &&
+                            latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
+                    },
                     scope = scope,
                     onInteraction = {
                         readerViewModel.onUserInteraction()
@@ -332,7 +339,7 @@ fun ReaderScreen(
         nav.addInputListener(
             DirectionalNavigationAdapter(
                 navigator = nav,
-                animatedTransition = false
+                animatedTransition = true
             )
         )
         nav.addInputListener(

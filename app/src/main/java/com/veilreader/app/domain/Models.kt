@@ -107,13 +107,16 @@ data class Highlight(
 
 enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
+enum class PageTurnStyle { PAPER, SLIDE }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
     val fontScale: Double = 1.0,
     val lineHeight: Double = 1.45,
     val pageMargins: Double = 1.0,
     val scroll: Boolean = false,
-    val publisherStyles: Boolean = true
+    val publisherStyles: Boolean = true,
+    val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER
 )
 
 /** A saved reading location, independent of text selection (also supports PDF). */

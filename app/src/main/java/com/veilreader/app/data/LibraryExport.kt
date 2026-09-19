@@ -7,6 +7,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
@@ -365,6 +366,7 @@ private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
     put("scroll", scroll); put("publisherStyles", publisherStyles)
+    put("pageTurnStyle", pageTurnStyle.name)
 }
 
 private fun bookFromJson(o: JSONObject): Book {
@@ -427,7 +429,11 @@ private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearan
     fontScale = (o.optDouble("fontScale", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.75, 1.8),
     lineHeight = (o.optDouble("lineHeight", 1.45).takeIf { it.isFinite() } ?: 1.45).coerceIn(1.1, 2.0),
     pageMargins = (o.optDouble("pageMargins", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.5, 2.0),
-    scroll = o.optBoolean("scroll", false), publisherStyles = o.optBoolean("publisherStyles", true)
+    scroll = o.optBoolean("scroll", false),
+    publisherStyles = o.optBoolean("publisherStyles", true),
+    pageTurnStyle = runCatching {
+        PageTurnStyle.valueOf(o.optString("pageTurnStyle", PageTurnStyle.PAPER.name))
+    }.getOrDefault(PageTurnStyle.PAPER)
 )
 
 private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = buildList {
