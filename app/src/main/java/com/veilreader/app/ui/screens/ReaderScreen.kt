@@ -269,10 +269,19 @@ fun ReaderScreen(
 
     LaunchedEffect(navigator, opened.book.id) {
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        if (navigator is EpubNavigatorFragment) {
+            nav.addInputListener(
+                BookPageTurnInputListener(
+                    navigator = nav,
+                    scope = scope,
+                    onInteraction = readerViewModel::onUserInteraction
+                )
+            )
+        }
         nav.addInputListener(
             DirectionalNavigationAdapter(
                 navigator = nav,
-                animatedTransition = true
+                animatedTransition = opened.format != BookFormat.EPUB
             )
         )
         nav.addInputListener(
