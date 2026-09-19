@@ -112,8 +112,7 @@ private fun ContinueReadingHero(
     onOpenLibrary: () -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val progress = current.progress.coerceIn(0f, 1f)
-    val progressPercent = (progress * 100).toInt()
+    val presentation = thresholdReadingPresentation(current)
     val shape = MaterialTheme.shapes.extraLarge
 
     BoxWithConstraints(
@@ -145,8 +144,7 @@ private fun ContinueReadingHero(
                 HeroCover(current)
                 HeroDetails(
                     current = current,
-                    progressPercent = progressPercent,
-                    progress = progress,
+                    presentation = presentation,
                     onOpenBook = onOpenBook,
                     onOpenLibrary = onOpenLibrary,
                     modifier = Modifier.weight(1f)
@@ -161,8 +159,7 @@ private fun ContinueReadingHero(
                 HeroCover(current)
                 HeroDetails(
                     current = current,
-                    progressPercent = progressPercent,
-                    progress = progress,
+                    presentation = presentation,
                     onOpenBook = onOpenBook,
                     onOpenLibrary = onOpenLibrary,
                     modifier = Modifier.fillMaxWidth()
@@ -200,8 +197,7 @@ private fun HeroCover(current: Book) {
 @Composable
 private fun HeroDetails(
     current: Book,
-    progressPercent: Int,
-    progress: Float,
+    presentation: ThresholdReadingPresentation,
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit,
     modifier: Modifier = Modifier
@@ -224,13 +220,13 @@ private fun HeroDetails(
 
         Spacer(Modifier.height(VeilSpacing.xs))
         LinearProgressIndicator(
-            progress = { progress },
+            progress = { presentation.progress },
             modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
             color = MaterialTheme.colorScheme.secondary,
             trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
         )
         Text(
-            heroProgressLabel(current, progressPercent, progress),
+            presentation.statusLabel,
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
@@ -245,7 +241,7 @@ private fun HeroDetails(
                 onClick = { onOpenBook(current) },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
-                Text(if (progress > 0f && !current.finished) "Continue" else "Open book")
+                Text(presentation.primaryActionLabel)
             }
             TextButton(
                 onClick = onOpenLibrary,
@@ -255,13 +251,6 @@ private fun HeroDetails(
             }
         }
     }
-}
-
-private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Float): String = when {
-    current.finished -> "Finished — open again anytime"
-    progress <= 0f -> "Ready to begin"
-    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" -> current.currentChapter
-    else -> "$progressPercent% complete"
 }
 
 @Composable
@@ -325,22 +314,13 @@ private fun RecentBookCard(book: Book, onOpenBook: (Book) -> Unit) {
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                recentBookStatus(book),
+                thresholdRecentStatus(book),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
         }
-    }
-}
-
-private fun recentBookStatus(book: Book): String {
-    val progress = book.progress.coerceIn(0f, 1f)
-    return when {
-        book.finished -> "Finished"
-        progress <= 0f -> "Not started"
-        else -> "${(progress * 100).toInt()}% read"
     }
 }
 

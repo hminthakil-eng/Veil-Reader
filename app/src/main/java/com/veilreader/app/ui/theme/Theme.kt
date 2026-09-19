@@ -8,11 +8,16 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 
 /** Veil Reader visual system: quiet reading utility wrapped in a mysterious world. */
 object VeilPalette {
@@ -92,74 +97,105 @@ private val VeilLightColors = lightColorScheme(
     outlineVariant = Color(0xFFD3CAD5)
 )
 
+/**
+ * App chrome is deliberately independent from OEM/system font overrides.
+ *
+ * Both bundled variable fonts contain Latin plus Persian/Arabic glyphs. Veil Reader's minSdk is 26,
+ * which is Android O, the minimum Android version with variable-font support.
+ */
+@OptIn(ExperimentalTextApi::class)
+private fun veilVariableFont(resId: Int, weight: FontWeight): Font = Font(
+    resId = resId,
+    weight = weight,
+    style = FontStyle.Normal,
+    variationSettings = FontVariation.Settings(
+        weight = weight,
+        style = FontStyle.Normal
+    )
+)
+
+private val VeilSansFamily = FontFamily(
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.Normal),
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.Medium),
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.SemiBold),
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.Bold)
+)
+
+private val VeilSerifFamily = FontFamily(
+    veilVariableFont(R.font.veil_display_serif, FontWeight.Normal),
+    veilVariableFont(R.font.veil_display_serif, FontWeight.Medium),
+    veilVariableFont(R.font.veil_display_serif, FontWeight.SemiBold),
+    veilVariableFont(R.font.veil_display_serif, FontWeight.Bold)
+)
+
 private val VeilTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilSerifFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 44.sp,
         lineHeight = 50.sp,
         letterSpacing = (-0.6).sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilSerifFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 30.sp,
         lineHeight = 35.sp,
         letterSpacing = (-0.25).sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilSerifFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 24.sp,
         lineHeight = 29.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 19.sp,
         lineHeight = 24.sp,
         letterSpacing = (-0.1).sp
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 15.sp,
         lineHeight = 21.sp
     ),
     bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 24.sp
     ),
     bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 20.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 13.sp,
         lineHeight = 18.sp,
         letterSpacing = 0.1.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
         lineHeight = 16.sp,
         letterSpacing = 0.65.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilSansFamily,
         fontWeight = FontWeight.Medium,
         fontSize = 10.sp,
         lineHeight = 14.sp,
