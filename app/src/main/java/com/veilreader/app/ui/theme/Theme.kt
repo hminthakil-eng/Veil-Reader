@@ -2,6 +2,7 @@ package com.veilreader.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
@@ -216,7 +217,13 @@ fun VeilTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = if (isSystemInDarkTheme()) VeilDarkColors else VeilLightColors,
         typography = VeilTypography,
-        shapes = VeilShapes,
-        content = content
-    )
+        shapes = VeilShapes
+    ) {
+        // MaterialTheme does not establish a global LocalTextStyle for arbitrary Text() calls.
+        // Providing the bundled body style here prevents OEM/system font overrides from leaking
+        // into app-shell text that does not explicitly choose a typography token.
+        ProvideTextStyle(value = VeilTypography.bodyLarge) {
+            content()
+        }
+    }
 }
