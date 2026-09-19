@@ -49,7 +49,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun runtimeRepository_serializesWrites_andRestoresSnapshotTransactionally() = runBlocking {
+    fun runtimeRepository_serializesWrites_andRestoresSnapshotTransactionally() = runBlocking<Unit> {
         val repository = repository()
         val book = Book(
             id = "runtime-book",
@@ -124,7 +124,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun duplicateFingerprint_returnsExistingBook_andDeletesTransientImportArtifacts() = runBlocking {
+    fun duplicateFingerprint_returnsExistingBook_andDeletesTransientImportArtifacts() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val covers = File(context.filesDir, "covers").apply { mkdirs() }
@@ -162,7 +162,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions() = runBlocking {
+    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val publication = File(publications, "roundtrip.epub").apply { writeBytes("test publication".toByteArray()) }
@@ -249,7 +249,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun pdfiumLocatorMigration_rewritesOnlyMatchingBookState_transactionally() = runBlocking {
+    fun pdfiumLocatorMigration_rewritesOnlyMatchingBookState_transactionally() = runBlocking<Unit> {
         val repository = repository()
         val pdf = Book(
             id = "pdf-book",
@@ -313,7 +313,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun backupV2_preservesStampedPdfiumLocators() = runBlocking {
+    fun backupV2_preservesStampedPdfiumLocators() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val publication = File(publications, "locator-roundtrip.pdf").apply {
@@ -356,7 +356,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking {
+    fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking<Unit> {
         val repository = repository()
         val book = Book(
             id = "hot-path-book",
@@ -392,7 +392,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking {
+    fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
             Book(
@@ -440,7 +440,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking {
+    fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
             Book(
