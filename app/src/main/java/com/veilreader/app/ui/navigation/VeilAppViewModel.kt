@@ -49,6 +49,7 @@ class VeilAppViewModel(
     fun openArchive() = update {
         copy(
             showArchive = true,
+            showSettings = false,
             activeChamber = null,
             activeBookId = null,
             locatorOverrideJson = null
