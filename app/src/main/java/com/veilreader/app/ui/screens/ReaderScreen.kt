@@ -114,11 +114,34 @@ fun ReaderScreen(
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
+    val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
     val appearance by library.appearance.collectAsStateWithLifecycle(
         initialValue = library.loadAppearance()
     )
+    val paperCurlConfig = remember(appearance.theme) {
+        when (appearance.theme) {
+            ReaderTheme.PAPER -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFFF2E8D8),
+                backPageContentAlpha = 0.13f
+            )
+            ReaderTheme.SEPIA -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFFE7D2AA),
+                backPageContentAlpha = 0.15f
+            )
+            ReaderTheme.DUSK -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFF27222C),
+                backPageContentAlpha = 0.09f,
+                edgeHighlight = Color(0xFFE8DFF0)
+            )
+            ReaderTheme.OLED -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFF111111),
+                backPageContentAlpha = 0.07f,
+                edgeHighlight = Color(0xFFD8D8D8)
+            )
+        }
+    }
     var showNotebook by remember { mutableStateOf(false) }
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
@@ -221,7 +244,12 @@ fun ReaderScreen(
         onClose()
     }
 
-    BackHandler(enabled = !showNotebook && !showAppearance && !showPdfZoom) { closeReader() }
+    BackHandler(
+        enabled = !showNotebook &&
+            !showAppearance &&
+            !showPdfZoom &&
+            !paperCurlState.active
+    ) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
         createReaderFactory(opened, appearance, selectionActionModeCallback)
@@ -250,6 +278,10 @@ fun ReaderScreen(
         }
     }
 
+    DisposableEffect(paperCurlState) {
+        onDispose { paperCurlState.dispose() }
+    }
+
     LaunchedEffect(navigator, opened.book.id) {
         val nav = navigator ?: return@LaunchedEffect
         nav.currentLocator
@@ -262,17 +294,45 @@ fun ReaderScreen(
                     progression = locator.locations.totalProgression
                         ?: readerViewModel.uiState.value.progress.toDouble(),
                     locatorJson = json,
-                    locationKey = "${opened.book.id}:$json"
+                    locationKey = "${opened.book.id}:$json",
+                    // EPUB paper turns are counted only after the curl commits.
+                    // Transient reveal/cancel navigation must not affect stats.
+                    countPageTurn = opened.format != BookFormat.EPUB
                 )
             }
     }
 
     LaunchedEffect(navigator, opened.book.id) {
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        if (navigator is EpubNavigatorFragment) {
+            nav.addInputListener(
+                PaperCurlInputListener(
+                    navigator = nav,
+                    state = paperCurlState,
+                    scope = scope,
+                    onInteraction = {
+                        readerViewModel.onUserInteraction()
+                        controlsVisible = false
+                    },
+                    onCommittedTurn = {
+                        val locator = nav.currentLocator.value
+                        val json = locator.toVeilPersistedJson(opened.format)
+                        readerViewModel.onLocatorChanged(
+                            bookId = opened.book.id,
+                            progression = locator.locations.totalProgression
+                                ?: readerViewModel.uiState.value.progress.toDouble(),
+                            locatorJson = json,
+                            locationKey = "${opened.book.id}:$json",
+                            countPageTurn = true
+                        )
+                    }
+                )
+            )
+        }
         nav.addInputListener(
             DirectionalNavigationAdapter(
                 navigator = nav,
-                animatedTransition = true
+                animatedTransition = false
             )
         )
         nav.addInputListener(
@@ -321,6 +381,14 @@ fun ReaderScreen(
             onDisposePublication = onDisposePublication,
             modifier = Modifier.fillMaxSize()
         )
+
+        if (opened.format == BookFormat.EPUB) {
+            PaperCurlOverlay(
+                state = paperCurlState,
+                config = paperCurlConfig,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         AnimatedVisibility(
             visible = controlsVisible,
