@@ -10,6 +10,9 @@ workflows:
         - pattern: 'upgrade/readium-3-4'
           include: true
           source: true
+        - pattern: 'fix/threshold-progress-presentation'
+          include: true
+          source: true
       cancel_previous_builds: true
     environment:
       java: 17
