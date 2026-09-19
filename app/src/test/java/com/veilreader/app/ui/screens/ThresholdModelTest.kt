@@ -108,17 +108,52 @@ class ThresholdModelTest {
         assertEquals(emptyList<Book>(), snapshot.recent)
     }
 
+    @Test
+    fun `tiny nonzero progress never renders as zero percent resume state`() {
+        val current = book(
+            id = "tiny-progress",
+            lastOpened = 100L,
+            added = 10L,
+            progress = 0.004f
+        )
+
+        val presentation = thresholdReadingPresentation(current)
+
+        assertEquals(0, presentation.progressPercent)
+        assertEquals("<1% complete", presentation.statusLabel)
+        assertEquals("Continue", presentation.primaryActionLabel)
+        assertEquals("<1% read", thresholdRecentStatus(current))
+    }
+
+    @Test
+    fun `zero progress remains an unopened presentation`() {
+        val current = book(
+            id = "not-started",
+            lastOpened = 0L,
+            added = 10L,
+            progress = 0f
+        )
+
+        val presentation = thresholdReadingPresentation(current)
+
+        assertEquals("Ready to begin", presentation.statusLabel)
+        assertEquals("Open book", presentation.primaryActionLabel)
+        assertEquals("Not started", thresholdRecentStatus(current))
+    }
+
     private fun book(
         id: String,
         lastOpened: Long,
         added: Long,
         finished: Boolean = false,
-        sourceUri: String? = "content://$id"
+        sourceUri: String? = "content://$id",
+        progress: Float = 0f
     ) = Book(
         id = id,
         title = id,
         author = "Author",
         sourceUri = sourceUri,
+        progress = progress,
         lastOpenedAtEpochMs = lastOpened,
         addedAtEpochMs = added,
         finished = finished
