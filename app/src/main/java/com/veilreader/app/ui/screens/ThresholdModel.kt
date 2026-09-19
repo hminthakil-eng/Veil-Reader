@@ -31,5 +31,44 @@ fun buildThresholdSnapshot(
     return ThresholdSnapshot(hero = hero, recent = recent)
 }
 
+data class ThresholdReadingPresentation(
+    val progress: Float,
+    val progressPercent: Int,
+    val statusLabel: String,
+    val primaryActionLabel: String
+)
+
+fun thresholdReadingPresentation(book: Book): ThresholdReadingPresentation {
+    val progress = book.progress.coerceIn(0f, 1f)
+    val progressPercent = (progress * 100).toInt()
+    val statusLabel = when {
+        book.finished -> "Finished — open again anytime"
+        progress <= 0f -> "Ready to begin"
+        book.currentChapter.isNotBlank() && book.currentChapter != "Not started" -> book.currentChapter
+        progressPercent == 0 -> "<1% complete"
+        else -> "$progressPercent% complete"
+    }
+    val primaryActionLabel =
+        if (progress > 0f && !book.finished) "Continue" else "Open book"
+
+    return ThresholdReadingPresentation(
+        progress = progress,
+        progressPercent = progressPercent,
+        statusLabel = statusLabel,
+        primaryActionLabel = primaryActionLabel
+    )
+}
+
+fun thresholdRecentStatus(book: Book): String {
+    val progress = book.progress.coerceIn(0f, 1f)
+    val progressPercent = (progress * 100).toInt()
+    return when {
+        book.finished -> "Finished"
+        progress <= 0f -> "Not started"
+        progressPercent == 0 -> "<1% read"
+        else -> "$progressPercent% read"
+    }
+}
+
 private fun bookRecency(book: Book): Long =
     book.lastOpenedAtEpochMs.takeIf { it > 0L } ?: book.addedAtEpochMs
