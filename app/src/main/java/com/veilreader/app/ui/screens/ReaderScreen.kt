@@ -82,6 +82,7 @@ import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
+import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
@@ -114,7 +115,9 @@ fun ReaderScreen(
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
-    var appearance by remember { mutableStateOf(library.loadAppearance()) }
+    val appearance by library.appearance.collectAsStateWithLifecycle(
+        initialValue = library.loadAppearance()
+    )
     var showNotebook by remember { mutableStateOf(false) }
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
@@ -555,7 +558,6 @@ fun ReaderScreen(
                 appearance = appearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
-                    appearance = it
                     library.saveAppearance(it)
                 },
                 onDone = { showAppearance = false }
@@ -564,7 +566,7 @@ fun ReaderScreen(
     }
 }
 
-@OptIn(ExperimentalReadiumApi::class)
+@OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
 private fun createReaderFactory(
     opened: OpenedPublication,
     appearance: ReaderAppearance,
@@ -575,6 +577,7 @@ private fun createReaderFactory(
             initialLocator = opened.initialLocator,
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
+                useReadiumCssFontSize = false
                 disablePageTurnsWhileScrolling = false
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
@@ -882,22 +885,46 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
 }
 
 @OptIn(ExperimentalReadiumApi::class)
-private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
-    theme = when (theme) {
-        ReaderTheme.PAPER -> Theme.LIGHT
-        ReaderTheme.SEPIA -> Theme.SEPIA
-        ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
-    },
-    backgroundColor = when (theme) {
-        ReaderTheme.OLED -> ReadiumColor(AndroidColor.BLACK)
-        ReaderTheme.DUSK -> ReadiumColor(AndroidColor.rgb(24, 21, 29))
-        else -> null
-    },
-    fontSize = ReadingPolicy.fontSizePercent(fontScale),
-    lineHeight = lineHeight,
-    pageMargins = pageMargins,
-    scroll = scroll,
-    publisherStyles = publisherStyles
-)
+internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
+    val normalizedFontScale = fontScale.coerceIn(0.75, 1.8)
+    val usePublisherStyles = publisherStyles
+
+    val explicitBackground = if (usePublisherStyles) {
+        null
+    } else {
+        when (theme) {
+            ReaderTheme.PAPER -> ReadiumColor(0xFFF6F1EA.toInt())
+            ReaderTheme.SEPIA -> ReadiumColor(0xFFF1E5C9.toInt())
+            ReaderTheme.DUSK -> ReadiumColor(0xFF18151D.toInt())
+            ReaderTheme.OLED -> ReadiumColor(AndroidColor.BLACK)
+        }
+    }
+
+    val explicitText = if (usePublisherStyles) {
+        null
+    } else {
+        when (theme) {
+            ReaderTheme.PAPER -> ReadiumColor(0xFF252128.toInt())
+            ReaderTheme.SEPIA -> ReadiumColor(0xFF3D3325.toInt())
+            ReaderTheme.DUSK, ReaderTheme.OLED -> ReadiumColor(0xFFF5F0F7.toInt())
+        }
+    }
+
+    return EpubPreferences(
+        theme = when (theme) {
+            ReaderTheme.PAPER -> Theme.LIGHT
+            ReaderTheme.SEPIA -> Theme.SEPIA
+            ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
+        },
+        backgroundColor = explicitBackground,
+        textColor = explicitText,
+        // Readium 3.4 expects a ratio: 1.0 = 100%, 1.5 = 150%.
+        fontSize = normalizedFontScale,
+        lineHeight = lineHeight,
+        pageMargins = pageMargins,
+        scroll = scroll,
+        publisherStyles = usePublisherStyles
+    )
+}
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
