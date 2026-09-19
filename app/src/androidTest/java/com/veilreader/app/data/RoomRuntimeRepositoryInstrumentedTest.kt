@@ -31,6 +31,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     private lateinit var context: Context
     private lateinit var db: VeilDatabase
     private lateinit var settings: SettingsStore
+    private var repositoryUnderTest: LocalLibraryRepository? = null
 
     @Before
     fun setUp() {
@@ -43,6 +44,8 @@ class RoomRuntimeRepositoryInstrumentedTest {
 
     @After
     fun tearDown() {
+        repositoryUnderTest?.closeForTest()
+        repositoryUnderTest = null
         db.close()
         File(context.filesDir, "publications").deleteRecursively()
         File(context.filesDir, "covers").deleteRecursively()
@@ -521,5 +524,5 @@ class RoomRuntimeRepositoryInstrumentedTest {
         database = db,
         settings = settings,
         runLegacyMigration = false
-    )
+    ).also { repositoryUnderTest = it }
 }
