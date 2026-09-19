@@ -100,20 +100,48 @@ class ReadiumEngine(context: Context) {
         }
     }
 
-    suspend fun openBook(book: Book): Result<OpenedPublication> = runCatching {
+    suspend fun openBook(
+        book: Book,
+        persistedLocatorJsons: Set<String> = emptySet()
+    ): Result<OpenedPublication> = runCatching {
         val uri = requireNotNull(book.sourceUri) { "This is a demo book. Import an EPUB or PDF first." }
             .let(Uri::parse)
         val publication = openPublication(uri, allowUserInteraction = true)
-        val format = formatOf(publication)
-        val initialLocator = book.locatorJson
-            ?.let { json -> runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull() }
+        try {
+            val format = formatOf(publication)
+            val allLocatorJsons = buildSet {
+                book.locatorJson?.let(::add)
+                addAll(persistedLocatorJsons)
+            }
+            val locatorMigrations = if (format == BookFormat.PDF) {
+                buildMap {
+                    for (json in allLocatorJsons) {
+                        val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
+                            ?: continue
+                        val migrated = publication.migrateVeilLegacyPdfiumLocator(locator)
+                        val migratedJson = migrated.toJSON().toString()
+                        if (migratedJson != json) put(json, migratedJson)
+                    }
+                }
+            } else {
+                emptyMap()
+            }
+            val initialLocator = book.locatorJson?.let { json ->
+                val persistedJson = locatorMigrations[json] ?: json
+                runCatching { Locator.fromJSON(JSONObject(persistedJson)) }.getOrNull()
+            }
 
-        OpenedPublication(
-            book = book,
-            publication = publication,
-            format = format,
-            initialLocator = initialLocator
-        )
+            OpenedPublication(
+                book = book,
+                publication = publication,
+                format = format,
+                initialLocator = initialLocator,
+                locatorMigrations = locatorMigrations
+            )
+        } catch (error: Throwable) {
+            publication.close()
+            throw error
+        }
     }
 
     /**
@@ -264,7 +292,8 @@ data class OpenedPublication(
     val book: Book,
     val publication: Publication,
     val format: BookFormat,
-    val initialLocator: Locator?
+    val initialLocator: Locator?,
+    val locatorMigrations: Map<String, String> = emptyMap()
 ) : AutoCloseable {
     override fun close() = publication.close()
 }

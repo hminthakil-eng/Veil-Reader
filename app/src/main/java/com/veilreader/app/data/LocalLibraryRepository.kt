@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -278,6 +279,67 @@ class LocalLibraryRepository internal constructor(
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
 
+    suspend fun locatorJsonsForBook(bookId: String): Set<String> = orderedWrite {
+        buildSet {
+            database.books().findWithCollections(bookId)?.book?.locatorJson?.let(::add)
+            database.bookmarks().listAll()
+                .filter { it.bookId == bookId }
+                .forEach { add(it.locatorJson) }
+            database.highlights().listAll()
+                .filter { it.bookId == bookId }
+                .forEach { add(it.locatorJson) }
+        }
+    }
+
+    /**
+     * Rewrites only locators that Readium 3.4 identified as legacy PDFium values.
+     *
+     * Every migrated locator carries its own compatibility marker, so this transaction is safe to
+     * retry after process death and restored backups do not need a separate schema flag.
+     */
+    suspend fun applyPdfiumLocatorMigrations(bookId: String, migrations: Map<String, String>) {
+        if (migrations.isEmpty()) return
+        flushProgress(bookId)
+
+        val (migratedBook, migratedBookmarks, migratedHighlights) = orderedWrite {
+            database.withTransaction {
+                val currentBook = database.books().findWithCollections(bookId)?.toDomain()
+                val bookUpdate = currentBook?.locatorJson
+                    ?.let(migrations::get)
+                    ?.let { currentBook.copy(locatorJson = it) }
+
+                val bookmarkUpdates = database.bookmarks().listAll().mapNotNull { entity ->
+                    if (entity.bookId != bookId) return@mapNotNull null
+                    migrations[entity.locatorJson]?.let { entity.toDomain().copy(locatorJson = it) }
+                }
+                val highlightUpdates = database.highlights().listAll().mapNotNull { entity ->
+                    if (entity.bookId != bookId) return@mapNotNull null
+                    migrations[entity.locatorJson]?.let { entity.toDomain().copy(locatorJson = it) }
+                }
+
+                bookUpdate?.let { database.books().upsert(it.toEntity()) }
+                if (bookmarkUpdates.isNotEmpty()) {
+                    database.bookmarks().upsertAll(bookmarkUpdates.map { it.toEntity() })
+                }
+                if (highlightUpdates.isNotEmpty()) {
+                    database.highlights().upsertAll(highlightUpdates.map { it.toEntity() })
+                }
+
+                Triple(bookUpdate, bookmarkUpdates, highlightUpdates)
+            }
+        }
+
+        migratedBook?.let(::replaceBookCached)
+        if (migratedBookmarks.isNotEmpty()) {
+            val byId = migratedBookmarks.associateBy { it.id }
+            _bookmarks.value = _bookmarks.value.map { byId[it.id] ?: it }
+        }
+        if (migratedHighlights.isNotEmpty()) {
+            val byId = migratedHighlights.associateBy { it.id }
+            _highlights.value = _highlights.value.map { byId[it.id] ?: it }
+        }
+    }
+
     fun deleteHighlight(id: String) {
         _highlights.value = _highlights.value.filterNot { it.id == id }
         enqueue { database.highlights().deleteById(id) }
@@ -308,6 +370,15 @@ class LocalLibraryRepository internal constructor(
             sessionFlushJobs.remove(sessionId)?.cancel()
             pendingReadingSessions.remove(sessionId)?.let(::enqueueReadingSessionWrite)
         }
+    }
+
+    /**
+     * Test-only lifecycle hook for instrumented repositories backed by short-lived in-memory DBs.
+     * Production repositories live for the app process, but tests must cancel Room observers before
+     * closing their database to avoid asynchronous queries against a closed connection.
+     */
+    internal fun closeForTest() {
+        scope.cancel()
     }
 
     /** Ensures migration and all writes queued before this call have reached durable storage. */

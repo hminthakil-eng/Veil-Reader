@@ -31,6 +31,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     private lateinit var context: Context
     private lateinit var db: VeilDatabase
     private lateinit var settings: SettingsStore
+    private var repositoryUnderTest: LocalLibraryRepository? = null
 
     @Before
     fun setUp() {
@@ -43,13 +44,15 @@ class RoomRuntimeRepositoryInstrumentedTest {
 
     @After
     fun tearDown() {
+        repositoryUnderTest?.closeForTest()
+        repositoryUnderTest = null
         db.close()
         File(context.filesDir, "publications").deleteRecursively()
         File(context.filesDir, "covers").deleteRecursively()
     }
 
     @Test
-    fun runtimeRepository_serializesWrites_andRestoresSnapshotTransactionally() = runBlocking {
+    fun runtimeRepository_serializesWrites_andRestoresSnapshotTransactionally() = runBlocking<Unit> {
         val repository = repository()
         val book = Book(
             id = "runtime-book",
@@ -124,7 +127,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun duplicateFingerprint_returnsExistingBook_andDeletesTransientImportArtifacts() = runBlocking {
+    fun duplicateFingerprint_returnsExistingBook_andDeletesTransientImportArtifacts() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val covers = File(context.filesDir, "covers").apply { mkdirs() }
@@ -162,7 +165,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions() = runBlocking {
+    fun backupV2_roundTripsRoomState_publicationFile_metadataCollections_andReadingSessions() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
         val publication = File(publications, "roundtrip.epub").apply { writeBytes("test publication".toByteArray()) }
@@ -249,7 +252,114 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking {
+    fun pdfiumLocatorMigration_rewritesOnlyMatchingBookState_transactionally() = runBlocking<Unit> {
+        val repository = repository()
+        val pdf = Book(
+            id = "pdf-book",
+            title = "Legacy PDF",
+            author = "Reader",
+            format = BookFormat.PDF,
+            sourceUri = "file:///legacy.pdf",
+            mediaType = "application/pdf"
+        )
+        val other = Book(
+            id = "other-book",
+            title = "Other",
+            author = "Reader",
+            format = BookFormat.PDF,
+            sourceUri = "file:///other.pdf",
+            mediaType = "application/pdf"
+        )
+        repository.addImportedBook(pdf)
+        repository.addImportedBook(other)
+
+        val oldProgress = """{"href":"document.pdf","type":"application/pdf","locations":{"position":3}}"""
+        val newProgress = """{"href":"document.pdf","type":"application/pdf","locations":{"position":2,"veilPdfiumLocatorVersion":1}}"""
+        val oldBookmark = """{"href":"document.pdf","type":"application/pdf","locations":{"position":5}}"""
+        val newBookmark = """{"href":"document.pdf","type":"application/pdf","locations":{"position":4,"veilPdfiumLocatorVersion":1}}"""
+        val oldHighlight = """{"href":"document.pdf","type":"application/pdf","locations":{"position":7}}"""
+        val newHighlight = """{"href":"document.pdf","type":"application/pdf","locations":{"position":6,"veilPdfiumLocatorVersion":1}}"""
+        val untouched = """{"href":"other.pdf","type":"application/pdf","locations":{"position":9}}"""
+
+        repository.saveProgress("pdf-book", 0.4, oldProgress)
+        repository.addBookmark("pdf-book", "Legacy bookmark", oldBookmark)
+        repository.addHighlight("pdf-book", "Legacy highlight", oldHighlight)
+        repository.addBookmark("other-book", "Other bookmark", untouched)
+        repository.flushWrites()
+
+        repository.applyPdfiumLocatorMigrations(
+            bookId = "pdf-book",
+            migrations = mapOf(
+                oldProgress to newProgress,
+                oldBookmark to newBookmark,
+                oldHighlight to newHighlight
+            )
+        )
+
+        assertEquals(newProgress, db.books().findEntity("pdf-book")?.locatorJson)
+        assertEquals(
+            newBookmark,
+            db.bookmarks().listAll().first { it.bookId == "pdf-book" }.locatorJson
+        )
+        assertEquals(
+            newHighlight,
+            db.highlights().listAll().first { it.bookId == "pdf-book" }.locatorJson
+        )
+        assertEquals(
+            untouched,
+            db.bookmarks().listAll().first { it.bookId == "other-book" }.locatorJson
+        )
+        assertEquals(
+            setOf(newProgress, newBookmark, newHighlight),
+            repository.locatorJsonsForBook("pdf-book")
+        )
+    }
+
+    @Test
+    fun backupV2_preservesStampedPdfiumLocators() = runBlocking<Unit> {
+        val repository = repository()
+        val publications = File(context.filesDir, "publications").apply { mkdirs() }
+        val publication = File(publications, "locator-roundtrip.pdf").apply {
+            writeBytes("pdf fixture".toByteArray())
+        }
+        val stampedProgress = """{"href":"document.pdf","type":"application/pdf","locations":{"position":2,"veilPdfiumLocatorVersion":1}}"""
+        val stampedBookmark = """{"href":"document.pdf","type":"application/pdf","locations":{"position":4,"veilPdfiumLocatorVersion":1}}"""
+
+        repository.addImportedBook(
+            Book(
+                id = "pdf-backup",
+                title = "Migrated PDF",
+                author = "Reader",
+                format = BookFormat.PDF,
+                sourceUri = Uri.fromFile(publication).toString(),
+                mediaType = "application/pdf",
+                locatorJson = stampedProgress
+            )
+        )
+        repository.addBookmark("pdf-backup", "Migrated bookmark", stampedBookmark)
+        repository.flushWrites()
+
+        val backupFile = File(context.cacheDir, "veil-pdf-locator-${UUID.randomUUID()}.zip")
+        val exporter = LibraryExport(context, repository)
+        exporter.writeBackup(Uri.fromFile(backupFile))
+
+        repository.replaceAll(
+            LibrarySnapshot(
+                books = emptyList(),
+                highlights = emptyList(),
+                bookmarks = emptyList(),
+                appearance = ReaderAppearance()
+            )
+        )
+        exporter.restoreBackup(Uri.fromFile(backupFile))
+
+        assertEquals(stampedProgress, db.books().findEntity("pdf-backup")?.locatorJson)
+        assertEquals(stampedBookmark, db.bookmarks().listAll().single().locatorJson)
+        backupFile.delete()
+    }
+
+    @Test
+    fun readerProgressHotPath_preservesMetadata_andFinishesOnlyOnce() = runBlocking<Unit> {
         val repository = repository()
         val book = Book(
             id = "hot-path-book",
@@ -285,7 +395,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking {
+    fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
             Book(
@@ -333,7 +443,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
-    fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking {
+    fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
             Book(
@@ -414,5 +524,5 @@ class RoomRuntimeRepositoryInstrumentedTest {
         database = db,
         settings = settings,
         runLegacyMigration = false
-    )
+    ).also { repositoryUnderTest = it }
 }

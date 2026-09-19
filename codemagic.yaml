@@ -1,0 +1,183 @@
+workflows:
+  veil-reader-cloud-verify:
+    name: Veil Reader Cloud Verify
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'upgrade/readium-3-4'
+          include: true
+          source: true
+      cancel_previous_builds: true
+    environment:
+      java: 17
+    scripts:
+      - name: Configure Android SDK and Gradle
+        script: |
+          set -e
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "sdk.dir=$SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
+
+          if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
+            GRADLE_VERSION="9.6.0"
+            GRADLE_HOME="$CM_BUILD_DIR/.gradle-dist/gradle-$GRADLE_VERSION"
+            if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
+              mkdir -p "$CM_BUILD_DIR/.gradle-dist"
+              curl --fail --location --retry 3 \
+                "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" \
+                --output "$CM_BUILD_DIR/.gradle-dist/gradle.zip"
+              unzip -q "$CM_BUILD_DIR/.gradle-dist/gradle.zip" -d "$CM_BUILD_DIR/.gradle-dist"
+            fi
+            cat > "$CM_BUILD_DIR/gradlew" <<'EOF'
+          #!/bin/sh
+          exec "$CM_BUILD_DIR/.gradle-dist/gradle-9.6.0/bin/gradle" "$@"
+          EOF
+            chmod +x "$CM_BUILD_DIR/gradlew"
+          fi
+
+          cd "$CM_BUILD_DIR"
+          ./gradlew --version
+
+      - name: Policy and performance parser checks
+        script: |
+          sh tools/test-policy.sh
+          python3 tools/test_performance_budget.py
+          python3 tools/test_performance_delta.py
+          python3 tools/test_performance_dashboard.py
+
+      - name: Unit tests
+        script: ./gradlew :app:testDebugUnitTest --stacktrace
+        test_report: app/build/test-results/**/*.xml
+
+      - name: Android lint
+        script: ./gradlew :app:lintDebug --stacktrace
+
+      - name: Build debug and instrumentation APKs
+        script: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+
+      - name: Verify device-cloud test artifacts
+        script: |
+          set -e
+          cd "$CM_BUILD_DIR"
+          APP_APK="app/build/outputs/apk/debug/app-debug.apk"
+          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' | head -n 1)"
+          test -f "$APP_APK"
+          test -n "$TEST_APK"
+          test -f "$TEST_APK"
+
+          RUNNER_FOUND=0
+          for DEX in $(unzip -Z1 "$TEST_APK" | grep '^classes.*\.dex$'); do
+            if unzip -p "$TEST_APK" "$DEX" | strings | grep -q 'Landroidx/test/runner/AndroidJUnitRunner;'; then
+              RUNNER_FOUND=1
+              break
+            fi
+          done
+          [ "$RUNNER_FOUND" -eq 1 ]
+
+          echo "App APK: $APP_APK"
+          echo "Test APK: $TEST_APK"
+          echo "AndroidJUnitRunner packaged: yes"
+
+      - name: Compile performance harness
+        script: ./gradlew :benchmark:assembleBenchmarkBenchmark --stacktrace
+
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/outputs/apk/androidTest/**/*.apk
+      - benchmark/build/outputs/**/*.apk
+      - app/build/reports/**
+      - app/build/test-results/**
+      - app/build/outputs/androidTest-results/**
+
+  veil-reader-device-verify:
+    name: Veil Reader Device Verify — emulator.wtf
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    environment:
+      java: 17
+    scripts:
+      - name: Require emulator.wtf token
+        script: |
+          set -e
+          if [ -z "${EW_API_TOKEN:-}" ]; then
+            echo "EW_API_TOKEN is not configured in Codemagic Environment variables."
+            echo "Create a free emulator.wtf Startup account, copy the API token, and save it as a Secret named EW_API_TOKEN."
+            exit 2
+          fi
+
+      - name: Configure Android SDK and Gradle
+        script: |
+          set -e
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "sdk.dir=$SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$PATH"
+
+          if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
+            GRADLE_VERSION="9.6.0"
+            GRADLE_HOME="$CM_BUILD_DIR/.gradle-dist/gradle-$GRADLE_VERSION"
+            if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
+              mkdir -p "$CM_BUILD_DIR/.gradle-dist"
+              curl --fail --location --retry 3 \
+                "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" \
+                --output "$CM_BUILD_DIR/.gradle-dist/gradle.zip"
+              unzip -q "$CM_BUILD_DIR/.gradle-dist/gradle.zip" -d "$CM_BUILD_DIR/.gradle-dist"
+            fi
+            cat > "$CM_BUILD_DIR/gradlew" <<'EOF'
+          #!/bin/sh
+          exec "$CM_BUILD_DIR/.gradle-dist/gradle-9.6.0/bin/gradle" "$@"
+          EOF
+            chmod +x "$CM_BUILD_DIR/gradlew"
+          fi
+
+          cd "$CM_BUILD_DIR"
+          ./gradlew --version
+
+      - name: Build app and instrumentation APKs
+        script: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+
+      - name: Verify AndroidJUnitRunner
+        script: |
+          set -e
+          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' | head -n 1)"
+          test -n "$TEST_APK"
+          RUNNER_FOUND=0
+          for DEX in $(unzip -Z1 "$TEST_APK" | grep '^classes.*\.dex$'); do
+            if unzip -p "$TEST_APK" "$DEX" | strings | grep -q 'Landroidx/test/runner/AndroidJUnitRunner;'; then
+              RUNNER_FOUND=1
+              break
+            fi
+          done
+          [ "$RUNNER_FOUND" -eq 1 ]
+
+      - name: Install emulator.wtf CLI
+        script: |
+          set -e
+          mkdir -p "$HOME/bin"
+          curl --fail --location --retry 3 https://maven.emulator.wtf/releases/ew-cli -o "$HOME/bin/ew-cli"
+          chmod +x "$HOME/bin/ew-cli"
+          "$HOME/bin/ew-cli" --version
+
+      - name: Run Android instrumentation on Pixel 7 API 35
+        script: |
+          set -e
+          APP_APK="app/build/outputs/apk/debug/app-debug.apk"
+          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' | head -n 1)"
+          mkdir -p emulator-wtf-results
+
+          "$HOME/bin/ew-cli" \
+            --app "$APP_APK" \
+            --test "$TEST_APK" \
+            --test-runner-class androidx.test.runner.AndroidJUnitRunner \
+            --device model=Pixel7,version=35,gpu=auto \
+            --timeout 15m \
+            --record-video \
+            --outputs-dir emulator-wtf-results
+        test_report: emulator-wtf-results/**/*.xml
+
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/outputs/apk/androidTest/**/*.apk
+      - emulator-wtf-results/**
