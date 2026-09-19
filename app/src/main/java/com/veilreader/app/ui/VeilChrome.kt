@@ -16,7 +16,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -29,7 +28,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -58,51 +56,12 @@ fun VeilWorldBackdrop(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    0f to colors.background,
-                    0.56f to colors.background,
-                    1f to colors.surface.copy(alpha = 0.92f)
-                )
-            )
-    ) {
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 150.dp, y = (-170).dp)
-                .size(430.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            colors.primary.copy(alpha = 0.12f),
-                            colors.primary.copy(alpha = 0.035f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-150).dp, y = 190.dp)
-                .size(420.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            colors.secondary.copy(alpha = 0.09f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        content()
-    }
+            .background(MaterialTheme.colorScheme.background),
+        content = content
+    )
 }
 
 @Composable
@@ -147,13 +106,13 @@ fun VeilBottomDock(
             .navigationBarsPadding()
             .padding(horizontal = 18.dp, vertical = 6.dp),
         shape = RoundedCornerShape(24.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        color = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 10.dp,
+        shadowElevation = 4.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.68f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
         )
     ) {
         Row(
@@ -242,11 +201,11 @@ fun VeilNavigationRail(
             .width(104.dp)
             .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
         shape = RoundedCornerShape(30.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-        shadowElevation = 12.dp,
+        color = MaterialTheme.colorScheme.surface,
+        shadowElevation = 4.dp,
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.64f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
         )
     ) {
         Column(
@@ -317,14 +276,7 @@ fun VeilBrandMark(
             modifier = Modifier
                 .size(52.dp)
                 .clip(RoundedCornerShape(17.dp))
-                .background(
-                    Brush.linearGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.primaryContainer,
-                            MaterialTheme.colorScheme.surfaceVariant
-                        )
-                    )
-                ),
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f)),
             contentAlignment = Alignment.Center
         ) {
             val primary = MaterialTheme.colorScheme.primary
@@ -337,14 +289,14 @@ fun VeilBrandMark(
                 )
                 val leftPage = Path().apply {
                     moveTo(size.width * .12f, size.height * .22f)
-                    quadraticBezierTo(
+                    quadraticTo(
                         size.width * .34f,
                         size.height * .12f,
                         size.width * .50f,
                         size.height * .34f
                     )
                     lineTo(size.width * .50f, size.height * .82f)
-                    quadraticBezierTo(
+                    quadraticTo(
                         size.width * .31f,
                         size.height * .66f,
                         size.width * .12f,
@@ -353,14 +305,14 @@ fun VeilBrandMark(
                 }
                 val rightPage = Path().apply {
                     moveTo(size.width * .88f, size.height * .22f)
-                    quadraticBezierTo(
+                    quadraticTo(
                         size.width * .66f,
                         size.height * .12f,
                         size.width * .50f,
                         size.height * .34f
                     )
                     lineTo(size.width * .50f, size.height * .82f)
-                    quadraticBezierTo(
+                    quadraticTo(
                         size.width * .69f,
                         size.height * .66f,
                         size.width * .88f,
@@ -470,16 +422,16 @@ private fun VeilTabIcon(
             VeilTab.READING -> {
                 val left = Path().apply {
                     moveTo(w * 0.10f, h * 0.22f)
-                    quadraticBezierTo(w * 0.32f, h * 0.14f, w * 0.50f, h * 0.30f)
+                    quadraticTo(w * 0.32f, h * 0.14f, w * 0.50f, h * 0.30f)
                     lineTo(w * 0.50f, h * 0.82f)
-                    quadraticBezierTo(w * 0.30f, h * 0.66f, w * 0.10f, h * 0.72f)
+                    quadraticTo(w * 0.30f, h * 0.66f, w * 0.10f, h * 0.72f)
                     close()
                 }
                 val right = Path().apply {
                     moveTo(w * 0.90f, h * 0.22f)
-                    quadraticBezierTo(w * 0.68f, h * 0.14f, w * 0.50f, h * 0.30f)
+                    quadraticTo(w * 0.68f, h * 0.14f, w * 0.50f, h * 0.30f)
                     lineTo(w * 0.50f, h * 0.82f)
-                    quadraticBezierTo(w * 0.70f, h * 0.66f, w * 0.90f, h * 0.72f)
+                    quadraticTo(w * 0.70f, h * 0.66f, w * 0.90f, h * 0.72f)
                     close()
                 }
                 drawPath(left, tint, style = stroke)

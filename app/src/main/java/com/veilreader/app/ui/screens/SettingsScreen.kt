@@ -15,7 +15,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -54,18 +53,10 @@ fun SettingsScreen(
     var appearance by remember(initialAppearance) { mutableStateOf(initialAppearance) }
     var confirmRestore by remember { mutableStateOf(false) }
 
-    val surface = MaterialTheme.colorScheme.surface
     Box(
         Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.background,
-                        surface.copy(alpha = 0.96f)
-                    )
-                )
-            )
+            .background(MaterialTheme.colorScheme.background)
     ) {
         Column(
             Modifier
@@ -226,12 +217,12 @@ private fun SettingsHero(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-        tonalElevation = 2.dp,
-        shadowElevation = 12.dp,
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
         )
     ) {
         Column(
@@ -286,7 +277,7 @@ private fun SettingsStatusPill(
     Surface(
         modifier = modifier,
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.46f)
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.32f)
     ) {
         Text(
             label,
@@ -323,10 +314,10 @@ private fun SettingsSection(
         Surface(
             modifier = Modifier.fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.54f),
+            color = MaterialTheme.colorScheme.surface,
             border = BorderStroke(
                 1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f)
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
             )
         ) {
             Column(
@@ -420,7 +411,7 @@ private fun InfoRow(
             Modifier
                 .size(38.dp)
                 .clip(MaterialTheme.shapes.medium)
-                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.52f)),
+                .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.32f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
