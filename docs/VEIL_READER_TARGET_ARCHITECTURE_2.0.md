@@ -526,6 +526,8 @@ Constraints:
 
 Manga Hub is a feature family, not a fork of another app.
 
+Its approved clean-room reference composition is documented in `docs/MANGA_REFERENCE_COMPOSITION.md`, combining Mihon, Kotatsu-Redo/kotatsu-parsers-redo, Yūzōnō anime-extensions, Miyomi, AniList/Jikan and controlled source candidates behind Veil-owned interfaces.
+
 ### Provider SPI
 
 ```kotlin
