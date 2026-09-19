@@ -29,3 +29,40 @@ Run a closed test with varied reading habits and devices. Resolve crashes, data-
 ## Immediate unblock
 
 Connect the Veil Reader GitHub repository so the prepared workflow can build an APK and expose actual Android compiler/runtime errors. A source ZIP and passing policy tests alone do not establish app readiness.
+
+
+## 7. Prove product and visual quality
+
+A release is not accepted because it compiles or because requested features exist.
+Run screenshot QA on every affected user-facing surface and verify:
+- visual hierarchy
+- spacing consistency
+- typography
+- iconography
+- light/dark parity
+- RTL
+- large text
+- empty/loading/error/offline states
+- phone/tablet/foldable adaptation
+- animation continuity and interruptibility
+
+Compare the reader against Apple Books, Kindle, Kobo, Google Play Books, ReadEra and Moon+ Reader.
+A visibly cheap, inconsistent or prototype-like screen cannot be GREEN.
+
+## 8. Prove reader feature parity
+
+Before a world-class reader claim, Veil must have validated paths for:
+font family, font size, line spacing, margins, alignment/justification,
+publisher defaults, themes/backgrounds, brightness, scroll/pagination,
+page-turn style, bookmarks, highlights, notes, table of contents and full-book search.
+
+Then add advanced accessibility and wide-screen capabilities:
+font weight, word/character spacing, dyslexia-friendly font,
+line guide/reading ruler, orientation lock, one/two-column layout and TTS/read-along.
+
+## 9. Preserve a Veil identity without hurting usability
+
+Use standard Android interaction patterns and familiar controls.
+Branding is restrained and content-first.
+Fun belongs around reading, not on top of reading.
+No decorative system may reduce legibility, touch reliability, performance or accessibility.

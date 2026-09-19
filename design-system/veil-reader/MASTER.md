@@ -110,3 +110,51 @@ For a new UI feature:
 - `pages/library.md`
 - `pages/reader.md`
 Page files may refine this system but should not silently contradict accessibility, platform, or RTL rules.
+
+
+## World-class visual quality gate — mandatory
+
+Veil Reader is not considered ready when it merely builds, passes tests, or has the requested features.
+Every user-facing release must also pass a visual and interaction quality review against first-class reading products.
+
+Reference bar:
+- Apple Books: calm reader chrome, strong reading controls, restrained branding, excellent typography and accessibility.
+- Kindle: deep readability controls, accessibility, familiar reader behavior.
+- Kobo: discoverable reading settings, font/layout/page-transition control.
+- Google Play Books: simple reading controls, brightness/color modes, one/two-page layouts.
+- ReadEra: low-friction local reading and library simplicity.
+- Moon+ Reader: advanced customization breadth without making the core reader impossible to use.
+
+### Mandatory visual standards
+- No generic AI-dashboard look.
+- No decorative gradient, glow, glass, card, or shadow unless it improves hierarchy.
+- Branding is restrained and subordinate to book content.
+- One icon language, one shape family, one spacing scale, one type hierarchy.
+- Every screen must have a clear primary action and obvious visual hierarchy.
+- Empty/loading/error/offline states are designed states, not placeholder text.
+- Dark and light modes must be equally intentional.
+- Reader chrome must disappear cleanly and never compete with the page.
+- Motion must feel purposeful, short, interruptible, and never block input.
+- All touch targets are practical at >=48dp.
+- RTL/LTR, large font scale, TalkBack, phone/tablet/foldable must be verified.
+
+### Screenshot acceptance
+Before a UI feature can be marked GREEN, capture and review the affected screens for:
+alignment, spacing, typography, contrast, density, icon consistency, hierarchy, truncation,
+RTL, light/dark appearance, and small/large-window behavior.
+
+A green build with visibly poor UI remains YELLOW or RED.
+
+### Reader experience baseline
+The in-reader settings model should be capable of supporting:
+font family, font size, font weight/bold, line spacing, word/character spacing,
+margins, justification/alignment, theme/background, brightness, scroll/pagination,
+page-turn style, publisher defaults, and adaptive one/two-column layout where appropriate.
+
+Advanced accessibility targets include line guide/reading ruler, dyslexia-friendly font options,
+TTS/read-along, reduced motion and strong screen-reader semantics.
+
+### Product personality
+Veil must feel premium, calm, mysterious and enjoyable — not childish, noisy or game-like while reading.
+Fun belongs around the reading experience: library discovery, progression, Castle, achievements and optional delight.
+The page itself remains sacred.
