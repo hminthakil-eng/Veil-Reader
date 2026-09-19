@@ -115,6 +115,7 @@ fun ReaderScreen(
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
+    var showPdfZoom by remember { mutableStateOf(false) }
     val appearance by library.appearance.collectAsStateWithLifecycle(
         initialValue = library.loadAppearance()
     )
@@ -220,7 +221,7 @@ fun ReaderScreen(
         onClose()
     }
 
-    BackHandler(enabled = !showNotebook && !showAppearance) { closeReader() }
+    BackHandler(enabled = !showNotebook && !showAppearance && !showPdfZoom) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
         createReaderFactory(opened, appearance, selectionActionModeCallback)
@@ -437,13 +438,21 @@ fun ReaderScreen(
                         }
                     }
                     ReaderControl(
-                        action = ReaderAction.APPEARANCE,
-                        label = "Appearance",
+                        action = if (opened.format == BookFormat.EPUB) {
+                            ReaderAction.APPEARANCE
+                        } else {
+                            ReaderAction.ZOOM
+                        },
+                        label = if (opened.format == BookFormat.EPUB) "Appearance" else "Zoom",
                         modifier = Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
+                        enabled = navigator != null
                     ) {
                         readerViewModel.onUserInteraction()
-                        showAppearance = true
+                        if (opened.format == BookFormat.EPUB) {
+                            showAppearance = true
+                        } else {
+                            showPdfZoom = true
+                        }
                     }
                 }
             }
@@ -568,6 +577,19 @@ fun ReaderScreen(
             )
         }
     }
+
+    if (showPdfZoom) {
+        ModalBottomSheet(onDismissRequest = { showPdfZoom = false }) {
+            PdfZoomControls(
+                navigator = navigator,
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp)
+                    .padding(bottom = 32.dp),
+                onDone = { showPdfZoom = false }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
@@ -641,7 +663,7 @@ private fun ReaderFragmentHost(
     }
 }
 
-private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE }
+private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
 
 @Composable
 private fun ReaderChromeButton(
@@ -734,50 +756,78 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
                 }
                 drawPath(path, tint, style = stroke)
             }
+            ReaderAction.ZOOM -> {
+                drawCircle(
+                    color = tint,
+                    radius = w * .22f,
+                    center = Offset(w * .43f, h * .40f),
+                    style = stroke
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .58f, h * .56f),
+                    Offset(w * .80f, h * .80f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(tint, Offset(w * .34f, h * .40f), Offset(w * .52f, h * .40f), stroke.width, StrokeCap.Round)
+                drawLine(tint, Offset(w * .43f, h * .31f), Offset(w * .43f, h * .49f), stroke.width, StrokeCap.Round)
+            }
             ReaderAction.APPEARANCE -> Unit
         }
     }
 }
 
-@OptIn(ExperimentalReadiumApi::class)
-internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
-    val normalizedFontScale = fontScale.coerceIn(0.75, 1.8)
+internal data class EpubPreferenceSpec(
+    val theme: ReaderTheme,
+    val backgroundColorArgb: Int?,
+    val textColorArgb: Int?,
+    val fontSize: Double,
+    val lineHeight: Double,
+    val pageMargins: Double,
+    val scroll: Boolean,
+    val publisherStyles: Boolean
+)
+
+internal fun ReaderAppearance.toEpubPreferenceSpec(): EpubPreferenceSpec {
     val usePublisherStyles = publisherStyles
-
-    val explicitBackground = if (usePublisherStyles) {
-        null
-    } else {
-        when (theme) {
-            ReaderTheme.PAPER -> ReadiumColor(0xFFF6F1EA.toInt())
-            ReaderTheme.SEPIA -> ReadiumColor(0xFFF1E5C9.toInt())
-            ReaderTheme.DUSK -> ReadiumColor(0xFF18151D.toInt())
-            ReaderTheme.OLED -> ReadiumColor(AndroidColor.BLACK)
-        }
-    }
-
-    val explicitText = if (usePublisherStyles) {
-        null
-    } else {
-        when (theme) {
-            ReaderTheme.PAPER -> ReadiumColor(0xFF252128.toInt())
-            ReaderTheme.SEPIA -> ReadiumColor(0xFF3D3325.toInt())
-            ReaderTheme.DUSK, ReaderTheme.OLED -> ReadiumColor(0xFFF5F0F7.toInt())
-        }
-    }
-
-    return EpubPreferences(
-        theme = when (theme) {
-            ReaderTheme.PAPER -> Theme.LIGHT
-            ReaderTheme.SEPIA -> Theme.SEPIA
-            ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
+    return EpubPreferenceSpec(
+        theme = theme,
+        backgroundColorArgb = if (usePublisherStyles) null else when (theme) {
+            ReaderTheme.PAPER -> 0xFFF6F1EA.toInt()
+            ReaderTheme.SEPIA -> 0xFFF1E5C9.toInt()
+            ReaderTheme.DUSK -> 0xFF18151D.toInt()
+            ReaderTheme.OLED -> 0xFF000000.toInt()
         },
-        backgroundColor = explicitBackground,
-        textColor = explicitText,
-        fontSize = normalizedFontScale,
+        textColorArgb = if (usePublisherStyles) null else when (theme) {
+            ReaderTheme.PAPER -> 0xFF252128.toInt()
+            ReaderTheme.SEPIA -> 0xFF3D3325.toInt()
+            ReaderTheme.DUSK, ReaderTheme.OLED -> 0xFFF5F0F7.toInt()
+        },
+        fontSize = fontScale.coerceIn(0.75, 1.8),
         lineHeight = lineHeight,
         pageMargins = pageMargins,
         scroll = scroll,
         publisherStyles = usePublisherStyles
+    )
+}
+
+@OptIn(ExperimentalReadiumApi::class)
+internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
+    val spec = toEpubPreferenceSpec()
+    return EpubPreferences(
+        theme = when (spec.theme) {
+            ReaderTheme.PAPER -> Theme.LIGHT
+            ReaderTheme.SEPIA -> Theme.SEPIA
+            ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
+        },
+        backgroundColor = spec.backgroundColorArgb?.let(::ReadiumColor),
+        textColor = spec.textColorArgb?.let(::ReadiumColor),
+        fontSize = spec.fontSize,
+        lineHeight = spec.lineHeight,
+        pageMargins = spec.pageMargins,
+        scroll = spec.scroll,
+        publisherStyles = spec.publisherStyles
     )
 }
 

@@ -85,6 +85,8 @@ dependencies {
     implementation("org.readium.kotlin-toolkit:readium-streamer:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-navigator:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-adapter-pdfium:3.4.0")
+    // Veil exposes explicit PDF zoom controls using the viewer already selected by Readium's Pdfium adapter.
+    implementation("com.github.marain87:AndroidPdfViewer:3.2.8")
 
     baselineProfile(project(":benchmark"))
 
