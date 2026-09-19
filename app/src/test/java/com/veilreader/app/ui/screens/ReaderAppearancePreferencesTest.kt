@@ -4,10 +4,17 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Theme
 
+// Exercise Readium's Android color initialization without starting Veil's application.
+// Pin the runtime independently of targetSdk; these preference mappings need no app resources.
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [28], manifest = Config.NONE, application = android.app.Application::class)
 class ReaderAppearancePreferencesTest {
     @Test
     fun `font size is passed to Readium as a ratio not a percent number`() {
@@ -31,8 +38,8 @@ class ReaderAppearancePreferencesTest {
 
         assertEquals(Theme.SEPIA, prefs.theme)
         assertFalse(prefs.publisherStyles ?: true)
-        assertNotNull(prefs.backgroundColor)
-        assertNotNull(prefs.textColor)
+        assertEquals(ReadiumColor(0xFFF1E5C9.toInt()), prefs.backgroundColor)
+        assertEquals(ReadiumColor(0xFF3D3325.toInt()), prefs.textColor)
     }
 
     @Test
