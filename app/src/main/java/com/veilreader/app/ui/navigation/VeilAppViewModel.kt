@@ -17,6 +17,7 @@ enum class VeilTab(val label: String, val glyph: String) {
 data class VeilRouteState(
     val selectedTab: VeilTab = VeilTab.READING,
     val showArchive: Boolean = false,
+    val showSettings: Boolean = false,
     val activeChamber: String? = null,
     val activeBookId: String? = null,
     val locatorOverrideJson: String? = null
@@ -38,6 +39,7 @@ class VeilAppViewModel(
         copy(
             selectedTab = tab,
             showArchive = false,
+            showSettings = false,
             activeChamber = null,
             activeBookId = null,
             locatorOverrideJson = null
@@ -55,12 +57,26 @@ class VeilAppViewModel(
 
     fun closeArchive() = update { copy(showArchive = false) }
 
+    fun openSettings() = update {
+        copy(
+            selectedTab = VeilTab.PROFILE,
+            showSettings = true,
+            showArchive = false,
+            activeChamber = null,
+            activeBookId = null,
+            locatorOverrideJson = null
+        )
+    }
+
+    fun closeSettings() = update { copy(showSettings = false) }
+
     fun openChamber(chamberId: String) {
         if (chamberId !in RESTORABLE_CHAMBERS) return
         update {
             copy(
                 activeChamber = chamberId,
                 showArchive = false,
+                showSettings = false,
                 activeBookId = null,
                 locatorOverrideJson = null
             )
@@ -76,6 +92,7 @@ class VeilAppViewModel(
                 activeBookId = bookId,
                 locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
                 showArchive = false,
+                showSettings = false,
                 activeChamber = null
             )
         }
@@ -98,6 +115,7 @@ class VeilAppViewModel(
             activeBookId = null,
             locatorOverrideJson = null,
             showArchive = false,
+            showSettings = false,
             activeChamber = null
         )
     }
@@ -111,6 +129,7 @@ class VeilAppViewModel(
     private fun persist(next: VeilRouteState) {
         savedStateHandle[KEY_TAB] = next.selectedTab.name
         savedStateHandle[KEY_ARCHIVE] = next.showArchive
+        savedStateHandle[KEY_SETTINGS] = next.showSettings
         if (next.activeChamber == null) savedStateHandle.remove<String>(KEY_CHAMBER)
         else savedStateHandle[KEY_CHAMBER] = next.activeChamber
         if (next.activeBookId == null) savedStateHandle.remove<String>(KEY_BOOK)
@@ -126,6 +145,7 @@ class VeilAppViewModel(
         return VeilRouteState(
             selectedTab = tab,
             showArchive = savedStateHandle.get<Boolean>(KEY_ARCHIVE) == true,
+            showSettings = savedStateHandle.get<Boolean>(KEY_SETTINGS) == true,
             activeChamber = savedStateHandle.get<String>(KEY_CHAMBER),
             activeBookId = savedStateHandle.get<String>(KEY_BOOK),
             locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR)
@@ -137,14 +157,27 @@ class VeilAppViewModel(
         if (cleanBookId != null) {
             return copy(
                 showArchive = false,
+                showSettings = false,
                 activeChamber = null,
                 activeBookId = cleanBookId,
                 locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank)
             )
         }
+        if (showSettings) {
+            return copy(
+                selectedTab = VeilTab.PROFILE,
+                showArchive = false,
+                showSettings = true,
+                activeChamber = null,
+                activeBookId = null,
+                locatorOverrideJson = null
+            )
+        }
+
         val cleanChamber = activeChamber?.takeIf { it in RESTORABLE_CHAMBERS }
         return copy(
             showArchive = showArchive && cleanChamber == null,
+            showSettings = false,
             activeChamber = cleanChamber,
             activeBookId = null,
             locatorOverrideJson = null
@@ -154,6 +187,7 @@ class VeilAppViewModel(
     companion object {
         private const val KEY_TAB = "veil.route.tab"
         private const val KEY_ARCHIVE = "veil.route.archive"
+        private const val KEY_SETTINGS = "veil.route.settings"
         private const val KEY_CHAMBER = "veil.route.chamber"
         private const val KEY_BOOK = "veil.route.book"
         private const val KEY_LOCATOR = "veil.route.locator"
