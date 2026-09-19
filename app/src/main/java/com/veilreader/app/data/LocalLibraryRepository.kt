@@ -78,6 +78,7 @@ class LocalLibraryRepository internal constructor(
     val bookmarks: StateFlow<List<Bookmark>> = _bookmarks
 
     private val _appearance = MutableStateFlow(ReaderAppearance())
+    val appearance: StateFlow<ReaderAppearance> = _appearance
 
     init {
         scope.launch {
