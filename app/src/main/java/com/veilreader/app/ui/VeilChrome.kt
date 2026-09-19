@@ -35,10 +35,14 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -213,7 +217,7 @@ private fun VeilDockItem(
         }
         Spacer(Modifier.height(2.dp))
         Text(
-            tab.label,
+            veilTabLabel(tab),
             style = MaterialTheme.typography.labelSmall.copy(
                 fontSize = 9.sp,
                 letterSpacing = 0.05.sp,
@@ -280,7 +284,7 @@ fun VeilNavigationRail(
                         VeilTabIcon(tab, foreground, Modifier.size(24.dp))
                         Spacer(Modifier.height(5.dp))
                         Text(
-                            tab.label,
+                            veilTabLabel(tab),
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontSize = 10.sp,
                                 letterSpacing = 0.1.sp
@@ -401,13 +405,26 @@ fun VeilBrandMark(
 }
 
 @Composable
+private fun veilTabLabel(tab: VeilTab): String = stringResource(
+    when (tab) {
+        VeilTab.READING -> R.string.nav_reading
+        VeilTab.LIBRARY -> R.string.nav_library
+        VeilTab.CASTLE -> R.string.nav_castle
+        VeilTab.PATH -> R.string.nav_path
+        VeilTab.PROFILE -> R.string.nav_profile
+    }
+)
+
+@Composable
 private fun VeilSettingsButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tint = MaterialTheme.colorScheme.onSurfaceVariant
+    val settingsLabel = stringResource(R.string.settings)
     Box(
         modifier = modifier
+            .semantics { contentDescription = settingsLabel }
             .clip(RoundedCornerShape(19.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f))
             .clickable(role = Role.Button, onClick = onClick),

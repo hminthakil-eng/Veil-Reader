@@ -16,8 +16,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.R
 import com.veilreader.app.data.settings.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -79,9 +81,9 @@ fun SettingsScreen(
             SettingsHero(appearance = appearance)
 
             SettingsSection(
-                eyebrow = "App",
-                title = "Interface appearance",
-                subtitle = "Choose how Veil Reader itself follows light and dark mode."
+                eyebrow = stringResource(R.string.settings_section_app),
+                title = stringResource(R.string.settings_interface_appearance),
+                subtitle = stringResource(R.string.settings_interface_appearance_subtitle)
             ) {
                 ThemeModeSelector(
                     selected = appThemeMode,
@@ -90,9 +92,9 @@ fun SettingsScreen(
             }
 
             SettingsSection(
-                eyebrow = "Reading",
-                title = "Reading experience",
-                subtitle = "Typography, page layout and persistent EPUB defaults."
+                eyebrow = stringResource(R.string.settings_section_reading),
+                title = stringResource(R.string.settings_reading_experience),
+                subtitle = stringResource(R.string.settings_reading_experience_subtitle)
             ) {
                 ReadingAppearanceControls(
                     appearance = appearance,
@@ -104,56 +106,64 @@ fun SettingsScreen(
             }
 
             SettingsSection(
-                eyebrow = "Library",
-                title = "Data & portability",
-                subtitle = "Your library stays local until you explicitly export it."
+                eyebrow = stringResource(R.string.settings_section_library),
+                title = stringResource(R.string.settings_data_portability),
+                subtitle = stringResource(R.string.settings_data_portability_subtitle)
             ) {
                 SettingsActionRow(
-                    title = "Export library backup",
-                    subtitle = "Books, positions, annotations, Path and Castle state.",
-                    action = if (exporting) "Exporting…" else "Export",
+                    title = stringResource(R.string.settings_export_backup),
+                    subtitle = stringResource(R.string.settings_export_backup_subtitle),
+                    action = if (exporting) {
+                        stringResource(R.string.action_exporting)
+                    } else {
+                        stringResource(R.string.action_export)
+                    },
                     enabled = !exporting && !restoring,
                     onClick = { backupPicker.launch("veil-reader-backup.zip") }
                 )
                 SettingsDivider()
                 SettingsActionRow(
-                    title = "Restore backup",
-                    subtitle = "Replace the local library with a Veil backup.",
-                    action = if (restoring) "Restoring…" else "Restore",
+                    title = stringResource(R.string.settings_restore_backup),
+                    subtitle = stringResource(R.string.settings_restore_backup_subtitle),
+                    action = if (restoring) {
+                        stringResource(R.string.action_restoring)
+                    } else {
+                        stringResource(R.string.action_restore)
+                    },
                     enabled = !exporting && !restoring,
                     onClick = { confirmRestore = true }
                 )
                 SettingsDivider()
                 SettingsActionRow(
-                    title = "Export notebook",
-                    subtitle = "Highlights and notes as portable Markdown.",
-                    action = "Export",
+                    title = stringResource(R.string.settings_export_notebook),
+                    subtitle = stringResource(R.string.settings_export_notebook_subtitle),
+                    action = stringResource(R.string.action_export),
                     enabled = !exporting && !restoring,
                     onClick = { notesPicker.launch("veil-reader-notebook.md") }
                 )
             }
 
             SettingsSection(
-                eyebrow = "Privacy",
-                title = "Local by default",
-                subtitle = "No account is required for the core reading experience."
+                eyebrow = stringResource(R.string.settings_section_privacy),
+                title = stringResource(R.string.settings_local_by_default),
+                subtitle = stringResource(R.string.settings_local_by_default_subtitle)
             ) {
                 InfoRow(
                     badge = "01",
-                    title = "Library",
-                    body = "Imported publications, reading progress and annotations remain on this device."
+                    title = stringResource(R.string.settings_privacy_library_title),
+                    body = stringResource(R.string.settings_privacy_library_body)
                 )
                 SettingsDivider()
                 InfoRow(
                     badge = "02",
-                    title = "Exports",
-                    body = "Files leave the app only when you choose an export destination."
+                    title = stringResource(R.string.settings_privacy_exports_title),
+                    body = stringResource(R.string.settings_privacy_exports_body)
                 )
                 SettingsDivider()
                 InfoRow(
                     badge = "03",
-                    title = "Reader core",
-                    body = "Readium Kotlin Toolkit 3.4 · offline-first reader foundation."
+                    title = stringResource(R.string.settings_privacy_reader_core_title),
+                    body = stringResource(R.string.settings_privacy_reader_core_body)
                 )
             }
         }
@@ -162,14 +172,14 @@ fun SettingsScreen(
     if (confirmRestore) {
         AlertDialog(
             onDismissRequest = { confirmRestore = false },
-            title = { Text("Replace local Veil Reader data?") },
+            title = { Text(stringResource(R.string.settings_restore_dialog_title)) },
             text = {
-                Text(
-                    "Restore replaces your current library, annotations, reading progress, Path progress and Castle state. Export a fresh backup first if you need the current state."
-                )
+                Text(stringResource(R.string.settings_restore_dialog_body))
             },
             dismissButton = {
-                TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmRestore = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
             },
             confirmButton = {
                 Button(
@@ -177,7 +187,7 @@ fun SettingsScreen(
                         confirmRestore = false
                         restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
                     }
-                ) { Text("Choose backup") }
+                ) { Text(stringResource(R.string.action_choose_backup)) }
             }
         )
     }
@@ -192,7 +202,7 @@ private fun SettingsTopBar(onBack: () -> Unit) {
             onClick = onBack,
             contentPadding = PaddingValues(horizontal = 0.dp, vertical = 8.dp)
         ) {
-            Text("‹ Back")
+            Text(stringResource(R.string.action_back))
         }
         Spacer(Modifier.weight(1f))
         Surface(
@@ -200,7 +210,7 @@ private fun SettingsTopBar(onBack: () -> Unit) {
             color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
         ) {
             Text(
-                "SETTINGS",
+                stringResource(R.string.settings),
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -231,11 +241,11 @@ private fun SettingsHero(
             VeilBrandMark(showWordmark = true)
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text(
-                    "Your reading environment",
+                    stringResource(R.string.settings_hero_title),
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
-                    "Calm defaults, explicit data controls and one place for every reader preference.",
+                    stringResource(R.string.settings_hero_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -249,11 +259,18 @@ private fun SettingsHero(
                     modifier = Modifier.weight(1f)
                 )
                 SettingsStatusPill(
-                    label = if (appearance.scroll) "Scroll" else "Pages",
+                    label = if (appearance.scroll) {
+                        stringResource(R.string.reader_mode_scroll)
+                    } else {
+                        stringResource(R.string.reader_mode_pages)
+                    },
                     modifier = Modifier.weight(1f)
                 )
                 SettingsStatusPill(
-                    label = ((appearance.fontScale * 100).toInt().toString() + "% text"),
+                    label = stringResource(
+                        R.string.settings_text_percent,
+                        (appearance.fontScale * 100).toInt()
+                    ),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -291,7 +308,7 @@ private fun SettingsSection(
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
-                eyebrow.uppercase(),
+                eyebrow,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary
             )
@@ -331,9 +348,9 @@ private fun ThemeModeSelector(
     ) {
         AppThemeMode.entries.forEach { mode ->
             val label = when (mode) {
-                AppThemeMode.SYSTEM -> "System"
-                AppThemeMode.LIGHT -> "Light"
-                AppThemeMode.DARK -> "Dark"
+                AppThemeMode.SYSTEM -> stringResource(R.string.theme_system)
+                AppThemeMode.LIGHT -> stringResource(R.string.theme_light)
+                AppThemeMode.DARK -> stringResource(R.string.theme_dark)
             }
             FilterChip(
                 selected = selected == mode,
@@ -345,9 +362,9 @@ private fun ThemeModeSelector(
     }
     Text(
         when (selected) {
-            AppThemeMode.SYSTEM -> "Veil follows your device appearance."
-            AppThemeMode.LIGHT -> "The app shell stays in the warm paper palette."
-            AppThemeMode.DARK -> "The app shell stays in the low-glare dark palette."
+            AppThemeMode.SYSTEM -> stringResource(R.string.theme_system_description)
+            AppThemeMode.LIGHT -> stringResource(R.string.theme_light_description)
+            AppThemeMode.DARK -> stringResource(R.string.theme_dark_description)
         },
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -434,9 +451,10 @@ private fun SettingsDivider() {
     )
 }
 
+@Composable
 private fun themeLabel(theme: ReaderTheme): String = when (theme) {
-    ReaderTheme.PAPER -> "Paper"
-    ReaderTheme.SEPIA -> "Sepia"
-    ReaderTheme.DUSK -> "Dusk"
-    ReaderTheme.OLED -> "OLED"
+    ReaderTheme.PAPER -> stringResource(R.string.reader_theme_paper)
+    ReaderTheme.SEPIA -> stringResource(R.string.reader_theme_sepia)
+    ReaderTheme.DUSK -> stringResource(R.string.reader_theme_dusk)
+    ReaderTheme.OLED -> stringResource(R.string.reader_theme_oled)
 }

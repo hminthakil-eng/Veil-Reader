@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ویل ریدر</string>
+
+    <string name="nav_reading">مطالعه</string>
+    <string name="nav_library">کتابخانه</string>
+    <string name="nav_castle">قلعه</string>
+    <string name="nav_path">مسیر</string>
+    <string name="nav_profile">پروفایل</string>
+    <string name="settings">تنظیمات</string>
+
+    <string name="settings_section_app">برنامه</string>
+    <string name="settings_interface_appearance">ظاهر برنامه</string>
+    <string name="settings_interface_appearance_subtitle">نحوه هماهنگی ویل ریدر با حالت روشن و تاریک را انتخاب کنید.</string>
+
+    <string name="settings_section_reading">مطالعه</string>
+    <string name="settings_reading_experience">تجربه مطالعه</string>
+    <string name="settings_reading_experience_subtitle">تایپوگرافی، چیدمان صفحه و تنظیمات پیش‌فرض EPUB.</string>
+
+    <string name="settings_section_library">کتابخانه</string>
+    <string name="settings_data_portability">داده و انتقال‌پذیری</string>
+    <string name="settings_data_portability_subtitle">کتابخانه شما تا زمانی که خودتان خروجی نگیرید روی دستگاه می‌ماند.</string>
+    <string name="settings_export_backup">خروجی پشتیبان کتابخانه</string>
+    <string name="settings_export_backup_subtitle">کتاب‌ها، موقعیت مطالعه، یادداشت‌ها، مسیر و وضعیت قلعه.</string>
+    <string name="settings_restore_backup">بازیابی نسخه پشتیبان</string>
+    <string name="settings_restore_backup_subtitle">کتابخانه محلی را با یک نسخه پشتیبان ویل جایگزین کنید.</string>
+    <string name="settings_export_notebook">خروجی دفتر یادداشت</string>
+    <string name="settings_export_notebook_subtitle">هایلایت‌ها و یادداشت‌ها به‌صورت Markdown قابل‌انتقال.</string>
+    <string name="action_export">خروجی</string>
+    <string name="action_exporting">در حال خروجی…</string>
+    <string name="action_restore">بازیابی</string>
+    <string name="action_restoring">در حال بازیابی…</string>
+
+    <string name="settings_section_privacy">حریم خصوصی</string>
+    <string name="settings_local_by_default">محلی به‌صورت پیش‌فرض</string>
+    <string name="settings_local_by_default_subtitle">برای تجربه اصلی مطالعه نیازی به حساب کاربری نیست.</string>
+    <string name="settings_privacy_library_title">کتابخانه</string>
+    <string name="settings_privacy_library_body">کتاب‌های واردشده، پیشرفت مطالعه و یادداشت‌ها روی همین دستگاه باقی می‌مانند.</string>
+    <string name="settings_privacy_exports_title">خروجی‌ها</string>
+    <string name="settings_privacy_exports_body">فایل‌ها فقط زمانی از برنامه خارج می‌شوند که خودتان مقصد خروجی را انتخاب کنید.</string>
+    <string name="settings_privacy_reader_core_title">هسته کتابخوان</string>
+    <string name="settings_privacy_reader_core_body">Readium Kotlin Toolkit 3.4 · هسته آفلاین‌محور کتابخوان.</string>
+
+    <string name="settings_restore_dialog_title">داده‌های محلی ویل ریدر جایگزین شوند؟</string>
+    <string name="settings_restore_dialog_body">بازیابی، کتابخانه فعلی، یادداشت‌ها، پیشرفت مطالعه، مسیر و وضعیت قلعه را جایگزین می‌کند. اگر وضعیت فعلی را لازم دارید ابتدا یک نسخه پشتیبان تازه بگیرید.</string>
+    <string name="action_cancel">لغو</string>
+    <string name="action_choose_backup">انتخاب نسخه پشتیبان</string>
+    <string name="action_back">بازگشت</string>
+
+    <string name="settings_hero_title">محیط مطالعه شما</string>
+    <string name="settings_hero_body">تنظیمات آرام، کنترل شفاف داده‌ها و یک محل واحد برای همه ترجیحات مطالعه.</string>
+    <string name="reader_mode_scroll">اسکرول</string>
+    <string name="reader_mode_pages">صفحه‌ای</string>
+    <string name="settings_text_percent">متن %1$d٪</string>
+
+    <string name="theme_system">سیستم</string>
+    <string name="theme_light">روشن</string>
+    <string name="theme_dark">تاریک</string>
+    <string name="theme_system_description">ویل از ظاهر دستگاه شما پیروی می‌کند.</string>
+    <string name="theme_light_description">پوسته برنامه همیشه با پالت کاغذی روشن نمایش داده می‌شود.</string>
+    <string name="theme_dark_description">پوسته برنامه همیشه با پالت تاریک و کم‌نور نمایش داده می‌شود.</string>
+
+    <string name="reader_theme_paper">کاغذ</string>
+    <string name="reader_theme_sepia">سپیا</string>
+    <string name="reader_theme_dusk">گرگ‌ومیش</string>
+    <string name="reader_theme_oled">OLED</string>
+
+    <string name="reading_appearance_title">ظاهر مطالعه</string>
+    <string name="reading_appearance_subtitle">این تنظیمات روی همین دستگاه ذخیره می‌شوند و دفعه بعد برای EPUB استفاده خواهند شد.</string>
+    <string name="reading_presets">پیش‌تنظیم‌ها</string>
+    <string name="reading_preset_book">کتاب</string>
+    <string name="reading_preset_comfort">راحت</string>
+    <string name="reading_preset_night">شب</string>
+    <string name="reading_preset_oled">OLED</string>
+    <string name="reading_text_size_value">اندازه متن · %1$d٪</string>
+    <string name="reading_line_height_value">ارتفاع خط · %1$.2f</string>
+    <string name="reading_page_margins_value">حاشیه صفحه · %1$.2f</string>
+    <string name="reading_continuous_scroll">اسکرول پیوسته</string>
+    <string name="reading_continuous_scroll_description">برای مطالعه صفحه‌ای با ژست ورق‌زدن، این گزینه را خاموش کنید.</string>
+    <string name="reading_page_turn">ورق‌زدن</string>
+    <string name="reading_page_turn_paper_curl">تاخوردگی کاغذی</string>
+    <string name="reading_page_turn_simple_slide">اسلاید ساده</string>
+    <string name="reading_page_turn_description">حالت کاغذی لبه صفحه را دنبال می‌کند؛ اسلاید ساده گزینه سبک‌تر و سازگارتر است.</string>
+    <string name="reading_publisher_styling">استایل ناشر</string>
+    <string name="reading_publisher_styling_description">در صورت امکان تایپوگرافی و چیدمان اصلی کتاب حفظ شود.</string>
+    <string name="reading_back_to_reading">بازگشت به مطالعه</string>
+</resources>

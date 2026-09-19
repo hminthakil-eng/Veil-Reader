@@ -7,10 +7,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.R
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -28,25 +30,38 @@ internal fun ReadingAppearanceControls(
     modifier: Modifier = Modifier,
     onDone: (() -> Unit)? = null
 ) {
+    val continuousScrollLabel = stringResource(R.string.reading_continuous_scroll)
+    val publisherStylingLabel = stringResource(R.string.reading_publisher_styling)
+
     Column(
         modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "These defaults stay on this device and are used the next time you open an EPUB.",
+                stringResource(R.string.reading_appearance_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                stringResource(R.string.reading_appearance_subtitle),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
-        Text("Presets", style = MaterialTheme.typography.titleMedium)
+        Text(
+            stringResource(R.string.reading_presets),
+            style = MaterialTheme.typography.titleMedium
+        )
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
+            AppearancePreset(
+                stringResource(R.string.reading_preset_book),
+                appearance.theme == ReaderTheme.PAPER
+            ) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.PAPER,
@@ -58,7 +73,10 @@ internal fun ReadingAppearanceControls(
                     )
                 )
             }
-            AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
+            AppearancePreset(
+                stringResource(R.string.reading_preset_comfort),
+                appearance.theme == ReaderTheme.SEPIA
+            ) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.SEPIA,
@@ -70,7 +88,10 @@ internal fun ReadingAppearanceControls(
                     )
                 )
             }
-            AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
+            AppearancePreset(
+                stringResource(R.string.reading_preset_night),
+                appearance.theme == ReaderTheme.DUSK
+            ) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.DUSK,
@@ -81,7 +102,10 @@ internal fun ReadingAppearanceControls(
                     )
                 )
             }
-            AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
+            AppearancePreset(
+                stringResource(R.string.reading_preset_oled),
+                appearance.theme == ReaderTheme.OLED
+            ) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.OLED,
@@ -94,36 +118,76 @@ internal fun ReadingAppearanceControls(
             }
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
 
-        Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
+        Text(
+            stringResource(
+                R.string.reading_text_size_value,
+                (appearance.fontScale * 100).toInt()
+            ),
+            fontWeight = FontWeight.SemiBold
+        )
         Slider(
             value = appearance.fontScale.toFloat(),
-            onValueChange = { onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false)) },
+            onValueChange = {
+                onChange(
+                    appearance.copy(
+                        fontScale = it.toDouble(),
+                        publisherStyles = false
+                    )
+                )
+            },
             valueRange = .75f..1.8f
         )
 
-        Text("Line height · ${"%.2f".format(appearance.lineHeight)}", fontWeight = FontWeight.SemiBold)
+        Text(
+            stringResource(R.string.reading_line_height_value, appearance.lineHeight),
+            fontWeight = FontWeight.SemiBold
+        )
         Slider(
             value = appearance.lineHeight.toFloat(),
-            onValueChange = { onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
+            onValueChange = {
+                onChange(
+                    appearance.copy(
+                        lineHeight = it.toDouble(),
+                        publisherStyles = false
+                    )
+                )
+            },
             valueRange = 1.1f..2.0f
         )
 
-        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
+        Text(
+            stringResource(R.string.reading_page_margins_value, appearance.pageMargins),
+            fontWeight = FontWeight.SemiBold
+        )
         Slider(
             value = appearance.pageMargins.toFloat(),
-            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
+            onValueChange = {
+                onChange(
+                    appearance.copy(
+                        pageMargins = it.toDouble(),
+                        publisherStyles = false
+                    )
+                )
+            },
             valueRange = .5f..2.0f
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        HorizontalDivider(
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+        )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Turn this off for paginated reading with page-turn gestures.",
+                    continuousScrollLabel,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    stringResource(R.string.reading_continuous_scroll_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -131,13 +195,18 @@ internal fun ReadingAppearanceControls(
             Switch(
                 checked = appearance.scroll,
                 onCheckedChange = { onChange(appearance.copy(scroll = it)) },
-                modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
+                modifier = Modifier.semantics {
+                    contentDescription = continuousScrollLabel
+                }
             )
         }
 
         if (!appearance.scroll) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Page turn", fontWeight = FontWeight.SemiBold)
+                Text(
+                    stringResource(R.string.reading_page_turn),
+                    fontWeight = FontWeight.SemiBold
+                )
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -145,22 +214,30 @@ internal fun ReadingAppearanceControls(
                     FilterChip(
                         selected = appearance.pageTurnStyle == PageTurnStyle.PAPER,
                         onClick = {
-                            onChange(appearance.copy(pageTurnStyle = PageTurnStyle.PAPER))
+                            onChange(
+                                appearance.copy(pageTurnStyle = PageTurnStyle.PAPER)
+                            )
                         },
-                        label = { Text("Paper curl") },
+                        label = {
+                            Text(stringResource(R.string.reading_page_turn_paper_curl))
+                        },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     )
                     FilterChip(
                         selected = appearance.pageTurnStyle == PageTurnStyle.SLIDE,
                         onClick = {
-                            onChange(appearance.copy(pageTurnStyle = PageTurnStyle.SLIDE))
+                            onChange(
+                                appearance.copy(pageTurnStyle = PageTurnStyle.SLIDE)
+                            )
                         },
-                        label = { Text("Simple slide") },
+                        label = {
+                            Text(stringResource(R.string.reading_page_turn_simple_slide))
+                        },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     )
                 }
                 Text(
-                    "Paper curl follows the page edge. Simple slide is a lighter compatibility option.",
+                    stringResource(R.string.reading_page_turn_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -169,30 +246,44 @@ internal fun ReadingAppearanceControls(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text("Publisher styling", fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Keep the book's original typography and layout when possible.",
+                    publisherStylingLabel,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    stringResource(R.string.reading_publisher_styling_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Switch(
                 checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
-                modifier = Modifier.semantics { contentDescription = "Publisher styling" }
+                onCheckedChange = {
+                    onChange(appearance.copy(publisherStyles = it))
+                },
+                modifier = Modifier.semantics {
+                    contentDescription = publisherStylingLabel
+                }
             )
         }
 
         onDone?.let { done ->
-            Button(onClick = done, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-                Text("Back to reading")
+            Button(
+                onClick = done,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+            ) {
+                Text(stringResource(R.string.reading_back_to_reading))
             }
         }
     }
 }
 
 @Composable
-private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun AppearancePreset(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
     FilterChip(
         selected = selected,
         onClick = onClick,
