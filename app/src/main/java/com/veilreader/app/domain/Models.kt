@@ -117,7 +117,15 @@ data class ReaderAppearance(
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER
-)
+) {
+    /**
+     * Apply a page palette without resetting the user's reading preferences.
+     * The current engine mapping requires publisherStyles=false for explicit colors;
+     * the UI explains this override before the user selects a palette.
+     */
+    fun withPageTheme(value: ReaderTheme): ReaderAppearance =
+        copy(theme = value, publisherStyles = false)
+}
 
 /** A saved reading location, independent of text selection (also supports PDF). */
 data class Bookmark(
