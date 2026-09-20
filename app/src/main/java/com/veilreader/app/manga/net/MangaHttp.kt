@@ -8,8 +8,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import okhttp3.FormBody
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class MangaHttpResponse(
     val code: Int,
@@ -29,6 +31,14 @@ fun interface MangaHttpClient {
         fields: Map<String, String>
     ): MangaHttpResponse {
         throw MangaSourceException.Unsupported("This HTTP client does not support form POST.")
+    }
+
+    suspend fun postJson(
+        url: String,
+        headers: Map<String, String>,
+        json: String
+    ): MangaHttpResponse {
+        throw MangaSourceException.Unsupported("This HTTP client does not support JSON POST.")
     }
 }
 
@@ -59,6 +69,18 @@ class OkHttpMangaHttpClient(
             request = Request.Builder().url(url).post(body)
         )
     }
+
+    override suspend fun postJson(
+        url: String,
+        headers: Map<String, String>,
+        json: String
+    ): MangaHttpResponse = executeRequest(
+        url = url,
+        headers = headers,
+        request = Request.Builder()
+            .url(url)
+            .post(json.toRequestBody("application/json; charset=utf-8".toMediaType()))
+    )
 
     private suspend fun executeRequest(
         url: String,
@@ -144,6 +166,17 @@ class PacedMangaHttpClient(
     ): MangaHttpResponse = mutex.withLock {
         waitForPermit()
         val result = delegate.postForm(url, headers, fields)
+        nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
+        result
+    }
+
+    override suspend fun postJson(
+        url: String,
+        headers: Map<String, String>,
+        json: String
+    ): MangaHttpResponse = mutex.withLock {
+        waitForPermit()
+        val result = delegate.postJson(url, headers, json)
         nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
         result
     }
