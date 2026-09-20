@@ -65,7 +65,13 @@ class MangaLibraryRepository internal constructor(
 
         database.withTransaction {
             val existingBindings = database.mangaSourceBindings().listForBook(bookId)
-            val isPreferred = makePreferred || existingBindings.isEmpty()
+            val existingForSource = existingBindings.firstOrNull {
+                it.sourceId == descriptor.id.value
+            }
+            val isPreferred =
+                makePreferred ||
+                    existingBindings.isEmpty() ||
+                    existingForSource?.isPreferred == true
 
             database.mangaSourceBindings().upsert(
                 MangaSourceBindingEntity(
@@ -94,6 +100,9 @@ class MangaLibraryRepository internal constructor(
                 )
                 val chapterId = existingBinding?.chapterId ?: UUID.randomUUID().toString()
                 val existing = existingById[chapterId]
+                require(existingBinding == null || existing != null) {
+                    "Source chapter is already bound to a different Veil library item."
+                }
 
                 if (existing == null) created += chapterId else reused += chapterId
 
