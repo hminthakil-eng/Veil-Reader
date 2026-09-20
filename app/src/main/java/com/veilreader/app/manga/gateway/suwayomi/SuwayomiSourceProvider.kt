@@ -110,7 +110,15 @@ class SuwayomiSourceProvider internal constructor(
                 "Suwayomi chapter key is no longer a numeric server id."
             )
 
-        return client.pages(chapterId).mapIndexed { index, request ->
+        val mangaId = ref.manga.key.toIntOrNull()
+            ?: throw MangaSourceException.SourceChanged(
+                "Suwayomi manga key is no longer a numeric server id."
+            )
+
+        return client.pages(
+            chapterId = chapterId,
+            expectedMangaId = mangaId
+        ).mapIndexed { index, request ->
             MangaPage(index = index, image = request)
         }
     }
