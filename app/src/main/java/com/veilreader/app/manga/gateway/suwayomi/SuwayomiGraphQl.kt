@@ -42,11 +42,11 @@ data class SuwayomiServerConfig(
         require(uri.query == null && uri.fragment == null) {
             "Suwayomi origin must not contain query or fragment components."
         }
-        require(uri.scheme == "https" || (allowInsecureHttp && uri.scheme == "http")) {
+        val scheme = uri.scheme.lowercase()
+        require(scheme == "https" || (allowInsecureHttp && scheme == "http")) {
             "Suwayomi requires HTTPS unless insecure HTTP is explicitly enabled."
         }
-        val portPart = if (uri.port == -1) "" else ":" + uri.port
-        normalizedOrigin = "${uri.scheme}://${uri.host}$portPart" + uri.path.trimEnd('/')
+        normalizedOrigin = scheme + "://" + uri.rawAuthority + uri.path.trimEnd('/')
         graphQlUrl = normalizedOrigin + "/api/graphql"
     }
 }
