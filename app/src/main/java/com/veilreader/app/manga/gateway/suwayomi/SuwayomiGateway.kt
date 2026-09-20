@@ -68,8 +68,8 @@ class SuwayomiGateway(
 
     private companion object {
         val SOURCES_QUERY = """
-            query VeilSuwayomiSources(\${'$'}first: Int!) {
-              sources(first: \${'$'}first) {
+            query VeilSuwayomiSources(${'$'}first: Int!) {
+              sources(first: ${'$'}first) {
                 nodes {
                   id
                   name
@@ -269,8 +269,8 @@ class SuwayomiSourceProvider internal constructor(
 
     private companion object {
         val BROWSE_MUTATION = """
-            mutation VeilSuwayomiBrowse(\${'$'}input: FetchSourceMangaInput!) {
-              fetchSourceManga(input: \${'$'}input) {
+            mutation VeilSuwayomiBrowse(${'$'}input: FetchSourceMangaInput!) {
+              fetchSourceManga(input: ${'$'}input) {
                 hasNextPage
                 mangas {
                   id
@@ -284,8 +284,8 @@ class SuwayomiSourceProvider internal constructor(
         """.trimIndent()
 
         val UPDATE_MUTATION = """
-            mutation VeilSuwayomiUpdate(\${'$'}input: FetchMangaAndChaptersInput!) {
-              fetchMangaAndChapters(input: \${'$'}input) {
+            mutation VeilSuwayomiUpdate(${'$'}input: FetchMangaAndChaptersInput!) {
+              fetchMangaAndChapters(input: ${'$'}input) {
                 manga {
                   id
                   sourceId
@@ -313,8 +313,8 @@ class SuwayomiSourceProvider internal constructor(
         """.trimIndent()
 
         val PAGES_MUTATION = """
-            mutation VeilSuwayomiPages(\${'$'}input: FetchChapterPagesInput!) {
-              fetchChapterPages(input: \${'$'}input) {
+            mutation VeilSuwayomiPages(${'$'}input: FetchChapterPagesInput!) {
+              fetchChapterPages(input: ${'$'}input) {
                 chapter {
                   id
                   pageCount
