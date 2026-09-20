@@ -32,6 +32,7 @@ data class MangaChapterSnapshot(
 data class MangaChapterBindingSnapshot(
     val chapterId: String,
     val sourceId: String,
+    val mangaSourceKey: String,
     val sourceChapterKey: String,
     val lastSeenAtEpochMs: Long
 )
@@ -89,6 +90,7 @@ internal fun MangaChapterSnapshot.toEntity() = MangaChapterEntity(
 internal fun MangaChapterBindingEntity.toSnapshot() = MangaChapterBindingSnapshot(
     chapterId = chapterId,
     sourceId = sourceId,
+    mangaSourceKey = mangaSourceKey,
     sourceChapterKey = sourceChapterKey,
     lastSeenAtEpochMs = lastSeenAtEpochMs
 )
@@ -96,6 +98,7 @@ internal fun MangaChapterBindingEntity.toSnapshot() = MangaChapterBindingSnapsho
 internal fun MangaChapterBindingSnapshot.toEntity() = MangaChapterBindingEntity(
     chapterId = chapterId,
     sourceId = sourceId,
+    mangaSourceKey = mangaSourceKey,
     sourceChapterKey = sourceChapterKey,
     lastSeenAtEpochMs = lastSeenAtEpochMs
 )
