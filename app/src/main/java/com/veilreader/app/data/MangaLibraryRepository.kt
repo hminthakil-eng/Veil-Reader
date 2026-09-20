@@ -183,6 +183,9 @@ class MangaLibraryRepository internal constructor(
             .firstOrNull()
             ?.let { MangaRef(MangaSourceId(it.sourceId), it.sourceKey) }
 
+    suspend fun chapterLastPageIndex(chapterId: String): Int =
+        database.mangaChapters().findById(chapterId)?.lastPageIndex ?: 0
+
     suspend fun chapterRefForReading(chapterId: String): MangaChapterRef? {
         val chapter = database.mangaChapters().findById(chapterId) ?: return null
         val sourceBindings = database.mangaSourceBindings().listForBook(chapter.bookId)
