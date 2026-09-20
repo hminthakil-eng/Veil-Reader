@@ -115,6 +115,26 @@ class SuwayomiGatewayTest {
     }
 
     @Test
+    fun pages_rejectCrossOriginResources() = runBlocking {
+        val http = RecordingHttpClient(
+            responses = mutableListOf(SOURCES_RESPONSE, CROSS_ORIGIN_PAGES_RESPONSE)
+        )
+        val provider = SuwayomiGateway(client(http)).discoverSources().first()
+        val manga = com.veilreader.app.manga.core.MangaRef(
+            provider.descriptor.id,
+            "900"
+        )
+
+        val error = runCatching {
+            provider.pages(
+                com.veilreader.app.manga.core.MangaChapterRef(manga, "501")
+            )
+        }.exceptionOrNull()
+
+        assertTrue(error is MangaSourceException.Blocked)
+    }
+
+    @Test
     fun graphqlAuthError_mapsToTypedSourceFailure() = runBlocking {
         val http = RecordingHttpClient(
             responses = mutableListOf(AUTH_ERROR_RESPONSE)
@@ -284,6 +304,19 @@ class SuwayomiGatewayTest {
                   "pages": [
                     "/api/v1/manga/900/chapter/0/page/0",
                     "/api/v1/manga/900/chapter/0/page/1"
+                  ]
+                }
+              }
+            }
+        """.trimIndent()
+
+        val CROSS_ORIGIN_PAGES_RESPONSE = """
+            {
+              "data": {
+                "fetchChapterPages": {
+                  "chapter": { "id": 501, "mangaId": 900 },
+                  "pages": [
+                    "https://evil.example/page/0"
                   ]
                 }
               }
