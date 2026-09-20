@@ -96,6 +96,7 @@ class MangaLibraryRepository internal constructor(
             update.chapters.orEmpty().forEachIndexed { displayOrder, sourceChapter ->
                 val existingBinding = database.mangaChapterBindings().findByExternalRef(
                     sourceId = descriptor.id.value,
+                    mangaSourceKey = sourceRef.key,
                     sourceChapterKey = sourceChapter.ref.key
                 )
                 val chapterId = existingBinding?.chapterId ?: UUID.randomUUID().toString()
@@ -118,6 +119,7 @@ class MangaLibraryRepository internal constructor(
                     MangaChapterBindingEntity(
                         chapterId = chapterId,
                         sourceId = descriptor.id.value,
+                        mangaSourceKey = sourceRef.key,
                         sourceChapterKey = sourceChapter.ref.key,
                         lastSeenAtEpochMs = syncedAtEpochMs
                     )
