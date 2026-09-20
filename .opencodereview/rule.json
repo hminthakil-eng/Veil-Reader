@@ -1,0 +1,33 @@
+{
+  "include": [
+    "app/src/test/**/*.kt",
+    "app/src/androidTest/**/*.kt"
+  ],
+  "exclude": [
+    "**/build/**",
+    "**/.gradle/**",
+    "**/generated/**"
+  ],
+  "rules": [
+    {
+      "path": "app/src/main/**/*.kt",
+      "rule": "Veil Reader production Kotlin review. In addition to the system Kotlin rule, check coroutine cancellation/join and lifecycle ownership; Room transaction/threading/database-close races; schema/migration/backup compatibility; Readium locator persistence/idempotency; DataStore/settings write durability and startup races; Compose state/navigation restoration; offline-first behavior; RTL/Persian and accessibility regressions; and any weakening or bypass of existing CI/device gates. Prefer concrete correctness/security/regression findings over style comments.",
+      "merge_system_rule": true
+    },
+    {
+      "path": "app/src/androidTest/**/*.kt",
+      "rule": "Veil Reader Android instrumentation review. Verify tests exercise real lifecycle/process boundaries where claimed; do not accept compile-only evidence as runtime proof; check deterministic setup/cleanup, device/API assumptions, Storage Access Framework behavior, force-stop/relaunch durability, accessibility selectors, timeouts, flakiness, and that tests cannot false-PASS after failed setup/import. Preserve existing device and release gates.",
+      "merge_system_rule": true
+    },
+    {
+      "path": "app/src/test/**/*.kt",
+      "rule": "Veil Reader JVM/unit test review. Check that assertions protect user-visible behavior and architecture contracts, cover regression boundaries rather than implementation trivia, remain deterministic, and do not mock away persistence/lifecycle behavior that requires instrumentation. Flag missing negative and restoration cases.",
+      "merge_system_rule": true
+    },
+    {
+      "path": "scripts/**/*.ps1",
+      "rule": "Veil Reader Windows/QA PowerShell review. Check fail-closed behavior, exit-code handling, quoting/path safety, timeout handling, stale/fake PASS conditions, secret leakage, destructive commands, device-selection ambiguity, and cleanup of temporary artifacts. Verification scripts must never claim PASS after a failed prerequisite.",
+      "merge_system_rule": true
+    }
+  ]
+}
