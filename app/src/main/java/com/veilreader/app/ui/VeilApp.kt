@@ -31,7 +31,10 @@ import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.data.settings.AppSettings
+import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
@@ -42,6 +45,7 @@ import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
+import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -49,7 +53,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun VeilApp(
     externalOpenUri: Uri? = null,
-    onExternalOpenUriConsumed: () -> Unit = {}
+    onExternalOpenUriConsumed: () -> Unit = {},
+    appSettings: AppSettings = AppSettings(),
+    onSetAppThemeMode: (AppThemeMode) -> Unit = {},
+    onSaveReaderAppearance: (ReaderAppearance) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
     val activity = LocalActivity.current
@@ -373,7 +380,8 @@ fun VeilApp(
                 onExportBackup = { exportData(it, true) },
                 onRestoreBackup = ::restoreData,
                 onExportNotes = { exportData(it, false) },
-                onOpenArchive = routeViewModel::openArchive
+                onOpenArchive = routeViewModel::openArchive,
+                onOpenSettings = routeViewModel::openSettings
             )
         }
     }
@@ -389,6 +397,15 @@ fun VeilApp(
                 routeViewModel.closeReader()
             }
         )
+    } else if (route.showSettings) {
+        VeilWorldBackdrop {
+            SettingsScreen(
+                settings = appSettings,
+                onSetAppThemeMode = onSetAppThemeMode,
+                onSaveReaderAppearance = onSaveReaderAppearance,
+                onClose = routeViewModel::closeSettings
+            )
+        }
     } else if (route.showArchive) {
         ArchiveScreen(
             books,
