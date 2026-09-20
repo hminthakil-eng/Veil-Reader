@@ -1,0 +1,95 @@
+name: Ripwire Code Context Pilot
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/ripwire-pilot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ripwire-pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Veil Reader
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install pinned Ripwire
+        shell: bash
+        run: |
+          set -euo pipefail
+          export RIPWIRE_REPO=redhat-et/ripwire
+          export RIPWIRE_VERSION=v0.6.1
+          export RIPWIRE_INSTALL_YES=1
+          export RIPWIRE_NO_ACTIVATE=1
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/redhat-et/ripwire/v0.6.1/scripts/install.sh)"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Verify Ripwire
+        shell: bash
+        run: |
+          set -euo pipefail
+          ripwire --version
+          ripwire . --doctor || true
+
+      - name: Build repository map
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ripwire-results
+          /usr/bin/time -f "elapsed=%e sec\nmax_rss=%M KB" -o ripwire-results/map-metrics.txt             ripwire . > ripwire-results/repo-map.txt
+          wc -c ripwire-results/repo-map.txt | tee ripwire-results/repo-map-bytes.txt
+
+      - name: Room SQLite failure localization
+        shell: bash
+        run: |
+          set -euo pipefail
+          TASK="Diagnose the Android instrumentation failure: android.database.sqlite.SQLiteException during a rapid reading session involving Room persistence, BookDao/VeilDatabase, reading progress, and database lifecycle. Identify the smallest relevant symbol set, likely callers/dependencies, blast radius, and tests that should run. Do not invent a root cause."
+          /usr/bin/time -f "elapsed=%e sec\nmax_rss=%M KB" -o ripwire-results/room-task-metrics.txt             ripwire . --for="$TASK" > ripwire-results/room-task.txt
+          wc -c ripwire-results/room-task.txt | tee ripwire-results/room-task-bytes.txt
+
+      - name: Database impact probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            echo "=== BookDao related ==="
+            ripwire . --for="BookDao Room persistence and reading progress"
+            echo
+            echo "=== VeilDatabase related ==="
+            ripwire . --for="VeilDatabase lifecycle Room SQLite instrumentation failure"
+          } > ripwire-results/db-probes.txt
+          wc -c ripwire-results/db-probes.txt | tee ripwire-results/db-probes-bytes.txt
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Ripwire pilot"
+            echo
+            echo "- Version: $(ripwire --version 2>/dev/null || echo unavailable)"
+            echo "- Repository: $GITHUB_REPOSITORY"
+            echo "- Commit: $GITHUB_SHA"
+            echo
+            echo "### Output sizes"
+            cat ripwire-results/*-bytes.txt 2>/dev/null || true
+            echo
+            echo "### Timing"
+            cat ripwire-results/*-metrics.txt 2>/dev/null || true
+          } | tee ripwire-results/summary.md
+          cat ripwire-results/summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload pilot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ripwire-pilot-results
+          path: ripwire-results/
+          if-no-files-found: warn
