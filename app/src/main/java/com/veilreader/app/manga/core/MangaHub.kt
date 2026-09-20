@@ -77,6 +77,7 @@ interface MangaProgressStore {
 
 interface MangaOfflineStore {
     suspend fun isChapterAvailable(ref: MangaChapterRef): Boolean
+    suspend fun loadChapter(ref: MangaChapterRef): List<MangaPage>?
     suspend fun saveChapter(ref: MangaChapterRef, pages: List<MangaPage>)
     suspend fun removeChapter(ref: MangaChapterRef)
 }
