@@ -84,4 +84,10 @@
     <string name="reading_publisher_styling">Publisher styling</string>
     <string name="reading_publisher_styling_description">Keep the book’s original typography and layout when possible.</string>
     <string name="reading_back_to_reading">Back to reading</string>
+    <string name="reading_page_color">Page color</string>
+    <string name="reading_page_color_description">Choosing a color turns off publisher styling. Your text size, spacing, margins and reading mode stay unchanged.</string>
+    <string name="reading_page_color_publisher_active">Publisher styling is on. Choose a page color to override it.</string>
+    <string name="reading_text_size">Text size</string>
+    <string name="reading_line_height">Line spacing</string>
+    <string name="reading_page_margins">Page margins</string>
 </resources>
