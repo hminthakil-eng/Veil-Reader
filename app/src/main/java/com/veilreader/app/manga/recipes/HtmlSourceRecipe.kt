@@ -434,20 +434,21 @@ internal fun sourceKey(
     baseUrl: String,
     rawUrl: String,
     allowCrossHost: Boolean
-): String? = runCatching {
-    val base = URI(baseUrl)
-    val resolved = base.resolve(rawUrl)
-    if (!allowCrossHost && !resolved.host.equals(base.host, ignoreCase = true)) {
-        return null
-    }
-    buildString {
+): String? {
+    val base = runCatching { URI(baseUrl) }.getOrNull() ?: return null
+    val resolved = runCatching { base.resolve(rawUrl) }.getOrNull() ?: return null
+    if (resolved.scheme != "https" && resolved.scheme != "http") return null
+    if (resolved.host.isNullOrBlank()) return null
+    if (!allowCrossHost && !resolved.host.equals(base.host, ignoreCase = true)) return null
+
+    return buildString {
         append(resolved.rawPath?.ifBlank { "/" } ?: "/")
         resolved.rawQuery?.takeIf(String::isNotBlank)?.let {
             append('?')
             append(it)
         }
     }
-}.getOrNull()
+}
 
 internal fun parseStatus(
     raw: String,
