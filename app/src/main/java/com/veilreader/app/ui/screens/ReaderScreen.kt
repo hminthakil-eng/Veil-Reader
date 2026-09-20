@@ -300,9 +300,11 @@ fun ReaderScreen(
                 (navigator as? EpubNavigatorFragment)
                     ?.submitPreferences(appearance.toEpubPreferences())
 
-            BookFormat.PDF ->
-                (navigator as? PdfiumNavigatorFragment)
-                    ?.submitPreferences(appearance.toPdfiumPreferences())
+            BookFormat.PDF -> {
+                @Suppress("UNCHECKED_CAST")
+                val pdfNavigator = navigator as? PdfiumNavigatorFragment
+                pdfNavigator?.submitPreferences(appearance.toPdfiumPreferences())
+            }
 
             else -> Unit
         }
