@@ -1,6 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -22,10 +27,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.AppThemeMode
@@ -38,11 +45,32 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
+    exporting: Boolean,
+    restoring: Boolean,
     onSetAppThemeMode: (AppThemeMode) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
+    onExportBackup: (Uri) -> Unit,
+    onRestoreBackup: (Uri) -> Unit,
+    onExportNotes: (Uri) -> Unit,
     onClose: () -> Unit
 ) {
     val appearance = settings.readerAppearance
+    val context = LocalContext.current
+    val appVersion = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
+        }.getOrDefault("").ifBlank { "Unknown" }
+    }
+    val backupPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { it?.let(onExportBackup) }
+    val restorePicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { it?.let(onRestoreBackup) }
+    val notesPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("text/markdown")
+    ) { it?.let(onExportNotes) }
+    var confirmRestore by remember { mutableStateOf(false) }
     BackHandler(onBack = onClose)
 
     Column(
@@ -159,6 +187,40 @@ fun SettingsScreen(
         }
 
         SettingsSection(
+            title = "Data & backup",
+            description = "Backups include imported books, reading positions, annotations, Path progress, quests and Castle identity."
+        ) {
+            Button(
+                enabled = !exporting && !restoring,
+                onClick = { backupPicker.launch("veil-reader-backup.zip") },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) { Text(if (exporting) "Exporting…" else "Export library backup") }
+            OutlinedButton(
+                enabled = !exporting && !restoring,
+                onClick = { confirmRestore = true },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) { Text(if (restoring) "Restoring…" else "Restore library backup") }
+            OutlinedButton(
+                enabled = !exporting && !restoring,
+                onClick = { notesPicker.launch("veil-reader-notebook.md") },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) { Text("Export notebook as Markdown") }
+        }
+
+        SettingsSection(
+            title = "Privacy & about",
+            description = "Veil Reader is local-first: your library, progress and annotations stay on this device unless you explicitly export them."
+        ) {
+            Text("App version · $appVersion", style = MaterialTheme.typography.labelLarge)
+            Text("Reader engine · Readium Kotlin Toolkit 3.4.0", style = MaterialTheme.typography.labelLarge)
+            Text(
+                "No account or cloud sync is required for core reading.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        SettingsSection(
             title = "Reset",
             description = "Restore Veil Reader's reader defaults without touching books, progress, highlights, notes or backups."
         ) {
@@ -171,6 +233,27 @@ fun SettingsScreen(
                 Text("Reset reader defaults")
             }
         }
+    }
+
+    if (confirmRestore) {
+        AlertDialog(
+            onDismissRequest = { confirmRestore = false },
+            title = { Text("Replace local Veil Reader data?") },
+            text = {
+                Text(
+                    "Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state."
+                )
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    confirmRestore = false
+                    restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
+                }) { Text("Choose backup") }
+            }
+        )
     }
 }
 
