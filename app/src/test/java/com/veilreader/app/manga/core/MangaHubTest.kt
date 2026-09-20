@@ -25,6 +25,28 @@ class MangaHubTest {
     }
 
     @Test
+    fun combinedUpdate_fetchesDetailsAndChaptersInOneProviderCall() = runBlocking {
+        val source = FakeSource()
+        val hub = MangaHub(MangaSourceRegistry(listOf(source)))
+        val ref = MangaRef(sourceId, "veil-knight")
+
+        val update = hub.update(ref)
+
+        assertEquals(1, source.updateCalls)
+        assertEquals("Veil Knight", update.details?.title)
+        assertEquals(1, update.chapters?.size)
+    }
+
+    @Test
+    fun providerIdentity_isStableAcrossLanguageScopedSourceInstances() {
+        val descriptor = FakeSource().descriptor
+
+        assertEquals("test", descriptor.providerId.value)
+        assertEquals("test.en", descriptor.id.value)
+        assertEquals(1, descriptor.version)
+    }
+
+    @Test
     fun registry_rejectsDuplicateSourceIds() {
         val error = runCatching {
             MangaSourceRegistry(listOf(FakeSource(), FakeSource()))
@@ -36,14 +58,23 @@ class MangaHubTest {
     fun hub_rejectsCrossSourceResults() = runBlocking {
         val wrong = object : MangaSourceProvider {
             override val descriptor = FakeSource().descriptor
-            override suspend fun search(query: String, cursor: String?) = MangaResultPage(
+
+            override suspend fun search(request: MangaSearchRequest) = MangaResultPage(
                 items = listOf(
-                    MangaSummary(MangaRef(MangaSourceId("other.en"), "m1"), "Wrong source")
+                    MangaSummary(
+                        MangaRef(MangaSourceId("other.en"), "m1"),
+                        "Wrong source"
+                    )
                 )
             )
-            override suspend fun details(ref: MangaRef) = FakeSource().details(ref)
-            override suspend fun chapters(ref: MangaRef) = FakeSource().chapters(ref)
-            override suspend fun pages(ref: MangaChapterRef) = FakeSource().pages(ref)
+
+            override suspend fun fetchUpdate(
+                ref: MangaRef,
+                existingChapters: List<MangaChapter>,
+                options: MangaUpdateOptions
+            ) = MangaUpdate(ref = ref)
+
+            override suspend fun pages(ref: MangaChapterRef) = emptyList<MangaPage>()
         }
 
         val error = runCatching {
@@ -55,25 +86,47 @@ class MangaHubTest {
     private inner class FakeSource : MangaSourceProvider {
         override val descriptor = MangaSourceDescriptor(
             id = sourceId,
+            providerId = MangaProviderId("test"),
+            version = 1,
             name = "Test Source",
             language = "en",
-            capabilities = setOf(MangaSourceCapability.SEARCH, MangaSourceCapability.POPULAR)
+            capabilities = setOf(
+                MangaSourceCapability.SEARCH,
+                MangaSourceCapability.POPULAR
+            )
         )
 
         private val mangaRef = MangaRef(sourceId, "veil-knight")
         private val chapterRef = MangaChapterRef(mangaRef, "chapter-1")
+        var updateCalls: Int = 0
+            private set
 
-        override suspend fun search(query: String, cursor: String?) =
+        override suspend fun search(request: MangaSearchRequest) =
             MangaResultPage(listOf(MangaSummary(mangaRef, "Veil Knight")))
 
-        override suspend fun popular(cursor: String?) =
+        override suspend fun popular(request: MangaBrowseRequest) =
             MangaResultPage(listOf(MangaSummary(mangaRef, "Veil Knight")))
 
-        override suspend fun details(ref: MangaRef) =
-            MangaDetails(ref = ref, title = "Veil Knight")
-
-        override suspend fun chapters(ref: MangaRef) =
-            listOf(MangaChapter(ref = chapterRef, chapterNumber = 1.0))
+        override suspend fun fetchUpdate(
+            ref: MangaRef,
+            existingChapters: List<MangaChapter>,
+            options: MangaUpdateOptions
+        ): MangaUpdate {
+            updateCalls += 1
+            return MangaUpdate(
+                ref = ref,
+                details = if (options.fetchDetails) {
+                    MangaDetails(ref = ref, title = "Veil Knight")
+                } else {
+                    null
+                },
+                chapters = if (options.fetchChapters) {
+                    listOf(MangaChapter(ref = chapterRef, chapterNumber = 1.0))
+                } else {
+                    null
+                }
+            )
+        }
 
         override suspend fun pages(ref: MangaChapterRef) = listOf(
             MangaPage(1, MangaResourceRequest("https://cdn.example.test/2.jpg")),
