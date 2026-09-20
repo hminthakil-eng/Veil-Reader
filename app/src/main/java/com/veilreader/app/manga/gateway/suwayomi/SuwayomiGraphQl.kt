@@ -179,6 +179,7 @@ internal fun SuwayomiServerConfig.resolveServerResource(raw: String): String? {
     val base = URI(normalizedOrigin + "/")
     val resolved = runCatching { base.resolve(raw) }.getOrNull() ?: return null
     if (resolved.scheme != "https" && resolved.scheme != "http") return null
+    if (!resolved.scheme.equals(base.scheme, ignoreCase = true)) return null
     if (!resolved.host.equals(base.host, ignoreCase = true)) return null
     if (resolved.port != base.port) return null
     return resolved.toString()
