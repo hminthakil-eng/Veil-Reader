@@ -280,7 +280,7 @@ class SuwayomiGatewayTest {
             {
               "data": {
                 "fetchChapterPages": {
-                  "chapter": { "id": 501 },
+                  "chapter": { "id": 501, "mangaId": 900 },
                   "pages": [
                     "/api/v1/manga/900/chapter/0/page/0",
                     "/api/v1/manga/900/chapter/0/page/1"
