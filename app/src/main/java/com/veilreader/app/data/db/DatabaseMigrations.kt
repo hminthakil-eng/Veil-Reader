@@ -67,6 +67,7 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
             CREATE TABLE IF NOT EXISTS manga_chapter_bindings (
                 chapterId TEXT NOT NULL,
                 sourceId TEXT NOT NULL,
+                mangaSourceKey TEXT NOT NULL,
                 sourceChapterKey TEXT NOT NULL,
                 lastSeenAtEpochMs INTEGER NOT NULL,
                 PRIMARY KEY(chapterId, sourceId),
@@ -77,8 +78,8 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         )
         db.execSQL(
             """
-            CREATE UNIQUE INDEX IF NOT EXISTS index_manga_chapter_bindings_sourceId_sourceChapterKey
-            ON manga_chapter_bindings(sourceId, sourceChapterKey)
+            CREATE UNIQUE INDEX IF NOT EXISTS index_manga_chapter_bindings_sourceId_mangaSourceKey_sourceChapterKey
+            ON manga_chapter_bindings(sourceId, mangaSourceKey, sourceChapterKey)
             """.trimIndent()
         )
 
