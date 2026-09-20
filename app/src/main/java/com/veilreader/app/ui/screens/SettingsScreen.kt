@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -117,6 +118,26 @@ fun SettingsScreen(
                 onCommit = { value ->
                     onSaveReaderAppearance(appearance.copy(pageMargins = value.toDouble()))
                 }
+            )
+
+            Text("Page turn", style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = PageTurnStyle.entries,
+                selected = appearance.pageTurnStyle,
+                label = { style ->
+                    when (style) {
+                        PageTurnStyle.PAPER -> "Paper curl"
+                        PageTurnStyle.SLIDE -> "Simple slide"
+                    }
+                },
+                onSelected = { style ->
+                    onSaveReaderAppearance(appearance.copy(pageTurnStyle = style))
+                }
+            )
+            Text(
+                "Paper curl is the premium paginated mode; Simple slide remains the rollback-safe fallback. Continuous scroll ignores this setting.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
             )
 
             SettingsSwitchRow(
