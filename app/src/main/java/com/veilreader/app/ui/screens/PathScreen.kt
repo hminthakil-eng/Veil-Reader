@@ -525,8 +525,8 @@ private fun PathIcon(pathId: String, tint: Color, modifier: Modifier = Modifier)
             "oracle" -> {
                 val eye = Path().apply {
                     moveTo(w * .10f, h * .50f)
-                    quadraticBezierTo(w * .50f, h * .16f, w * .90f, h * .50f)
-                    quadraticBezierTo(w * .50f, h * .84f, w * .10f, h * .50f)
+                    quadraticTo(w * .50f, h * .16f, w * .90f, h * .50f)
+                    quadraticTo(w * .50f, h * .84f, w * .10f, h * .50f)
                     close()
                 }
                 drawPath(eye, tint, style = stroke)
