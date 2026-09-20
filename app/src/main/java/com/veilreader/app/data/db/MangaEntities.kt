@@ -22,7 +22,6 @@ import androidx.room.PrimaryKey
         )
     ],
     indices = [
-        Index("bookId"),
         Index(value = ["sourceId", "sourceKey"], unique = true),
         Index("providerId")
     ]
@@ -84,7 +83,6 @@ data class MangaChapterEntity(
         )
     ],
     indices = [
-        Index("chapterId"),
         Index(value = ["sourceId", "sourceChapterKey"], unique = true)
     ]
 )
