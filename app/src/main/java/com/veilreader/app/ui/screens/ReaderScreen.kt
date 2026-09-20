@@ -121,6 +121,7 @@ fun ReaderScreen(
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
+    var showPdfZoom by remember { mutableStateOf(false) }
     var appearance by remember(opened.book.id) { mutableStateOf(readerAppearance) }
     val latestAppearance = rememberUpdatedState(appearance)
     val paperCurlConfig = remember(appearance.theme) {
@@ -252,7 +253,7 @@ fun ReaderScreen(
     }
 
     BackHandler(
-        enabled = !showNotebook && !showAppearance && !paperCurlState.active
+        enabled = !showNotebook && !showAppearance && !showPdfZoom && !paperCurlState.active
     ) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
@@ -539,13 +540,21 @@ fun ReaderScreen(
                         }
                     }
                     ReaderControl(
-                        action = ReaderAction.APPEARANCE,
-                        label = "Appearance",
+                        action = if (opened.format == BookFormat.EPUB) {
+                            ReaderAction.APPEARANCE
+                        } else {
+                            ReaderAction.ZOOM
+                        },
+                        label = if (opened.format == BookFormat.EPUB) "Appearance" else "Zoom",
                         modifier = Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB || opened.format == BookFormat.PDF
+                        enabled = navigator != null
                     ) {
                         readerViewModel.onUserInteraction()
-                        showAppearance = true
+                        if (opened.format == BookFormat.EPUB) {
+                            showAppearance = true
+                        } else {
+                            showPdfZoom = true
+                        }
                     }
                 }
             }
@@ -668,6 +677,19 @@ fun ReaderScreen(
             )
         }
     }
+
+    if (showPdfZoom) {
+        ModalBottomSheet(onDismissRequest = { showPdfZoom = false }) {
+            PdfZoomControls(
+                navigator = navigator,
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp)
+                    .padding(bottom = 32.dp),
+                onDone = { showPdfZoom = false }
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalReadiumApi::class)
@@ -743,7 +765,7 @@ private fun ReaderFragmentHost(
     }
 }
 
-private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE }
+private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
 
 @Composable
 private fun ReaderChromeButton(
@@ -837,6 +859,21 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
                 drawPath(path, tint, style = stroke)
             }
             ReaderAction.APPEARANCE -> Unit
+            ReaderAction.ZOOM -> {
+                drawCircle(
+                    color = tint,
+                    radius = w * .22f,
+                    center = Offset(w * .43f, h * .40f),
+                    style = stroke
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .58f, h * .56f),
+                    Offset(w * .80f, h * .80f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+            }
         }
     }
 }
