@@ -51,7 +51,7 @@ data class MangaSourceBindingEntity(
         )
     ],
     indices = [
-        Index(value = ["bookId", "displayOrder"], unique = true)
+        Index(value = ["bookId", "displayOrder"])
     ]
 )
 data class MangaChapterEntity(
