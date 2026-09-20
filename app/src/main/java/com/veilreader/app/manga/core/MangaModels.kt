@@ -66,7 +66,7 @@ data class MangaResourceRequest(
         require(
             url.startsWith("https://") ||
                 url.startsWith("http://") ||
-                url.startsWith("file://")
+                url.startsWith("file:")
         ) {
             "Manga resource URL must use http, https, or file."
         }
