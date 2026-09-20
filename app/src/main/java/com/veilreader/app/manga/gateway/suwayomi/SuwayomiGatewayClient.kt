@@ -7,6 +7,7 @@ import java.net.URI
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
@@ -163,11 +164,11 @@ class SuwayomiGatewayClient(
         )
         val payload = data.requiredObject("fetchMangaAndChapters")
         val manga = payload["manga"]
-            ?.takeUnless(JsonElement::isJsonNull)
+            ?.takeUnless { it.isJsonNull }
             ?.jsonObject
             ?.toRemoteManga()
         val chapters = payload["chapters"]
-            ?.takeUnless(JsonElement::isJsonNull)
+            ?.takeUnless { it.isJsonNull }
             ?.jsonArray
             ?.map { it.jsonObject.toRemoteChapter() }
 
@@ -277,7 +278,7 @@ class SuwayomiGatewayClient(
                 "Suwayomi resource escaped the configured server origin."
             )
         }
-        if (resolved.port != base.port) {
+        if (resolved.effectivePort() != base.effectivePort()) {
             throw MangaSourceException.Blocked(
                 "Suwayomi resource changed the configured server port."
             )
@@ -358,7 +359,7 @@ class SuwayomiGatewayClient(
 
     private fun JsonObject.requiredObject(key: String): JsonObject =
         this[key]
-            ?.takeUnless(JsonElement::isJsonNull)
+            ?.takeUnless { it.isJsonNull }
             ?.jsonObject
             ?: throw MangaSourceException.ParseFailure("Suwayomi response is missing '$key'.")
 
@@ -372,7 +373,7 @@ class SuwayomiGatewayClient(
 
     private fun JsonObject.nullableString(key: String): String? =
         this[key]
-            ?.takeUnless(JsonElement::isJsonNull)
+            ?.takeUnless { it.isJsonNull }
             ?.jsonPrimitive
             ?.contentOrNull
 
@@ -386,7 +387,7 @@ class SuwayomiGatewayClient(
 
     private fun JsonObject.longStringOrNull(key: String): Long? =
         this[key]
-            ?.takeUnless(JsonElement::isJsonNull)
+            ?.takeUnless { it.isJsonNull }
             ?.jsonPrimitive
             ?.contentOrNull
             ?.toLongOrNull()
@@ -490,4 +491,11 @@ enum class SuwayomiBrowseType {
 }
 
 private val JsonElement.isJsonNull: Boolean
-    get() = this.toString() == "null"
+    get() = this is JsonNull
+
+private fun URI.effectivePort(): Int = when {
+    port >= 0 -> port
+    scheme == "https" -> 443
+    scheme == "http" -> 80
+    else -> -1
+}
