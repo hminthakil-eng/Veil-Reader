@@ -5,7 +5,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-Write-Output "Eyad Studio Company OS — Veil Reader mobile command"
+Write-Output "Eyad Studio Company OS - Veil Reader mobile command"
 Write-Output "command=$Command"
 Write-Output "repo=$env:GITHUB_REPOSITORY"
 Write-Output "ref=$env:GITHUB_REF_NAME"
