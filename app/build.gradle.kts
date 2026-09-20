@@ -76,6 +76,7 @@ dependencies {
     // Manga Hub networking stays behind source adapters and feature flags.
     implementation("com.squareup.okhttp3:okhttp:5.5.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+    implementation("org.jsoup:jsoup:1.23.2")
 
     // Manga image reader: Compose rendering + network/disk cache/prefetch.
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
