@@ -50,6 +50,7 @@ class SuwayomiGatewayTest {
             config.resolveServerResource("/api/v1/image/1")
         )
         assertNull(config.resolveServerResource("https://evil.example/image/1"))
+        assertNull(config.resolveServerResource("http://reader.example:4567/image/1"))
     }
 
     @Test
