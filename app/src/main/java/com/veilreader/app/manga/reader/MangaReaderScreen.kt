@@ -43,13 +43,13 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 @Composable
 fun MangaReaderScreen(
     pages: List<MangaPage>,
-    initialPage: Int = 0,
     mode: MangaReaderMode,
-    readingDirection: MangaReadingDirection = MangaReadingDirection.RIGHT_TO_LEFT,
     onModeChange: (MangaReaderMode) -> Unit,
     onProgress: (Int) -> Unit,
     onClose: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialPage: Int = 0,
+    readingDirection: MangaReadingDirection = MangaReadingDirection.RIGHT_TO_LEFT
 ) {
     require(pages.map(MangaPage::index).distinct().size == pages.size) {
         "Manga reader pages must have unique indices."
