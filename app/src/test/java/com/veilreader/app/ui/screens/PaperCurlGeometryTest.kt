@@ -44,6 +44,38 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun commitThresholdAcceptsDistanceOrCurlProgress() {
+        assertTrue(
+            shouldCommitPaperTurn(
+                inwardDistance = 260f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.10f
+            )
+        )
+        assertTrue(
+            shouldCommitPaperTurn(
+                inwardDistance = 20f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.40f
+            )
+        )
+    }
+
+    @Test
+    fun commitThresholdRejectsSmallTentativeDrag() {
+        assertTrue(
+            !shouldCommitPaperTurn(
+                inwardDistance = 60f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.10f
+            )
+        )
+    }
+
+    @Test
     fun pageEdgeMovesInwardAsPointerPullsPage() {
         val start = Offset(980f, 500f)
         val shallow = paperCurlPageEdge(

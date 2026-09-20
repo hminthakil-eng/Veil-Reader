@@ -82,7 +82,6 @@ import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Theme
-import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
@@ -290,6 +289,16 @@ fun ReaderScreen(
             .debounce(500)
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
+
+                // Interactive paper drag temporarily previews the destination page underneath
+                // the captured source page. Never persist that transient locator. A committed
+                // paper turn is persisted explicitly by onCommittedTurn.
+                val paperPreviewActive =
+                    opened.format == BookFormat.EPUB &&
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER &&
+                        paperCurlState.active
+                if (paperPreviewActive) return@collect
+
                 val json = locator.toVeilPersistedJson(opened.format)
                 readerViewModel.onLocatorChanged(
                     bookId = opened.book.id,
@@ -305,11 +314,15 @@ fun ReaderScreen(
             }
     }
 
-    LaunchedEffect(navigator, opened.book.id) {
-        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        if (navigator is EpubNavigatorFragment) {
-            nav.addInputListener(
-                PaperCurlInputListener(
+    DisposableEffect(navigator, opened.book.id) {
+        val nav = navigator as? OverflowableNavigator
+        if (nav == null) {
+            onDispose { }
+        } else {
+            val listeners = mutableListOf<InputListener>()
+
+            if (navigator is EpubNavigatorFragment) {
+                listeners += PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
                     isEnabled = {
@@ -334,23 +347,29 @@ fun ReaderScreen(
                         )
                     }
                 )
-            )
-        }
-        nav.addInputListener(
-            DirectionalNavigationAdapter(
+            }
+
+            listeners += VeilDirectionalNavigationInputListener(
                 navigator = nav,
-                animatedTransition = true
+                isAnimated = {
+                    latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
+                }
             )
-        )
-        nav.addInputListener(
-            object : InputListener {
+
+            listeners += object : InputListener {
                 override fun onTap(event: TapEvent): Boolean {
                     readerViewModel.onUserInteraction()
                     controlsVisible = !controlsVisible
                     return true
                 }
             }
-        )
+
+            listeners.forEach(nav::addInputListener)
+
+            onDispose {
+                listeners.forEach(nav::removeInputListener)
+            }
+        }
     }
 
     LaunchedEffect(navigator, appearance) {
