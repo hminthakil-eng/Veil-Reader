@@ -80,7 +80,7 @@ interface MangaChapterDao {
         """
         SELECT * FROM manga_chapters
         WHERE bookId = :bookId
-        ORDER BY displayOrder ASC
+        ORDER BY displayOrder ASC, id ASC
         """
     )
     fun observeForBook(bookId: String): Flow<List<MangaChapterEntity>>
@@ -89,7 +89,7 @@ interface MangaChapterDao {
         """
         SELECT * FROM manga_chapters
         WHERE bookId = :bookId
-        ORDER BY displayOrder ASC
+        ORDER BY displayOrder ASC, id ASC
         """
     )
     suspend fun listForBook(bookId: String): List<MangaChapterEntity>
