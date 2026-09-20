@@ -301,6 +301,8 @@ internal fun shouldCommitPaperTurn(
     density: Float,
     curlProgress: Float
 ): Boolean {
+    // Returning to the origin or dragging outward must never commit a turn.
+    if (inwardDistance <= 0f) return false
     val commitDistance = max(92f * density, width * 0.20f)
     return inwardDistance >= commitDistance ||
         curlProgress >= 0.34f
