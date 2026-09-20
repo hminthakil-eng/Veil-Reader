@@ -1,8 +1,6 @@
 package com.veilreader.app.ui.screens
 
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -32,6 +30,9 @@ internal fun ReadingAppearanceControls(
 ) {
     val continuousScrollLabel = stringResource(R.string.reading_continuous_scroll)
     val publisherStylingLabel = stringResource(R.string.reading_publisher_styling)
+    val textSizeLabel = stringResource(R.string.reading_text_size)
+    val lineHeightLabel = stringResource(R.string.reading_line_height)
+    val pageMarginsLabel = stringResource(R.string.reading_page_margins)
 
     Column(
         modifier.fillMaxWidth(),
@@ -51,71 +52,42 @@ internal fun ReadingAppearanceControls(
         }
 
         Text(
-            stringResource(R.string.reading_presets),
+            stringResource(R.string.reading_page_color),
             style = MaterialTheme.typography.titleMedium
         )
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            AppearancePreset(
-                stringResource(R.string.reading_preset_book),
-                appearance.theme == ReaderTheme.PAPER
+        Text(
+            stringResource(R.string.reading_page_color_description),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium
+        )
+        ReaderTheme.entries.chunked(2).forEach { themes ->
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.PAPER,
-                        fontScale = 1.0,
-                        lineHeight = 1.45,
-                        pageMargins = 1.0,
-                        scroll = false,
-                        publisherStyles = true
+                themes.forEach { theme ->
+                    PageColorChoice(
+                        label = stringResource(
+                            when (theme) {
+                                ReaderTheme.PAPER -> R.string.reader_theme_paper
+                                ReaderTheme.SEPIA -> R.string.reader_theme_sepia
+                                ReaderTheme.DUSK -> R.string.reader_theme_dusk
+                                ReaderTheme.OLED -> R.string.reader_theme_oled
+                            }
+                        ),
+                        selected = !appearance.publisherStyles && appearance.theme == theme,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onChange(appearance.withPageTheme(theme)) }
                     )
-                )
+                }
             }
-            AppearancePreset(
-                stringResource(R.string.reading_preset_comfort),
-                appearance.theme == ReaderTheme.SEPIA
-            ) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.SEPIA,
-                        fontScale = 1.08,
-                        lineHeight = 1.6,
-                        pageMargins = 1.15,
-                        scroll = false,
-                        publisherStyles = false
-                    )
-                )
-            }
-            AppearancePreset(
-                stringResource(R.string.reading_preset_night),
-                appearance.theme == ReaderTheme.DUSK
-            ) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.DUSK,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
-                    )
-                )
-            }
-            AppearancePreset(
-                stringResource(R.string.reading_preset_oled),
-                appearance.theme == ReaderTheme.OLED
-            ) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.OLED,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
-                    )
-                )
-            }
+        }
+        if (appearance.publisherStyles) {
+            Text(
+                stringResource(R.string.reading_page_color_publisher_active),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
 
         HorizontalDivider(
@@ -130,6 +102,7 @@ internal fun ReadingAppearanceControls(
             fontWeight = FontWeight.SemiBold
         )
         Slider(
+            modifier = Modifier.semantics { contentDescription = textSizeLabel },
             value = appearance.fontScale.toFloat(),
             onValueChange = {
                 onChange(
@@ -147,6 +120,7 @@ internal fun ReadingAppearanceControls(
             fontWeight = FontWeight.SemiBold
         )
         Slider(
+            modifier = Modifier.semantics { contentDescription = lineHeightLabel },
             value = appearance.lineHeight.toFloat(),
             onValueChange = {
                 onChange(
@@ -164,6 +138,7 @@ internal fun ReadingAppearanceControls(
             fontWeight = FontWeight.SemiBold
         )
         Slider(
+            modifier = Modifier.semantics { contentDescription = pageMarginsLabel },
             value = appearance.pageMargins.toFloat(),
             onValueChange = {
                 onChange(
@@ -279,15 +254,16 @@ internal fun ReadingAppearanceControls(
 }
 
 @Composable
-private fun AppearancePreset(
+private fun PageColorChoice(
     label: String,
     selected: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     FilterChip(
         selected = selected,
         onClick = onClick,
         label = { Text(label) },
-        modifier = Modifier.heightIn(min = 48.dp)
+        modifier = modifier.heightIn(min = 48.dp)
     )
 }
