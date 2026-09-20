@@ -6,7 +6,7 @@ on:
       ref:
         description: "Branch or commit to verify"
         required: false
-        default: "upgrade/readium-3-4"
+        default: "main"
 
 permissions:
   contents: read
@@ -35,18 +35,38 @@ jobs:
         run: |
           sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
 
+      - name: Reading policy regression checks
+        shell: powershell
+        run: bash tools/test-policy.sh
+
+      - name: Performance budget parser checks
+        shell: powershell
+        run: |
+          python tools/test_performance_budget.py
+          python tools/test_performance_delta.py
+          python tools/test_performance_dashboard.py
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: "9.6.0"
+
       - name: Unit tests
         shell: powershell
-        run: .\gradlew.bat :app:testDebugUnitTest --stacktrace
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Verify committed Room schema
+        shell: powershell
+        run: git diff --exit-code -- app/schemas/
 
       - name: Android lint
         shell: powershell
-        run: .\gradlew.bat :app:lintDebug --stacktrace
+        run: gradle :app:lintDebug --stacktrace
 
       - name: Build debug APK
         shell: powershell
-        run: .\gradlew.bat :app:assembleDebug --stacktrace
+        run: gradle :app:assembleDebug --stacktrace
 
       - name: Compile performance harness
         shell: powershell
-        run: .\gradlew.bat :benchmark:assembleBenchmarkBenchmark --stacktrace
+        run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
