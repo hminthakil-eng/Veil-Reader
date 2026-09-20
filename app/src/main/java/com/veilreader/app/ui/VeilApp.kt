@@ -24,8 +24,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.window.core.layout.WindowHeightSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.core.layout.WindowSizeClass
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
@@ -435,16 +434,12 @@ fun VeilApp(
             onClose = routeViewModel::closeChamber
         )
     } else {
-        val adaptiveInfo = currentWindowAdaptiveInfoV2()
-        val widthSizeClass = adaptiveInfo.windowSizeClass.windowWidthSizeClass
-        val heightSizeClass = adaptiveInfo.windowSizeClass.windowHeightSizeClass
+        val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
 
         // Prefer the branded rail once there is enough persistent horizontal space, but keep the
         // compact dock on short landscape windows where a rail would compete with reading content.
-        val useRail = heightSizeClass != WindowHeightSizeClass.COMPACT &&
-            (widthSizeClass == WindowWidthSizeClass.MEDIUM ||
-                widthSizeClass == WindowWidthSizeClass.EXPANDED)
-        val contentMaxWidth = if (widthSizeClass == WindowWidthSizeClass.EXPANDED) 1280.dp else 1040.dp
+        val useRail = shouldUseNavigationRail(windowSizeClass)
+        val contentMaxWidth = contentMaxWidthDp(windowSizeClass).dp
 
         VeilWorldBackdrop {
             if (useRail) {
@@ -507,6 +502,17 @@ fun VeilApp(
         )
     }
 }
+
+internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
+    windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
+        windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+
+internal fun contentMaxWidthDp(windowSizeClass: WindowSizeClass): Int =
+    if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)) {
+        1280
+    } else {
+        1040
+    }
 
 private fun sigilDisplayName(id: String): String = when (id) {
     "first_hour" -> "Quiet Hour"
