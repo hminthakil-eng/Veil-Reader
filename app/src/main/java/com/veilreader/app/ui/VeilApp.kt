@@ -392,6 +392,8 @@ fun VeilApp(
             opened = opened,
             library = library,
             game = game,
+            readerAppearance = appSettings.readerAppearance,
+            onReaderAppearanceChange = onSaveReaderAppearance,
             onClose = {
                 openedPublication = null
                 routeViewModel.closeReader()
