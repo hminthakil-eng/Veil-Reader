@@ -145,6 +145,15 @@ interface MangaChapterBindingDao {
     @Query(
         """
         SELECT * FROM manga_chapter_bindings
+        WHERE sourceId = :sourceId
+        ORDER BY chapterId
+        """
+    )
+    suspend fun listForSource(sourceId: String): List<MangaChapterBindingEntity>
+
+    @Query(
+        """
+        SELECT * FROM manga_chapter_bindings
         WHERE sourceId = :sourceId AND sourceChapterKey = :sourceChapterKey
         LIMIT 1
         """
