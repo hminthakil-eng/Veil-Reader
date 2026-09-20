@@ -150,7 +150,7 @@ class SuwayomiSourceProvider internal constructor(
         val payload = data.requiredObject("fetchMangaAndChapters")
         val headers = resourceHeaders()
 
-        val details = payload.optionalObject("manga")?.let { manga ->
+        val details = if (options.fetchDetails) payload.optionalObject("manga")?.let { manga ->
             MangaDetails(
                 ref = ref,
                 title = manga.requiredString("title"),
@@ -165,9 +165,9 @@ class SuwayomiSourceProvider internal constructor(
                     ?.let(config::resolveServerResource)
                     ?.let { MangaResourceRequest(it, headers) }
             )
-        }
+        } else null
 
-        val chapters = payload.optionalArray("chapters")?.map { element ->
+        val chapters = if (options.fetchChapters) payload.optionalArray("chapters")?.map { element ->
             val chapter = element.jsonObject
             val chapterId = chapter.requiredInt("id")
             MangaChapter(
@@ -177,7 +177,7 @@ class SuwayomiSourceProvider internal constructor(
                 publishedAtEpochMs = chapter.optionalLong("uploadDate")?.takeIf { it > 0L },
                 scanlator = chapter.optionalString("scanlator")
             )
-        }
+        } else null
 
         return MangaUpdate(ref = ref, details = details, chapters = chapters)
     }
@@ -358,18 +358,18 @@ private fun mapStatus(raw: String?): MangaStatus = when (raw) {
 }
 
 private fun JsonObject.requiredObject(name: String): JsonObject =
-    this[name]?.jsonObject
+    this[name] as? JsonObject
         ?: throw MangaSourceException.ParseFailure("Suwayomi response is missing object: " + name)
 
 private fun JsonObject.optionalObject(name: String): JsonObject? =
-    this[name]?.takeUnless { it.toString() == "null" }?.jsonObject
+    this[name] as? JsonObject
 
 private fun JsonObject.requiredArray(name: String): JsonArray =
-    this[name]?.jsonArray
+    this[name] as? JsonArray
         ?: throw MangaSourceException.ParseFailure("Suwayomi response is missing array: " + name)
 
 private fun JsonObject.optionalArray(name: String): JsonArray? =
-    this[name]?.takeUnless { it.toString() == "null" }?.jsonArray
+    this[name] as? JsonArray
 
 private fun JsonObject.requiredString(name: String): String =
     optionalString(name)?.takeIf(String::isNotBlank)
