@@ -423,9 +423,10 @@ private fun PathSummary(profile: ReaderProfile, onOpenCastle: () -> Unit) {
                     overflow = TextOverflow.Ellipsis
                 )
             }
-            FilledTonalButton(
+            OutlinedButton(
                 onClick = onOpenCastle,
-                modifier = Modifier.heightIn(min = 48.dp)
+                modifier = Modifier.heightIn(min = 44.dp),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
             ) {
                 Text("Castle")
             }
@@ -449,7 +450,11 @@ private fun PathSummary(profile: ReaderProfile, onOpenCastle: () -> Unit) {
 @Composable
 private fun WhispersSection(quests: List<Quest>) {
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-        Text("Whispers", style = MaterialTheme.typography.titleLarge)
+        Text(
+            "Whispers",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
         Text(
             "Optional reading prompts. Nothing is lost if you ignore them today.",
             style = MaterialTheme.typography.bodyMedium,
@@ -468,8 +473,12 @@ private fun QuestRow(quest: Quest) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.68f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f))
+        color = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
+        )
     ) {
         Column(
             modifier = Modifier.padding(VeilSpacing.md),
@@ -483,6 +492,7 @@ private fun QuestRow(quest: Quest) {
                 Text(
                     quest.title,
                     style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis

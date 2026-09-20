@@ -73,30 +73,16 @@ fun MysteryCard(
 ) {
     val shape = MaterialTheme.shapes.large
     val colors = MaterialTheme.colorScheme
-    val panelBrush = Brush.verticalGradient(
-        listOf(
-            colors.surfaceVariant.copy(alpha = 0.74f),
-            colors.surface.copy(alpha = 0.94f)
-        )
-    )
-
     Box(
         modifier = modifier
             .animateContentSize(tween(VeilMotion.STANDARD_MS))
             .clip(shape)
-            .background(panelBrush)
+            .background(colors.surface)
             .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
+                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.40f)),
                 shape
             )
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.White.copy(alpha = 0.055f))
-                .align(Alignment.TopCenter)
-        )
         CompositionLocalProvider(
             LocalContentColor provides colors.onSurface
         ) {
