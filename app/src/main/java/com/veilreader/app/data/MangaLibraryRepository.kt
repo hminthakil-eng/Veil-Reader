@@ -60,7 +60,7 @@ class MangaLibraryRepository internal constructor(
         val existing = database.mangaChapters().listForBook(bookId)
         val existingById = existing.associateBy(MangaChapterEntity::id)
         val sourceBindings = database.mangaChapterBindings()
-            .listForSource(descriptor.id.value)
+            .listForSourceManga(descriptor.id.value, sourceRef.key)
         val sourceByKey = sourceBindings.associateBy(MangaChapterBindingEntity::sourceChapterKey)
         val incoming = update.chapters.orEmpty()
 
@@ -242,6 +242,7 @@ class MangaLibraryRepository internal constructor(
                     MangaChapterBindingEntity(
                         chapterId = chapterId,
                         sourceId = descriptor.id.value,
+                        mangaSourceKey = sourceRef.key,
                         sourceChapterKey = sourceChapter.ref.key,
                         lastSeenAtEpochMs = syncedAtEpochMs
                     )
