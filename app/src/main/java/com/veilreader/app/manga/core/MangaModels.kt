@@ -1,6 +1,11 @@
 package com.veilreader.app.manga.core
 
 @JvmInline
+value class MangaProviderId(val value: String) {
+    init { require(value.isNotBlank()) { "Manga provider id cannot be blank." } }
+}
+
+@JvmInline
 value class MangaSourceId(val value: String) {
     init { require(value.isNotBlank()) { "Manga source id cannot be blank." } }
 }
@@ -9,15 +14,24 @@ data class MangaSourceDescriptor(
     val id: MangaSourceId,
     val name: String,
     val language: String,
+    val providerId: MangaProviderId = MangaProviderId(id.value.substringBefore('.')),
+    val version: Int = 1,
     val capabilities: Set<MangaSourceCapability> = emptySet()
 ) {
     init {
         require(name.isNotBlank()) { "Manga source name cannot be blank." }
         require(language.isNotBlank()) { "Manga source language cannot be blank." }
+        require(version > 0) { "Manga source version must be positive." }
     }
 }
 
-enum class MangaSourceCapability { SEARCH, POPULAR, LATEST }
+enum class MangaSourceCapability {
+    SEARCH,
+    POPULAR,
+    LATEST,
+    FILTERS,
+    URL_RESOLUTION
+}
 
 data class MangaRef(val sourceId: MangaSourceId, val key: String) {
     init { require(key.isNotBlank()) { "Manga key cannot be blank." } }
