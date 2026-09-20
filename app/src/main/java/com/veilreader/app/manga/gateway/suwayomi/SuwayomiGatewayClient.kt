@@ -37,6 +37,9 @@ data class SuwayomiGatewayConfig(
         require(uri.userInfo.isNullOrBlank()) {
             "Suwayomi credentials must not be embedded in the base URL."
         }
+        require(uri.rawQuery.isNullOrBlank() && uri.rawFragment.isNullOrBlank()) {
+            "Suwayomi base URL must not contain a query or fragment."
+        }
     }
 
     val normalizedBaseUrl: String = baseUrl.trimEnd('/')
