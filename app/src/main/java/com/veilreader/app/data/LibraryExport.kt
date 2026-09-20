@@ -86,7 +86,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 zip.closeEntry()
                 zip.putNextEntry(ZipEntry("README.txt"))
                 val readme = "Veil Reader local backup. Restore it from Profile > Your data > Restore library backup. " +
-                    "The archive can contain private books, highlights, notes and reading state; keep it private.\n"
+                    "The archive can contain private books, manga source/chapter state, highlights, notes and reading state; " +
+                    "downloaded manga page files are not included. Keep it private.\n"
                 zip.write(readme.toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
                 files.forEach { (_, file, path) ->
@@ -115,7 +116,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val incoming = when (schema) {
                 1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
-                CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
+                2, CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
                 else -> error("Unsupported backup schema.")
             }
             val gamePreferences = JSONObject(manifest.getJSONObject("gamePreferences").toString())
@@ -296,8 +297,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     companion object {
         private const val GAME_PREFS = "veil_game_v1"
-        private const val CURRENT_BACKUP_SCHEMA = 2
-        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, CURRENT_BACKUP_SCHEMA)
+        private const val CURRENT_BACKUP_SCHEMA = 3
+        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
@@ -312,6 +313,9 @@ private fun LibrarySnapshot.toJson(): JSONObject = JSONObject().apply {
     put("bookmarks", JSONArray().apply { bookmarks.forEach { put(it.toJson()) } })
     put("appearance", appearance.toJson())
     put("readingSessions", JSONArray().apply { readingSessions.forEach { put(it.toJson()) } })
+    put("mangaSourceBindings", JSONArray().apply { mangaSourceBindings.forEach { put(it.toJson()) } })
+    put("mangaChapters", JSONArray().apply { mangaChapters.forEach { put(it.toJson()) } })
+    put("mangaChapterBindings", JSONArray().apply { mangaChapterBindings.forEach { put(it.toJson()) } })
 }
 
 private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -319,7 +323,16 @@ private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapsho
     highlights = json.optJSONArray("highlights")?.mapObjects(::highlightFromJson).orEmpty(),
     bookmarks = json.optJSONArray("bookmarks")?.mapObjects(::bookmarkFromJson).orEmpty(),
     appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject()),
-    readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty()
+    readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty(),
+    mangaSourceBindings = json.optJSONArray("mangaSourceBindings")
+        ?.mapObjects(::mangaSourceBindingFromJson)
+        .orEmpty(),
+    mangaChapters = json.optJSONArray("mangaChapters")
+        ?.mapObjects(::mangaChapterFromJson)
+        .orEmpty(),
+    mangaChapterBindings = json.optJSONArray("mangaChapterBindings")
+        ?.mapObjects(::mangaChapterBindingFromJson)
+        .orEmpty()
 )
 
 private fun parseLegacySchemaOne(prefs: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -360,6 +373,38 @@ private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
     put("pacedPageTurns", pacedPageTurns)
     put("highlightCount", highlightCount)
     put("noteCount", noteCount)
+}
+
+private fun MangaSourceBindingSnapshot.toJson(): JSONObject = JSONObject().apply {
+    put("bookId", bookId)
+    put("sourceId", sourceId)
+    put("providerId", providerId)
+    put("sourceKey", sourceKey)
+    put("language", language)
+    put("sourceVersion", sourceVersion)
+    put("isPreferred", isPreferred)
+    put("lastSyncedAt", lastSyncedAtEpochMs)
+}
+
+private fun MangaChapterSnapshot.toJson(): JSONObject = JSONObject().apply {
+    put("id", id)
+    put("bookId", bookId)
+    put("title", title)
+    put("chapterNumber", chapterNumber ?: JSONObject.NULL)
+    put("volumeNumber", volumeNumber ?: JSONObject.NULL)
+    put("publishedAt", publishedAtEpochMs ?: JSONObject.NULL)
+    put("displayOrder", displayOrder)
+    put("pageCount", pageCount)
+    put("lastPageIndex", lastPageIndex)
+    put("read", read)
+    put("lastReadAt", lastReadAtEpochMs ?: JSONObject.NULL)
+}
+
+private fun MangaChapterBindingSnapshot.toJson(): JSONObject = JSONObject().apply {
+    put("chapterId", chapterId)
+    put("sourceId", sourceId)
+    put("sourceChapterKey", sourceChapterKey)
+    put("lastSeenAt", lastSeenAtEpochMs)
 }
 
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
@@ -422,6 +467,41 @@ private fun readingSessionFromJson(o: JSONObject): ReadingSessionSnapshot = Read
     noteCount = o.optInt("noteCount", 0).coerceAtLeast(0)
 )
 
+private fun mangaSourceBindingFromJson(o: JSONObject): MangaSourceBindingSnapshot =
+    MangaSourceBindingSnapshot(
+        bookId = o.getString("bookId"),
+        sourceId = o.getString("sourceId"),
+        providerId = o.getString("providerId"),
+        sourceKey = o.getString("sourceKey"),
+        language = o.optString("language"),
+        sourceVersion = o.optInt("sourceVersion", 1).coerceAtLeast(1),
+        isPreferred = o.optBoolean("isPreferred", false),
+        lastSyncedAtEpochMs = o.optLong("lastSyncedAt", 0L)
+    )
+
+private fun mangaChapterFromJson(o: JSONObject): MangaChapterSnapshot =
+    MangaChapterSnapshot(
+        id = o.getString("id"),
+        bookId = o.getString("bookId"),
+        title = o.optString("title"),
+        chapterNumber = o.optFiniteDouble("chapterNumber"),
+        volumeNumber = o.optFiniteDouble("volumeNumber"),
+        publishedAtEpochMs = o.optNullableLong("publishedAt"),
+        displayOrder = o.optInt("displayOrder", 0).coerceAtLeast(0),
+        pageCount = o.optInt("pageCount", 0).coerceAtLeast(0),
+        lastPageIndex = o.optInt("lastPageIndex", 0).coerceAtLeast(0),
+        read = o.optBoolean("read", false),
+        lastReadAtEpochMs = o.optNullableLong("lastReadAt")
+    )
+
+private fun mangaChapterBindingFromJson(o: JSONObject): MangaChapterBindingSnapshot =
+    MangaChapterBindingSnapshot(
+        chapterId = o.getString("chapterId"),
+        sourceId = o.getString("sourceId"),
+        sourceChapterKey = o.getString("sourceChapterKey"),
+        lastSeenAtEpochMs = o.optLong("lastSeenAt", 0L)
+    )
+
 private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearance(
     theme = runCatching { ReaderTheme.valueOf(o.optString("theme", "DUSK")) }.getOrDefault(ReaderTheme.DUSK),
     fontScale = (o.optDouble("fontScale", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.75, 1.8),
@@ -439,3 +519,6 @@ private fun JSONObject.optNullableString(key: String): String? =
 
 private fun JSONObject.optFiniteDouble(key: String): Double? =
     if (!has(key) || isNull(key)) null else optDouble(key, Double.NaN).takeIf { it.isFinite() }
+
+private fun JSONObject.optNullableLong(key: String): Long? =
+    if (!has(key) || isNull(key)) null else optLong(key)
