@@ -57,7 +57,7 @@ val MIGRATION_1_2: Migration = object : Migration(1, 2) {
         )
         db.execSQL(
             """
-            CREATE UNIQUE INDEX IF NOT EXISTS index_manga_chapters_bookId_displayOrder
+            CREATE INDEX IF NOT EXISTS index_manga_chapters_bookId_displayOrder
             ON manga_chapters(bookId, displayOrder)
             """.trimIndent()
         )
