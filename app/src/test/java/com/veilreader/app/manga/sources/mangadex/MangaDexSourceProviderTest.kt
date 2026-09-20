@@ -10,7 +10,6 @@ import com.veilreader.app.manga.net.MangaHttpResponse
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -27,7 +26,7 @@ class MangaDexSourceProviderTest {
         val result = source.search("Veil Knight", null)
 
         assertEquals(1, result.items.size)
-        assertEquals("20", result.nextCursor)
+        assertEquals("1", result.nextCursor)
         assertEquals("Veil Knight", result.items.single().title)
         assertEquals(
             "https://uploads.mangadex.org/covers/manga-1/cover.jpg.256.jpg",
@@ -121,7 +120,7 @@ class MangaDexSourceProviderTest {
                   ]
                 }
               ],
-              "total": 21
+              "total": 2
             }
         """.trimIndent()
 
