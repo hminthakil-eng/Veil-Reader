@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.FormBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -21,6 +22,14 @@ fun interface MangaHttpClient {
         url: String,
         headers: Map<String, String>
     ): MangaHttpResponse
+
+    suspend fun postForm(
+        url: String,
+        headers: Map<String, String>,
+        fields: Map<String, String>
+    ): MangaHttpResponse {
+        throw MangaSourceException.Unsupported("This HTTP client does not support form POST.")
+    }
 }
 
 class OkHttpMangaHttpClient(
@@ -30,15 +39,37 @@ class OkHttpMangaHttpClient(
     override suspend fun get(
         url: String,
         headers: Map<String, String>
-    ): MangaHttpResponse = withContext(Dispatchers.IO) {
-        val builder = Request.Builder()
-            .url(url)
-            .header("User-Agent", userAgent)
+    ): MangaHttpResponse = executeRequest(
+        url = url,
+        headers = headers,
+        request = Request.Builder().url(url).get()
+    )
 
-        headers.forEach { (name, value) -> builder.header(name, value) }
+    override suspend fun postForm(
+        url: String,
+        headers: Map<String, String>,
+        fields: Map<String, String>
+    ): MangaHttpResponse {
+        val body = FormBody.Builder().apply {
+            fields.forEach { (name, value) -> add(name, value) }
+        }.build()
+        return executeRequest(
+            url = url,
+            headers = headers,
+            request = Request.Builder().url(url).post(body)
+        )
+    }
+
+    private suspend fun executeRequest(
+        url: String,
+        headers: Map<String, String>,
+        request: Request.Builder
+    ): MangaHttpResponse = withContext(Dispatchers.IO) {
+        request.header("User-Agent", userAgent)
+        headers.forEach { (name, value) -> request.header(name, value) }
 
         try {
-            client.newCall(builder.build()).execute().use { response ->
+            client.newCall(request.build()).execute().use { response ->
                 val body = response.body.string()
                 if (!response.isSuccessful) {
                     throw mangaHttpFailure(
@@ -100,14 +131,28 @@ class PacedMangaHttpClient(
         url: String,
         headers: Map<String, String>
     ): MangaHttpResponse = mutex.withLock {
+        waitForPermit()
+        val result = delegate.get(url, headers)
+        nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
+        result
+    }
+
+    override suspend fun postForm(
+        url: String,
+        headers: Map<String, String>,
+        fields: Map<String, String>
+    ): MangaHttpResponse = mutex.withLock {
+        waitForPermit()
+        val result = delegate.postForm(url, headers, fields)
+        nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
+        result
+    }
+
+    private suspend fun waitForPermit() {
         val now = System.nanoTime()
         val waitNanos = nextAllowedAtNanos - now
         if (waitNanos > 0) {
             delay((waitNanos + 999_999L) / 1_000_000L)
         }
-
-        val result = delegate.get(url, headers)
-        nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
-        result
     }
 }
