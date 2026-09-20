@@ -248,11 +248,15 @@ internal fun paperCurlPageEdge(
     start: Offset,
     current: Offset
 ): PaperCurlEdge {
-    val vector = Offset(width, start.y) - current
+    // Body swipes must start with an uncurled page, just like edge swipes.
+    // Anchor the fold to the page edge and apply only the finger displacement;
+    // using the absolute finger position pre-curls the page before it moves.
+    val draggedEdge = Offset(width + current.x - start.x, current.y)
+    val vector = Offset(width, start.y) - draggedEdge
     val rotated = Offset(-vector.y, vector.x)
     return PaperCurlEdge(
-        current - rotated + vector / 2f,
-        current + rotated + vector / 2f
+        draggedEdge - rotated + vector / 2f,
+        draggedEdge + rotated + vector / 2f
     )
 }
 
