@@ -83,12 +83,13 @@ data class MangaChapterEntity(
         )
     ],
     indices = [
-        Index(value = ["sourceId", "sourceChapterKey"], unique = true)
+        Index(value = ["sourceId", "mangaSourceKey", "sourceChapterKey"], unique = true)
     ]
 )
 data class MangaChapterBindingEntity(
     val chapterId: String,
     val sourceId: String,
+    val mangaSourceKey: String,
     val sourceChapterKey: String,
     val lastSeenAtEpochMs: Long
 )
