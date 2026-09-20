@@ -63,8 +63,12 @@ data class MangaResourceRequest(
     val headers: Map<String, String> = emptyMap()
 ) {
     init {
-        require(url.startsWith("https://") || url.startsWith("http://")) {
-            "Manga resource URL must use http or https."
+        require(
+            url.startsWith("https://") ||
+                url.startsWith("http://") ||
+                url.startsWith("file://")
+        ) {
+            "Manga resource URL must use http, https, or file."
         }
     }
 }
