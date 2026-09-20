@@ -165,7 +165,7 @@ class MangaLibraryRepository internal constructor(
                 .associateBy(MangaChapterEntity::id)
                 .toMutableMap()
             val sourceBindings = database.mangaChapterBindings()
-                .listForSource(descriptor.id.value)
+                .listForSourceManga(descriptor.id.value, sourceRef.key)
             val sourceByKey = sourceBindings.associateBy(MangaChapterBindingEntity::sourceChapterKey)
             val sourceBoundChapterIds = sourceBindings.mapTo(mutableSetOf()) { it.chapterId }
             val incomingChapters = update.chapters.orEmpty()
