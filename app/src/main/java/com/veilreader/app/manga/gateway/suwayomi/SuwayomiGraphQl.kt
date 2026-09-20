@@ -1,10 +1,10 @@
 package com.veilreader.app.manga.gateway.suwayomi
 
 import com.veilreader.app.manga.core.MangaSourceException
-import java.io.IOException
+import com.veilreader.app.manga.net.MangaHttpClient
+import com.veilreader.app.manga.net.OkHttpMangaHttpClient
+import com.veilreader.app.manga.net.PacedMangaHttpClient
 import java.net.URI
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -13,10 +13,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.RequestBody.Companion.toRequestBody
 
 @JvmInline
 value class SuwayomiServerId(val value: String) {
@@ -68,78 +64,51 @@ fun interface SuwayomiGraphQlTransport {
 class OkHttpSuwayomiGraphQlTransport(
     private val config: SuwayomiServerConfig,
     private val tokenProvider: SuwayomiAccessTokenProvider = SuwayomiAccessTokenProvider { null },
-    private val client: OkHttpClient = OkHttpClient(),
+    private val http: MangaHttpClient = PacedMangaHttpClient(
+        OkHttpMangaHttpClient(),
+        requestsPerSecond = 4
+    ),
     private val json: Json = Json { ignoreUnknownKeys = true }
 ) : SuwayomiGraphQlTransport {
-    override suspend fun execute(request: SuwayomiGraphQlRequest): JsonObject =
-        withContext(Dispatchers.IO) {
-            val payload = buildJsonObject {
-                put("operationName", request.operationName)
-                put("query", request.query)
-                put("variables", request.variables)
-            }.toString()
+    override suspend fun execute(request: SuwayomiGraphQlRequest): JsonObject {
+        val payload = buildJsonObject {
+            put("operationName", request.operationName)
+            put("query", request.query)
+            put("variables", request.variables)
+        }.toString()
 
-            val httpRequest = Request.Builder()
-                .url(config.graphQlUrl)
-                .post(payload.toRequestBody(JSON_MEDIA_TYPE))
-                .header("Accept", "application/json")
-                .apply {
-                    tokenProvider.accessToken()
-                        ?.trim()
-                        ?.takeIf(String::isNotEmpty)
-                        ?.let { header("Authorization", "Bearer $it") }
-                }
-                .build()
+        val headers = buildMap {
+            put("Accept", "application/json")
+            tokenProvider.accessToken()
+                ?.trim()
+                ?.takeIf(String::isNotEmpty)
+                ?.let { put("Authorization", "Bearer $it") }
+        }
 
-            try {
-                client.newCall(httpRequest).execute().use { response ->
-                    val body = response.body.string()
-                    if (!response.isSuccessful) {
-                        throw suwayomiHttpFailure(response.code, body)
-                    }
+        val body = http.postJson(
+            url = config.graphQlUrl,
+            headers = headers,
+            json = payload
+        ).body
 
-                    val root = runCatching { json.parseToJsonElement(body).jsonObject }
-                        .getOrElse { error ->
-                            throw MangaSourceException.ParseFailure(
-                                "Suwayomi returned invalid GraphQL JSON.",
-                                error
-                            )
-                        }
-
-                    val errors = root["errors"]?.jsonArray.orEmpty()
-                    if (errors.isNotEmpty()) {
-                        throw suwayomiGraphQlFailure(errors)
-                    }
-
-                    root["data"]?.jsonObject
-                        ?: throw MangaSourceException.ParseFailure(
-                            "Suwayomi GraphQL response did not contain data."
-                        )
-                }
-            } catch (error: MangaSourceException) {
-                throw error
-            } catch (error: IOException) {
-                throw MangaSourceException.NetworkFailure(
-                    message = "Suwayomi GraphQL request failed.",
-                    cause = error
+        val root = runCatching { json.parseToJsonElement(body).jsonObject }
+            .getOrElse { error ->
+                throw MangaSourceException.ParseFailure(
+                    "Suwayomi returned invalid GraphQL JSON.",
+                    error
                 )
             }
+
+        val errors = root["errors"]?.jsonArray.orEmpty()
+        if (errors.isNotEmpty()) {
+            throw suwayomiGraphQlFailure(errors)
         }
 
-    private fun suwayomiHttpFailure(code: Int, body: String): MangaSourceException =
-        when (code) {
-            401 -> MangaSourceException.AuthRequired("Suwayomi authentication is required.")
-            403 -> MangaSourceException.Blocked("Suwayomi rejected the request.")
-            404 -> MangaSourceException.NotFound("Suwayomi GraphQL endpoint was not found.")
-            429 -> MangaSourceException.RateLimited(message = "Suwayomi rate limit reached.")
-            in 500..599 -> MangaSourceException.TemporarilyUnavailable(
-                "Suwayomi server is temporarily unavailable (HTTP $code)."
+        return root["data"]?.jsonObject
+            ?: throw MangaSourceException.ParseFailure(
+                "Suwayomi GraphQL response did not contain data."
             )
-            else -> MangaSourceException.NetworkFailure(
-                statusCode = code,
-                message = "Suwayomi HTTP $code: " + body.take(160)
-            )
-        }
+    }
 
     private fun suwayomiGraphQlFailure(errors: List<JsonElement>): MangaSourceException {
         val messages = errors.mapNotNull { element ->
@@ -167,10 +136,6 @@ class OkHttpSuwayomiGraphQlTransport(
                 message = "Suwayomi GraphQL error: $combined"
             )
         }
-    }
-
-    private companion object {
-        val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
     }
 }
 

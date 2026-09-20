@@ -9,6 +9,8 @@ import com.veilreader.app.manga.core.MangaSourceCapability
 import com.veilreader.app.manga.core.MangaSourceException
 import com.veilreader.app.manga.core.MangaStatus
 import com.veilreader.app.manga.core.MangaUpdateOptions
+import com.veilreader.app.manga.net.MangaHttpClient
+import com.veilreader.app.manga.net.MangaHttpResponse
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -51,6 +53,32 @@ class SuwayomiGatewayTest {
         )
         assertNull(config.resolveServerResource("https://evil.example/image/1"))
         assertNull(config.resolveServerResource("http://reader.example:4567/image/1"))
+    }
+
+    @Test
+    fun graphQlTransport_usesSharedMangaHttpJsonPostAndBearerHeader() = runBlocking {
+        val http = RecordingHttp(
+            responseBody = """{"data":{"health":"ok"}}"""
+        )
+        val transport = OkHttpSuwayomiGraphQlTransport(
+            config = config,
+            tokenProvider = SuwayomiAccessTokenProvider { "token-123" },
+            http = http
+        )
+
+        val result = transport.execute(
+            SuwayomiGraphQlRequest(
+                operationName = "VeilHealth",
+                query = "query VeilHealth { health }"
+            )
+        )
+
+        assertEquals("ok", result["health"]?.jsonPrimitive?.content)
+        assertEquals(config.graphQlUrl, http.postUrl)
+        assertEquals("application/json", http.postHeaders["Accept"])
+        assertEquals("Bearer token-123", http.postHeaders["Authorization"])
+        assertTrue(http.postBody?.contains("\"operationName\":\"VeilHealth\"") == true)
+        assertEquals(0, http.getCalls)
     }
 
     @Test
@@ -302,6 +330,34 @@ class SuwayomiGatewayTest {
 
     private fun jsonObject(raw: String): JsonObject =
         Json.parseToJsonElement(raw).jsonObject
+
+    private class RecordingHttp(
+        private val responseBody: String
+    ) : MangaHttpClient {
+        var getCalls = 0
+        var postUrl: String? = null
+        var postHeaders: Map<String, String> = emptyMap()
+        var postBody: String? = null
+
+        override suspend fun get(
+            url: String,
+            headers: Map<String, String>
+        ): MangaHttpResponse {
+            getCalls += 1
+            error("Suwayomi GraphQL must use JSON POST, not GET.")
+        }
+
+        override suspend fun postJson(
+            url: String,
+            headers: Map<String, String>,
+            json: String
+        ): MangaHttpResponse {
+            postUrl = url
+            postHeaders = headers
+            postBody = json
+            return MangaHttpResponse(code = 200, body = responseBody)
+        }
+    }
 
     private class RecordingTransport(
         private val responses: Map<String, JsonObject>
