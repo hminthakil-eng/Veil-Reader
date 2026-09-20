@@ -181,3 +181,102 @@ workflows:
       - app/build/outputs/apk/debug/*.apk
       - app/build/outputs/apk/androidTest/**/*.apk
       - emulator-wtf-results/**
+
+ripwire-code-context-pilot:
+    name: Ripwire Code Context Pilot
+    instance_type: mac_mini_m2
+    max_build_duration: 15
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'pilot/ripwire-code-context'
+          include: true
+          source: true
+      cancel_previous_builds: true
+    scripts:
+      - name: Capture grep baseline
+        script: |
+          set -euo pipefail
+          mkdir -p ripwire-results
+          START=$(python3 - <<'PY'
+          import time
+          print(time.perf_counter_ns())
+          PY
+          )
+          git grep -n -I -E 'SQLiteException|Room|BookDao|VeilDatabase|readingProgress|reading progress|progress' -- app/src/main app/src/androidTest app/src/test > ripwire-results/grep-baseline.txt || true
+          END=$(python3 - <<'PY'
+          import time
+          print(time.perf_counter_ns())
+          PY
+          )
+          python3 - <<PY
+          from pathlib import Path
+          p=Path("ripwire-results/grep-baseline.txt")
+          lines=p.read_text(errors="replace").splitlines() if p.exists() else []
+          files=sorted({line.split(":",1)[0] for line in lines if ":" in line})
+          elapsed_ms=(${END}-${START})/1_000_000
+          Path("ripwire-results/grep-baseline-metrics.txt").write_text(
+              f"elapsed_ms={elapsed_ms:.3f}\\noutput_bytes={p.stat().st_size if p.exists() else 0}\\nresult_lines={len(lines)}\\nunique_files={len(files)}\\n"
+          )
+          PY
+
+      - name: Install pinned Ripwire
+        script: |
+          set -euo pipefail
+          export RIPWIRE_REPO=redhat-et/ripwire
+          export RIPWIRE_VERSION=v0.6.1
+          export RIPWIRE_INSTALL_YES=1
+          export RIPWIRE_NO_ACTIVATE=1
+          bash -c "$(curl -fsSL https://raw.githubusercontent.com/redhat-et/ripwire/v0.6.1/scripts/install.sh)"
+          export PATH="$HOME/.local/bin:$PATH"
+          ripwire --version | tee ripwire-results/ripwire-version.txt
+
+      - name: Build Veil Reader map
+        script: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          /usr/bin/time -p ripwire . > ripwire-results/repo-map.txt 2> ripwire-results/repo-map-time.txt
+          wc -c ripwire-results/repo-map.txt > ripwire-results/repo-map-bytes.txt
+
+      - name: Localize Room SQLite failure
+        script: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          TASK="Diagnose an Android instrumentation failure involving android.database.sqlite.SQLiteException during rapid reading with Room persistence. Focus on BookDao, VeilDatabase, reading progress persistence, transaction/lifecycle boundaries, callers, dependencies, blast radius, and tests to run. Do not invent the root cause."
+          /usr/bin/time -p ripwire . --for="$TASK" > ripwire-results/room-task.txt 2> ripwire-results/room-task-time.txt
+          wc -c ripwire-results/room-task.txt > ripwire-results/room-task-bytes.txt
+
+      - name: Database context probes
+        script: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          {
+            echo "=== BookDao ==="
+            ripwire . --for="BookDao Room persistence reading progress"
+            echo
+            echo "=== VeilDatabase ==="
+            ripwire . --for="VeilDatabase lifecycle SQLite instrumentation failure"
+          } > ripwire-results/db-probes.txt
+
+      - name: Pilot summary
+        script: |
+          set -euo pipefail
+          {
+            echo "RIPWIRE PILOT"
+            cat ripwire-results/ripwire-version.txt
+            echo
+            echo "GREP BASELINE"
+            cat ripwire-results/grep-baseline-metrics.txt
+            echo
+            echo "RIPWIRE MAP"
+            cat ripwire-results/repo-map-time.txt
+            cat ripwire-results/repo-map-bytes.txt
+            echo
+            echo "RIPWIRE ROOM TASK"
+            cat ripwire-results/room-task-time.txt
+            cat ripwire-results/room-task-bytes.txt
+          } | tee ripwire-results/summary.txt
+
+    artifacts:
+      - ripwire-results/**
