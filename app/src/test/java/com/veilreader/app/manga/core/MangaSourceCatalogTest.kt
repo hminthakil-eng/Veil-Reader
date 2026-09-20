@@ -109,6 +109,55 @@ class MangaSourceCatalogTest {
         assertEquals(456L, tracker.health(sourceId).updatedAtEpochMs)
     }
 
+    @Test
+    fun hubOperations_updateSourceHealthAutomatically() {
+        val sourceId = MangaSourceId("broken.en")
+        val failing = object : MangaSourceProvider {
+            override val descriptor = MangaSourceDescriptor(
+                id = sourceId,
+                providerId = MangaProviderId("test"),
+                name = "Broken",
+                language = "en",
+                capabilities = setOf(MangaSourceCapability.SEARCH)
+            )
+
+            override suspend fun search(request: MangaSearchRequest): MangaResultPage<MangaSummary> {
+                throw MangaSourceException.AuthRequired()
+            }
+
+            override suspend fun fetchUpdate(
+                ref: MangaRef,
+                existingChapters: List<MangaChapter>,
+                options: MangaUpdateOptions
+            ) = MangaUpdate(ref = ref)
+
+            override suspend fun pages(ref: MangaChapterRef) = emptyList<MangaPage>()
+        }
+
+        val catalog = MangaSourceCatalog(
+            registrations = listOf(
+                MangaSourceRegistration(
+                    provider = failing,
+                    origin = MangaSourceOrigin.DIRECT,
+                    enabledByDefault = true
+                )
+            ),
+            policy = MangaFeaturePolicy(
+                hubEnabled = true,
+                directSourcesEnabled = true
+            )
+        )
+
+        kotlinx.coroutines.runBlocking {
+            runCatching {
+                catalog.buildHubOrNull()!!.search(sourceId, "veil")
+            }
+        }
+
+        val health = catalog.snapshot().entries.single().health
+        assertEquals(MangaSourceHealthKind.AUTH_REQUIRED, health.kind)
+    }
+
     private fun registration(
         id: String,
         origin: MangaSourceOrigin,
