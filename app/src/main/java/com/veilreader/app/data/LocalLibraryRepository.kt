@@ -230,7 +230,12 @@ class LocalLibraryRepository internal constructor(
     }
 
     /** Returns true when this update completed the book for the first time. */
-    fun saveProgress(id: String, progression: Double, locatorJson: String): Boolean {
+    fun saveProgress(
+        id: String,
+        progression: Double,
+        locatorJson: String,
+        currentChapter: String? = null
+    ): Boolean {
         val current = getBook(id) ?: return false
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
@@ -243,6 +248,7 @@ class LocalLibraryRepository internal constructor(
             progress = safe,
             pagesRead = estimatedRead,
             locatorJson = locatorJson,
+            currentChapter = currentChapter?.takeIf(String::isNotBlank) ?: current.currentChapter,
             lastOpenedAtEpochMs = System.currentTimeMillis(),
             finished = current.finished || finishedNow
         )
@@ -253,6 +259,7 @@ class LocalLibraryRepository internal constructor(
                 progress = updated.progress,
                 pagesRead = updated.pagesRead,
                 locatorJson = locatorJson,
+                currentChapter = currentChapter?.takeIf(String::isNotBlank),
                 lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
                 finished = updated.finished
             ),
@@ -538,6 +545,7 @@ class LocalLibraryRepository internal constructor(
                     progress = value.progress,
                     pagesRead = value.pagesRead,
                     locatorJson = value.locatorJson,
+                    currentChapter = value.currentChapter,
                     lastOpenedAtEpochMs = value.lastOpenedAtEpochMs,
                     finished = value.finished
                 ) == 1
@@ -653,6 +661,7 @@ private data class PendingProgressWrite(
     val progress: Float,
     val pagesRead: Int,
     val locatorJson: String,
+    val currentChapter: String?,
     val lastOpenedAtEpochMs: Long,
     val finished: Boolean
 )
