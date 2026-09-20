@@ -150,6 +150,33 @@ class MangaLibraryRepository internal constructor(
         )
     }
 
+    suspend fun chapterWindow(
+        bookId: String,
+        chapterId: String
+    ): com.veilreader.app.manga.reader.MangaChapterWindow {
+        val chapters = database.mangaChapters().listForBook(bookId)
+        val position = chapters.indexOfFirst { it.id == chapterId }
+        require(position >= 0) { "Manga chapter does not belong to the requested book." }
+
+        return com.veilreader.app.manga.reader.MangaChapterWindow(
+            currentChapterId = chapterId,
+            previousChapterId = chapters.getOrNull(position - 1)?.id,
+            nextChapterId = chapters.getOrNull(position + 1)?.id
+        )
+    }
+
+    suspend fun resumeChapterId(bookId: String): String? =
+        database.mangaChapters()
+            .listForBook(bookId)
+            .maxWithOrNull(
+                compareBy<com.veilreader.app.data.db.MangaChapterEntity> {
+                    it.lastReadAtEpochMs ?: Long.MIN_VALUE
+                }.thenBy { it.displayOrder }
+            )
+            ?.takeIf { it.lastReadAtEpochMs != null }
+            ?.id
+            ?: database.mangaChapters().listForBook(bookId).firstOrNull()?.id
+
     suspend fun preferredSourceRef(bookId: String): MangaRef? =
         database.mangaSourceBindings()
             .listForBook(bookId)
