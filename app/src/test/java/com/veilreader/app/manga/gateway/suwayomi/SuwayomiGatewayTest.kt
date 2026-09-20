@@ -180,7 +180,7 @@ class SuwayomiGatewayTest {
             requests += RecordedRequest(url, headers, json)
             return MangaHttpResponse(
                 code = 200,
-                body = responses.removeFirst()
+                body = responses.removeAt(0)
             )
         }
     }
