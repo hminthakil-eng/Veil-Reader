@@ -105,6 +105,8 @@ data class Highlight(
     val createdAtEpochMs: Long = System.currentTimeMillis()
 )
 
+enum class AppThemeMode { SYSTEM, LIGHT, DARK }
+
 enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
 data class ReaderAppearance(
