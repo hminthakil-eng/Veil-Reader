@@ -33,7 +33,11 @@ if ($Publication) {
     & $adb push $Publication $remote | Out-Null
     $encodedName = [uri]::EscapeDataString("primary:Download/$remoteName")
     $uri = "content://com.android.externalstorage.documents/document/$encodedName"
-    & $adb shell am start -a android.intent.action.VIEW -d $uri -t $Mime --grant-read-uri-permission | Out-Null
+    $importOutput = & $adb shell am start -a android.intent.action.VIEW -d $uri -t $Mime --grant-read-uri-permission 2>&1
+    $importCode = $LASTEXITCODE
+    if ($importCode -ne 0 -or ($importOutput -join [Environment]::NewLine) -match "SecurityException|Permission Denial|Error:") {
+        throw "Publication import did not start successfully. The smoke harness must not report PASS when Android SAF rejected the URI."
+    }
     Start-Sleep -Seconds 4
 }
 
@@ -47,5 +51,5 @@ if ($errors) {
     throw "Reader smoke test found a crash/ANR. See app\build\qa\device-smoke-errors.txt"
 }
 
-Write-Output "PASS: launch/import smoke test completed without crash/ANR."
+Write-Output "PASS: launch/import smoke test completed and the import intent was accepted without crash/ANR."
 Write-Output "Screenshot: $shot"
