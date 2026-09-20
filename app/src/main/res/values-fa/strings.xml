@@ -84,4 +84,10 @@
     <string name="reading_publisher_styling">استایل ناشر</string>
     <string name="reading_publisher_styling_description">در صورت امکان تایپوگرافی و چیدمان اصلی کتاب حفظ شود.</string>
     <string name="reading_back_to_reading">بازگشت به مطالعه</string>
+    <string name="reading_page_color">رنگ صفحه</string>
+    <string name="reading_page_color_description">انتخاب رنگ، سبک ناشر را خاموش می‌کند. اندازهٔ متن، فاصله‌ها، حاشیه و حالت مطالعهٔ انتخابی شما حفظ می‌شوند.</string>
+    <string name="reading_page_color_publisher_active">سبک ناشر فعال است. برای جایگزینی آن، رنگ دلخواه را انتخاب کنید.</string>
+    <string name="reading_text_size">اندازهٔ متن</string>
+    <string name="reading_line_height">فاصلهٔ خطوط</string>
+    <string name="reading_page_margins">حاشیهٔ صفحه</string>
 </resources>
