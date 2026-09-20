@@ -95,7 +95,8 @@ fun ProfileScreen(
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
     onExportNotes: (Uri) -> Unit,
-    onOpenArchive: () -> Unit
+    onOpenArchive: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { it?.let(onExportBackup) }
     val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(onRestoreBackup) }
@@ -112,6 +113,15 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         ScreenHeader("Reader profile", castleTitle, "${p.path.name} · ${p.rankName}")
+
+        FilledTonalButton(
+            onClick = onOpenSettings,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+        ) {
+            Text("Reader & app settings")
+        }
 
         MysteryCard(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
