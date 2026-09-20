@@ -117,9 +117,13 @@ class MangaDexSourceProvider(
             val data = payload["data"]?.jsonArray ?: JsonArray(emptyList())
             total = payload["total"]?.jsonPrimitive?.intOrNull ?: data.size
 
-            chapters += data.map { element ->
+            chapters += data.mapNotNull { element ->
                 val item = element.jsonObject
                 val attributes = item["attributes"]!!.jsonObject
+                if (attributes.stringOrNull("externalUrl") != null) {
+                    return@mapNotNull null
+                }
+
                 val chapterRef = MangaChapterRef(ref, item.string("id"))
                 MangaChapter(
                     ref = chapterRef,
