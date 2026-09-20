@@ -403,6 +403,7 @@ private fun MangaChapterSnapshot.toJson(): JSONObject = JSONObject().apply {
 private fun MangaChapterBindingSnapshot.toJson(): JSONObject = JSONObject().apply {
     put("chapterId", chapterId)
     put("sourceId", sourceId)
+    put("mangaSourceKey", mangaSourceKey)
     put("sourceChapterKey", sourceChapterKey)
     put("lastSeenAt", lastSeenAtEpochMs)
 }
@@ -498,6 +499,7 @@ private fun mangaChapterBindingFromJson(o: JSONObject): MangaChapterBindingSnaps
     MangaChapterBindingSnapshot(
         chapterId = o.getString("chapterId"),
         sourceId = o.getString("sourceId"),
+        mangaSourceKey = o.optString("mangaSourceKey"),
         sourceChapterKey = o.getString("sourceChapterKey"),
         lastSeenAtEpochMs = o.optLong("lastSeenAt", 0L)
     )
