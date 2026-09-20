@@ -1,5 +1,6 @@
 package com.veilreader.app.manga.net
 
+import com.veilreader.app.manga.core.MangaSourceException
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -36,21 +37,55 @@ class OkHttpMangaHttpClient(
 
         headers.forEach { (name, value) -> builder.header(name, value) }
 
-        client.newCall(builder.build()).execute().use { response ->
-            val body = response.body.string()
-            if (!response.isSuccessful) {
-                throw IOException("Manga HTTP ${response.code} for $url")
-            }
-
-            MangaHttpResponse(
-                code = response.code,
-                body = body,
-                headers = response.headers.names().associateWith { name ->
-                    response.header(name).orEmpty()
+        try {
+            client.newCall(builder.build()).execute().use { response ->
+                val body = response.body.string()
+                if (!response.isSuccessful) {
+                    throw mangaHttpFailure(
+                        statusCode = response.code,
+                        retryAfterHeader = response.header("Retry-After"),
+                        url = url
+                    )
                 }
+
+                MangaHttpResponse(
+                    code = response.code,
+                    body = body,
+                    headers = response.headers.names().associateWith { name ->
+                        response.header(name).orEmpty()
+                    }
+                )
+            }
+        } catch (error: MangaSourceException) {
+            throw error
+        } catch (error: IOException) {
+            throw MangaSourceException.NetworkFailure(
+                message = "Manga network request failed for $url",
+                cause = error
             )
         }
     }
+}
+
+internal fun mangaHttpFailure(
+    statusCode: Int,
+    retryAfterHeader: String?,
+    url: String
+): MangaSourceException = when (statusCode) {
+    401 -> MangaSourceException.AuthRequired("Manga source requires authentication: $url")
+    403 -> MangaSourceException.Blocked("Manga source blocked the request: $url")
+    404 -> MangaSourceException.NotFound("Manga source item was not found: $url")
+    429 -> MangaSourceException.RateLimited(
+        retryAfterMillis = retryAfterHeader?.toLongOrNull()?.times(1_000L),
+        message = "Manga source rate limit reached: $url"
+    )
+    in 500..599 -> MangaSourceException.TemporarilyUnavailable(
+        "Manga source is temporarily unavailable (HTTP $statusCode): $url"
+    )
+    else -> MangaSourceException.NetworkFailure(
+        statusCode = statusCode,
+        message = "Manga HTTP $statusCode for $url"
+    )
 }
 
 class PacedMangaHttpClient(
