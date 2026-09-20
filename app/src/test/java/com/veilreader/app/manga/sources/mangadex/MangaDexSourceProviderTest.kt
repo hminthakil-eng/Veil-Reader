@@ -61,6 +61,19 @@ class MangaDexSourceProviderTest {
     }
 
     @Test
+    fun chapters_excludesExternalEntriesFromInternalReader() = runBlocking {
+        val source = MangaDexSourceProvider(RecordingHttpClient { CHAPTER_FEED_JSON })
+        val manga = MangaRef(MangaSourceId("mangadex.en"), "manga-1")
+
+        val chapters = source.chapters(manga)
+
+        assertEquals(1, chapters.size)
+        assertEquals("hosted-chapter", chapters.single().ref.key)
+        assertEquals(2.0, chapters.single().chapterNumber ?: 0.0, 0.0)
+        assertEquals("Group One", chapters.single().scanlator)
+    }
+
+    @Test
     fun catalog_keepsMangaDexDisabledByDefault() {
         val fake = RecordingHttpClient { error("Network must not be used while disabled") }
 
@@ -155,5 +168,36 @@ class MangaDexSourceProviderTest {
               }
             }
         """.trimIndent()
+
+        val CHAPTER_FEED_JSON = """
+            {
+              "data": [
+                {
+                  "id": "external-chapter",
+                  "attributes": {
+                    "title": "External",
+                    "chapter": "1",
+                    "externalUrl": "https://publisher.example/chapter/1",
+                    "publishAt": "2026-09-01T00:00:00+00:00"
+                  },
+                  "relationships": []
+                },
+                {
+                  "id": "hosted-chapter",
+                  "attributes": {
+                    "title": "Hosted",
+                    "chapter": "2",
+                    "externalUrl": null,
+                    "publishAt": "2026-09-02T00:00:00+00:00"
+                  },
+                  "relationships": [
+                    {"type": "scanlation_group", "attributes": {"name": "Group One"}}
+                  ]
+                }
+              ],
+              "total": 2
+            }
+        """.trimIndent()
+
     }
 }
