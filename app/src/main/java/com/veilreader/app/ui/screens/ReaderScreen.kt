@@ -56,7 +56,6 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
-import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -86,6 +85,7 @@ import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Fit
 import org.readium.r2.navigator.preferences.Theme
+import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
@@ -692,7 +692,7 @@ fun ReaderScreen(
     }
 }
 
-@OptIn(ExperimentalReadiumApi::class)
+@OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
 private fun createReaderFactory(
     opened: OpenedPublication,
     appearance: ReaderAppearance,
@@ -703,6 +703,7 @@ private fun createReaderFactory(
             initialLocator = opened.initialLocator,
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
+                useReadiumCssFontSize = false
                 disablePageTurnsWhileScrolling = false
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
@@ -1089,23 +1090,33 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
 }
 
 @OptIn(ExperimentalReadiumApi::class)
-internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
-    theme = when (theme) {
-        ReaderTheme.PAPER -> Theme.LIGHT
-        ReaderTheme.SEPIA -> Theme.SEPIA
-        ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
-    },
-    backgroundColor = when (theme) {
-        ReaderTheme.OLED -> ReadiumColor(AndroidColor.BLACK)
-        ReaderTheme.DUSK -> ReadiumColor(AndroidColor.rgb(24, 21, 29))
-        else -> null
-    },
-    fontSize = ReadingPolicy.fontSizePercent(fontScale),
-    lineHeight = lineHeight,
-    pageMargins = pageMargins,
-    scroll = scroll,
-    publisherStyles = publisherStyles
-)
+internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
+    val colors = if (publisherStyles) null else readiumThemeColors(theme)
+    return EpubPreferences(
+        theme = when (theme) {
+            ReaderTheme.PAPER -> Theme.LIGHT
+            ReaderTheme.SEPIA -> Theme.SEPIA
+            ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
+        },
+        backgroundColor = colors?.first?.let(::ReadiumColor),
+        textColor = colors?.second?.let(::ReadiumColor),
+        fontSize = readiumFontSizeRatio(fontScale),
+        lineHeight = lineHeight.coerceIn(1.1, 2.0),
+        pageMargins = pageMargins.coerceIn(0.5, 2.0),
+        scroll = scroll,
+        publisherStyles = publisherStyles
+    )
+}
+
+internal fun readiumFontSizeRatio(scale: Double): Double =
+    (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
+
+internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
+    ReaderTheme.PAPER -> 0xFFF6F1EA.toInt() to 0xFF252128.toInt()
+    ReaderTheme.SEPIA -> 0xFFF1E5C9.toInt() to 0xFF3D3325.toInt()
+    ReaderTheme.DUSK -> 0xFF18151D.toInt() to 0xFFF5F0F7.toInt()
+    ReaderTheme.OLED -> 0xFF000000.toInt() to 0xFFF5F0F7.toInt()
+}
 
 @OptIn(ExperimentalReadiumApi::class)
 internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumPreferences(
