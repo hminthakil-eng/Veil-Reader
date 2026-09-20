@@ -8,6 +8,7 @@ import com.veilreader.app.manga.core.MangaHub
 import com.veilreader.app.manga.core.MangaPage
 import com.veilreader.app.manga.core.MangaSourceException
 import java.util.LinkedHashMap
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -159,6 +160,23 @@ class MangaReaderViewModel(
         }
     }
 
+    fun flushProgress() {
+        val state = _uiState.value
+        val bookId = state.bookId ?: return
+        val chapterId = state.chapterId ?: return
+        if (state.pages.isEmpty()) return
+
+        progressJob?.cancel()
+        progressJob = viewModelScope.launch {
+            mangaLibrary.saveReadingProgress(
+                bookId = bookId,
+                chapterId = chapterId,
+                pageIndex = state.pageIndex,
+                pageCount = state.pages.size
+            )
+        }
+    }
+
     fun retry() {
         val state = _uiState.value
         val bookId = state.bookId ?: return
@@ -228,6 +246,8 @@ class MangaReaderViewModel(
             ) {
                 preloadNextChapter(window.nextChapterId)
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (error: Throwable) {
             _uiState.value = _uiState.value.copy(
                 loading = false,
@@ -243,12 +263,16 @@ class MangaReaderViewModel(
         if (preloadJob?.isActive == true) return
 
         preloadJob = viewModelScope.launch {
-            runCatching {
-                val sourceRef = mangaLibrary.chapterRefForReading(chapterId) ?: return@runCatching
+            try {
+                val sourceRef = mangaLibrary.chapterRefForReading(chapterId) ?: return@launch
                 val pages = mangaHub.pages(sourceRef)
                 synchronized(chapterPageCache) {
                     chapterPageCache[chapterId] = pages
                 }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                // Preloading is opportunistic. The real chapter load owns user-visible failures.
             }
         }
     }
