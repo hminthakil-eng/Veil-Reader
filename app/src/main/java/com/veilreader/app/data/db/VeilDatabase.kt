@@ -12,9 +12,13 @@ import androidx.room.RoomDatabase
         BookmarkEntity::class,
         CollectionEntity::class,
         BookCollectionCrossRef::class,
-        ReadingSessionEntity::class
+        ReadingSessionEntity::class,
+        MangaSourceBindingEntity::class,
+        MangaChapterEntity::class,
+        MangaChapterBindingEntity::class,
+        MangaDownloadEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class VeilDatabase : RoomDatabase() {
@@ -23,6 +27,10 @@ abstract class VeilDatabase : RoomDatabase() {
     abstract fun bookmarks(): BookmarkDao
     abstract fun collections(): CollectionDao
     abstract fun readingSessions(): ReadingSessionDao
+    abstract fun mangaSourceBindings(): MangaSourceBindingDao
+    abstract fun mangaChapters(): MangaChapterDao
+    abstract fun mangaChapterBindings(): MangaChapterBindingDao
+    abstract fun mangaDownloads(): MangaDownloadDao
 
     companion object {
         @Volatile private var instance: VeilDatabase? = null
@@ -32,7 +40,10 @@ abstract class VeilDatabase : RoomDatabase() {
                 context.applicationContext,
                 VeilDatabase::class.java,
                 "veil_reader.db"
-            ).build().also { instance = it }
+            )
+                .addMigrations(*ALL_DATABASE_MIGRATIONS)
+                .build()
+                .also { instance = it }
         }
     }
 }
