@@ -44,6 +44,12 @@ interface MangaSourceBindingDao {
     @Upsert
     suspend fun upsertAll(bindings: List<MangaSourceBindingEntity>)
 
+    @Query("SELECT * FROM manga_source_bindings ORDER BY bookId, isPreferred DESC, sourceId")
+    suspend fun listAll(): List<MangaSourceBindingEntity>
+
+    @Query("DELETE FROM manga_source_bindings")
+    suspend fun deleteAll()
+
     @Query("UPDATE manga_source_bindings SET isPreferred = 0 WHERE bookId = :bookId")
     suspend fun clearPreferred(bookId: String)
 
@@ -97,6 +103,12 @@ interface MangaChapterDao {
     @Upsert
     suspend fun upsertAll(chapters: List<MangaChapterEntity>)
 
+    @Query("SELECT * FROM manga_chapters ORDER BY bookId, displayOrder")
+    suspend fun listAll(): List<MangaChapterEntity>
+
+    @Query("DELETE FROM manga_chapters")
+    suspend fun deleteAll()
+
     @Query(
         """
         UPDATE manga_chapters
@@ -147,6 +159,12 @@ interface MangaChapterBindingDao {
 
     @Upsert
     suspend fun upsertAll(bindings: List<MangaChapterBindingEntity>)
+
+    @Query("SELECT * FROM manga_chapter_bindings ORDER BY chapterId, sourceId")
+    suspend fun listAll(): List<MangaChapterBindingEntity>
+
+    @Query("DELETE FROM manga_chapter_bindings")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -202,4 +220,7 @@ interface MangaDownloadDao {
 
     @Query("DELETE FROM manga_downloads WHERE chapterId = :chapterId")
     suspend fun delete(chapterId: String)
+
+    @Query("DELETE FROM manga_downloads")
+    suspend fun deleteAll()
 }
