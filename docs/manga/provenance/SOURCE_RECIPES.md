@@ -63,3 +63,26 @@ Role:
 
 Veil intentionally does not use `Jsoup.connect()` in source adapters so transport,
 rate limiting, headers, typed errors, and security policy remain centralized.
+
+
+## Eyad Studio provenance gate result
+
+### Keiyoushi behavioral reference
+- provenance_status: VERIFIED
+- license_status: COMPATIBLE
+- SPDX: Apache-2.0
+- evidence:
+  - canonical repository and immutable main commit recorded above
+  - reviewed file blob SHAs recorded above
+  - root Apache-2.0 license verified
+- action: PROCEED_TO_DEDUP
+- restriction: this slice is clean-room behavior/pattern reimplementation; any future direct
+  source adaptation must record the exact source file and preserve applicable attribution/NOTICE.
+
+### jsoup dependency
+- provenance_status: VERIFIED
+- license_status: COMPATIBLE
+- SPDX: MIT
+- version: 1.23.2
+- role: HTML DOM/CSS-selector parser
+- action: PROCEED_TO_DEDUP
