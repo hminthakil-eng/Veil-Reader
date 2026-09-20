@@ -6,12 +6,12 @@ interface MangaSourceProvider {
     suspend fun search(request: MangaSearchRequest): MangaResultPage<MangaSummary>
 
     suspend fun popular(
-        request: MangaBrowseRequest = MangaBrowseRequest()
+        request: MangaBrowseRequest
     ): MangaResultPage<MangaSummary> =
         throw MangaSourceException.Unsupported("Popular browse is not supported by this source.")
 
     suspend fun latest(
-        request: MangaBrowseRequest = MangaBrowseRequest()
+        request: MangaBrowseRequest
     ): MangaResultPage<MangaSummary> =
         throw MangaSourceException.Unsupported("Latest browse is not supported by this source.")
 
