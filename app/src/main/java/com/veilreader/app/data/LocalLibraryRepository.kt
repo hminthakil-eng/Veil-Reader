@@ -402,7 +402,10 @@ class LocalLibraryRepository internal constructor(
                     books = database.books().listAllWithCollections().map { it.toDomain() },
                     highlights = database.highlights().listAll().map { it.toDomain() },
                     bookmarks = database.bookmarks().listAll().map { it.toDomain() },
-                    readingSessions = database.readingSessions().listAll().map { it.toSnapshot() }
+                    readingSessions = database.readingSessions().listAll().map { it.toSnapshot() },
+                    mangaSourceBindings = database.mangaSourceBindings().listAll().map { it.toSnapshot() },
+                    mangaChapters = database.mangaChapters().listAll().map { it.toSnapshot() },
+                    mangaChapterBindings = database.mangaChapterBindings().listAll().map { it.toSnapshot() }
                 )
             }
             val appearance = settings.settings.first().readerAppearance
@@ -411,7 +414,10 @@ class LocalLibraryRepository internal constructor(
                 highlights = databaseState.highlights,
                 bookmarks = databaseState.bookmarks,
                 appearance = appearance,
-                readingSessions = databaseState.readingSessions
+                readingSessions = databaseState.readingSessions,
+                mangaSourceBindings = databaseState.mangaSourceBindings,
+                mangaChapters = databaseState.mangaChapters,
+                mangaChapterBindings = databaseState.mangaChapterBindings
             )
         }
     }
@@ -422,6 +428,10 @@ class LocalLibraryRepository internal constructor(
         discardAllPendingReadingSessions()
         orderedWrite {
             database.withTransaction {
+                database.mangaDownloads().deleteAll()
+                database.mangaChapterBindings().deleteAll()
+                database.mangaChapters().deleteAll()
+                database.mangaSourceBindings().deleteAll()
                 database.highlights().deleteAll()
                 database.bookmarks().deleteAll()
                 database.collections().clearAllLinks()
@@ -435,6 +445,15 @@ class LocalLibraryRepository internal constructor(
                 if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
                 if (snapshot.readingSessions.isNotEmpty()) {
                     database.readingSessions().upsertAll(snapshot.readingSessions.map { it.toEntity() })
+                }
+                if (snapshot.mangaSourceBindings.isNotEmpty()) {
+                    database.mangaSourceBindings().upsertAll(snapshot.mangaSourceBindings.map { it.toEntity() })
+                }
+                if (snapshot.mangaChapters.isNotEmpty()) {
+                    database.mangaChapters().upsertAll(snapshot.mangaChapters.map { it.toEntity() })
+                }
+                if (snapshot.mangaChapterBindings.isNotEmpty()) {
+                    database.mangaChapterBindings().upsertAll(snapshot.mangaChapterBindings.map { it.toEntity() })
                 }
             }
             settings.saveReaderAppearance(snapshot.appearance)
@@ -611,7 +630,10 @@ data class LibrarySnapshot(
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
     val appearance: ReaderAppearance,
-    val readingSessions: List<ReadingSessionSnapshot> = emptyList()
+    val readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    val mangaSourceBindings: List<MangaSourceBindingSnapshot> = emptyList(),
+    val mangaChapters: List<MangaChapterSnapshot> = emptyList(),
+    val mangaChapterBindings: List<MangaChapterBindingSnapshot> = emptyList()
 ) {
     companion object
 }
@@ -620,7 +642,10 @@ private data class DatabaseLibraryState(
     val books: List<Book>,
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
-    val readingSessions: List<ReadingSessionSnapshot>
+    val readingSessions: List<ReadingSessionSnapshot>,
+    val mangaSourceBindings: List<MangaSourceBindingSnapshot>,
+    val mangaChapters: List<MangaChapterSnapshot>,
+    val mangaChapterBindings: List<MangaChapterBindingSnapshot>
 )
 
 private data class PendingProgressWrite(
