@@ -85,6 +85,8 @@ dependencies {
     implementation("org.readium.kotlin-toolkit:readium-streamer:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-navigator:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-adapter-pdfium:3.4.0")
+    // Explicit access to the PDFView already used by Readium's Pdfium adapter for manual zoom fallback controls.
+    implementation("com.github.marain87:AndroidPdfViewer:3.2.8")
 
     baselineProfile(project(":benchmark"))
 
