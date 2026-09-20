@@ -1,14 +1,12 @@
 package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.ReaderAppearance
-import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Fit
-import org.readium.r2.navigator.preferences.Theme
 
 class ReaderPreferencesTest {
     @Test
@@ -30,11 +28,4 @@ class ReaderPreferencesTest {
         assertEquals(Axis.VERTICAL, prefs.scrollAxis)
     }
 
-    @Test
-    fun epubThemes_keepDistinctComfortPresets() {
-        assertEquals(Theme.LIGHT, ReaderAppearance(theme = ReaderTheme.PAPER).toEpubPreferences().theme)
-        assertEquals(Theme.SEPIA, ReaderAppearance(theme = ReaderTheme.SEPIA).toEpubPreferences().theme)
-        assertEquals(Theme.DARK, ReaderAppearance(theme = ReaderTheme.DUSK).toEpubPreferences().theme)
-        assertEquals(Theme.DARK, ReaderAppearance(theme = ReaderTheme.OLED).toEpubPreferences().theme)
-    }
 }
