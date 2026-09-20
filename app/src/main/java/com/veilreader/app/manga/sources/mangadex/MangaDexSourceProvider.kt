@@ -1,18 +1,24 @@
 package com.veilreader.app.manga.sources.mangadex
 
+import com.veilreader.app.manga.core.MangaBrowseRequest
 import com.veilreader.app.manga.core.MangaChapter
 import com.veilreader.app.manga.core.MangaChapterRef
 import com.veilreader.app.manga.core.MangaDetails
 import com.veilreader.app.manga.core.MangaPage
+import com.veilreader.app.manga.core.MangaProviderId
 import com.veilreader.app.manga.core.MangaRef
 import com.veilreader.app.manga.core.MangaResourceRequest
 import com.veilreader.app.manga.core.MangaResultPage
+import com.veilreader.app.manga.core.MangaSearchRequest
 import com.veilreader.app.manga.core.MangaSourceCapability
 import com.veilreader.app.manga.core.MangaSourceDescriptor
+import com.veilreader.app.manga.core.MangaSourceException
 import com.veilreader.app.manga.core.MangaSourceId
 import com.veilreader.app.manga.core.MangaSourceProvider
 import com.veilreader.app.manga.core.MangaStatus
 import com.veilreader.app.manga.core.MangaSummary
+import com.veilreader.app.manga.core.MangaUpdate
+import com.veilreader.app.manga.core.MangaUpdateOptions
 import com.veilreader.app.manga.net.MangaHttpClient
 import java.net.URLEncoder
 import java.time.Instant
@@ -33,6 +39,8 @@ class MangaDexSourceProvider(
 ) : MangaSourceProvider {
     override val descriptor = MangaSourceDescriptor(
         id = MangaSourceId("mangadex.$translatedLanguage"),
+        providerId = MangaProviderId("mangadex"),
+        version = 1,
         name = "MangaDex",
         language = translatedLanguage,
         capabilities = setOf(
@@ -44,25 +52,64 @@ class MangaDexSourceProvider(
 
     private val json = Json { ignoreUnknownKeys = true }
 
-    override suspend fun search(
-        query: String,
-        cursor: String?
-    ): MangaResultPage<MangaSummary> = browse(
-        cursor = cursor,
-        extra = listOf(
-            "title" to query,
-            "order[relevance]" to "desc"
+    override suspend fun search(request: MangaSearchRequest): MangaResultPage<MangaSummary> {
+        requireNoFilters(request.filters.isEmpty())
+        return browse(
+            cursor = request.cursor,
+            extra = listOf(
+                "title" to request.query,
+                "order[relevance]" to "desc"
+            )
         )
-    )
+    }
 
-    override suspend fun popular(cursor: String?): MangaResultPage<MangaSummary> =
-        browse(cursor, listOf("order[followedCount]" to "desc"))
+    override suspend fun popular(request: MangaBrowseRequest): MangaResultPage<MangaSummary> {
+        requireNoFilters(request.filters.isEmpty())
+        return browse(request.cursor, listOf("order[followedCount]" to "desc"))
+    }
 
-    override suspend fun latest(cursor: String?): MangaResultPage<MangaSummary> =
-        browse(cursor, listOf("order[latestUploadedChapter]" to "desc"))
+    override suspend fun latest(request: MangaBrowseRequest): MangaResultPage<MangaSummary> {
+        requireNoFilters(request.filters.isEmpty())
+        return browse(request.cursor, listOf("order[latestUploadedChapter]" to "desc"))
+    }
 
-    override suspend fun details(ref: MangaRef): MangaDetails {
+    override suspend fun fetchUpdate(
+        ref: MangaRef,
+        existingChapters: List<MangaChapter>,
+        options: MangaUpdateOptions
+    ): MangaUpdate {
         requireOwned(ref)
+        return MangaUpdate(
+            ref = ref,
+            details = if (options.fetchDetails) fetchDetails(ref) else null,
+            chapters = if (options.fetchChapters) fetchChapters(ref) else null
+        )
+    }
+
+    override suspend fun pages(ref: MangaChapterRef): List<MangaPage> {
+        requireOwned(ref.manga)
+        val payload = root(
+            http.get(api("/at-home/server/${ref.key}", emptyList()), emptyMap()).body
+        )
+        val baseUrl = payload.string("baseUrl")
+        val chapter = payload["chapter"]?.jsonObject
+            ?: throw MangaSourceException.SourceChanged("MangaDex chapter payload is missing.")
+        val hash = chapter.string("hash")
+        val key = if (preferDataSaver) "dataSaver" else "data"
+        val folder = if (preferDataSaver) "data-saver" else "data"
+        val files = chapter[key]?.jsonArray ?: JsonArray(emptyList())
+
+        return files.mapIndexed { index, element ->
+            MangaPage(
+                index = index,
+                image = MangaResourceRequest(
+                    url = "$baseUrl/$folder/$hash/${element.jsonPrimitive.content}"
+                )
+            )
+        }
+    }
+
+    private suspend fun fetchDetails(ref: MangaRef): MangaDetails {
         val url = api(
             "/manga/${ref.key}",
             listOf(
@@ -71,8 +118,10 @@ class MangaDexSourceProvider(
                 "includes[]" to "artist"
             )
         )
-        val item = root(http.get(url, emptyMap()).body)["data"]!!.jsonObject
-        val attributes = item["attributes"]!!.jsonObject
+        val item = root(http.get(url, emptyMap()).body)["data"]?.jsonObject
+            ?: throw MangaSourceException.SourceChanged("MangaDex details payload is missing data.")
+        val attributes = item["attributes"]?.jsonObject
+            ?: throw MangaSourceException.SourceChanged("MangaDex details payload is missing attributes.")
         val relationships = item["relationships"]?.jsonArray ?: JsonArray(emptyList())
 
         return MangaDetails(
@@ -95,8 +144,7 @@ class MangaDexSourceProvider(
         )
     }
 
-    override suspend fun chapters(ref: MangaRef): List<MangaChapter> {
-        requireOwned(ref)
+    private suspend fun fetchChapters(ref: MangaRef): List<MangaChapter> {
         val chapters = mutableListOf<MangaChapter>()
         var offset = 0
         var total = Int.MAX_VALUE
@@ -119,7 +167,10 @@ class MangaDexSourceProvider(
 
             chapters += data.mapNotNull { element ->
                 val item = element.jsonObject
-                val attributes = item["attributes"]!!.jsonObject
+                val attributes = item["attributes"]?.jsonObject
+                    ?: throw MangaSourceException.SourceChanged(
+                        "MangaDex chapter payload is missing attributes."
+                    )
                 if (attributes.stringOrNull("externalUrl") != null) {
                     return@mapNotNull null
                 }
@@ -143,28 +194,6 @@ class MangaDexSourceProvider(
         }
 
         return chapters
-    }
-
-    override suspend fun pages(ref: MangaChapterRef): List<MangaPage> {
-        requireOwned(ref.manga)
-        val payload = root(
-            http.get(api("/at-home/server/${ref.key}", emptyList()), emptyMap()).body
-        )
-        val baseUrl = payload.string("baseUrl")
-        val chapter = payload["chapter"]!!.jsonObject
-        val hash = chapter.string("hash")
-        val key = if (preferDataSaver) "dataSaver" else "data"
-        val folder = if (preferDataSaver) "data-saver" else "data"
-        val files = chapter[key]?.jsonArray ?: JsonArray(emptyList())
-
-        return files.mapIndexed { index, element ->
-            MangaPage(
-                index = index,
-                image = MangaResourceRequest(
-                    url = "$baseUrl/$folder/$hash/${element.jsonPrimitive.content}"
-                )
-            )
-        }
     }
 
     private suspend fun browse(
@@ -195,7 +224,8 @@ class MangaDexSourceProvider(
 
     private fun parseSummary(item: JsonObject): MangaSummary {
         val id = item.string("id")
-        val attributes = item["attributes"]!!.jsonObject
+        val attributes = item["attributes"]?.jsonObject
+            ?: throw MangaSourceException.SourceChanged("MangaDex result is missing attributes.")
         val relationships = item["relationships"]?.jsonArray ?: JsonArray(emptyList())
         return MangaSummary(
             ref = MangaRef(descriptor.id, id),
@@ -243,10 +273,27 @@ class MangaDexSourceProvider(
     }
 
     private fun requireOwned(ref: MangaRef) {
-        require(ref.sourceId == descriptor.id) { "MangaDex adapter received a foreign source id." }
+        require(ref.sourceId == descriptor.id) {
+            "MangaDex adapter received a foreign source id."
+        }
     }
 
-    private fun root(body: String): JsonObject = json.parseToJsonElement(body).jsonObject
+    private fun requireNoFilters(empty: Boolean) {
+        if (!empty) {
+            throw MangaSourceException.Unsupported(
+                "MangaDex filter mapping is not enabled in this adapter version."
+            )
+        }
+    }
+
+    private fun root(body: String): JsonObject = try {
+        json.parseToJsonElement(body).jsonObject
+    } catch (error: Exception) {
+        throw MangaSourceException.ParseFailure(
+            message = "MangaDex response could not be parsed.",
+            cause = error
+        )
+    }
 
     private fun api(path: String, params: List<Pair<String, String>>): String {
         if (params.isEmpty()) return API_BASE + path
@@ -258,7 +305,9 @@ class MangaDexSourceProvider(
     private fun encode(value: String): String = URLEncoder.encode(value, "UTF-8")
 
     private fun JsonObject.string(key: String): String =
-        requireNotNull(stringOrNull(key)) { "Missing MangaDex field: $key" }
+        stringOrNull(key) ?: throw MangaSourceException.SourceChanged(
+            "Missing MangaDex field: $key"
+        )
 
     private fun JsonObject.stringOrNull(key: String): String? =
         get(key)?.jsonPrimitive?.contentOrNull
