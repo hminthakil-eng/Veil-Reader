@@ -65,7 +65,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.8.0")
+                put("appVersion", "0.10.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("gamePreferences", gamePrefs)
@@ -99,7 +99,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         }
     }
 
-    /** Restores both current schema-2 backups and older 0.6 schema-1 backups. */
+    /** Restores current schema-3 backups plus compatible schema-2 and legacy schema-1 backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-${UUID.randomUUID()}").apply { mkdirs() }
         var installedRoot: File? = null
