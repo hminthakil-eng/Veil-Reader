@@ -114,6 +114,7 @@ data class HtmlSourceRecipe(
     val endpoints: HtmlRecipeEndpoints,
     val parsers: HtmlRecipeParsers,
     val filters: List<MangaFilterDefinition> = emptyList(),
+    val allowedRequestHosts: Set<String> = emptySet(),
     val allowCrossHostContent: Boolean = false
 ) {
     init {
@@ -207,9 +208,12 @@ class HtmlRecipeSourceProvider(
         )
     }
 
-    private suspend fun execute(plan: MangaHttpPlan): MangaHttpResponse = when (plan) {
-        is MangaHttpPlan.Get -> http.get(plan.url, plan.headers)
-        is MangaHttpPlan.PostForm -> http.postForm(plan.url, plan.headers, plan.fields)
+    private suspend fun execute(plan: MangaHttpPlan): MangaHttpResponse {
+        validateRequestPlan(recipe, plan)
+        return when (plan) {
+            is MangaHttpPlan.Get -> http.get(plan.url, plan.headers)
+            is MangaHttpPlan.PostForm -> http.postForm(plan.url, plan.headers, plan.fields)
+        }
     }
 }
 
@@ -249,11 +253,13 @@ class HtmlRecipeParser(
             )
         }
 
+        val uniqueItems = items.distinctBy { it.ref }
+
         val nextCursor = rules.nextPageSelector
             ?.takeIf { document.selectFirst(it) != null }
             ?.let { nextCursor(cursor) }
 
-        return MangaResultPage(items = items, nextCursor = nextCursor)
+        return MangaResultPage(items = uniqueItems, nextCursor = nextCursor)
     }
 
     fun parseDetails(
@@ -340,7 +346,7 @@ class HtmlRecipeParser(
                     ?.trim()
                     ?.takeIf(String::isNotEmpty)
             )
-        }
+        }.distinctBy { it.ref }
     }
 
     fun parsePages(html: String): List<MangaPage> {
@@ -349,9 +355,8 @@ class HtmlRecipeParser(
         return document.select(rules.imageSelector)
             .mapNotNull { image ->
                 firstImageUrl(image, rules.imageAttributes)
-                    ?.let { absoluteUrl(image, null, it) }
+                    ?.let { absoluteHttpUrl(image, null, it) }
             }
-            .filter(String::isNotBlank)
             .distinct()
             .mapIndexed { index, url ->
                 MangaPage(index, MangaResourceRequest(url))
@@ -372,8 +377,7 @@ class HtmlRecipeParser(
         attributes: List<String>
     ): MangaResourceRequest? =
         firstImageUrl(image, attributes)
-            ?.let { absoluteUrl(image, null, it) }
-            ?.takeIf(String::isNotBlank)
+            ?.let { absoluteHttpUrl(image, null, it) }
             ?.let(::MangaResourceRequest)
 
     private fun absoluteUrl(
@@ -386,6 +390,43 @@ class HtmlRecipeParser(
         return runCatching {
             URI(recipe.baseUrl).resolve(rawValue).toString()
         }.getOrDefault(rawValue)
+    }
+
+    private fun absoluteHttpUrl(
+        element: Element,
+        attribute: String?,
+        rawValue: String
+    ): String? {
+        val resolved = absoluteUrl(element, attribute, rawValue)
+        return runCatching { URI(resolved) }
+            .getOrNull()
+            ?.takeIf { it.scheme == "https" || it.scheme == "http" }
+            ?.takeIf { !it.host.isNullOrBlank() }
+            ?.toString()
+    }
+}
+
+internal fun validateRequestPlan(
+    recipe: HtmlSourceRecipe,
+    plan: MangaHttpPlan
+) {
+    val target = runCatching { URI(plan.url) }.getOrNull()
+        ?: throw MangaSourceException.Blocked("HTML recipe produced an invalid request URL.")
+    if ((target.scheme != "https" && target.scheme != "http") || target.host.isNullOrBlank()) {
+        throw MangaSourceException.Blocked("HTML recipe request must use an absolute HTTP(S) URL.")
+    }
+
+    val baseHost = URI(recipe.baseUrl).host.lowercase()
+    val allowed = buildSet {
+        add(baseHost)
+        recipe.allowedRequestHosts
+            .map(String::lowercase)
+            .forEach(::add)
+    }
+    if (target.host.lowercase() !in allowed) {
+        throw MangaSourceException.Blocked(
+            "HTML recipe attempted a request to an unapproved host: " + target.host
+        )
     }
 }
 
