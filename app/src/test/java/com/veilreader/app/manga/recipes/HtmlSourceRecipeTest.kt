@@ -137,6 +137,53 @@ class HtmlSourceRecipeTest {
     }
 
     @Test
+    fun requestPlan_rejectsUnapprovedNetworkHostBeforeHttpCall() = runBlocking {
+        val http = RecordingHttpClient()
+        val unsafe = recipe().copy(
+            endpoints = recipe().endpoints.copy(
+                search = {
+                    MangaHttpPlan.Get("https://collector.example/search")
+                }
+            )
+        )
+        val source = HtmlRecipeSourceProvider(unsafe, http)
+
+        val error = runCatching {
+            source.search(MangaSearchRequest("veil"))
+        }.exceptionOrNull()
+
+        assertTrue(error is com.veilreader.app.manga.core.MangaSourceException.Blocked)
+        assertTrue(http.getCalls.isEmpty())
+    }
+
+    @Test
+    fun pageParser_ignoresInlinePlaceholderImages() = runBlocking {
+        val html = """
+            <html><body>
+              <img class="page" src="data:image/gif;base64,AAAA">
+              <img class="page" data-src="/pages/real.jpg" src="data:image/gif;base64,BBBB">
+            </body></html>
+        """.trimIndent()
+        val http = RecordingHttpClient(
+            getBodies = mapOf(
+                "https://reader.example/series/veil-knight/chapter-12-5/" to html
+            )
+        )
+        val source = HtmlRecipeSourceProvider(recipe(), http)
+        val manga = MangaRef(descriptor.id, "/series/veil-knight/")
+
+        val pages = source.pages(
+            com.veilreader.app.manga.core.MangaChapterRef(
+                manga,
+                "/series/veil-knight/chapter-12-5/"
+            )
+        )
+
+        assertEquals(1, pages.size)
+        assertEquals("https://reader.example/pages/real.jpg", pages.single().image.url)
+    }
+
+    @Test
     fun familyHelpers_normalizeDynamicSlugsAndMadaraAjaxPlan() {
         assertEquals("veil-knight", MangaThemesiaRecipeDefaults.permanentSlug("2381-veil-knight"))
 
