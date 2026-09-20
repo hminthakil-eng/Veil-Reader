@@ -53,6 +53,7 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
@@ -85,7 +86,6 @@ import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Fit
 import org.readium.r2.navigator.preferences.Theme
-import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
@@ -121,6 +121,7 @@ fun ReaderScreen(
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
     var appearance by remember(opened.book.id) { mutableStateOf(readerAppearance) }
+    val latestAppearance = rememberUpdatedState(appearance)
     var showNotebook by remember { mutableStateOf(false) }
 
     LaunchedEffect(readerAppearance, opened.book.id) {
@@ -273,23 +274,31 @@ fun ReaderScreen(
             }
     }
 
-    LaunchedEffect(navigator, opened.book.id) {
-        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        nav.addInputListener(
-            DirectionalNavigationAdapter(
-                navigator = nav,
-                animatedTransition = false
-            )
-        )
-        nav.addInputListener(
-            object : InputListener {
-                override fun onTap(event: TapEvent): Boolean {
-                    readerViewModel.onUserInteraction()
-                    controlsVisible = !controlsVisible
-                    return true
+    DisposableEffect(navigator, opened.book.id) {
+        val nav = navigator as? OverflowableNavigator
+        if (nav == null) {
+            onDispose { }
+        } else {
+            val listeners = listOf<InputListener>(
+                VeilDirectionalNavigationInputListener(
+                    navigator = nav,
+                    isAnimated = {
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
+                    }
+                ),
+                object : InputListener {
+                    override fun onTap(event: TapEvent): Boolean {
+                        readerViewModel.onUserInteraction()
+                        controlsVisible = !controlsVisible
+                        return true
+                    }
                 }
+            )
+            listeners.forEach(nav::addInputListener)
+            onDispose {
+                listeners.forEach(nav::removeInputListener)
             }
-        )
+        }
     }
 
     LaunchedEffect(navigator, appearance, opened.format) {

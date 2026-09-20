@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
@@ -25,7 +26,8 @@ class SettingsStoreInstrumentedTest {
             lineHeight = 1.71,
             pageMargins = 1.23,
             scroll = true,
-            publisherStyles = false
+            publisherStyles = false,
+            pageTurnStyle = PageTurnStyle.SLIDE
         )
 
         try {
