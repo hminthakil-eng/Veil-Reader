@@ -38,6 +38,36 @@ class VeilAppViewModelTest {
     }
 
     @Test
+    fun settingsRoute_isRestorableAndExclusiveWithArchiveAndReader() {
+        val handle = SavedStateHandle()
+        val first = VeilAppViewModel(handle)
+
+        first.selectTab(VeilTab.PROFILE)
+        first.openSettings()
+
+        assertTrue(first.route.value.showSettings)
+        assertFalse(first.route.value.showArchive)
+        assertNull(first.route.value.activeBookId)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(VeilTab.PROFILE, recreated.route.value.selectedTab)
+        assertTrue(recreated.route.value.showSettings)
+
+        recreated.openArchive()
+        assertFalse(recreated.route.value.showSettings)
+        assertTrue(recreated.route.value.showArchive)
+
+        recreated.openSettings()
+        recreated.requestBook("book-settings")
+        assertFalse(recreated.route.value.showSettings)
+        assertEquals("book-settings", recreated.route.value.activeBookId)
+
+        recreated.closeReader()
+        assertFalse(recreated.route.value.showSettings)
+        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
+    }
+
+    @Test
     fun tabsAndOverlays_cancelPendingReader_andNormalizeInvalidSavedState() {
         val handle = SavedStateHandle(
             mapOf(
