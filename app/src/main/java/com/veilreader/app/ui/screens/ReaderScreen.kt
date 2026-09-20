@@ -66,6 +66,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
 import org.readium.adapter.pdfium.navigator.PdfiumDefaults
+import org.readium.adapter.pdfium.navigator.PdfiumNavigatorFragment
+import org.readium.adapter.pdfium.navigator.PdfiumPreferences
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.Navigator
@@ -79,7 +81,9 @@ import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
+import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
+import org.readium.r2.navigator.preferences.Fit
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -91,6 +95,8 @@ fun ReaderScreen(
     opened: OpenedPublication,
     library: LocalLibraryRepository,
     game: GameRepository,
+    readerAppearance: ReaderAppearance,
+    onReaderAppearanceChange: (ReaderAppearance) -> Unit,
     onClose: () -> Unit
 ) {
     val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
@@ -114,8 +120,12 @@ fun ReaderScreen(
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
-    var appearance by remember { mutableStateOf(library.loadAppearance()) }
+    var appearance by remember(opened.book.id) { mutableStateOf(readerAppearance) }
     var showNotebook by remember { mutableStateOf(false) }
+
+    LaunchedEffect(readerAppearance, opened.book.id) {
+        appearance = readerAppearance
+    }
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
             .map { items -> items.filter { it.bookId == opened.book.id } }
@@ -268,7 +278,7 @@ fun ReaderScreen(
         nav.addInputListener(
             DirectionalNavigationAdapter(
                 navigator = nav,
-                animatedTransition = true
+                animatedTransition = false
             )
         )
         nav.addInputListener(
@@ -282,11 +292,20 @@ fun ReaderScreen(
         )
     }
 
-    LaunchedEffect(navigator, appearance) {
+    LaunchedEffect(navigator, appearance, opened.format) {
         game.pauseReading()
         readerViewModel.onUserInteraction()
-        val epub = navigator as? EpubNavigatorFragment ?: return@LaunchedEffect
-        epub.submitPreferences(appearance.toEpubPreferences())
+        when (opened.format) {
+            BookFormat.EPUB ->
+                (navigator as? EpubNavigatorFragment)
+                    ?.submitPreferences(appearance.toEpubPreferences())
+
+            BookFormat.PDF ->
+                (navigator as? PdfiumNavigatorFragment)
+                    ?.submitPreferences(appearance.toPdfiumPreferences())
+
+            else -> Unit
+        }
     }
 
     LaunchedEffect(navigator, opened.book.id, bookHighlights) {
@@ -437,7 +456,7 @@ fun ReaderScreen(
                         action = ReaderAction.APPEARANCE,
                         label = "Appearance",
                         modifier = Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
+                        enabled = opened.format == BookFormat.EPUB || opened.format == BookFormat.PDF
                     ) {
                         readerViewModel.onUserInteraction()
                         showAppearance = true
@@ -552,11 +571,12 @@ fun ReaderScreen(
     if (showAppearance) {
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
             AppearancePanel(
+                format = opened.format,
                 appearance = appearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
                     appearance = it
-                    library.saveAppearance(it)
+                    onReaderAppearanceChange(it)
                 },
                 onDone = { showAppearance = false }
             )
@@ -587,9 +607,12 @@ private fun createReaderFactory(
     BookFormat.PDF -> PdfNavigatorFactory(
         publication = opened.publication,
         pdfEngineProvider = PdfiumEngineProvider(
-            defaults = PdfiumDefaults(scroll = true)
+            defaults = PdfiumDefaults()
         )
-    ).createFragmentFactory(initialLocator = opened.initialLocator)
+    ).createFragmentFactory(
+        initialLocator = opened.initialLocator,
+        initialPreferences = appearance.toPdfiumPreferences()
+    )
 
     else -> error("Unsupported reader format")
 }
@@ -734,6 +757,7 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 
 @Composable
 private fun AppearancePanel(
+    format: BookFormat,
     appearance: ReaderAppearance,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
@@ -747,16 +771,25 @@ private fun AppearancePanel(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "Tune the page once, then get back to the book. These choices stay on your device.",
+                if (format == BookFormat.PDF) "PDF reading controls" else "Reading appearance",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                if (format == BookFormat.PDF) {
+                    "Choose paginated or continuous reading. Pinch or double-tap the document to zoom."
+                } else {
+                    "Tune the page once, then get back to the book. These choices stay on your device."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
-        Text("Presets", fontWeight = FontWeight.SemiBold)
-        Row(
+        if (format == BookFormat.EPUB) {
+            Text("Presets", fontWeight = FontWeight.SemiBold)
+            Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -830,6 +863,7 @@ private fun AppearancePanel(
             onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
             valueRange = .5f..2.0f
         )
+        }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
@@ -837,7 +871,11 @@ private fun AppearancePanel(
             Column(Modifier.weight(1f)) {
                 Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Turn this off for paginated reading with animated page turns.",
+                    if (format == BookFormat.PDF) {
+                        "Turn this off for horizontal page snapping. Zoom stays available in both modes."
+                    } else {
+                        "Turn this off for paginated reading without the slide-like transition."
+                    },
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -849,19 +887,33 @@ private fun AppearancePanel(
             )
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Publisher styling", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Keep the book's original typography and layout when possible.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+        if (format == BookFormat.EPUB) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Publisher styling", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Keep the book's original typography and layout when possible.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = appearance.publisherStyles,
+                    onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
+                    modifier = Modifier.semantics { contentDescription = "Publisher styling" }
                 )
             }
-            Switch(
-                checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
-                modifier = Modifier.semantics { contentDescription = "Publisher styling" }
+        }
+
+        if (format == BookFormat.PDF) {
+            Text(
+                if (appearance.scroll) {
+                    "PDF scroll mode: pages flow vertically and fit the screen width."
+                } else {
+                    "PDF paginated mode: pages snap horizontally and fit inside the viewport."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
@@ -882,7 +934,7 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
 }
 
 @OptIn(ExperimentalReadiumApi::class)
-private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
+internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
     theme = when (theme) {
         ReaderTheme.PAPER -> Theme.LIGHT
         ReaderTheme.SEPIA -> Theme.SEPIA
@@ -898,6 +950,14 @@ private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferen
     pageMargins = pageMargins,
     scroll = scroll,
     publisherStyles = publisherStyles
+)
+
+@OptIn(ExperimentalReadiumApi::class)
+internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumPreferences(
+    fit = if (scroll) Fit.WIDTH else Fit.CONTAIN,
+    pageSpacing = if (scroll) 12.0 else 6.0,
+    scroll = scroll,
+    scrollAxis = if (scroll) Axis.VERTICAL else null
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
