@@ -1,8 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import android.net.Uri
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -86,22 +83,13 @@ private val veiledDiscoveries = listOf(
 fun ProfileScreen(
     profile: ReaderProfile,
     highlightCount: Int,
-    exporting: Boolean,
-    restoring: Boolean,
     dailyGoalMinutes: Int,
     castleTitle: String,
     equippedSigilName: String?,
     onSetDailyGoal: (Int) -> Unit,
-    onExportBackup: (Uri) -> Unit,
-    onRestoreBackup: (Uri) -> Unit,
-    onExportNotes: (Uri) -> Unit,
     onOpenArchive: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    val backupPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { it?.let(onExportBackup) }
-    val restorePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(onRestoreBackup) }
-    val notesPicker = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/markdown")) { it?.let(onExportNotes) }
-    var confirmRestore by remember { mutableStateOf(false) }
     val p = profile
     val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
 
@@ -226,51 +214,6 @@ fun ProfileScreen(
             Text("Explore all highlights & notes")
         }
 
-        ProfileSectionHeading(
-            eyebrow = "Private by default",
-            title = "Your data"
-        )
-        Text(
-            "Backups contain your imported books, reading position, annotations, Path progress, quests, and Castle identity. Restore replaces the current local library after validating the archive.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Button(
-            enabled = !exporting && !restoring,
-            onClick = { backupPicker.launch("veil-reader-backup.zip") },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (exporting) "Exporting…" else "Export library backup")
-        }
-        OutlinedButton(
-            enabled = !exporting && !restoring,
-            onClick = { confirmRestore = true },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (restoring) "Restoring…" else "Restore library backup")
-        }
-        OutlinedButton(
-            enabled = !exporting && !restoring,
-            onClick = { notesPicker.launch("veil-reader-notebook.md") },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Export notebook as Markdown")
-        }
-    }
-
-    if (confirmRestore) {
-        AlertDialog(
-            onDismissRequest = { confirmRestore = false },
-            title = { Text("Replace local Veil Reader data?") },
-            text = { Text("Restore replaces your current library, annotations, reading progress, Path progress, and Castle state with the selected backup. Export a fresh backup first if you need the current state.") },
-            dismissButton = { TextButton(onClick = { confirmRestore = false }) { Text("Cancel") } },
-            confirmButton = {
-                Button(onClick = {
-                    confirmRestore = false
-                    restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
-                }) { Text("Choose backup") }
-            }
-        )
     }
 }
 

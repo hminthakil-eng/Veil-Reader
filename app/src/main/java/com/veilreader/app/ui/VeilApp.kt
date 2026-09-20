@@ -371,15 +371,10 @@ fun VeilApp(
             VeilTab.PROFILE -> ProfileScreen(
                 profile = requireNotNull(profile),
                 highlightCount = highlights.size,
-                exporting = exporting,
-                restoring = restoring,
                 dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
                 castleTitle = requireNotNull(castleTitle),
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
-                onExportBackup = { exportData(it, true) },
-                onRestoreBackup = ::restoreData,
-                onExportNotes = { exportData(it, false) },
                 onOpenArchive = routeViewModel::openArchive,
                 onOpenSettings = routeViewModel::openSettings
             )
@@ -403,8 +398,13 @@ fun VeilApp(
         VeilWorldBackdrop {
             SettingsScreen(
                 settings = appSettings,
+                exporting = exporting,
+                restoring = restoring,
                 onSetAppThemeMode = onSetAppThemeMode,
                 onSaveReaderAppearance = onSaveReaderAppearance,
+                onExportBackup = { exportData(it, true) },
+                onRestoreBackup = ::restoreData,
+                onExportNotes = { exportData(it, false) },
                 onClose = routeViewModel::closeSettings
             )
         }
