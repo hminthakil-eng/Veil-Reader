@@ -186,7 +186,10 @@ class SuwayomiGatewayClient(
         return SuwayomiUpdatePayload(manga = manga, chapters = chapters)
     }
 
-    suspend fun pages(chapterId: Int): List<MangaResourceRequest> {
+    suspend fun pages(
+        chapterId: Int,
+        expectedMangaId: Int
+    ): List<MangaResourceRequest> {
         val variables = buildJsonObject {
             put("input", buildJsonObject { put("chapterId", chapterId) })
         }
@@ -196,10 +199,12 @@ class SuwayomiGatewayClient(
             variables = variables
         )
         val payload = data.requiredObject("fetchChapterPages")
-        val returnedChapterId = payload.requiredObject("chapter").int("id")
-        if (returnedChapterId != chapterId) {
+        val returnedChapter = payload.requiredObject("chapter")
+        val returnedChapterId = returnedChapter.int("id")
+        val returnedMangaId = returnedChapter.int("mangaId")
+        if (returnedChapterId != chapterId || returnedMangaId != expectedMangaId) {
             throw MangaSourceException.SourceChanged(
-                "Suwayomi returned pages for a different chapter."
+                "Suwayomi returned pages for a different manga/chapter."
             )
         }
 
@@ -476,6 +481,7 @@ class SuwayomiGatewayClient(
               fetchChapterPages(input: $input) {
                 chapter {
                   id
+                  mangaId
                 }
                 pages
               }
