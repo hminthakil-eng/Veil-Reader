@@ -49,9 +49,14 @@ data class MangaReaderPreferences(
 }
 
 /**
- * Compatibility alias for the first prototype. New code should use [MangaReaderLayout].
+ * Compatibility enum for the first prototype screen.
+ * New state code uses [MangaReaderLayout]; the screen migrates after renderer benchmarking.
  */
-typealias MangaReaderMode = MangaReaderLayout
+@Deprecated("Use MangaReaderLayout in new reader state code.")
+enum class MangaReaderMode {
+    PAGED,
+    WEBTOON
+}
 
 data class MangaChapterWindow(
     val currentChapterId: String,
