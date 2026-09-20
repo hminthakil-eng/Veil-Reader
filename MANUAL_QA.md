@@ -1,6 +1,6 @@
-# 0.4.0 device acceptance checks
+# 0.10.0 release-candidate device acceptance checks
 
-Run after `gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` succeeds. These cases are supplied for verification; they have not been executed on a device here.
+Run after the host gate succeeds: `gradle :app:testDebugUnitTest :app:compileDebugAndroidTestKotlin :app:lintDebug :app:assembleDebug :benchmark:assembleBenchmarkBenchmark`. Host success is not device evidence; every runtime item below must record the device/API, build SHA and result.
 
 1. Upgrade an installation with imported EPUB/PDF books, highlights, and progress. Confirm all survive without clearing app data.
 2. Open an EPUB with nested contents. Open Contents & notes, select a nested chapter, and verify the visible chapter. Repeat with a PDF outline and a book lacking a table of contents.
@@ -14,9 +14,9 @@ Run after `gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` succ
 10. Background the reader for over a minute: reading minutes must not increase. Resume for a full minute: one minute should be recorded. Finish a book twice: only the first completion should award the completion bonus.
 11. Check light/dark reading, text selection, tap navigation, TalkBack labels and bottom-sheet scrolling in both portrait and landscape. Confirm toolbar overlays do not make the first or last lines inaccessible.
 
-Outstanding baseline risks: fast page navigation can still award XP; every path currently shares the five-highlight ritual; configuration-change restoration and large-library storage need dedicated device testing.
+The original baseline cases above remain mandatory regressions. Current RC blocking evidence additionally includes physical page-turn behavior, PDF zoom, Settings persistence, accessibility/adaptive layouts, configuration restoration and large-library durability.
 
-# Additional 0.5.0 acceptance cases
+## Regression cases retained from 0.5.0
 
 12. Import `qa/fixtures/veil-smoke.epub`. Verify both chapters and the nested A Small Clue anchor; select and highlight a paragraph; confirm font size is readable at 100%.
 13. Favorite a book and assign a collection. Restart the app. Search by title/author/collection, use each reading-state filter and each sort order, edit metadata, clear a collection and test no-results recovery.
@@ -28,4 +28,14 @@ Outstanding baseline risks: fast page navigation can still award XP; every path 
 19. Earn a sigil, restart, end a streak or delete highlights and confirm earned status persists. Confirm level/rank ceilings and quest rewards are not accidentally duplicated.
 20. Switch Android system light/dark mode. Compare paper, sepia, dusk and OLED reader themes. Verify text is not hidden by either toolbar and appearance controls scroll in landscape/large text.
 
-Remaining risks listed earlier should be read with 0.5.0 changes: page farming now has bounds and the six rituals are distinct. Device verification, configuration-change restoration and large-library persistence remain outstanding.
+## 0.10 reader-interaction acceptance
+
+21. Open Profile → Reader & app settings. Verify Back returns to Profile, the route survives recreation, and Settings remains a secondary destination rather than a sixth primary tab.
+22. Change app theme and EPUB paper/sepia/dusk/OLED theme, text size, line height, margins and publisher styles. Reopen the book and restart the app. Confirm 100% text is normal-sized and every theme remains readable.
+23. In paginated EPUB mode test Paper curl and Simple slide separately. For Paper curl test edge tap, body swipe, slow drag, cancel, rapid repeated turns and first/last-page boundaries in both LTR and RTL content. A cancelled preview must not advance saved progress.
+24. Turn on continuous scroll and verify page-turn style no longer interferes with vertical reading. Return to pagination and confirm the selected page-turn style resumes.
+25. In PDF, open Zoom and test zoom in/out, slider, reset and fit-to-width. Rotate, background/foreground and reopen the PDF; navigation and rendering must remain usable without a crash or stuck scale.
+26. In Settings → Data & backup, export a backup, cancel each picker once, export the notebook, and run a validated restore. Confirm the same data controls are not duplicated in Profile.
+27. Repeat the reader/settings matrix with large system text, TalkBack/focus navigation, short landscape and an expanded/tablet layout. Record any clipped control, unreachable action or incorrect rail/bottom navigation transition.
+
+Current release blockers are device evidence for the cases above, backup/restore durability on hardware, adaptive/accessibility sign-off, large-library/large-PDF behavior, and a reproducible signed release artifact.
