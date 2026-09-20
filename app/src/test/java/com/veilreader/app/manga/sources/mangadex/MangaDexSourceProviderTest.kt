@@ -5,6 +5,7 @@ import com.veilreader.app.manga.MangaSourceFeatureFlags
 import com.veilreader.app.manga.core.MangaRef
 import com.veilreader.app.manga.core.MangaSourceId
 import com.veilreader.app.manga.core.MangaStatus
+import com.veilreader.app.manga.core.MangaUpdateOptions
 import com.veilreader.app.manga.net.MangaHttpClient
 import com.veilreader.app.manga.net.MangaHttpResponse
 import kotlinx.coroutines.runBlocking
@@ -46,6 +47,29 @@ class MangaDexSourceProviderTest {
         assertEquals(MangaStatus.ONGOING, details.status)
         assertEquals(listOf("Author One", "Artist Two"), details.authors)
         assertEquals(listOf("Action"), details.tags)
+    }
+
+    @Test
+    fun combinedUpdate_mapsDetailsAndHostedChapters() = runBlocking {
+        val http = RecordingHttpClient { url ->
+            when {
+                "/feed" in url -> CHAPTER_FEED_JSON
+                "/manga/manga-1" in url -> DETAILS_JSON
+                else -> error("Unexpected URL: $url")
+            }
+        }
+        val source = MangaDexSourceProvider(http)
+        val ref = MangaRef(MangaSourceId("mangadex.en"), "manga-1")
+
+        val update = source.fetchUpdate(
+            ref = ref,
+            existingChapters = emptyList(),
+            options = MangaUpdateOptions()
+        )
+
+        assertEquals("Veil Knight", update.details?.title)
+        assertEquals(listOf("hosted-chapter"), update.chapters?.map { it.ref.key })
+        assertEquals(2, http.urls.size)
     }
 
     @Test
