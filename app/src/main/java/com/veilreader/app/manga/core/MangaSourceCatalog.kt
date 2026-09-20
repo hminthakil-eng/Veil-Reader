@@ -1,5 +1,8 @@
 package com.veilreader.app.manga.core
 
+import java.util.concurrent.ConcurrentHashMap
+import kotlinx.coroutines.CancellationException
+
 enum class MangaSourceOrigin {
     LOCAL,
     DIRECT,
@@ -77,7 +80,7 @@ data class MangaSourceCatalogSnapshot(
 }
 
 class MangaSourceHealthTracker {
-    private val health = linkedMapOf<MangaSourceId, MangaSourceHealth>()
+    private val health = ConcurrentHashMap<MangaSourceId, MangaSourceHealth>()
 
     fun health(sourceId: MangaSourceId): MangaSourceHealth =
         health[sourceId] ?: MangaSourceHealth()
@@ -153,7 +156,12 @@ class MangaSourceCatalog(
     fun enabledProviders(): List<MangaSourceProvider> =
         registrationsById.values
             .filter(policy::allows)
-            .map(MangaSourceRegistration::provider)
+            .map { registration ->
+                HealthTrackedMangaSourceProvider(
+                    delegate = registration.provider,
+                    healthTracker = healthTracker
+                )
+            }
 
     fun buildHubOrNull(): MangaHub? {
         if (!policy.hubEnabled) return null
@@ -161,6 +169,51 @@ class MangaSourceCatalog(
     }
 
     fun healthTracker(): MangaSourceHealthTracker = healthTracker
+}
+
+private class HealthTrackedMangaSourceProvider(
+    private val delegate: MangaSourceProvider,
+    private val healthTracker: MangaSourceHealthTracker
+) : MangaSourceProvider {
+    override val descriptor: MangaSourceDescriptor
+        get() = delegate.descriptor
+
+    override suspend fun search(request: MangaSearchRequest): MangaResultPage<MangaSummary> =
+        track { delegate.search(request) }
+
+    override suspend fun popular(request: MangaBrowseRequest): MangaResultPage<MangaSummary> =
+        track { delegate.popular(request) }
+
+    override suspend fun latest(request: MangaBrowseRequest): MangaResultPage<MangaSummary> =
+        track { delegate.latest(request) }
+
+    override suspend fun filters(): List<MangaFilterDefinition> =
+        track { delegate.filters() }
+
+    override suspend fun resolveUrl(url: String): MangaRef? =
+        track { delegate.resolveUrl(url) }
+
+    override suspend fun fetchUpdate(
+        ref: MangaRef,
+        existingChapters: List<MangaChapter>,
+        options: MangaUpdateOptions
+    ): MangaUpdate =
+        track { delegate.fetchUpdate(ref, existingChapters, options) }
+
+    override suspend fun pages(ref: MangaChapterRef): List<MangaPage> =
+        track { delegate.pages(ref) }
+
+    private suspend fun <T> track(block: suspend () -> T): T =
+        try {
+            block().also {
+                healthTracker.recordSuccess(descriptor.id)
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Throwable) {
+            healthTracker.recordFailure(descriptor.id, error)
+            throw error
+        }
 }
 
 internal fun Throwable.toMangaSourceHealth(
