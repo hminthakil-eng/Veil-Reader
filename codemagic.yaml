@@ -2,15 +2,20 @@ workflows:
   veil-reader-cloud-verify:
     name: Veil Reader Cloud Verify
     instance_type: mac_mini_m2
-    max_build_duration: 45
+    max_build_duration: 30
     triggering:
       events:
-        - push
+        - pull_request
       branch_patterns:
-        - pattern: 'upgrade/readium-3-4'
+        - pattern: '{feature,fix,infra}/*'
           include: true
           source: true
       cancel_previous_builds: true
+    cache:
+      cache_paths:
+        - ~/.gradle/caches
+        - ~/.gradle/wrapper
+        - $CM_BUILD_DIR/.gradle-dist
     environment:
       java: 17
     scripts:
