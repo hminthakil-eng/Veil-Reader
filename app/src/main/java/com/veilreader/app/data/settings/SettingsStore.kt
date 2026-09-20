@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.map
 private val Context.veilSettingsDataStore by preferencesDataStore(name = "veil_settings")
 
 data class AppSettings(
+    val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
@@ -24,6 +26,7 @@ data class AppSettings(
 
 class SettingsStore(private val context: Context) {
     private object Keys {
+        val appThemeMode = stringPreferencesKey("app_theme_mode")
         val theme = stringPreferencesKey("reader_theme")
         val fontScale = doublePreferencesKey("reader_font_scale")
         val lineHeight = doublePreferencesKey("reader_line_height")
@@ -38,6 +41,9 @@ class SettingsStore(private val context: Context) {
 
     val settings: Flow<AppSettings> = context.veilSettingsDataStore.data.map { prefs ->
         AppSettings(
+            appThemeMode = runCatching {
+                AppThemeMode.valueOf(prefs[Keys.appThemeMode] ?: AppThemeMode.SYSTEM.name)
+            }.getOrDefault(AppThemeMode.SYSTEM),
             readerAppearance = ReaderAppearance(
                 theme = runCatching {
                     ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.DUSK.name)
@@ -53,6 +59,10 @@ class SettingsStore(private val context: Context) {
             legacyLibraryImported = prefs[Keys.legacyLibraryImported] ?: false,
             legacyGameImported = prefs[Keys.legacyGameImported] ?: false
         )
+    }
+
+    suspend fun setAppThemeMode(mode: AppThemeMode) {
+        context.veilSettingsDataStore.edit { it[Keys.appThemeMode] = mode.name }
     }
 
     suspend fun saveReaderAppearance(value: ReaderAppearance) {
