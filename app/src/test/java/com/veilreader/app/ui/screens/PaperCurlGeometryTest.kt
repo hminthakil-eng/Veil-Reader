@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.ui.geometry.Offset
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -73,6 +74,49 @@ class PaperCurlGeometryTest {
                 curlProgress = 0.10f
             )
         )
+    }
+
+    @Test
+    fun stationaryBodyDragDoesNotPreCurlOrCommit() {
+        for (startX in listOf(100f, 250f, 500f, 750f, 980f)) {
+            val start = Offset(startX, 500f)
+            val edge = paperCurlPageEdge(1000f, start, start)
+            val centerX = (edge.top.x + edge.bottom.x) * 0.5f
+            val progress = (1f - centerX / 1000f).coerceIn(0f, 1f)
+
+            assertEquals(1000f, centerX, 0.001f)
+            assertFalse(shouldCommitPaperTurn(0f, 1000f, 1f, progress))
+        }
+    }
+
+    @Test
+    fun shortBodyDragCancelsAtEveryStartingPosition() {
+        for (startX in listOf(100f, 250f, 500f, 750f, 980f)) {
+            val start = Offset(startX, 500f)
+            val edge = paperCurlPageEdge(1000f, start, Offset(startX - 20f, 500f))
+            val centerX = (edge.top.x + edge.bottom.x) * 0.5f
+            val progress = (1f - centerX / 1000f).coerceIn(0f, 1f)
+
+            assertEquals(990f, centerX, 0.001f)
+            assertFalse(shouldCommitPaperTurn(20f, 1000f, 1f, progress))
+        }
+    }
+
+    @Test
+    fun equalFingerDisplacementProducesEqualFoldFromBodyOrEdge() {
+        val body = paperCurlPageEdge(1000f, Offset(400f, 500f), Offset(140f, 540f))
+        val edge = paperCurlPageEdge(1000f, Offset(980f, 500f), Offset(720f, 540f))
+
+        assertEquals(edge.top, body.top)
+        assertEquals(edge.bottom, body.bottom)
+        val progress = (1f - (body.top.x + body.bottom.x) * 0.5f / 1000f)
+        assertTrue(shouldCommitPaperTurn(260f, 1000f, 1f, progress))
+    }
+
+    @Test
+    fun returnedOrOutwardDragCannotCommitFromStaleVisualProgress() {
+        assertFalse(shouldCommitPaperTurn(0f, 1000f, 1f, 0.8f))
+        assertFalse(shouldCommitPaperTurn(-60f, 1000f, 1f, 0.8f))
     }
 
     @Test
