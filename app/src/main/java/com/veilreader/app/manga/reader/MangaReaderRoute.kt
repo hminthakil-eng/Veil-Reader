@@ -90,6 +90,10 @@ fun MangaReaderRoute(
                     viewModel.setPreferences(state.preferences.copy(layout = layout))
                 },
                 onProgress = viewModel::onPageSettled,
+                canGoPreviousChapter = state.canGoPreviousChapter && !state.loading,
+                canGoNextChapter = state.canGoNextChapter && !state.loading,
+                onPreviousChapter = viewModel::goToPreviousChapter,
+                onNextChapter = viewModel::goToNextChapter,
                 onClose = {
                     viewModel.flushProgress()
                     onClose()
