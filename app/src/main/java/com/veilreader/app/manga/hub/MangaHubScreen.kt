@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -64,7 +65,9 @@ fun MangaHubScreen(
             progressStore = progressStore,
             cacheRoot = cacheRoot,
             onClose = model::closeReader,
-            modifier = modifier.fillMaxSize()
+            modifier = modifier
+            .fillMaxSize()
+            .testTag(MangaHubVerificationTags.ROOT)
         )
         return
     }
@@ -115,7 +118,9 @@ fun MangaHubScreen(
                     onRead = model::startReading,
                     onAdd = model::addSelectedToLibrary,
                     onRemove = model::removeSelectedFromLibrary,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                    .weight(1f)
+                    .testTag(MangaHubVerificationTags.SEARCH_FIELD)
                 )
             } else {
                 when (state.tab) {
@@ -183,11 +188,17 @@ private fun MangaHubHeader(
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MangaHubTab.entries.forEach { value ->
                 if (value == tab) {
-                    Button(onClick = { onTab(value) }) {
+                    Button(
+                        onClick = { onTab(value) },
+                        modifier = Modifier.testTag(value.testTag())
+                    ) {
                         Text(value.label())
                     }
                 } else {
-                    OutlinedButton(onClick = { onTab(value) }) {
+                    OutlinedButton(
+                        onClick = { onTab(value) },
+                        modifier = Modifier.testTag(value.testTag())
+                    ) {
                         Text(value.label())
                     }
                 }
@@ -221,7 +232,8 @@ private fun MangaHubSearch(
             )
             Button(
                 onClick = onSearch,
-                enabled = state.query.isNotBlank() && !state.searchLoading
+                enabled = state.query.isNotBlank() && !state.searchLoading,
+                modifier = Modifier.testTag(MangaHubVerificationTags.SEARCH_ACTION)
             ) {
                 Text("Search")
             }
@@ -280,6 +292,12 @@ private fun MangaHubCatalogCard(
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
+            .testTag(
+                MangaHubVerificationTags.catalog(
+                    item.summary.ref.sourceId.value,
+                    item.summary.ref.key
+                )
+            )
             .clickable { onItem(item) }
     ) {
         Column(Modifier.padding(16.dp)) {
@@ -330,6 +348,7 @@ private fun MangaHubLibrary(
                         Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 6.dp)
+                            .testTag(MangaHubVerificationTags.library(work.id.value))
                             .clickable { onWork(work) }
                     ) {
                         Column(Modifier.padding(16.dp)) {
@@ -363,6 +382,7 @@ private fun MangaHubDetails(
     LazyColumn(
         modifier
             .fillMaxSize()
+            .testTag(MangaHubVerificationTags.DETAILS)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -394,7 +414,8 @@ private fun MangaHubDetails(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(
                     onClick = onRead,
-                    enabled = !state.readerLoading && selected.chaptersInReadingOrder.isNotEmpty()
+                    enabled = !state.readerLoading && selected.chaptersInReadingOrder.isNotEmpty(),
+                    modifier = Modifier.testTag(MangaHubVerificationTags.READ)
                 ) {
                     Text(if (selected.canonical == null) "Read & save" else "Read")
                 }
@@ -402,14 +423,16 @@ private fun MangaHubDetails(
                 if (selected.canonical == null) {
                     OutlinedButton(
                         onClick = onAdd,
-                        enabled = !state.detailsLoading
+                        enabled = !state.detailsLoading,
+                        modifier = Modifier.testTag(MangaHubVerificationTags.ADD)
                     ) {
                         Text("Add to Library")
                     }
                 } else {
                     OutlinedButton(
                         onClick = onRemove,
-                        enabled = !state.detailsLoading
+                        enabled = !state.detailsLoading,
+                        modifier = Modifier.testTag(MangaHubVerificationTags.REMOVE)
                     ) {
                         Text("Remove")
                     }
@@ -433,6 +456,12 @@ private fun MangaHubDetails(
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .testTag(
+                        MangaHubVerificationTags.chapter(
+                            chapter.sourceId.value,
+                            chapter.chapterKey
+                        )
+                    )
                     .padding(vertical = 6.dp)
             ) {
                 Text(
@@ -453,4 +482,11 @@ private fun MangaHubTab.label(): String = when (this) {
     MangaHubTab.DISCOVER -> "Discover"
     MangaHubTab.SEARCH -> "Search"
     MangaHubTab.LIBRARY -> "Library"
+}
+
+
+private fun MangaHubTab.testTag(): String = when (this) {
+    MangaHubTab.DISCOVER -> MangaHubVerificationTags.DISCOVER
+    MangaHubTab.SEARCH -> MangaHubVerificationTags.SEARCH
+    MangaHubTab.LIBRARY -> MangaHubVerificationTags.LIBRARY
 }
