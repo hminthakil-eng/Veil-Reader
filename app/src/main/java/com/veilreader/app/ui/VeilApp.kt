@@ -434,6 +434,7 @@ fun VeilApp(
         MangaReaderHost(
             runtime = mangaRuntime,
             target = mangaTarget,
+            onChapterChanged = routeViewModel::requestMangaChapter,
             onClose = {
                 mangaHubViewModel.closeReader()
                 routeViewModel.closeMangaReader()
@@ -567,6 +568,7 @@ fun VeilApp(
 private fun MangaReaderHost(
     runtime: MangaAppRuntime,
     target: MangaReaderTarget,
+    onChapterChanged: (String, String) -> Unit,
     onClose: () -> Unit
 ) {
     val mangaReaderViewModel: MangaReaderViewModel = viewModel(
@@ -574,14 +576,27 @@ private fun MangaReaderHost(
         factory = MangaReaderViewModel.factory(
             mangaLibrary = runtime.library,
             mangaHub = runtime.hub,
-            offlineStore = runtime.offlineStore
+            offlineStore = runtime.offlineStore,
+            preferencesPersistence = runtime.readerPreferences
         )
     )
+    val mangaReaderState by mangaReaderViewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(target.bookId, target.chapterId, mangaReaderViewModel) {
         mangaReaderViewModel.open(
             bookId = target.bookId,
             chapterId = target.chapterId
         )
+    }
+    LaunchedEffect(
+        mangaReaderState.bookId,
+        mangaReaderState.chapterId,
+        mangaReaderState.loading
+    ) {
+        val bookId = mangaReaderState.bookId ?: return@LaunchedEffect
+        val chapterId = mangaReaderState.chapterId ?: return@LaunchedEffect
+        if (!mangaReaderState.loading && (bookId != target.bookId || chapterId != target.chapterId)) {
+            onChapterChanged(bookId, chapterId)
+        }
     }
     MangaReaderRoute(
         viewModel = mangaReaderViewModel,
