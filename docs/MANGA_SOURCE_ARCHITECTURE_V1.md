@@ -270,21 +270,41 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - manual protocol isolates true OS process death from Room persistence and records extreme-image visual/memory evidence;
    - existing connectedDebugAndroidTest emulator workflow is reused; no duplicate device workflow is added.
 
+17. **Manga Hub catalog vertical slice**
+   - production Manga Hub UI is source-neutral and contains Discover, Search and Library surfaces;
+   - Discover consumes product-level SourceMangaRef seeds instead of inventing a fake browse method in every source adapter;
+   - Search uses SourceRegistry + SourceExecutionCoordinator across installed providers;
+   - search results are deduplicated only by exact source identity; equal titles from different sources are never auto-merged;
+   - source details and chapter order come from the provider without title/number re-sorting;
+   - canonical add is idempotent by stable sourceId + sourceKey identity;
+   - Room adds a query-only canonical lookup by source identity; schema v2 is unchanged;
+   - Library details and Reader session creation fall back across linked sources when a preferred source fails;
+   - chapter rows open MangaReaderSession at the selected provider chapter key;
+   - Read & save creates canonical identity first, then opens the integrated Reader and keeps Details state synchronized;
+   - Reader close returns to the same Hub Details surface instead of the EPUB/PDF shell;
+   - source issues are surfaced as a small skipped-source count while Library remains usable;
+   - production Hub route is still not enabled in VeilApp;
+   - debug-only fixture provider exercises SEARCH/DETAILS/CHAPTERS/PAGES contracts with two deterministic works;
+   - debug Hub host uses a dedicated Room database and local generated page files, never the user's production library or a live website;
+   - shared debug fixture image generation is reused by Reader and Hub verification;
+   - JVM service gates cover idempotent add, no title merge, linked-source fallback, provider chapter order and discovery library flags;
+   - Android E2E gates cover Discover -> Details -> Add -> Library persistence, Search -> Details, chapter tap -> selected Reader chapter and Read & save -> Reader -> Details.
+
 ## Next vertical slices
 
-1. **Manga Hub catalog vertical slice**
-   - source-neutral Browse/Search/Library entry point;
-   - one fixture/local provider end-to-end before any live source adapter;
-   - canonical work creation/linking through Room;
-   - chapter list -> MangaReaderSession -> integrated reader;
-   - source health/replacement state visible but not overexposed in normal UX;
-   - no bulk source catalog until the end-to-end product path is Android-verified.
-
-2. **Execute Android device gate**
+1. **Execute Android device gate**
    - run the prepared connectedDebugAndroidTest matrix once the runner/PC build gate is available;
    - generate Room schema v2 through KSP;
+   - run Reader + Manga Hub E2E instrumentation;
    - run the manual true process-death and extreme visual-quality protocol;
    - do not merge the stacked Manga foundations until these gates are green.
+
+2. **First live source adapter controlled pilot — only after the gate is green**
+   - research source terms, stability and legal/operational constraints first;
+   - implement one provider behind the existing Source SDK;
+   - fixture compatibility tests remain mandatory;
+   - no bulk source catalog, scraper import or source explosion;
+   - validate health, challenge, replacement and offline behavior before adding a second live source.
 
 ## Verification state
 
@@ -303,6 +323,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Room v2 persistence has an additive v1→v2 migration, DAO/repository instrumentation gates, and backup schema-3 coverage. The generated `app/schemas/.../2.json` remains pending the first successful Android/KSP build; it will not be fabricated manually.
 - Android challenge UI now has process-local host/session/header boundaries plus unit/instrumentation gates for retry handoff, rotation grace, host loss, cancellation and HTTPS origin confinement. Full WebView device execution remains pending the Android build/device gate.
 - Reader device verification harness is now committed: deterministic debug host, isolated Room persistence, Compose instrumentation matrix, extreme local fixture and manual process-death protocol. These tests are prepared but not yet executed because Android runners still fail before their first workflow step.
+- Manga Hub catalog vertical slice is now committed with production source-neutral UI/service boundaries plus a debug-only local provider and Android E2E matrix. It remains unexposed in VeilApp until the Android device gate is green.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
