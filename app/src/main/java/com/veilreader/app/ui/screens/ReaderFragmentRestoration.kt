@@ -9,6 +9,13 @@ import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.publication.Link
+import org.readium.r2.shared.publication.LocalizedString
+import org.readium.r2.shared.publication.Manifest
+import org.readium.r2.shared.publication.Metadata
+import org.readium.r2.shared.publication.Publication
+import org.readium.r2.shared.util.Url
+import org.readium.r2.shared.util.mediatype.MediaType
 
 /**
  * Makes Readium's constructor-bound navigator fragments safe during Activity restoration.
@@ -21,6 +28,28 @@ import org.readium.r2.shared.ExperimentalReadiumApi
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal object ReaderFragmentRestoration {
+    /**
+     * Readium 3.4's PDF dummy factory uses an empty reading order, while
+     * PdfNavigatorViewModel immediately reads readingOrder.first(). A minimal valid
+     * one-link PDF manifest keeps FragmentManager restoration alive only long enough
+     * for [discardRestoredDummies] to remove the temporary fragment before resume.
+     * No resource is ever opened from this publication.
+     */
+    private val pdfRestorationPublication = Publication(
+        Manifest(
+            metadata = Metadata(
+                identifier = "veil:pdf-restoration",
+                localizedTitle = LocalizedString("")
+            ),
+            readingOrder = listOf(
+                Link(
+                    href = Url("restoration.pdf")!!,
+                    mediaType = MediaType.PDF
+                )
+            )
+        )
+    )
+
     private val restoredDummies = Collections.newSetFromMap(
         WeakHashMap<Fragment, Boolean>()
     )
@@ -33,8 +62,10 @@ internal object ReaderFragmentRestoration {
                         .instantiate(classLoader, className)
 
                 PdfNavigatorFragment::class.java.name ->
-                    PdfNavigatorFragment.createDummyFactory(PdfiumEngineProvider())
-                        .instantiate(classLoader, className)
+                    PdfNavigatorFragment.createFactory(
+                        publication = pdfRestorationPublication,
+                        pdfEngineProvider = PdfiumEngineProvider()
+                    ).instantiate(classLoader, className)
 
                 else -> return super.instantiate(classLoader, className)
             }
