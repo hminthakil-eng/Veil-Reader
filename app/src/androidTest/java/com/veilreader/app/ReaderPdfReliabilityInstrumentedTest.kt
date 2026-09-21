@@ -112,10 +112,13 @@ class ReaderPdfReliabilityInstrumentedTest {
     private fun waitForResumedActivity(excluding: Activity): Activity {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
         while (SystemClock.elapsedRealtime() < deadline) {
-            val resumed = ActivityLifecycleMonitorRegistry.getInstance()
-                .getActivitiesInStage(Stage.RESUMED)
-                .firstOrNull { it !== excluding }
-            if (resumed != null) return resumed
+            var resumed: Activity? = null
+            instrumentation.runOnMainSync {
+                resumed = ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED)
+                    .firstOrNull { it !== excluding }
+            }
+            resumed?.let { return it }
             SystemClock.sleep(POLL_MS)
         }
         error("Timed out waiting for recreated reader Activity")
