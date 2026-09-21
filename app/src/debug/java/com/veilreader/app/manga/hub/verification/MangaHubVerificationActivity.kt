@@ -66,18 +66,23 @@ class MangaHubVerificationActivity : FragmentActivity() {
             }
         }
 
+        val resetLibrary = savedInstanceState == null &&
+            intent.getBooleanExtra(EXTRA_RESET_LIBRARY, true)
+
         lifecycleScope.launch {
             dependencies = withContext(Dispatchers.IO) {
-                buildDependencies()
+                buildDependencies(resetLibrary)
             }
         }
     }
 
-    private suspend fun buildDependencies(): VerificationDependencies {
+    private suspend fun buildDependencies(
+        resetLibrary: Boolean
+    ): VerificationDependencies {
         val cacheRoot = File(cacheDir, "manga-hub-verification").apply { mkdirs() }
         val repository = MangaHubVerificationDatabase.repository(applicationContext)
 
-        if (intent.getBooleanExtra(EXTRA_RESET_LIBRARY, true)) {
+        if (resetLibrary) {
             repository.listWorks().forEach { repository.deleteWork(it.id) }
             repository.clearOfflineIndex()
         }
