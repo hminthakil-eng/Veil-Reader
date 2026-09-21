@@ -8,12 +8,18 @@ import com.veilreader.app.manga.source.SourceFailureKind
 import com.veilreader.app.manga.source.SourceOutcome
 import kotlinx.coroutines.CancellationException
 
+fun interface MangaChapterPresentationLoader {
+    suspend fun load(
+        request: MangaChapterPresentationRequest
+    ): MangaReaderPresentationState
+}
+
 class MangaReaderChapterLoader(
     private val offlineIndex: MangaOfflineCacheIndex,
     private val sourceExecution: SourceExecutionCoordinator
-) {
+) : MangaChapterPresentationLoader {
 
-    suspend fun load(
+    override suspend fun load(
         request: MangaChapterPresentationRequest
     ): MangaReaderPresentationState {
         val manifest = request.offlineChapterIdOrNull()?.let { offlineIndex.load(it) }

@@ -109,6 +109,23 @@ class MangaReaderController(
         policy: MangaOrientationPolicy
     ): MangaReaderState = state.copy(orientationPolicy = policy)
 
+    fun moveToItem(
+        state: MangaReaderState,
+        itemIndex: Int,
+        webtoonOffsetFraction: Double = 0.0
+    ): MangaReaderState {
+        val index = clampIndex(itemIndex, state.pageCount)
+        val position = positionFor(
+            mode = state.mode,
+            itemIndex = index,
+            webtoonOffset = webtoonOffsetFraction
+        )
+        return state.copy(
+            position = position,
+            zoom = defaultZoom()
+        )
+    }
+
     fun updateWebtoonPosition(
         state: MangaReaderState,
         itemIndex: Int,

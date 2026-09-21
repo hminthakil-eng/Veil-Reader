@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import com.veilreader.app.manga.reader.MangaReaderChapterRef
+import com.veilreader.app.manga.reader.ui.MangaReaderGestureOwner
 import com.veilreader.app.manga.reader.ui.MangaReaderSurface
 import com.veilreader.app.manga.reader.ui.MangaReaderUiIntent
 import com.veilreader.app.manga.reader.ui.MangaReaderUiState
@@ -23,6 +24,7 @@ fun MangaReaderPresentationSurface(
     onIntent: (MangaReaderUiIntent) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
+    gestureOwner: MangaReaderGestureOwner = MangaReaderGestureOwner.VEIL_READER,
     loadingContent: @Composable (MangaReaderChapterRef) -> Unit,
     errorContent: @Composable (MangaPresentationError, onRetry: () -> Unit) -> Unit,
     partialOfflineContent: @Composable () -> Unit = {},
@@ -66,7 +68,8 @@ fun MangaReaderPresentationSurface(
                 MangaReaderSurface(
                     state = uiState,
                     onIntent = onIntent,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    gestureOwner = gestureOwner
                 ) { index, pageModifier ->
                     val asset = ready.page(index)
                     if (asset != null) {
