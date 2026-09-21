@@ -143,4 +143,12 @@ class MangaReaderModelTest {
         assertEquals(1, remoteCalls)
     }
 
+    @Test
+    fun layoutModeMapping_keepsVerticalLayoutsOutOfHorizontalLegacyMode() {
+        assertEquals(MangaReaderMode.PAGED, MangaReaderLayout.PAGED.toScreenMode())
+        assertEquals(MangaReaderMode.PAGED, MangaReaderLayout.VERTICAL_PAGER.toScreenMode())
+        assertEquals(MangaReaderMode.WEBTOON, MangaReaderLayout.WEBTOON.toScreenMode())
+        assertEquals(MangaReaderMode.WEBTOON, MangaReaderLayout.CONTINUOUS_VERTICAL.toScreenMode())
+    }
+
 }
