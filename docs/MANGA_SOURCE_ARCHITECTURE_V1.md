@@ -36,11 +36,21 @@ This permits:
 - migration from a dead source to an alternative source;
 - cached/offline state to survive host changes.
 
-### Recovery
+### Recovery and execution
 
 Failures are classified into network, timeout, rate limit, blocked/challenge, auth, not found, parser changed, source removed, unsupported and unknown.
 
-`SourceRecoveryPolicy` returns one recovery action. Retry budgets and cooldowns belong to a future execution coordinator so the policy cannot create infinite retry loops.
+`SourceRecoveryPolicy` returns one recovery action. `SourceExecutionCoordinator` owns the bounded execution mechanics:
+
+- maximum attempt budget;
+- per-source semaphore/concurrency limit;
+- runtime domain/mirror selection;
+- rate-limit delay clamping;
+- cancellation propagation;
+- one challenge attempt per domain per operation;
+- an explicit `SourceChallengeAdapter` boundary.
+
+The coordinator intentionally does **not** choose a different source. Cross-source replacement requires canonical work matching and migration confidence and therefore remains a separate layer.
 
 ### Registry
 
@@ -49,8 +59,8 @@ Failures are classified into network, timeout, rate limit, blocked/challenge, au
 ## Deliberately not in this slice
 
 - no source website adapter;
-- no network dependency;
-- no WebView/Cloudflare implementation;
+- no network/HTML parser dependency;
+- no concrete WebView/Cloudflare implementation;
 - no Room schema changes;
 - no library migration;
 - no Manga UI;
@@ -59,34 +69,44 @@ Failures are classified into network, timeout, rate limit, blocked/challenge, au
 
 That keeps the existing EPUB/PDF release candidate behavior unchanged.
 
-## Next vertical slices
+## Completed foundation
 
-1. **Execution coordinator**
+1. **Source SDK contract**
+   - stable source identity;
+   - source-neutral manga/chapter/page models;
+   - explicit capabilities;
+   - classified failures.
+
+2. **Execution coordinator**
    - bounded retry;
    - per-source concurrency;
-   - timeout/cancellation propagation;
+   - cancellation propagation;
    - mirror/domain failover;
-   - challenge adapter boundary.
+   - rate-limit clamp;
+   - challenge adapter boundary;
+   - anti-loop challenge guard.
 
-2. **One reference provider**
+## Next vertical slices
+
+1. **One reference provider**
    - search -> details -> chapters -> pages;
-   - contract tests using deterministic fixtures;
+   - deterministic fixture-backed contract tests;
    - no persistence yet.
 
-3. **Offline cache + progress model**
+2. **Offline cache + progress model**
    - canonical work identity separated from `SourceMangaRef`;
    - chapter/page cache metadata;
    - resume state;
    - migration-safe keys.
 
-4. **Alternatives / source replacement**
+3. **Alternatives / source replacement**
    - title/alt-title matching;
    - chapter number/volume alignment;
    - cover similarity as secondary evidence;
    - explicit confidence and manual confirmation;
    - transactionally migrate progress/favourites/download metadata.
 
-5. **Reader vertical slice**
+4. **Reader vertical slice**
    - paged manga;
    - RTL page direction;
    - webtoon continuous mode;
