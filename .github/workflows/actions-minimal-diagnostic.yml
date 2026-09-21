@@ -71,6 +71,14 @@ jobs:
           if ($api -ne '35') { throw "Expected API 35, got $api" }
           if ($boot -ne '1') { throw "Emulator not booted" }
 
+      - name: Seed SAF EPUB fixture
+        shell: powershell
+        run: |
+          $adb = 'C:\Users\Microsoft\AppData\Local\Android\Sdk\platform-tools\adb.exe'
+          & $adb -s emulator-5554 shell rm -f /sdcard/Download/VeilReaderQa.epub
+          & $adb -s emulator-5554 push qa/fixtures/veil-smoke.epub /sdcard/Download/VeilReaderQa.epub
+          if ($LASTEXITCODE -ne 0) { throw "Failed to seed SAF EPUB fixture" }
+
       - name: Connected instrumentation
         shell: powershell
         run: gradle :app:connectedDebugAndroidTest --stacktrace
