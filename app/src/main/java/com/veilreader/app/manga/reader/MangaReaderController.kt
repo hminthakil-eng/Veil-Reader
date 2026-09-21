@@ -34,7 +34,10 @@ class MangaReaderController(
         currentChapter: MangaReaderChapterRef,
         currentPageCount: Int?
     ): MangaReaderState {
-        if (snapshot.version != MangaReaderSnapshot.CURRENT_VERSION || snapshot.chapter != currentChapter) {
+        if (
+            snapshot.version != MangaReaderSnapshot.CURRENT_VERSION ||
+            !snapshot.chapter.sameLogicalChapter(currentChapter)
+        ) {
             return initial(
                 chapter = currentChapter,
                 mode = snapshot.mode,
@@ -207,6 +210,7 @@ class MangaReaderController(
     }
 
     private fun clampIndex(index: Int, pageCount: Int?): Int {
+        require(pageCount == null || pageCount > 0) { "Page count must be positive when known" }
         val nonNegative = index.coerceAtLeast(0)
         return if (pageCount == null) nonNegative else nonNegative.coerceAtMost(pageCount - 1)
     }
