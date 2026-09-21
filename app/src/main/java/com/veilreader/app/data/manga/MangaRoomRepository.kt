@@ -33,13 +33,13 @@ class MangaRoomRepository(
     private val database: VeilDatabase
 ) : MangaCanonicalStore, MangaProgressStore, MangaOfflineCacheIndex {
 
-    override suspend fun load(id: CanonicalMangaId): CanonicalManga? =
+    override suspend fun loadWork(id: CanonicalMangaId): CanonicalManga? =
         database.mangaLibrary().find(id.value)?.toDomain()
 
-    override suspend fun listAll(): List<CanonicalManga> =
+    override suspend fun listWorks(): List<CanonicalManga> =
         database.mangaLibrary().listAll().map(MangaWorkWithLinks::toDomain)
 
-    override suspend fun save(manga: CanonicalManga) {
+    override suspend fun saveWork(manga: CanonicalManga) {
         database.withTransaction {
             database.mangaLibrary().upsertWork(manga.toEntity())
             database.mangaLibrary().deleteLinksForManga(manga.id.value)
@@ -52,7 +52,7 @@ class MangaRoomRepository(
         }
     }
 
-    override suspend fun delete(id: CanonicalMangaId) {
+    override suspend fun deleteWork(id: CanonicalMangaId) {
         database.mangaLibrary().deleteWork(id.value)
     }
 
