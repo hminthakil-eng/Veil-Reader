@@ -23,6 +23,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
@@ -95,7 +97,8 @@ internal fun PdfZoomControls(
                 onCheckedChange = {
                     zoom = view?.minZoom ?: 1f
                     onAppearanceChange(appearance.copy(scroll = it))
-                }
+                },
+                modifier = Modifier.semantics { contentDescription = "PDF continuous scroll" }
             )
         }
 
