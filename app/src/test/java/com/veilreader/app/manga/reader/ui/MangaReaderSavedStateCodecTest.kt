@@ -65,6 +65,15 @@ class MangaReaderSavedStateCodecTest {
     }
 
     @Test
+    fun malformedOptionalChapterNumberIsRejectedInsteadOfSilentlyDropped() {
+        val values = validPayload().toMutableMap().apply {
+            put("chapter_number", "not-a-number")
+        }
+
+        assertNull(MangaReaderSavedStateCodec.decode(values))
+    }
+
+    @Test
     fun payloadWithNonFiniteZoomIsRejected() {
         val values = validPayload().toMutableMap().apply {
             put("zoom_scale", "NaN")
