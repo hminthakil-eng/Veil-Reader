@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.room.Room
@@ -57,20 +59,26 @@ class MangaReaderVerificationActivity : FragmentActivity() {
 
         setContent {
             VeilTheme {
-                val ready = fixture
-                if (ready == null) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .semantics { testTagsAsResourceId = true }
+                ) {
+                    val ready = fixture
+                    if (ready == null) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        MangaReaderIntegratedScreen(
+                            session = ready.session,
+                            loader = ready.loader,
+                            progressStore = ready.progressStore,
+                            cacheRoot = ready.cacheRoot,
+                            onClose = ::finish,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
-                } else {
-                    MangaReaderIntegratedScreen(
-                        session = ready.session,
-                        loader = ready.loader,
-                        progressStore = ready.progressStore,
-                        cacheRoot = ready.cacheRoot,
-                        onClose = ::finish,
-                        modifier = Modifier.fillMaxSize()
-                    )
                 }
             }
         }
