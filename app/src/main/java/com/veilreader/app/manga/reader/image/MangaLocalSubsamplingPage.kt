@@ -25,7 +25,8 @@ fun MangaLocalSubsamplingPage(
     dimensions: MangaImageDimensions,
     mode: MangaReaderMode,
     imageLoader: ImageLoader,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onTap: (() -> Unit)? = null
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val request = remember(page.file, mode) {
@@ -55,6 +56,7 @@ fun MangaLocalSubsamplingPage(
         imageLoader = imageLoader,
         modifier = imageModifier,
         contentScale = ContentScale.Fit,
-        zoomState = zoomState
+        zoomState = zoomState,
+        onTap = { onTap?.invoke() }
     )
 }
