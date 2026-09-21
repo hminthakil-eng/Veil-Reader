@@ -63,6 +63,7 @@ class MangaReaderScreenViewModel(
 
     private var loadJob: Job? = null
     private var progressSaveJob: Job? = null
+    private var progressWriteJob: Job? = null
     private var pendingPersistentProgress: MangaReadingProgress? = null
 
     private val processSnapshot = savedState.load()
@@ -133,8 +134,10 @@ class MangaReaderScreenViewModel(
     fun onBackgrounded() {
         val reader = _state.value.readerUi.reader
         progressSaveJob?.cancel()
-        progressSaveJob = viewModelScope.launch {
-            progressStore.save(MangaReaderProgressMapper.toProgress(reader, clock()))
+        if (reader.pageCount != null) {
+            enqueueProgressWrite(
+                MangaReaderProgressMapper.toProgress(reader, clock())
+            )
         }
         savedState.save(controller.snapshot(reader))
     }
@@ -181,7 +184,7 @@ class MangaReaderScreenViewModel(
                 loader.load(entry.request())
             } catch (cancelled: CancellationException) {
                 throw cancelled
-            } catch (error: Throwable) {
+            } catch (error: Exception) {
                 MangaReaderPresentationState.Error(
                     chapter = entry.route.readerChapter,
                     error = MangaPresentationError(
@@ -293,8 +296,10 @@ class MangaReaderScreenViewModel(
 
         val previousReader = _state.value.readerUi.reader
         progressSaveJob?.cancel()
-        viewModelScope.launch {
-            progressStore.save(MangaReaderProgressMapper.toProgress(previousReader, clock()))
+        if (previousReader.pageCount != null) {
+            enqueueProgressWrite(
+                MangaReaderProgressMapper.toProgress(previousReader, clock())
+            )
         }
 
         loadJob?.cancel()
@@ -319,9 +324,19 @@ class MangaReaderScreenViewModel(
 
     private fun scheduleProgressSave(reader: MangaReaderState) {
         progressSaveJob?.cancel()
+        if (reader.pageCount == null) return
+
         val progress = MangaReaderProgressMapper.toProgress(reader, clock())
         progressSaveJob = viewModelScope.launch {
             delay(PROGRESS_SAVE_DEBOUNCE_MS)
+            enqueueProgressWrite(progress)
+        }
+    }
+
+    private fun enqueueProgressWrite(progress: MangaReadingProgress) {
+        val previous = progressWriteJob
+        progressWriteJob = viewModelScope.launch {
+            previous?.join()
             progressStore.save(progress)
         }
     }
