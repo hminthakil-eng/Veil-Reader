@@ -33,6 +33,9 @@ interface MangaLibraryDao {
     @Query("SELECT * FROM manga_works ORDER BY createdAtEpochMs ASC, id ASC")
     suspend fun listAll(): List<MangaWorkWithLinks>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM manga_works WHERE id = :id)")
+    suspend fun exists(id: String): Boolean
+
     @Upsert
     suspend fun upsertWork(work: MangaWorkEntity)
 
