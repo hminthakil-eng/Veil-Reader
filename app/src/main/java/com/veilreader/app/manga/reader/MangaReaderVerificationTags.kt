@@ -10,4 +10,7 @@ object MangaReaderVerificationTags {
     const val SUBSAMPLING = "manga-reader-subsampling"
 
     fun page(index: Int): String = "manga-reader-page-" + index
+
+    fun chapter(sourceId: String, chapterKey: String): String =
+        "manga-reader-chapter-" + sourceId + "-" + chapterKey
 }
