@@ -219,7 +219,7 @@ class MangaReaderChapterLoaderTest {
         completed: Boolean,
         pages: List<OfflinePageEntry>
     ) = OfflineChapterManifest(
-        chapterId = request.offlineChapterId(),
+        chapterId = requireNotNull(request.offlineChapterIdOrNull()),
         anchor = request.chapter.anchor,
         pages = pages,
         originSourceId = SourceId("test.source"),
