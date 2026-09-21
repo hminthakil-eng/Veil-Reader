@@ -12,6 +12,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -49,6 +50,15 @@ fun MangaChallengeHost(
 ) {
     RegisterChallengeForegroundHost(runtime.hostRegistry)
     val session by runtime.sessions.session.collectAsStateWithLifecycle()
+
+    BackHandler(enabled = session != null) {
+        session?.let { active ->
+            runtime.sessions.complete(
+                active.id,
+                AndroidChallengeBrowserResult(ChallengeUiResult.CANCELLED)
+            )
+        }
+    }
 
     Box(modifier.fillMaxSize()) {
         content()
@@ -236,6 +246,7 @@ private fun ChallengeBrowserOverlay(
                                         session.id,
                                         AndroidChallengeBrowserResult(ChallengeUiResult.FAILED)
                                     )
+                                    if (webViewRef === view) webViewRef = null
                                     view?.destroy()
                                     return true
                                 }
@@ -303,9 +314,9 @@ private fun ChallengeBrowserOverlay(
                         val webView = webViewRef ?: return@Button
                         val cookieManager = CookieManager.getInstance()
                         cookieManager.flush()
-                        val currentUrl = webView.url ?: session.startUrl
-                        val cookie = cookieManager.getCookie(currentUrl)
-                            ?: cookieManager.getCookie(session.startUrl)
+                        // Query cookies for the source origin, not the current subdomain. This
+                        // preserves WebView cookie scope before forwarding them to source HTTP.
+                        val cookie = cookieManager.getCookie(session.startUrl)
                         val userAgent = webView.settings.userAgentString
                         sessions.complete(
                             session.id,
