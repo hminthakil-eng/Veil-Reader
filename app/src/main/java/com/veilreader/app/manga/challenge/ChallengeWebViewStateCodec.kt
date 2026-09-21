@@ -20,7 +20,7 @@ object ChallengeWebViewStateCodec {
                 MAX_STATE_BYTES,
                 false
             )
-            out.takeUnless(Bundle::isEmpty)
+            out.takeUnless { it.isEmpty }
         }.getOrNull()
     }
 
