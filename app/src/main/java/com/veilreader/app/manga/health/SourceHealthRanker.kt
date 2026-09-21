@@ -41,9 +41,9 @@ class SourceHealthRanker(
         nowEpochMs: Long
     ): List<RankedSource> = providers.map { provider ->
         val health = healthStore.snapshot(provider.descriptor.id, nowEpochMs)
-        val exploration = explorationBonus(health.sampleCount)
+        val exploration = explorationBonus(health.rankingEvidence)
         val latencyScore = latencyScore(health.latencyEwmaMillis)
-        val confidence = sampleConfidence(health.sampleCount)
+        val confidence = sampleConfidence(health.rankingEvidence)
 
         // Prior reliability dominates. Latency improves ordering, while confidence prevents a
         // single lucky request from overwhelming proven sources.
@@ -79,14 +79,14 @@ class SourceHealthRanker(
             .firstOrNull { !it.unavailableByCircuit }
             ?.provider
 
-    private fun explorationBonus(samples: Int): Double {
-        if (samples >= explorationSamples) return 0.0
-        val remaining = (explorationSamples - samples).toDouble() / explorationSamples
+    private fun explorationBonus(evidence: Double): Double {
+        if (evidence >= explorationSamples) return 0.0
+        val remaining = (explorationSamples - evidence) / explorationSamples
         return maxExplorationBonus * remaining
     }
 
-    private fun sampleConfidence(samples: Int): Double =
-        (ln(1.0 + samples) / ln(1.0 + explorationSamples)).coerceIn(0.0, 1.0)
+    private fun sampleConfidence(evidence: Double): Double =
+        (ln(1.0 + evidence) / ln(1.0 + explorationSamples)).coerceIn(0.0, 1.0)
 
     private fun latencyScore(latencyMillis: Double?): Double {
         if (latencyMillis == null) return 0.55
