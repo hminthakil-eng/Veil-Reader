@@ -94,7 +94,8 @@ internal suspend fun resolveMangaChapterPages(
 class MangaReaderViewModel(
     private val mangaLibrary: MangaLibraryRepository,
     private val mangaHub: MangaHub,
-    private val offlineStore: MangaOfflineStore? = null
+    private val offlineStore: MangaOfflineStore? = null,
+    private val preferencesPersistence: MangaReaderPreferencesPersistence? = null
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MangaReaderUiState())
     val uiState: StateFlow<MangaReaderUiState> = _uiState.asStateFlow()
@@ -112,19 +113,22 @@ class MangaReaderViewModel(
     private var loadJob: Job? = null
     private var progressJob: Job? = null
     private var preloadJob: Job? = null
+    private var preferenceJob: Job? = null
 
     fun open(
         bookId: String,
         chapterId: String? = null,
-        preferences: MangaReaderPreferences = _uiState.value.preferences
+        preferences: MangaReaderPreferences? = null
     ) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
+            val resolvedPreferences =
+                preferences ?: preferencesPersistence?.current() ?: _uiState.value.preferences
             val target = chapterId ?: mangaLibrary.resumeChapterId(bookId)
             if (target == null) {
                 _uiState.value = MangaReaderUiState(
                     bookId = bookId,
-                    preferences = preferences,
+                    preferences = resolvedPreferences,
                     failure = MangaReaderFailure(
                         kind = MangaReaderFailureKind.NOT_FOUND,
                         message = "No readable manga chapter is available.",
@@ -133,12 +137,23 @@ class MangaReaderViewModel(
                 )
                 return@launch
             }
-            loadChapter(bookId, target, preferences, restorePage = true)
+            loadChapter(bookId, target, resolvedPreferences, restorePage = true)
         }
     }
 
     fun setPreferences(value: MangaReaderPreferences) {
         _uiState.value = _uiState.value.copy(preferences = value)
+        val persistence = preferencesPersistence ?: return
+        preferenceJob?.cancel()
+        preferenceJob = viewModelScope.launch {
+            try {
+                persistence.save(value)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                // Preferences stay usable in-memory even if a local persistence write fails.
+            }
+        }
     }
 
     fun onPageSettled(pageIndex: Int) {
@@ -172,26 +187,29 @@ class MangaReaderViewModel(
     }
 
     fun goToPreviousChapter() {
-        val state = _uiState.value
-        val bookId = state.bookId ?: return
-        val target = state.previousChapterId ?: return
-        loadJob?.cancel()
-        loadJob = viewModelScope.launch {
-            loadChapter(
-                bookId = bookId,
-                chapterId = target,
-                preferences = state.preferences,
-                restorePage = true
-            )
-        }
+        navigateToAdjacentChapter(previous = true)
     }
 
     fun goToNextChapter() {
+        navigateToAdjacentChapter(previous = false)
+    }
+
+    private fun navigateToAdjacentChapter(previous: Boolean) {
         val state = _uiState.value
+        if (state.loading) return
         val bookId = state.bookId ?: return
-        val target = state.nextChapterId ?: return
+        val target = if (previous) state.previousChapterId else state.nextChapterId ?: return
+        if (target == null) return
+
+        _uiState.value = loadingMangaReaderState(
+            current = state,
+            bookId = bookId,
+            chapterId = target,
+            preferences = state.preferences
+        )
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
+            persistProgress(state)
             loadChapter(
                 bookId = bookId,
                 chapterId = target,
@@ -203,19 +221,24 @@ class MangaReaderViewModel(
 
     fun flushProgress() {
         val state = _uiState.value
-        val bookId = state.bookId ?: return
-        val chapterId = state.chapterId ?: return
-        if (state.pages.isEmpty()) return
+        if (state.bookId == null || state.chapterId == null || state.pages.isEmpty()) return
 
         progressJob?.cancel()
         progressJob = viewModelScope.launch {
-            mangaLibrary.saveReadingProgress(
-                bookId = bookId,
-                chapterId = chapterId,
-                pageIndex = state.pageIndex,
-                pageCount = state.pages.size
-            )
+            persistProgress(state)
         }
+    }
+
+    private suspend fun persistProgress(state: MangaReaderUiState) {
+        val bookId = state.bookId ?: return
+        val chapterId = state.chapterId ?: return
+        if (state.pages.isEmpty()) return
+        mangaLibrary.saveReadingProgress(
+            bookId = bookId,
+            chapterId = chapterId,
+            pageIndex = state.pageIndex,
+            pageCount = state.pages.size
+        )
     }
 
     fun retry() {
@@ -388,12 +411,18 @@ class MangaReaderViewModel(
         fun factory(
             mangaLibrary: MangaLibraryRepository,
             mangaHub: MangaHub,
-            offlineStore: MangaOfflineStore? = null
+            offlineStore: MangaOfflineStore? = null,
+            preferencesPersistence: MangaReaderPreferencesPersistence? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(MangaReaderViewModel::class.java))
-                return MangaReaderViewModel(mangaLibrary, mangaHub, offlineStore) as T
+                return MangaReaderViewModel(
+                    mangaLibrary = mangaLibrary,
+                    mangaHub = mangaHub,
+                    offlineStore = offlineStore,
+                    preferencesPersistence = preferencesPersistence
+                ) as T
             }
         }
     }
