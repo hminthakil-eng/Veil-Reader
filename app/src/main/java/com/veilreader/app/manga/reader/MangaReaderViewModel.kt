@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.veilreader.app.data.MangaLibraryRepository
+import com.veilreader.app.manga.core.MangaChapterRef
 import com.veilreader.app.manga.core.MangaHub
+import com.veilreader.app.manga.core.MangaOfflineStore
 import com.veilreader.app.manga.core.MangaPage
 import com.veilreader.app.manga.core.MangaSourceException
 import java.util.LinkedHashMap
@@ -51,9 +53,48 @@ data class MangaReaderUiState(
     val canGoNextChapter: Boolean get() = nextChapterId != null
 }
 
+internal fun loadingMangaReaderState(
+    current: MangaReaderUiState,
+    bookId: String,
+    chapterId: String,
+    preferences: MangaReaderPreferences
+): MangaReaderUiState {
+    val switchingChapter = current.chapterId != chapterId
+    return current.copy(
+        bookId = bookId,
+        chapterId = chapterId,
+        pages = if (switchingChapter) emptyList() else current.pages,
+        pageIndex = if (switchingChapter) 0 else current.pageIndex,
+        preferences = preferences,
+        previousChapterId = if (switchingChapter) null else current.previousChapterId,
+        nextChapterId = if (switchingChapter) null else current.nextChapterId,
+        loading = true,
+        failure = null
+    )
+}
+
+internal suspend fun resolveMangaChapterPages(
+    ref: MangaChapterRef,
+    cached: List<MangaPage>?,
+    offlineStore: MangaOfflineStore?,
+    remote: suspend () -> List<MangaPage>
+): List<MangaPage> {
+    cached?.let { return it }
+
+    val offline = try {
+        offlineStore?.loadChapter(ref)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Throwable) {
+        null
+    }
+    return offline ?: remote()
+}
+
 class MangaReaderViewModel(
     private val mangaLibrary: MangaLibraryRepository,
-    private val mangaHub: MangaHub
+    private val mangaHub: MangaHub,
+    private val offlineStore: MangaOfflineStore? = null
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MangaReaderUiState())
     val uiState: StateFlow<MangaReaderUiState> = _uiState.asStateFlow()
@@ -198,26 +239,30 @@ class MangaReaderViewModel(
         preferences: MangaReaderPreferences,
         restorePage: Boolean
     ) {
-        _uiState.value = _uiState.value.copy(
+        _uiState.value = loadingMangaReaderState(
+            current = _uiState.value,
             bookId = bookId,
             chapterId = chapterId,
-            preferences = preferences,
-            loading = true,
-            failure = null
+            preferences = preferences
         )
 
         try {
             val window = mangaLibrary.chapterWindow(bookId, chapterId)
-            val pages = synchronized(chapterPageCache) {
+            val cachedPages = synchronized(chapterPageCache) {
                 chapterPageCache[chapterId]
-            } ?: run {
-                val sourceRef = requireNotNull(mangaLibrary.chapterRefForReading(chapterId)) {
-                    "No source binding is available for this manga chapter."
-                }
-                mangaHub.pages(sourceRef).also { loaded ->
-                    synchronized(chapterPageCache) {
-                        chapterPageCache[chapterId] = loaded
-                    }
+            }
+            val sourceRef = requireNotNull(mangaLibrary.chapterRefForReading(chapterId)) {
+                "No source binding is available for this manga chapter."
+            }
+            val pages = resolveMangaChapterPages(
+                ref = sourceRef,
+                cached = cachedPages,
+                offlineStore = offlineStore
+            ) {
+                mangaHub.pages(sourceRef)
+            }.also { loaded ->
+                synchronized(chapterPageCache) {
+                    chapterPageCache[chapterId] = loaded
                 }
             }
 
@@ -265,7 +310,13 @@ class MangaReaderViewModel(
         preloadJob = viewModelScope.launch {
             try {
                 val sourceRef = mangaLibrary.chapterRefForReading(chapterId) ?: return@launch
-                val pages = mangaHub.pages(sourceRef)
+                val pages = resolveMangaChapterPages(
+                    ref = sourceRef,
+                    cached = null,
+                    offlineStore = offlineStore
+                ) {
+                    mangaHub.pages(sourceRef)
+                }
                 synchronized(chapterPageCache) {
                     chapterPageCache[chapterId] = pages
                 }
@@ -336,12 +387,13 @@ class MangaReaderViewModel(
 
         fun factory(
             mangaLibrary: MangaLibraryRepository,
-            mangaHub: MangaHub
+            mangaHub: MangaHub,
+            offlineStore: MangaOfflineStore? = null
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 require(modelClass.isAssignableFrom(MangaReaderViewModel::class.java))
-                return MangaReaderViewModel(mangaLibrary, mangaHub) as T
+                return MangaReaderViewModel(mangaLibrary, mangaHub, offlineStore) as T
             }
         }
     }
