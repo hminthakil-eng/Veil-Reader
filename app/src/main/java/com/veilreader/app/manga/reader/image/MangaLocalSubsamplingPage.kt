@@ -13,7 +13,7 @@ import com.github.panpf.zoomimage.CoilZoomAsyncImage
 import com.github.panpf.zoomimage.rememberCoilZoomState
 import com.github.panpf.zoomimage.util.Logger
 import com.veilreader.app.manga.reader.MangaReaderMode
-import com.veilreader.app.manga.reader.screen.MangaReaderVerificationTags
+import com.veilreader.app.manga.reader.MangaReaderVerificationTags
 
 /**
  * Isolated mature subsampling renderer for verified local extreme images.
