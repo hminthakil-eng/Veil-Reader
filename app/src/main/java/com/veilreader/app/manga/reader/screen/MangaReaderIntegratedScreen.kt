@@ -37,6 +37,7 @@ import com.veilreader.app.manga.library.MangaProgressStore
 import com.veilreader.app.manga.reader.MangaOrientationPolicy
 import com.veilreader.app.manga.reader.MangaPageDirection
 import com.veilreader.app.manga.reader.MangaReaderMode
+import com.veilreader.app.manga.reader.MangaReaderVerificationTags
 import com.veilreader.app.manga.reader.image.AndroidMangaImageDimensionProbe
 import com.veilreader.app.manga.reader.image.MangaCoilPage
 import com.veilreader.app.manga.reader.image.MangaImageDeliveryPlan
