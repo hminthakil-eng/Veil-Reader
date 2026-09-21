@@ -254,8 +254,11 @@ class MangaReaderViewModel(
         val state = _uiState.value
         if (state.bookId == null || state.chapterId == null || state.pages.isEmpty()) return
 
+        // Cancel only the debounce timer. Immediate lifecycle flushes are independent jobs so a
+        // rapid ON_PAUSE -> ON_STOP sequence cannot cancel an in-flight Room write.
         progressJob?.cancel()
-        progressJob = viewModelScope.launch {
+        progressJob = null
+        viewModelScope.launch {
             persistProgress(state)
         }
     }
@@ -334,14 +337,14 @@ class MangaReaderViewModel(
         )
 
         try {
+            val sourceRef = mangaLibrary.chapterRefForReading(chapterId)
+                ?: throw MangaSourceException.NotFound(
+                    "This manga chapter no longer exists or has a readable source binding."
+                )
             val window = mangaLibrary.chapterWindow(bookId, chapterId)
             val cachedPages = synchronized(chapterPageCache) {
                 chapterPageCache[chapterId]
             }
-            val sourceRef = mangaLibrary.chapterRefForReading(chapterId)
-                ?: throw MangaSourceException.NotFound(
-                    "This manga chapter no longer has a readable source binding."
-                )
             val pages = validateMangaChapterPages(
                 resolveMangaChapterPages(
                     ref = sourceRef,
