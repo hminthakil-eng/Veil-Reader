@@ -16,7 +16,7 @@ class MangaReaderChapterLoader(
     suspend fun load(
         request: MangaChapterPresentationRequest
     ): MangaReaderPresentationState {
-        val manifest = offlineIndex.load(request.offlineChapterId())
+        val manifest = request.offlineChapterIdOrNull()?.let { offlineIndex.load(it) }
         val offline = validateOffline(manifest)
 
         if (offline is OfflineValidation.Complete) {
