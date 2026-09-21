@@ -363,10 +363,14 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun seedPdfFixture() {
+        val path = "/sdcard/Download/VeilReaderQa.pdf"
         val command =
-            "sh -c \"printf '%s' '$PDF_BASE64' | base64 -d > /sdcard/Download/VeilReaderQa.pdf\""
+            "sh -c \"printf '%s' '$PDF_BASE64' | base64 -d > $path\""
         uiAutomation.executeShellCommand(command).close()
-        SystemClock.sleep(500)
+        uiAutomation.executeShellCommand(
+            "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$path"
+        ).close()
+        SystemClock.sleep(1_500)
     }
 
     private fun pressAndroidBack() {
