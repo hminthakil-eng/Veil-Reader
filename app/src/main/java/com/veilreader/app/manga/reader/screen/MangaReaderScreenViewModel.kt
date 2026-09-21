@@ -10,10 +10,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.veilreader.app.manga.library.MangaProgressStore
 import com.veilreader.app.manga.library.MangaReadingProgress
 import com.veilreader.app.manga.reader.MangaReaderController
-import com.veilreader.app.manga.reader.MangaReaderPosition
 import com.veilreader.app.manga.reader.MangaReaderState
 import com.veilreader.app.manga.reader.presentation.MangaChapterNavigationResolver
 import com.veilreader.app.manga.reader.presentation.MangaChapterPresentationLoader
+import com.veilreader.app.manga.reader.presentation.MangaPresentationError
+import com.veilreader.app.manga.reader.presentation.MangaPresentationErrorKind
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationCoordinator
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationEffect
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationState
@@ -62,6 +63,7 @@ class MangaReaderScreenViewModel(
 
     private var loadJob: Job? = null
     private var progressSaveJob: Job? = null
+    private var pendingPersistentProgress: MangaReadingProgress? = null
 
     private val processSnapshot = savedState.load()
     private var currentEntry = processSnapshot
@@ -132,7 +134,7 @@ class MangaReaderScreenViewModel(
         val reader = _state.value.readerUi.reader
         progressSaveJob?.cancel()
         progressSaveJob = viewModelScope.launch {
-            progressStore.save(toProgress(reader))
+            progressStore.save(MangaReaderProgressMapper.toProgress(reader, clock()))
         }
         savedState.save(controller.snapshot(reader))
     }
@@ -146,12 +148,13 @@ class MangaReaderScreenViewModel(
         val entry = session.entryForChapter(progressChapter) ?: return
 
         currentEntry = entry
+        pendingPersistentProgress = progress
         val reader = controller.initial(
             chapter = entry.route.readerChapter,
             mode = session.options.mode,
             direction = session.options.direction,
             orientationPolicy = session.options.orientationPolicy,
-            pageCount = progress.pageCount,
+            pageCount = null,
             initialItemIndex = progress.pageIndex
         )
         _state.value = MangaReaderScreenState(
@@ -178,6 +181,15 @@ class MangaReaderScreenViewModel(
                 loader.load(entry.request())
             } catch (cancelled: CancellationException) {
                 throw cancelled
+            } catch (error: Throwable) {
+                MangaReaderPresentationState.Error(
+                    chapter = entry.route.readerChapter,
+                    error = MangaPresentationError(
+                        kind = MangaPresentationErrorKind.SOURCE_FAILURE,
+                        message = error.message ?: "The chapter could not be loaded.",
+                        retryable = true
+                    )
+                )
             }
 
             if (
@@ -190,8 +202,33 @@ class MangaReaderScreenViewModel(
             when (result) {
                 is MangaReaderPresentationState.Ready -> {
                     val current = _state.value
+                    var readerUi = current.readerUi
+
+                    val pending = pendingPersistentProgress
+                    if (
+                        pending != null &&
+                        current.entry.route.readerChapter.sameLogicalChapter(
+                            com.veilreader.app.manga.reader.MangaReaderChapterRef(
+                                mangaId = pending.mangaId,
+                                anchor = pending.chapter
+                            )
+                        )
+                    ) {
+                        val mappedIndex = MangaReaderProgressMapper.remappedItemIndex(
+                            progress = pending,
+                            newPageCount = result.value.pageCount
+                        )
+                        readerUi = readerUi.copy(
+                            reader = controller.moveToItem(
+                                readerUi.reader,
+                                itemIndex = mappedIndex
+                            )
+                        )
+                        pendingPersistentProgress = null
+                    }
+
                     val reduction = reducer.reduce(
-                        current.readerUi,
+                        readerUi,
                         MangaReaderUiIntent.PageCountResolved(result.value.pageCount)
                     )
                     _state.value = current.copy(
@@ -257,7 +294,7 @@ class MangaReaderScreenViewModel(
         val previousReader = _state.value.readerUi.reader
         progressSaveJob?.cancel()
         viewModelScope.launch {
-            progressStore.save(toProgress(previousReader))
+            progressStore.save(MangaReaderProgressMapper.toProgress(previousReader, clock()))
         }
 
         loadJob?.cancel()
@@ -282,35 +319,11 @@ class MangaReaderScreenViewModel(
 
     private fun scheduleProgressSave(reader: MangaReaderState) {
         progressSaveJob?.cancel()
-        val progress = toProgress(reader)
+        val progress = MangaReaderProgressMapper.toProgress(reader, clock())
         progressSaveJob = viewModelScope.launch {
             delay(PROGRESS_SAVE_DEBOUNCE_MS)
             progressStore.save(progress)
         }
-    }
-
-    private fun toProgress(reader: MangaReaderState): MangaReadingProgress {
-        val pageCount = reader.pageCount
-        val index = reader.position.itemIndex
-        val progression = when {
-            pageCount == null || pageCount <= 1 -> 0.0
-            reader.position is MangaReaderPosition.Webtoon -> {
-                val position = reader.position
-                ((position.itemIndex + position.offsetFraction) / pageCount.toDouble())
-                    .coerceIn(0.0, 1.0)
-            }
-            else -> (index.toDouble() / (pageCount - 1).toDouble())
-                .coerceIn(0.0, 1.0)
-        }
-
-        return MangaReadingProgress(
-            mangaId = reader.chapter.mangaId,
-            chapter = reader.chapter.anchor,
-            pageIndex = index,
-            pageCount = pageCount,
-            chapterProgression = progression,
-            updatedAtEpochMs = clock()
-        )
     }
 
     private fun sameEntry(
