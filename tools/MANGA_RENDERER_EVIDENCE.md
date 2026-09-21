@@ -26,6 +26,12 @@ Each capture records:
 
 Evidence is written under ignored `build/manga-renderer-evidence/`.
 
+Fail-closed rules:
+- the Git worktree must be clean so the recorded commit SHA matches the tested source
+- the selected ADB transport must remain in `device` state
+- `baseline`, `peak` and `settled` require Veil Reader to be running; otherwise capture stops with an error
+- `snapshot` is the only phase allowed when the app process is not running
+
 The script is measurement-only: it does not install/uninstall the app, clear app data, change renderer settings or automate gestures. Pair it with the manual matrix in issue #177.
 
 Interpretation rule: a host build is not a device pass. A renderer only advances when memory does not cause app death, PSS/native heap settles materially after stress, gestures remain correct and the exact tested SHA is recorded.
