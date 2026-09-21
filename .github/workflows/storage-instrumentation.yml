@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "app/src/main/java/com/veilreader/app/data/**"
+      - "app/src/main/java/com/veilreader/app/manga/reader/**"
+      - "app/src/debug/**"
       - "app/src/androidTest/**"
       - "app/schemas/**"
       - "app/build.gradle.kts"
@@ -43,7 +45,7 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Run Room instrumentation tests
+      - name: Run Android instrumentation tests
         uses: ReactiveCircus/android-emulator-runner@v2
         with:
           api-level: 35
