@@ -161,7 +161,7 @@ class MangaHubViewModel(
     fun resumeBook(bookId: String) {
         viewModelScope.launch {
             try {
-                val chapterId = requireNotNull(runtime.library.resumeChapterId(bookId)) {
+                val chapterId = requireNotNull(runtime.library.resumeReadableChapterId(bookId)) {
                     "This manga has no readable chapter yet."
                 }
                 _uiState.value = _uiState.value.copy(
