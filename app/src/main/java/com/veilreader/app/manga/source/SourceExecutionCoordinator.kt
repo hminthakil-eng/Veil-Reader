@@ -1,5 +1,8 @@
 package com.veilreader.app.manga.source
 
+import com.veilreader.app.manga.health.SourceExecutionHealthObserver
+import com.veilreader.app.manga.health.SourceHealthRecorder
+import com.veilreader.app.manga.health.SourceOperation
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -37,11 +40,13 @@ data class SourceExecutionResult<T>(
 class SourceExecutionCoordinator(
     private val recoveryPolicy: SourceRecoveryPolicy = SourceRecoveryPolicy(),
     private val challengeAdapter: SourceChallengeAdapter? = null,
+    healthObserver: SourceExecutionHealthObserver? = null,
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
     private val maxParallelPerSource: Int = DEFAULT_MAX_PARALLEL_PER_SOURCE,
     private val defaultRetryDelayMillis: Long = DEFAULT_RETRY_DELAY_MILLIS,
     private val maxRetryDelayMillis: Long = DEFAULT_MAX_RETRY_DELAY_MILLIS,
-    private val sleeper: suspend (Long) -> Unit = { delay(it) }
+    private val sleeper: suspend (Long) -> Unit = { delay(it) },
+    clock: () -> Long = System::currentTimeMillis
 ) {
 
     init {
@@ -54,51 +59,56 @@ class SourceExecutionCoordinator(
     }
 
     private val sourceSemaphores = ConcurrentHashMap<SourceId, Semaphore>()
+    private val healthRecorder = SourceHealthRecorder(healthObserver, clock)
 
     suspend fun search(
         provider: MangaSourceProvider,
         request: SourceSearchRequest
     ): SourceExecutionResult<PagedSourceResult<SourceMangaSummary>> =
-        execute(provider) { context -> provider.search(request, context) }
+        execute(provider, SourceOperation.SEARCH) { context -> provider.search(request, context) }
 
     suspend fun details(
         provider: MangaSourceProvider,
         manga: SourceMangaRef
     ): SourceExecutionResult<SourceMangaDetails> =
-        execute(provider) { context -> provider.details(manga, context) }
+        execute(provider, SourceOperation.DETAILS) { context -> provider.details(manga, context) }
 
     suspend fun chapters(
         provider: MangaSourceProvider,
         manga: SourceMangaRef
     ): SourceExecutionResult<List<SourceChapter>> =
-        execute(provider) { context -> provider.chapters(manga, context) }
+        execute(provider, SourceOperation.CHAPTERS) { context -> provider.chapters(manga, context) }
 
     suspend fun pages(
         provider: MangaSourceProvider,
         chapter: SourceChapter
     ): SourceExecutionResult<List<MangaPageImage>> =
-        execute(provider) { context -> provider.pages(chapter, context) }
+        execute(provider, SourceOperation.PAGES) { context -> provider.pages(chapter, context) }
 
     suspend fun resolvePublicUrl(
         provider: MangaSourceProvider,
         url: String
     ): SourceExecutionResult<SourceMangaRef?> =
-        execute(provider) { context -> provider.resolvePublicUrl(url, context) }
+        execute(provider, SourceOperation.RESOLVE_URL) { context ->
+            provider.resolvePublicUrl(url, context)
+        }
 
     private suspend fun <T> execute(
         provider: MangaSourceProvider,
+        operationKind: SourceOperation,
         operation: suspend (SourceRequestContext) -> SourceOutcome<T>
     ): SourceExecutionResult<T> {
         val semaphore = sourceSemaphores.computeIfAbsent(provider.descriptor.id) {
             Semaphore(maxParallelPerSource)
         }
         return semaphore.withPermit {
-            executeWithPermit(provider, operation)
+            executeWithPermit(provider, operationKind, operation)
         }
     }
 
     private suspend fun <T> executeWithPermit(
         provider: MangaSourceProvider,
+        operationKind: SourceOperation,
         operation: suspend (SourceRequestContext) -> SourceOutcome<T>
     ): SourceExecutionResult<T> {
         val domains = provider.descriptor.domains
@@ -112,9 +122,11 @@ class SourceExecutionCoordinator(
 
         for (attempt in 1..maxAttempts) {
             val domain = domains[domainIndex]
+            val startedAt = healthRecorder.start()
             val outcome = try {
                 operation(SourceRequestContext(domain = domain, attempt = attempt))
             } catch (cancelled: CancellationException) {
+                // Cancellation is caller/lifecycle state, not source health.
                 throw cancelled
             } catch (error: Throwable) {
                 SourceOutcome.Failure(
@@ -127,13 +139,22 @@ class SourceExecutionCoordinator(
             }
 
             when (outcome) {
-                is SourceOutcome.Success -> return SourceExecutionResult(
-                    outcome = outcome,
-                    finalDomain = domain,
-                    attempts = attempt
-                )
+                is SourceOutcome.Success -> {
+                    healthRecorder.success(provider.descriptor.id, operationKind, startedAt)
+                    return SourceExecutionResult(
+                        outcome = outcome,
+                        finalDomain = domain,
+                        attempts = attempt
+                    )
+                }
 
                 is SourceOutcome.Failure -> {
+                    healthRecorder.failure(
+                        provider.descriptor.id,
+                        operationKind,
+                        startedAt,
+                        outcome.error.kind
+                    )
                     lastFailure = outcome.error
                     val hasAlternateDomain = domainIndex < domains.lastIndex
                     val action = recoveryPolicy.decide(
