@@ -77,8 +77,10 @@ class MangaDexSourceProviderTest {
         val result = provider.chapters(ref(), context())
 
         val chapters = (result as SourceOutcome.Success).value
+        assertEquals(2, chapters.size)
         assertEquals(listOf(CHAPTER_TWO, CHAPTER_ONE), chapters.map(SourceChapter::chapterKey))
         assertEquals(listOf(2.0, 1.0), chapters.map(SourceChapter::number))
+        assertFalse(chapters.any { it.chapterKey == EXTERNAL_CHAPTER })
         assertEquals("Group Two", chapters.first().scanlator)
         assertEquals("en", chapters.first().languageTag)
         assertNotNull(chapters.first().publishedAtEpochMs)
@@ -208,6 +210,7 @@ class MangaDexSourceProviderTest {
         const val MANGA_ID = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
         const val CHAPTER_ONE = "11111111-1111-4111-8111-111111111111"
         const val CHAPTER_TWO = "22222222-2222-4222-8222-222222222222"
+        const val EXTERNAL_CHAPTER = "44444444-4444-4444-8444-444444444444"
 
         val SEARCH_JSON = """
             {
@@ -263,6 +266,18 @@ class MangaDexSourceProviderTest {
               "result": "ok",
               "data": [
                 {
+                  "id": "$EXTERNAL_CHAPTER",
+                  "attributes": {
+                    "title": "Publisher",
+                    "volume": "1",
+                    "chapter": "0",
+                    "translatedLanguage": "en",
+                    "externalUrl": "https://publisher.example/chapter/0",
+                    "publishAt": "2025-12-31T00:00:00+00:00"
+                  },
+                  "relationships": []
+                },
+                {
                   "id": "$CHAPTER_TWO",
                   "attributes": {
                     "title": "Second",
@@ -291,7 +306,7 @@ class MangaDexSourceProviderTest {
               ],
               "limit": 100,
               "offset": 0,
-              "total": 2
+              "total": 3
             }
         """.trimIndent()
 
