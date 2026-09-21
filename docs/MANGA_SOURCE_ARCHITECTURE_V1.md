@@ -198,6 +198,25 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - ZoomImage renderer remains isolated until reader screen transfers gesture ownership explicitly;
    - ZoomImage logger is forced to Error level because its debug pipeline can include request data.
 
+13. **Reader screen integration foundation**
+   - route-injected chapter session/catalog; no premature coupling to the EPUB/PDF app shell;
+   - one canonical manga per session and duplicate logical chapters rejected;
+   - ViewModel integrates presentation loader, reducer, SavedState and durable progress;
+   - process-death SavedState has priority over durable progress restore;
+   - durable progress remaps by chapter progression when page count changes;
+   - incomplete/unknown page-count state never overwrites richer durable progress;
+   - durable progress writes are serialized to prevent late stale writes;
+   - stale chapter loads are cancelled and generation-checked before committing UI state;
+   - unexpected loader exceptions become retryable presentation errors rather than screen crashes;
+   - chapter-boundary effects resolve against explicit reading order;
+   - complete/offline/hybrid/partial-offline rules remain enforced during transitions;
+   - orientation policy is applied only while the Manga screen is active and previous host orientation is restored on exit;
+   - explicit gesture ownership is exclusive: Veil gestures or page renderer, never both;
+   - local extreme pages transfer gesture ownership to ZoomImage;
+   - ZoomImage tap is bridged back only to reader chrome controls, not to page-turn navigation;
+   - adaptive page rendering selects standard Coil, bounded remote preview or local subsampling from measured strategy;
+   - existing EPUB/PDF ReaderScreen and VeilApp routing remain untouched.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -213,14 +232,14 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - process-death and host-loss recovery;
    - instrumentation coverage for rotation/background/close.
 
-3. **Reader screen integration**
-   - state holder/ViewModel wiring for loader + reducer + SavedState;
-   - explicit gesture ownership switch between Veil reader gestures and ZoomImage subsampling pages;
-   - orientation host integration;
-   - chapter-route transitions;
-   - offline reopen UX;
-   - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts;
-   - OOM/zoom-quality gate for extreme local images.
+3. **Reader instrumentation + device verification**
+   - rotation and process-death restore;
+   - RTL/LTR swipe/tap behavior;
+   - paged ↔ webtoon switching;
+   - offline reopen and partial-offline boundary UX;
+   - extreme local image OOM/zoom-quality gate;
+   - gesture conflict checks for ZoomImage vs LazyColumn/paged navigation;
+   - run only once Android/Gradle execution is available.
 
 ## Verification state
 
@@ -234,7 +253,8 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Reader presentation orchestration passed local execution smoke with `MANGA_READER_PRESENTATION_SMOKE_OK`: complete offline reopen, HYBRID local/remote delivery, partial-offline fallback and safe chapter-boundary blocking.
 - Unnumbered chapter cache identity passed `MANGA_OFFLINE_LOCATOR_SMOKE_OK`: normalized-title identity survives provider-key replacement and distinguishes different specials.
 - Reader image delivery now has unit gates for cache-root confinement, byte-size/hash verification, remote URL/header validation and secret redaction. Full Coil/Compose Android compilation remains pending the Android build gate.
-- Extreme-image strategy has deterministic JVM tests for standard/local-subsampling/remote-preview decisions and dimension-probe planning. Independent pure-Kotlin smoke passed with `EXTREME_IMAGE_STRATEGY_SMOKE_OK`. ZoomImage integration is intentionally isolated pending gesture-ownership wiring and Android build verification.
+- Extreme-image strategy has deterministic JVM tests for standard/local-subsampling/remote-preview decisions and dimension-probe planning. Independent pure-Kotlin smoke passed with `EXTREME_IMAGE_STRATEGY_SMOKE_OK`.
+- Reader screen integration now has deterministic unit gates for session identity/source ownership, progress remapping and exclusive gesture ownership. Full ViewModel/Compose/ZoomImage Android verification remains blocked on the Android build gate.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
