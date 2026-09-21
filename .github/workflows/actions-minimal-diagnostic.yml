@@ -26,8 +26,19 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v4
+      - name: Configure existing Android SDK
+        shell: powershell
+        run: |
+          $sdk = 'C:\Users\Microsoft\AppData\Local\Android\Sdk'
+          if (!(Test-Path "$sdk\cmdline-tools\latest\bin\sdkmanager.bat")) {
+            throw "sdkmanager missing at $sdk"
+          }
+          "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "$sdk\platform-tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          "$sdk\cmdline-tools\latest\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          & "$sdk\cmdline-tools\latest\bin\sdkmanager.bat" "platforms;android-37" "build-tools;37.0.0" "platform-tools"
+          if ($LASTEXITCODE -ne 0) { throw "sdkmanager failed: $LASTEXITCODE" }
 
       - name: Reading policy regression checks
         shell: powershell
