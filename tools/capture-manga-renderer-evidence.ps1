@@ -50,11 +50,11 @@ $SafeSerial = $Serial -replace '[^A-Za-z0-9_.-]', '_'
 $Dir = Join-Path (Join-Path $RepoRoot $OutputRoot) ($Timestamp + '-' + $SafeSerial + '-' + $Phase)
 New-Item -ItemType Directory -Force -Path $Dir | Out-Null
 
-function AdbShell([string[]]$Args) {
-    return @(& $Adb -s $Serial shell @Args 2>&1)
+function AdbShell([string[]]$ShellArgs) {
+    return @(& $Adb -s $Serial shell @ShellArgs 2>&1)
 }
 
-$Pid = ((AdbShell @('pidof',$AppId)) | Out-String).Trim()
+$AppPid = ((AdbShell @('pidof',$AppId)) | Out-String).Trim()
 $Device = [ordered]@{
     serial = $Serial
     manufacturer = ((AdbShell @('getprop','ro.product.manufacturer')) | Out-String).Trim()
@@ -72,7 +72,7 @@ $Metadata = [ordered]@{
     capturedAt = (Get-Date).ToString('o')
     commit = $Commit
     appId = $AppId
-    pid = $Pid
+    pid = $AppPid
     device = $Device
 }
 $Metadata | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 (Join-Path $Dir 'metadata.json')
@@ -88,5 +88,5 @@ $Logcat | Where-Object {
 
 Write-Host ('Captured ' + $Phase + ' renderer evidence: ' + $Dir)
 Write-Host ('Device: ' + $Device.manufacturer + ' ' + $Device.model + ' / API ' + $Device.api)
-Write-Host ('App PID: ' + $(if ($Pid) { $Pid } else { 'not running' }))
+Write-Host ('App PID: ' + $(if ($AppPid) { $AppPid } else { 'not running' }))
 exit 0
