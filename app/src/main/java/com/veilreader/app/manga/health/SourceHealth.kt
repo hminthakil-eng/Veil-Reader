@@ -59,9 +59,16 @@ data class SourceHealthSnapshot(
         require(latencyEwmaMillis == null || latencyEwmaMillis >= 0.0)
     }
 
+    /**
+     * Evidence used for ranking. Zero-penalty failures (notably local NETWORK failures) deliberately
+     * do not increase ranking confidence or reduce the exploration allowance.
+     */
+    val rankingEvidence: Double
+        get() = successfulSamples + weightedFailurePenalty
+
     val observedReliability: Double
         get() {
-            if (sampleCount == 0) return 0.65
+            if (rankingEvidence == 0.0) return 0.65
             val effectiveFailures = weightedFailurePenalty.coerceAtMost(sampleCount.toDouble())
             return ((successfulSamples + 1.5) /
                 (successfulSamples + effectiveFailures + 3.0)).coerceIn(0.0, 1.0)
