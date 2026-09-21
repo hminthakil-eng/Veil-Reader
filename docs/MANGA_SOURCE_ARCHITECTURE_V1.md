@@ -144,6 +144,18 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - decode-ready image geometry guard prevents zero-size/NaN/Infinity layout;
    - very tall webtoon pages use finite fit-width geometry.
 
+9. **Reader UI adapter foundation**
+   - pure UI intents/effects reducer on top of `MangaReaderController`;
+   - tap-zone classification for left/center/right reader actions;
+   - zoomed pages block accidental page-turn swipe/tap navigation;
+   - double-tap zoom and transform-zoom intents;
+   - webtoon viewport -> item/offset mapping;
+   - fail-closed platform-neutral SavedState codec;
+   - Android `SavedStateHandle` bridge stores only primitive String values;
+   - renderer-agnostic Compose paged and LazyColumn webtoon surfaces;
+   - image loading/transport intentionally stays outside the UI adapter;
+   - no new image/network dependency.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -159,14 +171,13 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - process-death and host-loss recovery;
    - instrumentation coverage for rotation/background/close.
 
-3. **Reader UI adapter vertical slice**
-   - Compose paged surface wired to `MangaReaderController`;
-   - lazy webtoon surface wired to source/offline pages;
-   - pinch/double-tap zoom adapter;
+3. **Reader presentation integration**
+   - bind real online/offline page renderer into the slot-based surfaces;
    - orientation host integration;
-   - process SavedState adapter;
-   - offline reopen and chapter-boundary navigation;
-   - instrumentation for rotation/process death/tall images/RTL.
+   - chapter-boundary navigation;
+   - offline reopen;
+   - loading/error/placeholder UX;
+   - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts.
 
 ## Verification state
 
@@ -176,6 +187,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Source health/ranking production files compile independently and smoke execution passed with `SOURCE_HEALTH_SMOKE_OK`. The smoke run caught and fixed an initial ranking-evidence bug where zero-penalty NETWORK observations still changed confidence.
 - Browser challenge orchestration compiles independently and smoke execution passed with `BROWSER_CHALLENGE_SMOKE_OK`. A race between session completion and cooldown evaluation was found and fixed before PR creation.
 - Manga reader core compiles independently and smoke execution passed with `MANGA_READER_CORE_SMOKE_OK`: RTL/LTR navigation, zoom bounds, page-count clamp, webtoon restore, tall-image geometry and source-replacement-safe chapter restore.
+- Reader UI reducer/SavedState logic passed local execution smoke with `MANGA_READER_UI_SMOKE_OK`: zoom-safe swipe gating, double-tap reset, boundary effects and fail-closed state restore. Compose sources remain pending full Android/Gradle verification.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
