@@ -60,7 +60,7 @@ class MangaRoomRepository(
         database.mangaProgress().find(mangaId.value)?.toDomain()
 
     override suspend fun save(progress: MangaReadingProgress) {
-        require(database.mangaLibrary().find(progress.mangaId.value) != null) {
+        require(database.mangaLibrary().exists(progress.mangaId.value)) {
             "Canonical manga must exist before progress can be persisted"
         }
         database.mangaProgress().upsert(progress.toEntity())
@@ -76,7 +76,7 @@ class MangaRoomRepository(
             ?.toDomain()
 
     override suspend fun put(manifest: OfflineChapterManifest) {
-        require(database.mangaLibrary().find(manifest.chapterId.mangaId.value) != null) {
+        require(database.mangaLibrary().exists(manifest.chapterId.mangaId.value)) {
             "Canonical manga must exist before offline manifests can be persisted"
         }
 
