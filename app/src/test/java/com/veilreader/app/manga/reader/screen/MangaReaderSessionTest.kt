@@ -5,6 +5,7 @@ import com.veilreader.app.manga.library.MangaChapterAnchor
 import com.veilreader.app.manga.reader.MangaReaderChapterRef
 import com.veilreader.app.manga.reader.presentation.MangaChapterRoute
 import com.veilreader.app.manga.source.MangaContentType
+import com.veilreader.app.manga.source.MangaSourceCapability
 import com.veilreader.app.manga.source.MangaSourceDescriptor
 import com.veilreader.app.manga.source.MangaSourceProvider
 import com.veilreader.app.manga.source.SourceChapter
@@ -141,5 +142,7 @@ class MangaReaderSessionTest {
                 domains = listOf("$id.example"),
                 contentTypes = setOf(MangaContentType.MANGA)
             )
+
+            override val capabilities = emptySet<MangaSourceCapability>()
         }
 }
