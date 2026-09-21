@@ -61,6 +61,44 @@ class MangaReaderRestoreTest {
     }
 
     @Test
+    fun sourceReplacementProviderHintDoesNotResetSameLogicalChapter() {
+        val oldChapter = MangaReaderChapterRef(
+            mangaId = CanonicalMangaId("work"),
+            anchor = MangaChapterAnchor(
+                volume = 2.0,
+                number = 12.5,
+                languageTag = "en",
+                normalizedTitle = "Chapter 12.5",
+                providerChapterKeyHint = "old-source-key"
+            )
+        )
+        val replacementChapter = MangaReaderChapterRef(
+            mangaId = CanonicalMangaId("work"),
+            anchor = MangaChapterAnchor(
+                volume = 2.0,
+                number = 12.5,
+                languageTag = "en",
+                normalizedTitle = "Ch. 12.5",
+                providerChapterKeyHint = "new-source-key"
+            )
+        )
+        val oldState = controller.initial(
+            chapter = oldChapter,
+            pageCount = 20,
+            initialItemIndex = 9
+        )
+
+        val restored = controller.restore(
+            controller.snapshot(oldState),
+            currentChapter = replacementChapter,
+            currentPageCount = 20
+        )
+
+        assertEquals(9, restored.position.itemIndex)
+        assertEquals(replacementChapter, restored.chapter)
+    }
+
+    @Test
     fun snapshotFromDifferentChapterNeverRestoresForeignPosition() {
         val oldChapter = chapter("work", 4.0)
         val newChapter = chapter("work", 5.0)
