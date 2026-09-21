@@ -101,6 +101,34 @@ class ChallengeSessionHeaderHandoffTest {
     }
 
     @Test
+    fun sourceRequestContextNeverPrintsSessionSecrets() {
+        val context = SourceRequestContext(
+            domain = "redact.example",
+            attempt = 2,
+            sessionHeaders = mapOf("Cookie" to "secret-cookie")
+        )
+
+        val text = context.toString()
+
+        assertTrue(!text.contains("secret-cookie"))
+        assertTrue(text.contains("<redacted>"))
+    }
+
+    @Test
+    fun invalidHeaderValuesAreDroppedBeforeHandoff() {
+        val store = ChallengeSessionHeadersStore()
+        val key = ChallengeKey(SourceId("sanitize.source"), "sanitize.example")
+
+        store.put(
+            key,
+            cookieHeader = "safe=1\r\nInjected: yes",
+            userAgent = "ua\nInjected"
+        )
+
+        assertTrue(store.headersFor(key.sourceId, key.domain).isEmpty())
+    }
+
+    @Test
     fun headerSnapshotNeverPrintsSecrets() {
         val value = ChallengeSessionHeaders(
             cookieHeader = "secret-cookie",
