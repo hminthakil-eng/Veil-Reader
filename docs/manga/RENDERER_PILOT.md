@@ -55,6 +55,7 @@ Known risks:
 - Debug APK delta observed locally was about +503 KiB (+1.23%).
 - A dedicated pilot keep-rule is now committed so the next retained release/R8 pass measures actual
   Telephoto shrinker compatibility instead of allowing the unused pilot to be fully dead-stripped.
+- The pilot branch caps paged-reader `beyondViewportPageCount` at 1 to reduce overlapping giant-image decodes during stress testing.
 - Physical-device memory/gesture acceptance remains mandatory before any production adoption.
 
 ## Why SSIV stays as fallback
