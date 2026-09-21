@@ -145,7 +145,7 @@ class MangaReaderViewModel(
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             val resolvedPreferences = preferences ?: loadPersistedPreferences()
-            val target = chapterId ?: mangaLibrary.resumeChapterId(bookId)
+            val target = chapterId ?: mangaLibrary.resumeReadableChapterId(bookId)
             if (target == null) {
                 _uiState.value = MangaReaderUiState(
                     bookId = bookId,
