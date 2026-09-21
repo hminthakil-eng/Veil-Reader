@@ -170,6 +170,22 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - unnumbered special chapters use source-neutral title-based offline cache identity when possible;
    - provider chapter key is only the last-resort offline discriminator.
 
+11. **Reader image delivery foundation**
+   - Coil 3.6.3 dedicated reader image pipeline;
+   - request-scoped network headers only; no global header interceptor;
+   - remote URL/header values are redacted from model/resolution `toString()`;
+   - HTTP(S)-only remote assets with embedded-credential and CR/LF header-injection rejection;
+   - local file canonical-path confinement to the Manga cache root;
+   - local non-empty/byte-size verification and optional SHA-256 integrity verification;
+   - verified-file memoization keyed by path/length/mtime/expected hash;
+   - dedicated memory cache with background trim;
+   - Coil disk cache disabled so Veil's explicit offline cache remains the only persistent Manga cache;
+   - partial image decode disabled;
+   - bounded parallel bitmap decoding;
+   - paged/webtoon max-bitmap policies to reduce large-decode OOM risk;
+   - AsyncImage renderer with loading/error/retry UI and intrinsic-height webtoon layout;
+   - no SubcomposeAsyncImage in LazyColumn.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -185,12 +201,11 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - process-death and host-loss recovery;
    - instrumentation coverage for rotation/background/close.
 
-3. **Reader image delivery adapter**
-   - bind a mature image pipeline to `MangaPageAsset.Local/Remote`;
-   - local file resolver with integrity/hash checks;
-   - remote request-header boundary without durable secret persistence;
-   - memory/disk decode policy for large/tall images;
-   - loading/error placeholders and retry affordance.
+3. **Extreme-tall image strategy**
+   - image-dimension probe before expensive decode where possible;
+   - evaluate region/tile/subsampling path for extreme webtoon pages;
+   - quality gate against OOM, blur from aggressive downsampling and zoom quality regression;
+   - keep ordinary pages on Coil; do not build a custom decoder when a mature tiling solution fits.
 
 4. **Reader screen integration**
    - state holder/ViewModel wiring for loader + reducer + SavedState;
@@ -210,6 +225,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Reader UI reducer/SavedState logic passed local execution smoke with `MANGA_READER_UI_SMOKE_OK`: zoom-safe swipe gating, double-tap reset, boundary effects and fail-closed state restore. Compose sources remain pending full Android/Gradle verification.
 - Reader presentation orchestration passed local execution smoke with `MANGA_READER_PRESENTATION_SMOKE_OK`: complete offline reopen, HYBRID local/remote delivery, partial-offline fallback and safe chapter-boundary blocking.
 - Unnumbered chapter cache identity passed `MANGA_OFFLINE_LOCATOR_SMOKE_OK`: normalized-title identity survives provider-key replacement and distinguishes different specials.
+- Reader image delivery now has unit gates for cache-root confinement, byte-size/hash verification, remote URL/header validation and secret redaction. Full Coil/Compose Android compilation remains pending the Android build gate.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
