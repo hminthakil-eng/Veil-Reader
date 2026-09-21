@@ -69,6 +69,7 @@ class MangaDexSourceProviderTest {
         val provider = provider(FakeTransport { url, _ ->
             val parsed = url.toHttpUrl()
             assertEquals("/manga/$MANGA_ID/feed", parsed.encodedPath)
+            assertEquals("0", parsed.queryParameter("includeExternalUrl"))
             assertEquals("asc", parsed.queryParameter("order[volume]"))
             assertEquals("asc", parsed.queryParameter("order[chapter]"))
             ok(CHAPTERS_JSON)
