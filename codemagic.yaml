@@ -44,9 +44,27 @@ workflows:
       - name: Configure Android SDK and Gradle
         script: |
           set -e
-          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [ -z "$SDK_ROOT" ]; then
+            echo "Android SDK root is not configured."
+            exit 1
+          fi
           echo "sdk.dir=$SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
           export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
+
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(command -v sdkmanager || true)"
+          fi
+          if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager is not available in the Codemagic image."
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" --install \
+            "platform-tools" \
+            "platforms;android-37" \
+            "build-tools;37.0.0"
 
           if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
             GRADLE_VERSION="9.6.0"
@@ -156,9 +174,27 @@ workflows:
       - name: Configure Android SDK and Gradle
         script: |
           set -e
-          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          if [ -z "$SDK_ROOT" ]; then
+            echo "Android SDK root is not configured."
+            exit 1
+          fi
           echo "sdk.dir=$SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
           export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$PATH"
+
+          SDKMANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$(command -v sdkmanager || true)"
+          fi
+          if [ -z "$SDKMANAGER" ] || [ ! -x "$SDKMANAGER" ]; then
+            echo "sdkmanager is not available in the Codemagic image."
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
+          "$SDKMANAGER" --install \
+            "platform-tools" \
+            "platforms;android-37" \
+            "build-tools;37.0.0"
 
           if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
             GRADLE_VERSION="9.6.0"
