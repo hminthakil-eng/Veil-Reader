@@ -26,6 +26,11 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
+enum class MangaReaderGestureOwner {
+    VEIL_READER,
+    PAGE_RENDERER
+}
+
 /**
  * Renderer-agnostic Compose shell.
  *
@@ -38,6 +43,7 @@ fun MangaReaderSurface(
     state: MangaReaderUiState,
     onIntent: (MangaReaderUiIntent) -> Unit,
     modifier: Modifier = Modifier,
+    gestureOwner: MangaReaderGestureOwner = MangaReaderGestureOwner.VEIL_READER,
     pageContent: @Composable (pageIndex: Int, modifier: Modifier) -> Unit
 ) {
     when (state.reader.mode) {
@@ -45,6 +51,7 @@ fun MangaReaderSurface(
             state = state,
             onIntent = onIntent,
             modifier = modifier,
+            gestureOwner = gestureOwner,
             pageContent = pageContent
         )
 
@@ -52,6 +59,7 @@ fun MangaReaderSurface(
             state = state,
             onIntent = onIntent,
             modifier = modifier,
+            gestureOwner = gestureOwner,
             pageContent = pageContent
         )
     }
@@ -62,16 +70,24 @@ private fun MangaPagedReaderSurface(
     state: MangaReaderUiState,
     onIntent: (MangaReaderUiIntent) -> Unit,
     modifier: Modifier,
+    gestureOwner: MangaReaderGestureOwner,
     pageContent: @Composable (pageIndex: Int, modifier: Modifier) -> Unit
 ) {
     val index = state.reader.position.itemIndex
     val zoom = state.reader.zoom
 
+    val gestureModifier = if (gestureOwner == MangaReaderGestureOwner.VEIL_READER) {
+        Modifier
+            .readerTapAndZoomGestures(state, onIntent)
+            .pagedSwipeGestures(state, onIntent)
+    } else {
+        Modifier
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
-            .readerTapAndZoomGestures(state, onIntent)
-            .pagedSwipeGestures(state, onIntent)
+            .then(gestureModifier)
     ) {
         pageContent(
             index,
@@ -152,11 +168,17 @@ private fun MangaWebtoonReaderSurface(
 
     val zoom = state.reader.zoom
 
+    val gestureModifier = if (gestureOwner == MangaReaderGestureOwner.VEIL_READER) {
+        Modifier.readerTapAndZoomGestures(state, onIntent)
+    } else {
+        Modifier
+    }
+
     LazyColumn(
         state = listState,
         modifier = modifier
             .fillMaxSize()
-            .readerTapAndZoomGestures(state, onIntent)
+            .then(gestureModifier)
     ) {
         items(
             count = pageCount,
