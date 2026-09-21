@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -42,14 +43,15 @@ internal fun PdfZoomControls(
     modifier: Modifier = Modifier,
     onDone: () -> Unit
 ) {
-    var pdfView by remember(navigator) {
-        mutableStateOf(navigator.findPdfView())
+    val composeRoot = LocalView.current.rootView
+    var pdfView by remember(navigator, composeRoot) {
+        mutableStateOf(navigator.findPdfView() ?: composeRoot.findPdfView())
     }
-    LaunchedEffect(navigator) {
+    LaunchedEffect(navigator, composeRoot) {
         repeat(PDF_VIEW_CONNECT_RETRIES) {
             if (pdfView != null) return@LaunchedEffect
             delay(PDF_VIEW_CONNECT_DELAY_MS)
-            pdfView = navigator.findPdfView()
+            pdfView = navigator.findPdfView() ?: composeRoot.findPdfView()
         }
     }
 
