@@ -206,6 +206,15 @@ class MangaLibraryRepository internal constructor(
             ?.id
             ?: database.mangaChapters().listForBook(bookId).firstOrNull()?.id
 
+    suspend fun resumeReadableChapterId(bookId: String): String? {
+        val preferred = resumeChapterId(bookId) ?: return null
+        if (chapterRefForReading(preferred) != null) return preferred
+        return recoveryChapterId(
+            bookId = bookId,
+            unavailableChapterId = preferred
+        )
+    }
+
     /**
      * Finds the nearest chapter that still has a usable source binding without deleting history.
      *
