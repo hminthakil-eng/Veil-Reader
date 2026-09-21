@@ -58,7 +58,7 @@ The coordinator intentionally does **not** choose a different source. Cross-sour
 
 ## Deliberately not in this slice
 
-- no source website adapter;
+- no live source website adapter;
 - no network/HTML parser dependency;
 - no concrete WebView/Cloudflare implementation;
 - no Room schema changes;
@@ -86,33 +86,40 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - challenge adapter boundary;
    - anti-loop challenge guard.
 
+3. **Fixture-backed contract proof**
+   - search -> details -> chapters -> pages;
+   - reverse URL resolution;
+   - deterministic local provider;
+   - no dependency on a live manga website.
+
 ## Next vertical slices
 
-1. **One reference provider**
-   - search -> details -> chapters -> pages;
-   - deterministic fixture-backed contract tests;
-   - no persistence yet.
-
-2. **Offline cache + progress model**
+1. **Offline cache + progress model**
    - canonical work identity separated from `SourceMangaRef`;
    - chapter/page cache metadata;
    - resume state;
    - migration-safe keys.
 
-3. **Alternatives / source replacement**
+2. **Alternatives / source replacement**
    - title/alt-title matching;
    - chapter number/volume alignment;
    - cover similarity as secondary evidence;
    - explicit confidence and manual confirmation;
    - transactionally migrate progress/favourites/download metadata.
 
-4. **Reader vertical slice**
+3. **Reader vertical slice**
    - paged manga;
    - RTL page direction;
    - webtoon continuous mode;
    - zoom;
    - orientation/process restoration;
    - offline reopen.
+
+## Verification state
+
+- Pure-Kotlin compilation of the source foundation succeeds independently.
+- GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
+- Full Android/Gradle verification remains required before merge.
 
 ## Quality gates
 
