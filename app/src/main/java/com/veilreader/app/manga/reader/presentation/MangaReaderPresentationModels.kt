@@ -32,6 +32,9 @@ sealed interface MangaPageAsset {
             require(index >= 0)
             require(imageUrl.isNotBlank())
         }
+
+        override fun toString(): String =
+            "Remote(index=$index, imageUrl=<redacted>, requestHeaders=<redacted>)"
     }
 }
 
