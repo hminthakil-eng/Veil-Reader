@@ -572,7 +572,7 @@ private fun MangaReaderHost(
     onClose: () -> Unit
 ) {
     val mangaReaderViewModel: MangaReaderViewModel = viewModel(
-        key = "manga-reader-" + target.bookId,
+        key = "veil-manga-reader",
         factory = MangaReaderViewModel.factory(
             mangaLibrary = runtime.library,
             mangaHub = runtime.hub,
