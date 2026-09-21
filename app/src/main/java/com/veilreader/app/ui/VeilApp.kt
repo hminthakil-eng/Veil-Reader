@@ -572,7 +572,7 @@ private fun MangaReaderHost(
     onClose: () -> Unit
 ) {
     val mangaReaderViewModel: MangaReaderViewModel = viewModel(
-        key = "manga-reader-" + target.bookId + "-" + target.chapterId,
+        key = "manga-reader-" + target.bookId,
         factory = MangaReaderViewModel.factory(
             mangaLibrary = runtime.library,
             mangaHub = runtime.hub,
@@ -582,6 +582,15 @@ private fun MangaReaderHost(
     )
     val mangaReaderState by mangaReaderViewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(target.bookId, target.chapterId, mangaReaderViewModel) {
+        val current = mangaReaderViewModel.uiState.value
+        if (
+            current.bookId == target.bookId &&
+            current.chapterId == target.chapterId &&
+            !current.loading &&
+            current.failure == null
+        ) {
+            return@LaunchedEffect
+        }
         mangaReaderViewModel.open(
             bookId = target.bookId,
             chapterId = target.chapterId
