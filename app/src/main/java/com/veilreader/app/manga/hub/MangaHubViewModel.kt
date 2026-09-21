@@ -9,6 +9,7 @@ import com.veilreader.app.manga.library.CanonicalManga
 import com.veilreader.app.manga.reader.screen.MangaReaderSession
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 enum class MangaHubTab {
