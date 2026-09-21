@@ -83,6 +83,32 @@ class MangaHubVerticalSliceInstrumentedTest {
     }
 
     @Test
+    fun chapterTapLaunchesReaderAtSelectedChapter() {
+        launch(resetLibrary = true).use {
+            val resultTag = MangaHubVerificationTags.catalog(
+                "fixture.local",
+                "ink-dragon"
+            )
+            waitForTag(resultTag)
+            compose.onNodeWithTag(resultTag).performClick()
+
+            val chapterTag = MangaHubVerificationTags.chapter(
+                "fixture.local",
+                "ink-dragon-chapter-2"
+            )
+            waitForTag(chapterTag)
+            compose.onNodeWithTag(chapterTag).performClick()
+
+            waitForTag(
+                MangaReaderVerificationTags.chapter(
+                    "fixture.local",
+                    "ink-dragon-chapter-2"
+                )
+            )
+        }
+    }
+
+    @Test
     fun readAndSaveLaunchesIntegratedReaderAndBackReturnsToDetails() {
         launch(resetLibrary = true).use { scenario ->
             val resultTag = MangaHubVerificationTags.catalog(
