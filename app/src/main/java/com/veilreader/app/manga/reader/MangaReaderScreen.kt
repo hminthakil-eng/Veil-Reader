@@ -65,7 +65,11 @@ fun MangaReaderScreen(
     val imageLoader = context.imageLoader
 
     LaunchedEffect(anchorPage, orderedPages) {
-        MangaPrefetchWindow.indices(anchorPage, orderedPages.size).forEach { pageIndex ->
+        MangaPrefetchWindow.indices(
+            center = anchorPage,
+            total = orderedPages.size,
+            radius = MangaRendererSafety.prefetchRadius(mode)
+        ).forEach { pageIndex ->
             imageLoader.enqueue(mangaImageRequest(context, orderedPages[pageIndex].image))
         }
     }
@@ -100,8 +104,9 @@ fun MangaReaderScreen(
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                    // Pilot safety cap: avoid overlapping too many giant image decodes.
-                    beyondViewportPageCount = minOf(1, (orderedPages.size - 1).coerceAtLeast(0)),
+                    // Pilot safety cap: keep pager retention aligned with prefetch policy.
+                    beyondViewportPageCount =
+                        MangaRendererSafety.beyondViewportPageCount(orderedPages.size),
                     reverseLayout = readingDirection == MangaReadingDirection.RIGHT_TO_LEFT,
                     key = { page -> orderedPages[page].index }
                 ) { page ->
