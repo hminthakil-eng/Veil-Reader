@@ -1,7 +1,7 @@
 package com.veilreader.app.manga.sources.mangadex
 
-import com.veilreader.app.manga.MangaSourceCatalog
-import com.veilreader.app.manga.MangaSourceFeatureFlags
+import com.veilreader.app.manga.MangaDirectSourceFactory
+import com.veilreader.app.manga.MangaDirectSourceFlags
 import com.veilreader.app.manga.core.MangaRef
 import com.veilreader.app.manga.core.MangaSourceId
 import com.veilreader.app.manga.core.MangaStatus
@@ -101,9 +101,9 @@ class MangaDexSourceProviderTest {
     fun catalog_keepsMangaDexDisabledByDefault() {
         val fake = RecordingHttpClient { error("Network must not be used while disabled") }
 
-        val disabled = MangaSourceCatalog.providers(MangaSourceFeatureFlags(), httpClient = fake)
-        val enabled = MangaSourceCatalog.providers(
-            MangaSourceFeatureFlags(mangaDexEnabled = true),
+        val disabled = MangaDirectSourceFactory.providers(MangaDirectSourceFlags(), httpClient = fake)
+        val enabled = MangaDirectSourceFactory.providers(
+            MangaDirectSourceFlags(mangaDexEnabled = true),
             httpClient = fake
         )
 
