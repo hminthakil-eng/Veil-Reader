@@ -197,9 +197,11 @@ class MangaDexSourceProvider internal constructor(
                 .build()
 
             val page = requestJson(url) { root ->
+                val data = root.array("data")
                 ChapterPage(
-                    total = root.int("total") ?: 0,
-                    items = root.array("data").map { element ->
+                    total = root.int("total") ?: data.size,
+                    receivedCount = data.size,
+                    items = data.mapNotNull { element ->
                         parseChapter(
                             mangaKey = manga.key,
                             data = element as? JsonObject
@@ -222,10 +224,10 @@ class MangaDexSourceProvider internal constructor(
                     }
 
                     chapters += page.value.items
-                    if (page.value.items.isEmpty() || chapters.size >= page.value.total) {
+                    offset += page.value.receivedCount
+                    if (page.value.receivedCount == 0 || offset >= page.value.total) {
                         return SourceOutcome.Success(chapters)
                     }
-                    offset += page.value.items.size
                 }
             }
         }
@@ -405,11 +407,14 @@ class MangaDexSourceProvider internal constructor(
     private fun parseChapter(
         mangaKey: String,
         data: JsonObject
-    ): SourceChapter {
+    ): SourceChapter? {
         val id = data.string("id")?.takeIf(MANGADEX_UUID::matches)
             ?: payloadError("MangaDex chapter id is missing or invalid")
         val attributes = data.obj("attributes")
             ?: payloadError("MangaDex chapter attributes are missing")
+        if (!attributes.string("externalUrl").isNullOrBlank()) {
+            return null
+        }
 
         val scanlator = data.array("relationships")
             .mapNotNull { it as? JsonObject }
@@ -537,6 +542,7 @@ class MangaDexSourceProvider internal constructor(
 
     private data class ChapterPage(
         val total: Int,
+        val receivedCount: Int,
         val items: List<SourceChapter>
     )
 
