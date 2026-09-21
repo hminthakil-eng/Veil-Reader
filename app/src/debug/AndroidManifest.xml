@@ -4,5 +4,8 @@
         <activity
             android:name=".manga.reader.verification.MangaReaderVerificationActivity"
             android:exported="true" />
+        <activity
+            android:name=".manga.hub.verification.MangaHubVerificationActivity"
+            android:exported="true" />
     </application>
 </manifest>

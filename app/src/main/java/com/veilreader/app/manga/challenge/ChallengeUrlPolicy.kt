@@ -1,23 +1,18 @@
 package com.veilreader.app.manga.challenge
 
-import android.net.Uri
 import java.net.IDN
+import java.net.URI
 import java.util.Locale
 
 object ChallengeUrlPolicy {
 
     fun startUrl(domain: String): String {
         val host = normalizeHost(domain)
-        return Uri.Builder()
-            .scheme("https")
-            .encodedAuthority(host)
-            .path("/")
-            .build()
-            .toString()
+        return "https://" + host + "/"
     }
 
     fun isAllowedTopLevelNavigation(domain: String, rawUrl: String): Boolean {
-        val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return false
+        val uri = runCatching { URI(rawUrl) }.getOrNull() ?: return false
         val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: return false
         if (scheme != "https") return false
         if (uri.userInfo != null) return false

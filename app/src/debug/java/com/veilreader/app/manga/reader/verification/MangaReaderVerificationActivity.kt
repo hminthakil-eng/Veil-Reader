@@ -1,10 +1,5 @@
 package com.veilreader.app.manga.reader.verification
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.graphics.Paint
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -15,12 +10,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.room.Room
 import com.veilreader.app.data.db.MIGRATION_1_2
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaRoomRepository
+import com.veilreader.app.manga.debug.MangaDebugFixtureAssets
 import com.veilreader.app.manga.library.CanonicalManga
 import com.veilreader.app.manga.library.CanonicalMangaId
 import com.veilreader.app.manga.library.InMemoryMangaProgressStore
@@ -61,20 +59,26 @@ class MangaReaderVerificationActivity : FragmentActivity() {
 
         setContent {
             VeilTheme {
-                val ready = fixture
-                if (ready == null) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .semantics { testTagsAsResourceId = true }
+                ) {
+                    val ready = fixture
+                    if (ready == null) {
+                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        MangaReaderIntegratedScreen(
+                            session = ready.session,
+                            loader = ready.loader,
+                            progressStore = ready.progressStore,
+                            cacheRoot = ready.cacheRoot,
+                            onClose = ::finish,
+                            modifier = Modifier.fillMaxSize()
+                        )
                     }
-                } else {
-                    MangaReaderIntegratedScreen(
-                        session = ready.session,
-                        loader = ready.loader,
-                        progressStore = ready.progressStore,
-                        cacheRoot = ready.cacheRoot,
-                        onClose = ::finish,
-                        modifier = Modifier.fillMaxSize()
-                    )
                 }
             }
         }
@@ -95,16 +99,18 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         val requestedStartPage = intent.getIntExtra(EXTRA_START_PAGE, 0).coerceIn(0, 2)
 
         val normalFiles = (0..2).map { index ->
-            ensureImage(
-                file = File(cacheRoot, "normal-" + index + ".png"),
+            MangaDebugFixtureAssets.ensurePng(
+                root = cacheRoot,
+                name = "normal-" + index + ".png",
                 width = 600,
                 height = 900,
                 seed = index + 1
             )
         }
         val extremeFile = if (extreme) {
-            ensureImage(
-                file = File(cacheRoot, "extreme.png"),
+            MangaDebugFixtureAssets.ensurePng(
+                root = cacheRoot,
+                name = "extreme.png",
                 width = 360,
                 height = 12_000,
                 seed = 50
@@ -206,79 +212,6 @@ class MangaReaderVerificationActivity : FragmentActivity() {
             loader = loader,
             progressStore = progressStore
         )
-    }
-
-    private fun ensureImage(
-        file: File,
-        width: Int,
-        height: Int,
-        seed: Int
-    ): File {
-        if (isValidFixture(file, width, height)) return file
-        file.delete()
-
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        try {
-            val canvas = Canvas(bitmap)
-            val background = Paint().apply {
-                color = Color.rgb(
-                    40 + (seed * 37) % 160,
-                    40 + (seed * 53) % 160,
-                    40 + (seed * 71) % 160
-                )
-            }
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), background)
-
-            val marker = Paint().apply {
-                color = Color.WHITE
-                strokeWidth = 8f
-                textSize = 42f
-            }
-            var y = 80
-            var markerIndex = 0
-            while (y < height) {
-                canvas.drawLine(0f, y.toFloat(), width.toFloat(), y.toFloat(), marker)
-                canvas.drawText(
-                    "Veil " + seed + " / " + markerIndex,
-                    24f,
-                    (y - 16).coerceAtLeast(48).toFloat(),
-                    marker
-                )
-                y += 512
-                markerIndex += 1
-            }
-
-            val temporary = File(file.parentFile, file.name + ".tmp")
-            temporary.delete()
-            temporary.outputStream().buffered().use { output ->
-                check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
-                    "Verification image compression failed"
-                }
-            }
-            if (!temporary.renameTo(file)) {
-                file.delete()
-                check(temporary.renameTo(file)) {
-                    "Verification image atomic replace failed"
-                }
-            }
-        } finally {
-            bitmap.recycle()
-        }
-        check(isValidFixture(file, width, height)) {
-            "Verification image dimensions are invalid after write"
-        }
-        return file
-    }
-
-    private fun isValidFixture(
-        file: File,
-        expectedWidth: Int,
-        expectedHeight: Int
-    ): Boolean {
-        if (!file.isFile || file.length() <= 0L) return false
-        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeFile(file.absolutePath, options)
-        return options.outWidth == expectedWidth && options.outHeight == expectedHeight
     }
 
     data class VerificationFixture(

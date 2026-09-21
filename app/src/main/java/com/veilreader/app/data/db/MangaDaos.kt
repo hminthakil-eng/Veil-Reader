@@ -1,6 +1,8 @@
 package com.veilreader.app.data.db
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -36,11 +38,20 @@ interface MangaLibraryDao {
     @Query("SELECT EXISTS(SELECT 1 FROM manga_works WHERE id = :id)")
     suspend fun exists(id: String): Boolean
 
+    @Transaction
+    @Query(
+        "SELECT manga_works.* FROM manga_works " +
+            "INNER JOIN manga_source_links ON manga_source_links.mangaId = manga_works.id " +
+            "WHERE manga_source_links.sourceId = :sourceId " +
+            "AND manga_source_links.sourceKey = :sourceKey LIMIT 1"
+    )
+    suspend fun findBySource(sourceId: String, sourceKey: String): MangaWorkWithLinks?
+
     @Upsert
     suspend fun upsertWork(work: MangaWorkEntity)
 
-    @Upsert
-    suspend fun upsertLinks(links: List<MangaSourceLinkEntity>)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertLinks(links: List<MangaSourceLinkEntity>)
 
     @Query("DELETE FROM manga_source_links WHERE mangaId = :mangaId")
     suspend fun deleteLinksForManga(mangaId: String)

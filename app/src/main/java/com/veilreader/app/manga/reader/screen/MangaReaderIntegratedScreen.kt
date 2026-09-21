@@ -121,6 +121,15 @@ fun MangaReaderIntegratedScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
+            Box(
+                Modifier.testTag(
+                    MangaReaderVerificationTags.chapter(
+                        state.entry.route.sourceChapter.sourceId.value,
+                        state.entry.route.sourceChapter.chapterKey
+                    )
+                )
+            )
+
             MangaReaderPresentationSurface(
                 presentation = state.presentation,
                 uiState = state.readerUi,

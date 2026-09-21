@@ -36,6 +36,11 @@ class MangaRoomRepository(
     override suspend fun loadWork(id: CanonicalMangaId): CanonicalManga? =
         database.mangaLibrary().find(id.value)?.toDomain()
 
+    override suspend fun findWorkBySource(ref: SourceMangaRef): CanonicalManga? =
+        database.mangaLibrary()
+            .findBySource(ref.sourceId.value, ref.key)
+            ?.toDomain()
+
     override suspend fun listWorks(): List<CanonicalManga> =
         database.mangaLibrary().listAll().map(MangaWorkWithLinks::toDomain)
 
@@ -47,7 +52,7 @@ class MangaRoomRepository(
                 .sortedBy { it.sourceId.value }
                 .map { it.toEntity(manga.id) }
             if (links.isNotEmpty()) {
-                database.mangaLibrary().upsertLinks(links)
+                database.mangaLibrary().insertLinks(links)
             }
         }
     }
@@ -132,7 +137,7 @@ class MangaRoomRepository(
                     val links = manga.sourceRefs.values
                         .sortedBy { it.sourceId.value }
                         .map { it.toEntity(manga.id) }
-                    if (links.isNotEmpty()) database.mangaLibrary().upsertLinks(links)
+                    if (links.isNotEmpty()) database.mangaLibrary().insertLinks(links)
                 }
 
             snapshot.progress.forEach { progress ->
