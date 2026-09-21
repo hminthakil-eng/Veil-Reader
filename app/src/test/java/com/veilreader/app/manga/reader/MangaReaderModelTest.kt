@@ -151,4 +151,49 @@ class MangaReaderModelTest {
         assertEquals(MangaReaderMode.WEBTOON, MangaReaderLayout.CONTINUOUS_VERTICAL.toScreenMode())
     }
 
+    @Test
+    fun enumPreferenceDecode_fallsBackForMissingOrUnknownValues() {
+        assertEquals(
+            MangaReaderLayout.PAGED,
+            enumValueOrDefault<MangaReaderLayout>(null, MangaReaderLayout.PAGED)
+        )
+        assertEquals(
+            MangaReadingDirection.RIGHT_TO_LEFT,
+            enumValueOrDefault("NOT_A_DIRECTION", MangaReadingDirection.RIGHT_TO_LEFT)
+        )
+        assertEquals(
+            MangaImageFit.WIDTH,
+            enumValueOrDefault("WIDTH", MangaImageFit.SCREEN)
+        )
+    }
+
+    @Test
+    fun loadingState_marksAdjacentTransitionBeforeAsyncLoad() {
+        val current = MangaReaderUiState(
+            bookId = "book",
+            chapterId = "chapter-a",
+            pages = listOf(
+                MangaPage(
+                    index = 0,
+                    image = MangaResourceRequest("https://example.invalid/a.jpg")
+                )
+            ),
+            previousChapterId = "chapter-prev",
+            nextChapterId = "chapter-b"
+        )
+
+        val transition = loadingMangaReaderState(
+            current = current,
+            bookId = "book",
+            chapterId = "chapter-b",
+            preferences = current.preferences
+        )
+
+        assertTrue(transition.loading)
+        assertEquals("chapter-b", transition.chapterId)
+        assertTrue(transition.pages.isEmpty())
+        assertEquals(null, transition.previousChapterId)
+        assertEquals(null, transition.nextChapterId)
+    }
+
 }
