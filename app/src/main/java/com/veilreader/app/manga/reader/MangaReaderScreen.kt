@@ -100,7 +100,8 @@ fun MangaReaderScreen(
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                    beyondViewportPageCount = minOf(2, (orderedPages.size - 1).coerceAtLeast(0)),
+                    // Pilot safety cap: avoid overlapping too many giant image decodes.
+                    beyondViewportPageCount = minOf(1, (orderedPages.size - 1).coerceAtLeast(0)),
                     reverseLayout = readingDirection == MangaReadingDirection.RIGHT_TO_LEFT,
                     key = { page -> orderedPages[page].index }
                 ) { page ->
