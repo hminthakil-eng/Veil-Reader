@@ -196,14 +196,15 @@ class MangaHubViewModel(
                 errorMessage = null
             )
             try {
-                val session = selected.canonical?.let { canonical ->
-                    service.openLibraryWork(
-                        id = canonical.id,
-                        preferredSourceId = selected.source.id
-                    )
-                } ?: service.openFromSource(selected.details)
+                val canonical = selected.canonical
+                    ?: service.addToLibrary(selected.details)
+                val session = service.openLibraryWork(
+                    id = canonical.id,
+                    preferredSourceId = selected.source.id
+                )
 
                 _state.value = _state.value.copy(
+                    selectedDetails = selected.copy(canonical = canonical),
                     activeReaderSession = session,
                     readerLoading = false
                 )
