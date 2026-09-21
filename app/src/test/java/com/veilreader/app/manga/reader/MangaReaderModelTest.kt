@@ -242,4 +242,38 @@ class MangaReaderModelTest {
         assertEquals(0, remoteCalls)
     }
 
+    @Test
+    fun chapterWindow_usesCurrentOrderAfterReorder() {
+        val first = mangaChapterWindow(
+            orderedChapterIds = listOf("a", "b", "c"),
+            currentChapterId = "b"
+        )
+        assertEquals("a", first.previousChapterId)
+        assertEquals("c", first.nextChapterId)
+
+        val reordered = mangaChapterWindow(
+            orderedChapterIds = listOf("c", "b", "a"),
+            currentChapterId = "b"
+        )
+        assertEquals("c", reordered.previousChapterId)
+        assertEquals("a", reordered.nextChapterId)
+    }
+
+    @Test
+    fun chapterWindow_handlesFirstAndLastBoundaries() {
+        val first = mangaChapterWindow(
+            orderedChapterIds = listOf("a", "b"),
+            currentChapterId = "a"
+        )
+        assertEquals(null, first.previousChapterId)
+        assertEquals("b", first.nextChapterId)
+
+        val last = mangaChapterWindow(
+            orderedChapterIds = listOf("a", "b"),
+            currentChapterId = "b"
+        )
+        assertEquals("a", last.previousChapterId)
+        assertEquals(null, last.nextChapterId)
+    }
+
 }
