@@ -46,9 +46,9 @@ internal fun PdfZoomControls(
         mutableStateOf(navigator.findPdfView())
     }
     LaunchedEffect(navigator) {
-        repeat(12) {
+        repeat(PDF_VIEW_CONNECT_RETRIES) {
             if (pdfView != null) return@LaunchedEffect
-            delay(100)
+            delay(PDF_VIEW_CONNECT_DELAY_MS)
             pdfView = navigator.findPdfView()
         }
     }
@@ -184,6 +184,9 @@ private fun Navigator?.findPdfView(): PDFView? {
     val root = (this as? OverflowableNavigator)?.publicationView ?: return null
     return root.findPdfView()
 }
+
+private const val PDF_VIEW_CONNECT_RETRIES = 50
+private const val PDF_VIEW_CONNECT_DELAY_MS = 200L
 
 private fun View.findPdfView(): PDFView? {
     if (this is PDFView) return this
