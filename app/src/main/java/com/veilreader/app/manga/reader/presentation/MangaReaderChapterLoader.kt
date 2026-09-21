@@ -33,11 +33,16 @@ class MangaReaderChapterLoader(
         if (!request.canUseNetwork) {
             return when (offline) {
                 is OfflineValidation.Partial -> partialOffline(request, offline.pages)
-                is OfflineValidation.Corrupt,
+                is OfflineValidation.Corrupt -> error(
+                    request,
+                    MangaPresentationErrorKind.INVALID_PAGE_SET,
+                    offline.reason,
+                    retryable = false
+                )
                 OfflineValidation.Empty -> error(
                     request,
                     MangaPresentationErrorKind.OFFLINE_UNAVAILABLE,
-                    "This chapter is not fully available offline.",
+                    "This chapter is not available offline.",
                     retryable = false
                 )
                 is OfflineValidation.Complete -> error(
