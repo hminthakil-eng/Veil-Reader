@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -36,6 +37,7 @@ import com.veilreader.app.manga.library.MangaProgressStore
 import com.veilreader.app.manga.reader.MangaOrientationPolicy
 import com.veilreader.app.manga.reader.MangaPageDirection
 import com.veilreader.app.manga.reader.MangaReaderMode
+import com.veilreader.app.manga.reader.MangaReaderVerificationTags
 import com.veilreader.app.manga.reader.image.AndroidMangaImageDimensionProbe
 import com.veilreader.app.manga.reader.image.MangaCoilPage
 import com.veilreader.app.manga.reader.image.MangaImageDeliveryPlan
@@ -110,7 +112,9 @@ fun MangaReaderIntegratedScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(MangaReaderVerificationTags.ROOT)
     ) { padding ->
         Box(
             Modifier
@@ -135,7 +139,9 @@ fun MangaReaderIntegratedScreen(
                 partialOfflineContent = {
                     Text(
                         "Offline preview · reconnect to load the rest",
-                        modifier = Modifier.padding(12.dp)
+                        modifier = Modifier
+                            .padding(12.dp)
+                            .testTag(MangaReaderVerificationTags.PARTIAL_OFFLINE)
                     )
                 },
                 pageContent = { asset, pageModifier ->
@@ -190,6 +196,9 @@ private fun MangaAdaptivePage(
     modifier: Modifier
 ) {
     var retryKey by remember(asset) { mutableIntStateOf(0) }
+    val taggedModifier = modifier.testTag(
+        MangaReaderVerificationTags.page(asset.index)
+    )
 
     val planState by produceState<AdaptivePageState>(
         initialValue = AdaptivePageState.Loading,
@@ -222,13 +231,13 @@ private fun MangaAdaptivePage(
 
     when (val current = planState) {
         AdaptivePageState.Loading -> {
-            Box(modifier, contentAlignment = Alignment.Center) {
+            Box(taggedModifier, contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         }
 
         is AdaptivePageState.Error -> {
-            Box(modifier, contentAlignment = Alignment.Center) {
+            Box(taggedModifier, contentAlignment = Alignment.Center) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(current.message)
                     Button(onClick = { retryKey += 1 }) {
@@ -250,7 +259,7 @@ private fun MangaAdaptivePage(
                     dimensions = plan.dimensions,
                     mode = mode,
                     imageLoader = imageLoader,
-                    modifier = modifier,
+                    modifier = taggedModifier,
                     onTap = onRendererTap
                 )
             } else {
@@ -259,7 +268,7 @@ private fun MangaAdaptivePage(
                     mode = mode,
                     resolver = resolver,
                     imageLoader = imageLoader,
-                    modifier = modifier
+                    modifier = taggedModifier
                 )
             }
         }
@@ -281,13 +290,19 @@ private fun MangaReaderChrome(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier.padding(12.dp),
+        modifier = modifier
+            .padding(12.dp)
+            .testTag(MangaReaderVerificationTags.CHROME),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Button(onClick = onClose) {
+        Button(
+            onClick = onClose,
+            modifier = Modifier.testTag(MangaReaderVerificationTags.BACK)
+        ) {
             Text("Back")
         }
         Button(
+            modifier = Modifier.testTag(MangaReaderVerificationTags.MODE),
             onClick = {
                 onIntent(
                     MangaReaderUiIntent.SetMode(
@@ -303,6 +318,7 @@ private fun MangaReaderChrome(
             Text(if (mode == MangaReaderMode.PAGED) "Webtoon" else "Paged")
         }
         Button(
+            modifier = Modifier.testTag(MangaReaderVerificationTags.DIRECTION),
             onClick = {
                 onIntent(
                     MangaReaderUiIntent.SetDirection(

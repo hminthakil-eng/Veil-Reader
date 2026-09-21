@@ -105,4 +105,6 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.room:room-testing:2.8.5")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.5")
 }
