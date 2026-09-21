@@ -65,9 +65,7 @@ fun MangaHubScreen(
             progressStore = progressStore,
             cacheRoot = cacheRoot,
             onClose = model::closeReader,
-            modifier = modifier
-            .fillMaxSize()
-            .testTag(MangaHubVerificationTags.ROOT)
+            modifier = modifier.fillMaxSize()
         )
         return
     }
@@ -88,7 +86,9 @@ fun MangaHubScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbar) },
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .testTag(MangaHubVerificationTags.ROOT)
     ) { padding ->
         Column(
             Modifier
@@ -118,9 +118,7 @@ fun MangaHubScreen(
                     onRead = model::startReading,
                     onAdd = model::addSelectedToLibrary,
                     onRemove = model::removeSelectedFromLibrary,
-                    modifier = Modifier
-                    .weight(1f)
-                    .testTag(MangaHubVerificationTags.SEARCH_FIELD)
+                    modifier = Modifier.weight(1f)
                 )
             } else {
                 when (state.tab) {
@@ -228,7 +226,9 @@ private fun MangaHubSearch(
                 onValueChange = onQuery,
                 label = { Text("Search Manga") },
                 singleLine = true,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag(MangaHubVerificationTags.SEARCH_FIELD)
             )
             Button(
                 onClick = onSearch,
