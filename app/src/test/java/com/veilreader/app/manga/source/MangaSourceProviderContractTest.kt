@@ -20,7 +20,9 @@ class MangaSourceProviderContractTest {
         val coordinator = SourceExecutionCoordinator(sleeper = {})
 
         val searchResult = coordinator.search(provider, SourceSearchRequest("veil"))
-        val search = (searchResult.outcome as SourceOutcome.Success).value
+        val search = (
+            searchResult.outcome as SourceOutcome.Success<PagedSourceResult<SourceMangaSummary>>
+        ).value
         assertEquals(1, search.items.size)
 
         val manga = search.items.single()
@@ -28,16 +30,22 @@ class MangaSourceProviderContractTest {
         assertEquals(SourceId("fixture.reference"), manga.ref.sourceId)
 
         val detailsResult = coordinator.details(provider, manga.ref)
-        val details = (detailsResult.outcome as SourceOutcome.Success).value
+        val details = (
+            detailsResult.outcome as SourceOutcome.Success<SourceMangaDetails>
+        ).value
         assertEquals(manga.ref, details.summary.ref)
         assertEquals(setOf("Archive Team"), details.authors)
 
         val chaptersResult = coordinator.chapters(provider, manga.ref)
-        val chapters = (chaptersResult.outcome as SourceOutcome.Success).value
+        val chapters = (
+            chaptersResult.outcome as SourceOutcome.Success<List<SourceChapter>>
+        ).value
         assertEquals(2, chapters.size)
 
         val pagesResult = coordinator.pages(provider, chapters.first())
-        val pages = (pagesResult.outcome as SourceOutcome.Success).value
+        val pages = (
+            pagesResult.outcome as SourceOutcome.Success<List<MangaPageImage>>
+        ).value
         assertEquals(listOf(0, 1, 2), pages.map { it.index })
         assertTrue(pages.all { it.imageUrl.startsWith("https://fixture.example/") })
 
@@ -45,7 +53,9 @@ class MangaSourceProviderContractTest {
             provider,
             "https://fixture.example/title/veiled-library"
         )
-        val resolved = (resolvedResult.outcome as SourceOutcome.Success).value
+        val resolved = (
+            resolvedResult.outcome as SourceOutcome.Success<SourceMangaRef?>
+        ).value
         assertNotNull(resolved)
         assertEquals(manga.ref, resolved)
 
