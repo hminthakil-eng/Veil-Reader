@@ -45,5 +45,11 @@ class ChallengeUrlPolicyInstrumentedTest {
                 "file:///data/local.html"
             )
         )
+        assertFalse(
+            ChallengeUrlPolicy.isAllowedTopLevelNavigation(
+                "example.com",
+                "http://example.com/insecure"
+            )
+        )
     }
 }
