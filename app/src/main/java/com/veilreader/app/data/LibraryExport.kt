@@ -3,6 +3,10 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.manga.MangaBackupCodec
+import com.veilreader.app.data.manga.MangaBackupSnapshot
+import com.veilreader.app.data.manga.MangaRoomRepository
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
@@ -25,6 +29,8 @@ import org.json.JSONObject
 
 /** User-initiated local backup/export. No server or account is involved. */
 class LibraryExport(private val context: Context, private val library: LocalLibraryRepository) {
+    private val manga = MangaRoomRepository(VeilDatabase.get(context))
+
     suspend fun writeNotebook(destination: Uri) {
         val snapshot = library.snapshot()
         val books = snapshot.books.associateBy { it.id }
@@ -51,6 +57,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     suspend fun writeBackup(destination: Uri) {
         val snapshot = library.snapshot()
+        val mangaSnapshot = manga.backupSnapshot()
         val gamePrefs = preferencesToJson(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE))
         withContext(Dispatchers.IO) {
             val files = snapshot.books.filter { it.isImported }.mapIndexed { index, book ->
@@ -68,6 +75,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 put("appVersion", "0.8.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
+                put("manga", MangaBackupCodec.toJson(mangaSnapshot))
                 put("gamePreferences", gamePrefs)
                 put("publications", JSONArray().apply {
                     files.forEach { (book, _, path) -> put(JSONObject().apply {
@@ -98,7 +106,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         }
     }
 
-    /** Restores both current schema-2 backups and older 0.6 schema-1 backups. */
+    /** Restores current schema-3 backups plus schema-2 and older schema-1 backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-${UUID.randomUUID()}").apply { mkdirs() }
         var installedRoot: File? = null
@@ -115,8 +123,14 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val incoming = when (schema) {
                 1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
-                CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
+                2, CURRENT_BACKUP_SCHEMA ->
+                    LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
                 else -> error("Unsupported backup schema.")
+            }
+            val incomingManga = if (schema >= 3) {
+                MangaBackupCodec.fromJson(manifest.optJSONObject("manga") ?: JSONObject())
+            } else {
+                MangaBackupSnapshot()
             }
             val gamePreferences = JSONObject(manifest.getJSONObject("gamePreferences").toString())
             val archivedByBookId = stagedPublications(manifest, stagingRoot)
@@ -150,15 +164,18 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val gamePrefs = context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE)
             val oldLibrary = library.snapshot()
+            val oldManga = manga.backupSnapshot()
             val oldGame = gamePrefs.all.toMap()
 
             try {
                 library.replaceAll(restoredSnapshot)
+                manga.replaceFromBackup(incomingManga)
                 if (!replacePreferences(gamePrefs, gamePreferences)) {
                     error("Could not commit restored progression data.")
                 }
             } catch (error: Throwable) {
                 runCatching { library.replaceAll(oldLibrary) }
+                runCatching { manga.replaceFromBackup(oldManga) }
                 restorePreferencesSnapshot(gamePrefs, oldGame)
                 throw IllegalStateException("Restore could not be committed. Your previous data was kept.", error)
             }
@@ -296,8 +313,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     companion object {
         private const val GAME_PREFS = "veil_game_v1"
-        private const val CURRENT_BACKUP_SCHEMA = 2
-        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, CURRENT_BACKUP_SCHEMA)
+        private const val CURRENT_BACKUP_SCHEMA = 3
+        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
