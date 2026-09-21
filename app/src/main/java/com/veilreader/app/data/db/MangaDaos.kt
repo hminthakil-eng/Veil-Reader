@@ -1,6 +1,8 @@
 package com.veilreader.app.data.db
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -48,8 +50,8 @@ interface MangaLibraryDao {
     @Upsert
     suspend fun upsertWork(work: MangaWorkEntity)
 
-    @Upsert
-    suspend fun upsertLinks(links: List<MangaSourceLinkEntity>)
+    @Insert(onConflict = OnConflictStrategy.ABORT)
+    suspend fun insertLinks(links: List<MangaSourceLinkEntity>)
 
     @Query("DELETE FROM manga_source_links WHERE mangaId = :mangaId")
     suspend fun deleteLinksForManga(mangaId: String)
