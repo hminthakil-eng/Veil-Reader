@@ -76,6 +76,8 @@ dependencies {
     // Manga image delivery: mature Compose pipeline with request-scoped network headers.
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
+    // Stable line matched to Kotlin 2.3.x / Compose 1.10.x; subsamples very large local images.
+    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3-core:1.5.0")
 
     // Production local persistence.
     implementation("androidx.room:room-runtime:2.8.5")
