@@ -46,6 +46,10 @@ fun MangaReaderScreen(
     mode: MangaReaderMode,
     onModeChange: (MangaReaderMode) -> Unit,
     onProgress: (Int) -> Unit,
+    canGoPreviousChapter: Boolean = false,
+    canGoNextChapter: Boolean = false,
+    onPreviousChapter: () -> Unit = {},
+    onNextChapter: () -> Unit = {},
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
     initialPage: Int = 0,
@@ -153,6 +157,10 @@ fun MangaReaderScreen(
             currentPage = anchorPage,
             totalPages = orderedPages.size,
             onModeChange = onModeChange,
+            canGoPreviousChapter = canGoPreviousChapter,
+            canGoNextChapter = canGoNextChapter,
+            onPreviousChapter = onPreviousChapter,
+            onNextChapter = onNextChapter,
             onClose = onClose,
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -167,6 +175,10 @@ private fun MangaReaderControls(
     currentPage: Int,
     totalPages: Int,
     onModeChange: (MangaReaderMode) -> Unit,
+    canGoPreviousChapter: Boolean,
+    canGoNextChapter: Boolean,
+    onPreviousChapter: () -> Unit,
+    onNextChapter: () -> Unit,
     onClose: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -186,6 +198,18 @@ private fun MangaReaderControls(
                 text = if (totalPages == 0) "0 / 0" else "${currentPage + 1} / $totalPages",
                 color = Color.White
             )
+            TextButton(
+                onClick = onPreviousChapter,
+                enabled = canGoPreviousChapter
+            ) {
+                Text("Prev", color = Color.White)
+            }
+            TextButton(
+                onClick = onNextChapter,
+                enabled = canGoNextChapter
+            ) {
+                Text("Next", color = Color.White)
+            }
             TextButton(
                 onClick = { onModeChange(MangaReaderMode.PAGED) },
                 enabled = mode != MangaReaderMode.PAGED
