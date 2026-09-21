@@ -178,6 +178,10 @@ class MangaHubViewModel(
         }
     }
 
+    fun consumeReaderTarget() {
+        _uiState.value = _uiState.value.copy(readerTarget = null)
+    }
+
     fun closeReader() {
         _uiState.value = _uiState.value.copy(readerTarget = null)
     }
