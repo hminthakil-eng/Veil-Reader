@@ -82,7 +82,7 @@ fun MangaCoilPage(
                     model = request,
                     imageLoader = imageLoader,
                     contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = imageModifier(mode),
                     contentScale = ContentScale.Fit,
                     onLoading = {
                         loading = true
@@ -137,4 +137,9 @@ private fun pageModifier(
 ): Modifier = when (mode) {
     MangaReaderMode.PAGED -> modifier.fillMaxSize()
     MangaReaderMode.WEBTOON -> modifier.fillMaxWidth().wrapContentHeight()
+}
+
+private fun imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
+    MangaReaderMode.PAGED -> Modifier.fillMaxSize()
+    MangaReaderMode.WEBTOON -> Modifier.fillMaxWidth().wrapContentHeight()
 }
