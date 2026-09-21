@@ -132,7 +132,7 @@ private fun ChallengeBrowserOverlay(
                     ChallengeWebViewStateCodec.capture(webView)
                 )
                 webView.stopLoading()
-                webView.webChromeClient = null
+                webView.webChromeClient = WebChromeClient()
                 webView.webViewClient = WebViewClient()
                 webView.removeAllViews()
                 webView.destroy()
