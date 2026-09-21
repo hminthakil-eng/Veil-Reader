@@ -1,10 +1,5 @@
 package com.veilreader.app.manga.reader.verification
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.graphics.Paint
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -21,6 +16,7 @@ import androidx.room.Room
 import com.veilreader.app.data.db.MIGRATION_1_2
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaRoomRepository
+import com.veilreader.app.manga.debug.MangaDebugFixtureAssets
 import com.veilreader.app.manga.library.CanonicalManga
 import com.veilreader.app.manga.library.CanonicalMangaId
 import com.veilreader.app.manga.library.InMemoryMangaProgressStore
@@ -95,16 +91,16 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         val requestedStartPage = intent.getIntExtra(EXTRA_START_PAGE, 0).coerceIn(0, 2)
 
         val normalFiles = (0..2).map { index ->
-            ensureImage(
-                file = File(cacheRoot, "normal-" + index + ".png"),
+            MangaDebugFixtureAssets.ensurePng(root = cacheRoot, 
+                name = "normal-" + index + ".png"),
                 width = 600,
                 height = 900,
                 seed = index + 1
             )
         }
         val extremeFile = if (extreme) {
-            ensureImage(
-                file = File(cacheRoot, "extreme.png"),
+            MangaDebugFixtureAssets.ensurePng(root = cacheRoot, 
+                name = "extreme.png"),
                 width = 360,
                 height = 12_000,
                 seed = 50
@@ -208,7 +204,7 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         )
     }
 
-    private fun ensureImage(
+    private fun MangaDebugFixtureAssets.ensurePng(root = cacheRoot, 
         file: File,
         width: Int,
         height: Int,
