@@ -92,13 +92,22 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - deterministic local provider;
    - no dependency on a live manga website.
 
+4. **Canonical library/offline foundation**
+   - source-independent `CanonicalMangaId`;
+   - multiple source refs linked to one logical work;
+   - source-neutral chapter anchors and reading progress;
+   - page remapping by chapter progression when replacement page counts differ;
+   - source-independent offline chapter/page manifests;
+   - traversal-safe relative cache layout;
+   - conservative chapter matcher that rejects ambiguous migrations.
+
 ## Next vertical slices
 
-1. **Offline cache + progress model**
-   - canonical work identity separated from `SourceMangaRef`;
-   - chapter/page cache metadata;
-   - resume state;
-   - migration-safe keys.
+1. **Room persistence adapters for Manga Hub**
+   - persist canonical works and source links;
+   - persist progress and offline manifests;
+   - versioned schema migration + backup compatibility;
+   - only land after full Android/Gradle verification is available.
 
 2. **Alternatives / source replacement**
    - title/alt-title matching;
@@ -117,7 +126,8 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 
 ## Verification state
 
-- Pure-Kotlin compilation of the source foundation succeeds independently.
+- Pure-Kotlin compilation of the source and canonical-library foundations succeeds independently.
+- Local smoke execution passed canonical identity preservation, progress page remapping, cache-path safety and ambiguous chapter rejection.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
