@@ -156,6 +156,20 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - image loading/transport intentionally stays outside the UI adapter;
    - no new image/network dependency.
 
+10. **Reader presentation integration foundation**
+   - offline-first chapter loader over the existing cache index and bounded source coordinator;
+   - complete offline chapters reopen with no provider/network dependency;
+   - partial cache + online pages merge into HYBRID delivery;
+   - network/source failure falls back to a contiguous PARTIAL_OFFLINE prefix when available;
+   - incomplete cache never renumbers later pages into earlier UI indices;
+   - remote page lists must be unique and contiguous from index 0;
+   - loading/error/ready presentation states with retryability;
+   - chapter boundary navigation uses explicit provider reading order and logical chapter identity;
+   - PARTIAL_OFFLINE cannot auto-cross into another chapter;
+   - stale UI state never renders assets from a newly loaded chapter;
+   - unnumbered special chapters use source-neutral title-based offline cache identity when possible;
+   - provider chapter key is only the last-resort offline discriminator.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -171,12 +185,18 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - process-death and host-loss recovery;
    - instrumentation coverage for rotation/background/close.
 
-3. **Reader presentation integration**
-   - bind real online/offline page renderer into the slot-based surfaces;
+3. **Reader image delivery adapter**
+   - bind a mature image pipeline to `MangaPageAsset.Local/Remote`;
+   - local file resolver with integrity/hash checks;
+   - remote request-header boundary without durable secret persistence;
+   - memory/disk decode policy for large/tall images;
+   - loading/error placeholders and retry affordance.
+
+4. **Reader screen integration**
+   - state holder/ViewModel wiring for loader + reducer + SavedState;
    - orientation host integration;
-   - chapter-boundary navigation;
-   - offline reopen;
-   - loading/error/placeholder UX;
+   - chapter-route transitions;
+   - offline reopen UX;
    - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts.
 
 ## Verification state
@@ -188,6 +208,8 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Browser challenge orchestration compiles independently and smoke execution passed with `BROWSER_CHALLENGE_SMOKE_OK`. A race between session completion and cooldown evaluation was found and fixed before PR creation.
 - Manga reader core compiles independently and smoke execution passed with `MANGA_READER_CORE_SMOKE_OK`: RTL/LTR navigation, zoom bounds, page-count clamp, webtoon restore, tall-image geometry and source-replacement-safe chapter restore.
 - Reader UI reducer/SavedState logic passed local execution smoke with `MANGA_READER_UI_SMOKE_OK`: zoom-safe swipe gating, double-tap reset, boundary effects and fail-closed state restore. Compose sources remain pending full Android/Gradle verification.
+- Reader presentation orchestration passed local execution smoke with `MANGA_READER_PRESENTATION_SMOKE_OK`: complete offline reopen, HYBRID local/remote delivery, partial-offline fallback and safe chapter-boundary blocking.
+- Unnumbered chapter cache identity passed `MANGA_OFFLINE_LOCATOR_SMOKE_OK`: normalized-title identity survives provider-key replacement and distinguishes different specials.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
