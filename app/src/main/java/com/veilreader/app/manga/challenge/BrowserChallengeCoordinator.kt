@@ -191,6 +191,23 @@ class BrowserChallengeCoordinator(
         val key = ChallengeKey(source.id, domain)
 
         while (true) {
+            // Joining an already-running same-key session must happen before cooldown inspection.
+            // Otherwise a caller arriving as SOLVED is being recorded could falsely classify that
+            // still-active session as an ineffective recurrence.
+            currentSession()?.let { current ->
+                val result = withTimeoutOrNull(waiterTimeoutMillis) {
+                    current.result.await()
+                } ?: return false
+
+                if (current.key == key) {
+                    return result == ChallengeUiResult.SOLVED
+                }
+                // A different source/domain owned the global session. Re-evaluate our own key after
+                // the global slot becomes available.
+                return@let
+            }
+            if (currentSession() != null) continue
+
             when (cooldowns.beforeChallenge(key, clock())) {
                 ChallengeCooldownDecision.RECENT_FAILURE,
                 ChallengeCooldownDecision.RECENT_SUCCESS_BECAME_INEFFECTIVE -> return false
@@ -208,13 +225,14 @@ class BrowserChallengeCoordinator(
                     if (decision.key == key) {
                         return result == ChallengeUiResult.SOLVED
                     }
-
-                    // Another source/domain owned the global session. Re-evaluate our own cooldown
-                    // and launch eligibility after it finishes.
+                    // A session raced in between cooldown evaluation and acquisition. Loop and
+                    // re-evaluate after that global session completes.
                 }
             }
         }
     }
+
+    private suspend fun currentSession(): ActiveSession? = mutex.withLock { activeSession }
 
     private suspend fun joinOrStart(
         source: MangaSourceDescriptor,
@@ -248,13 +266,12 @@ class BrowserChallengeCoordinator(
             }
 
             cooldowns.record(key, result, clock())
-            deferred.complete(result)
-
             mutex.withLock {
                 if (activeSession === created) {
                     activeSession = null
                 }
             }
+            deferred.complete(result)
         }
 
         JoinDecision.Wait(key, deferred)
