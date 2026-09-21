@@ -28,12 +28,11 @@ class InMemoryMangaCanonicalStore : MangaCanonicalStore {
         )
 
     override suspend fun saveWork(manga: CanonicalManga) {
-        val conflict = manga.sourceRefs.values.firstNotNullOfOrNull { ref ->
-            findWorkBySource(ref)
-                ?.takeIf { existing -> existing.id != manga.id }
-        }
-        require(conflict == null) {
-            "A provider Manga identity is already linked to another canonical work"
+        for (ref in manga.sourceRefs.values) {
+            val conflict = findWorkBySource(ref)
+            require(conflict == null || conflict.id == manga.id) {
+                "A provider Manga identity is already linked to another canonical work"
+            }
         }
         values[manga.id] = manga
     }
