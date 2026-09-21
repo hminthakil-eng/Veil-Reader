@@ -44,7 +44,7 @@ class ReaderPdfReliabilityInstrumentedTest {
 
         waitForPackage(target.packageName)
         SystemClock.sleep(2_000)
-        tapReaderCenter()
+        revealReaderChrome()
 
         clickText("Zoom")
         waitForText("PDF zoom")
@@ -67,7 +67,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         try {
             waitForPackage(target.packageName)
             SystemClock.sleep(1_000)
-            tapReaderCenter()
+            revealReaderChrome()
             waitForText("Zoom")
         } finally {
             uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
@@ -79,6 +79,16 @@ class ReaderPdfReliabilityInstrumentedTest {
             "sh -c \"printf '%s' '$PDF_BASE64' | base64 -d > /sdcard/Download/VeilReaderQa.pdf\""
         uiAutomation.executeShellCommand(command).close()
         SystemClock.sleep(500)
+    }
+
+    private fun revealReaderChrome() {
+        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        while (SystemClock.elapsedRealtime() < deadline) {
+            if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+            tapReaderCenter()
+            SystemClock.sleep(750)
+        }
+        error("Timed out revealing PDF reader chrome")
     }
 
     private fun tapReaderCenter() {
