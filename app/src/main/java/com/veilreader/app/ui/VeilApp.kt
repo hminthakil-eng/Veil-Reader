@@ -82,7 +82,21 @@ fun VeilApp(
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
-    val readerOwnsScreen = openedPublication != null || mangaState.readerTarget != null
+    val restoredMangaTarget = route.activeMangaBookId?.let { bookId ->
+        route.activeMangaChapterId?.let { chapterId ->
+            MangaReaderTarget(bookId = bookId, chapterId = chapterId)
+        }
+    }
+    val readerOwnsScreen = openedPublication != null || restoredMangaTarget != null
+
+    LaunchedEffect(mangaState.readerTarget) {
+        val pending = mangaState.readerTarget ?: return@LaunchedEffect
+        routeViewModel.requestMangaChapter(
+            bookId = pending.bookId,
+            chapterId = pending.chapterId
+        )
+        mangaHubViewModel.consumeReaderTarget()
+    }
 
     // While a reader owns the screen, remove these collectors from composition entirely so
     // progress/game writes cannot invalidate the app shell. StateFlow immediately supplies its
@@ -411,13 +425,16 @@ fun VeilApp(
         }
     }
 
-    val mangaTarget = mangaState.readerTarget
+    val mangaTarget = restoredMangaTarget
     val opened = openedPublication
     if (mangaTarget != null) {
         MangaReaderHost(
             runtime = mangaRuntime,
             target = mangaTarget,
-            onClose = mangaHubViewModel::closeReader
+            onClose = {
+                mangaHubViewModel.closeReader()
+                routeViewModel.closeMangaReader()
+            }
         )
     } else if (opened != null) {
         ReaderScreen(
