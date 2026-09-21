@@ -115,7 +115,8 @@ fun MangaHubScreen(
                 MangaHubDetails(
                     state = state,
                     onBack = model::closeDetails,
-                    onRead = model::startReading,
+                    onRead = { model.startReading() },
+                    onReadChapter = { key -> model.startReading(key) },
                     onAdd = model::addSelectedToLibrary,
                     onRemove = model::removeSelectedFromLibrary,
                     modifier = Modifier.weight(1f)
@@ -374,6 +375,7 @@ private fun MangaHubDetails(
     state: MangaHubUiState,
     onBack: () -> Unit,
     onRead: () -> Unit,
+    onReadChapter: (String) -> Unit,
     onAdd: () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier
@@ -462,7 +464,8 @@ private fun MangaHubDetails(
                             chapter.chapterKey
                         )
                     )
-                    .padding(vertical = 6.dp)
+                    .clickable { onReadChapter(chapter.chapterKey) }
+                    .padding(vertical = 10.dp)
             ) {
                 Text(
                     chapter.title
