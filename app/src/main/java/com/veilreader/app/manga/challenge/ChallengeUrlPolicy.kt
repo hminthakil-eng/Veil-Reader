@@ -19,7 +19,7 @@ object ChallengeUrlPolicy {
     fun isAllowedTopLevelNavigation(domain: String, rawUrl: String): Boolean {
         val uri = runCatching { Uri.parse(rawUrl) }.getOrNull() ?: return false
         val scheme = uri.scheme?.lowercase(Locale.ROOT) ?: return false
-        if (scheme != "https" && scheme != "http") return false
+        if (scheme != "https") return false
         if (uri.userInfo != null) return false
 
         val requestedHost = uri.host?.let(::normalizeHost) ?: return false
