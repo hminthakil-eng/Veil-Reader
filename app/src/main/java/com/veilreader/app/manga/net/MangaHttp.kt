@@ -7,8 +7,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 
 data class MangaHttpResponse(
     val code: Int,
@@ -21,6 +23,14 @@ fun interface MangaHttpClient {
         url: String,
         headers: Map<String, String>
     ): MangaHttpResponse
+
+    suspend fun postJson(
+        url: String,
+        headers: Map<String, String>,
+        json: String
+    ): MangaHttpResponse {
+        throw MangaSourceException.Unsupported("This HTTP client does not support JSON POST.")
+    }
 }
 
 class OkHttpMangaHttpClient(
@@ -30,15 +40,34 @@ class OkHttpMangaHttpClient(
     override suspend fun get(
         url: String,
         headers: Map<String, String>
-    ): MangaHttpResponse = withContext(Dispatchers.IO) {
-        val builder = Request.Builder()
-            .url(url)
-            .header("User-Agent", userAgent)
+    ): MangaHttpResponse = executeRequest(
+        url = url,
+        headers = headers,
+        request = Request.Builder().url(url).get()
+    )
 
-        headers.forEach { (name, value) -> builder.header(name, value) }
+    override suspend fun postJson(
+        url: String,
+        headers: Map<String, String>,
+        json: String
+    ): MangaHttpResponse = executeRequest(
+        url = url,
+        headers = headers,
+        request = Request.Builder()
+            .url(url)
+            .post(json.toRequestBody(JSON_MEDIA_TYPE))
+    )
+
+    private suspend fun executeRequest(
+        url: String,
+        headers: Map<String, String>,
+        request: Request.Builder
+    ): MangaHttpResponse = withContext(Dispatchers.IO) {
+        request.header("User-Agent", userAgent)
+        headers.forEach { (name, value) -> request.header(name, value) }
 
         try {
-            client.newCall(builder.build()).execute().use { response ->
+            client.newCall(request.build()).execute().use { response ->
                 val body = response.body.string()
                 if (!response.isSuccessful) {
                     throw mangaHttpFailure(
@@ -64,6 +93,10 @@ class OkHttpMangaHttpClient(
                 cause = error
             )
         }
+    }
+
+    private companion object {
+        val JSON_MEDIA_TYPE = "application/json; charset=utf-8".toMediaType()
     }
 }
 
@@ -99,15 +132,30 @@ class PacedMangaHttpClient(
     override suspend fun get(
         url: String,
         headers: Map<String, String>
-    ): MangaHttpResponse = mutex.withLock {
+    ): MangaHttpResponse = paced {
+        delegate.get(url, headers)
+    }
+
+    override suspend fun postJson(
+        url: String,
+        headers: Map<String, String>,
+        json: String
+    ): MangaHttpResponse = paced {
+        delegate.postJson(url, headers, json)
+    }
+
+    private suspend fun <T> paced(block: suspend () -> T): T = mutex.withLock {
+        waitForPermit()
+        val result = block()
+        nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
+        result
+    }
+
+    private suspend fun waitForPermit() {
         val now = System.nanoTime()
         val waitNanos = nextAllowedAtNanos - now
         if (waitNanos > 0) {
             delay((waitNanos + 999_999L) / 1_000_000L)
         }
-
-        val result = delegate.get(url, headers)
-        nextAllowedAtNanos = System.nanoTime() + minimumIntervalMs * 1_000_000L
-        result
     }
 }
