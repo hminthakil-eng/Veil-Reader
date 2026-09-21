@@ -2,6 +2,7 @@ package com.veilreader.app.manga.reader.verification
 
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.Paint
 import android.os.Bundle
@@ -213,7 +214,8 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         height: Int,
         seed: Int
     ): File {
-        if (file.isFile && file.length() > 0L) return file
+        if (isValidFixture(file, width, height)) return file
+        file.delete()
 
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         try {
@@ -246,15 +248,37 @@ class MangaReaderVerificationActivity : FragmentActivity() {
                 markerIndex += 1
             }
 
-            file.outputStream().buffered().use { output ->
+            val temporary = File(file.parentFile, file.name + ".tmp")
+            temporary.delete()
+            temporary.outputStream().buffered().use { output ->
                 check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)) {
                     "Verification image compression failed"
+                }
+            }
+            if (!temporary.renameTo(file)) {
+                file.delete()
+                check(temporary.renameTo(file)) {
+                    "Verification image atomic replace failed"
                 }
             }
         } finally {
             bitmap.recycle()
         }
+        check(isValidFixture(file, width, height)) {
+            "Verification image dimensions are invalid after write"
+        }
         return file
+    }
+
+    private fun isValidFixture(
+        file: File,
+        expectedWidth: Int,
+        expectedHeight: Int
+    ): Boolean {
+        if (!file.isFile || file.length() <= 0L) return false
+        val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeFile(file.absolutePath, options)
+        return options.outWidth == expectedWidth && options.outHeight == expectedHeight
     }
 
     data class VerificationFixture(
