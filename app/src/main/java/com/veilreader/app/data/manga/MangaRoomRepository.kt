@@ -52,7 +52,7 @@ class MangaRoomRepository(
                 .sortedBy { it.sourceId.value }
                 .map { it.toEntity(manga.id) }
             if (links.isNotEmpty()) {
-                database.mangaLibrary().upsertLinks(links)
+                database.mangaLibrary().insertLinks(links)
             }
         }
     }
@@ -137,7 +137,7 @@ class MangaRoomRepository(
                     val links = manga.sourceRefs.values
                         .sortedBy { it.sourceId.value }
                         .map { it.toEntity(manga.id) }
-                    if (links.isNotEmpty()) database.mangaLibrary().upsertLinks(links)
+                    if (links.isNotEmpty()) database.mangaLibrary().insertLinks(links)
                 }
 
             snapshot.progress.forEach { progress ->
