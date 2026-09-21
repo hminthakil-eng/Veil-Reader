@@ -167,6 +167,43 @@ class LocalLibraryRepository internal constructor(
         return result
     }
 
+    /**
+     * Upserts a source-backed library item such as a manga title.
+     *
+     * Source-backed books have no local publication URI. Refreshing source metadata must never
+     * reset durable reading state, favorites, timestamps, locators, or user collections.
+     */
+    suspend fun upsertSourceBackedBook(book: Book): Book {
+        require(!book.isImported) { "Source-backed books must not carry a local publication URI." }
+        val committed = orderedWrite {
+            val existing = database.books().findWithCollections(book.id)?.toDomain()
+            val merged = if (existing == null) {
+                book
+            } else {
+                book.copy(
+                    progress = existing.progress,
+                    currentChapter = existing.currentChapter,
+                    totalPages = existing.totalPages,
+                    pagesRead = existing.pagesRead,
+                    locatorJson = existing.locatorJson,
+                    addedAtEpochMs = existing.addedAtEpochMs,
+                    lastOpenedAtEpochMs = existing.lastOpenedAtEpochMs,
+                    finished = existing.finished,
+                    favorite = existing.favorite,
+                    collection = existing.collection,
+                    collections = existing.collections
+                )
+            }
+            database.withTransaction {
+                database.books().upsert(merged.toEntity())
+                setCollectionsInternal(merged.id, merged.allCollections.toSet())
+            }
+            merged
+        }
+        _books.value = listOf(committed) + _books.value.filterNot { it.id == committed.id }
+        return committed
+    }
+
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
 
     /**
