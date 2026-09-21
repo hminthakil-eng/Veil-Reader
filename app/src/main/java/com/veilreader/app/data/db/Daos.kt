@@ -40,6 +40,7 @@ interface BookDao {
         SET progress = :progress,
             pagesRead = :pagesRead,
             locatorJson = :locatorJson,
+            currentChapter = COALESCE(:currentChapter, currentChapter),
             lastOpenedAtEpochMs = :lastOpenedAtEpochMs,
             finished = :finished
         WHERE id = :id
@@ -50,6 +51,7 @@ interface BookDao {
         progress: Float,
         pagesRead: Int,
         locatorJson: String,
+        currentChapter: String?,
         lastOpenedAtEpochMs: Long,
         finished: Boolean
     ): Int
