@@ -1,19 +1,43 @@
 workflows:
   veil-reader-cloud-verify:
-    name: Veil Reader Cloud Verify
+    name: Veil Reader Phone Cloud Green Gate
     instance_type: mac_mini_m2
     max_build_duration: 45
     triggering:
       events:
         - push
+        - pull_request
       branch_patterns:
-        - pattern: 'upgrade/readium-3-4'
+        - pattern: 'integration/reader-manga-*'
+          include: true
+          source: true
+        - pattern: 'fix/manga-*'
+          include: true
+          source: true
+        - pattern: 'feature/manga-*'
+          include: true
+          source: true
+        - pattern: 'ci/phone-cloud-*'
           include: true
           source: true
       cancel_previous_builds: true
     environment:
       java: 17
+    cache:
+      cache_paths:
+        - $HOME/.gradle/caches
+        - $HOME/.gradle/wrapper
+        - $CM_BUILD_DIR/.gradle-dist
     scripts:
+      - name: Record verified commit
+        script: |
+          set -e
+          mkdir -p "$CM_BUILD_DIR/verification"
+          git rev-parse HEAD | tee "$CM_BUILD_DIR/verification/verified-sha.txt"
+          printf '%s\n' "workflow=veil-reader-cloud-verify" > "$CM_BUILD_DIR/verification/gate.txt"
+          printf '%s\n' "branch=${CM_BRANCH:-unknown}" >> "$CM_BUILD_DIR/verification/gate.txt"
+          printf '%s\n' "build=${BUILD_ID:-unknown}" >> "$CM_BUILD_DIR/verification/gate.txt"
+
       - name: Configure Android SDK and Gradle
         script: |
           set -e
@@ -52,11 +76,27 @@ workflows:
         script: ./gradlew :app:testDebugUnitTest --stacktrace
         test_report: app/build/test-results/**/*.xml
 
+      - name: Verify committed Room schema
+        script: |
+          set -e
+          CHANGES="$(git status --porcelain --untracked-files=all -- app/schemas/)"
+          if [ -n "$CHANGES" ]; then
+            echo "Room schemas differ from the committed checkout:"
+            echo "$CHANGES"
+            exit 1
+          fi
+
       - name: Android lint
         script: ./gradlew :app:lintDebug --stacktrace
 
-      - name: Build debug and instrumentation APKs
-        script: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - name: Build debug APK and compile instrumentation
+        script: ./gradlew :app:assembleDebug :app:compileDebugAndroidTestKotlin --stacktrace
+
+      - name: Verify release R8 build
+        script: ./gradlew :app:assembleRelease --stacktrace
+
+      - name: Build instrumentation APK
+        script: ./gradlew :app:assembleDebugAndroidTest --stacktrace
 
       - name: Verify device-cloud test artifacts
         script: |
@@ -85,7 +125,9 @@ workflows:
         script: ./gradlew :benchmark:assembleBenchmarkBenchmark --stacktrace
 
     artifacts:
+      - verification/**
       - app/build/outputs/apk/debug/*.apk
+      - app/build/outputs/apk/release/*.apk
       - app/build/outputs/apk/androidTest/**/*.apk
       - benchmark/build/outputs/**/*.apk
       - app/build/reports/**
