@@ -1,6 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import org.readium.r2.navigator.preferences.Axis
+import org.readium.r2.navigator.preferences.Fit
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -19,5 +22,20 @@ class ReaderPreferenceMappingTest {
         assertEquals(0xFFF1E5C9.toInt() to 0xFF3D3325.toInt(), readiumThemeColors(ReaderTheme.SEPIA))
         assertEquals(0xFF18151D.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.DUSK))
         assertEquals(0xFF000000.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.OLED))
+    }
+
+    @Test
+    fun `pdf preferences map continuous and paginated layouts deterministically`() {
+        val continuous = ReaderAppearance(scroll = true).toPdfiumPreferences()
+        assertEquals(Fit.WIDTH, continuous.fit)
+        assertEquals(12.0, continuous.pageSpacing!!, 0.0001)
+        assertEquals(true, continuous.scroll)
+        assertEquals(Axis.VERTICAL, continuous.scrollAxis)
+
+        val paginated = ReaderAppearance(scroll = false).toPdfiumPreferences()
+        assertEquals(Fit.CONTAIN, paginated.fit)
+        assertEquals(6.0, paginated.pageSpacing!!, 0.0001)
+        assertEquals(false, paginated.scroll)
+        assertEquals(null, paginated.scrollAxis)
     }
 }
