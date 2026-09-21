@@ -59,6 +59,7 @@ class AndroidChallengeUiDriver(
             throw cancelled
         } finally {
             hostMonitor.cancel()
+            sessions.release(session.id)
         }
     }
 }
