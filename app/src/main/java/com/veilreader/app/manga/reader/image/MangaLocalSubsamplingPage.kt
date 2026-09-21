@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.ImageLoader
 import com.github.panpf.zoomimage.CoilZoomAsyncImage
+import com.github.panpf.zoomimage.rememberCoilZoomState
+import com.github.panpf.zoomimage.util.Logger
 import com.veilreader.app.manga.reader.MangaReaderMode
 
 /**
@@ -33,6 +35,9 @@ fun MangaLocalSubsamplingPage(
             mode = mode
         )
     }
+    // ZoomImage debug logs include request.data. Error level prevents page paths/URLs from being
+    // emitted by its debug pipeline while preserving actionable library failures.
+    val zoomState = rememberCoilZoomState(logLevel = Logger.Level.Error)
 
     val imageModifier = when (mode) {
         MangaReaderMode.PAGED -> modifier.fillMaxSize()
@@ -49,6 +54,7 @@ fun MangaLocalSubsamplingPage(
         contentDescription = null,
         imageLoader = imageLoader,
         modifier = imageModifier,
-        contentScale = ContentScale.Fit
+        contentScale = ContentScale.Fit,
+        zoomState = zoomState
     )
 }
