@@ -98,4 +98,62 @@ class VeilAppViewModelTest {
         assertEquals("treasury", model.route.value.activeChamber)
         assertFalse(model.route.value.showArchive)
     }
+    @Test
+    fun mangaReaderRoute_survivesViewModelRecreation_thenClosesBackToManga() {
+        val handle = SavedStateHandle()
+        val first = VeilAppViewModel(handle)
+
+        first.selectTab(VeilTab.LIBRARY)
+        first.requestMangaChapter("manga-book-1", "chapter-9")
+
+        assertEquals(VeilTab.MANGA, first.route.value.selectedTab)
+        assertEquals("manga-book-1", first.route.value.activeMangaBookId)
+        assertEquals("chapter-9", first.route.value.activeMangaChapterId)
+        assertNull(first.route.value.activeBookId)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(VeilTab.MANGA, recreated.route.value.selectedTab)
+        assertEquals("manga-book-1", recreated.route.value.activeMangaBookId)
+        assertEquals("chapter-9", recreated.route.value.activeMangaChapterId)
+        assertNull(recreated.route.value.activeBookId)
+
+        recreated.closeMangaReader()
+        assertEquals(VeilTab.MANGA, recreated.route.value.selectedTab)
+        assertNull(recreated.route.value.activeMangaBookId)
+        assertNull(recreated.route.value.activeMangaChapterId)
+    }
+
+    @Test
+    fun incompleteSavedMangaRoute_isDroppedFailClosed() {
+        val handle = SavedStateHandle(
+            mapOf(
+                "veil.route.tab" to VeilTab.MANGA.name,
+                "veil.route.manga.book" to "manga-book-1",
+                "veil.route.manga.chapter" to "   "
+            )
+        )
+
+        val model = VeilAppViewModel(handle)
+
+        assertEquals(VeilTab.MANGA, model.route.value.selectedTab)
+        assertNull(model.route.value.activeMangaBookId)
+        assertNull(model.route.value.activeMangaChapterId)
+        assertNull(model.route.value.activeBookId)
+    }
+
+    @Test
+    fun openingBookAndMangaRoutes_areMutuallyExclusive() {
+        val model = VeilAppViewModel(SavedStateHandle())
+
+        model.requestBook("book-epub")
+        model.requestMangaChapter("manga-book", "chapter-a")
+        assertNull(model.route.value.activeBookId)
+        assertEquals("manga-book", model.route.value.activeMangaBookId)
+
+        model.requestBook("book-epub-2")
+        assertEquals("book-epub-2", model.route.value.activeBookId)
+        assertNull(model.route.value.activeMangaBookId)
+        assertNull(model.route.value.activeMangaChapterId)
+    }
+
 }
