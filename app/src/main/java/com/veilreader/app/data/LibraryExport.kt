@@ -3,6 +3,7 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaBackupCodec
 import com.veilreader.app.data.manga.MangaBackupSnapshot
@@ -72,7 +73,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.8.0")
+                put("appVersion", BuildConfig.VERSION_NAME)
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("manga", MangaBackupCodec.toJson(mangaSnapshot))
@@ -94,7 +95,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 zip.closeEntry()
                 zip.putNextEntry(ZipEntry("README.txt"))
                 val readme = "Veil Reader local backup. Restore it from Profile > Your data > Restore library backup. " +
-                    "The archive can contain private books, highlights, notes and reading state; keep it private.\n"
+                    "The archive can contain private books, Manga library links, highlights, notes and reading state; keep it private. " +
+                    "Downloaded Manga page files are cache and are not included.\n"
                 zip.write(readme.toByteArray(Charsets.UTF_8))
                 zip.closeEntry()
                 files.forEach { (_, file, path) ->
