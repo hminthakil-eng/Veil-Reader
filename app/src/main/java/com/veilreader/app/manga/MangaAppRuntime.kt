@@ -10,6 +10,8 @@ import com.veilreader.app.manga.core.MangaOfflineStore
 import com.veilreader.app.manga.core.MangaSourceCatalog
 import com.veilreader.app.manga.core.MangaSourceId
 import com.veilreader.app.manga.net.OkHttpMangaBinaryFetcher
+import com.veilreader.app.manga.reader.MangaReaderPreferencesPersistence
+import com.veilreader.app.manga.reader.MangaReaderPreferencesStore
 import com.veilreader.app.manga.storage.FileMangaOfflineStore
 import java.io.File
 
@@ -17,7 +19,8 @@ data class MangaAppRuntime(
     val catalog: MangaSourceCatalog,
     val hub: MangaHub,
     val library: MangaLibraryRepository,
-    val offlineStore: MangaOfflineStore
+    val offlineStore: MangaOfflineStore,
+    val readerPreferences: MangaReaderPreferencesPersistence
 )
 
 internal fun defaultMangaRuntimeConfig(
@@ -73,7 +76,8 @@ object MangaAppRuntimeFactory {
             catalog = catalog,
             hub = hub,
             library = mangaLibrary,
-            offlineStore = offlineStore
+            offlineStore = offlineStore,
+            readerPreferences = MangaReaderPreferencesStore(appContext)
         )
     }
 }
