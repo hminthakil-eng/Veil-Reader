@@ -24,7 +24,10 @@ android {
         getByName("release") {
             isMinifyEnabled = true
             isShrinkResources = true
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-telephoto-pilot.pro"
+            )
         }
         create("benchmark") {
             initWith(getByName("release"))
@@ -80,6 +83,9 @@ dependencies {
     // Manga image reader: Compose rendering + network/disk cache/prefetch.
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
+
+    // Controlled renderer pilot only. Do not merge into production until device gates pass.
+    implementation("me.saket.telephoto:zoomable-image-coil3:0.19.0")
 
     // Production local persistence.
     implementation("androidx.room:room-runtime:2.8.5")
