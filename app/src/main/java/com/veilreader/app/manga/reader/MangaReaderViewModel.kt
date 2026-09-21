@@ -122,8 +122,7 @@ class MangaReaderViewModel(
     ) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
-            val resolvedPreferences =
-                preferences ?: preferencesPersistence?.current() ?: _uiState.value.preferences
+            val resolvedPreferences = preferences ?: loadPersistedPreferences()
             val target = chapterId ?: mangaLibrary.resumeChapterId(bookId)
             if (target == null) {
                 _uiState.value = MangaReaderUiState(
@@ -138,6 +137,17 @@ class MangaReaderViewModel(
                 return@launch
             }
             loadChapter(bookId, target, resolvedPreferences, restorePage = true)
+        }
+    }
+
+    private suspend fun loadPersistedPreferences(): MangaReaderPreferences {
+        val persistence = preferencesPersistence ?: return _uiState.value.preferences
+        return try {
+            persistence.current()
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (_: Throwable) {
+            _uiState.value.preferences
         }
     }
 
@@ -198,9 +208,11 @@ class MangaReaderViewModel(
         val state = _uiState.value
         if (state.loading) return
         val bookId = state.bookId ?: return
-        val target = if (previous) state.previousChapterId else state.nextChapterId ?: return
-        if (target == null) return
+        val target = (
+            if (previous) state.previousChapterId else state.nextChapterId
+        ) ?: return
 
+        progressJob?.cancel()
         _uiState.value = loadingMangaReaderState(
             current = state,
             bookId = bookId,
