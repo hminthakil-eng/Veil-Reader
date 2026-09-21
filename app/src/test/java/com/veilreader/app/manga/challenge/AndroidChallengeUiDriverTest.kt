@@ -4,6 +4,7 @@ import com.veilreader.app.manga.source.MangaSourceDescriptor
 import com.veilreader.app.manga.source.SourceFailureKind
 import com.veilreader.app.manga.source.SourceId
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -122,6 +123,34 @@ class AndroidChallengeUiDriverTest {
             sessions.await(active.id).uiResult
         )
         assertEquals(null, sessions.activeId())
+    }
+
+    @Test
+    fun cancellingDriverOwnerReleasesGlobalAndroidSlot() = runBlocking {
+        val registry = ChallengeForegroundHostRegistry()
+        val registration = registry.register(Any())
+        val sessions = AndroidChallengeSessionStore()
+        val driver = AndroidChallengeUiDriver(
+            hostRegistry = registry,
+            sessions = sessions,
+            sessionHeaders = ChallengeSessionHeadersStore(),
+            hostLossGraceMillis = 100L
+        )
+
+        val owner = async { driver.solve(request()) }
+        withTimeout(1_000L) { sessions.session.filterNotNull().first() }
+        owner.cancelAndJoin()
+
+        assertEquals(null, sessions.activeId())
+
+        val next = async { driver.solve(request()) }
+        val active = withTimeout(1_000L) { sessions.session.filterNotNull().first() }
+        sessions.complete(
+            active.id,
+            AndroidChallengeBrowserResult(ChallengeUiResult.CANCELLED)
+        )
+        assertEquals(ChallengeUiResult.CANCELLED, next.await())
+        registry.unregister(registration)
     }
 
     @Test
