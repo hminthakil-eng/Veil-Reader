@@ -187,7 +187,7 @@ class MangaHubViewModel(
         }
     }
 
-    fun startReading() {
+    fun startReading(preferredChapterKey: String? = null) {
         val selected = _state.value.selectedDetails ?: return
         readerJob?.cancel()
         readerJob = viewModelScope.launch {
@@ -200,7 +200,8 @@ class MangaHubViewModel(
                     ?: service.addToLibrary(selected.details)
                 val session = service.openLibraryWork(
                     id = canonical.id,
-                    preferredSourceId = selected.source.id
+                    preferredSourceId = selected.source.id,
+                    preferredChapterKey = preferredChapterKey
                 )
 
                 _state.value = _state.value.copy(
