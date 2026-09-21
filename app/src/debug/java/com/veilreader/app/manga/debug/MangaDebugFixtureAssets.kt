@@ -23,14 +23,15 @@ object MangaDebugFixtureAssets {
         if (isValidFixture(file, width, height)) return file
         file.delete()
 
+        val safeSeed = seed and Int.MAX_VALUE
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         try {
             val canvas = Canvas(bitmap)
             val background = Paint().apply {
                 color = Color.rgb(
-                    40 + (seed * 37) % 160,
-                    40 + (seed * 53) % 160,
-                    40 + (seed * 71) % 160
+                    40 + (safeSeed * 37L % 160L).toInt(),
+                    40 + (safeSeed * 53L % 160L).toInt(),
+                    40 + (safeSeed * 71L % 160L).toInt()
                 )
             }
             canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), background)
