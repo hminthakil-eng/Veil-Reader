@@ -36,6 +36,11 @@ class MangaRoomRepository(
     override suspend fun loadWork(id: CanonicalMangaId): CanonicalManga? =
         database.mangaLibrary().find(id.value)?.toDomain()
 
+    override suspend fun findWorkBySource(ref: SourceMangaRef): CanonicalManga? =
+        database.mangaLibrary()
+            .findBySource(ref.sourceId.value, ref.key)
+            ?.toDomain()
+
     override suspend fun listWorks(): List<CanonicalManga> =
         database.mangaLibrary().listAll().map(MangaWorkWithLinks::toDomain)
 
