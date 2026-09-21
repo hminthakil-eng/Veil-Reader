@@ -67,7 +67,7 @@ class MangaOfflineChapterLocatorTest {
     fun insufficientChapterIdentitySkipsUnsafeOfflineLookup() {
         val id = MangaOfflineChapterLocator.idFor(
             CanonicalMangaId("work"),
-            MangaChapterAnchor(languageTag = "en")
+            MangaChapterAnchor(volume = 2.0, languageTag = "en")
         )
 
         assertNull(id)
