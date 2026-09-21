@@ -76,6 +76,55 @@ class AndroidChallengeUiDriverTest {
     }
 
     @Test
+    fun briefHostLossLikeRotationDoesNotCancelChallenge() = runBlocking {
+        val registry = ChallengeForegroundHostRegistry()
+        var registration = registry.register(Any())
+        val sessions = AndroidChallengeSessionStore()
+        val driver = AndroidChallengeUiDriver(
+            hostRegistry = registry,
+            sessions = sessions,
+            sessionHeaders = ChallengeSessionHeadersStore(),
+            hostLossGraceMillis = 100L
+        )
+
+        val result = async { driver.solve(request()) }
+        val active = withTimeout(1_000L) { sessions.session.filterNotNull().first() }
+
+        registry.unregister(registration)
+        delay(20L)
+        registration = registry.register(Any())
+        delay(120L)
+
+        sessions.complete(
+            active.id,
+            AndroidChallengeBrowserResult(ChallengeUiResult.SOLVED)
+        )
+
+        assertEquals(ChallengeUiResult.SOLVED, result.await())
+        registry.unregister(registration)
+    }
+
+    @Test
+    fun completionBeforeAwaitConsumptionPreservesResult() = runBlocking {
+        val sessions = AndroidChallengeSessionStore()
+        val active = sessions.begin(
+            request = request(),
+            startUrl = "https://challenge.example/"
+        )
+
+        sessions.complete(
+            active.id,
+            AndroidChallengeBrowserResult(ChallengeUiResult.SOLVED)
+        )
+
+        assertEquals(
+            ChallengeUiResult.SOLVED,
+            sessions.await(active.id).uiResult
+        )
+        assertEquals(null, sessions.activeId())
+    }
+
+    @Test
     fun noForegroundHostFailsClosedWithoutOpeningSession() = runBlocking {
         val registry = ChallengeForegroundHostRegistry()
         val sessions = AndroidChallengeSessionStore()
