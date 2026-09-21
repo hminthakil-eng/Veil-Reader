@@ -5,6 +5,7 @@ import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -78,7 +79,6 @@ import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
-import org.readium.r2.navigator.R2WebView
 import org.readium.r2.navigator.SelectableNavigator
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
@@ -745,12 +745,12 @@ private fun ReaderFragmentHost(
     }
 }
 
-private fun findEpubWebView(navigator: Navigator?): R2WebView? {
+private fun findEpubWebView(navigator: Navigator?): WebView? {
     val fragment = navigator as? Fragment ?: return null
     return findEpubWebView(fragment)
 }
 
-private fun findEpubWebView(fragment: Fragment): R2WebView? {
+private fun findEpubWebView(fragment: Fragment): WebView? {
     findEpubWebView(fragment.view)?.let { return it }
     for (child in fragment.childFragmentManager.fragments) {
         findEpubWebView(child)?.let { return it }
@@ -758,11 +758,11 @@ private fun findEpubWebView(fragment: Fragment): R2WebView? {
     return null
 }
 
-private fun findEpubWebView(view: View?): R2WebView? = when (view) {
+private fun findEpubWebView(view: View?): WebView? = when (view) {
     null -> null
-    is R2WebView -> view
+    is WebView -> if (view.javaClass.name == READIUM_REFLOWABLE_WEBVIEW_CLASS) view else null
     is ViewGroup -> {
-        var result: R2WebView? = null
+        var result: WebView? = null
         for (index in 0 until view.childCount) {
             result = findEpubWebView(view.getChildAt(index))
             if (result != null) break
@@ -772,7 +772,7 @@ private fun findEpubWebView(view: View?): R2WebView? = when (view) {
     else -> null
 }
 
-private fun configureEpubPageMotion(webView: R2WebView, enabled: Boolean) {
+private fun configureEpubPageMotion(webView: WebView, enabled: Boolean) {
     if (!enabled) {
         webView.setOnScrollChangeListener(null)
         resetEpubPageMotion(webView)
@@ -1202,3 +1202,4 @@ private const val PDF_ZOOM_STEP = 1.35f
 private const val EPUB_PAGE_CAMERA_DISTANCE_DP = 10_000f
 private const val EPUB_PAGE_DEPTH_DP = 6f
 private const val EPUB_PAGE_MOTION_EPSILON = 0.001f
+private const val READIUM_REFLOWABLE_WEBVIEW_CLASS = "org.readium.r2.navigator.R2WebView"
