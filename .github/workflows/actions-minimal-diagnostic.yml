@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  android-base:
+  storage-instrumentation:
     runs-on: [self-hosted, Windows, X64, veil-reader]
     timeout-minutes: 45
     steps:
@@ -31,29 +31,36 @@ jobs:
         run: |
           $sdk = 'C:\Users\Microsoft\AppData\Local\Android\Sdk'
           if (!(Test-Path "$sdk\platforms\android-37.0")) { throw "Android API 37 missing" }
-          if (!(Test-Path "$sdk\build-tools\37.0.0")) { throw "Build tools 37.0.0 missing" }
-          if (!(Test-Path "$sdk\platform-tools\adb.exe")) { throw "Platform tools missing" }
+          if (!(Test-Path "$sdk\platform-tools\adb.exe")) { throw "adb missing" }
           "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "$sdk\platform-tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-
-      - name: Reading policy regression checks
-        shell: powershell
-        run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: "9.6.0"
 
-      - name: Unit tests
+      - name: Verify committed Room schema baseline
         shell: powershell
-        run: gradle :app:testDebugUnitTest --stacktrace
+        run: |
+          git diff --exit-code -- app/schemas/
+          if ($LASTEXITCODE -ne 0) { throw "Room schema baseline is dirty" }
 
-      - name: Android lint
+      - name: Compile Android instrumentation tests
         shell: powershell
-        run: gradle :app:lintDebug --stacktrace
+        run: gradle :app:compileDebugAndroidTestKotlin --stacktrace
 
-      - name: Build debug APK
+      - name: Verify API 35 emulator
         shell: powershell
-        run: gradle :app:assembleDebug --stacktrace
+        run: |
+          $adb = 'C:\Users\Microsoft\AppData\Local\Android\Sdk\platform-tools\adb.exe'
+          & $adb -s emulator-5554 wait-for-device
+          $sdk = (& $adb -s emulator-5554 shell getprop ro.build.version.sdk).Trim()
+          $boot = (& $adb -s emulator-5554 shell getprop sys.boot_completed).Trim()
+          if ($sdk -ne '35') { throw "Expected API 35 emulator, got $sdk" }
+          if ($boot -ne '1') { throw "Emulator is not boot complete" }
+
+      - name: Run storage instrumentation
+        shell: powershell
+        run: gradle :app:connectedDebugAndroidTest --stacktrace
