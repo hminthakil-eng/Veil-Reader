@@ -106,7 +106,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
         while (SystemClock.elapsedRealtime() < deadline) {
             candidates.forEach { candidate ->
-                findNode { it.text?.toString() == candidate }?.let {
+                findClickableNode { it.text?.toString() == candidate }?.let {
                     clickNode(it)
                     return
                 }
@@ -117,7 +117,15 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun clickText(text: String) {
-        waitForNode("text=$text") { it.text?.toString() == text }.also(::clickNode)
+        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        while (SystemClock.elapsedRealtime() < deadline) {
+            findClickableNode { it.text?.toString() == text }?.let {
+                clickNode(it)
+                return
+            }
+            SystemClock.sleep(POLL_MS)
+        }
+        error("Timed out waiting for clickable text=$text")
     }
 
     private fun waitForText(text: String) {
@@ -146,6 +154,29 @@ class ReaderPdfReliabilityInstrumentedTest {
         error("Timed out waiting for $label")
     }
 
+    private fun findClickableNode(
+        predicate: (AccessibilityNodeInfo) -> Boolean
+    ): AccessibilityNodeInfo? {
+        val root = uiAutomation.rootInActiveWindow ?: return null
+        val queue = ArrayDeque<AccessibilityNodeInfo>()
+        queue.add(root)
+
+        while (queue.isNotEmpty()) {
+            val node = queue.removeFirst()
+            if (predicate(node) && clickableAncestor(node) != null) return node
+            for (index in 0 until node.childCount) {
+                node.getChild(index)?.let(queue::add)
+            }
+        }
+        return null
+    }
+
+    private fun clickableAncestor(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        var current: AccessibilityNodeInfo? = node
+        while (current != null && !current.isClickable) current = current.parent
+        return current
+    }
+
     private fun findNode(
         predicate: (AccessibilityNodeInfo) -> Boolean
     ): AccessibilityNodeInfo? {
@@ -164,11 +195,9 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun clickNode(node: AccessibilityNodeInfo) {
-        var current: AccessibilityNodeInfo? = node
-        while (current != null && !current.isClickable) {
-            current = current.parent
+        val current = checkNotNull(clickableAncestor(node)) {
+            "No clickable ancestor for accessibility node"
         }
-        checkNotNull(current) { "No clickable ancestor for accessibility node" }
         check(current.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
             "Accessibility click failed"
         }
