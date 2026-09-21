@@ -5,10 +5,12 @@ import com.veilreader.app.data.db.MangaChapterBindingEntity
 import com.veilreader.app.data.db.MangaChapterEntity
 import com.veilreader.app.data.db.MangaSourceBindingEntity
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.manga.core.MangaChapter
 import com.veilreader.app.manga.core.MangaChapterRef
+import com.veilreader.app.manga.core.MangaDetails
 import com.veilreader.app.manga.core.MangaRef
 import com.veilreader.app.manga.core.MangaSourceDescriptor
 import com.veilreader.app.manga.core.MangaSourceId
@@ -29,6 +31,37 @@ class MangaLibraryRepository internal constructor(
     private val database: VeilDatabase,
     private val library: LocalLibraryRepository
 ) {
+
+    suspend fun importOrSyncSource(
+        descriptor: MangaSourceDescriptor,
+        update: MangaUpdate,
+        makePreferred: Boolean = true
+    ): MangaSyncResult {
+        val details = requireNotNull(update.details) {
+            "A manga must include details before it can enter the Veil library."
+        }
+        require(details.ref == update.ref) {
+            "Manga details do not belong to the requested update."
+        }
+        val book = library.upsertSourceBackedBook(
+            mangaSourceBackedBook(details, descriptor)
+        )
+        return syncSource(
+            bookId = book.id,
+            descriptor = descriptor,
+            sourceRef = update.ref,
+            update = update,
+            makePreferred = makePreferred
+        )
+    }
+
+    suspend fun chapterIdForSourceRef(ref: MangaChapterRef): String? =
+        database.mangaChapterBindings().findByExternalRef(
+            sourceId = ref.manga.sourceId.value,
+            mangaSourceKey = ref.manga.key,
+            sourceChapterKey = ref.key
+        )?.chapterId
+
     suspend fun syncSource(
         bookId: String,
         descriptor: MangaSourceDescriptor,
@@ -261,6 +294,31 @@ class MangaLibraryRepository internal constructor(
             }
         )
     }
+}
+
+
+internal fun mangaSourceBackedBook(
+    details: MangaDetails,
+    descriptor: MangaSourceDescriptor
+): Book {
+    require(details.ref.sourceId == descriptor.id) {
+        "Manga details source does not match the source descriptor."
+    }
+    val stableId = UUID.nameUUIDFromBytes(
+        ("veil-manga\n" + descriptor.id.value + "\n" + details.ref.key)
+            .toByteArray(Charsets.UTF_8)
+    ).toString()
+
+    return Book(
+        id = "manga-$stableId",
+        title = details.title,
+        author = details.authors.joinToString(", ").ifBlank { "Unknown author" },
+        format = BookFormat.COMIC,
+        mediaType = "application/x-veil-manga",
+        language = descriptor.language,
+        collection = "Manga",
+        collections = listOf("Manga")
+    )
 }
 
 internal fun mangaOverallProgression(
