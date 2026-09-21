@@ -22,6 +22,8 @@ import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaRoomRepository
 import com.veilreader.app.manga.library.CanonicalManga
 import com.veilreader.app.manga.library.CanonicalMangaId
+import com.veilreader.app.manga.library.InMemoryMangaProgressStore
+import com.veilreader.app.manga.library.MangaProgressStore
 import com.veilreader.app.manga.library.MangaReadingProgress
 import com.veilreader.app.manga.reader.MangaPageDirection
 import com.veilreader.app.manga.reader.MangaReaderMode
@@ -67,7 +69,7 @@ class MangaReaderVerificationActivity : FragmentActivity() {
                     MangaReaderIntegratedScreen(
                         session = ready.session,
                         loader = ready.loader,
-                        progressStore = ready.repository,
+                        progressStore = ready.progressStore,
                         cacheRoot = ready.cacheRoot,
                         onClose = ::finish,
                         modifier = Modifier.fillMaxSize()
@@ -88,6 +90,7 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         val extreme = intent.getBooleanExtra(EXTRA_EXTREME, false)
         val partial = intent.getBooleanExtra(EXTRA_PARTIAL_OFFLINE, false)
         val resetProgress = intent.getBooleanExtra(EXTRA_RESET_PROGRESS, true)
+        val durableProgress = intent.getBooleanExtra(EXTRA_DURABLE_PROGRESS, true)
         val requestedStartPage = intent.getIntExtra(EXTRA_START_PAGE, 0).coerceIn(0, 2)
 
         val normalFiles = (0..2).map { index ->
@@ -143,11 +146,18 @@ class MangaReaderVerificationActivity : FragmentActivity() {
                 )
             )
         }
+
+        val progressStore: MangaProgressStore = if (durableProgress) {
+            repository
+        } else {
+            InMemoryMangaProgressStore()
+        }
+
         if (resetProgress) {
-            repository.delete(mangaId)
+            progressStore.delete(mangaId)
             if (requestedStartPage > 0) {
                 val chapter = session.initialEntry.route.readerChapter
-                repository.save(
+                progressStore.save(
                     MangaReadingProgress(
                         mangaId = mangaId,
                         chapter = chapter.anchor,
@@ -193,7 +203,7 @@ class MangaReaderVerificationActivity : FragmentActivity() {
             cacheRoot = cacheRoot,
             session = session,
             loader = loader,
-            repository = repository
+            progressStore = progressStore
         )
     }
 
@@ -251,13 +261,14 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         val cacheRoot: File,
         val session: MangaReaderSession,
         val loader: MangaChapterPresentationLoader,
-        val repository: MangaRoomRepository
+        val progressStore: MangaProgressStore
     )
 
     companion object {
         const val EXTRA_EXTREME = "extreme"
         const val EXTRA_PARTIAL_OFFLINE = "partial_offline"
         const val EXTRA_RESET_PROGRESS = "reset_progress"
+        const val EXTRA_DURABLE_PROGRESS = "durable_progress"
         const val EXTRA_START_PAGE = "start_page"
 
         private const val VERIFY_MANGA_ID = "verification-work"
