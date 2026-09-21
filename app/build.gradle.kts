@@ -74,6 +74,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
     implementation("androidx.webkit:webkit:1.17.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+    implementation("com.squareup.okhttp3:okhttp:5.5.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
 
     // Manga image delivery: mature Compose pipeline with request-scoped network headers.
     implementation("io.coil-kt.coil3:coil-compose:3.6.3")

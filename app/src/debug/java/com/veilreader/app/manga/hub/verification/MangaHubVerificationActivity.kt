@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.room.Room
@@ -22,10 +24,13 @@ import com.veilreader.app.manga.hub.MangaHubDiscoverySeed
 import com.veilreader.app.manga.hub.MangaHubScreen
 import com.veilreader.app.manga.reader.presentation.MangaChapterAvailability
 import com.veilreader.app.manga.reader.presentation.MangaChapterPresentationLoader
+import com.veilreader.app.manga.reader.presentation.MangaReaderChapterLoader
 import com.veilreader.app.manga.reader.presentation.MangaPageAsset
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationState
 import com.veilreader.app.manga.reader.presentation.MangaReadyPresentation
+import com.veilreader.app.manga.source.MangaSourceProvider
 import com.veilreader.app.manga.source.SourceExecutionCoordinator
+import com.veilreader.app.manga.source.mangadex.MangaDexSourceProvider
 import com.veilreader.app.manga.source.SourceRegistry
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
@@ -54,30 +59,42 @@ class MangaHubVerificationActivity : FragmentActivity() {
                         CircularProgressIndicator()
                     }
                 } else {
-                    MangaHubScreen(
-                        service = ready.service,
-                        readerLoader = ready.readerLoader,
-                        progressStore = ready.repository,
-                        cacheRoot = ready.cacheRoot,
-                        onClose = ::finish,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .semantics { testTagsAsResourceId = true }
+                    ) {
+                        MangaHubScreen(
+                            service = ready.service,
+                            readerLoader = ready.readerLoader,
+                            progressStore = ready.repository,
+                            cacheRoot = ready.cacheRoot,
+                            onClose = ::finish,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         }
 
         val resetLibrary = savedInstanceState == null &&
             intent.getBooleanExtra(EXTRA_RESET_LIBRARY, true)
+        val sourceMode = intent.getStringExtra(EXTRA_SOURCE_MODE)
+            ?: SOURCE_MODE_FIXTURE
 
         lifecycleScope.launch {
             dependencies = withContext(Dispatchers.IO) {
-                buildDependencies(resetLibrary)
+                buildDependencies(
+                    resetLibrary = resetLibrary,
+                    sourceMode = sourceMode
+                )
             }
         }
     }
 
     private suspend fun buildDependencies(
-        resetLibrary: Boolean
+        resetLibrary: Boolean,
+        sourceMode: String
     ): VerificationDependencies {
         val cacheRoot = File(cacheDir, "manga-hub-verification").apply { mkdirs() }
         val repository = MangaHubVerificationDatabase.repository(applicationContext)
@@ -87,17 +104,51 @@ class MangaHubVerificationActivity : FragmentActivity() {
             repository.clearOfflineIndex()
         }
 
-        val provider = FixtureMangaSourceProvider()
-        val registry = SourceRegistry(listOf(provider))
         val execution = SourceExecutionCoordinator()
+        val fixtureProvider = FixtureMangaSourceProvider()
+        val provider: MangaSourceProvider
+        val discoverySeed: MangaHubDiscoverySeed
+        val loader: MangaChapterPresentationLoader
+
+        when (sourceMode) {
+            SOURCE_MODE_FIXTURE -> {
+                provider = fixtureProvider
+                discoverySeed = MangaHubDiscoverySeed { fixtureProvider.discoveryRefs() }
+                loader = fixtureReaderLoader(cacheRoot)
+            }
+
+            SOURCE_MODE_MANGADEX -> {
+                provider = MangaDexSourceProvider(preferredLanguageTags = listOf("en"))
+                discoverySeed = MangaHubDiscoverySeed { emptyList() }
+                loader = MangaReaderChapterLoader(
+                    offlineIndex = repository,
+                    sourceExecution = execution
+                )
+            }
+
+            else -> error("Unknown Manga Hub verification source mode: " + sourceMode)
+        }
+
+        val registry = SourceRegistry(listOf(provider))
         val service = MangaHubCatalogService(
             sources = registry,
             execution = execution,
             library = repository,
-            discoverySeed = MangaHubDiscoverySeed { provider.discoveryRefs() }
+            discoverySeed = discoverySeed
         )
 
-        val loader = MangaChapterPresentationLoader { request ->
+        return VerificationDependencies(
+            cacheRoot = cacheRoot,
+            repository = repository,
+            service = service,
+            readerLoader = loader
+        )
+    }
+
+    private fun fixtureReaderLoader(
+        cacheRoot: File
+    ): MangaChapterPresentationLoader =
+        MangaChapterPresentationLoader { request ->
             val sourceChapter = requireNotNull(request.sourceChapter) {
                 "Fixture Hub reader expects a source-backed chapter"
             }
@@ -129,14 +180,6 @@ class MangaHubVerificationActivity : FragmentActivity() {
             )
         }
 
-        return VerificationDependencies(
-            cacheRoot = cacheRoot,
-            repository = repository,
-            service = service,
-            readerLoader = loader
-        )
-    }
-
     data class VerificationDependencies(
         val cacheRoot: File,
         val repository: MangaRoomRepository,
@@ -146,6 +189,9 @@ class MangaHubVerificationActivity : FragmentActivity() {
 
     companion object {
         const val EXTRA_RESET_LIBRARY = "reset_library"
+        const val EXTRA_SOURCE_MODE = "source_mode"
+        const val SOURCE_MODE_FIXTURE = "fixture"
+        const val SOURCE_MODE_MANGADEX = "mangadex"
     }
 }
 

@@ -290,21 +290,44 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - JVM service gates cover idempotent add, no title merge, linked-source fallback, provider chapter order and discovery library flags;
    - Android E2E gates cover Discover -> Details -> Add -> Library persistence, Search -> Details, chapter tap -> selected Reader chapter and Read & save -> Reader -> Details.
 
+18. **First live source controlled pilot — MangaDex**
+   - uses Veil's current Source SDK; the older experimental MangaDex branch is reference-only and is not revived;
+   - stable source identity is `mangadex`; language and API host are execution/configuration concerns, not persisted source identity;
+   - official JSON API path only; no HTML scraping or parser dependency is introduced;
+   - read-only capabilities are SEARCH, DETAILS, CHAPTERS and PAGES;
+   - requests are paced conservatively at 4 requests/second with monotonic time;
+   - network cancellation propagates through OkHttp call cancellation;
+   - HTTP failures map into the existing source-failure taxonomy, including bounded Retry-After handling for 429;
+   - search/details map stable MangaDex UUID identity, localized metadata and cover relationships;
+   - chapter feeds keep provider order, preserve scanlation-group credit metadata, request `includeExternalUrl=0`, and defensively drop any external chapter that still appears;
+   - chapter pagination advances by the raw API page size, not the filtered chapter count, preventing loops after external-entry filtering;
+   - at-home page URLs must be HTTPS and preserve contiguous source page order;
+   - public reverse-link resolution accepts only HTTPS MangaDex title URLs;
+   - content-rating requests are limited to safe + suggestive during this pilot;
+   - a 2,000-chapter safety bound prevents unbounded feed retrieval;
+   - fixture compatibility tests cover search, metadata, chapter filtering/order, page URLs, rate limits, reverse links and policy guards without live network dependency;
+   - current reviewed policy guard records required MangaDex/source-group credit and blocks production enablement until a fresh acceptable-use review;
+   - the live provider can be selected only by the debug Manga Hub verification host using `source_mode=mangadex`;
+   - the normal debug fixture remains the default so deterministic Android E2E tests are unchanged;
+   - `VeilApp` still does not register or route to MangaDex, and EPUB/PDF behavior is untouched.
+
 ## Next vertical slices
 
-1. **Execute Android device gate**
-   - run the prepared connectedDebugAndroidTest matrix once the runner/PC build gate is available;
-   - generate Room schema v2 through KSP;
-   - run Reader + Manga Hub E2E instrumentation;
-   - run the manual true process-death and extreme visual-quality protocol;
-   - do not merge the stacked Manga foundations until these gates are green.
+1. **MangaDex live device smoke**
+   - use the debug Hub host only;
+   - validate Search -> Details -> chapter feed -> at-home pages on an Android device;
+   - record API failure/rate-limit behavior without weakening fixture-based gates;
+   - do not make live-network tests mandatory CI tests.
 
-2. **First live source adapter controlled pilot — only after the gate is green**
-   - research source terms, stability and legal/operational constraints first;
-   - implement one provider behind the existing Source SDK;
-   - fixture compatibility tests remain mandatory;
-   - no bulk source catalog, scraper import or source explosion;
-   - validate health, challenge, replacement and offline behavior before adding a second live source.
+2. **MangaDex resilience gate**
+   - exercise source-health observation, rate-limit cooldown, source removal/parser-change handling, offline reopen and replacement boundaries;
+   - verify no challenge loop is introduced for an API source that does not declare browser challenge capability;
+   - verify scanlation/source attribution is adequate before any product exposure.
+
+3. **Production-enablement decision**
+   - re-check current MangaDex acceptable-use terms immediately before any user-facing registration;
+   - keep disabled if the intended distribution/monetization model conflicts with those terms;
+   - do not add a second live source until this first source passes policy, resilience and device gates.
 
 ## Verification state
 
@@ -314,18 +337,20 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Source health/ranking production files compile independently and smoke execution passed with `SOURCE_HEALTH_SMOKE_OK`. The smoke run caught and fixed an initial ranking-evidence bug where zero-penalty NETWORK observations still changed confidence.
 - Browser challenge orchestration compiles independently and smoke execution passed with `BROWSER_CHALLENGE_SMOKE_OK`. A race between session completion and cooldown evaluation was found and fixed before PR creation.
 - Manga reader core compiles independently and smoke execution passed with `MANGA_READER_CORE_SMOKE_OK`: RTL/LTR navigation, zoom bounds, page-count clamp, webtoon restore, tall-image geometry and source-replacement-safe chapter restore.
-- Reader UI reducer/SavedState logic passed local execution smoke with `MANGA_READER_UI_SMOKE_OK`: zoom-safe swipe gating, double-tap reset, boundary effects and fail-closed state restore. Compose sources remain pending full Android/Gradle verification.
+- Reader UI reducer/SavedState logic passed local execution smoke with `MANGA_READER_UI_SMOKE_OK`; the full Android Reader stack has since passed local Gradle/device verification.
 - Reader presentation orchestration passed local execution smoke with `MANGA_READER_PRESENTATION_SMOKE_OK`: complete offline reopen, HYBRID local/remote delivery, partial-offline fallback and safe chapter-boundary blocking.
 - Unnumbered chapter cache identity passed `MANGA_OFFLINE_LOCATOR_SMOKE_OK`: normalized-title identity survives provider-key replacement and distinguishes different specials.
-- Reader image delivery now has unit gates for cache-root confinement, byte-size/hash verification, remote URL/header validation and secret redaction. Full Coil/Compose Android compilation remains pending the Android build gate.
+- Reader image delivery has unit gates for cache-root confinement, byte-size/hash verification, remote URL/header validation and secret redaction, and the Coil/Compose stack now compiles in the verified Android build.
 - Extreme-image strategy has deterministic JVM tests for standard/local-subsampling/remote-preview decisions and dimension-probe planning. Independent pure-Kotlin smoke passed with `EXTREME_IMAGE_STRATEGY_SMOKE_OK`.
-- Reader screen integration now has deterministic unit gates for session identity/source ownership, progress remapping and exclusive gesture ownership. Full ViewModel/Compose/ZoomImage Android verification remains blocked on the Android build gate.
-- Room v2 persistence has an additive v1→v2 migration, DAO/repository instrumentation gates, and backup schema-3 coverage. The generated `app/schemas/.../2.json` remains pending the first successful Android/KSP build; it will not be fabricated manually.
-- Android challenge UI now has process-local host/session/header boundaries plus unit/instrumentation gates for retry handoff, rotation grace, host loss, cancellation and HTTPS origin confinement. Full WebView device execution remains pending the Android build/device gate.
-- Reader device verification harness is now committed: deterministic debug host, isolated Room persistence, Compose instrumentation matrix, extreme local fixture and manual process-death protocol. These tests are prepared but not yet executed because Android runners still fail before their first workflow step.
-- Manga Hub catalog vertical slice is now committed with production source-neutral UI/service boundaries plus a debug-only local provider and Android E2E matrix. It remains unexposed in VeilApp until the Android device gate is green.
+- Reader screen integration has deterministic unit gates for session identity/source ownership, progress remapping and exclusive gesture ownership and now passes the local Android device matrix.
+- Room v2 persistence has an additive v1→v2 migration, DAO/repository instrumentation gates, backup schema-3 coverage and a real KSP-generated tracked `app/schemas/.../2.json`.
+- Android challenge UI has process-local host/session/header boundaries plus unit/instrumentation gates for retry handoff, rotation grace, host loss, cancellation and HTTPS origin confinement; the Android build/device gate now runs locally.
+- Reader device verification harness is committed and executed locally: deterministic debug host, isolated Room persistence, Compose instrumentation matrix, extreme local fixture and true external OS process-death resume verification.
+- Manga Hub catalog vertical slice is committed with production source-neutral UI/service boundaries plus a debug-only local provider and Android E2E matrix. The local device gate is green, but the Hub remains unexposed in VeilApp by deliberate rollout policy.
+- The local Android gate is now green on PC: unit/lint/assemble pass, connected instrumentation is 33/33, and external `am kill` process-death resume returned to the saved Manga page.
+- MangaDex controlled pilot now has a fixture-verified read-only adapter and debug-only Hub selection. Live Android network smoke and fresh pre-production policy review remain required.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
-- Full Android/Gradle verification remains required before merge.
+- Hosted GitHub runners still fail before their first workflow step; local Android/Gradle verification is green, but stacked Manga PRs remain unmerged pending explicit approval and hosted-infrastructure resolution.
 
 ## Quality gates
 
