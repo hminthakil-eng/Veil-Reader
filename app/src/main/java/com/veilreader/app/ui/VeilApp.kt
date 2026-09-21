@@ -33,7 +33,15 @@ import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.manga.MangaAppRuntime
+import com.veilreader.app.manga.MangaAppRuntimeFactory
+import com.veilreader.app.manga.MangaHubScreen
+import com.veilreader.app.manga.MangaHubViewModel
+import com.veilreader.app.manga.MangaReaderTarget
+import com.veilreader.app.manga.reader.MangaReaderRoute
+import com.veilreader.app.manga.reader.MangaReaderViewModel
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
@@ -63,19 +71,28 @@ fun VeilApp(
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
     val readerEngine = remember(context) { ReadiumEngine(context) }
+    val mangaRuntime = remember(context, library) {
+        MangaAppRuntimeFactory.create(context = context, library = library)
+    }
+    val mangaHubViewModel: MangaHubViewModel = viewModel(
+        key = "veil-manga-hub",
+        factory = MangaHubViewModel.factory(mangaRuntime)
+    )
+    val mangaState by mangaHubViewModel.uiState.collectAsStateWithLifecycle()
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
+    val readerOwnsScreen = openedPublication != null || mangaState.readerTarget != null
 
-    // While Readium owns the screen, remove these collectors from composition entirely so
+    // While a reader owns the screen, remove these collectors from composition entirely so
     // progress/game writes cannot invalidate the app shell. StateFlow immediately supplies its
     // latest value when these collectors re-enter after the reader closes.
-    val booksState = if (openedPublication == null) {
+    val booksState = if (!readerOwnsScreen) {
         library.books.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val highlightsState = if (openedPublication == null) {
+    val highlightsState = if (!readerOwnsScreen) {
         library.highlights.collectAsStateWithLifecycle()
     } else {
         null
@@ -104,27 +121,27 @@ fun VeilApp(
             ?.let { library.updateContentFingerprint(book.id, it) }
     }
 
-    val profileState = if (openedPublication == null) {
+    val profileState = if (!readerOwnsScreen) {
         game.profile.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val questsState = if (openedPublication == null) {
+    val questsState = if (!readerOwnsScreen) {
         game.quests.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val dailyGoalState = if (openedPublication == null) {
+    val dailyGoalState = if (!readerOwnsScreen) {
         game.dailyGoalMinutes.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val equippedSigilState = if (openedPublication == null) {
+    val equippedSigilState = if (!readerOwnsScreen) {
         game.equippedSigil.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val castleTitleState = if (openedPublication == null) {
+    val castleTitleState = if (!readerOwnsScreen) {
         game.castleTitle.collectAsStateWithLifecycle()
     } else {
         null
@@ -190,6 +207,11 @@ fun VeilApp(
 
     fun requestOpenBook(book: Book, locatorOverride: String? = null) {
         if (restoring) return
+        if (book.format == BookFormat.COMIC) {
+            routeViewModel.selectTab(VeilTab.MANGA)
+            mangaHubViewModel.resumeBook(book.id)
+            return
+        }
         if (!book.isImported) {
             errorMessage = "This sample entry has no source file. Import an EPUB or PDF from Android Files."
             return
@@ -335,6 +357,15 @@ fun VeilApp(
                 onEditMetadata = library::editMetadata
             )
 
+            VeilTab.MANGA -> MangaHubScreen(
+                state = mangaState,
+                onQueryChange = mangaHubViewModel::setQuery,
+                onSearch = mangaHubViewModel::search,
+                onSelect = mangaHubViewModel::select,
+                onOpenChapter = mangaHubViewModel::openChapter,
+                onBackToResults = mangaHubViewModel::backToResults
+            )
+
             VeilTab.CASTLE -> CastleScreen(
                 profile = requireNotNull(profile),
                 onOpenRoom = { room ->
@@ -380,8 +411,15 @@ fun VeilApp(
         }
     }
 
+    val mangaTarget = mangaState.readerTarget
     val opened = openedPublication
-    if (opened != null) {
+    if (mangaTarget != null) {
+        MangaReaderHost(
+            runtime = mangaRuntime,
+            target = mangaTarget,
+            onClose = mangaHubViewModel::closeReader
+        )
+    } else if (opened != null) {
         ReaderScreen(
             opened = opened,
             library = library,
@@ -501,6 +539,34 @@ fun VeilApp(
             }
         )
     }
+}
+
+
+
+@Composable
+private fun MangaReaderHost(
+    runtime: MangaAppRuntime,
+    target: MangaReaderTarget,
+    onClose: () -> Unit
+) {
+    val mangaReaderViewModel: MangaReaderViewModel = viewModel(
+        key = "manga-reader-" + target.bookId + "-" + target.chapterId,
+        factory = MangaReaderViewModel.factory(
+            mangaLibrary = runtime.library,
+            mangaHub = runtime.hub,
+            offlineStore = runtime.offlineStore
+        )
+    )
+    LaunchedEffect(target.bookId, target.chapterId, mangaReaderViewModel) {
+        mangaReaderViewModel.open(
+            bookId = target.bookId,
+            chapterId = target.chapterId
+        )
+    }
+    MangaReaderRoute(
+        viewModel = mangaReaderViewModel,
+        onClose = onClose
+    )
 }
 
 internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
