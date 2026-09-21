@@ -26,22 +26,16 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Configure existing Android SDK
+      - name: Use provisioned Android SDK
         shell: powershell
         run: |
           $sdk = 'C:\Users\Microsoft\AppData\Local\Android\Sdk'
-          $android = "$sdk\cmdline-tools\latest\bin\android.exe"
-          if (!(Test-Path $android)) { throw "Android CLI missing at $android" }
+          if (!(Test-Path "$sdk\platforms\android-37.0")) { throw "Android API 37 missing" }
+          if (!(Test-Path "$sdk\build-tools\37.0.0")) { throw "Build tools 37.0.0 missing" }
+          if (!(Test-Path "$sdk\platform-tools\adb.exe")) { throw "Platform tools missing" }
           "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "$sdk\platform-tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          "$sdk\cmdline-tools\latest\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          & $android sdk install "platforms/android-37.0"
-          if ($LASTEXITCODE -ne 0) { throw "platform install failed: $LASTEXITCODE" }
-          & $android sdk install "build-tools/37.0.0"
-          if ($LASTEXITCODE -ne 0) { throw "build-tools install failed: $LASTEXITCODE" }
-          & $android sdk install "platform-tools"
-          if ($LASTEXITCODE -ne 0) { throw "platform-tools install failed: $LASTEXITCODE" }
 
       - name: Reading policy regression checks
         shell: powershell
