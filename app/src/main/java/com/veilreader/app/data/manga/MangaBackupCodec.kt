@@ -72,8 +72,9 @@ object MangaBackupCodec {
                     refs[sourceId] = SourceMangaRef(
                         sourceId = sourceId,
                         key = refJson.getString("key"),
-                        publicUrl = refJson.optString("publicUrl")
-                            .takeIf { it.isNotBlank() && it != "null" }
+                        publicUrl = refJson.optNullableString("publicUrl")
+                            ?.trim()
+                            ?.takeIf(String::isNotEmpty)
                     )
                 }
 
