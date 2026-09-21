@@ -23,6 +23,11 @@ data class SourceRequestContext(
             "Source session header names cannot be blank"
         }
     }
+
+    override fun toString(): String =
+        "SourceRequestContext(domain=" + domain +
+            ", attempt=" + attempt +
+            ", sessionHeaders=<redacted>)"
 }
 
 /**
