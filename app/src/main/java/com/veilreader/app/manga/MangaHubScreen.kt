@@ -51,6 +51,8 @@ fun MangaHubScreen(
             chapters = state.chapters,
             onOpenChapter = onOpenChapter,
             onBack = onBackToResults,
+            openingChapter = state.openingChapter,
+            errorMessage = state.errorMessage,
             modifier = modifier
         )
         return
@@ -207,6 +209,8 @@ private fun MangaDetailsPane(
     chapters: List<MangaChapter>,
     onOpenChapter: (MangaChapter) -> Unit,
     onBack: () -> Unit,
+    openingChapter: Boolean,
+    errorMessage: String?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -271,6 +275,26 @@ private fun MangaDetailsPane(
             )
         }
 
+        errorMessage?.let { message ->
+            Text(
+                text = message,
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(top = 14.dp)
+            )
+        }
+
+        if (openingChapter) {
+            Row(
+                modifier = Modifier.padding(top = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                Text("Preparing chapter…", style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+
         Text(
             text = "Chapters · " + chapters.size,
             style = MaterialTheme.typography.titleMedium,
@@ -292,7 +316,7 @@ private fun MangaDetailsPane(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onOpenChapter(chapter) }
+                            .clickable(enabled = !openingChapter) { onOpenChapter(chapter) }
                             .padding(vertical = 14.dp, horizontal = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
