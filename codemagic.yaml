@@ -11,6 +11,9 @@ workflows:
         - pattern: 'integration/reader-manga-*'
           include: true
           source: true
+        - pattern: 'integration/manga-*'
+          include: true
+          source: true
         - pattern: 'fix/manga-*'
           include: true
           source: true
