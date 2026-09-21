@@ -135,9 +135,7 @@ fun MangaReaderIntegratedScreen(
                 partialOfflineContent = {
                     Text(
                         "Offline preview · reconnect to load the rest",
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(12.dp)
+                        modifier = Modifier.padding(12.dp)
                     )
                 },
                 pageContent = { asset, pageModifier ->
@@ -209,11 +207,7 @@ private fun MangaAdaptivePage(
 
     val desiredOwner = when (val current = planState) {
         is AdaptivePageState.Ready ->
-            if (current.plan.decision.strategy == MangaImageDeliveryStrategy.LOCAL_SUBSAMPLING) {
-                MangaReaderGestureOwner.PAGE_RENDERER
-            } else {
-                MangaReaderGestureOwner.VEIL_READER
-            }
+            MangaReaderGestureOwnershipPolicy.ownerFor(current.plan.decision.strategy)
         AdaptivePageState.Loading,
         is AdaptivePageState.Error -> MangaReaderGestureOwner.VEIL_READER
     }
