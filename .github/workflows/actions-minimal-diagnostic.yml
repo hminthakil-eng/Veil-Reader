@@ -8,9 +8,12 @@ on:
 
 jobs:
   ping:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, Windows, X64, veil-reader]
+    timeout-minutes: 5
     steps:
       - name: Runner alive
+        shell: powershell
         run: |
-          echo "runner-ok"
-          uname -a
+          Write-Output "runner-ok"
+          Write-Output $env:COMPUTERNAME
+          Write-Output $PSVersionTable.PSVersion
