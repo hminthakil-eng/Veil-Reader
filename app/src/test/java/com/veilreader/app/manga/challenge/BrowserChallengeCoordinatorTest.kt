@@ -6,6 +6,7 @@ import com.veilreader.app.manga.source.SourceFailureKind
 import com.veilreader.app.manga.source.SourceId
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -237,6 +238,39 @@ class BrowserChallengeCoordinatorTest {
             assertEquals(1, launches.get())
             assertEquals(1, snapshot.ineffectiveSuccessCount)
             assertEquals(ChallengeUiResult.FAILED, snapshot.lastResult)
+        } finally {
+            scope.cancel()
+        }
+    }
+
+    @Test
+    fun cancelledUiDriverCompletesSessionAndEntersCooldown() = runBlocking {
+        val launches = AtomicInteger()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        val cooldowns = ChallengeCooldownRegistry()
+        val descriptor = source("drivercancel.source")
+        val key = ChallengeKey(descriptor.id, "drivercancel.example")
+        try {
+            val coordinator = BrowserChallengeCoordinator(
+                uiDriver = object : ChallengeUiDriver {
+                    override suspend fun solve(request: ChallengeRequest): ChallengeUiResult {
+                        launches.incrementAndGet()
+                        throw CancellationException("host disappeared")
+                    }
+                },
+                launchPolicy = ChallengeLaunchPolicy { true },
+                cooldowns = cooldowns,
+                sessionScope = scope
+            )
+
+            assertFalse(
+                coordinator.resolve(descriptor, key.domain, challengeFailure())
+            )
+            assertEquals(1, launches.get())
+            assertEquals(
+                ChallengeUiResult.CANCELLED,
+                cooldowns.snapshot(key).lastResult
+            )
         } finally {
             scope.cancel()
         }
