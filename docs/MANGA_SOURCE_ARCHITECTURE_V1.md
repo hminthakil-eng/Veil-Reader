@@ -120,6 +120,16 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - OPEN circuits excluded from automatic best-source selection;
    - optional execution observer so Source SDK behavior is unchanged when health tracking is disabled.
 
+7. **Browser challenge orchestration foundation**
+   - one process-wide interactive challenge session at a time;
+   - background callers can join an existing session but cannot launch UI;
+   - callers for another source/domain wait for the global slot, then re-evaluate;
+   - configurable success-recurrence and failure cooldown windows;
+   - repeated challenge shortly after SOLVED is classified as ineffective and does not reopen UI;
+   - cancelled/failed UI sessions complete deterministically and release waiters;
+   - session lifetime belongs to an injected application scope;
+   - no Activity/WebView references cross the challenge boundary.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -128,12 +138,12 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - versioned schema migration + backup compatibility;
    - only land after full Android/Gradle verification is available.
 
-2. **Browser challenge adapter implementation**
-   - Android lifecycle-safe WebView boundary;
-   - one global solver session;
-   - background callers wait but cannot start challenge UI;
-   - cooldown/ineffective-challenge detection;
-   - no source/parser-owned Activity references.
+2. **Android challenge UI driver**
+   - lifecycle-safe WebView host behind `ChallengeUiDriver`;
+   - cookie/user-agent handoff scoped to the source/domain;
+   - foreground host registry without Activity retention;
+   - process-death and host-loss recovery;
+   - instrumentation coverage for rotation/background/close.
 
 3. **Reader vertical slice**
    - paged manga;
@@ -149,6 +159,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Local smoke execution passed canonical identity preservation, progress page remapping, cache-path safety and ambiguous chapter rejection.
 - Source replacement production files compile independently and smoke execution passed with `SOURCE_REPLACEMENT_SMOKE_OK`: strong candidate selection, equal-candidate ambiguity guard and READY-only finalization.
 - Source health/ranking production files compile independently and smoke execution passed with `SOURCE_HEALTH_SMOKE_OK`. The smoke run caught and fixed an initial ranking-evidence bug where zero-penalty NETWORK observations still changed confidence.
+- Browser challenge orchestration compiles independently and smoke execution passed with `BROWSER_CHALLENGE_SMOKE_OK`. A race between session completion and cooldown evaluation was found and fixed before PR creation.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
