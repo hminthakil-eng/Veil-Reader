@@ -14,22 +14,27 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/** Veil Reader visual system: quiet reading utility wrapped in a mysterious world. */
+/**
+ * Compatibility aliases for older feature code.
+ *
+ * New UI should prefer MaterialTheme semantic roles and VeilIdentity foundations over direct
+ * palette reads.
+ */
 object VeilPalette {
-    val Ink = Color(0xFF0B0A0F)
-    val Obsidian = Color(0xFF121117)
-    val Slate = Color(0xFF1B1921)
-    val RaisedSlate = Color(0xFF24212B)
-    val Moon = Color(0xFFF5F0F7)
-    val Mist = Color(0xFFCFC6D3)
-    val Amethyst = Color(0xFFD5BCFF)
-    val DeepAmethyst = Color(0xFF4C2D6D)
-    val OldGold = Color(0xFFE5C97B)
-    val Jade = Color(0xFF8EDBC7)
-    val AshLine = Color(0xFF514A58)
-    val Parchment = Color(0xFFF6F1EA)
-    val WarmPaper = Color(0xFFFFFBF6)
-    val InkOnPaper = Color(0xFF252128)
+    val Ink = VeilIdentityColor.Obsidian
+    val Obsidian = VeilIdentityColor.Ink
+    val Slate = VeilIdentityColor.Slate
+    val RaisedSlate = VeilIdentityColor.RaisedSlate
+    val Moon = VeilIdentityColor.Ivory
+    val Mist = VeilIdentityColor.MistOnDark
+    val Amethyst = VeilIdentityColor.Moonlight
+    val DeepAmethyst = VeilIdentityColor.Ink
+    val OldGold = VeilIdentityColor.AgedBrass
+    val Jade = VeilIdentityColor.Moonlight
+    val AshLine = VeilIdentityColor.RuleDark
+    val Parchment = VeilIdentityColor.Ivory
+    val WarmPaper = VeilIdentityColor.WarmPaper
+    val InkOnPaper = VeilIdentityColor.InkOnPaper
 }
 
 object VeilSpacing {
@@ -42,54 +47,68 @@ object VeilSpacing {
     val xxl = 32.dp
 }
 
+/** Compatibility motion names; new interaction work should use VeilMotionGrammar directly. */
 object VeilMotion {
-    const val QUICK_MS = 150
-    const val STANDARD_MS = 250
-    const val CEREMONIAL_MS = 480
+    const val QUICK_MS = VeilMotionGrammar.RESPONSE_MS
+    const val STANDARD_MS = VeilMotionGrammar.CONTINUITY_MS
+    const val CEREMONIAL_MS = VeilMotionGrammar.THRESHOLD_MS
 }
 
 private val VeilDarkColors = darkColorScheme(
-    primary = VeilPalette.Amethyst,
-    onPrimary = Color(0xFF251538),
-    primaryContainer = Color(0xFF372349),
-    onPrimaryContainer = Color(0xFFF0E2FF),
-    secondary = VeilPalette.OldGold,
-    onSecondary = Color(0xFF342906),
-    secondaryContainer = Color(0xFF443712),
-    onSecondaryContainer = Color(0xFFFFEBB2),
-    tertiary = VeilPalette.Jade,
-    onTertiary = Color(0xFF07342A),
-    background = VeilPalette.Ink,
-    onBackground = VeilPalette.Moon,
-    surface = VeilPalette.Obsidian,
-    onSurface = VeilPalette.Moon,
-    surfaceVariant = VeilPalette.Slate,
-    onSurfaceVariant = VeilPalette.Mist,
-    outline = VeilPalette.AshLine,
-    outlineVariant = Color(0xFF332E39),
+    // Moonlight is used as the digital/futuristic focus signal.
+    primary = VeilIdentityColor.Moonlight,
+    onPrimary = VeilIdentityColor.Obsidian,
+    primaryContainer = VeilIdentityColor.Slate,
+    onPrimaryContainer = VeilIdentityColor.Moonlight,
+
+    // Brass is historical/material emphasis, not a blanket "luxury" color.
+    secondary = VeilIdentityColor.AgedBrass,
+    onSecondary = VeilIdentityColor.Obsidian,
+    secondaryContainer = VeilIdentityColor.RaisedSlate,
+    onSecondaryContainer = VeilIdentityColor.Ivory,
+
+    tertiary = VeilIdentityColor.MistOnDark,
+    onTertiary = VeilIdentityColor.Obsidian,
+
+    background = VeilIdentityColor.Obsidian,
+    onBackground = VeilIdentityColor.Ivory,
+    surface = VeilIdentityColor.Ink,
+    onSurface = VeilIdentityColor.Ivory,
+    surfaceVariant = VeilIdentityColor.Slate,
+    onSurfaceVariant = VeilIdentityColor.MistOnDark,
+    outline = VeilIdentityColor.RuleDark,
+    outlineVariant = Color(0xFF2C313A),
+
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005)
 )
 
 private val VeilLightColors = lightColorScheme(
-    primary = Color(0xFF68438D),
+    // Light Veil is editorial, not simply the dark palette inverted.
+    primary = Color(0xFF333944),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFEBD9FF),
-    onPrimaryContainer = Color(0xFF28113F),
-    secondary = Color(0xFF755D12),
+    primaryContainer = Color(0xFFE5EAF0),
+    onPrimaryContainer = Color(0xFF181C22),
+
+    secondary = VeilIdentityColor.DeepBrass,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFE8A7),
-    onSecondaryContainer = Color(0xFF251C00),
-    tertiary = Color(0xFF276D5E),
+    secondaryContainer = Color(0xFFE9DFC8),
+    onSecondaryContainer = Color(0xFF2A2114),
+
+    tertiary = Color(0xFF536979),
     onTertiary = Color.White,
-    background = VeilPalette.Parchment,
-    onBackground = VeilPalette.InkOnPaper,
-    surface = VeilPalette.WarmPaper,
-    onSurface = VeilPalette.InkOnPaper,
-    surfaceVariant = Color(0xFFECE6ED),
-    onSurfaceVariant = Color(0xFF514A54),
-    outline = Color(0xFF807781),
-    outlineVariant = Color(0xFFD3CAD5)
+
+    background = VeilIdentityColor.Ivory,
+    onBackground = VeilIdentityColor.InkOnPaper,
+    surface = VeilIdentityColor.WarmPaper,
+    onSurface = VeilIdentityColor.InkOnPaper,
+    surfaceVariant = Color(0xFFEDE8DE),
+    onSurfaceVariant = VeilIdentityColor.MistOnLight,
+    outline = Color(0xFF857C70),
+    outlineVariant = VeilIdentityColor.RuleLight,
+
+    error = Color(0xFFBA1A1A),
+    onError = Color.White
 )
 
 private val VeilTypography = Typography(
@@ -167,12 +186,16 @@ private val VeilTypography = Typography(
     )
 )
 
+/**
+ * Geometry intentionally avoids "card soup". Larger rounding remains available only through
+ * explicit feature components rather than becoming the universal default.
+ */
 private val VeilShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(VeilRadius.Precision),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(VeilRadius.Control),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(VeilRadius.Panel),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(VeilRadius.Feature),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
 )
 
 @Composable
