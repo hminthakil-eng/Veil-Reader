@@ -72,8 +72,8 @@ workflows:
           python3 tools/test_performance_delta.py
           python3 tools/test_performance_dashboard.py
 
-      - name: Unit tests
-        script: ./gradlew :app:testDebugUnitTest --stacktrace
+      - name: Unit tests + Manga RC regression contract
+        script: sh tools/test-manga-rc.sh
         test_report: app/build/test-results/**/*.xml
 
       - name: Verify committed Room schema
