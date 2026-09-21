@@ -10,14 +10,14 @@ permissions:
   contents: read
 
 jobs:
-  storage-instrumentation:
+  reader-rc:
     runs-on: [self-hosted, Windows, X64, veil-reader]
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
-      - name: Checkout main
+      - name: Checkout Reader RC
         uses: actions/checkout@v7
         with:
-          ref: main
+          ref: integration/reader-rc-v2
           clean: true
 
       - name: Set up JDK 17
@@ -41,26 +41,36 @@ jobs:
         with:
           gradle-version: "9.6.0"
 
-      - name: Verify committed Room schema baseline
+      - name: Reading policy regression checks
         shell: powershell
-        run: |
-          git diff --exit-code -- app/schemas/
-          if ($LASTEXITCODE -ne 0) { throw "Room schema baseline is dirty" }
+        run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
 
-      - name: Compile Android instrumentation tests
+      - name: Unit tests
+        shell: powershell
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Compile instrumentation tests
         shell: powershell
         run: gradle :app:compileDebugAndroidTestKotlin --stacktrace
+
+      - name: Android lint
+        shell: powershell
+        run: gradle :app:lintDebug --stacktrace
+
+      - name: Build debug APK
+        shell: powershell
+        run: gradle :app:assembleDebug --stacktrace
 
       - name: Verify API 35 emulator
         shell: powershell
         run: |
           $adb = 'C:\Users\Microsoft\AppData\Local\Android\Sdk\platform-tools\adb.exe'
           & $adb -s emulator-5554 wait-for-device
-          $sdk = (& $adb -s emulator-5554 shell getprop ro.build.version.sdk).Trim()
+          $api = (& $adb -s emulator-5554 shell getprop ro.build.version.sdk).Trim()
           $boot = (& $adb -s emulator-5554 shell getprop sys.boot_completed).Trim()
-          if ($sdk -ne '35') { throw "Expected API 35 emulator, got $sdk" }
-          if ($boot -ne '1') { throw "Emulator is not boot complete" }
+          if ($api -ne '35') { throw "Expected API 35, got $api" }
+          if ($boot -ne '1') { throw "Emulator not booted" }
 
-      - name: Run storage instrumentation
+      - name: Connected instrumentation
         shell: powershell
         run: gradle :app:connectedDebugAndroidTest --stacktrace
