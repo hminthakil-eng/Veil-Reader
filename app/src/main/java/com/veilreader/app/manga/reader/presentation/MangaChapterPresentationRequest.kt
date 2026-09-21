@@ -1,5 +1,6 @@
 package com.veilreader.app.manga.reader.presentation
 
+import com.veilreader.app.manga.library.MangaOfflineChapterLocator
 import com.veilreader.app.manga.library.OfflineChapterId
 import com.veilreader.app.manga.reader.MangaReaderChapterRef
 import com.veilreader.app.manga.source.MangaSourceProvider
@@ -23,11 +24,9 @@ data class MangaChapterPresentationRequest(
 
     val canUseNetwork: Boolean get() = provider != null && sourceChapter != null
 
-    fun offlineChapterId(): OfflineChapterId = OfflineChapterId(
-        mangaId = chapter.mangaId,
-        languageTag = chapter.anchor.languageTag,
-        volume = chapter.anchor.volume,
-        number = chapter.anchor.number,
-        discriminator = "main"
-    )
+    fun offlineChapterIdOrNull(): OfflineChapterId? =
+        MangaOfflineChapterLocator.idFor(
+            mangaId = chapter.mangaId,
+            anchor = chapter.anchor
+        )
 }
