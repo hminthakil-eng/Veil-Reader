@@ -64,6 +64,19 @@ data class MangaChapterWindow(
     val nextChapterId: String?
 )
 
+internal fun mangaChapterWindow(
+    orderedChapterIds: List<String>,
+    currentChapterId: String
+): MangaChapterWindow {
+    val position = orderedChapterIds.indexOf(currentChapterId)
+    require(position >= 0) { "Manga chapter does not belong to the requested book." }
+    return MangaChapterWindow(
+        currentChapterId = currentChapterId,
+        previousChapterId = orderedChapterIds.getOrNull(position - 1),
+        nextChapterId = orderedChapterIds.getOrNull(position + 1)
+    )
+}
+
 enum class MangaChapterTransitionDirection {
     PREVIOUS,
     NEXT
