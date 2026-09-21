@@ -36,7 +36,8 @@ class AndroidChallengeSessionStore(
 ) {
     private data class Active(
         var session: AndroidChallengeBrowserSession,
-        val result: CompletableDeferred<AndroidChallengeBrowserResult>
+        val result: CompletableDeferred<AndroidChallengeBrowserResult>,
+        var completed: Boolean = false
     )
 
     private var active: Active? = null
@@ -58,16 +59,21 @@ class AndroidChallengeSessionStore(
     }
 
     suspend fun await(id: String): AndroidChallengeBrowserResult {
-        val deferred = synchronized(this) {
-            active?.takeIf { it.session.id == id }?.result
+        val current = synchronized(this) {
+            active?.takeIf { it.session.id == id }
         } ?: return AndroidChallengeBrowserResult(ChallengeUiResult.CANCELLED)
-        return deferred.await()
+
+        val value = current.result.await()
+        synchronized(this) {
+            if (active === current) active = null
+        }
+        return value
     }
 
     @Synchronized
     fun saveWebViewState(id: String, state: Bundle?) {
         val current = active ?: return
-        if (current.session.id != id) return
+        if (current.session.id != id || current.completed) return
         current.session = current.session.copy(
             restoredWebViewState = state?.let(::Bundle)
         )
@@ -77,8 +83,8 @@ class AndroidChallengeSessionStore(
     @Synchronized
     fun complete(id: String, result: AndroidChallengeBrowserResult): Boolean {
         val current = active ?: return false
-        if (current.session.id != id) return false
-        active = null
+        if (current.session.id != id || current.completed) return false
+        current.completed = true
         _session.value = null
         current.result.complete(result)
         return true
@@ -87,12 +93,13 @@ class AndroidChallengeSessionStore(
     @Synchronized
     fun cancelActive(): Boolean {
         val current = active ?: return false
-        active = null
+        if (current.completed) return false
+        current.completed = true
         _session.value = null
         current.result.complete(AndroidChallengeBrowserResult(ChallengeUiResult.CANCELLED))
         return true
     }
 
     @Synchronized
-    fun activeId(): String? = active?.session?.id
+    fun activeId(): String? = active?.takeUnless { it.completed }?.session?.id
 }
