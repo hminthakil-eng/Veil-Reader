@@ -190,6 +190,7 @@ class MangaDexSourceProvider internal constructor(
                 .addQueryParameter("limit", CHAPTER_PAGE_SIZE.toString())
                 .addQueryParameter("offset", offset.toString())
                 .addQueryParameter("includes[]", "scanlation_group")
+                .addQueryParameter("includeExternalUrl", "0")
                 .addQueryParameter("order[volume]", "asc")
                 .addQueryParameter("order[chapter]", "asc")
                 .also(::addLanguageFilters)
