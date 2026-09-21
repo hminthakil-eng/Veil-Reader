@@ -31,6 +31,7 @@ fun MangaReaderRoute(
     modifier: Modifier = Modifier
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val failure = state.failure
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(lifecycleOwner, viewModel) {
@@ -53,7 +54,7 @@ fun MangaReaderRoute(
             }
         }
 
-        state.failure != null && state.pages.isEmpty() -> {
+        failure != null && state.pages.isEmpty() -> {
             Column(
                 modifier = modifier
                     .fillMaxSize()
@@ -61,13 +62,13 @@ fun MangaReaderRoute(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(state.failure.message)
-                if (state.failure.retryable) {
+                Text(failure.message)
+                if (failure.retryable) {
                     TextButton(onClick = viewModel::retry) {
                         Text("Retry")
                     }
                 }
-                if (state.failure.recoveryChapterId != null) {
+                if (failure.recoveryChapterId != null) {
                     TextButton(onClick = viewModel::recoverNearbyChapter) {
                         Text("Open nearby chapter")
                     }
