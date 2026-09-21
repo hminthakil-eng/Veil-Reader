@@ -23,7 +23,7 @@ import com.veilreader.app.manga.gateway.suwayomi.SuwayomiServerConfig
 import com.veilreader.app.manga.gateway.suwayomi.SuwayomiServerId
 import com.veilreader.app.manga.net.MangaHttpClient
 import com.veilreader.app.manga.net.MangaHttpResponse
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -95,7 +95,7 @@ class MangaRuntimeSourceAssemblyTest {
     }
 
     @Test
-    fun catalogWithSuwayomi_keepsHealthyGatewayProvidersAndReturnsFailures() = runTest {
+    fun catalogWithSuwayomi_keepsHealthyGatewayProvidersAndReturnsFailures() = runBlocking {
         val first = runtimeServer("first")
         val second = runtimeServer("second")
         val gateway = FakeSource("suwayomi.first.1")
