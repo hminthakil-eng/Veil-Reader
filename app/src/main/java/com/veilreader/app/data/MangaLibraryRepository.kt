@@ -210,6 +210,39 @@ class MangaLibraryRepository internal constructor(
             ?.id
             ?: database.mangaChapters().listForBook(bookId).firstOrNull()?.id
 
+    /**
+     * Finds the nearest chapter that still has a usable source binding without deleting history.
+     *
+     * A source refresh may remove or invalidate one chapter while Veil keeps its stable local
+     * chapter/progress record. Recovery deliberately preserves that record and moves only when the
+     * reader explicitly asks to recover.
+     */
+    suspend fun recoveryChapterId(
+        bookId: String,
+        unavailableChapterId: String
+    ): String? {
+        val chapters = database.mangaChapters().listForBook(bookId)
+        if (chapters.isEmpty()) return null
+
+        val unavailableIndex = chapters.indexOfFirst { it.id == unavailableChapterId }
+        val candidateIndices = if (unavailableIndex >= 0) {
+            chapters.indices
+                .filter { it != unavailableIndex }
+                .sortedWith(
+                    compareBy<Int> { kotlin.math.abs(it - unavailableIndex) }
+                        .thenBy { it }
+                )
+        } else {
+            chapters.indices.toList()
+        }
+
+        for (index in candidateIndices) {
+            val candidateId = chapters[index].id
+            if (chapterRefForReading(candidateId) != null) return candidateId
+        }
+        return null
+    }
+
     suspend fun preferredSourceRef(bookId: String): MangaRef? =
         database.mangaSourceBindings()
             .listForBook(bookId)
