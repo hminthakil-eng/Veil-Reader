@@ -74,6 +74,20 @@ data class MangaChapterTransition(
     val targetChapterId: String
 )
 
+object MangaRendererSafety {
+    const val PAGED_PREFETCH_RADIUS = 1
+    const val PAGED_BEYOND_VIEWPORT = 1
+    const val WEBTOON_PREFETCH_RADIUS = 2
+
+    fun prefetchRadius(mode: MangaReaderMode): Int = when (mode) {
+        MangaReaderMode.PAGED -> PAGED_PREFETCH_RADIUS
+        MangaReaderMode.WEBTOON -> WEBTOON_PREFETCH_RADIUS
+    }
+
+    fun beyondViewportPageCount(totalPages: Int): Int =
+        minOf(PAGED_BEYOND_VIEWPORT, (totalPages - 1).coerceAtLeast(0))
+}
+
 object MangaPrefetchWindow {
     fun indices(
         center: Int,
