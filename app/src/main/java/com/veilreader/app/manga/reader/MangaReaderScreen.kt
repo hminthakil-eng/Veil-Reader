@@ -66,7 +66,7 @@ fun MangaReaderScreen(
 
     LaunchedEffect(anchorPage, orderedPages) {
         MangaPrefetchWindow.indices(anchorPage, orderedPages.size).forEach { pageIndex ->
-            imageLoader.enqueue(imageRequest(context, orderedPages[pageIndex].image))
+            imageLoader.enqueue(mangaImageRequest(context, orderedPages[pageIndex].image))
         }
     }
 
@@ -105,7 +105,7 @@ fun MangaReaderScreen(
                     key = { page -> orderedPages[page].index }
                 ) { page ->
                     AsyncImage(
-                        model = imageRequest(context, orderedPages[page].image),
+                        model = mangaImageRequest(context, orderedPages[page].image),
                         contentDescription = "Manga page ${page + 1} of ${orderedPages.size}",
                         contentScale = ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
@@ -136,7 +136,7 @@ fun MangaReaderScreen(
                         key = { _, page -> page.index }
                     ) { index, page ->
                         AsyncImage(
-                            model = imageRequest(context, page.image),
+                            model = mangaImageRequest(context, page.image),
                             contentDescription = "Manga page ${index + 1} of ${orderedPages.size}",
                             contentScale = ContentScale.FillWidth,
                             modifier = Modifier
@@ -202,7 +202,7 @@ private fun MangaReaderControls(
     }
 }
 
-private fun imageRequest(
+internal fun mangaImageRequest(
     context: Context,
     resource: MangaResourceRequest
 ): ImageRequest {
