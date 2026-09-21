@@ -43,6 +43,15 @@ if ($Serial) {
 }
 
 $Serial = $selected.Serial
+$State = ((& $Adb -s $Serial get-state 2>$null | Out-String).Trim())
+if ($State -ne 'device') { throw ('Device changed state to: ' + $State) }
+
+$Dirty = @(git status --porcelain)
+if ($LASTEXITCODE -ne 0) { throw 'git status failed.' }
+if ($Dirty.Count -gt 0) {
+    throw 'Refusing renderer evidence from a dirty worktree; commit or stash changes first.'
+}
+
 $AppId = 'com.veilreader.app'
 $Commit = (git rev-parse HEAD).Trim()
 $Timestamp = Get-Date -Format 'yyyyMMdd-HHmmss'
@@ -55,6 +64,10 @@ function AdbShell([string[]]$ShellArgs) {
 }
 
 $AppPid = ((AdbShell @('pidof',$AppId)) | Out-String).Trim()
+if ($Phase -ne 'snapshot' -and -not $AppPid) {
+    throw ('Veil Reader is not running; cannot capture ' + $Phase + ' renderer evidence.')
+}
+
 $Device = [ordered]@{
     serial = $Serial
     manufacturer = ((AdbShell @('getprop','ro.product.manufacturer')) | Out-String).Trim()
