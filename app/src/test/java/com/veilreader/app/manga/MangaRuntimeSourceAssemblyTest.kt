@@ -16,8 +16,14 @@ import com.veilreader.app.manga.core.MangaSourceProvider
 import com.veilreader.app.manga.core.MangaSummary
 import com.veilreader.app.manga.core.MangaUpdate
 import com.veilreader.app.manga.core.MangaUpdateOptions
+import com.veilreader.app.manga.gateway.suwayomi.SuwayomiProviderDiscoverer
+import com.veilreader.app.manga.gateway.suwayomi.SuwayomiRuntimeDiscovery
+import com.veilreader.app.manga.gateway.suwayomi.SuwayomiRuntimeServer
+import com.veilreader.app.manga.gateway.suwayomi.SuwayomiServerConfig
+import com.veilreader.app.manga.gateway.suwayomi.SuwayomiServerId
 import com.veilreader.app.manga.net.MangaHttpClient
 import com.veilreader.app.manga.net.MangaHttpResponse
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -87,6 +93,49 @@ class MangaRuntimeSourceAssemblyTest {
         assertTrue(entries.getValue("local.one").enabled)
         assertFalse(entries.getValue("gateway.one").enabled)
     }
+
+    @Test
+    fun catalogWithSuwayomi_keepsHealthyGatewayProvidersAndReturnsFailures() = runTest {
+        val first = runtimeServer("first")
+        val second = runtimeServer("second")
+        val gateway = FakeSource("suwayomi.first.1")
+        val discovery = SuwayomiRuntimeDiscovery(
+            SuwayomiProviderDiscoverer { server ->
+                if (server.config.serverId == first.config.serverId) listOf(gateway)
+                else error("offline")
+            }
+        )
+
+        val result = MangaRuntimeSourceAssembly.catalogWithSuwayomi(
+            config = MangaRuntimeSourceConfig(
+                policy = MangaFeaturePolicy(
+                    hubEnabled = true,
+                    gatewaySourcesEnabled = true,
+                    explicitlyEnabledSources = setOf(gateway.descriptor.id)
+                )
+            ),
+            suwayomiServers = listOf(first, second),
+            suwayomiDiscovery = discovery,
+            directHttpClient = MangaHttpClient { _, _ ->
+                MangaHttpResponse(code = 200, body = "{}")
+            }
+        )
+
+        assertEquals(
+            listOf("suwayomi.first.1"),
+            result.catalog.enabledProviders().map { it.descriptor.id.value }
+        )
+        assertEquals(listOf("second"), result.gatewayFailures.map { it.serverId.value })
+        assertEquals("offline", result.gatewayFailures.single().error.message)
+    }
+
+    private fun runtimeServer(id: String): SuwayomiRuntimeServer =
+        SuwayomiRuntimeServer(
+            config = SuwayomiServerConfig(
+                serverId = SuwayomiServerId(id),
+                origin = "https://$id.example"
+            )
+        )
 
     private class FakeSource(id: String) : MangaSourceProvider {
         override val descriptor = MangaSourceDescriptor(
