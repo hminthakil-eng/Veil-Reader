@@ -15,7 +15,7 @@ import com.veilreader.app.manga.core.MangaSummary
 import com.veilreader.app.manga.core.MangaUpdate
 import com.veilreader.app.manga.core.MangaUpdateOptions
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -23,7 +23,7 @@ import org.junit.Test
 
 class SuwayomiRuntimeDiscoveryTest {
     @Test
-    fun discover_keepsHealthyServersWhenAnotherServerFails() = runTest {
+    fun discover_keepsHealthyServersWhenAnotherServerFails() = runBlocking {
         val first = server("first")
         val second = server("second")
         val expected = FakeSource("suwayomi.first.1")
@@ -46,7 +46,7 @@ class SuwayomiRuntimeDiscoveryTest {
     }
 
     @Test
-    fun discover_rejectsDuplicateServerIdsBeforeNetworkWork() = runTest {
+    fun discover_rejectsDuplicateServerIdsBeforeNetworkWork() = runBlocking {
         var calls = 0
         val discovery = SuwayomiRuntimeDiscovery(
             SuwayomiProviderDiscoverer {
@@ -64,7 +64,7 @@ class SuwayomiRuntimeDiscoveryTest {
     }
 
     @Test
-    fun discover_doesNotSwallowCancellation() = runTest {
+    fun discover_doesNotSwallowCancellation() = runBlocking {
         val expected = CancellationException("stop")
         val discovery = SuwayomiRuntimeDiscovery(
             SuwayomiProviderDiscoverer { throw expected }
