@@ -196,4 +196,50 @@ class MangaReaderModelTest {
         assertEquals(null, transition.nextChapterId)
     }
 
+    @Test(expected = com.veilreader.app.manga.core.MangaSourceException.NotFound::class)
+    fun pageValidation_rejectsEmptyChapter() {
+        validateMangaChapterPages(emptyList())
+    }
+
+    @Test(expected = com.veilreader.app.manga.core.MangaSourceException.ParseFailure::class)
+    fun pageValidation_rejectsDuplicatePageIndices() {
+        validateMangaChapterPages(
+            listOf(
+                MangaPage(0, MangaResourceRequest("https://example.invalid/a.jpg")),
+                MangaPage(0, MangaResourceRequest("https://example.invalid/b.jpg"))
+            )
+        )
+    }
+
+    @Test
+    fun offlineOnlyResume_doesNotTouchFailingRemoteSource() = runBlocking {
+        val manga = MangaRef(MangaSourceId("test"), "series")
+        val ref = MangaChapterRef(manga, "offline-chapter")
+        val offlinePages = listOf(
+            MangaPage(0, MangaResourceRequest("file:///offline/00000.img")),
+            MangaPage(1, MangaResourceRequest("file:///offline/00001.img"))
+        )
+        var remoteCalls = 0
+        val store = object : MangaOfflineStore {
+            override suspend fun isChapterAvailable(ref: MangaChapterRef): Boolean = true
+            override suspend fun loadChapter(ref: MangaChapterRef): List<MangaPage>? = offlinePages
+            override suspend fun saveChapter(ref: MangaChapterRef, pages: List<MangaPage>) = Unit
+            override suspend fun removeChapter(ref: MangaChapterRef) = Unit
+        }
+
+        val pages = validateMangaChapterPages(
+            resolveMangaChapterPages(
+                ref = ref,
+                cached = null,
+                offlineStore = store
+            ) {
+                remoteCalls += 1
+                throw com.veilreader.app.manga.core.MangaSourceException.NetworkFailure()
+            }
+        )
+
+        assertEquals(offlinePages, pages)
+        assertEquals(0, remoteCalls)
+    }
+
 }
