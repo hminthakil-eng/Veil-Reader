@@ -1,6 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.View
 import androidx.activity.compose.BackHandler
@@ -55,7 +54,6 @@ import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
-import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -73,14 +71,11 @@ import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.SelectableNavigator
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
-import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
-import org.readium.r2.navigator.preferences.Color as ReadiumColor
-import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
@@ -881,23 +876,5 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
     )
 }
 
-@OptIn(ExperimentalReadiumApi::class)
-private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
-    theme = when (theme) {
-        ReaderTheme.PAPER -> Theme.LIGHT
-        ReaderTheme.SEPIA -> Theme.SEPIA
-        ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
-    },
-    backgroundColor = when (theme) {
-        ReaderTheme.OLED -> ReadiumColor(AndroidColor.BLACK)
-        ReaderTheme.DUSK -> ReadiumColor(AndroidColor.rgb(24, 21, 29))
-        else -> null
-    },
-    fontSize = ReadingPolicy.fontSizePercent(fontScale),
-    lineHeight = lineHeight,
-    pageMargins = pageMargins,
-    scroll = scroll,
-    publisherStyles = publisherStyles
-)
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
