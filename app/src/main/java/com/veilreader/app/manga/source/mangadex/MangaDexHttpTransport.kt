@@ -33,7 +33,7 @@ internal fun interface MangaDexHttpTransport {
 internal class OkHttpMangaDexTransport(
     private val client: OkHttpClient = defaultClient(),
     private val minimumRequestIntervalMillis: Long = 250L,
-    private val nowMillis: () -> Long = System::currentTimeMillis,
+    private val nowNanos: () -> Long = System::nanoTime,
     private val sleeper: suspend (Long) -> Unit = { delay(it) }
 ) : MangaDexHttpTransport {
 
@@ -42,16 +42,19 @@ internal class OkHttpMangaDexTransport(
     }
 
     private val rateGate = Mutex()
-    private var nextRequestAtMillis: Long = 0L
+    private var nextRequestAtNanos: Long = 0L
 
     override suspend fun get(
         url: String,
         headers: Map<String, String>
     ): MangaDexHttpResponse {
         rateGate.withLock {
-            val waitMillis = (nextRequestAtMillis - nowMillis()).coerceAtLeast(0L)
-            if (waitMillis > 0L) sleeper(waitMillis)
-            nextRequestAtMillis = nowMillis() + minimumRequestIntervalMillis
+            val waitNanos = nextRequestAtNanos - nowNanos()
+            if (waitNanos > 0L) {
+                sleeper((waitNanos + NANOS_PER_MILLISECOND - 1L) / NANOS_PER_MILLISECOND)
+            }
+            nextRequestAtNanos = nowNanos() +
+                minimumRequestIntervalMillis * NANOS_PER_MILLISECOND
         }
 
         val requestBuilder = Request.Builder()
@@ -94,6 +97,8 @@ internal class OkHttpMangaDexTransport(
         }
 
     private companion object {
+        const val NANOS_PER_MILLISECOND = 1_000_000L
+
         fun defaultClient(): OkHttpClient =
             OkHttpClient.Builder()
                 .callTimeout(20L, TimeUnit.SECONDS)
