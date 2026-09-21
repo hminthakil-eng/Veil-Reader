@@ -67,6 +67,11 @@ fun MangaReaderRoute(
                         Text("Retry")
                     }
                 }
+                if (state.failure.recoveryChapterId != null) {
+                    TextButton(onClick = viewModel::recoverNearbyChapter) {
+                        Text("Open nearby chapter")
+                    }
+                }
                 TextButton(
                     onClick = {
                         viewModel.flushProgress()
