@@ -46,6 +46,16 @@ fun MangaReaderPresentationSurface(
 
         is MangaReaderPresentationState.Ready -> {
             val ready = presentation.value
+
+            // Never render newly loaded assets through stale reader state from another chapter.
+            // The owner must initialize/restore MangaReaderState for the new route first.
+            if (!uiState.reader.chapter.sameLogicalChapter(ready.chapter)) {
+                Box(modifier.fillMaxSize()) {
+                    loadingContent(ready.chapter)
+                }
+                return
+            }
+
             LaunchedEffect(ready.chapter, ready.pageCount) {
                 if (uiState.reader.pageCount != ready.pageCount) {
                     onIntent(MangaReaderUiIntent.PageCountResolved(ready.pageCount))
