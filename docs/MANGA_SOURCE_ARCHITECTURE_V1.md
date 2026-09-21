@@ -168,12 +168,6 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - offline reopen and chapter-boundary navigation;
    - instrumentation for rotation/process death/tall images/RTL.
 
-4. **Room persistence adapters for Manga Hub**
-   - canonical works/source links;
-   - progress + offline manifests;
-   - versioned schema migration and backup compatibility;
-   - land only after full Android/Gradle verification is available.
-
 ## Verification state
 
 - Pure-Kotlin compilation of the source and canonical-library foundations succeeds independently.
