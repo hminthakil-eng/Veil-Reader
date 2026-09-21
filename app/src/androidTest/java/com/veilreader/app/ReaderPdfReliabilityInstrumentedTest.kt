@@ -2,8 +2,12 @@ package com.veilreader.app
 
 import android.app.Activity
 import android.app.UiAutomation
+import android.content.ContentValues
 import android.content.Intent
+import android.os.Environment
 import android.os.SystemClock
+import android.provider.MediaStore
+import android.util.Base64
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
@@ -363,14 +367,33 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun seedPdfFixture() {
-        val path = "/sdcard/Download/VeilReaderQa.pdf"
-        val command =
-            "sh -c \"printf '%s' '$PDF_BASE64' | base64 -d > $path\""
-        uiAutomation.executeShellCommand(command).close()
-        uiAutomation.executeShellCommand(
-            "am broadcast -a android.intent.action.MEDIA_SCANNER_SCAN_FILE -d file://$path"
-        ).close()
-        SystemClock.sleep(1_500)
+        val resolver = instrumentation.targetContext.contentResolver
+        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val displayName = "VeilReaderQa.pdf"
+
+        resolver.delete(
+            collection,
+            "${MediaStore.MediaColumns.DISPLAY_NAME} = ?",
+            arrayOf(displayName),
+        )
+        uiAutomation.executeShellCommand("rm -f /sdcard/Download/$displayName").close()
+
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = requireNotNull(resolver.insert(collection, values)) {
+            "Unable to create PDF fixture in MediaStore Downloads"
+        }
+        resolver.openOutputStream(uri, "w")!!.use { output ->
+            output.write(Base64.decode(PDF_BASE64, Base64.DEFAULT))
+        }
+        values.clear()
+        values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        SystemClock.sleep(1_000)
     }
 
     private fun pressAndroidBack() {
