@@ -138,9 +138,8 @@ class DatabaseFoundationInstrumentedTest {
         val legacyPrefs = context.getSharedPreferences("veil_library_v1", Context.MODE_PRIVATE)
         legacyPrefs.edit().clear().commit()
 
-        // This test is the only DataStore user in the instrumentation suite. Start from a clean file
-        // before the preferencesDataStore delegate is first accessed.
-        File(context.filesDir, "datastore/veil_settings.preferences_pb").delete()
+        val settings = SettingsStore(context)
+        settings.clearAllForTest()
 
         val books = JSONArray().put(JSONObject().apply {
             put("id", "legacy-book")
@@ -189,7 +188,6 @@ class DatabaseFoundationInstrumentedTest {
             .putString("appearance", appearance.toString())
             .commit()
 
-        val settings = SettingsStore(context)
         val migrator = LegacyLibraryMigrator(context, db, settings)
         val first = migrator.migrateIfNeeded()
 
