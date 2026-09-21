@@ -186,6 +186,18 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - AsyncImage renderer with loading/error/retry UI and intrinsic-height webtoon layout;
    - no SubcomposeAsyncImage in LazyColumn.
 
+12. **Extreme image subsampling strategy**
+   - dimension-based strategy; never infer extreme status from filename/URL;
+   - local bounds probe uses decode-bounds mode before expensive bitmap decode;
+   - ordinary images stay on Coil;
+   - verified local extreme images are eligible for ZoomImage subsampling;
+   - remote extreme/unknown images stay on bounded Coil preview until localized;
+   - no hidden second download/cache path is introduced for remote tiling;
+   - thresholds include pixel count, long edge and tall aspect ratio;
+   - ZoomImage 1.5.0 selected for Kotlin 2.3.x / Compose 1.10.x compatibility;
+   - ZoomImage renderer remains isolated until reader screen transfers gesture ownership explicitly;
+   - ZoomImage logger is forced to Error level because its debug pipeline can include request data.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -201,18 +213,14 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - process-death and host-loss recovery;
    - instrumentation coverage for rotation/background/close.
 
-3. **Extreme-tall image strategy**
-   - image-dimension probe before expensive decode where possible;
-   - evaluate region/tile/subsampling path for extreme webtoon pages;
-   - quality gate against OOM, blur from aggressive downsampling and zoom quality regression;
-   - keep ordinary pages on Coil; do not build a custom decoder when a mature tiling solution fits.
-
-4. **Reader screen integration**
+3. **Reader screen integration**
    - state holder/ViewModel wiring for loader + reducer + SavedState;
+   - explicit gesture ownership switch between Veil reader gestures and ZoomImage subsampling pages;
    - orientation host integration;
    - chapter-route transitions;
    - offline reopen UX;
-   - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts.
+   - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts;
+   - OOM/zoom-quality gate for extreme local images.
 
 ## Verification state
 
@@ -226,6 +234,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Reader presentation orchestration passed local execution smoke with `MANGA_READER_PRESENTATION_SMOKE_OK`: complete offline reopen, HYBRID local/remote delivery, partial-offline fallback and safe chapter-boundary blocking.
 - Unnumbered chapter cache identity passed `MANGA_OFFLINE_LOCATOR_SMOKE_OK`: normalized-title identity survives provider-key replacement and distinguishes different specials.
 - Reader image delivery now has unit gates for cache-root confinement, byte-size/hash verification, remote URL/header validation and secret redaction. Full Coil/Compose Android compilation remains pending the Android build gate.
+- Extreme-image strategy has deterministic JVM tests for standard/local-subsampling/remote-preview decisions and dimension-probe planning. Independent pure-Kotlin smoke passed with `EXTREME_IMAGE_STRATEGY_SMOKE_OK`. ZoomImage integration is intentionally isolated pending gesture-ownership wiring and Android build verification.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
