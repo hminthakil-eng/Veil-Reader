@@ -444,9 +444,8 @@ fun ReaderScreen(
                     }
                     ReaderControl(
                         action = ReaderAction.APPEARANCE,
-                        label = "Appearance",
-                        modifier = Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
+                        label = "Settings",
+                        modifier = Modifier.weight(1f)
                     ) {
                         readerViewModel.onUserInteraction()
                         showAppearance = true
@@ -560,7 +559,8 @@ fun ReaderScreen(
 
     if (showAppearance) {
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
-            AppearancePanel(
+            ReaderSettingsPanel(
+                format = opened.format,
                 appearance = appearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
@@ -746,11 +746,14 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 }
 
 @Composable
-private fun AppearancePanel(
+private fun ReaderSettingsPanel(
+    format: BookFormat,
     appearance: ReaderAppearance,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
 ) {
+    var advancedVisible by remember(format) { mutableStateOf(false) }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -761,130 +764,188 @@ private fun AppearancePanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                "READER",
+                "READER SETTINGS",
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary
             )
             Text(
-                "Reading appearance",
+                if (format == BookFormat.EPUB) "Reading settings" else "PDF controls",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                "Shape the page, then let the interface disappear. These choices stay on your device.",
+                if (format == BookFormat.EPUB) {
+                    "Quick controls first. Advanced typography stays one tap away. These preferences apply to EPUB books on this device."
+                } else {
+                    "PDF pages keep their original layout. Use pinch to zoom and drag to pan; EPUB typography controls are hidden because they do not affect PDFs."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
-        Text("Presets", fontWeight = FontWeight.SemiBold)
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            AppearancePreset("Ivory", appearance.theme == ReaderTheme.PAPER) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.PAPER,
-                        fontScale = 1.0,
-                        lineHeight = 1.45,
-                        pageMargins = 1.0,
-                        scroll = false,
-                        publisherStyles = true
+        if (format == BookFormat.EPUB) {
+            Text("Quick", fontWeight = FontWeight.SemiBold)
+
+            Text("Theme", style = MaterialTheme.typography.labelLarge)
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AppearancePreset("Ivory", appearance.theme == ReaderTheme.PAPER) {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.PAPER,
+                            fontScale = 1.0,
+                            lineHeight = 1.45,
+                            pageMargins = 1.0,
+                            scroll = false,
+                            publisherStyles = true
+                        )
                     )
-                )
-            }
-            AppearancePreset("Warm", appearance.theme == ReaderTheme.SEPIA) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.SEPIA,
-                        fontScale = 1.08,
-                        lineHeight = 1.6,
-                        pageMargins = 1.15,
-                        scroll = false,
-                        publisherStyles = false
+                }
+                AppearancePreset("Warm", appearance.theme == ReaderTheme.SEPIA) {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.SEPIA,
+                            fontScale = 1.08,
+                            lineHeight = 1.6,
+                            pageMargins = 1.15,
+                            scroll = false,
+                            publisherStyles = false
+                        )
                     )
-                )
-            }
-            AppearancePreset("Ink", appearance.theme == ReaderTheme.DUSK) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.DUSK,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
+                }
+                AppearancePreset("Ink", appearance.theme == ReaderTheme.DUSK) {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.DUSK,
+                            fontScale = 1.05,
+                            lineHeight = 1.55,
+                            pageMargins = 1.1,
+                            publisherStyles = false
+                        )
                     )
-                )
-            }
-            AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.OLED,
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
+                }
+                AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
+                    onChange(
+                        appearance.copy(
+                            theme = ReaderTheme.OLED,
+                            fontScale = 1.05,
+                            lineHeight = 1.55,
+                            pageMargins = 1.1,
+                            publisherStyles = false
+                        )
                     )
-                )
+                }
             }
-        }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.fontScale.toFloat(),
-            onValueChange = { onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false)) },
-            valueRange = .75f..1.8f
-        )
-
-        Text("Line height · ${"%.2f".format(appearance.lineHeight)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.lineHeight.toFloat(),
-            onValueChange = { onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
-            valueRange = 1.1f..2.0f
-        )
-
-        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = appearance.pageMargins.toFloat(),
-            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
-            valueRange = .5f..2.0f
-        )
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Turn this off for paginated reading with animated page turns.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = appearance.scroll,
-                onCheckedChange = { onChange(appearance.copy(scroll = it)) },
-                modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
+            Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
+            Slider(
+                value = appearance.fontScale.toFloat(),
+                onValueChange = {
+                    onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false))
+                },
+                valueRange = .75f..1.8f
             )
-        }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Publisher styling", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Keep the book's original typography and layout when possible.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        if (appearance.scroll) "Scroll vertically through the book."
+                        else "Paginated reading stays active.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = appearance.scroll,
+                    onCheckedChange = { onChange(appearance.copy(scroll = it)) },
+                    modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
                 )
             }
-            Switch(
-                checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
-                modifier = Modifier.semantics { contentDescription = "Publisher styling" }
-            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            TextButton(
+                onClick = { advancedVisible = !advancedVisible },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(if (advancedVisible) "Hide advanced settings" else "Show advanced settings")
+            }
+
+            if (advancedVisible) {
+                Text(
+                    "Advanced",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+
+                Text(
+                    "Line height · ${"%.2f".format(appearance.lineHeight)}",
+                    fontWeight = FontWeight.SemiBold
+                )
+                Slider(
+                    value = appearance.lineHeight.toFloat(),
+                    onValueChange = {
+                        onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false))
+                    },
+                    valueRange = 1.1f..2.0f
+                )
+
+                Text(
+                    "Page margins · ${"%.2f".format(appearance.pageMargins)}",
+                    fontWeight = FontWeight.SemiBold
+                )
+                Slider(
+                    value = appearance.pageMargins.toFloat(),
+                    onValueChange = {
+                        onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false))
+                    },
+                    valueRange = .5f..2.0f
+                )
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Publisher styling", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            "Keep the book's original typography and layout when possible.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    Switch(
+                        checked = appearance.publisherStyles,
+                        onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
+                        modifier = Modifier.semantics { contentDescription = "Publisher styling" }
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { onChange(ReaderAppearance()) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text("Reset EPUB settings")
+                }
+            }
+        } else {
+            Surface(
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                shape = RoundedCornerShape(VeilRadius.Control)
+            ) {
+                Column(
+                    Modifier.fillMaxWidth().padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("On-page PDF gestures", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Pinch to zoom. Drag to pan while zoomed. Page position and resume state remain handled by the PDF navigator.",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
         }
 
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
