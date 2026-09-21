@@ -48,7 +48,7 @@ fun MangaReaderRoute(
     }
 
     when {
-        state.loading && state.pages.isEmpty() -> {
+        failure == null && state.pages.isEmpty() -> {
             Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Loading chapter…")
             }
