@@ -10,6 +10,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.room.Room
@@ -57,14 +59,20 @@ class MangaHubVerificationActivity : FragmentActivity() {
                         CircularProgressIndicator()
                     }
                 } else {
-                    MangaHubScreen(
-                        service = ready.service,
-                        readerLoader = ready.readerLoader,
-                        progressStore = ready.repository,
-                        cacheRoot = ready.cacheRoot,
-                        onClose = ::finish,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .semantics { testTagsAsResourceId = true }
+                    ) {
+                        MangaHubScreen(
+                            service = ready.service,
+                            readerLoader = ready.readerLoader,
+                            progressStore = ready.repository,
+                            cacheRoot = ready.cacheRoot,
+                            onClose = ::finish,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
             }
         }
