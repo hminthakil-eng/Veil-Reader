@@ -43,8 +43,10 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @After
-    fun tearDown() = runBlocking {
-        repositoryUnderTest?.closeForTest()
+    fun tearDown() {
+        runBlocking {
+            repositoryUnderTest?.closeForTest()
+        }
         repositoryUnderTest = null
         db.close()
         File(context.filesDir, "publications").deleteRecursively()
