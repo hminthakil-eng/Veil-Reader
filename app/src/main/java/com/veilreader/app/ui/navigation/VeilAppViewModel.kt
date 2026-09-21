@@ -21,7 +21,9 @@ data class VeilRouteState(
     val showArchive: Boolean = false,
     val activeChamber: String? = null,
     val activeBookId: String? = null,
-    val locatorOverrideJson: String? = null
+    val locatorOverrideJson: String? = null,
+    val activeMangaBookId: String? = null,
+    val activeMangaChapterId: String? = null
 )
 
 /**
@@ -43,7 +45,9 @@ class VeilAppViewModel(
             showArchive = false,
             activeChamber = null,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            activeMangaBookId = null,
+            activeMangaChapterId = null
         )
     }
 
@@ -53,7 +57,9 @@ class VeilAppViewModel(
             showArchive = true,
             activeChamber = null,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            activeMangaBookId = null,
+            activeMangaChapterId = null
         )
     }
 
@@ -65,7 +71,9 @@ class VeilAppViewModel(
             showArchive = false,
             activeChamber = null,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            activeMangaBookId = null,
+            activeMangaChapterId = null
         )
     }
 
@@ -79,7 +87,9 @@ class VeilAppViewModel(
                 showSettings = false,
                 showArchive = false,
                 activeBookId = null,
-                locatorOverrideJson = null
+                locatorOverrideJson = null,
+                activeMangaBookId = null,
+                activeMangaChapterId = null
             )
         }
     }
@@ -94,7 +104,25 @@ class VeilAppViewModel(
                 locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
                 showSettings = false,
                 showArchive = false,
-                activeChamber = null
+                activeChamber = null,
+                activeMangaBookId = null,
+                activeMangaChapterId = null
+            )
+        }
+    }
+
+    fun requestMangaChapter(bookId: String, chapterId: String) {
+        if (bookId.isBlank() || chapterId.isBlank()) return
+        update {
+            copy(
+                selectedTab = VeilTab.MANGA,
+                showSettings = false,
+                showArchive = false,
+                activeChamber = null,
+                activeBookId = null,
+                locatorOverrideJson = null,
+                activeMangaBookId = bookId,
+                activeMangaChapterId = chapterId
             )
         }
     }
@@ -116,8 +144,23 @@ class VeilAppViewModel(
             showSettings = false,
             activeBookId = null,
             locatorOverrideJson = null,
+            activeMangaBookId = null,
+            activeMangaChapterId = null,
             showArchive = false,
             activeChamber = null
+        )
+    }
+
+    fun closeMangaReader() = update {
+        copy(
+            selectedTab = VeilTab.MANGA,
+            showSettings = false,
+            showArchive = false,
+            activeChamber = null,
+            activeBookId = null,
+            locatorOverrideJson = null,
+            activeMangaBookId = null,
+            activeMangaChapterId = null
         )
     }
 
@@ -137,6 +180,10 @@ class VeilAppViewModel(
         else savedStateHandle[KEY_BOOK] = next.activeBookId
         if (next.locatorOverrideJson == null) savedStateHandle.remove<String>(KEY_LOCATOR)
         else savedStateHandle[KEY_LOCATOR] = next.locatorOverrideJson
+        if (next.activeMangaBookId == null) savedStateHandle.remove<String>(KEY_MANGA_BOOK)
+        else savedStateHandle[KEY_MANGA_BOOK] = next.activeMangaBookId
+        if (next.activeMangaChapterId == null) savedStateHandle.remove<String>(KEY_MANGA_CHAPTER)
+        else savedStateHandle[KEY_MANGA_CHAPTER] = next.activeMangaChapterId
     }
 
     private fun readSavedRoute(): VeilRouteState {
@@ -149,11 +196,28 @@ class VeilAppViewModel(
             showArchive = savedStateHandle.get<Boolean>(KEY_ARCHIVE) == true,
             activeChamber = savedStateHandle.get<String>(KEY_CHAMBER),
             activeBookId = savedStateHandle.get<String>(KEY_BOOK),
-            locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR)
+            locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR),
+            activeMangaBookId = savedStateHandle.get<String>(KEY_MANGA_BOOK),
+            activeMangaChapterId = savedStateHandle.get<String>(KEY_MANGA_CHAPTER)
         ).normalized()
     }
 
     private fun VeilRouteState.normalized(): VeilRouteState {
+        val cleanMangaBookId = activeMangaBookId?.takeIf(String::isNotBlank)
+        val cleanMangaChapterId = activeMangaChapterId?.takeIf(String::isNotBlank)
+        if (cleanMangaBookId != null && cleanMangaChapterId != null) {
+            return copy(
+                selectedTab = VeilTab.MANGA,
+                showSettings = false,
+                showArchive = false,
+                activeChamber = null,
+                activeBookId = null,
+                locatorOverrideJson = null,
+                activeMangaBookId = cleanMangaBookId,
+                activeMangaChapterId = cleanMangaChapterId
+            )
+        }
+
         val cleanBookId = activeBookId?.takeIf(String::isNotBlank)
         if (cleanBookId != null) {
             return copy(
@@ -161,7 +225,9 @@ class VeilAppViewModel(
                 showArchive = false,
                 activeChamber = null,
                 activeBookId = cleanBookId,
-                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank)
+                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
+                activeMangaBookId = null,
+                activeMangaChapterId = null
             )
         }
         val cleanChamber = activeChamber?.takeIf { it in RESTORABLE_CHAMBERS }
@@ -171,7 +237,9 @@ class VeilAppViewModel(
             showArchive = showArchive && cleanChamber == null && !cleanSettings,
             activeChamber = cleanChamber,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            activeMangaBookId = null,
+            activeMangaChapterId = null
         )
     }
 
@@ -182,6 +250,8 @@ class VeilAppViewModel(
         private const val KEY_CHAMBER = "veil.route.chamber"
         private const val KEY_BOOK = "veil.route.book"
         private const val KEY_LOCATOR = "veil.route.locator"
+        private const val KEY_MANGA_BOOK = "veil.route.manga.book"
+        private const val KEY_MANGA_CHAPTER = "veil.route.manga.chapter"
         private val RESTORABLE_CHAMBERS = setOf("treasury", "sanctum")
     }
 }
