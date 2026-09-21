@@ -57,6 +57,9 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.theme.VeilMotionGrammar
+import com.veilreader.app.ui.theme.VeilRadius
+import com.veilreader.app.ui.theme.VeilReaderFoundation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -142,7 +145,7 @@ fun ReaderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarBottom by animateDpAsState(
         targetValue = if (controlsVisible) 104.dp else 16.dp,
-        animationSpec = tween(220),
+        animationSpec = tween(VeilMotionGrammar.CONTINUITY_MS),
         label = "reader-snackbar-offset"
     )
 
@@ -321,8 +324,10 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
-            enter = fadeIn(tween(170)) + slideInVertically(tween(220)) { -it / 2 },
-            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { -it / 2 }
+            enter = fadeIn(tween(VeilMotionGrammar.RESPONSE_MS)) +
+                slideInVertically(tween(VeilMotionGrammar.CONTINUITY_MS)) { -it / 3 },
+            exit = fadeOut(tween(VeilMotionGrammar.RESPONSE_FAST_MS)) +
+                slideOutVertically(tween(VeilMotionGrammar.RESPONSE_MS)) { -it / 3 }
         ) {
             Surface(
                 modifier = Modifier
@@ -330,10 +335,12 @@ fun ReaderScreen(
                     .widthIn(max = 760.dp)
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 1.dp,
-                shadowElevation = 10.dp
+                color = MaterialTheme.colorScheme.surface.copy(
+                    alpha = VeilReaderFoundation.CHROME_SURFACE_ALPHA
+                ),
+                shape = RoundedCornerShape(VeilRadius.Panel),
+                tonalElevation = 0.dp,
+                shadowElevation = 3.dp
             ) {
                 Column(
                     Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -361,20 +368,18 @@ fun ReaderScreen(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        Surface(
-                            modifier = Modifier.semantics {
-                                contentDescription = "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
-                            },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
-                        ) {
-                            Text(
-                                "${(progress * 100).toInt()}%",
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                style = MaterialTheme.typography.labelMedium
-                            )
-                        }
+                        Text(
+                            text = "${(progress * 100).toInt()}%",
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp)
+                                .semantics {
+                                    contentDescription =
+                                        "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
+                                },
+                            color = MaterialTheme.colorScheme.secondary,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
@@ -389,8 +394,10 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = fadeIn(tween(170)) + slideInVertically(tween(220)) { it / 2 },
-            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { it / 2 }
+            enter = fadeIn(tween(VeilMotionGrammar.RESPONSE_MS)) +
+                slideInVertically(tween(VeilMotionGrammar.CONTINUITY_MS)) { it / 3 },
+            exit = fadeOut(tween(VeilMotionGrammar.RESPONSE_FAST_MS)) +
+                slideOutVertically(tween(VeilMotionGrammar.RESPONSE_MS)) { it / 3 }
         ) {
             Surface(
                 modifier = Modifier
@@ -398,10 +405,12 @@ fun ReaderScreen(
                     .widthIn(max = 560.dp)
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                tonalElevation = 2.dp,
-                shadowElevation = 12.dp,
-                shape = RoundedCornerShape(28.dp)
+                color = MaterialTheme.colorScheme.surface.copy(
+                    alpha = VeilReaderFoundation.CHROME_SURFACE_ALPHA
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 4.dp,
+                shape = RoundedCornerShape(VeilRadius.Panel)
             ) {
                 Row(
                     Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
@@ -642,13 +651,17 @@ private fun ReaderChromeButton(
     accessibilityLabel: String,
     onClick: () -> Unit
 ) {
-    FilledTonalIconButton(
+    IconButton(
         onClick = onClick,
         modifier = Modifier
             .size(48.dp)
             .semantics { contentDescription = accessibilityLabel }
     ) {
-        ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSecondaryContainer)
+        ReaderActionIcon(
+            action,
+            Modifier.size(22.dp),
+            MaterialTheme.colorScheme.onSurface
+        )
     }
 }
 
@@ -747,9 +760,18 @@ private fun AppearancePanel(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
-                "Tune the page once, then get back to the book. These choices stay on your device.",
+                "READER",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.secondary
+            )
+            Text(
+                "Reading appearance",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                "Shape the page, then let the interface disappear. These choices stay on your device.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -760,7 +782,7 @@ private fun AppearancePanel(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
+            AppearancePreset("Ivory", appearance.theme == ReaderTheme.PAPER) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.PAPER,
@@ -772,7 +794,7 @@ private fun AppearancePanel(
                     )
                 )
             }
-            AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
+            AppearancePreset("Warm", appearance.theme == ReaderTheme.SEPIA) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.SEPIA,
@@ -784,7 +806,7 @@ private fun AppearancePanel(
                     )
                 )
             }
-            AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
+            AppearancePreset("Ink", appearance.theme == ReaderTheme.DUSK) {
                 onChange(
                     appearance.copy(
                         theme = ReaderTheme.DUSK,
