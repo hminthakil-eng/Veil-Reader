@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
+import com.veilreader.app.manga.challenge.MangaChallengeHost
 import com.veilreader.app.ui.VeilApp
 import com.veilreader.app.ui.theme.VeilTheme
 
@@ -22,10 +23,12 @@ class MainActivity : FragmentActivity() {
 
         setContent {
             VeilTheme {
-                VeilApp(
-                    externalOpenUri = externalOpenUri,
-                    onExternalOpenUriConsumed = { externalOpenUri = null }
-                )
+                MangaChallengeHost {
+                    VeilApp(
+                        externalOpenUri = externalOpenUri,
+                        onExternalOpenUriConsumed = { externalOpenUri = null }
+                    )
+                }
             }
         }
     }
