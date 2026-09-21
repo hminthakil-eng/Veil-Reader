@@ -109,6 +109,17 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - no offline-cache ownership rewrite because cache belongs to `CanonicalMangaId`;
    - ambiguity-aware multi-candidate resolver with minimum lead before auto-recommendation.
 
+6. **Source health + ranking foundation**
+   - payload-free local health events: source, operation, success/failure class and latency only;
+   - no query/title/chapter key/URL/user identity in health records;
+   - local NETWORK failures have zero penalty and do not increase ranking confidence;
+   - weighted source-attributable failures;
+   - circuit breaker with OPEN -> HALF_OPEN -> CLOSED recovery;
+   - latency EWMA;
+   - reliability ranker with bounded exploration bonus for under-sampled sources;
+   - OPEN circuits excluded from automatic best-source selection;
+   - optional execution observer so Source SDK behavior is unchanged when health tracking is disabled.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -117,12 +128,12 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - versioned schema migration + backup compatibility;
    - only land after full Android/Gradle verification is available.
 
-2. **Source health + ranking**
-   - success/failure/latency observations;
-   - circuit breaker and cooldown;
-   - per-source reliability score;
-   - exploration guard so new sources are not permanently starved;
-   - privacy-safe local-first metrics.
+2. **Browser challenge adapter implementation**
+   - Android lifecycle-safe WebView boundary;
+   - one global solver session;
+   - background callers wait but cannot start challenge UI;
+   - cooldown/ineffective-challenge detection;
+   - no source/parser-owned Activity references.
 
 3. **Reader vertical slice**
    - paged manga;
@@ -137,6 +148,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Pure-Kotlin compilation of the source and canonical-library foundations succeeds independently.
 - Local smoke execution passed canonical identity preservation, progress page remapping, cache-path safety and ambiguous chapter rejection.
 - Source replacement production files compile independently and smoke execution passed with `SOURCE_REPLACEMENT_SMOKE_OK`: strong candidate selection, equal-candidate ambiguity guard and READY-only finalization.
+- Source health/ranking production files compile independently and smoke execution passed with `SOURCE_HEALTH_SMOKE_OK`. The smoke run caught and fixed an initial ranking-evidence bug where zero-penalty NETWORK observations still changed confidence.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
