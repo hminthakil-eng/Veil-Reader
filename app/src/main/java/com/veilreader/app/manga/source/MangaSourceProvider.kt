@@ -8,11 +8,20 @@ package com.veilreader.app.manga.source
  */
 data class SourceRequestContext(
     val domain: String,
-    val attempt: Int
+    val attempt: Int,
+    /**
+     * Ephemeral request headers produced by source/session infrastructure (for example a solved
+     * browser challenge). Providers may forward these to their HTTP client but must not persist,
+     * log or copy them into reader state.
+     */
+    val sessionHeaders: Map<String, String> = emptyMap()
 ) {
     init {
         require(domain.isNotBlank()) { "Source request domain cannot be blank" }
         require(attempt > 0) { "Source request attempt must be positive" }
+        require(sessionHeaders.keys.none(String::isBlank)) {
+            "Source session header names cannot be blank"
+        }
     }
 }
 
