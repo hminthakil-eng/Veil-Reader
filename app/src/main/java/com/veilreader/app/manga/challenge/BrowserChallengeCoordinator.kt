@@ -5,11 +5,14 @@ import com.veilreader.app.manga.source.SourceChallengeAdapter
 import com.veilreader.app.manga.source.SourceFailure
 import com.veilreader.app.manga.source.SourceFailureKind
 import com.veilreader.app.manga.source.SourceId
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 data class ChallengeKey(
@@ -194,7 +197,8 @@ class BrowserChallengeCoordinator(
             // Joining an already-running same-key session must happen before cooldown inspection.
             // Otherwise a caller arriving as SOLVED is being recorded could falsely classify that
             // still-active session as an ineffective recurrence.
-            currentSession()?.let { current ->
+            val current = currentSession()
+            if (current != null) {
                 val result = withTimeoutOrNull(waiterTimeoutMillis) {
                     current.result.await()
                 } ?: return false
@@ -204,9 +208,8 @@ class BrowserChallengeCoordinator(
                 }
                 // A different source/domain owned the global session. Re-evaluate our own key after
                 // the global slot becomes available.
-                return@let
+                continue
             }
-            if (currentSession() != null) continue
 
             when (cooldowns.beforeChallenge(key, clock())) {
                 ChallengeCooldownDecision.RECENT_FAILURE,
@@ -253,7 +256,7 @@ class BrowserChallengeCoordinator(
         activeSession = created
 
         sessionScope.launch {
-            val result = runCatching {
+            val result = try {
                 uiDriver.solve(
                     ChallengeRequest(
                         source = source,
@@ -261,17 +264,22 @@ class BrowserChallengeCoordinator(
                         failureKind = failure.kind
                     )
                 )
-            }.getOrElse {
+            } catch (cancelled: CancellationException) {
+                ChallengeUiResult.CANCELLED
+            } catch (error: Throwable) {
                 ChallengeUiResult.FAILED
             }
 
-            cooldowns.record(key, result, clock())
-            mutex.withLock {
-                if (activeSession === created) {
-                    activeSession = null
+            // Complete global state even if the app-owned session scope is being cancelled.
+            withContext(NonCancellable) {
+                cooldowns.record(key, result, clock())
+                mutex.withLock {
+                    if (activeSession === created) {
+                        activeSession = null
+                    }
                 }
+                deferred.complete(result)
             }
-            deferred.complete(result)
         }
 
         JoinDecision.Wait(key, deferred)
