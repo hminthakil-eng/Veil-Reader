@@ -363,6 +363,37 @@ private fun VeilTabIcon(
                 }
             }
 
+            VeilTab.MANGA -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.16f, h * 0.18f),
+                    size = androidx.compose.ui.geometry.Size(w * 0.58f, h * 0.64f),
+                    cornerRadius = CornerRadius(3.dp.toPx()),
+                    style = stroke
+                )
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.27f, h * 0.10f),
+                    size = androidx.compose.ui.geometry.Size(w * 0.58f, h * 0.64f),
+                    cornerRadius = CornerRadius(3.dp.toPx()),
+                    style = stroke
+                )
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.38f, h * 0.34f),
+                    end = Offset(w * 0.72f, h * 0.34f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = tint,
+                    start = Offset(w * 0.38f, h * 0.50f),
+                    end = Offset(w * 0.68f, h * 0.50f),
+                    strokeWidth = stroke.width,
+                    cap = StrokeCap.Round
+                )
+            }
+
             VeilTab.CASTLE -> {
                 val towerTop = h * 0.24f
                 val baseTop = h * 0.46f
