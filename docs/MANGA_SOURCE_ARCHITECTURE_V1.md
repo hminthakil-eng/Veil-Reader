@@ -101,6 +101,14 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - traversal-safe relative cache layout;
    - conservative chapter matcher that rejects ambiguous migrations.
 
+5. **Alternatives / source replacement planner**
+   - title-dominant work matching with metadata as secondary evidence;
+   - conservative chapter mapping;
+   - explicit READY / MANUAL_REVIEW / REJECTED states;
+   - two-phase replacement: link new source first, unlink old source only after safe finalize;
+   - no offline-cache ownership rewrite because cache belongs to `CanonicalMangaId`;
+   - ambiguity-aware multi-candidate resolver with minimum lead before auto-recommendation.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -109,12 +117,12 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - versioned schema migration + backup compatibility;
    - only land after full Android/Gradle verification is available.
 
-2. **Alternatives / source replacement**
-   - title/alt-title matching;
-   - chapter number/volume alignment;
-   - cover similarity as secondary evidence;
-   - explicit confidence and manual confirmation;
-   - transactionally migrate progress/favourites/download metadata.
+2. **Source health + ranking**
+   - success/failure/latency observations;
+   - circuit breaker and cooldown;
+   - per-source reliability score;
+   - exploration guard so new sources are not permanently starved;
+   - privacy-safe local-first metrics.
 
 3. **Reader vertical slice**
    - paged manga;
@@ -128,6 +136,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 
 - Pure-Kotlin compilation of the source and canonical-library foundations succeeds independently.
 - Local smoke execution passed canonical identity preservation, progress page remapping, cache-path safety and ambiguous chapter rejection.
+- Source replacement production files compile independently and smoke execution passed with `SOURCE_REPLACEMENT_SMOKE_OK`: strong candidate selection, equal-candidate ambiguity guard and READY-only finalization.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
