@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import android.animation.ValueAnimator
 import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.View
@@ -59,11 +60,13 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.calculateEpubPageMotion
 import com.veilreader.app.ui.theme.VeilMotionGrammar
 import com.veilreader.app.ui.theme.VeilRadius
 import com.veilreader.app.ui.theme.VeilReaderFoundation
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -75,6 +78,7 @@ import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
+import org.readium.r2.navigator.R2WebView
 import org.readium.r2.navigator.SelectableNavigator
 import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
@@ -253,7 +257,7 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(navigator, opened.book.id) {
+    LaunchedEffect(navigator, opened.book.id, appearance.scroll) {
         val nav = navigator ?: return@LaunchedEffect
         nav.currentLocator
             .debounce(500)
@@ -267,6 +271,14 @@ fun ReaderScreen(
                     locatorJson = json,
                     locationKey = "${opened.book.id}:$json"
                 )
+                if (opened.format == BookFormat.EPUB) {
+                    findEpubWebView(nav)?.let { webView ->
+                        configureEpubPageMotion(
+                            webView = webView,
+                            enabled = !appearance.scroll && ValueAnimator.areAnimatorsEnabled()
+                        )
+                    }
+                }
             }
     }
 
@@ -275,7 +287,7 @@ fun ReaderScreen(
         nav.addInputListener(
             DirectionalNavigationAdapter(
                 navigator = nav,
-                animatedTransition = true
+                animatedTransition = ValueAnimator.areAnimatorsEnabled()
             )
         )
         nav.addInputListener(
@@ -295,6 +307,22 @@ fun ReaderScreen(
         val epub = navigator as? EpubNavigatorFragment ?: return@LaunchedEffect
         epub.submitPreferences(appearance.toEpubPreferences())
     }
+
+    LaunchedEffect(navigator, opened.format, appearance.scroll) {
+        if (opened.format != BookFormat.EPUB) return@LaunchedEffect
+        repeat(12) {
+            val webView = findEpubWebView(navigator)
+            if (webView != null) {
+                configureEpubPageMotion(
+                    webView = webView,
+                    enabled = !appearance.scroll && ValueAnimator.areAnimatorsEnabled()
+                )
+                return@LaunchedEffect
+            }
+            delay(100)
+        }
+    }
+
     LaunchedEffect(controlsVisible, navigator, opened.format) {
         if (!controlsVisible || opened.format != BookFormat.PDF) return@LaunchedEffect
         findPdfView(navigator)?.let { pdfZoom = it.zoom }
@@ -603,7 +631,7 @@ fun ReaderScreen(
                 readerViewModel.onUserInteraction()
                 game.pauseReading()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
-                if (locator != null && navigator?.go(locator, animated = true) == true) {
+                if (locator != null && navigator?.go(locator, animated = ValueAnimator.areAnimatorsEnabled()) == true) {
                     showNotebook = false
                 } else {
                     showNotebook = false
@@ -613,7 +641,7 @@ fun ReaderScreen(
             onChapter = { link ->
                 readerViewModel.onUserInteraction()
                 game.pauseReading()
-                if (navigator?.go(link, animated = true) == true) {
+                if (navigator?.go(link, animated = ValueAnimator.areAnimatorsEnabled()) == true) {
                     showNotebook = false
                 } else {
                     showNotebook = false
@@ -717,6 +745,70 @@ private fun ReaderFragmentHost(
     }
 }
 
+private fun findEpubWebView(navigator: Navigator?): R2WebView? {
+    val fragment = navigator as? Fragment ?: return null
+    return findEpubWebView(fragment)
+}
+
+private fun findEpubWebView(fragment: Fragment): R2WebView? {
+    findEpubWebView(fragment.view)?.let { return it }
+    for (child in fragment.childFragmentManager.fragments) {
+        findEpubWebView(child)?.let { return it }
+    }
+    return null
+}
+
+private fun findEpubWebView(view: View?): R2WebView? = when (view) {
+    null -> null
+    is R2WebView -> view
+    is ViewGroup -> {
+        var result: R2WebView? = null
+        for (index in 0 until view.childCount) {
+            result = findEpubWebView(view.getChildAt(index))
+            if (result != null) break
+        }
+        result
+    }
+    else -> null
+}
+
+private fun configureEpubPageMotion(webView: R2WebView, enabled: Boolean) {
+    if (!enabled) {
+        webView.setOnScrollChangeListener(null)
+        resetEpubPageMotion(webView)
+        return
+    }
+
+    val density = webView.resources.displayMetrics.density
+    webView.cameraDistance = EPUB_PAGE_CAMERA_DISTANCE_DP * density
+    webView.setOnScrollChangeListener { view, scrollX, _, oldScrollX, _ ->
+        val frame = calculateEpubPageMotion(
+            scrollX = scrollX,
+            oldScrollX = oldScrollX,
+            pageWidth = view.width
+        )
+        if (frame.phase <= EPUB_PAGE_MOTION_EPSILON) {
+            resetEpubPageMotion(view)
+            return@setOnScrollChangeListener
+        }
+
+        view.pivotX = if (frame.pivotAtStart) 0f else view.width.toFloat()
+        view.pivotY = view.height / 2f
+        view.rotationY = frame.rotationYDegrees
+        view.scaleX = frame.scale
+        view.scaleY = frame.scale
+        view.alpha = frame.alpha
+        view.translationZ = EPUB_PAGE_DEPTH_DP * density * frame.phase
+    }
+}
+
+private fun resetEpubPageMotion(view: View) {
+    view.rotationY = 0f
+    view.scaleX = 1f
+    view.scaleY = 1f
+    view.alpha = 1f
+    view.translationZ = 0f
+}
 private fun findPdfView(navigator: Navigator?): PDFView? {
     val fragment = navigator as? Fragment ?: return null
     return findPdfView(fragment)
@@ -1107,3 +1199,6 @@ private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferen
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
 private const val PDF_ZOOM_STEP = 1.35f
+private const val EPUB_PAGE_CAMERA_DISTANCE_DP = 10_000f
+private const val EPUB_PAGE_DEPTH_DP = 6f
+private const val EPUB_PAGE_MOTION_EPSILON = 0.001f
