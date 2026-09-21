@@ -101,5 +101,13 @@ class AndroidChallengeSessionStore(
     }
 
     @Synchronized
+    fun release(id: String) {
+        val current = active ?: return
+        if (current.session.id == id && current.completed) {
+            active = null
+        }
+    }
+
+    @Synchronized
     fun activeId(): String? = active?.takeUnless { it.completed }?.session?.id
 }
