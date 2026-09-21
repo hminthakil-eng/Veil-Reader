@@ -222,13 +222,6 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts;
    - OOM/zoom-quality gate for extreme local images.
 
-4. **Manga Hub persistence adapters**
-   - state holder/ViewModel wiring for loader + reducer + SavedState;
-   - orientation host integration;
-   - chapter-route transitions;
-   - offline reopen UX;
-   - instrumentation for rotation/process death/tall images/RTL/pinch-vs-swipe conflicts.
-
 ## Verification state
 
 - Pure-Kotlin compilation of the source and canonical-library foundations succeeds independently.
