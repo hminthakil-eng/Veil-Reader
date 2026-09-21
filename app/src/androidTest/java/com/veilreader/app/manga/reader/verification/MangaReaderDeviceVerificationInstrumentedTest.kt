@@ -63,6 +63,25 @@ class MangaReaderDeviceVerificationInstrumentedTest {
     }
 
     @Test
+    fun rtlAndLtrEdgeTapsAdvanceFromOppositeEdges() {
+        launch(startPage = 1).use {
+            waitForPage(1)
+            compose.onNodeWithTag(MangaReaderVerificationTags.page(1))
+                .performTouchInput { click(percentOffset(0.1f, 0.5f)) }
+            waitForPage(2)
+        }
+
+        launch(startPage = 1).use {
+            waitForPage(1)
+            openChrome(1)
+            compose.onNodeWithTag(MangaReaderVerificationTags.DIRECTION).performClick()
+            compose.onNodeWithTag(MangaReaderVerificationTags.page(1))
+                .performTouchInput { click(percentOffset(0.9f, 0.5f)) }
+            waitForPage(2)
+        }
+    }
+
+    @Test
     fun pagedToWebtoonMode_survivesActivityRecreation() {
         launch(startPage = 1).use { scenario ->
             waitForPage(1)
@@ -76,6 +95,10 @@ class MangaReaderDeviceVerificationInstrumentedTest {
             waitForTag(MangaReaderVerificationTags.ROOT)
             compose.onNodeWithTag(MangaReaderVerificationTags.MODE)
                 .assertTextContains("Paged")
+
+            compose.onNodeWithTag(MangaReaderVerificationTags.MODE).performClick()
+            compose.onNodeWithTag(MangaReaderVerificationTags.MODE)
+                .assertTextContains("Webtoon")
         }
     }
 
