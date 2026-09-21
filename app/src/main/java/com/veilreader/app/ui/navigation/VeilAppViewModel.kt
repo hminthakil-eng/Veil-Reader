@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.asStateFlow
 enum class VeilTab(val label: String, val glyph: String) {
     READING("Reading", "◉"),
     LIBRARY("Library", "▦"),
+    MANGA("Manga", "▤"),
     CASTLE("Castle", "♜"),
     PATH("Path", "✦"),
     PROFILE("Profile", "◎")
