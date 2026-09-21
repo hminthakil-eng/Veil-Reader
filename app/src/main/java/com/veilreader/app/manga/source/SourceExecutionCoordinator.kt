@@ -40,6 +40,7 @@ data class SourceExecutionResult<T>(
 class SourceExecutionCoordinator(
     private val recoveryPolicy: SourceRecoveryPolicy = SourceRecoveryPolicy(),
     private val challengeAdapter: SourceChallengeAdapter? = null,
+    private val sessionHeadersProvider: SourceSessionHeadersProvider? = null,
     healthObserver: SourceExecutionHealthObserver? = null,
     private val maxAttempts: Int = DEFAULT_MAX_ATTEMPTS,
     private val maxParallelPerSource: Int = DEFAULT_MAX_PARALLEL_PER_SOURCE,
@@ -124,7 +125,15 @@ class SourceExecutionCoordinator(
             val domain = domains[domainIndex]
             val startedAt = healthRecorder.start()
             val outcome = try {
-                operation(SourceRequestContext(domain = domain, attempt = attempt))
+                operation(
+                    SourceRequestContext(
+                        domain = domain,
+                        attempt = attempt,
+                        sessionHeaders = sessionHeadersProvider
+                            ?.headersFor(provider.descriptor.id, domain)
+                            .orEmpty()
+                    )
+                )
             } catch (cancelled: CancellationException) {
                 // Cancellation is caller/lifecycle state, not source health.
                 throw cancelled
