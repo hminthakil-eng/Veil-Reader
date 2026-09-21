@@ -3,6 +3,7 @@ package com.veilreader.app.manga.reader.verification
 import android.content.Context
 import android.content.Intent
 import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.fetchSemanticsNodes
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -16,6 +17,7 @@ import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.lifecycle.Lifecycle
 import com.veilreader.app.manga.reader.MangaReaderVerificationTags
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -84,8 +86,9 @@ class MangaReaderDeviceVerificationInstrumentedTest {
                 .performTouchInput { swipeRight() }
             waitForPage(1)
 
-            // Let the production 300ms debounce persist into the isolated verification Room DB.
-            Thread.sleep(650L)
+            // Backgrounding triggers the production immediate flush path, independent of debounce.
+            it.moveToState(Lifecycle.State.CREATED)
+            Thread.sleep(300L)
         }
 
         launch(startPage = 0, resetProgress = false).use {
@@ -106,13 +109,13 @@ class MangaReaderDeviceVerificationInstrumentedTest {
             compose.onNodeWithTag(MangaReaderVerificationTags.page(1))
                 .performTouchInput { swipeRight() }
 
+            val boundaryMessage =
+                "Reconnect to load the rest of this chapter before continuing."
             compose.waitUntil(timeoutMillis = 5_000L) {
-                compose.onAllNodesWithTag(MangaReaderVerificationTags.page(1))
+                compose.onAllNodesWithText(boundaryMessage)
                     .fetchSemanticsNodes().isNotEmpty()
             }
-            compose.onNodeWithText(
-                "Reconnect to load the rest of this chapter before continuing."
-            ).assertExists()
+            compose.onNodeWithText(boundaryMessage).assertExists()
         }
     }
 
@@ -124,6 +127,7 @@ class MangaReaderDeviceVerificationInstrumentedTest {
 
             compose.onNodeWithTag(MangaReaderVerificationTags.SUBSAMPLING)
                 .performTouchInput { swipeRight() }
+            compose.waitForIdle()
 
             waitForPage(0)
             assertTrue(
