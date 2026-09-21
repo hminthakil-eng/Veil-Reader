@@ -111,10 +111,12 @@ class VeilAppViewModelTest {
         assertEquals("chapter-9", first.route.value.activeMangaChapterId)
         assertNull(first.route.value.activeBookId)
 
+        first.requestMangaChapter("manga-book-1", "chapter-10")
+
         val recreated = VeilAppViewModel(handle)
         assertEquals(VeilTab.MANGA, recreated.route.value.selectedTab)
         assertEquals("manga-book-1", recreated.route.value.activeMangaBookId)
-        assertEquals("chapter-9", recreated.route.value.activeMangaChapterId)
+        assertEquals("chapter-10", recreated.route.value.activeMangaChapterId)
         assertNull(recreated.route.value.activeBookId)
 
         recreated.closeMangaReader()
