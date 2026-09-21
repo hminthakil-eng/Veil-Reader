@@ -48,6 +48,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.github.barteksc.pdfviewer.PDFView
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
@@ -682,6 +683,12 @@ fun ReaderScreen(
         ModalBottomSheet(onDismissRequest = { showPdfZoom = false }) {
             PdfZoomControls(
                 navigator = navigator,
+                appearance = appearance,
+                onAppearanceChange = {
+                    readerViewModel.onUserInteraction()
+                    appearance = it
+                    onReaderAppearanceChange(it)
+                },
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 22.dp)
@@ -716,7 +723,15 @@ private fun createReaderFactory(
     BookFormat.PDF -> PdfNavigatorFactory(
         publication = opened.publication,
         pdfEngineProvider = PdfiumEngineProvider(
-            defaults = PdfiumDefaults()
+            defaults = PdfiumDefaults(),
+            listener = object : PdfiumEngineProvider.Listener {
+                override fun onConfigurePdfView(configurator: PDFView.Configurator) {
+                    // Lock the gesture contract instead of relying on AndroidPdfViewer defaults.
+                    configurator.enableSwipe(true)
+                    configurator.enableDoubletap(true)
+                    configurator.enableAntialiasing(true)
+                }
+            }
         )
     ).createFragmentFactory(
         initialLocator = opened.initialLocator,
