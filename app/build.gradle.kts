@@ -85,6 +85,8 @@ dependencies {
     implementation("org.readium.kotlin-toolkit:readium-streamer:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-navigator:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-adapter-pdfium:3.4.0")
+    // Same PDFView implementation already used transitively by Readium; explicit for Slice 1D controls.
+    implementation("com.github.marain87:AndroidPdfViewer:3.2.8")
 
     baselineProfile(project(":benchmark"))
 
