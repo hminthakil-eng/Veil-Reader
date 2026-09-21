@@ -130,6 +130,20 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - session lifetime belongs to an injected application scope;
    - no Activity/WebView references cross the challenge boundary.
 
+8. **Manga reader core foundation**
+   - pure-Kotlin reader state independent from Compose/Android;
+   - paged and webtoon modes;
+   - explicit LTR/RTL tap and swipe mapping;
+   - chapter-boundary signaling without implicit navigation;
+   - zoom state with finite/clamped scale and normalized focal point;
+   - paged navigation resets page zoom while webtoon scroll updates preserve active zoom;
+   - source-neutral process-death snapshot/restore;
+   - restore clamps positions when page counts change;
+   - source replacement can change provider chapter key without resetting the same logical chapter;
+   - orientation policy changes preserve logical reading position;
+   - decode-ready image geometry guard prevents zero-size/NaN/Infinity layout;
+   - very tall webtoon pages use finite fit-width geometry.
+
 ## Next vertical slices
 
 1. **Room persistence adapters for Manga Hub**
@@ -145,13 +159,14 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - process-death and host-loss recovery;
    - instrumentation coverage for rotation/background/close.
 
-3. **Reader vertical slice**
-   - paged manga;
-   - RTL page direction;
-   - webtoon continuous mode;
-   - zoom;
-   - orientation/process restoration;
-   - offline reopen.
+3. **Reader UI adapter vertical slice**
+   - Compose paged surface wired to `MangaReaderController`;
+   - lazy webtoon surface wired to source/offline pages;
+   - pinch/double-tap zoom adapter;
+   - orientation host integration;
+   - process SavedState adapter;
+   - offline reopen and chapter-boundary navigation;
+   - instrumentation for rotation/process death/tall images/RTL.
 
 ## Verification state
 
@@ -160,6 +175,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Source replacement production files compile independently and smoke execution passed with `SOURCE_REPLACEMENT_SMOKE_OK`: strong candidate selection, equal-candidate ambiguity guard and READY-only finalization.
 - Source health/ranking production files compile independently and smoke execution passed with `SOURCE_HEALTH_SMOKE_OK`. The smoke run caught and fixed an initial ranking-evidence bug where zero-penalty NETWORK observations still changed confidence.
 - Browser challenge orchestration compiles independently and smoke execution passed with `BROWSER_CHALLENGE_SMOKE_OK`. A race between session completion and cooldown evaluation was found and fixed before PR creation.
+- Manga reader core compiles independently and smoke execution passed with `MANGA_READER_CORE_SMOKE_OK`: RTL/LTR navigation, zoom bounds, page-count clamp, webtoon restore, tall-image geometry and source-replacement-safe chapter restore.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
