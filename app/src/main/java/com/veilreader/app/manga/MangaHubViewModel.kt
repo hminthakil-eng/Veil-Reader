@@ -24,6 +24,7 @@ data class MangaHubUiState(
     val query: String = "",
     val searching: Boolean = false,
     val loadingDetails: Boolean = false,
+    val openingChapter: Boolean = false,
     val results: List<MangaSummary> = emptyList(),
     val details: MangaDetails? = null,
     val chapters: List<MangaChapter> = emptyList(),
@@ -120,10 +121,12 @@ class MangaHubViewModel(
     }
 
     fun openChapter(chapter: MangaChapter) {
+        if (_uiState.value.openingChapter) return
         val update = selectedUpdate ?: return
         val descriptor = selectedDescriptor ?: return
         if (chapter.ref.manga != update.ref) return
 
+        _uiState.value = _uiState.value.copy(openingChapter = true, errorMessage = null)
         viewModelScope.launch {
             try {
                 val sync = runtime.library.importOrSyncSource(
@@ -141,12 +144,14 @@ class MangaHubViewModel(
                         bookId = sync.bookId,
                         chapterId = chapterId
                     ),
+                    openingChapter = false,
                     errorMessage = null
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Throwable) {
                 _uiState.value = _uiState.value.copy(
+                    openingChapter = false,
                     errorMessage = error.message ?: "Could not open this manga chapter."
                 )
             }
