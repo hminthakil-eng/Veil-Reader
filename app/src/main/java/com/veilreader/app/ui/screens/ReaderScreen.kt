@@ -420,43 +420,109 @@ fun ReaderScreen(
                 shadowElevation = 4.dp,
                 shape = RoundedCornerShape(VeilRadius.Panel)
             ) {
-                Row(
+                Column(
                     Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    ReaderControl(
-                        action = ReaderAction.NOTEBOOK,
-                        label = "Notebook",
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        readerViewModel.onUserInteraction()
-                        showNotebook = true
-                    }
-                    ReaderControl(
-                        action = ReaderAction.BOOKMARK,
-                        label = "Bookmark",
-                        modifier = Modifier.weight(1f),
-                        enabled = navigator != null
-                    ) {
-                        readerViewModel.onUserInteraction()
-                        val locator = navigator?.currentLocator?.value
-                        if (locator != null) {
-                            val added = library.addBookmark(
-                                opened.book.id,
-                                "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                locator.toVeilPersistedJson(opened.format)
+                    if (opened.format == BookFormat.PDF) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            PdfZoomButton("−", "Zoom out", Modifier.weight(1f)) {
+                                readerViewModel.onUserInteraction()
+                                val pdfView = findPdfView(navigator)
+                                if (pdfView == null) {
+                                    readerMessage = "PDF zoom controls are still loading."
+                                } else {
+                                    val target = (pdfView.zoom / PDF_ZOOM_STEP)
+                                        .coerceAtLeast(pdfView.minZoom)
+                                    pdfView.zoomWithAnimation(target)
+                                    pdfZoom = target
+                                }
+                            }
+                            Text(
+                                text = "${(pdfZoom * 100).roundToInt()}%",
+                                modifier = Modifier
+                                    .widthIn(min = 58.dp)
+                                    .semantics {
+                                        contentDescription =
+                                            "PDF zoom ${(pdfZoom * 100).roundToInt()} percent"
+                                    },
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.secondary
                             )
-                            readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
+                            PdfZoomButton("Fit", "Fit width", Modifier.weight(1.25f)) {
+                                readerViewModel.onUserInteraction()
+                                val pdfView = findPdfView(navigator)
+                                if (pdfView == null) {
+                                    readerMessage = "PDF zoom controls are still loading."
+                                } else {
+                                    pdfView.fitToWidth(pdfView.currentPage)
+                                    pdfZoom = pdfView.zoom
+                                }
+                            }
+                            PdfZoomButton("+", "Zoom in", Modifier.weight(1f)) {
+                                readerViewModel.onUserInteraction()
+                                val pdfView = findPdfView(navigator)
+                                if (pdfView == null) {
+                                    readerMessage = "PDF zoom controls are still loading."
+                                } else {
+                                    val target = (pdfView.zoom * PDF_ZOOM_STEP)
+                                        .coerceAtMost(pdfView.maxZoom)
+                                    pdfView.zoomWithAnimation(target)
+                                    pdfZoom = target
+                                }
+                            }
                         }
+                        HorizontalDivider(
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f)
+                        )
                     }
-                    ReaderControl(
-                        action = ReaderAction.APPEARANCE,
-                        label = "Settings",
-                        modifier = Modifier.weight(1f)
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        readerViewModel.onUserInteraction()
-                        showAppearance = true
+                        ReaderControl(
+                            action = ReaderAction.NOTEBOOK,
+                            label = "Notebook",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            showNotebook = true
+                        }
+                        ReaderControl(
+                            action = ReaderAction.BOOKMARK,
+                            label = "Bookmark",
+                            modifier = Modifier.weight(1f),
+                            enabled = navigator != null
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            val locator = navigator?.currentLocator?.value
+                            if (locator != null) {
+                                val added = library.addBookmark(
+                                    opened.book.id,
+                                    "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
+                                    locator.toVeilPersistedJson(opened.format)
+                                )
+                                readerMessage =
+                                    if (added) "Bookmark saved"
+                                    else "This location is already bookmarked"
+                            }
+                        }
+                        ReaderControl(
+                            action = ReaderAction.APPEARANCE,
+                            label = "Settings",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            showAppearance = true
+                        }
                     }
                 }
             }
