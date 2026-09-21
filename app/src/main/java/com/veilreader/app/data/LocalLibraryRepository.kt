@@ -30,7 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -377,8 +377,8 @@ class LocalLibraryRepository internal constructor(
      * Production repositories live for the app process, but tests must cancel Room observers before
      * closing their database to avoid asynchronous queries against a closed connection.
      */
-    internal fun closeForTest() {
-        scope.cancel()
+    internal suspend fun closeForTest() {
+        scope.coroutineContext[Job]?.cancelAndJoin()
     }
 
     /** Ensures migration and all writes queued before this call have reached durable storage. */
