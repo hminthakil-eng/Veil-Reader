@@ -16,6 +16,7 @@ import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import androidx.lifecycle.Lifecycle
 import com.veilreader.app.manga.reader.MangaReaderVerificationTags
 import org.junit.Assert.assertTrue
@@ -88,8 +89,10 @@ class MangaReaderDeviceVerificationInstrumentedTest {
             compose.onNodeWithTag(MangaReaderVerificationTags.MODE).performClick()
             compose.onNodeWithTag(MangaReaderVerificationTags.MODE)
                 .assertTextContains("Paged")
+            settleComposeAndMainThread()
 
             scenario.recreate()
+            settleComposeAndMainThread()
             waitForTag(MangaReaderVerificationTags.ROOT)
             compose.onNodeWithTag(MangaReaderVerificationTags.MODE)
                 .assertTextContains("Paged")
@@ -165,6 +168,12 @@ class MangaReaderDeviceVerificationInstrumentedTest {
             scenario.recreate()
             waitForTag(MangaReaderVerificationTags.SUBSAMPLING)
         }
+    }
+
+    private fun settleComposeAndMainThread() {
+        compose.waitForIdle()
+        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+        compose.waitForIdle()
     }
 
     private fun openChrome(page: Int) {
