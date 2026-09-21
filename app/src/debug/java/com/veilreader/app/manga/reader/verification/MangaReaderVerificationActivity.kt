@@ -91,16 +91,18 @@ class MangaReaderVerificationActivity : FragmentActivity() {
         val requestedStartPage = intent.getIntExtra(EXTRA_START_PAGE, 0).coerceIn(0, 2)
 
         val normalFiles = (0..2).map { index ->
-            MangaDebugFixtureAssets.ensurePng(root = cacheRoot, 
-                name = "normal-" + index + ".png"),
+            MangaDebugFixtureAssets.ensurePng(
+                root = cacheRoot,
+                name = "normal-" + index + ".png",
                 width = 600,
                 height = 900,
                 seed = index + 1
             )
         }
         val extremeFile = if (extreme) {
-            MangaDebugFixtureAssets.ensurePng(root = cacheRoot, 
-                name = "extreme.png"),
+            MangaDebugFixtureAssets.ensurePng(
+                root = cacheRoot,
+                name = "extreme.png",
                 width = 360,
                 height = 12_000,
                 seed = 50
