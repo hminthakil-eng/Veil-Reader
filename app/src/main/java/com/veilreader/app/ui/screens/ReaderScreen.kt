@@ -546,7 +546,7 @@ fun ReaderScreen(
                         } else {
                             ReaderAction.ZOOM
                         },
-                        label = if (opened.format == BookFormat.EPUB) "Appearance" else "Zoom",
+                        label = if (opened.format == BookFormat.EPUB) "Settings" else "Zoom",
                         modifier = Modifier.weight(1f),
                         enabled = navigator != null
                     ) {
@@ -911,7 +911,7 @@ private fun AppearancePanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                if (format == BookFormat.PDF) "PDF reading controls" else "Reading appearance",
+                if (format == BookFormat.PDF) "PDF reading controls" else "Reader settings",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
