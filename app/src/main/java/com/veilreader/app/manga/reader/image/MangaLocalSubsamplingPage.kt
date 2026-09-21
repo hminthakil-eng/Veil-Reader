@@ -1,5 +1,6 @@
 package com.veilreader.app.manga.reader.image
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,13 +53,17 @@ fun MangaLocalSubsamplingPage(
             )
     }
 
-    CoilZoomAsyncImage(
-        model = request,
-        contentDescription = null,
-        imageLoader = imageLoader,
-        modifier = imageModifier.testTag(MangaReaderVerificationTags.SUBSAMPLING),
-        contentScale = ContentScale.Fit,
-        zoomState = zoomState,
-        onTap = { onTap?.invoke() }
-    )
+    Box(modifier = imageModifier) {
+        CoilZoomAsyncImage(
+            model = request,
+            contentDescription = null,
+            imageLoader = imageLoader,
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag(MangaReaderVerificationTags.SUBSAMPLING),
+            contentScale = ContentScale.Fit,
+            zoomState = zoomState,
+            onTap = { onTap?.invoke() }
+        )
+    }
 }
