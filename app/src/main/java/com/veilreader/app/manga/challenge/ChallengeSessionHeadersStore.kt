@@ -30,8 +30,8 @@ class ChallengeSessionHeadersStore(
         cookieHeader: String?,
         userAgent: String?
     ) {
-        val cookie = cookieHeader?.trim()?.takeIf(String::isNotEmpty)
-        val agent = userAgent?.trim()?.takeIf(String::isNotEmpty)
+        val cookie = sanitizeHeaderValue(cookieHeader, MAX_COOKIE_HEADER_LENGTH)
+        val agent = sanitizeHeaderValue(userAgent, MAX_USER_AGENT_LENGTH)
 
         if (cookie == null && agent == null) {
             values.remove(key)
@@ -72,4 +72,16 @@ class ChallengeSessionHeadersStore(
 
     @Synchronized
     fun snapshot(key: ChallengeKey): ChallengeSessionHeaders? = values[key]
+
+    private fun sanitizeHeaderValue(value: String?, maxLength: Int): String? {
+        val clean = value?.trim()?.takeIf(String::isNotEmpty) ?: return null
+        if (clean.length > maxLength) return null
+        if (clean.contains('\r') || clean.contains('\n')) return null
+        return clean
+    }
+
+    private companion object {
+        const val MAX_COOKIE_HEADER_LENGTH = 32 * 1024
+        const val MAX_USER_AGENT_LENGTH = 2 * 1024
+    }
 }
