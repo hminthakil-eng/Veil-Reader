@@ -43,7 +43,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @After
-    fun tearDown() {
+    fun tearDown() = runBlocking {
         repositoryUnderTest?.closeForTest()
         repositoryUnderTest = null
         db.close()
