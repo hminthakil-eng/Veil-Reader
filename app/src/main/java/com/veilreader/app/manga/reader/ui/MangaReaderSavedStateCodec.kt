@@ -73,8 +73,8 @@ object MangaReaderSavedStateCodec {
         if (version != MangaReaderSnapshot.CURRENT_VERSION) return null
 
         val mangaId = values[MANGA_ID]?.takeIf(String::isNotBlank) ?: return null
-        val volume = values[VOLUME]?.toDoubleOrNull()
-        val chapterNumber = values[CHAPTER_NUMBER]?.toDoubleOrNull()
+        val volume = optionalFiniteDouble(values, VOLUME)
+        val chapterNumber = optionalFiniteDouble(values, CHAPTER_NUMBER)
         val title = values[TITLE]?.takeIf(String::isNotBlank)
         val providerHint = values[PROVIDER_HINT]?.takeIf(String::isNotBlank)
 
@@ -106,4 +106,15 @@ object MangaReaderSavedStateCodec {
             )
         )
     }.getOrNull()
+
+    private fun optionalFiniteDouble(
+        values: Map<String, String>,
+        key: String
+    ): Double? {
+        val raw = values[key] ?: return null
+        val parsed = raw.toDoubleOrNull()
+            ?: throw IllegalArgumentException("Invalid numeric SavedState value for $key")
+        require(parsed.isFinite()) { "Non-finite SavedState value for $key" }
+        return parsed
+    }
 }
