@@ -5,6 +5,7 @@ import coil3.network.NetworkHeaders
 import coil3.network.httpHeaders
 import coil3.request.CachePolicy
 import coil3.request.allowPartialImage
+import coil3.request.maxBitmapSize
 import coil3.request.ImageRequest
 import coil3.size.Precision
 import com.veilreader.app.manga.reader.MangaReaderMode
