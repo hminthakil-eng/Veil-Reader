@@ -5,6 +5,7 @@ import com.veilreader.app.domain.ReaderTheme
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Fit
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ReaderPreferenceMappingTest {
@@ -22,6 +23,16 @@ class ReaderPreferenceMappingTest {
         assertEquals(0xFFF1E5C9.toInt() to 0xFF3D3325.toInt(), readiumThemeColors(ReaderTheme.SEPIA))
         assertEquals(0xFF18151D.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.DUSK))
         assertEquals(0xFF000000.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.OLED))
+    }
+
+    @Test
+    fun `explicit theme selection disables publisher style override`() {
+        ReaderTheme.entries.forEach { theme ->
+            val selected = ReaderAppearance(publisherStyles = true).withTheme(theme)
+
+            assertEquals(theme, selected.theme)
+            assertFalse(selected.publisherStyles)
+        }
     }
 
     @Test

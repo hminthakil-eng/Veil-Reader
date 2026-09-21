@@ -119,7 +119,10 @@ data class ReaderAppearance(
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER
-)
+) {
+    fun withTheme(theme: ReaderTheme): ReaderAppearance =
+        copy(theme = theme, publisherStyles = false)
+}
 
 /** A saved reading location, independent of text selection (also supports PDF). */
 data class Bookmark(

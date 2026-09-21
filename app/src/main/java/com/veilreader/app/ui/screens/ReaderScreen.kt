@@ -934,47 +934,39 @@ private fun AppearancePanel(
         ) {
             AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
                 onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.PAPER,
+                    appearance.withTheme(ReaderTheme.PAPER).copy(
                         fontScale = 1.0,
                         lineHeight = 1.45,
                         pageMargins = 1.0,
-                        scroll = false,
-                        publisherStyles = true
+                        scroll = false
                     )
                 )
             }
             AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
                 onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.SEPIA,
+                    appearance.withTheme(ReaderTheme.SEPIA).copy(
                         fontScale = 1.08,
                         lineHeight = 1.6,
                         pageMargins = 1.15,
-                        scroll = false,
-                        publisherStyles = false
+                        scroll = false
                     )
                 )
             }
             AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
                 onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.DUSK,
+                    appearance.withTheme(ReaderTheme.DUSK).copy(
                         fontScale = 1.05,
                         lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
+                        pageMargins = 1.1
                     )
                 )
             }
             AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
                 onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.OLED,
+                    appearance.withTheme(ReaderTheme.OLED).copy(
                         fontScale = 1.05,
                         lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
+                        pageMargins = 1.1
                     )
                 )
             }
