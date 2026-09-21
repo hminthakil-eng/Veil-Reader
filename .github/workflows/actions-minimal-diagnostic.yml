@@ -6,14 +6,46 @@ on:
     branches:
       - diag/actions-minimal
 
+permissions:
+  contents: read
+
 jobs:
-  ping:
+  android-base:
     runs-on: [self-hosted, Windows, X64, veil-reader]
-    timeout-minutes: 5
+    timeout-minutes: 45
     steps:
-      - name: Runner alive
+      - name: Checkout main
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          clean: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Reading policy regression checks
         shell: powershell
-        run: |
-          Write-Output "runner-ok"
-          Write-Output $env:COMPUTERNAME
-          Write-Output $PSVersionTable.PSVersion
+        run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Unit tests
+        shell: powershell
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Android lint
+        shell: powershell
+        run: gradle :app:lintDebug --stacktrace
+
+      - name: Build debug APK
+        shell: powershell
+        run: gradle :app:assembleDebug --stacktrace
