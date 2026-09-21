@@ -89,8 +89,7 @@ private fun MangaPagedReaderSurface(
             .fillMaxSize()
             .then(gestureModifier)
     ) {
-        pageContent(
-            index,
+        val pageModifier = if (gestureOwner == MangaReaderGestureOwner.VEIL_READER) {
             Modifier
                 .fillMaxSize()
                 .graphicsLayer {
@@ -101,7 +100,10 @@ private fun MangaPagedReaderSurface(
                         pivotFractionY = zoom.centerYFraction.toFloat()
                     )
                 }
-        )
+        } else {
+            Modifier.fillMaxSize()
+        }
+        pageContent(index, pageModifier)
     }
 }
 
@@ -110,6 +112,7 @@ private fun MangaWebtoonReaderSurface(
     state: MangaReaderUiState,
     onIntent: (MangaReaderUiIntent) -> Unit,
     modifier: Modifier,
+    gestureOwner: MangaReaderGestureOwner,
     pageContent: @Composable (pageIndex: Int, modifier: Modifier) -> Unit
 ) {
     val pageCount = state.reader.pageCount ?: 0
@@ -184,7 +187,10 @@ private fun MangaWebtoonReaderSurface(
             count = pageCount,
             key = { index -> index }
         ) { index ->
-            val pageModifier = if (index == state.reader.position.itemIndex) {
+            val pageModifier = if (
+                index == state.reader.position.itemIndex &&
+                gestureOwner == MangaReaderGestureOwner.VEIL_READER
+            ) {
                 Modifier.graphicsLayer {
                     scaleX = zoom.scale.toFloat()
                     scaleY = zoom.scale.toFloat()
