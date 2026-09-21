@@ -153,6 +153,9 @@ fun MangaReaderIntegratedScreen(
                                 gestureOwner = owner
                             }
                         },
+                        onRendererTap = {
+                            readerViewModel.onIntent(MangaReaderUiIntent.ToggleControls)
+                        },
                         modifier = pageModifier
                     )
                 }
@@ -183,6 +186,7 @@ private fun MangaAdaptivePage(
     imageLoader: ImageLoader,
     isCurrent: Boolean,
     onCurrentGestureOwner: (MangaReaderGestureOwner) -> Unit,
+    onRendererTap: () -> Unit,
     modifier: Modifier
 ) {
     var retryKey by remember(asset) { mutableIntStateOf(0) }
@@ -246,7 +250,8 @@ private fun MangaAdaptivePage(
                     dimensions = plan.dimensions,
                     mode = mode,
                     imageLoader = imageLoader,
-                    modifier = modifier
+                    modifier = modifier,
+                    onTap = onRendererTap
                 )
             } else {
                 MangaCoilPage(
