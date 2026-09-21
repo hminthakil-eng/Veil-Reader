@@ -61,7 +61,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         // Restore the original layout so this test does not leak reader preference state.
         clickDescription("PDF continuous scroll")
         waitForPdfLayoutLabel(excluding = after)
-        clickText("Back to reading")
+        pressAndroidBack()
 
         uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_90)
         try {
@@ -79,6 +79,11 @@ class ReaderPdfReliabilityInstrumentedTest {
             "sh -c \"printf '%s' '$PDF_BASE64' | base64 -d > /sdcard/Download/VeilReaderQa.pdf\""
         uiAutomation.executeShellCommand(command).close()
         SystemClock.sleep(500)
+    }
+
+    private fun pressAndroidBack() {
+        uiAutomation.executeShellCommand("input keyevent KEYCODE_BACK").close()
+        SystemClock.sleep(750)
     }
 
     private fun revealReaderChrome() {
