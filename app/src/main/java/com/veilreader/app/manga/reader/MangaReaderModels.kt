@@ -22,7 +22,49 @@ enum class MangaOrientationPolicy {
 data class MangaReaderChapterRef(
     val mangaId: CanonicalMangaId,
     val anchor: MangaChapterAnchor
-)
+) {
+    /**
+     * Logical equality for restore/migration deliberately ignores providerChapterKeyHint when
+     * stronger source-neutral chapter evidence exists.
+     */
+    fun sameLogicalChapter(other: MangaReaderChapterRef): Boolean {
+        if (mangaId != other.mangaId) return false
+        val left = anchor
+        val right = other.anchor
+
+        if (left.number != null && right.number != null) {
+            val volumeMatches =
+                left.volume == null || right.volume == null || close(left.volume, right.volume)
+            val languageMatches =
+                left.languageTag == null ||
+                    right.languageTag == null ||
+                    left.languageTag.equals(right.languageTag, ignoreCase = true)
+            return close(left.number, right.number) && volumeMatches && languageMatches
+        }
+
+        val leftTitle = left.normalizedTitle?.let(::normalizeChapterTitle)
+        val rightTitle = right.normalizedTitle?.let(::normalizeChapterTitle)
+        if (!leftTitle.isNullOrBlank() && !rightTitle.isNullOrBlank()) {
+            val languageMatches =
+                left.languageTag == null ||
+                    right.languageTag == null ||
+                    left.languageTag.equals(right.languageTag, ignoreCase = true)
+            return leftTitle == rightTitle && languageMatches
+        }
+
+        return !left.providerChapterKeyHint.isNullOrBlank() &&
+            left.providerChapterKeyHint == right.providerChapterKeyHint
+    }
+
+    private fun close(a: Double, b: Double): Boolean =
+        kotlin.math.abs(a - b) < 0.0001
+
+    private fun normalizeChapterTitle(value: String): String =
+        value.lowercase()
+            .replace(Regex("[^\\p{L}\\p{N}]+"), " ")
+            .trim()
+            .replace(Regex("\\s+"), " ")
+}
 
 sealed interface MangaReaderPosition {
     val itemIndex: Int
