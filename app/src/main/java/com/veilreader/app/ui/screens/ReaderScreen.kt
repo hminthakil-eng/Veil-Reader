@@ -77,6 +77,7 @@ import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
+import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
@@ -559,7 +560,7 @@ fun ReaderScreen(
     }
 }
 
-@OptIn(ExperimentalReadiumApi::class)
+@OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
 private fun createReaderFactory(
     opened: OpenedPublication,
     appearance: ReaderAppearance,
@@ -570,6 +571,7 @@ private fun createReaderFactory(
             initialLocator = opened.initialLocator,
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
+                useReadiumCssFontSize = false
                 disablePageTurnsWhileScrolling = false
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(

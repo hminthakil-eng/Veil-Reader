@@ -1,7 +1,6 @@
 package com.veilreader.app.ui.screens
 
 import android.graphics.Color as AndroidColor
-import com.veilreader.app.domain.ReadingPolicy
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Theme
@@ -21,10 +20,13 @@ internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPrefere
         ReaderTheme.DUSK -> ReadiumColor(AndroidColor.rgb(24, 21, 29))
         else -> null
     },
-    fontSize = ReadingPolicy.fontSizePercent(fontScale),
+    fontSize = readiumFontSizeRatio(fontScale),
     lineHeight = lineHeight,
     pageMargins = pageMargins,
     scroll = scroll,
     publisherStyles = publisherStyles
 )
 
+
+internal fun readiumFontSizeRatio(scale: Double): Double =
+    (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
