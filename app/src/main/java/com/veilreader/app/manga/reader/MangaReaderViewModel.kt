@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 enum class MangaReaderFailureKind {
     RATE_LIMITED,
@@ -34,7 +36,8 @@ enum class MangaReaderFailureKind {
 data class MangaReaderFailure(
     val kind: MangaReaderFailureKind,
     val message: String,
-    val retryable: Boolean
+    val retryable: Boolean,
+    val recoveryChapterId: String? = null
 )
 
 data class MangaReaderUiState(
@@ -91,6 +94,23 @@ internal suspend fun resolveMangaChapterPages(
     return offline ?: remote()
 }
 
+internal fun validateMangaChapterPages(pages: List<MangaPage>): List<MangaPage> {
+    if (pages.isEmpty()) {
+        throw MangaSourceException.NotFound("This manga chapter has no readable pages.")
+    }
+    if (pages.map(MangaPage::index).distinct().size != pages.size) {
+        throw MangaSourceException.ParseFailure("Manga chapter returned duplicate page indices.")
+    }
+    return pages
+}
+
+private data class MangaProgressSnapshot(
+    val bookId: String,
+    val chapterId: String,
+    val pageIndex: Int,
+    val pageCount: Int
+)
+
 class MangaReaderViewModel(
     private val mangaLibrary: MangaLibraryRepository,
     private val mangaHub: MangaHub,
@@ -114,6 +134,8 @@ class MangaReaderViewModel(
     private var progressJob: Job? = null
     private var preloadJob: Job? = null
     private var preferenceJob: Job? = null
+    private val progressMutex = Mutex()
+    private var lastPersistedProgress: MangaProgressSnapshot? = null
 
     fun open(
         bookId: String,
@@ -180,11 +202,8 @@ class MangaReaderViewModel(
         progressJob?.cancel()
         progressJob = viewModelScope.launch {
             delay(PROGRESS_DEBOUNCE_MS)
-            mangaLibrary.saveReadingProgress(
-                bookId = bookId,
-                chapterId = chapterId,
-                pageIndex = safePage,
-                pageCount = state.pages.size
+            persistProgress(
+                state.copy(pageIndex = safePage)
             )
         }
 
@@ -245,12 +264,22 @@ class MangaReaderViewModel(
         val bookId = state.bookId ?: return
         val chapterId = state.chapterId ?: return
         if (state.pages.isEmpty()) return
-        mangaLibrary.saveReadingProgress(
+        val snapshot = MangaProgressSnapshot(
             bookId = bookId,
             chapterId = chapterId,
-            pageIndex = state.pageIndex,
+            pageIndex = state.pageIndex.coerceIn(0, state.pages.lastIndex),
             pageCount = state.pages.size
         )
+        progressMutex.withLock {
+            if (lastPersistedProgress == snapshot) return
+            mangaLibrary.saveReadingProgress(
+                bookId = snapshot.bookId,
+                chapterId = snapshot.chapterId,
+                pageIndex = snapshot.pageIndex,
+                pageCount = snapshot.pageCount
+            )
+            lastPersistedProgress = snapshot
+        }
     }
 
     fun retry() {
@@ -262,6 +291,29 @@ class MangaReaderViewModel(
             loadChapter(
                 bookId = bookId,
                 chapterId = chapterId,
+                preferences = state.preferences,
+                restorePage = true
+            )
+        }
+    }
+
+    fun recoverNearbyChapter() {
+        val state = _uiState.value
+        val bookId = state.bookId ?: return
+        val target = state.failure?.recoveryChapterId ?: return
+        if (state.loading) return
+
+        _uiState.value = loadingMangaReaderState(
+            current = state,
+            bookId = bookId,
+            chapterId = target,
+            preferences = state.preferences
+        )
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            loadChapter(
+                bookId = bookId,
+                chapterId = target,
                 preferences = state.preferences,
                 restorePage = true
             )
@@ -286,16 +338,19 @@ class MangaReaderViewModel(
             val cachedPages = synchronized(chapterPageCache) {
                 chapterPageCache[chapterId]
             }
-            val sourceRef = requireNotNull(mangaLibrary.chapterRefForReading(chapterId)) {
-                "No source binding is available for this manga chapter."
-            }
-            val pages = resolveMangaChapterPages(
-                ref = sourceRef,
-                cached = cachedPages,
-                offlineStore = offlineStore
-            ) {
-                mangaHub.pages(sourceRef)
-            }.also { loaded ->
+            val sourceRef = mangaLibrary.chapterRefForReading(chapterId)
+                ?: throw MangaSourceException.NotFound(
+                    "This manga chapter no longer has a readable source binding."
+                )
+            val pages = validateMangaChapterPages(
+                resolveMangaChapterPages(
+                    ref = sourceRef,
+                    cached = cachedPages,
+                    offlineStore = offlineStore
+                ) {
+                    mangaHub.pages(sourceRef)
+                }
+            ).also { loaded ->
                 synchronized(chapterPageCache) {
                     chapterPageCache[chapterId] = loaded
                 }
@@ -329,9 +384,16 @@ class MangaReaderViewModel(
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (error: Throwable) {
+            val recoveryChapterId = if (error is MangaSourceException.NotFound) {
+                mangaLibrary.recoveryChapterId(bookId, chapterId)
+            } else {
+                null
+            }
             _uiState.value = _uiState.value.copy(
                 loading = false,
-                failure = error.toReaderFailure()
+                failure = error.toReaderFailure().copy(
+                    recoveryChapterId = recoveryChapterId
+                )
             )
         }
     }
