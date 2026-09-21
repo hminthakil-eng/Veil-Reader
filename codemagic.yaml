@@ -161,6 +161,8 @@ workflows:
     max_build_duration: 45
     environment:
       java: 17
+      groups:
+        - emulatorwtf
     scripts:
       - name: Require emulator.wtf token
         script: |
@@ -233,13 +235,19 @@ workflows:
           done
           [ "$RUNNER_FOUND" -eq 1 ]
 
-      - name: Install emulator.wtf CLI
+      - name: Resolve emulator.wtf CLI
         script: |
           set -e
-          mkdir -p "$HOME/bin"
-          curl --fail --location --retry 3 https://maven.emulator.wtf/releases/ew-cli -o "$HOME/bin/ew-cli"
-          chmod +x "$HOME/bin/ew-cli"
-          "$HOME/bin/ew-cli" --version
+          if command -v ew-cli >/dev/null 2>&1; then
+            EW_CLI="$(command -v ew-cli)"
+          else
+            mkdir -p "$HOME/bin"
+            curl --fail --location --retry 3 https://maven.emulator.wtf/releases/ew-cli -o "$HOME/bin/ew-cli"
+            chmod +x "$HOME/bin/ew-cli"
+            EW_CLI="$HOME/bin/ew-cli"
+          fi
+          "$EW_CLI" --version
+          printf '%s\n' "EW_CLI=$EW_CLI" >> "$CM_ENV"
 
       - name: Run Android instrumentation on Pixel 7 API 35
         script: |
@@ -248,7 +256,7 @@ workflows:
           TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' | head -n 1)"
           mkdir -p emulator-wtf-results
 
-          "$HOME/bin/ew-cli" \
+          "$EW_CLI" \
             --app "$APP_APK" \
             --test "$TEST_APK" \
             --test-runner-class androidx.test.runner.AndroidJUnitRunner \
