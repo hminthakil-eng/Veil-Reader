@@ -255,16 +255,36 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - runtime factory wires BrowserChallengeCoordinator + AndroidChallengeUiDriver + transient session headers into SourceExecutionCoordinator;
    - tests cover solved-header handoff, expiry, injection rejection, host-loss cancellation, rotation grace, completion race, owner cancellation and origin policy.
 
+16. **Reader device verification harness**
+   - debug-only verification Activity reconstructs a complete local Manga session from Intent extras;
+   - no live Manga website or production library data is required;
+   - verification persistence uses a dedicated Room database separate from the user's library;
+   - optional in-memory progress mode isolates SavedState for true process-death testing;
+   - generated image fixtures are atomic and dimension-validated before reuse;
+   - normal fixture pages are fully local/offline;
+   - partial-offline fixture exposes a bounded incomplete chapter;
+   - extreme fixture generates a 360x12000 local PNG with repeated visual markers;
+   - stable Compose semantics tags expose reader root, page, chrome, mode, direction, partial-offline and subsampling surfaces;
+   - emulator tests cover Activity recreation, RTL/LTR swipe and edge-tap direction, Paged↔Webtoon round trip, durable offline reopen, partial-offline boundary blocking and extreme-page gesture isolation;
+   - extreme renderer test requires successful subsampling render and Activity recreation without OOM/crash;
+   - manual protocol isolates true OS process death from Room persistence and records extreme-image visual/memory evidence;
+   - existing connectedDebugAndroidTest emulator workflow is reused; no duplicate device workflow is added.
+
 ## Next vertical slices
 
-1. **Reader instrumentation + device verification**
-   - rotation and process-death restore;
-   - RTL/LTR swipe/tap behavior;
-   - paged ↔ webtoon switching;
-   - offline reopen and partial-offline boundary UX;
-   - extreme local image OOM/zoom-quality gate;
-   - gesture conflict checks for ZoomImage vs LazyColumn/paged navigation;
-   - run only once Android/Gradle execution is available.
+1. **Manga Hub catalog vertical slice**
+   - source-neutral Browse/Search/Library entry point;
+   - one fixture/local provider end-to-end before any live source adapter;
+   - canonical work creation/linking through Room;
+   - chapter list -> MangaReaderSession -> integrated reader;
+   - source health/replacement state visible but not overexposed in normal UX;
+   - no bulk source catalog until the end-to-end product path is Android-verified.
+
+2. **Execute Android device gate**
+   - run the prepared connectedDebugAndroidTest matrix once the runner/PC build gate is available;
+   - generate Room schema v2 through KSP;
+   - run the manual true process-death and extreme visual-quality protocol;
+   - do not merge the stacked Manga foundations until these gates are green.
 
 ## Verification state
 
@@ -282,6 +302,7 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Reader screen integration now has deterministic unit gates for session identity/source ownership, progress remapping and exclusive gesture ownership. Full ViewModel/Compose/ZoomImage Android verification remains blocked on the Android build gate.
 - Room v2 persistence has an additive v1→v2 migration, DAO/repository instrumentation gates, and backup schema-3 coverage. The generated `app/schemas/.../2.json` remains pending the first successful Android/KSP build; it will not be fabricated manually.
 - Android challenge UI now has process-local host/session/header boundaries plus unit/instrumentation gates for retry handoff, rotation grace, host loss, cancellation and HTTPS origin confinement. Full WebView device execution remains pending the Android build/device gate.
+- Reader device verification harness is now committed: deterministic debug host, isolated Room persistence, Compose instrumentation matrix, extreme local fixture and manual process-death protocol. These tests are prepared but not yet executed because Android runners still fail before their first workflow step.
 - GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
 - Full Android/Gradle verification remains required before merge.
 
