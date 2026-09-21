@@ -262,8 +262,10 @@ class MangaDexSourceProvider internal constructor(
                 ?.takeIf(String::isNotBlank)
                 ?: payloadError("MangaDex at-home response missing hash")
 
-            val original = chapterObject.array("data").mapNotNull(JsonPrimitive::contentOrNull)
-            val dataSaver = chapterObject.array("dataSaver").mapNotNull(JsonPrimitive::contentOrNull)
+            val original = chapterObject.array("data")
+                .mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
+            val dataSaver = chapterObject.array("dataSaver")
+                .mapNotNull { (it as? JsonPrimitive)?.contentOrNull }
             val filenames = original.ifEmpty { dataSaver }
             val pathSegment = if (original.isNotEmpty()) "data" else "data-saver"
 
