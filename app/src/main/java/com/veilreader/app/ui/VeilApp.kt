@@ -87,7 +87,10 @@ fun VeilApp(
             MangaReaderTarget(bookId = bookId, chapterId = chapterId)
         }
     }
-    val readerOwnsScreen = openedPublication != null || restoredMangaTarget != null
+    val readerOwnsScreen =
+        openedPublication != null ||
+            restoredMangaTarget != null ||
+            mangaState.readerTarget != null
 
     LaunchedEffect(mangaState.readerTarget) {
         val pending = mangaState.readerTarget ?: return@LaunchedEffect
