@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -48,6 +49,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.github.barteksc.pdfviewer.PDFView
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
@@ -87,6 +89,7 @@ import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.util.DirectionalNavigationAdapter
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalReadiumApi::class, ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
@@ -115,6 +118,7 @@ fun ReaderScreen(
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
+    var pdfZoom by remember(opened.book.id) { mutableFloatStateOf(1f) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     var showAppearance by remember { mutableStateOf(false) }
     var appearance by remember { mutableStateOf(library.loadAppearance()) }
@@ -290,6 +294,10 @@ fun ReaderScreen(
         readerViewModel.onUserInteraction()
         val epub = navigator as? EpubNavigatorFragment ?: return@LaunchedEffect
         epub.submitPreferences(appearance.toEpubPreferences())
+    }
+    LaunchedEffect(controlsVisible, navigator, opened.format) {
+        if (!controlsVisible || opened.format != BookFormat.PDF) return@LaunchedEffect
+        findPdfView(navigator)?.let { pdfZoom = it.zoom }
     }
 
     LaunchedEffect(navigator, opened.book.id, bookHighlights) {
@@ -643,6 +651,54 @@ private fun ReaderFragmentHost(
     }
 }
 
+private fun findPdfView(navigator: Navigator?): PDFView? {
+    val fragment = navigator as? Fragment ?: return null
+    return findPdfView(fragment)
+}
+
+private fun findPdfView(fragment: Fragment): PDFView? {
+    findPdfView(fragment.view)?.let { return it }
+    for (child in fragment.childFragmentManager.fragments) {
+        findPdfView(child)?.let { return it }
+    }
+    return null
+}
+
+private fun findPdfView(view: View?): PDFView? = when (view) {
+    null -> null
+    is PDFView -> view
+    is ViewGroup -> {
+        var result: PDFView? = null
+        for (index in 0 until view.childCount) {
+            result = findPdfView(view.getChildAt(index))
+            if (result != null) break
+        }
+        result
+    }
+    else -> null
+}
+
+@Composable
+private fun PdfZoomButton(
+    label: String,
+    accessibilityLabel: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier
+            .heightIn(min = 44.dp)
+            .semantics { contentDescription = accessibilityLabel },
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
 private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE }
 
 @Composable
@@ -777,7 +833,7 @@ private fun ReaderSettingsPanel(
                 if (format == BookFormat.EPUB) {
                     "Quick controls first. Advanced typography stays one tap away. These preferences apply to EPUB books on this device."
                 } else {
-                    "PDF pages keep their original layout. Use pinch to zoom and drag to pan; EPUB typography controls are hidden because they do not affect PDFs."
+                    "PDF pages keep their original layout. Pinch or double-tap to zoom, drag to pan, or use the Reader chrome controls for precise zoom and Fit width."
                 },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
@@ -940,7 +996,7 @@ private fun ReaderSettingsPanel(
                 ) {
                     Text("On-page PDF gestures", fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Pinch to zoom. Drag to pan while zoomed. Page position and resume state remain handled by the PDF navigator.",
+                        "Pinch or double-tap to zoom. Drag to pan while zoomed. Reader chrome adds − / Fit / + controls without replacing native gestures. Page position and resume state remain handled by the PDF navigator.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -984,3 +1040,4 @@ private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferen
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
+private const val PDF_ZOOM_STEP = 1.35f
