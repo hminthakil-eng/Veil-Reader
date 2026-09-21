@@ -6,6 +6,7 @@ on:
       - "app/src/main/java/com/veilreader/app/data/**"
       - "app/src/main/java/com/veilreader/app/manga/reader/**"
       - "app/src/main/java/com/veilreader/app/manga/hub/**"
+      - "app/src/main/java/com/veilreader/app/manga/source/**"
       - "app/src/debug/**"
       - "app/src/androidTest/**"
       - "app/schemas/**"
