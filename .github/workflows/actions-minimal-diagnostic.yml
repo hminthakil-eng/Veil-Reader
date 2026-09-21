@@ -30,15 +30,18 @@ jobs:
         shell: powershell
         run: |
           $sdk = 'C:\Users\Microsoft\AppData\Local\Android\Sdk'
-          if (!(Test-Path "$sdk\cmdline-tools\latest\bin\sdkmanager.bat")) {
-            throw "sdkmanager missing at $sdk"
-          }
+          $android = "$sdk\cmdline-tools\latest\bin\android.exe"
+          if (!(Test-Path $android)) { throw "Android CLI missing at $android" }
           "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
           "$sdk\platform-tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           "$sdk\cmdline-tools\latest\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          & "$sdk\cmdline-tools\latest\bin\sdkmanager.bat" "platforms;android-37" "build-tools;37.0.0" "platform-tools"
-          if ($LASTEXITCODE -ne 0) { throw "sdkmanager failed: $LASTEXITCODE" }
+          & $android sdk install "platforms/android-37.0"
+          if ($LASTEXITCODE -ne 0) { throw "platform install failed: $LASTEXITCODE" }
+          & $android sdk install "build-tools/37.0.0"
+          if ($LASTEXITCODE -ne 0) { throw "build-tools install failed: $LASTEXITCODE" }
+          & $android sdk install "platform-tools"
+          if ($LASTEXITCODE -ne 0) { throw "platform-tools install failed: $LASTEXITCODE" }
 
       - name: Reading policy regression checks
         shell: powershell
