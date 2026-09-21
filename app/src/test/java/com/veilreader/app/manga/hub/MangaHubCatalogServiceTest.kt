@@ -22,6 +22,7 @@ import com.veilreader.app.manga.source.SourceOutcome
 import com.veilreader.app.manga.source.SourceRegistry
 import com.veilreader.app.manga.source.SourceRequestContext
 import com.veilreader.app.manga.source.SourceSearchRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
@@ -183,6 +184,39 @@ class MangaHubCatalogServiceTest {
 
         assertEquals(1, result.items.size)
         assertEquals(canonical.id, result.items.single().canonicalId)
+    }
+
+    @Test
+    fun cancellationAfterDurableAddIsNotReclassifiedAsUniqueIdentityRecovery() = runBlocking {
+        val provider = FakeProvider("fixture.one", "work", "Work")
+        val delegate = InMemoryMangaCanonicalStore()
+        val cancellation = CancellationException("caller stopped after commit")
+        var lookups = 0
+        val store = object : com.veilreader.app.manga.library.MangaCanonicalStore by delegate {
+            override suspend fun findWorkBySource(ref: SourceMangaRef): CanonicalManga? {
+                lookups += 1
+                return delegate.findWorkBySource(ref)
+            }
+
+            override suspend fun saveWork(manga: CanonicalManga) {
+                delegate.saveWork(manga)
+                throw cancellation
+            }
+        }
+        val service = MangaHubCatalogService(
+            sources = SourceRegistry(listOf(provider)),
+            execution = SourceExecutionCoordinator(),
+            library = store
+        )
+        var caught: CancellationException? = null
+        try {
+            service.addToLibrary(provider.detailsValue)
+        } catch (error: CancellationException) {
+            caught = error
+        }
+        assertSame(cancellation, caught)
+        assertEquals(1, lookups)
+        assertEquals(1, delegate.listWorks().size)
     }
 
     private class FakeProvider(

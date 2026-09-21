@@ -18,6 +18,7 @@ import com.veilreader.app.manga.source.SourceMangaSummary
 import com.veilreader.app.manga.source.SourceOutcome
 import com.veilreader.app.manga.source.SourceRegistry
 import com.veilreader.app.manga.source.SourceSearchRequest
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.supervisorScope
 
@@ -176,6 +177,8 @@ class MangaHubCatalogService(
         return try {
             library.saveWork(created)
             created
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (error: Exception) {
             // A concurrent Add action may have won the unique source-identity race. Return that
             // canonical work rather than creating a duplicate or surfacing a false failure.
