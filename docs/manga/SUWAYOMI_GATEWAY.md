@@ -73,3 +73,21 @@ Recommended:
 - authentication enabled when reachable outside a trusted LAN
 
 The gateway does not provide or discover third-party public servers.
+
+
+## Runtime discovery
+
+Configured Suwayomi servers are discovered independently before their providers enter the canonical
+Manga source catalog.
+
+- duplicate local server IDs are rejected before network work starts;
+- a failed or offline server is reported separately and does not suppress providers discovered from
+  healthy servers;
+- coroutine cancellation is never converted into a source failure;
+- bearer credentials remain behind the runtime token provider and are not copied into source
+  identity, catalog metadata, or persistence;
+- discovered providers still pass through `MangaFeaturePolicy`, so gateway discovery alone never
+  enables every remote source.
+
+This keeps runtime availability separate from source enablement and lets the future Manga Hub UI
+show partial availability without weakening Veil's fail-closed source policy.
