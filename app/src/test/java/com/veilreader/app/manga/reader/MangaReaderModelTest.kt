@@ -19,6 +19,24 @@ class MangaReaderModelTest {
         assertEquals(listOf(0, 1, 2), MangaPrefetchWindow.indices(center = 99, total = 3))
     }
     @Test
+    fun rendererSafety_capsPagedRetentionAndPrefetchTogether() {
+        assertEquals(1, MangaRendererSafety.prefetchRadius(MangaReaderMode.PAGED))
+        assertEquals(2, MangaRendererSafety.prefetchRadius(MangaReaderMode.WEBTOON))
+        assertEquals(0, MangaRendererSafety.beyondViewportPageCount(totalPages = 0))
+        assertEquals(0, MangaRendererSafety.beyondViewportPageCount(totalPages = 1))
+        assertEquals(1, MangaRendererSafety.beyondViewportPageCount(totalPages = 2))
+        assertEquals(1, MangaRendererSafety.beyondViewportPageCount(totalPages = 200))
+        assertEquals(
+            listOf(3, 4, 5),
+            MangaPrefetchWindow.indices(
+                center = 4,
+                total = 10,
+                radius = MangaRendererSafety.prefetchRadius(MangaReaderMode.PAGED)
+            )
+        )
+    }
+
+    @Test
     fun preloadNextChapter_startsOnlyNearChapterEnd() {
         assertTrue(!shouldPreloadNextChapter(pageIndex = 0, totalPages = 20))
         assertTrue(!shouldPreloadNextChapter(pageIndex = 16, totalPages = 20))
