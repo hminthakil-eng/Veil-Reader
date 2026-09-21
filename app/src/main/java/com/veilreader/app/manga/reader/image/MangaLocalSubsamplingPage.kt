@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.layout.ContentScale
 import coil3.ImageLoader
 import com.github.panpf.zoomimage.CoilZoomAsyncImage
 import com.github.panpf.zoomimage.rememberCoilZoomState
 import com.github.panpf.zoomimage.util.Logger
 import com.veilreader.app.manga.reader.MangaReaderMode
+import com.veilreader.app.manga.reader.screen.MangaReaderVerificationTags
 
 /**
  * Isolated mature subsampling renderer for verified local extreme images.
@@ -54,7 +56,7 @@ fun MangaLocalSubsamplingPage(
         model = request,
         contentDescription = null,
         imageLoader = imageLoader,
-        modifier = imageModifier,
+        modifier = imageModifier.testTag(MangaReaderVerificationTags.SUBSAMPLING),
         contentScale = ContentScale.Fit,
         zoomState = zoomState,
         onTap = { onTap?.invoke() }
