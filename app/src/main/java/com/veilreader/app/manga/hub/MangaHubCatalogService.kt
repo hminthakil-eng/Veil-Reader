@@ -118,6 +118,51 @@ class MangaHubCatalogService(
         )
     }
 
+    suspend fun loadLibraryDetails(
+        id: CanonicalMangaId,
+        preferredSourceId: SourceId? = null
+    ): MangaHubWorkDetails {
+        val canonical = library.loadWork(id)
+            ?: throw MangaHubException("This Manga is no longer in the local library.")
+
+        val refs = buildList {
+            if (preferredSourceId != null) {
+                canonical.sourceRef(preferredSourceId)?.let(::add)
+            }
+            canonical.sourceRefs.values
+                .filterNot { it.sourceId == preferredSourceId }
+                .sortedBy { it.sourceId.value }
+                .forEach(::add)
+        }
+
+        var lastFailure: MangaHubException? = null
+        for (ref in refs) {
+            val provider = sources.find(ref.sourceId) ?: continue
+            try {
+                val details = requireSuccess(
+                    execution.details(provider, ref).outcome,
+                    "Could not load Manga details."
+                )
+                val chapters = requireSuccess(
+                    execution.chapters(provider, ref).outcome,
+                    "Could not load Manga chapters."
+                )
+                return MangaHubWorkDetails(
+                    details = details,
+                    chaptersInReadingOrder = chapters,
+                    source = provider.descriptor,
+                    canonical = canonical
+                )
+            } catch (error: MangaHubException) {
+                lastFailure = error
+            }
+        }
+
+        throw lastFailure ?: MangaHubException(
+            "No linked source can currently open this Manga."
+        )
+    }
+
     suspend fun addToLibrary(details: SourceMangaDetails): CanonicalManga {
         val ref = details.summary.ref
         val existing = library.findWorkBySource(ref)
@@ -128,8 +173,14 @@ class MangaHubCatalogService(
             initialSource = ref,
             alternativeTitles = details.summary.alternativeTitles
         )
-        library.saveWork(created)
-        return created
+        return try {
+            library.saveWork(created)
+            created
+        } catch (error: Exception) {
+            // A concurrent Add action may have won the unique source-identity race. Return that
+            // canonical work rather than creating a duplicate or surfacing a false failure.
+            library.findWorkBySource(ref) ?: throw error
+        }
     }
 
     suspend fun removeFromLibrary(id: CanonicalMangaId) {
