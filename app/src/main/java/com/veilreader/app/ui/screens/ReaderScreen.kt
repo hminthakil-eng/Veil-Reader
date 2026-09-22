@@ -123,10 +123,9 @@ fun ReaderScreen(
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
-    var appearance by remember(opened.book.id) { mutableStateOf(readerAppearance) }
-    val latestAppearance = rememberUpdatedState(appearance)
-    val paperCurlConfig = remember(appearance.theme) {
-        when (appearance.theme) {
+    val latestAppearance = rememberUpdatedState(readerAppearance)
+    val paperCurlConfig = remember(readerAppearance.theme) {
+        when (readerAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFFF2E8D8),
                 backPageContentAlpha = 0.13f
@@ -156,7 +155,6 @@ fun ReaderScreen(
             sessionId = readerViewModel.traceSessionId(),
             details = "theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
         )
-        appearance = readerAppearance
     }
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
@@ -264,7 +262,7 @@ fun ReaderScreen(
     ) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
-        createReaderFactory(opened, appearance, selectionActionModeCallback)
+        createReaderFactory(opened, readerAppearance, selectionActionModeCallback)
     }
     val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
         { ready ->
@@ -396,10 +394,10 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(navigator, appearance, opened.format) {
+    LaunchedEffect(navigator, readerAppearance, opened.format) {
         game.pauseReading()
         readerViewModel.onUserInteraction()
-        val traceDetails = "format=${opened.format} theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
+        val traceDetails = "format=${opened.format} theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
         ReaderTrace.event(
             "appearance_submit_requested",
             bookId = opened.book.id,
@@ -409,12 +407,12 @@ fun ReaderScreen(
         when (opened.format) {
             BookFormat.EPUB ->
                 (navigator as? EpubNavigatorFragment)
-                    ?.submitPreferences(appearance.toEpubPreferences())
+                    ?.submitPreferences(readerAppearance.toEpubPreferences())
 
             BookFormat.PDF -> {
                 @Suppress("UNCHECKED_CAST")
                 val pdfNavigator = navigator as? PdfiumNavigatorFragment
-                pdfNavigator?.submitPreferences(appearance.toPdfiumPreferences())
+                pdfNavigator?.submitPreferences(readerAppearance.toPdfiumPreferences())
             }
 
             else -> Unit
@@ -707,10 +705,9 @@ fun ReaderScreen(
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
             AppearancePanel(
                 format = opened.format,
-                appearance = appearance,
+                appearance = readerAppearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
-                    appearance = it
                     onReaderAppearanceChange(it)
                 },
                 onDone = { showAppearance = false }
@@ -926,6 +923,22 @@ private fun AppearancePanel(
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
 ) {
+    var draft by remember { mutableStateOf(appearance) }
+    var hasPendingDraft by remember { mutableStateOf(false) }
+
+    LaunchedEffect(appearance) {
+        when {
+            !hasPendingDraft -> draft = appearance
+            appearance == draft -> hasPendingDraft = false
+        }
+    }
+
+    fun updateDraft(value: ReaderAppearance) {
+        draft = value
+        hasPendingDraft = true
+        onChange(value)
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -957,9 +970,9 @@ private fun AppearancePanel(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
-                onChange(
-                    appearance.copy(
+            AppearancePreset("Book", draft.theme == ReaderTheme.PAPER) {
+                updateDraft(
+                    draft.copy(
                         theme = ReaderTheme.PAPER,
                         fontScale = 1.0,
                         lineHeight = 1.45,
@@ -969,9 +982,9 @@ private fun AppearancePanel(
                     )
                 )
             }
-            AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
-                onChange(
-                    appearance.copy(
+            AppearancePreset("Comfort", draft.theme == ReaderTheme.SEPIA) {
+                updateDraft(
+                    draft.copy(
                         theme = ReaderTheme.SEPIA,
                         fontScale = 1.08,
                         lineHeight = 1.6,
@@ -981,9 +994,9 @@ private fun AppearancePanel(
                     )
                 )
             }
-            AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
-                onChange(
-                    appearance.copy(
+            AppearancePreset("Night", draft.theme == ReaderTheme.DUSK) {
+                updateDraft(
+                    draft.copy(
                         theme = ReaderTheme.DUSK,
                         fontScale = 1.05,
                         lineHeight = 1.55,
@@ -992,9 +1005,9 @@ private fun AppearancePanel(
                     )
                 )
             }
-            AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
-                onChange(
-                    appearance.copy(
+            AppearancePreset("OLED", draft.theme == ReaderTheme.OLED) {
+                updateDraft(
+                    draft.copy(
                         theme = ReaderTheme.OLED,
                         fontScale = 1.05,
                         lineHeight = 1.55,
@@ -1007,24 +1020,24 @@ private fun AppearancePanel(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
+        Text("Text size · ${(draft.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
         Slider(
-            value = appearance.fontScale.toFloat(),
-            onValueChange = { onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false)) },
+            value = draft.fontScale.toFloat(),
+            onValueChange = { updateDraft(draft.copy(fontScale = it.toDouble(), publisherStyles = false)) },
             valueRange = .75f..1.8f
         )
 
-        Text("Line height · ${"%.2f".format(appearance.lineHeight)}", fontWeight = FontWeight.SemiBold)
+        Text("Line height · ${"%.2f".format(draft.lineHeight)}", fontWeight = FontWeight.SemiBold)
         Slider(
-            value = appearance.lineHeight.toFloat(),
-            onValueChange = { onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
+            value = draft.lineHeight.toFloat(),
+            onValueChange = { updateDraft(draft.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
             valueRange = 1.1f..2.0f
         )
 
-        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
+        Text("Page margins · ${"%.2f".format(draft.pageMargins)}", fontWeight = FontWeight.SemiBold)
         Slider(
-            value = appearance.pageMargins.toFloat(),
-            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
+            value = draft.pageMargins.toFloat(),
+            onValueChange = { updateDraft(draft.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
             valueRange = .5f..2.0f
         )
         }
@@ -1045,8 +1058,8 @@ private fun AppearancePanel(
                 )
             }
             Switch(
-                checked = appearance.scroll,
-                onCheckedChange = { onChange(appearance.copy(scroll = it)) },
+                checked = draft.scroll,
+                onCheckedChange = { updateDraft(draft.copy(scroll = it)) },
                 modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
             )
         }
@@ -1059,22 +1072,22 @@ private fun AppearancePanel(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     FilterChip(
-                        selected = appearance.pageTurnStyle == PageTurnStyle.PAPER,
-                        onClick = { onChange(appearance.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
-                        enabled = !appearance.scroll,
+                        selected = draft.pageTurnStyle == PageTurnStyle.PAPER,
+                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
+                        enabled = !draft.scroll,
                         label = { Text("Paper curl") },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     )
                     FilterChip(
-                        selected = appearance.pageTurnStyle == PageTurnStyle.SLIDE,
-                        onClick = { onChange(appearance.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
-                        enabled = !appearance.scroll,
+                        selected = draft.pageTurnStyle == PageTurnStyle.SLIDE,
+                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
+                        enabled = !draft.scroll,
                         label = { Text("Simple slide") },
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     )
                 }
                 Text(
-                    if (appearance.scroll) {
+                    if (draft.scroll) {
                         "Page-turn effects are paused while continuous scroll is on."
                     } else {
                         "Paper curl follows your drag; Simple slide keeps Readium's native animated fallback."
@@ -1095,7 +1108,7 @@ private fun AppearancePanel(
                 }
                 Switch(
                     checked = appearance.publisherStyles,
-                    onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
+                    onCheckedChange = { updateDraft(draft.copy(publisherStyles = it)) },
                     modifier = Modifier.semantics { contentDescription = "Publisher styling" }
                 )
             }
@@ -1103,7 +1116,7 @@ private fun AppearancePanel(
 
         if (format == BookFormat.PDF) {
             Text(
-                if (appearance.scroll) {
+                if (draft.scroll) {
                     "PDF scroll mode: pages flow vertically and fit the screen width."
                 } else {
                     "PDF paginated mode: pages snap horizontally and fit inside the viewport."
