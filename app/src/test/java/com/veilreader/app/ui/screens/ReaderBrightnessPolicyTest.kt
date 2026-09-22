@@ -25,7 +25,7 @@ class ReaderBrightnessPolicyTest {
             ReaderBrightness(
                 mode = ReaderBrightnessMode.OVERRIDE,
                 level = 0.42
-            ).toWindowBrightnessOverride(),
+            ).toWindowBrightnessOverride().let(::requireNotNull),
             0.0001f
         )
         assertEquals(
@@ -33,7 +33,7 @@ class ReaderBrightnessPolicyTest {
             ReaderBrightness(
                 mode = ReaderBrightnessMode.OVERRIDE,
                 level = -5.0
-            ).toWindowBrightnessOverride(),
+            ).toWindowBrightnessOverride().let(::requireNotNull),
             0.0001f
         )
         assertEquals(
@@ -41,7 +41,7 @@ class ReaderBrightnessPolicyTest {
             ReaderBrightness(
                 mode = ReaderBrightnessMode.OVERRIDE,
                 level = Double.NaN
-            ).toWindowBrightnessOverride(),
+            ).toWindowBrightnessOverride().let(::requireNotNull),
             0.0001f
         )
     }
