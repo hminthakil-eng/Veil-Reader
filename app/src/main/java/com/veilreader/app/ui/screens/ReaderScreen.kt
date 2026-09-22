@@ -128,7 +128,6 @@ fun ReaderScreen(
         ReaderTrace.event(
             "reader_brightness_applied",
             bookId = opened.book.id,
-            sessionId = readerViewModel.traceSessionId(),
             details = "mode=${readerAppearance.brightness.mode} level=${readerAppearance.brightness.normalizedLevel()}"
         )
     }
