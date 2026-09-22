@@ -4,6 +4,7 @@ Status: P0 controlled pilot
 Owner: SID / Veil Reader Engineering / Security & QA
 Upstream: https://github.com/google/skills
 License: Apache-2.0
+Reviewed upstream commit: `d6b9f75668ed1450a87ea12a8de57e02f33cc7b4`
 
 ## Company decision
 
@@ -36,6 +37,36 @@ The first Veil Reader pilot is deliberately narrow:
 
 Android-specific skills are evaluated from Google's separate official Android skills upstream rather than duplicated here.
 
+## Security review findings
+
+### Google Skill Finder
+
+Approved for pilot with guardrails.
+
+Observed behavior:
+- fetches the remote Google skill catalog;
+- can use shell/network tools such as curl/wget;
+- follows remote entrypoint URLs dynamically;
+- explicitly rejects TLS verification bypass.
+
+Required Eyad guardrail:
+- resolve catalog and skill entrypoints against the reviewed commit SHA, not mutable `main`, until re-reviewed.
+
+### Google Developer Knowledge
+
+Approved for pilot with guardrails.
+
+Observed behavior:
+- prefers Developer Knowledge MCP tools when available;
+- can fall back to the Google Developer Knowledge REST API;
+- fallback may use gcloud credentials or an API key.
+
+Required Eyad guardrail:
+- prefer MCP/read-only retrieval;
+- do not use API keys, gcloud tokens, or other cloud credentials without explicit authorization for that task;
+- do not persist retrieved secrets or credentials;
+- treat auth failures or empty results as failed lookups.
+
 ## Acceptance gates
 
 A skill may be promoted only when all are true:
@@ -67,4 +98,3 @@ Use the approved developer-knowledge/finder subset on one bounded Veil Reader en
 - security footprint,
 - reproducibility,
 - rollback path.
-
