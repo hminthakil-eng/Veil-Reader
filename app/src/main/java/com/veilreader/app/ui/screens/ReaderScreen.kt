@@ -120,6 +120,7 @@ fun ReaderScreen(
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
+    var initialNavigatorLocatorTraced by remember(opened.book.id) { mutableStateOf(false) }
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
@@ -329,6 +330,21 @@ fun ReaderScreen(
                 if (paperPreviewActive) return@collect
 
                 val json = locator.toVeilPersistedJson(opened.format)
+                if (!initialNavigatorLocatorTraced) {
+                    ReaderTrace.event(
+                        "navigator_initial_locator",
+                        bookId = opened.book.id,
+                        sessionId = readerViewModel.traceSessionId(),
+                        details = buildString {
+                            ReaderTrace.fingerprint(json)?.let { append("fp=").append(it) }
+                            locator.locations.totalProgression?.let {
+                                if (isNotEmpty()) append(' ')
+                                append("progress=").append(it)
+                            }
+                        }
+                    )
+                    initialNavigatorLocatorTraced = true
+                }
                 ReaderTrace.event(
                     "locator_observed",
                     bookId = opened.book.id,
