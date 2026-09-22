@@ -374,8 +374,11 @@ class LocalLibraryRepository internal constructor(
      * Production repositories live for the app process, but tests must cancel Room observers before
      * closing their database to avoid asynchronous queries against a closed connection.
      */
-    internal fun closeForTest() {
-        scope.cancel()
+    internal suspend fun closeForTest() {
+        scope.coroutineContext[Job]?.let { rootJob ->
+            rootJob.cancel()
+            rootJob.join()
+        }
     }
 
     /** Ensures migration and all writes queued before this call have reached durable storage. */
