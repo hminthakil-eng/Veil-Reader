@@ -1,5 +1,7 @@
 package com.veilreader.app.data
 
+import com.veilreader.app.diagnostics.ReaderTrace
+
 import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
@@ -525,6 +527,11 @@ class LocalLibraryRepository internal constructor(
             ) {
                 "Book disappeared before its progress could be persisted: ${value.id}"
             }
+            ReaderTrace.event(
+                "locator_persisted",
+                bookId = value.id,
+                details = "progress=${value.progress}"
+            )
         }
     }
 
