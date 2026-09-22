@@ -9,7 +9,7 @@ import org.junit.Test
 
 class VeilAppViewModelTest {
     @Test
-    fun activeReaderRoute_survivesViewModelRecreation_thenClosesToLibrary() {
+    fun activeReaderRoute_reusesSavedHandleAcrossViewModelRecreation_thenClosesToLibrary() {
         val handle = SavedStateHandle()
         val first = VeilAppViewModel(handle)
 
