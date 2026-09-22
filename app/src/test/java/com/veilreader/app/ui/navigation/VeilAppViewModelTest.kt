@@ -1,6 +1,8 @@
 package com.veilreader.app.ui.navigation
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.testing.viewModelScenario
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -9,32 +11,37 @@ import org.junit.Test
 
 class VeilAppViewModelTest {
     @Test
-    fun activeReaderRoute_survivesViewModelRecreation_thenClosesToLibrary() {
-        val handle = SavedStateHandle()
-        val first = VeilAppViewModel(handle)
+    fun activeReaderRoute_survivesSystemProcessDeathSimulation_thenClosesToLibrary() {
+        viewModelScenario {
+            VeilAppViewModel(createSavedStateHandle())
+        }.use { scenario ->
+            val first = scenario.viewModel
 
-        first.selectTab(VeilTab.CASTLE)
-        first.openArchive()
-        first.requestBook("book-42", "{\"href\":\"chapter.xhtml\"}")
+            first.selectTab(VeilTab.CASTLE)
+            first.openArchive()
+            first.requestBook("book-42", "{\"href\":\"chapter.xhtml\"}")
 
-        assertEquals("book-42", first.route.value.activeBookId)
-        assertEquals("{\"href\":\"chapter.xhtml\"}", first.route.value.locatorOverrideJson)
-        assertFalse(first.route.value.showArchive)
+            assertEquals("book-42", first.route.value.activeBookId)
+            assertEquals("{\"href\":\"chapter.xhtml\"}", first.route.value.locatorOverrideJson)
+            assertFalse(first.route.value.showArchive)
 
-        val recreated = VeilAppViewModel(handle)
-        assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
-        assertEquals("book-42", recreated.route.value.activeBookId)
-        assertEquals("{\"href\":\"chapter.xhtml\"}", recreated.route.value.locatorOverrideJson)
+            scenario.recreate()
+            val recreated = scenario.viewModel
 
-        recreated.readerOpened("book-42")
-        assertNull(recreated.route.value.locatorOverrideJson)
-        assertEquals("book-42", recreated.route.value.activeBookId)
+            assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
+            assertEquals("book-42", recreated.route.value.activeBookId)
+            assertEquals("{\"href\":\"chapter.xhtml\"}", recreated.route.value.locatorOverrideJson)
 
-        recreated.closeReader()
-        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
-        assertNull(recreated.route.value.activeBookId)
-        assertNull(recreated.route.value.activeChamber)
-        assertFalse(recreated.route.value.showArchive)
+            recreated.readerOpened("book-42")
+            assertNull(recreated.route.value.locatorOverrideJson)
+            assertEquals("book-42", recreated.route.value.activeBookId)
+
+            recreated.closeReader()
+            assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
+            assertNull(recreated.route.value.activeBookId)
+            assertNull(recreated.route.value.activeChamber)
+            assertFalse(recreated.route.value.showArchive)
+        }
     }
 
     @Test
