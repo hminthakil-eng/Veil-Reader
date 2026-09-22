@@ -76,7 +76,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertTrue(repository.addBookmark("runtime-book", "Opening", "{\"href\":\"c1.xhtml\"}"))
         repository.saveProgress("runtime-book", 0.5, "{\"href\":\"c2.xhtml\"}")
         repository.updateCoverCachePath("runtime-book", "/covers/runtime.jpg")
-        repository.saveAppearance(ReaderAppearance(theme = ReaderTheme.SEPIA, fontScale = 1.2))
+        settings.saveReaderAppearance(ReaderAppearance(theme = ReaderTheme.SEPIA, fontScale = 1.2))
         repository.flushWrites()
 
         val stored = db.books().findWithCollections("runtime-book") ?: error("runtime book missing")
@@ -189,7 +189,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.addImportedBook(book)
         repository.addHighlight("backup-book", "Preserve me", "{\"href\":\"chapter.xhtml\"}")
         repository.addBookmark("backup-book", "Saved place", "{\"href\":\"chapter.xhtml\"}")
-        repository.saveAppearance(ReaderAppearance(theme = ReaderTheme.OLED, lineHeight = 1.7))
+        settings.saveReaderAppearance(ReaderAppearance(theme = ReaderTheme.OLED, lineHeight = 1.7))
         repository.saveReadingSession(
             ReadingSessionSnapshot(
                 id = "session-backup",
