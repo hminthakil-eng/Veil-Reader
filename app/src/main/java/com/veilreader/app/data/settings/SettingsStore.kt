@@ -10,6 +10,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderBrightness
+import com.veilreader.app.domain.ReaderBrightnessMode
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -34,6 +36,8 @@ class SettingsStore(private val context: Context) {
         val pageMargins = doublePreferencesKey("reader_page_margins")
         val scroll = booleanPreferencesKey("reader_scroll")
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
+        val brightnessMode = stringPreferencesKey("reader_brightness_mode")
+        val brightnessLevel = doublePreferencesKey("reader_brightness_level")
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
@@ -55,6 +59,17 @@ class SettingsStore(private val context: Context) {
                 pageMargins = (prefs[Keys.pageMargins] ?: 1.0).coerceIn(0.5, 2.0),
                 scroll = prefs[Keys.scroll] ?: false,
                 publisherStyles = prefs[Keys.publisherStyles] ?: true,
+                brightness = ReaderBrightness(
+                    mode = runCatching {
+                        ReaderBrightnessMode.valueOf(
+                            prefs[Keys.brightnessMode] ?: ReaderBrightnessMode.SYSTEM.name
+                        )
+                    }.getOrDefault(ReaderBrightnessMode.SYSTEM),
+                    level = (prefs[Keys.brightnessLevel] ?: ReaderBrightness.DEFAULT_LEVEL)
+                        .takeIf { it.isFinite() }
+                        ?.coerceIn(ReaderBrightness.MIN_LEVEL, ReaderBrightness.MAX_LEVEL)
+                        ?: ReaderBrightness.DEFAULT_LEVEL
+                ),
                 pageTurnStyle = runCatching {
                     PageTurnStyle.valueOf(prefs[Keys.pageTurnStyle] ?: PageTurnStyle.PAPER.name)
                 }.getOrDefault(PageTurnStyle.PAPER)
@@ -78,6 +93,8 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.pageMargins] = value.pageMargins
             prefs[Keys.scroll] = value.scroll
             prefs[Keys.publisherStyles] = value.publisherStyles
+            prefs[Keys.brightnessMode] = value.brightness.mode.name
+            prefs[Keys.brightnessLevel] = value.brightness.normalizedLevel()
             prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
         }
     }
