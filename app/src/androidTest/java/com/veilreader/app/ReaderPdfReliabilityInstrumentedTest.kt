@@ -139,16 +139,23 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     private fun exerciseNativePdfGestures(view: PDFView) {
         val initialZoom = readZoom(view)
+        val doubleTapTarget = readDoubleTapTarget(view, initialZoom)
         dispatchDoubleTap(view)
-        val doubleTapZoom = waitForZoomAbove(view, initialZoom)
+
+        // AndroidPdfViewer animates a double tap toward mid/max/min zoom. Waiting only until
+        // zoom rises above the baseline races that animation: a subsequent resetZoom() can be
+        // overwritten by the still-running animator. Wait for the actual animation target first.
+        waitForZoomNear(view, doubleTapTarget)
+        val doubleTapZoom = readZoom(view)
         assertTrue("Double-tap did not increase PDF zoom", doubleTapZoom > initialZoom)
 
+        val baselineZoom = readMinZoom(view)
         instrumentation.runOnMainSync { view.resetZoom() }
-        waitForZoomNear(view, initialZoom)
+        waitForZoomNear(view, baselineZoom)
 
         dispatchPinchOut(view)
-        val pinchZoom = waitForZoomAbove(view, initialZoom)
-        assertTrue("Pinch did not increase PDF zoom", pinchZoom > initialZoom)
+        val pinchZoom = waitForZoomAbove(view, baselineZoom)
+        assertTrue("Pinch did not increase PDF zoom", pinchZoom > baselineZoom)
 
         val (beforeX, beforeY) = readOffsets(view)
         dispatchPan(view)
@@ -165,7 +172,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         assertTrue("Pan did not move the zoomed PDF viewport", moved)
 
         instrumentation.runOnMainSync { view.resetZoom() }
-        waitForZoomNear(view, initialZoom)
+        waitForZoomNear(view, baselineZoom)
     }
 
     private fun dispatchDoubleTap(view: PDFView) {
@@ -335,6 +342,24 @@ class ReaderPdfReliabilityInstrumentedTest {
         var value = 1f
         instrumentation.runOnMainSync { value = view.zoom }
         return value
+    }
+
+    private fun readMinZoom(view: PDFView): Float {
+        var value = 1f
+        instrumentation.runOnMainSync { value = view.minZoom }
+        return value
+    }
+
+    private fun readDoubleTapTarget(view: PDFView, currentZoom: Float): Float {
+        var target = currentZoom
+        instrumentation.runOnMainSync {
+            target = when {
+                currentZoom < view.midZoom -> view.midZoom
+                currentZoom < view.maxZoom -> view.maxZoom
+                else -> view.minZoom
+            }
+        }
+        return target
     }
 
     private fun readOffsets(view: PDFView): Pair<Float, Float> {
