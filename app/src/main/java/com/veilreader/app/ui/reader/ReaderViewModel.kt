@@ -145,11 +145,17 @@ class ReaderViewModel(
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
         val sequence = ++locatorSequence
+        val fingerprint = ReaderTrace.fingerprint(locatorJson)
         ReaderTrace.event(
             "locator_committed",
             bookId = bookId,
             sessionId = current.sessionId,
-            details = "seq=$sequence progress=$safe event=$event"
+            details = buildString {
+                append("seq=").append(sequence)
+                append(" progress=").append(safe)
+                append(" event=").append(event)
+                fingerprint?.let { append(" fp=").append(it) }
+            }
         )
         val completed = library.saveProgress(
             id = bookId,
@@ -161,7 +167,12 @@ class ReaderViewModel(
             "locator_save_enqueued",
             bookId = bookId,
             sessionId = current.sessionId,
-            details = "seq=$sequence progress=$safe event=$event"
+            details = buildString {
+                append("seq=").append(sequence)
+                append(" progress=").append(safe)
+                append(" event=").append(event)
+                fingerprint?.let { append(" fp=").append(it) }
+            }
         )
         if (completed) game.recordBookFinished()
         _uiState.value = _uiState.value.copy(progress = safe, activeMillis = current.activeMillis)
