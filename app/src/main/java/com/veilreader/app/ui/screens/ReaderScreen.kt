@@ -59,6 +59,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -176,6 +177,7 @@ fun ReaderScreen(
         initialValue = emptyList()
     )
     var readerMessage by remember { mutableStateOf<String?>(null) }
+    var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
     var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
     var pendingNoteText by remember { mutableStateOf("") }
     var noteSaving by remember { mutableStateOf(false) }
@@ -260,15 +262,45 @@ fun ReaderScreen(
     }
 
     fun closeReader() {
-        navigator?.currentLocator?.value?.let { locator ->
+        if (closeInFlight) return
+        latestNavigator.value?.currentLocator?.value?.let { locator ->
             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
         }
-        readerViewModel.closeBook()
-        onClose()
+        closeInFlight = true
+        scope.launch {
+            try {
+                ReaderTrace.event(
+                    "reader_close_durability_wait",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId()
+                )
+                awaitDurableReaderClose(
+                    finalizeSession = readerViewModel::closeBook,
+                    awaitDurability = library::flushWrites,
+                    clearRoute = onClose
+                )
+                ReaderTrace.event(
+                    "reader_close_durable",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId()
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                closeInFlight = false
+                ReaderTrace.event(
+                    "reader_close_durability_failed",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId(),
+                    details = "error=${error::class.java.simpleName}"
+                )
+                readerMessage = "Could not safely close this book because the latest reading position was not confirmed in storage."
+            }
+        }
     }
 
     BackHandler(
-        enabled = !showNotebook && !showAppearance && !showPdfZoom && !paperCurlState.active
+        enabled = !closeInFlight && !showNotebook && !showAppearance && !showPdfZoom && !paperCurlState.active
     ) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
