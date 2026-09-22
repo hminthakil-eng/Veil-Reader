@@ -25,6 +25,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -54,7 +55,27 @@ fun SettingsScreen(
     onExportNotes: (Uri) -> Unit,
     onClose: () -> Unit
 ) {
-    val appearance = settings.readerAppearance
+    var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
+    var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
+
+    LaunchedEffect(settings.readerAppearance) {
+        val persisted = settings.readerAppearance
+        when {
+            pendingAppearance == null -> appearanceDraft = persisted
+            persisted == pendingAppearance -> {
+                appearanceDraft = persisted
+                pendingAppearance = null
+            }
+        }
+    }
+
+    fun commitReaderAppearance(value: ReaderAppearance) {
+        appearanceDraft = value
+        pendingAppearance = value
+        onSaveReaderAppearance(value)
+    }
+
+    val appearance = appearanceDraft
     val context = LocalContext.current
     val appVersion = remember(context) {
         runCatching {
@@ -116,7 +137,7 @@ fun SettingsScreen(
                 selected = appearance.theme,
                 label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
                 onSelected = { theme ->
-                    onSaveReaderAppearance(appearance.withTheme(theme))
+                    commitReaderAppearance(appearance.withTheme(theme))
                 }
             )
 
@@ -126,7 +147,7 @@ fun SettingsScreen(
                 valueRange = 0.75f..1.8f,
                 displayValue = { "${(it * 100).toInt()}%" },
                 onCommit = { value ->
-                    onSaveReaderAppearance(appearance.copy(fontScale = value.toDouble()))
+                    commitReaderAppearance(appearance.copy(fontScale = value.toDouble()))
                 }
             )
             ReaderSlider(
@@ -135,7 +156,7 @@ fun SettingsScreen(
                 valueRange = 1.1f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
-                    onSaveReaderAppearance(appearance.copy(lineHeight = value.toDouble()))
+                    commitReaderAppearance(appearance.copy(lineHeight = value.toDouble()))
                 }
             )
             ReaderSlider(
@@ -144,7 +165,7 @@ fun SettingsScreen(
                 valueRange = 0.5f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
-                    onSaveReaderAppearance(appearance.copy(pageMargins = value.toDouble()))
+                    commitReaderAppearance(appearance.copy(pageMargins = value.toDouble()))
                 }
             )
 
@@ -159,7 +180,7 @@ fun SettingsScreen(
                     }
                 },
                 onSelected = { style ->
-                    onSaveReaderAppearance(appearance.copy(pageTurnStyle = style))
+                    commitReaderAppearance(appearance.copy(pageTurnStyle = style))
                 }
             )
             Text(
@@ -173,7 +194,7 @@ fun SettingsScreen(
                 subtitle = "Use continuous vertical reading instead of pagination when the format supports it.",
                 checked = appearance.scroll,
                 onCheckedChange = { enabled ->
-                    onSaveReaderAppearance(appearance.copy(scroll = enabled))
+                    commitReaderAppearance(appearance.copy(scroll = enabled))
                 }
             )
             SettingsSwitchRow(
@@ -181,14 +202,14 @@ fun SettingsScreen(
                 subtitle = "Keep the publication's typography and styling when available. This can override Veil theme colors.",
                 checked = appearance.publisherStyles,
                 onCheckedChange = { enabled ->
-                    onSaveReaderAppearance(appearance.copy(publisherStyles = enabled))
+                    commitReaderAppearance(appearance.copy(publisherStyles = enabled))
                 }
             )
 
             Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
                 appearance = appearance,
-                onChange = onSaveReaderAppearance
+                onChange = ::commitReaderAppearance
             )
         }
 
@@ -231,7 +252,7 @@ fun SettingsScreen(
             description = "Restore Veil Reader's reader defaults without touching books, progress, highlights, notes or backups."
         ) {
             OutlinedButton(
-                onClick = { onSaveReaderAppearance(ReaderAppearance()) },
+                onClick = { commitReaderAppearance(ReaderAppearance()) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
