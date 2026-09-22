@@ -124,6 +124,15 @@ data class ReaderAppearance(
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
 
+    fun withFontScale(value: Double): ReaderAppearance =
+        copy(fontScale = value, publisherStyles = false)
+
+    fun withLineHeight(value: Double): ReaderAppearance =
+        copy(lineHeight = value, publisherStyles = false)
+
+    fun withPageMargins(value: Double): ReaderAppearance =
+        copy(pageMargins = value, publisherStyles = false)
+
     fun withScreenBrightness(value: Double?): ReaderAppearance =
         copy(
             screenBrightness = value
