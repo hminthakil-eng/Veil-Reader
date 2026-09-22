@@ -38,6 +38,7 @@ class ReaderViewModel(
     private var resumed = false
     private var uncreditedActiveMillis = 0L
     private val locatorDeduplicator = ReaderLocatorDeduplicator()
+    private var locatorSequence = 0L
 
     init {
         viewModelScope.launch {
@@ -69,6 +70,7 @@ class ReaderViewModel(
         resumed = false
         uncreditedActiveMillis = 0L
         locatorDeduplicator.reset()
+        locatorSequence = 0L
         _uiState.value = ReaderUiState(bookId = bookId, progress = initialProgress.coerceIn(0f, 1f))
         persistSession(immediate = true)
     }
@@ -111,16 +113,27 @@ class ReaderViewModel(
         locatorJson: String,
         locationKey: String,
         event: ReaderLocatorEvent
-    ) {
-        val current = tracker?.takeIf { it.bookId == bookId } ?: return
-        if (!locatorDeduplicator.accept(locationKey)) {
+    ): ReaderLocatorCommit? {
+        val current = tracker?.takeIf { it.bookId == bookId } ?: return null
+
+        if (!event.commitsLocator) {
             ReaderTrace.event(
-                "locator_duplicate_ignored",
+                "locator_observed_uncommitted",
                 bookId = bookId,
                 sessionId = current.sessionId,
                 details = "event=$event"
             )
-            return
+            return null
+        }
+
+        if (!locatorDeduplicator.acceptCommit(locationKey)) {
+            ReaderTrace.event(
+                "locator_duplicate_commit_ignored",
+                bookId = bookId,
+                sessionId = current.sessionId,
+                details = "event=$event"
+            )
+            return null
         }
 
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
@@ -131,22 +144,29 @@ class ReaderViewModel(
 
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
+        val sequence = ++locatorSequence
         ReaderTrace.event(
-            "locator_save_requested",
+            "locator_committed",
             bookId = bookId,
             sessionId = current.sessionId,
-            details = "progress=$safe event=$event"
+            details = "seq=$sequence progress=$safe event=$event"
         )
-        val completed = library.saveProgress(bookId, safe.toDouble(), locatorJson)
+        val completed = library.saveProgress(
+            id = bookId,
+            progression = safe.toDouble(),
+            locatorJson = locatorJson,
+            traceSequence = sequence
+        )
         ReaderTrace.event(
             "locator_save_enqueued",
             bookId = bookId,
             sessionId = current.sessionId,
-            details = "progress=$safe event=$event"
+            details = "seq=$sequence progress=$safe event=$event"
         )
         if (completed) game.recordBookFinished()
         _uiState.value = _uiState.value.copy(progress = safe, activeMillis = current.activeMillis)
         persistSession()
+        return ReaderLocatorCommit(sequence, locatorJson, safe)
     }
 
     fun onHighlightAdded() {
@@ -198,6 +218,7 @@ class ReaderViewModel(
         tracker = null
         uncreditedActiveMillis = 0L
         locatorDeduplicator.reset()
+        locatorSequence = 0L
     }
 
     private fun creditActive(deltaMillis: Long) {
