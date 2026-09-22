@@ -133,4 +133,58 @@ class VeilAppViewModelTest {
         assertEquals("treasury", model.route.value.activeChamber)
         assertFalse(model.route.value.showArchive)
     }
+    @Test
+    fun explicitFlushAck_preservesNewerReaderCheckpoint() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+
+        model.requestBook("book-race", "locator-explicit")
+        model.checkpointReaderLocator("book-race", "locator-newer")
+
+        model.readerOpened("book-race")
+
+        assertNull(model.route.value.locatorOverrideJson)
+        assertEquals("locator-newer", model.route.value.readerLocatorCheckpointJson)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals("book-race", recreated.route.value.activeBookId)
+        assertNull(recreated.route.value.locatorOverrideJson)
+        assertEquals("locator-newer", recreated.route.value.readerLocatorCheckpointJson)
+    }
+
+
+    @Test
+    fun checkpointUpdates_ignoreBlankAndWrongBook() {
+        val model = VeilAppViewModel(SavedStateHandle())
+        model.requestBook("book-a")
+        model.checkpointReaderLocator("book-a", "locator-a")
+
+        model.checkpointReaderLocator("book-a", "   ")
+        model.checkpointReaderLocator("book-b", "locator-b")
+
+        assertEquals("locator-a", model.route.value.readerLocatorCheckpointJson)
+    }
+
+
+
+    @Test
+    fun closeReader_clearsPendingCheckpointFromSavedState() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+
+        model.requestBook("book-close")
+        model.checkpointReaderLocator("book-close", "locator-pending")
+        model.closeReader()
+
+        assertNull(model.route.value.activeBookId)
+        assertNull(model.route.value.locatorOverrideJson)
+        assertNull(model.route.value.readerLocatorCheckpointJson)
+
+        val recreated = VeilAppViewModel(handle)
+        assertNull(recreated.route.value.activeBookId)
+        assertNull(recreated.route.value.readerLocatorCheckpointJson)
+        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
+    }
+
+
 }
