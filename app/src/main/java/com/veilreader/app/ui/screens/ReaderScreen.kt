@@ -736,8 +736,7 @@ fun ReaderScreen(
 
     if (showAppearance) {
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
-            AppearancePanel(
-                format = opened.format,
+            EpubAppearancePanel(
                 appearance = readerAppearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
@@ -950,8 +949,7 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 }
 
 @Composable
-private fun AppearancePanel(
-    format: BookFormat,
+private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
@@ -982,23 +980,18 @@ private fun AppearancePanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                if (format == BookFormat.PDF) "PDF reading controls" else "Reading appearance",
+                "Reading appearance",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                if (format == BookFormat.PDF) {
-                    "Choose paginated or continuous reading. Pinch or double-tap the document to zoom."
-                } else {
-                    "Tune the page once, then get back to the book. These choices stay on your device."
-                },
+                "Tune the page once, then get back to the book. These choices stay on your device.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
-        if (format == BookFormat.EPUB) {
-            Text("Presets", fontWeight = FontWeight.SemiBold)
+        Text("Presets", fontWeight = FontWeight.SemiBold)
             Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -1065,7 +1058,6 @@ private fun AppearancePanel(
             onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
             valueRange = .5f..2.0f
         )
-        }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
@@ -1073,11 +1065,7 @@ private fun AppearancePanel(
             Column(Modifier.weight(1f)) {
                 Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
                 Text(
-                    if (format == BookFormat.PDF) {
-                        "Turn this off for horizontal page snapping. Zoom stays available in both modes."
-                    } else {
-                        "Turn this off for paginated reading without the slide-like transition."
-                    },
+                    "Turn this off for paginated reading without the slide-like transition.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1089,8 +1077,7 @@ private fun AppearancePanel(
             )
         }
 
-        if (format == BookFormat.EPUB) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Page turn", fontWeight = FontWeight.SemiBold)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1137,19 +1124,6 @@ private fun AppearancePanel(
                     modifier = Modifier.semantics { contentDescription = "Publisher styling" }
                 )
             }
-        }
-
-        if (format == BookFormat.PDF) {
-            Text(
-                if (draft.scroll) {
-                    "PDF scroll mode: pages flow vertically and fit the screen width."
-                } else {
-                    "PDF paginated mode: pages snap horizontally and fit inside the viewport."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         ReaderBrightnessControls(
