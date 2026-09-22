@@ -18,4 +18,17 @@ class PdfZoomControlsTest {
     fun `zoom step scales inside range`() {
         assertEquals(2.5f, nextPdfZoom(2f, 1f, 4f, 1.25f), 0.001f)
     }
+
+    @Test
+    fun `renderer zoom mirror clamps invalid values`() {
+        assertEquals(1f, normalizedPdfZoom(Float.NaN, 1f, 4f), 0.001f)
+        assertEquals(1f, normalizedPdfZoom(0.2f, 1f, 4f), 0.001f)
+        assertEquals(4f, normalizedPdfZoom(8f, 1f, 4f), 0.001f)
+    }
+
+    @Test
+    fun `zoom step normalizes renderer value before scaling`() {
+        assertEquals(1.25f, nextPdfZoom(Float.NaN, 1f, 4f, 1.25f), 0.001f)
+        assertEquals(2f, nextPdfZoom(2f, 1f, 4f, Float.NaN), 0.001f)
+    }
 }
