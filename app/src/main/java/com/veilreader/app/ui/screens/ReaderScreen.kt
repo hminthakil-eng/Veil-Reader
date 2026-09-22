@@ -388,7 +388,10 @@ fun ReaderScreen(
             val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
                 isAnimated = {
-                    latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
+                    shouldAnimateDirectionalNavigation(
+                        format = opened.format,
+                        pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    )
                 },
                 isTapNavigationEnabled = {
                     shouldUseDirectionalTapNavigation(
