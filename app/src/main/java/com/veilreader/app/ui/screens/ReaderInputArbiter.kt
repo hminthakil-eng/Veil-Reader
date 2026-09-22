@@ -6,6 +6,7 @@ import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
+import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
     PAPER,
@@ -29,6 +30,7 @@ internal fun shouldUseDirectionalTapNavigation(
  * Internal delegate order is product policy, not an incidental registration order:
  * paper turn -> directional edge navigation -> Veil chrome -> renderer fallback.
  */
+@OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
     private val paper: InputListener?,
     private val directional: InputListener,
