@@ -105,7 +105,7 @@ class ReaderViewModel(
         publishActiveMillis()
     }
 
-    fun onLocatorUpdate(
+    internal fun onLocatorUpdate(
         bookId: String,
         progression: Double,
         locatorJson: String,
