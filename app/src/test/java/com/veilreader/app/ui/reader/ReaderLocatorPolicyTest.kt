@@ -7,30 +7,50 @@ import org.junit.Test
 class ReaderLocatorPolicyTest {
 
     @Test
-    fun consecutiveDuplicate_isRejected_butRevisitAfterMovementIsAccepted() {
+    fun consecutiveCommittedDuplicate_isRejected_butRevisitAfterMovementIsAccepted() {
         val gate = ReaderLocatorDeduplicator()
 
-        assertTrue(gate.accept("book:a"))
-        assertFalse(gate.accept("book:a"))
-        assertTrue(gate.accept("book:b"))
-        assertTrue(gate.accept("book:a"))
+        assertTrue(gate.acceptCommit("book:a"))
+        assertFalse(gate.acceptCommit("book:a"))
+        assertTrue(gate.acceptCommit("book:b"))
+        assertTrue(gate.acceptCommit("book:a"))
     }
 
     @Test
-    fun reset_allowsCurrentLocationAgainForNewReaderSession() {
+    fun reset_allowsCurrentCommittedLocationAgainForNewReaderSession() {
         val gate = ReaderLocatorDeduplicator()
 
-        assertTrue(gate.accept("book:a"))
-        assertFalse(gate.accept("book:a"))
+        assertTrue(gate.acceptCommit("book:a"))
+        assertFalse(gate.acceptCommit("book:a"))
         gate.reset()
-        assertTrue(gate.accept("book:a"))
+        assertTrue(gate.acceptCommit("book:a"))
     }
 
     @Test
-    fun onlyCommittedPageEventsCountAsPageTurns() {
+    fun observationCannotConsumeLaterCommit() {
+        val gate = ReaderLocatorDeduplicator()
+
+        assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.commitsLocator)
+        // Observation never enters the commit gate.
+        assertTrue(gate.acceptCommit("book:a"))
+        assertFalse(gate.acceptCommit("book:a"))
+    }
+
+    @Test
+    fun locatorCommitAndPageTurnSemantics_areIndependent() {
+        assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.countsPageTurn)
+
+        assertTrue(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.commitsLocator)
+        assertFalse(ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT.countsPageTurn)
+
+        assertTrue(ReaderLocatorEvent.NAVIGATOR_PAGE_TURN.commitsLocator)
         assertTrue(ReaderLocatorEvent.NAVIGATOR_PAGE_TURN.countsPageTurn)
+
+        assertTrue(ReaderLocatorEvent.PAPER_COMMIT.commitsLocator)
         assertTrue(ReaderLocatorEvent.PAPER_COMMIT.countsPageTurn)
+
+        assertTrue(ReaderLocatorEvent.FINAL_SNAPSHOT.commitsLocator)
         assertFalse(ReaderLocatorEvent.FINAL_SNAPSHOT.countsPageTurn)
     }
 }
