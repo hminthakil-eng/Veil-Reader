@@ -57,6 +57,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -245,12 +246,12 @@ fun ReaderScreen(
     fun closeReader() {
         navigator?.currentLocator?.value?.let { locator ->
             val json = locator.toVeilPersistedJson(opened.format)
-            readerViewModel.onLocatorChanged(
+            readerViewModel.onLocatorUpdate(
                 bookId = opened.book.id,
                 progression = locator.locations.totalProgression ?: readerViewModel.uiState.value.progress.toDouble(),
                 locatorJson = json,
                 locationKey = "${opened.book.id}:$json",
-                countPageTurn = false
+                event = ReaderLocatorEvent.FINAL_SNAPSHOT
             )
         }
         readerViewModel.closeBook()
@@ -320,14 +321,21 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId(),
                     details = "progress=${locator.locations.totalProgression}"
                 )
-                readerViewModel.onLocatorChanged(
+                val event = if (
+                    opened.format != BookFormat.EPUB ||
+                    latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
+                ) {
+                    ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                } else {
+                    ReaderLocatorEvent.NAVIGATOR_POSITION
+                }
+                readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     progression = locator.locations.totalProgression
                         ?: readerViewModel.uiState.value.progress.toDouble(),
                     locatorJson = json,
                     locationKey = "${opened.book.id}:$json",
-                    countPageTurn = opened.format != BookFormat.EPUB ||
-                        latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
+                    event = event
                 )
             }
     }
@@ -355,12 +363,13 @@ fun ReaderScreen(
                     onCommittedTurn = {
                         val locator = nav.currentLocator.value
                         val json = locator.toVeilPersistedJson(opened.format)
-                        readerViewModel.onLocatorChanged(
+                        readerViewModel.onLocatorUpdate(
                             bookId = opened.book.id,
                             progression = locator.locations.totalProgression
                                 ?: readerViewModel.uiState.value.progress.toDouble(),
                             locatorJson = json,
-                            locationKey = "${opened.book.id}:$json"
+                            locationKey = "${opened.book.id}:$json",
+                            event = ReaderLocatorEvent.PAPER_COMMIT
                         )
                     }
                 )
