@@ -1045,21 +1045,21 @@ private fun AppearancePanel(
         Text("Text size · ${(draft.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
         Slider(
             value = draft.fontScale.toFloat(),
-            onValueChange = { updateDraft(draft.copy(fontScale = it.toDouble(), publisherStyles = false)) },
+            onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
             valueRange = .75f..1.8f
         )
 
         Text("Line height · ${"%.2f".format(draft.lineHeight)}", fontWeight = FontWeight.SemiBold)
         Slider(
             value = draft.lineHeight.toFloat(),
-            onValueChange = { updateDraft(draft.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
+            onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
             valueRange = 1.1f..2.0f
         )
 
         Text("Page margins · ${"%.2f".format(draft.pageMargins)}", fontWeight = FontWeight.SemiBold)
         Slider(
             value = draft.pageMargins.toFloat(),
-            onValueChange = { updateDraft(draft.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
+            onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
             valueRange = .5f..2.0f
         )
         }
