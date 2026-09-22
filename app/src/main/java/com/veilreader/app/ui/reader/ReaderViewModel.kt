@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
+import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReadingSessionTracker
 import java.util.UUID
 import kotlinx.coroutines.delay
@@ -58,6 +59,12 @@ class ReaderViewModel(
             startedAtEpochMs = nowWall,
             startedAtElapsedMs = nowElapsed
         )
+        ReaderTrace.event(
+            "reader_open",
+            bookId = bookId,
+            sessionId = tracker?.sessionId,
+            details = "initialProgress=${initialProgress.coerceIn(0f, 1f)}"
+        )
         resumed = false
         uncreditedActiveMillis = 0L
         _uiState.value = ReaderUiState(bookId = bookId, progress = initialProgress.coerceIn(0f, 1f))
@@ -75,7 +82,9 @@ class ReaderViewModel(
 
     fun onPause() {
         val current = tracker ?: return
+        ReaderTrace.event("reader_pause", bookId = current.bookId, sessionId = current.sessionId)
         library.flushProgress(current.bookId)
+        ReaderTrace.event("locator_flush_enqueued", bookId = current.bookId, sessionId = current.sessionId)
         if (!resumed) {
             library.flushReadingSession(current.sessionId)
             game.pauseReading()
@@ -110,7 +119,19 @@ class ReaderViewModel(
 
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
+        ReaderTrace.event(
+            "locator_save_requested",
+            bookId = bookId,
+            sessionId = current.sessionId,
+            details = "progress=$safe countPageTurn=$countPageTurn"
+        )
         val completed = library.saveProgress(bookId, safe.toDouble(), locatorJson)
+        ReaderTrace.event(
+            "locator_save_enqueued",
+            bookId = bookId,
+            sessionId = current.sessionId,
+            details = "progress=$safe"
+        )
         if (completed) game.recordBookFinished()
         _uiState.value = _uiState.value.copy(progress = safe, activeMillis = current.activeMillis)
         persistSession()
@@ -135,8 +156,13 @@ class ReaderViewModel(
     }
 
     fun closeBook() {
+        tracker?.let { current ->
+            ReaderTrace.event("reader_close_requested", bookId = current.bookId, sessionId = current.sessionId)
+        }
         finishCurrentSession()
     }
+
+    fun traceSessionId(): String? = tracker?.sessionId
 
     private fun heartbeat() {
         val current = tracker ?: return
@@ -156,6 +182,7 @@ class ReaderViewModel(
         library.flushProgress(current.bookId)
         library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
         library.flushReadingSession(current.sessionId)
+        ReaderTrace.event("reader_closed", bookId = current.bookId, sessionId = current.sessionId)
         tracker = null
         uncreditedActiveMillis = 0L
     }
