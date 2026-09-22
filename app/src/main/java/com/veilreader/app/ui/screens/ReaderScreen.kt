@@ -79,8 +79,6 @@ import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
-import org.readium.r2.navigator.input.InputListener
-import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Axis
@@ -345,10 +343,8 @@ fun ReaderScreen(
         if (nav == null) {
             onDispose { }
         } else {
-            val listeners = mutableListOf<InputListener>()
-
-            if (navigator is EpubNavigatorFragment) {
-                listeners += PaperCurlInputListener(
+            val paperListener = if (navigator is EpubNavigatorFragment) {
+                PaperCurlInputListener(
                     navigator = nav,
                     state = paperCurlState,
                     isEnabled = {
@@ -373,32 +369,45 @@ fun ReaderScreen(
                         )
                     }
                 )
+            } else {
+                null
             }
 
-            listeners += VeilDirectionalNavigationInputListener(
+            val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
                 isAnimated = {
                     latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
+                },
+                isTapNavigationEnabled = {
+                    shouldUseDirectionalTapNavigation(
+                        format = opened.format,
+                        scroll = nav.overflow.value.scroll,
+                        pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    )
                 }
             )
 
-            listeners += object : InputListener {
-                override fun onTap(event: TapEvent): Boolean {
+            val inputArbiter = ReaderInputArbiter(
+                paper = paperListener,
+                directional = directionalListener,
+                chromeTap = {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = !controlsVisible
+                    true
+                },
+                onTapOwner = { owner ->
                     ReaderTrace.event(
                         "gesture_owned",
                         bookId = opened.book.id,
                         sessionId = readerViewModel.traceSessionId(),
-                        details = "gesture=tap owner=veil_chrome"
+                        details = "gesture=tap owner=${owner.name.lowercase()}"
                     )
-                    readerViewModel.onUserInteraction()
-                    controlsVisible = !controlsVisible
-                    return true
                 }
-            }
+            )
 
-            listeners.forEach(nav::addInputListener)
+            nav.addInputListener(inputArbiter)
             onDispose {
-                listeners.forEach(nav::removeInputListener)
+                nav.removeInputListener(inputArbiter)
             }
         }
     }
