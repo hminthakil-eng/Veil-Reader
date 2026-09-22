@@ -165,4 +165,24 @@ class VeilAppViewModelTest {
         assertEquals("locator-a", model.route.value.readerLocatorCheckpointJson)
     }
 
+
+    @Test
+    fun closeReader_clearsPendingCheckpointFromSavedState() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+
+        model.requestBook("book-close")
+        model.checkpointReaderLocator("book-close", "locator-pending")
+        model.closeReader()
+
+        assertNull(model.route.value.activeBookId)
+        assertNull(model.route.value.locatorOverrideJson)
+        assertNull(model.route.value.readerLocatorCheckpointJson)
+
+        val recreated = VeilAppViewModel(handle)
+        assertNull(recreated.route.value.activeBookId)
+        assertNull(recreated.route.value.readerLocatorCheckpointJson)
+        assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
+    }
+
 }
