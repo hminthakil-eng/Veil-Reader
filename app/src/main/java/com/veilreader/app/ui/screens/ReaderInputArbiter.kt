@@ -25,6 +25,20 @@ internal fun shouldUseDirectionalTapNavigation(
         pageTurnStyle == PageTurnStyle.SLIDE
 
 /**
+ * Page-turn style is an EPUB-only preference.
+ *
+ * PDF navigation must not change when the hidden EPUB page-turn preference changes.
+ * Keep PDF directional-key navigation deterministic and unanimated here; native PDF
+ * swipe/fling/zoom behavior remains owned by the renderer.
+ */
+internal fun shouldAnimateDirectionalNavigation(
+    format: BookFormat,
+    pageTurnStyle: PageTurnStyle
+): Boolean =
+    format == BookFormat.EPUB &&
+        pageTurnStyle == PageTurnStyle.SLIDE
+
+/**
  * One Veil input listener is registered with Readium.
  *
  * Internal delegate order is product policy, not an incidental registration order:
