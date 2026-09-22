@@ -37,6 +37,7 @@ class ReaderViewModel(
     private var tracker: ReadingSessionTracker? = null
     private var resumed = false
     private var uncreditedActiveMillis = 0L
+    private val locatorDeduplicator = ReaderLocatorDeduplicator()
 
     init {
         viewModelScope.launch {
@@ -67,6 +68,7 @@ class ReaderViewModel(
         )
         resumed = false
         uncreditedActiveMillis = 0L
+        locatorDeduplicator.reset()
         _uiState.value = ReaderUiState(bookId = bookId, progress = initialProgress.coerceIn(0f, 1f))
         persistSession(immediate = true)
     }
@@ -103,17 +105,27 @@ class ReaderViewModel(
         publishActiveMillis()
     }
 
-    fun onLocatorChanged(
+    fun onLocatorUpdate(
         bookId: String,
         progression: Double,
         locatorJson: String,
         locationKey: String,
-        countPageTurn: Boolean = true
+        event: ReaderLocatorEvent
     ) {
         val current = tracker?.takeIf { it.bookId == bookId } ?: return
+        if (!locatorDeduplicator.accept(locationKey)) {
+            ReaderTrace.event(
+                "locator_duplicate_ignored",
+                bookId = bookId,
+                sessionId = current.sessionId,
+                details = "event=$event"
+            )
+            return
+        }
+
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
 
-        if (countPageTurn && resumed && game.recordPageTurn(locationKey)) {
+        if (event.countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
             current.recordPacedPageTurn()
         }
 
@@ -123,14 +135,14 @@ class ReaderViewModel(
             "locator_save_requested",
             bookId = bookId,
             sessionId = current.sessionId,
-            details = "progress=$safe countPageTurn=$countPageTurn"
+            details = "progress=$safe event=$event"
         )
         val completed = library.saveProgress(bookId, safe.toDouble(), locatorJson)
         ReaderTrace.event(
             "locator_save_enqueued",
             bookId = bookId,
             sessionId = current.sessionId,
-            details = "progress=$safe"
+            details = "progress=$safe event=$event"
         )
         if (completed) game.recordBookFinished()
         _uiState.value = _uiState.value.copy(progress = safe, activeMillis = current.activeMillis)
@@ -185,6 +197,7 @@ class ReaderViewModel(
         ReaderTrace.event("reader_closed", bookId = current.bookId, sessionId = current.sessionId)
         tracker = null
         uncreditedActiveMillis = 0L
+        locatorDeduplicator.reset()
     }
 
     private fun creditActive(deltaMillis: Long) {
