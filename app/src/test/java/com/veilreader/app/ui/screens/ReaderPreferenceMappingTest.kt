@@ -33,4 +33,13 @@ class ReaderPreferenceMappingTest {
         }
     }
 
+
+    @Test
+    fun `reader brightness clamps custom values and preserves system mode`() {
+        assertEquals(null, ReaderAppearance().withScreenBrightness(null).screenBrightness)
+        assertEquals(null, ReaderAppearance().withScreenBrightness(Double.NaN).screenBrightness)
+        assertEquals(0.05, ReaderAppearance().withScreenBrightness(0.01).screenBrightness!!, 0.0001)
+        assertEquals(0.42, ReaderAppearance().withScreenBrightness(0.42).screenBrightness!!, 0.0001)
+        assertEquals(1.0, ReaderAppearance().withScreenBrightness(2.0).screenBrightness!!, 0.0001)
+    }
 }
