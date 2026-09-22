@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.View
+import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -56,6 +57,8 @@ import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderBrightness
+import com.veilreader.app.domain.ReaderBrightnessMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -104,6 +107,32 @@ fun ReaderScreen(
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
+    val originalWindowBrightness = remember(activity) {
+        activity.window.attributes.screenBrightness
+    }
+
+    DisposableEffect(activity) {
+        onDispose {
+            val attributes = activity.window.attributes
+            attributes.screenBrightness = originalWindowBrightness
+            activity.window.attributes = attributes
+        }
+    }
+
+    LaunchedEffect(activity, readerAppearance.brightness, opened.book.id) {
+        val override = readerAppearance.brightness.toWindowBrightnessOverride()
+        val attributes = activity.window.attributes
+        attributes.screenBrightness =
+            override ?: WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        activity.window.attributes = attributes
+        ReaderTrace.event(
+            "reader_brightness_applied",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = "mode=${readerAppearance.brightness.mode} level=${readerAppearance.brightness.normalizedLevel()}"
+        )
+    }
+
     val readerViewModel: ReaderViewModel = viewModel(
         key = "veil-reader-state",
         factory = remember(library, game) { ReaderViewModel.factory(library, game) }
@@ -152,7 +181,7 @@ fun ReaderScreen(
             "appearance_observed",
             bookId = opened.book.id,
             sessionId = readerViewModel.traceSessionId(),
-            details = "theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
+            details = "theme=${readerAppearance.theme} brightness=${readerAppearance.brightness.mode} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
         )
     }
     val bookHighlightsFlow = remember(library, opened.book.id) {
@@ -1073,6 +1102,66 @@ private fun AppearancePanel(
                 modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
             )
         }
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Screen brightness", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = draft.brightness.mode == ReaderBrightnessMode.SYSTEM,
+                    onClick = {
+                        updateDraft(
+                            draft.copy(
+                                brightness = draft.brightness.copy(mode = ReaderBrightnessMode.SYSTEM)
+                            )
+                        )
+                    },
+                    label = { Text("System") },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                )
+                FilterChip(
+                    selected = draft.brightness.mode == ReaderBrightnessMode.OVERRIDE,
+                    onClick = {
+                        updateDraft(
+                            draft.copy(
+                                brightness = draft.brightness.copy(mode = ReaderBrightnessMode.OVERRIDE)
+                            )
+                        )
+                    },
+                    label = { Text("Reader override") },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                )
+            }
+
+            if (draft.brightness.mode == ReaderBrightnessMode.OVERRIDE) {
+                Text(
+                    "Brightness · ${(draft.brightness.normalizedLevel() * 100).toInt()}%",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Slider(
+                    value = draft.brightness.normalizedLevel().toFloat(),
+                    onValueChange = { value ->
+                        updateDraft(
+                            draft.copy(
+                                brightness = draft.brightness.copy(level = value.toDouble())
+                            )
+                        )
+                    },
+                    valueRange = ReaderBrightness.MIN_LEVEL.toFloat()..ReaderBrightness.MAX_LEVEL.toFloat()
+                )
+            }
+
+            Text(
+                "Reader override changes only this reading window. System brightness is never modified.",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         if (format == BookFormat.EPUB) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
