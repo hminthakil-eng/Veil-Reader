@@ -1,6 +1,8 @@
 package com.veilreader.app.diagnostics
 
 import android.util.Log
+import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -11,6 +13,20 @@ import java.util.concurrent.atomic.AtomicLong
 object ReaderTrace {
     private const val TAG = "VeilReaderTrace"
     private val sequence = AtomicLong(0L)
+
+    /**
+     * Stable, non-reversible locator fingerprint for QA/restore evidence.
+     *
+     * Only the first 12 hex characters are logged. Raw locator JSON is never emitted.
+     */
+    fun fingerprint(raw: String?): String? {
+        val value = raw?.takeIf { it.isNotBlank() } ?: return null
+        val digest = MessageDigest.getInstance("SHA-256")
+            .digest(value.toByteArray(StandardCharsets.UTF_8))
+        return digest.take(6).joinToString(separator = "") { byte ->
+            (byte.toInt() and 0xff).toString(16).padStart(2, '0')
+        }
+    }
 
     fun event(
         name: String,
