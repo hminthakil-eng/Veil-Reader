@@ -527,6 +527,9 @@ class LocalLibraryRepository internal constructor(
                 details = buildString {
                     value.traceSequence?.let { append("seq=").append(it).append(' ') }
                     append("progress=").append(value.progress)
+                    ReaderTrace.fingerprint(value.locatorJson)?.let {
+                        append(" fp=").append(it)
+                    }
                 }
             )
         }
