@@ -429,7 +429,6 @@ class LocalLibraryRepository internal constructor(
                 }
             }
             settings.saveReaderAppearance(snapshot.appearance)
-            _appearance.value = snapshot.appearance
         }
     }
 
