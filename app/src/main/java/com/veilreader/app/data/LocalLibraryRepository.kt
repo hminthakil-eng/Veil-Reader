@@ -79,7 +79,6 @@ class LocalLibraryRepository internal constructor(
     private val _bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
     val bookmarks: StateFlow<List<Bookmark>> = _bookmarks
 
-    private val _appearance = MutableStateFlow(ReaderAppearance())
 
     init {
         scope.launch {
@@ -111,9 +110,6 @@ class LocalLibraryRepository internal constructor(
         scope.launch {
             database.bookmarks().observeAll().collect { rows -> _bookmarks.value = rows.map { it.toDomain() } }
         }
-        scope.launch {
-            settings.settings.collect { _appearance.value = it.readerAppearance }
-        }
     }
 
     fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean {
@@ -133,13 +129,6 @@ class LocalLibraryRepository internal constructor(
         val updated = _highlights.value.firstOrNull { it.id == id }?.copy(note = note.trim()) ?: return
         _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
         enqueue { database.highlights().upsert(updated.toEntity()) }
-    }
-
-    fun loadAppearance(): ReaderAppearance = _appearance.value
-
-    fun saveAppearance(value: ReaderAppearance) {
-        _appearance.value = value
-        enqueue { settings.saveReaderAppearance(value) }
     }
 
     /**
