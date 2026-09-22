@@ -184,6 +184,12 @@ fun SettingsScreen(
                     onSaveReaderAppearance(appearance.copy(publisherStyles = enabled))
                 }
             )
+
+            Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
+            ReaderBrightnessControls(
+                appearance = appearance,
+                onChange = onSaveReaderAppearance
+            )
         }
 
         SettingsSection(
