@@ -6,6 +6,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderBrightness
+import com.veilreader.app.domain.ReaderBrightnessMode
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -27,6 +29,10 @@ class SettingsStoreInstrumentedTest {
             pageMargins = 1.23,
             scroll = true,
             publisherStyles = false,
+            brightness = ReaderBrightness(
+                mode = ReaderBrightnessMode.OVERRIDE,
+                level = 0.42
+            ),
             pageTurnStyle = PageTurnStyle.SLIDE
         )
 
