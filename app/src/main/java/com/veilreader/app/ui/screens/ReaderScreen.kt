@@ -1129,7 +1129,7 @@ private fun AppearancePanel(
                     )
                 }
                 Switch(
-                    checked = appearance.publisherStyles,
+                    checked = draft.publisherStyles,
                     onCheckedChange = { updateDraft(draft.copy(publisherStyles = it)) },
                     modifier = Modifier.semantics { contentDescription = "Publisher styling" }
                 )
