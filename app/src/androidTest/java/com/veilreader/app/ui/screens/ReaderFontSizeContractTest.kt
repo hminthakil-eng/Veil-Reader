@@ -3,6 +3,8 @@ package com.veilreader.app.ui.screens
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.readium.r2.shared.ExperimentalReadiumApi
 
@@ -30,4 +32,18 @@ class ReaderFontSizeContractTest {
             assertEquals(expected, requireNotNull(appearance.toEpubPreferences().fontSize), 0.0001)
         }
     }
+
+    @Test
+    fun explicitThemeSelectionProducesReadiumColors() {
+        for (theme in ReaderTheme.entries) {
+            val appearance = ReaderAppearance(publisherStyles = true).withTheme(theme)
+            val preferences = appearance.toEpubPreferences()
+
+            assertFalse(appearance.publisherStyles)
+            assertFalse(requireNotNull(preferences.publisherStyles))
+            assertNotNull(preferences.backgroundColor)
+            assertNotNull(preferences.textColor)
+        }
+    }
+
 }
