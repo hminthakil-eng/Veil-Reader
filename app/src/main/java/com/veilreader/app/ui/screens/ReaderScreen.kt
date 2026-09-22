@@ -97,7 +97,8 @@ fun ReaderScreen(
     game: GameRepository,
     readerAppearance: ReaderAppearance,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    onLocatorCheckpoint: (String) -> Unit = {}
 ) {
     val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
         "Veil Reader requires a FragmentActivity host."
@@ -118,6 +119,7 @@ fun ReaderScreen(
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
+    val latestNavigator = rememberUpdatedState(navigator)
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
@@ -243,16 +245,23 @@ fun ReaderScreen(
         if (readerMessage == message) readerMessage = null
     }
 
+    fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
+        val json = locator.toVeilPersistedJson(opened.format)
+        readerViewModel.onLocatorUpdate(
+            bookId = opened.book.id,
+            progression = locator.locations.totalProgression
+                ?: readerViewModel.uiState.value.progress.toDouble(),
+            locatorJson = json,
+            locationKey = "${opened.book.id}:$json",
+            event = event
+        )?.let { commit ->
+            onLocatorCheckpoint(commit.locatorJson)
+        }
+    }
+
     fun closeReader() {
         navigator?.currentLocator?.value?.let { locator ->
-            val json = locator.toVeilPersistedJson(opened.format)
-            readerViewModel.onLocatorUpdate(
-                bookId = opened.book.id,
-                progression = locator.locations.totalProgression ?: readerViewModel.uiState.value.progress.toDouble(),
-                locatorJson = json,
-                locationKey = "${opened.book.id}:$json",
-                event = ReaderLocatorEvent.FINAL_SNAPSHOT
-            )
+            recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
         }
         readerViewModel.closeBook()
         onClose()
@@ -290,7 +299,12 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_RESUME -> readerViewModel.onResume()
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
-                Lifecycle.Event.ON_DESTROY -> readerViewModel.onPause()
+                Lifecycle.Event.ON_DESTROY -> {
+                    latestNavigator.value?.currentLocator?.value?.let { locator ->
+                        recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    }
+                    readerViewModel.onPause()
+                }
                 else -> Unit
             }
         }
@@ -321,13 +335,14 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId(),
                     details = "progress=${locator.locations.totalProgression}"
                 )
-                val event = if (
+                val continuousScroll =
+                    (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
+                val event = when {
+                    continuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
                     opened.format != BookFormat.EPUB ||
-                    latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE
-                ) {
-                    ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
-                } else {
-                    ReaderLocatorEvent.NAVIGATOR_POSITION
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE ->
+                        ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                    else -> ReaderLocatorEvent.NAVIGATOR_POSITION
                 }
                 readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
@@ -336,7 +351,9 @@ fun ReaderScreen(
                     locatorJson = json,
                     locationKey = "${opened.book.id}:$json",
                     event = event
-                )
+                )?.let { commit ->
+                    onLocatorCheckpoint(commit.locatorJson)
+                }
             }
     }
 
@@ -361,14 +378,7 @@ fun ReaderScreen(
                     onCommittedTurn = {
                         val locator = nav.currentLocator.value
                         val json = locator.toVeilPersistedJson(opened.format)
-                        readerViewModel.onLocatorUpdate(
-                            bookId = opened.book.id,
-                            progression = locator.locations.totalProgression
-                                ?: readerViewModel.uiState.value.progress.toDouble(),
-                            locatorJson = json,
-                            locationKey = "${opened.book.id}:$json",
-                            event = ReaderLocatorEvent.PAPER_COMMIT
-                        )
+                        recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     }
                 )
             } else {
