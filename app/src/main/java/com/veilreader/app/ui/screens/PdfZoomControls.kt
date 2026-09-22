@@ -48,7 +48,19 @@ internal fun PdfZoomControls(
     }
 
     val view = pdfView
-    var zoom by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
+    var zoomMirror by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
+
+    // AndroidPdfViewer 3.2.8 exposes zoom getters/mutators but no zoom-change callback.
+    // Keep PDFView authoritative and mirror its current zoom only while this sheet is composed.
+    LaunchedEffect(view) {
+        val target = view ?: return@LaunchedEffect
+        while (true) {
+            val minZoom = target.minZoom.coerceAtLeast(0.5f)
+            val maxZoom = target.maxZoom.coerceAtLeast(minZoom + 0.5f)
+            zoomMirror = normalizedPdfZoom(target.zoom, minZoom, maxZoom)
+            delay(PDF_ZOOM_MIRROR_INTERVAL_MS)
+        }
+    }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -74,7 +86,7 @@ internal fun PdfZoomControls(
         } else {
             val minZoom = view.minZoom.coerceAtLeast(0.5f)
             val maxZoom = view.maxZoom.coerceAtLeast(minZoom + 0.5f)
-            val displayedZoom = zoom.coerceIn(minZoom, maxZoom)
+            val displayedZoom = normalizedPdfZoom(zoomMirror, minZoom, maxZoom)
 
             Text(
                 "Zoom · ${(displayedZoom * 100).toInt()}%",
@@ -83,8 +95,9 @@ internal fun PdfZoomControls(
             Slider(
                 value = displayedZoom,
                 onValueChange = {
-                    zoom = it.coerceIn(minZoom, maxZoom)
-                    view.zoomTo(zoom)
+                    val requested = normalizedPdfZoom(it, minZoom, maxZoom)
+                    view.zoomTo(requested)
+                    zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                 },
                 valueRange = minZoom..maxZoom
             )
@@ -96,22 +109,31 @@ internal fun PdfZoomControls(
             ) {
                 OutlinedButton(
                     onClick = {
-                        zoom = nextPdfZoom(zoom, minZoom, maxZoom, 0.8f)
-                        view.zoomWithAnimation(zoom)
+                        val requested = nextPdfZoom(
+                            current = normalizedPdfZoom(view.zoom, minZoom, maxZoom),
+                            min = minZoom,
+                            max = maxZoom,
+                            factor = 0.8f
+                        )
+                        view.zoomWithAnimation(requested)
                     },
                     modifier = Modifier.weight(1f)
                 ) { Text("−") }
                 OutlinedButton(
                     onClick = {
                         view.resetZoomWithAnimation()
-                        zoom = minZoom
                     },
                     modifier = Modifier.weight(1f)
                 ) { Text("Reset") }
                 OutlinedButton(
                     onClick = {
-                        zoom = nextPdfZoom(zoom, minZoom, maxZoom, 1.25f)
-                        view.zoomWithAnimation(zoom)
+                        val requested = nextPdfZoom(
+                            current = normalizedPdfZoom(view.zoom, minZoom, maxZoom),
+                            min = minZoom,
+                            max = maxZoom,
+                            factor = 1.25f
+                        )
+                        view.zoomWithAnimation(requested)
                     },
                     modifier = Modifier.weight(1f)
                 ) { Text("+") }
@@ -120,7 +142,7 @@ internal fun PdfZoomControls(
             OutlinedButton(
                 onClick = {
                     view.fitToWidth(view.currentPage)
-                    zoom = view.zoom.coerceIn(minZoom, maxZoom)
+                    zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                 },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
             ) { Text("Fit page width") }
@@ -134,12 +156,29 @@ internal fun PdfZoomControls(
     }
 }
 
+internal fun normalizedPdfZoom(
+    current: Float,
+    min: Float,
+    max: Float
+): Float {
+    val safeMin = if (min.isFinite()) min.coerceAtLeast(0.01f) else 1f
+    val safeMax = if (max.isFinite()) max.coerceAtLeast(safeMin) else safeMin
+    val safeCurrent = if (current.isFinite()) current else safeMin
+    return safeCurrent.coerceIn(safeMin, safeMax)
+}
+
 internal fun nextPdfZoom(
     current: Float,
     min: Float,
     max: Float,
     factor: Float
-): Float = (current * factor).coerceIn(min, max)
+): Float {
+    val safeCurrent = normalizedPdfZoom(current, min, max)
+    val safeFactor = if (factor.isFinite() && factor > 0f) factor else 1f
+    return normalizedPdfZoom(safeCurrent * safeFactor, min, max)
+}
+
+private const val PDF_ZOOM_MIRROR_INTERVAL_MS = 80L
 
 @OptIn(ExperimentalReadiumApi::class)
 private fun Navigator?.findPdfView(): PDFView? {
