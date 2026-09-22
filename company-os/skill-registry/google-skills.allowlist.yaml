@@ -5,6 +5,7 @@ upstream:
   url: https://github.com/google/skills
   trust: official-upstream
   license: Apache-2.0
+  reviewed_commit: d6b9f75668ed1450a87ea12a8de57e02f33cc7b4
 policy:
   bulk_install: false
   auto_sync: false
@@ -17,10 +18,20 @@ policy:
 allowlist_candidates:
   - path: skills/developers/finding-google-skills
     purpose: discover official Google skills without broad installation
-    state: candidate
+    state: approved-for-pilot-with-guardrails
+    guardrails:
+      - resolve_catalog_against_reviewed_commit
+      - do_not_follow_mutable_main_without_re_review
+      - verify_json_before_following_entrypoints
+      - no_tls_verification_bypass
   - path: skills/developers/retrieving-developer-knowledge
     purpose: retrieve official developer knowledge for bounded engineering tasks
-    state: candidate
+    state: approved-for-pilot-with-guardrails
+    guardrails:
+      - prefer_mcp_or_read_only_transport
+      - no_api_key_or_cloud_credential_fallback_without_explicit_authorization
+      - treat_401_403_empty_results_as_failed_lookup
+      - no_secret_persistence
 separate_official_upstreams:
   - repo: android/skills
     purpose: Android-specific skills for Veil Reader
