@@ -258,6 +258,22 @@ fun VeilApp(
             readerCheckpointJson = readerCheckpoint,
             durableLocatorJson = book.locatorJson
         )
+        val restoreSource = when {
+            locatorOverride != null -> "explicit"
+            readerCheckpoint != null -> "checkpoint"
+            !book.locatorJson.isNullOrBlank() -> "room"
+            else -> "none"
+        }
+        com.veilreader.app.diagnostics.ReaderTrace.event(
+            "reader_restore_requested",
+            bookId = targetId,
+            details = buildString {
+                append("source=").append(restoreSource)
+                com.veilreader.app.diagnostics.ReaderTrace.fingerprint(initialLocatorJson)?.let {
+                    append(" fp=").append(it)
+                }
+            }
+        )
         val candidate =
             if (initialLocatorJson == book.locatorJson) book
             else book.copy(locatorJson = initialLocatorJson)
@@ -278,6 +294,21 @@ fun VeilApp(
             opened.close()
             return@LaunchedEffect
         }
+
+        com.veilreader.app.diagnostics.ReaderTrace.event(
+            "reader_restore_opened",
+            bookId = targetId,
+            details = buildString {
+                append("source=").append(restoreSource)
+                val openedJson = opened.initialLocator?.toJSON()?.toString()
+                com.veilreader.app.diagnostics.ReaderTrace.fingerprint(openedJson)?.let {
+                    append(" fp=").append(it)
+                }
+                opened.initialLocator?.locations?.totalProgression?.let {
+                    append(" progress=").append(it)
+                }
+            }
+        )
 
         try {
             library.applyPdfiumLocatorMigrations(targetId, opened.locatorMigrations)
