@@ -18,10 +18,12 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 @OptIn(ExperimentalReadiumApi::class)
 internal class VeilDirectionalNavigationInputListener(
     private val navigator: OverflowableNavigator,
-    private val isAnimated: () -> Boolean
+    private val isAnimated: () -> Boolean,
+    private val isTapNavigationEnabled: () -> Boolean = { true }
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
+        if (!isTapNavigationEnabled()) return false
         if (navigator.overflow.value.scroll) return false
 
         val width = navigator.publicationView.width.toDouble()
