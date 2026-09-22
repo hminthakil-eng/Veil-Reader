@@ -18,6 +18,9 @@ class ReaderSafImportInstrumentedTest {
 
     @Test
     fun importedEpub_opensReaderThroughAndroidSaf() {
+        uiAutomation.executeShellCommand("pm clear com.google.android.documentsui").close()
+        SystemClock.sleep(500)
+
         val target = instrumentation.targetContext
         val launchIntent = target.packageManager
             .getLaunchIntentForPackage(target.packageName)
