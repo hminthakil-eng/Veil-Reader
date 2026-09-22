@@ -118,10 +118,18 @@ data class ReaderAppearance(
     val pageMargins: Double = 1.0,
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
-    val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER
+    val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
+    val screenBrightness: Double? = null
 ) {
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
+
+    fun withScreenBrightness(value: Double?): ReaderAppearance =
+        copy(
+            screenBrightness = value
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.05, 1.0)
+        )
 }
 
 /** A saved reading location, independent of text selection (also supports PDF). */
