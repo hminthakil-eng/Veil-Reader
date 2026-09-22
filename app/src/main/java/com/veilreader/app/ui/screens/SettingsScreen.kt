@@ -69,7 +69,8 @@ fun SettingsScreen(
         }
     }
 
-    fun commitReaderAppearance(value: ReaderAppearance) {
+    fun commitReaderAppearance(transform: (ReaderAppearance) -> ReaderAppearance) {
+        val value = transform(appearanceDraft)
         appearanceDraft = value
         pendingAppearance = value
         onSaveReaderAppearance(value)
@@ -137,7 +138,7 @@ fun SettingsScreen(
                 selected = appearance.theme,
                 label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
                 onSelected = { theme ->
-                    commitReaderAppearance(appearance.withTheme(theme))
+                    commitReaderAppearance { current -> current.withTheme(theme) }
                 }
             )
 
@@ -147,7 +148,7 @@ fun SettingsScreen(
                 valueRange = 0.75f..1.8f,
                 displayValue = { "${(it * 100).toInt()}%" },
                 onCommit = { value ->
-                    commitReaderAppearance(appearance.copy(fontScale = value.toDouble()))
+                    commitReaderAppearance { current -> current.copy(fontScale = value.toDouble()) }
                 }
             )
             ReaderSlider(
@@ -156,7 +157,7 @@ fun SettingsScreen(
                 valueRange = 1.1f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
-                    commitReaderAppearance(appearance.copy(lineHeight = value.toDouble()))
+                    commitReaderAppearance { current -> current.copy(lineHeight = value.toDouble()) }
                 }
             )
             ReaderSlider(
@@ -165,7 +166,7 @@ fun SettingsScreen(
                 valueRange = 0.5f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
-                    commitReaderAppearance(appearance.copy(pageMargins = value.toDouble()))
+                    commitReaderAppearance { current -> current.copy(pageMargins = value.toDouble()) }
                 }
             )
 
@@ -180,7 +181,7 @@ fun SettingsScreen(
                     }
                 },
                 onSelected = { style ->
-                    commitReaderAppearance(appearance.copy(pageTurnStyle = style))
+                    commitReaderAppearance { current -> current.copy(pageTurnStyle = style) }
                 }
             )
             Text(
@@ -194,7 +195,7 @@ fun SettingsScreen(
                 subtitle = "Use continuous vertical reading instead of pagination when the format supports it.",
                 checked = appearance.scroll,
                 onCheckedChange = { enabled ->
-                    commitReaderAppearance(appearance.copy(scroll = enabled))
+                    commitReaderAppearance { current -> current.copy(scroll = enabled) }
                 }
             )
             SettingsSwitchRow(
@@ -202,14 +203,18 @@ fun SettingsScreen(
                 subtitle = "Keep the publication's typography and styling when available. This can override Veil theme colors.",
                 checked = appearance.publisherStyles,
                 onCheckedChange = { enabled ->
-                    commitReaderAppearance(appearance.copy(publisherStyles = enabled))
+                    commitReaderAppearance { current -> current.copy(publisherStyles = enabled) }
                 }
             )
 
             Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
                 appearance = appearance,
-                onChange = ::commitReaderAppearance
+                onChange = { proposed ->
+                    commitReaderAppearance { current ->
+                        current.withScreenBrightness(proposed.screenBrightness)
+                    }
+                }
             )
         }
 
@@ -252,7 +257,7 @@ fun SettingsScreen(
             description = "Restore Veil Reader's reader defaults without touching books, progress, highlights, notes or backups."
         ) {
             OutlinedButton(
-                onClick = { commitReaderAppearance(ReaderAppearance()) },
+                onClick = { commitReaderAppearance { ReaderAppearance() } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
