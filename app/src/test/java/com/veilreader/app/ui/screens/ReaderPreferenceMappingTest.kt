@@ -42,4 +42,22 @@ class ReaderPreferenceMappingTest {
         assertEquals(0.42, ReaderAppearance().withScreenBrightness(0.42).screenBrightness!!, 0.0001)
         assertEquals(1.0, ReaderAppearance().withScreenBrightness(2.0).screenBrightness!!, 0.0001)
     }
+
+    @Test
+    fun `explicit typography overrides disable publisher styles`() {
+        val original = ReaderAppearance(publisherStyles = true)
+
+        val font = original.withFontScale(1.25)
+        assertEquals(1.25, font.fontScale, 0.0001)
+        assertFalse(font.publisherStyles)
+
+        val line = original.withLineHeight(1.7)
+        assertEquals(1.7, line.lineHeight, 0.0001)
+        assertFalse(line.publisherStyles)
+
+        val margins = original.withPageMargins(1.3)
+        assertEquals(1.3, margins.pageMargins, 0.0001)
+        assertFalse(margins.publisherStyles)
+    }
+
 }
