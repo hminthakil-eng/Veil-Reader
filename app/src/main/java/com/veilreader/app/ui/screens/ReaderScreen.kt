@@ -52,6 +52,7 @@ import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
+import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
@@ -149,6 +150,12 @@ fun ReaderScreen(
     var showNotebook by remember { mutableStateOf(false) }
 
     LaunchedEffect(readerAppearance, opened.book.id) {
+        ReaderTrace.event(
+            "appearance_observed",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = "theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
+        )
         appearance = readerAppearance
     }
     val bookHighlightsFlow = remember(library, opened.book.id) {
@@ -260,7 +267,15 @@ fun ReaderScreen(
         createReaderFactory(opened, appearance, selectionActionModeCallback)
     }
     val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
-        { ready -> navigator = ready }
+        { ready ->
+            navigator = ready
+            ReaderTrace.event(
+                "navigator_attached",
+                bookId = opened.book.id,
+                sessionId = readerViewModel.traceSessionId(),
+                details = "type=${ready::class.java.simpleName}"
+            )
+        }
     }
     val onDisposePublication = remember(opened.book.id) {
         { opened.close() }
@@ -301,6 +316,12 @@ fun ReaderScreen(
                 if (paperPreviewActive) return@collect
 
                 val json = locator.toVeilPersistedJson(opened.format)
+                ReaderTrace.event(
+                    "locator_observed",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId(),
+                    details = "progress=${locator.locations.totalProgression}"
+                )
                 readerViewModel.onLocatorChanged(
                     bookId = opened.book.id,
                     progression = locator.locations.totalProgression
@@ -356,6 +377,12 @@ fun ReaderScreen(
 
             listeners += object : InputListener {
                 override fun onTap(event: TapEvent): Boolean {
+                    ReaderTrace.event(
+                        "gesture_owned",
+                        bookId = opened.book.id,
+                        sessionId = readerViewModel.traceSessionId(),
+                        details = "gesture=tap owner=veil_chrome"
+                    )
                     readerViewModel.onUserInteraction()
                     controlsVisible = !controlsVisible
                     return true
@@ -372,6 +399,13 @@ fun ReaderScreen(
     LaunchedEffect(navigator, appearance, opened.format) {
         game.pauseReading()
         readerViewModel.onUserInteraction()
+        val traceDetails = "format=${opened.format} theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
+        ReaderTrace.event(
+            "appearance_submit_requested",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = traceDetails
+        )
         when (opened.format) {
             BookFormat.EPUB ->
                 (navigator as? EpubNavigatorFragment)
@@ -385,6 +419,12 @@ fun ReaderScreen(
 
             else -> Unit
         }
+        ReaderTrace.event(
+            "appearance_submit_returned",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = traceDetails
+        )
     }
 
     LaunchedEffect(navigator, opened.book.id, bookHighlights) {
