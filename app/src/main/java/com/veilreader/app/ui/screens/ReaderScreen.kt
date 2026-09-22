@@ -152,9 +152,11 @@ fun ReaderScreen(
             "appearance_observed",
             bookId = opened.book.id,
             sessionId = readerViewModel.traceSessionId(),
-            details = "theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
+            details = "theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle} brightness=${readerAppearance.screenBrightness ?: "system"}"
         )
     }
+    ReaderBrightnessEffect(activity, readerAppearance.screenBrightness)
+
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
             .map { items -> items.filter { it.bookId == opened.book.id } }
@@ -1135,6 +1137,12 @@ private fun AppearancePanel(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        ReaderBrightnessControls(
+            appearance = draft,
+            onChange = ::updateDraft
+        )
 
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
             Text("Back to reading")
