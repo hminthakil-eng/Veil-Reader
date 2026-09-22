@@ -1,8 +1,8 @@
 # R1.2 — Reader State Ownership Map
 
-Status: architecture decision record for the Reader Reliability track  
-Parent slice: R1.1 trace layer (`obs/r1-1-reader-trace`)  
-Behavior change: none  
+Status: architecture decision record for the Reader Reliability track
+Parent slice: R1.1 trace layer (`obs/r1-1-reader-trace`)
+Behavior change: none
 Production merge: not authorized
 
 ## Purpose
