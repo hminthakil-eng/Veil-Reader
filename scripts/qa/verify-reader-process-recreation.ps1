@@ -133,10 +133,9 @@ Start-Sleep -Seconds 2
 $afterHome = (Invoke-Adb -Arguments @("shell", "dumpsys", "activity", "activities") | Out-String)
 $afterHome | Set-Content -Path (Join-Path $runDir "02-after-home-activities.txt") -Encoding UTF8
 
-$resumedLine = ($afterHome -split "?
-" | Where-Object { $_ -match "mResumedActivity" } | Select-Object -First 1)
+$resumedLine = ($afterHome -split '\r?\n' | Where-Object { $_ -match "mResumedActivity|topResumedActivity" } | Select-Object -First 1)
 if ($resumedLine -and $resumedLine -match [regex]::Escape($Package)) {
-    throw "Veil Reader is still the resumed Activity after HOME. Refusing to run an invalid system-kill test."
+    throw "Veil Reader is still the resumed Activity after HOME. Refusing to run an invalid process-recreation test."
 }
 
 if ($Scenario -eq "system-kill") {
@@ -156,6 +155,10 @@ $launchOutput | Set-Content -Path (Join-Path $runDir "04-launch.txt") -Encoding 
 $afterPid = Wait-ForPid -TimeoutSeconds 10
 $deviceInfo.afterPid = $afterPid
 $deviceInfo.pidChanged = ($beforePid -ne $afterPid)
+
+if ($beforePid -eq $afterPid) {
+    throw "The process PID did not change across termination/relaunch; this run is not valid process-recreation evidence."
+}
 
 Start-Sleep -Seconds 3
 
