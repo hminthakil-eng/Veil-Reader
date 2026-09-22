@@ -111,6 +111,22 @@ enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
 enum class PageTurnStyle { PAPER, SLIDE }
 
+enum class ReaderBrightnessMode { SYSTEM, OVERRIDE }
+
+data class ReaderBrightness(
+    val mode: ReaderBrightnessMode = ReaderBrightnessMode.SYSTEM,
+    val level: Double = DEFAULT_LEVEL
+) {
+    fun normalizedLevel(): Double =
+        (if (level.isFinite()) level else DEFAULT_LEVEL).coerceIn(MIN_LEVEL, MAX_LEVEL)
+
+    companion object {
+        const val DEFAULT_LEVEL = 0.65
+        const val MIN_LEVEL = 0.05
+        const val MAX_LEVEL = 1.0
+    }
+}
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
     val fontScale: Double = 1.0,
@@ -118,6 +134,7 @@ data class ReaderAppearance(
     val pageMargins: Double = 1.0,
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
+    val brightness: ReaderBrightness = ReaderBrightness(),
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER
 ) {
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
