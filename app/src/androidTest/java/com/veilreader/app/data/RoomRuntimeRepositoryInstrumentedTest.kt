@@ -11,6 +11,8 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderBrightness
+import com.veilreader.app.domain.ReaderBrightnessMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
@@ -189,7 +191,16 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.addImportedBook(book)
         repository.addHighlight("backup-book", "Preserve me", "{\"href\":\"chapter.xhtml\"}")
         repository.addBookmark("backup-book", "Saved place", "{\"href\":\"chapter.xhtml\"}")
-        settings.saveReaderAppearance(ReaderAppearance(theme = ReaderTheme.OLED, lineHeight = 1.7))
+        settings.saveReaderAppearance(
+            ReaderAppearance(
+                theme = ReaderTheme.OLED,
+                lineHeight = 1.7,
+                brightness = ReaderBrightness(
+                    mode = ReaderBrightnessMode.OVERRIDE,
+                    level = 0.42
+                )
+            )
+        )
         repository.saveReadingSession(
             ReadingSessionSnapshot(
                 id = "session-backup",
@@ -239,7 +250,10 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertTrue(restoredFile.isFile && restoredFile.readBytes().contentEquals("test publication".toByteArray()))
         assertEquals(1, db.highlights().observeAll().first().size)
         assertEquals(1, db.bookmarks().observeAll().first().size)
-        assertEquals(ReaderTheme.OLED, settings.settings.first().readerAppearance.theme)
+        val restoredAppearance = settings.settings.first().readerAppearance
+        assertEquals(ReaderTheme.OLED, restoredAppearance.theme)
+        assertEquals(ReaderBrightnessMode.OVERRIDE, restoredAppearance.brightness.mode)
+        assertEquals(0.42, restoredAppearance.brightness.level, 0.0001)
 
         val restoredSession = db.readingSessions().listAll().single()
         assertEquals("session-backup", restoredSession.id)
