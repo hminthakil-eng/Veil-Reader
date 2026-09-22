@@ -27,7 +27,8 @@ class SettingsStoreInstrumentedTest {
             pageMargins = 1.23,
             scroll = true,
             publisherStyles = false,
-            pageTurnStyle = PageTurnStyle.SLIDE
+            pageTurnStyle = PageTurnStyle.SLIDE,
+            screenBrightness = 0.42
         )
 
         try {
