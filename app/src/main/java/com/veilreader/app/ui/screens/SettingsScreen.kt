@@ -116,7 +116,7 @@ fun SettingsScreen(
                 selected = appearance.theme,
                 label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
                 onSelected = { theme ->
-                    onSaveReaderAppearance(appearance.copy(theme = theme))
+                    onSaveReaderAppearance(appearance.withTheme(theme))
                 }
             )
 
@@ -178,7 +178,7 @@ fun SettingsScreen(
             )
             SettingsSwitchRow(
                 title = "Publisher styles",
-                subtitle = "Keep the publication's typography and styling when available.",
+                subtitle = "Keep the publication's typography and styling when available. This can override Veil theme colors.",
                 checked = appearance.publisherStyles,
                 onCheckedChange = { enabled ->
                     onSaveReaderAppearance(appearance.copy(publisherStyles = enabled))
