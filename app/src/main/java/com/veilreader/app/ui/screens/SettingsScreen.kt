@@ -38,6 +38,8 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderBrightness
+import com.veilreader.app.domain.ReaderBrightnessMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
@@ -146,6 +148,43 @@ fun SettingsScreen(
                 onCommit = { value ->
                     onSaveReaderAppearance(appearance.copy(pageMargins = value.toDouble()))
                 }
+            )
+
+            Text("Reader brightness", style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = ReaderBrightnessMode.entries,
+                selected = appearance.brightness.mode,
+                label = { mode ->
+                    when (mode) {
+                        ReaderBrightnessMode.SYSTEM -> "System"
+                        ReaderBrightnessMode.OVERRIDE -> "Reader override"
+                    }
+                },
+                onSelected = { mode ->
+                    onSaveReaderAppearance(
+                        appearance.copy(brightness = appearance.brightness.copy(mode = mode))
+                    )
+                }
+            )
+            if (appearance.brightness.mode == ReaderBrightnessMode.OVERRIDE) {
+                ReaderSlider(
+                    label = "Brightness",
+                    value = appearance.brightness.normalizedLevel().toFloat(),
+                    valueRange = ReaderBrightness.MIN_LEVEL.toFloat()..ReaderBrightness.MAX_LEVEL.toFloat(),
+                    displayValue = { "${(it * 100).toInt()}%" },
+                    onCommit = { value ->
+                        onSaveReaderAppearance(
+                            appearance.copy(
+                                brightness = appearance.brightness.copy(level = value.toDouble())
+                            )
+                        )
+                    }
+                )
+            }
+            Text(
+                "Reader override applies only while a book is open. Veil never changes the device's global brightness.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
             )
 
             Text("Page turn", style = MaterialTheme.typography.labelLarge)
