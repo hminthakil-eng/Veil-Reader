@@ -1,11 +1,14 @@
 package com.veilreader.app
 
+import android.app.Activity
 import android.app.UiAutomation
 import android.content.Intent
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,7 +29,7 @@ class ReaderSafImportInstrumentedTest {
             .getLaunchIntentForPackage(target.packageName)
         assertNotNull("Launch intent missing", launchIntent)
 
-        instrumentation.startActivitySync(
+        val activity = instrumentation.startActivitySync(
             launchIntent!!.addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             )
@@ -47,6 +50,33 @@ class ReaderSafImportInstrumentedTest {
             "com.veilreader.app:id/resourcePager",
             "com.veilreader.app:id/webView"
         )
+
+        uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_90)
+        try {
+            waitForPackage(target.packageName)
+            waitForResumedActivity(excluding = activity)
+            waitForViewId(
+                "com.veilreader.app:id/resourcePager",
+                "com.veilreader.app:id/webView"
+            )
+        } finally {
+            uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+        }
+    }
+
+    private fun waitForResumedActivity(excluding: Activity): Activity {
+        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        while (SystemClock.elapsedRealtime() < deadline) {
+            var resumed: Activity? = null
+            instrumentation.runOnMainSync {
+                resumed = ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED)
+                    .firstOrNull { it !== excluding }
+            }
+            resumed?.let { return it }
+            SystemClock.sleep(POLL_MS)
+        }
+        error("Timed out waiting for recreated EPUB Activity")
     }
 
     private fun clickFirstText(vararg candidates: String) {
