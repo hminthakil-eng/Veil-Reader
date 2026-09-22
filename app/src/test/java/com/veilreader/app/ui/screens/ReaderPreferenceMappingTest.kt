@@ -1,7 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 class ReaderPreferenceMappingTest {
@@ -20,4 +22,15 @@ class ReaderPreferenceMappingTest {
         assertEquals(0xFF18151D.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.DUSK))
         assertEquals(0xFF000000.toInt() to 0xFFF5F0F7.toInt(), readiumThemeColors(ReaderTheme.OLED))
     }
+
+    @Test
+    fun `explicit theme selection disables publisher style override`() {
+        ReaderTheme.entries.forEach { theme ->
+            val selected = ReaderAppearance(publisherStyles = true).withTheme(theme)
+
+            assertEquals(theme, selected.theme)
+            assertFalse(selected.publisherStyles)
+        }
+    }
+
 }
