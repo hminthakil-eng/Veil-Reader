@@ -252,7 +252,15 @@ fun VeilApp(
         }
 
         val locatorOverride = route.locatorOverrideJson
-        val candidate = if (locatorOverride == null) book else book.copy(locatorJson = locatorOverride)
+        val readerCheckpoint = route.readerLocatorCheckpointJson
+        val initialLocatorJson = com.veilreader.app.ui.navigation.chooseReaderRestoreLocator(
+            explicitOverrideJson = locatorOverride,
+            readerCheckpointJson = readerCheckpoint,
+            durableLocatorJson = book.locatorJson
+        )
+        val candidate =
+            if (initialLocatorJson == book.locatorJson) book
+            else book.copy(locatorJson = initialLocatorJson)
         val opened = readerEngine.openBook(
             book = candidate,
             persistedLocatorJsons = library.locatorJsonsForBook(targetId)
@@ -280,32 +288,50 @@ fun VeilApp(
             errorMessage = "The book opened, but older PDF reading positions could not be upgraded yet. ${error.message.orEmpty()}"
         }
 
-        if (locatorOverride != null) {
-            val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: locatorOverride
-            library.saveProgress(targetId, book.progress.toDouble(), persistedLocator)
+        val recoveryLocator = locatorOverride ?: readerCheckpoint
+        if (recoveryLocator != null) {
+            val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
+            val recoveredProgress =
+                opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
+            library.saveProgress(targetId, recoveredProgress, persistedLocator)
         }
         library.markOpened(targetId)
         openedPublication = opened
 
-        if (locatorOverride == null) {
-            routeViewModel.readerOpened(targetId)
-        } else {
-            scope.launch {
-                try {
-                    library.flushWrites()
-                    val currentRoute = routeViewModel.route.value
-                    if (
-                        currentRoute.activeBookId == targetId &&
-                        currentRoute.locatorOverrideJson == locatorOverride
-                    ) {
-                        routeViewModel.readerOpened(targetId)
+        when {
+            locatorOverride != null -> {
+                scope.launch {
+                    try {
+                        library.flushWrites()
+                        val currentRoute = routeViewModel.route.value
+                        if (
+                            currentRoute.activeBookId == targetId &&
+                            currentRoute.locatorOverrideJson == locatorOverride
+                        ) {
+                            routeViewModel.readerOpened(targetId)
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
                     }
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
                 }
             }
+
+            readerCheckpoint != null -> {
+                scope.launch {
+                    try {
+                        library.flushWrites()
+                        routeViewModel.readerCheckpointPersisted(targetId, readerCheckpoint)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        errorMessage = "Your restored reading position is open, but could not be made durable yet. ${error.message.orEmpty()}"
+                    }
+                }
+            }
+
+            else -> routeViewModel.readerOpened(targetId)
         }
     }
 
@@ -391,6 +417,9 @@ fun VeilApp(
             onClose = {
                 openedPublication = null
                 routeViewModel.closeReader()
+            },
+            onLocatorCheckpoint = { locatorJson ->
+                routeViewModel.checkpointReaderLocator(opened.book.id, locatorJson)
             }
         )
     } else if (route.showSettings) {
