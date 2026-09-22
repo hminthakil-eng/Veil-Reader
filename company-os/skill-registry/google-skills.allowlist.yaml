@@ -1,0 +1,62 @@
+version: 1
+status: controlled-pilot
+upstream:
+  name: google/skills
+  url: https://github.com/google/skills
+  trust: official-upstream
+  license: Apache-2.0
+  reviewed_commit: d6b9f75668ed1450a87ea12a8de57e02f33cc7b4
+policy:
+  bulk_install: false
+  auto_sync: false
+  auto_execute: false
+  require_commit_pin: true
+  require_security_review: true
+  require_duplication_check: true
+  require_reversible_test: true
+  production_use: false
+allowlist_candidates:
+  - path: skills/developers/finding-google-skills
+    purpose: discover official Google skills without broad installation
+    state: approved-for-pilot-with-guardrails
+    guardrails:
+      - resolve_catalog_against_reviewed_commit
+      - do_not_follow_mutable_main_without_re_review
+      - verify_json_before_following_entrypoints
+      - no_tls_verification_bypass
+  - path: skills/developers/retrieving-developer-knowledge
+    purpose: retrieve official developer knowledge for bounded engineering tasks
+    state: approved-for-pilot-with-guardrails
+    guardrails:
+      - prefer_mcp_or_read_only_transport
+      - no_api_key_or_cloud_credential_fallback_without_explicit_authorization
+      - treat_401_403_empty_results_as_failed_lookup
+      - no_secret_persistence
+separate_official_upstreams:
+  - repo: android/skills
+    url: https://github.com/android/skills
+    purpose: Android-specific skills for Veil Reader
+    trust: official-upstream
+    license: Apache-2.0
+    reviewed_commit: b1f707d90904129b5972b3cc6436b568583effe5
+    state: approved-for-controlled-pilot
+    skills:
+      - path: testing/testing-setup
+        purpose: Android testing strategy and RC/device verification
+        state: approved-for-pilot-with-guardrails
+        guardrails:
+          - respect_existing_test_stack
+          - no_dependency_injection_framework_change_without_need
+          - do_not_install_broad_test_stack_automatically
+          - require_device_evidence_for_end_to_end_claims
+          - preserve_reader_runtime_architecture
+promotion_gate:
+  - provenance_pinned
+  - license_checked
+  - scripts_reviewed
+  - credentials_reviewed
+  - no_architecture_conflict
+  - no_material_duplication
+  - deterministic_reproduction
+  - measurable_benefit
+  - reversible
