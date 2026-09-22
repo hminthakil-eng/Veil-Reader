@@ -221,7 +221,12 @@ class LocalLibraryRepository internal constructor(
     }
 
     /** Returns true when this update completed the book for the first time. */
-    fun saveProgress(id: String, progression: Double, locatorJson: String): Boolean {
+    fun saveProgress(
+        id: String,
+        progression: Double,
+        locatorJson: String,
+        traceSequence: Long? = null
+    ): Boolean {
         val current = getBook(id) ?: return false
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
@@ -245,7 +250,8 @@ class LocalLibraryRepository internal constructor(
                 pagesRead = updated.pagesRead,
                 locatorJson = locatorJson,
                 lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
-                finished = updated.finished
+                finished = updated.finished,
+                traceSequence = traceSequence
             ),
             immediate = newlyFinished
         )
@@ -518,7 +524,10 @@ class LocalLibraryRepository internal constructor(
             ReaderTrace.event(
                 "locator_persisted",
                 bookId = value.id,
-                details = "progress=${value.progress}"
+                details = buildString {
+                    value.traceSequence?.let { append("seq=").append(it).append(' ') }
+                    append("progress=").append(value.progress)
+                }
             )
         }
     }
@@ -624,7 +633,8 @@ private data class PendingProgressWrite(
     val pagesRead: Int,
     val locatorJson: String,
     val lastOpenedAtEpochMs: Long,
-    val finished: Boolean
+    val finished: Boolean,
+    val traceSequence: Long? = null
 )
 
 private const val PROGRESS_WRITE_INTERVAL_MS = 250L
