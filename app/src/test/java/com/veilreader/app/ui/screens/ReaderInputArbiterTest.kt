@@ -50,4 +50,37 @@ class ReaderInputArbiterTest {
             )
         )
     }
+
+    @Test
+    fun `PDF directional animation ignores hidden EPUB page-turn style`() {
+        assertFalse(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.PDF,
+                pageTurnStyle = PageTurnStyle.PAPER
+            )
+        )
+        assertFalse(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.PDF,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+    }
+
+    @Test
+    fun `EPUB slide alone enables directional animation`() {
+        assertFalse(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.EPUB,
+                pageTurnStyle = PageTurnStyle.PAPER
+            )
+        )
+        assertTrue(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.EPUB,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+    }
+
 }
