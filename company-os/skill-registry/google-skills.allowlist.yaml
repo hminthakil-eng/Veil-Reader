@@ -34,8 +34,22 @@ allowlist_candidates:
       - no_secret_persistence
 separate_official_upstreams:
   - repo: android/skills
+    url: https://github.com/android/skills
     purpose: Android-specific skills for Veil Reader
-    state: evaluate-separately
+    trust: official-upstream
+    license: Apache-2.0
+    reviewed_commit: b1f707d90904129b5972b3cc6436b568583effe5
+    state: approved-for-controlled-pilot
+    skills:
+      - path: testing/testing-setup
+        purpose: Android testing strategy and RC/device verification
+        state: approved-for-pilot-with-guardrails
+        guardrails:
+          - respect_existing_test_stack
+          - no_dependency_injection_framework_change_without_need
+          - do_not_install_broad_test_stack_automatically
+          - require_device_evidence_for_end_to_end_claims
+          - preserve_reader_runtime_architecture
 promotion_gate:
   - provenance_pinned
   - license_checked
