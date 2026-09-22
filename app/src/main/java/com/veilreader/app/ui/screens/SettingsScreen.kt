@@ -148,7 +148,7 @@ fun SettingsScreen(
                 valueRange = 0.75f..1.8f,
                 displayValue = { "${(it * 100).toInt()}%" },
                 onCommit = { value ->
-                    commitReaderAppearance { current -> current.copy(fontScale = value.toDouble()) }
+                    commitReaderAppearance { current -> current.copy(fontScale = value.toDouble(), publisherStyles = false) }
                 }
             )
             ReaderSlider(
@@ -157,7 +157,7 @@ fun SettingsScreen(
                 valueRange = 1.1f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
-                    commitReaderAppearance { current -> current.copy(lineHeight = value.toDouble()) }
+                    commitReaderAppearance { current -> current.copy(lineHeight = value.toDouble(), publisherStyles = false) }
                 }
             )
             ReaderSlider(
@@ -166,7 +166,7 @@ fun SettingsScreen(
                 valueRange = 0.5f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
-                    commitReaderAppearance { current -> current.copy(pageMargins = value.toDouble()) }
+                    commitReaderAppearance { current -> current.copy(pageMargins = value.toDouble(), publisherStyles = false) }
                 }
             )
 
