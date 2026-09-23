@@ -126,9 +126,14 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun updateHighlightNote(id: String, note: String) {
-        val updated = _highlights.value.firstOrNull { it.id == id }?.copy(note = note.trim()) ?: return
-        _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
-        enqueue { database.highlights().upsert(updated.toEntity()) }
+        val cleanNote = note.trim()
+        _highlights.value.firstOrNull { it.id == id }?.copy(note = cleanNote)?.let { updated ->
+            _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
+        }
+        enqueue {
+            val persisted = database.highlights().findById(id)?.toDomain() ?: return@enqueue
+            database.highlights().upsert(persisted.copy(note = cleanNote).toEntity())
+        }
     }
 
     /**
