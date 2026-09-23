@@ -20,10 +20,15 @@ class MainActivity : FragmentActivity() {
     private var externalOpenUri by mutableStateOf<Uri?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Readium navigator fragments require a custom factory during FragmentManager restore.
-        supportFragmentManager.fragmentFactory = ReaderFragmentRestoration.fragmentFactory
+        // A custom factory is only needed when FragmentManager is restoring saved navigator state.
+        // Avoid eagerly touching FragmentManager on a true cold launch.
+        if (savedInstanceState != null) {
+            supportFragmentManager.fragmentFactory = ReaderFragmentRestoration.fragmentFactory
+        }
         super.onCreate(savedInstanceState)
-        ReaderFragmentRestoration.discardRestoredDummies(supportFragmentManager)
+        if (savedInstanceState != null) {
+            ReaderFragmentRestoration.discardRestoredDummies(supportFragmentManager)
+        }
 
         enableEdgeToEdge()
         externalOpenUri = if (savedInstanceState == null) viewUriFrom(intent) else null
