@@ -18,7 +18,9 @@ import java.io.File
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Performance-only entry point that opens a deterministic local EPUB in the real Readium
@@ -36,10 +38,12 @@ class BenchmarkReaderActivity : FragmentActivity() {
             val engine = ReadiumEngine(context)
             val game = GameRepository(context)
 
-            val inspected = engine.inspectAndCreateBook(Uri.fromFile(ensureFixture())).getOrThrow()
-            val committed = library.addImportedBook(inspected).book
-            library.flushWrites()
-            val opened = engine.openBook(committed).getOrThrow()
+            val opened = withContext(Dispatchers.IO) {
+                val inspected = engine.inspectAndCreateBook(Uri.fromFile(ensureFixture())).getOrThrow()
+                val committed = library.addImportedBook(inspected).book
+                library.flushWrites()
+                engine.openBook(committed).getOrThrow()
+            }
 
             setContent {
                 val readerAppearance = remember { mutableStateOf(ReaderAppearance()) }
