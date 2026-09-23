@@ -783,6 +783,11 @@ fun ReaderScreen(
         ModalBottomSheet(onDismissRequest = { showPdfZoom = false }) {
             PdfZoomControls(
                 navigator = navigator,
+                appearance = readerAppearance,
+                onAppearanceChange = { updated ->
+                    readerViewModel.onUserInteraction()
+                    onReaderAppearanceChange(updated)
+                },
                 modifier = Modifier
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 22.dp)
