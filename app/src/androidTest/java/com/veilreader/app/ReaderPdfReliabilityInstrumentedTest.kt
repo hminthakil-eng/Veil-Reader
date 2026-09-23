@@ -444,23 +444,112 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun revealReaderChrome(view: PDFView) {
+        waitForInteractivePdfView(view)
+        if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+
+        // Use synchronized instrumentation injection rather than `adb shell input tap`.
+        // After a configuration change the renderer can be drawn before the recreated
+        // window/input channel is fully ready; shell input is asynchronous and was
+        // intermittently lost on that boundary. Probe a few deterministic interior
+        // points so the gate does not depend on one renderer hotspot.
+        val targetFractions = listOf(
+            0.50f to 0.50f,
+            0.42f to 0.50f,
+            0.58f to 0.50f,
+        )
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        var attempt = 0
         while (SystemClock.elapsedRealtime() < deadline) {
             if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
-            tapViewCenter(view)
-            SystemClock.sleep(750)
+
+            val (xFraction, yFraction) = targetFractions[attempt % targetFractions.size]
+            injectTapInsideView(view, xFraction, yFraction)
+            uiAutomation.waitForIdle(250, 2_000)
+            SystemClock.sleep(300)
+            attempt++
         }
-        error("Timed out revealing PDF reader chrome; page=" + readCurrentPage(view) +
-            ", zoom=" + readZoom(view))
+
+        var attached = false
+        var shown = false
+        var focused = false
+        var width = 0
+        var height = 0
+        instrumentation.runOnMainSync {
+            attached = view.isAttachedToWindow
+            shown = view.isShown
+            focused = view.hasWindowFocus()
+            width = view.width
+            height = view.height
+        }
+        error(
+            "Timed out revealing PDF reader chrome; page=" + readCurrentPage(view) +
+                ", zoom=" + readZoom(view) +
+                ", attached=" + attached +
+                ", shown=" + shown +
+                ", windowFocus=" + focused +
+                ", size=" + width + "x" + height +
+                ", attempts=" + attempt
+        )
     }
 
-    private fun tapViewCenter(view: View) {
+    private fun waitForInteractivePdfView(view: View) {
+        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        while (SystemClock.elapsedRealtime() < deadline) {
+            var interactive = false
+            instrumentation.runOnMainSync {
+                interactive =
+                    view.isAttachedToWindow &&
+                        view.isShown &&
+                        view.width > 0 &&
+                        view.height > 0 &&
+                        view.hasWindowFocus()
+            }
+            if (interactive) {
+                instrumentation.waitForIdleSync()
+                uiAutomation.waitForIdle(250, 2_000)
+                return
+            }
+            SystemClock.sleep(POLL_MS)
+        }
+        error("Timed out waiting for interactive PDFView after reader recreation")
+    }
+
+    private fun injectTapInsideView(view: View, xFraction: Float, yFraction: Float) {
         val location = IntArray(2)
-        instrumentation.runOnMainSync { view.getLocationOnScreen(location) }
-        val x = location[0] + view.width / 2
-        val y = location[1] + view.height / 2
-        uiAutomation.executeShellCommand("input tap $x $y").close()
-        SystemClock.sleep(500)
+        var width = 0
+        var height = 0
+        instrumentation.runOnMainSync {
+            view.getLocationOnScreen(location)
+            width = view.width
+            height = view.height
+        }
+
+        val x = location[0] + width * xFraction
+        val y = location[1] + height * yFraction
+        val downTime = SystemClock.uptimeMillis()
+
+        fun inject(action: Int, eventTime: Long) {
+            val event = MotionEvent.obtain(
+                downTime,
+                eventTime,
+                action,
+                x,
+                y,
+                0,
+            ).apply {
+                source = InputDevice.SOURCE_TOUCHSCREEN
+            }
+            try {
+                check(uiAutomation.injectInputEvent(event, true)) {
+                    "UiAutomation rejected PDF chrome tap action=$action at ($x,$y)"
+                }
+            } finally {
+                event.recycle()
+            }
+        }
+
+        inject(MotionEvent.ACTION_DOWN, downTime)
+        inject(MotionEvent.ACTION_UP, downTime + 60)
     }
 
     private fun currentPdfLayoutLabel(): String =
