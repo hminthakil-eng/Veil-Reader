@@ -62,7 +62,9 @@ fun VeilApp(
     val scope = rememberCoroutineScope()
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
-    val readerEngine = remember(context) { ReadiumEngine(context) }
+    val readerEngine = remember(context) {
+        lazy(LazyThreadSafetyMode.NONE) { ReadiumEngine(context) }
+    }
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
@@ -89,7 +91,7 @@ fun VeilApp(
     val nextCoverBook = books.firstOrNull { it.isImported && it.coverCachePath == null }
     LaunchedEffect(nextCoverBook?.id) {
         val book = nextCoverBook ?: return@LaunchedEffect
-        val cachedPath = readerEngine.extractAndCacheCover(book).getOrDefault("")
+        val cachedPath = readerEngine.value.extractAndCacheCover(book).getOrDefault("")
         library.updateCoverCachePath(book.id, cachedPath)
     }
 
@@ -98,7 +100,7 @@ fun VeilApp(
     val nextFingerprintBook = books.firstOrNull { it.isImported && it.contentFingerprint.isNullOrBlank() }
     LaunchedEffect(nextFingerprintBook?.id, nextFingerprintBook?.sourceUri) {
         val book = nextFingerprintBook ?: return@LaunchedEffect
-        readerEngine.computeContentFingerprint(book)
+        readerEngine.value.computeContentFingerprint(book)
             .getOrNull()
             ?.takeIf { it.isNotBlank() }
             ?.let { library.updateContentFingerprint(book.id, it) }
@@ -202,7 +204,7 @@ fun VeilApp(
         isImporting = true
         scope.launch {
             try {
-                val inspected = readerEngine.inspectAndCreateBook(uri)
+                val inspected = readerEngine.value.inspectAndCreateBook(uri)
                 val inspectionError = inspected.exceptionOrNull()
                 if (inspectionError != null) {
                     if (inspectionError is CancellationException) throw inspectionError
@@ -261,7 +263,7 @@ fun VeilApp(
         val candidate =
             if (initialLocatorJson == book.locatorJson) book
             else book.copy(locatorJson = initialLocatorJson)
-        val opened = readerEngine.openBook(
+        val opened = readerEngine.value.openBook(
             book = candidate,
             persistedLocatorJsons = library.locatorJsonsForBook(targetId)
         ).fold(
