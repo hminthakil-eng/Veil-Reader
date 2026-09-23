@@ -3,6 +3,10 @@ package com.veilreader.app
 import android.app.Activity
 import android.app.UiAutomation
 import android.content.Intent
+import android.content.ContentValues
+import android.os.Environment
+import android.provider.MediaStore
+import android.util.Base64
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityNodeInfo
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -36,6 +40,7 @@ class ReaderSafImportInstrumentedTest {
     fun importedEpub_opensReaderThroughAndroidSaf() {
         uiAutomation.executeShellCommand("pm clear com.google.android.documentsui").close()
         SystemClock.sleep(500)
+        seedEpubFixture()
 
         val target = instrumentation.targetContext
         val launchIntent = target.packageManager
@@ -173,8 +178,37 @@ class ReaderSafImportInstrumentedTest {
         SystemClock.sleep(750)
     }
 
+
+    private fun seedEpubFixture() {
+        val resolver = instrumentation.targetContext.contentResolver
+        val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+        val displayName = "VeilReaderQa.epub"
+        resolver.delete(
+            collection,
+            "${MediaStore.MediaColumns.DISPLAY_NAME} = ?",
+            arrayOf(displayName),
+        )
+        val values = ContentValues().apply {
+            put(MediaStore.MediaColumns.DISPLAY_NAME, displayName)
+            put(MediaStore.MediaColumns.MIME_TYPE, "application/epub+zip")
+            put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+            put(MediaStore.MediaColumns.IS_PENDING, 1)
+        }
+        val uri = requireNotNull(resolver.insert(collection, values)) {
+            "Unable to create EPUB fixture in MediaStore Downloads"
+        }
+        resolver.openOutputStream(uri, "w")!!.use { output ->
+            output.write(Base64.decode(EPUB_BASE64, Base64.DEFAULT))
+        }
+        values.clear()
+        values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+        resolver.update(uri, values, null, null)
+        SystemClock.sleep(1_000)
+    }
+
     private companion object {
         const val TIMEOUT_MS = 15_000L
         const val POLL_MS = 250L
+        const val EPUB_BASE64 = "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"
     }
 }
