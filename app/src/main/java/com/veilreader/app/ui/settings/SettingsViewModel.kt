@@ -18,7 +18,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     val settings: StateFlow<AppSettings> = store.settings.stateIn(
         scope = viewModelScope,
-        started = SharingStarted.Eagerly,
+        started = SharingStarted.WhileSubscribed(stopTimeoutMillis = 5_000),
         initialValue = AppSettings()
     )
 
