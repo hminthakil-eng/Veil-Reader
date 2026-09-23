@@ -160,9 +160,15 @@ class ReaderSafImportInstrumentedTest {
         while (current != null && !current.isClickable) {
             current = current.parent
         }
-        checkNotNull(current) { "No clickable ancestor for accessibility node" }
-        check(current.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            "Accessibility click failed"
+
+        val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+        if (!clicked) {
+            val bounds = android.graphics.Rect()
+            (current ?: node).getBoundsInScreen(bounds)
+            check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
+            uiAutomation.executeShellCommand(
+                "input tap ${bounds.centerX()} ${bounds.centerY()}"
+            ).close()
         }
         SystemClock.sleep(750)
     }
