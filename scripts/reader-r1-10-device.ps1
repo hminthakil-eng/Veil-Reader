@@ -8,9 +8,19 @@ Set-Location $repoRoot
 
 $sdk = if ($env:ANDROID_HOME) { $env:ANDROID_HOME } else { "$env:LOCALAPPDATA\Android\Sdk" }
 $adb = Join-Path $sdk "platform-tools\adb.exe"
-$gradle = Join-Path $repoRoot "gradlew.bat"
+$gradleWrapper = Join-Path $repoRoot "gradlew.bat"
 if (-not (Test-Path $adb)) { throw "adb.exe not found under $sdk" }
-if (-not (Test-Path $gradle)) { throw "gradlew.bat not found at $gradle" }
+
+if (Test-Path $gradleWrapper) {
+    $gradle = $gradleWrapper
+} else {
+    $gradleCommand = Get-Command gradle -ErrorAction SilentlyContinue
+    if (-not $gradleCommand) {
+        throw "Neither gradlew.bat nor a system Gradle command is available."
+    }
+    $gradle = $gradleCommand.Source
+}
+
 if (-not (Test-Path $EpubFixture)) { throw "EPUB fixture not found: $EpubFixture" }
 
 $devices = @(& $adb devices | Select-String '\s+device$' | ForEach-Object { ($_ -split '\s+')[0] })
