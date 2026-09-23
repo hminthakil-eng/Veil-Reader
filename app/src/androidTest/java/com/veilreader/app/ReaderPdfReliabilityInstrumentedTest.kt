@@ -444,34 +444,32 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun revealReaderChrome(view: PDFView) {
-        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
-        var attempts = 0
+        if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+
+        val readerSurface = waitForNode("Reader surface") {
+            it.contentDescription?.toString() == "Reader surface"
+        }
+
+        check(readerSurface.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+            "Reader surface rejected ACTION_CLICK; actions=" +
+                readerSurface.actionList.joinToString { it.label?.toString() ?: it.id.toString() }
+        }
+
+        uiAutomation.waitForIdle(250, 2_000)
+        val deadline = SystemClock.elapsedRealtime() + 5_000L
         while (SystemClock.elapsedRealtime() < deadline) {
             if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
-
-            // The PDF renderer owns native touch dispatch and can consume shell taps before
-            // Readium's input listener sees them. Drive the same chrome state through the
-            // reader surface accessibility action instead of retrying a renderer-owned tap.
-            val readerSurface = findNode {
-                it.contentDescription?.toString() == "Reader surface"
-            }
-            if (readerSurface != null) {
-                clickNode(readerSurface)
-            } else {
-                // Retain one real-tap fallback for diagnostics on older APKs.
-                tapViewCenter(view)
-            }
-            attempts++
-            SystemClock.sleep(250)
+            SystemClock.sleep(POLL_MS)
         }
+
         error(
-            "Timed out revealing PDF reader chrome; page=" + readCurrentPage(view) +
+            "Reader surface accepted ACTION_CLICK but chrome did not appear; page=" +
+                readCurrentPage(view) +
                 ", zoom=" + readZoom(view) +
                 ", attached=" + view.isAttachedToWindow +
                 ", shown=" + view.isShown +
                 ", windowFocus=" + view.hasWindowFocus() +
-                ", size=" + view.width + "x" + view.height +
-                ", attempts=" + attempts
+                ", size=" + view.width + "x" + view.height
         )
     }
 
