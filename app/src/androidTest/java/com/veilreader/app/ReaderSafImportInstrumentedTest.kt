@@ -47,12 +47,11 @@ class ReaderSafImportInstrumentedTest {
             .getLaunchIntentForPackage(target.packageName)
         assertNotNull("Launch intent missing", launchIntent)
 
-        val activity = instrumentation.startActivitySync(
-            launchIntent!!.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            )
+        val launch = launchIntent!!.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         )
-        instrumentation.waitForIdleSync()
+        instrumentation.targetContext.startActivity(launch)
+        val activity = waitForResumedActivity()
         uiAutomation.waitForIdle(500, 5_000)
 
         clickText("Library")
@@ -82,14 +81,14 @@ class ReaderSafImportInstrumentedTest {
         }
     }
 
-    private fun waitForResumedActivity(excluding: Activity): Activity {
+    private fun waitForResumedActivity(excluding: Activity? = null): Activity {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
         while (SystemClock.elapsedRealtime() < deadline) {
             var resumed: Activity? = null
             instrumentation.runOnMainSync {
                 resumed = ActivityLifecycleMonitorRegistry.getInstance()
                     .getActivitiesInStage(Stage.RESUMED)
-                    .firstOrNull { it !== excluding }
+                    .firstOrNull { excluding == null || it !== excluding }
             }
             resumed?.let { return it }
             SystemClock.sleep(POLL_MS)
