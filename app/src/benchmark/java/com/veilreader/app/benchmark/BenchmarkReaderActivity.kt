@@ -11,6 +11,7 @@ import androidx.lifecycle.lifecycleScope
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
@@ -46,7 +47,9 @@ class BenchmarkReaderActivity : FragmentActivity() {
             }
 
             setContent {
-                val readerAppearance = remember { mutableStateOf(ReaderAppearance()) }
+                val readerAppearance = remember {
+                    mutableStateOf(ReaderAppearance(pageTurnStyle = PageTurnStyle.SLIDE))
+                }
                 VeilTheme {
                     ReaderScreen(
                         opened = opened,
