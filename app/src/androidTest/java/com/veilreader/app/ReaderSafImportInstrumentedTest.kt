@@ -9,6 +9,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
+import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +20,17 @@ class ReaderSafImportInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation: UiAutomation
         get() = instrumentation.uiAutomation
+
+    @Before
+    fun forcePortraitStart() {
+        uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_0)
+        SystemClock.sleep(500)
+    }
+
+    @After
+    fun releaseRotation() {
+        uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+    }
 
     @Test
     fun importedEpub_opensReaderThroughAndroidSaf() {
