@@ -54,53 +54,13 @@ fun VeilWorldBackdrop(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    0f to colors.background,
-                    0.56f to colors.background,
-                    1f to colors.surface.copy(alpha = 0.92f)
-                )
-            )
-    ) {
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .offset(x = 150.dp, y = (-170).dp)
-                .size(430.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            colors.primary.copy(alpha = 0.12f),
-                            colors.primary.copy(alpha = 0.035f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        Box(
-            Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-150).dp, y = 190.dp)
-                .size(420.dp)
-                .clip(CircleShape)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            colors.secondary.copy(alpha = 0.09f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        content()
-    }
+            .background(MaterialTheme.colorScheme.background),
+        content = content
+    )
 }
-
 @Composable
 fun VeilAnimatedTabHost(
     selectedTab: VeilTab,
