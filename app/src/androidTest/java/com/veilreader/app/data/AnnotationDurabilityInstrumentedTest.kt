@@ -42,7 +42,7 @@ class AnnotationDurabilityInstrumentedTest {
     }
 
     @After
-    fun tearDown() {
+    fun tearDown() = runBlocking {
         repository.closeForTest()
         db.close()
     }

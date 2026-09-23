@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReaderAppearance
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,6 +27,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun saveReaderAppearance(appearance: ReaderAppearance) {
-        viewModelScope.launch { store.saveReaderAppearance(appearance) }
+        val details = "theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
+        ReaderTrace.event("appearance_requested", details = details)
+        viewModelScope.launch {
+            store.saveReaderAppearance(appearance)
+            ReaderTrace.event("appearance_persisted", details = details)
+        }
     }
 }

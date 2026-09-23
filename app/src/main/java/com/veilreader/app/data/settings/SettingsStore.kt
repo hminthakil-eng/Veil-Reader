@@ -35,6 +35,7 @@ class SettingsStore(private val context: Context) {
         val scroll = booleanPreferencesKey("reader_scroll")
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
+        val screenBrightness = doublePreferencesKey("reader_screen_brightness")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
@@ -57,7 +58,10 @@ class SettingsStore(private val context: Context) {
                 publisherStyles = prefs[Keys.publisherStyles] ?: true,
                 pageTurnStyle = runCatching {
                     PageTurnStyle.valueOf(prefs[Keys.pageTurnStyle] ?: PageTurnStyle.PAPER.name)
-                }.getOrDefault(PageTurnStyle.PAPER)
+                }.getOrDefault(PageTurnStyle.PAPER),
+                screenBrightness = prefs[Keys.screenBrightness]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(0.05, 1.0)
             ),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
@@ -79,6 +83,9 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.scroll] = value.scroll
             prefs[Keys.publisherStyles] = value.publisherStyles
             prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
+            value.screenBrightness?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
+            } ?: prefs.remove(Keys.screenBrightness)
         }
     }
 

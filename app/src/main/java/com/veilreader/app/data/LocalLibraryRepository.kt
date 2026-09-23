@@ -1,5 +1,7 @@
 package com.veilreader.app.data
 
+import com.veilreader.app.diagnostics.ReaderTrace
+
 import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
@@ -77,7 +79,6 @@ class LocalLibraryRepository internal constructor(
     private val _bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
     val bookmarks: StateFlow<List<Bookmark>> = _bookmarks
 
-    private val _appearance = MutableStateFlow(ReaderAppearance())
 
     init {
         scope.launch {
@@ -109,9 +110,6 @@ class LocalLibraryRepository internal constructor(
         scope.launch {
             database.bookmarks().observeAll().collect { rows -> _bookmarks.value = rows.map { it.toDomain() } }
         }
-        scope.launch {
-            settings.settings.collect { _appearance.value = it.readerAppearance }
-        }
     }
 
     fun addBookmark(bookId: String, label: String, locatorJson: String): Boolean {
@@ -128,16 +126,14 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun updateHighlightNote(id: String, note: String) {
-        val updated = _highlights.value.firstOrNull { it.id == id }?.copy(note = note.trim()) ?: return
-        _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
-        enqueue { database.highlights().upsert(updated.toEntity()) }
-    }
-
-    fun loadAppearance(): ReaderAppearance = _appearance.value
-
-    fun saveAppearance(value: ReaderAppearance) {
-        _appearance.value = value
-        enqueue { settings.saveReaderAppearance(value) }
+        val cleanNote = note.trim()
+        _highlights.value.firstOrNull { it.id == id }?.copy(note = cleanNote)?.let { updated ->
+            _highlights.value = _highlights.value.map { if (it.id == id) updated else it }
+        }
+        enqueue {
+            val persisted = database.highlights().findById(id)?.toDomain() ?: return@enqueue
+            database.highlights().upsert(persisted.copy(note = cleanNote).toEntity())
+        }
     }
 
     /**
@@ -230,7 +226,12 @@ class LocalLibraryRepository internal constructor(
     }
 
     /** Returns true when this update completed the book for the first time. */
-    fun saveProgress(id: String, progression: Double, locatorJson: String): Boolean {
+    fun saveProgress(
+        id: String,
+        progression: Double,
+        locatorJson: String,
+        traceSequence: Long? = null
+    ): Boolean {
         val current = getBook(id) ?: return false
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
@@ -254,7 +255,8 @@ class LocalLibraryRepository internal constructor(
                 pagesRead = updated.pagesRead,
                 locatorJson = locatorJson,
                 lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
-                finished = updated.finished
+                finished = updated.finished,
+                traceSequence = traceSequence
             ),
             immediate = newlyFinished
         )
@@ -377,8 +379,11 @@ class LocalLibraryRepository internal constructor(
      * Production repositories live for the app process, but tests must cancel Room observers before
      * closing their database to avoid asynchronous queries against a closed connection.
      */
-    internal fun closeForTest() {
-        scope.cancel()
+    internal suspend fun closeForTest() {
+        scope.coroutineContext[Job]?.let { rootJob ->
+            rootJob.cancel()
+            rootJob.join()
+        }
     }
 
     /** Ensures migration and all writes queued before this call have reached durable storage. */
@@ -438,7 +443,6 @@ class LocalLibraryRepository internal constructor(
                 }
             }
             settings.saveReaderAppearance(snapshot.appearance)
-            _appearance.value = snapshot.appearance
         }
     }
 
@@ -525,6 +529,14 @@ class LocalLibraryRepository internal constructor(
             ) {
                 "Book disappeared before its progress could be persisted: ${value.id}"
             }
+            ReaderTrace.event(
+                "locator_persisted",
+                bookId = value.id,
+                details = buildString {
+                    value.traceSequence?.let { append("seq=").append(it).append(' ') }
+                    append("progress=").append(value.progress)
+                }
+            )
         }
     }
 
@@ -629,7 +641,8 @@ private data class PendingProgressWrite(
     val pagesRead: Int,
     val locatorJson: String,
     val lastOpenedAtEpochMs: Long,
-    val finished: Boolean
+    val finished: Boolean,
+    val traceSequence: Long? = null
 )
 
 private const val PROGRESS_WRITE_INTERVAL_MS = 250L

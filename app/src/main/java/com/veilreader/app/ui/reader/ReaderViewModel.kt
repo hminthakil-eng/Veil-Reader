@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
+import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReadingSessionTracker
 import java.util.UUID
 import kotlinx.coroutines.delay
@@ -36,6 +37,8 @@ class ReaderViewModel(
     private var tracker: ReadingSessionTracker? = null
     private var resumed = false
     private var uncreditedActiveMillis = 0L
+    private val locatorDeduplicator = ReaderLocatorDeduplicator()
+    private var locatorSequence = 0L
 
     init {
         viewModelScope.launch {
@@ -58,8 +61,16 @@ class ReaderViewModel(
             startedAtEpochMs = nowWall,
             startedAtElapsedMs = nowElapsed
         )
+        ReaderTrace.event(
+            "reader_open",
+            bookId = bookId,
+            sessionId = tracker?.sessionId,
+            details = "initialProgress=${initialProgress.coerceIn(0f, 1f)}"
+        )
         resumed = false
         uncreditedActiveMillis = 0L
+        locatorDeduplicator.reset()
+        locatorSequence = 0L
         _uiState.value = ReaderUiState(bookId = bookId, progress = initialProgress.coerceIn(0f, 1f))
         persistSession(immediate = true)
     }
@@ -75,7 +86,9 @@ class ReaderViewModel(
 
     fun onPause() {
         val current = tracker ?: return
+        ReaderTrace.event("reader_pause", bookId = current.bookId, sessionId = current.sessionId)
         library.flushProgress(current.bookId)
+        ReaderTrace.event("locator_flush_enqueued", bookId = current.bookId, sessionId = current.sessionId)
         if (!resumed) {
             library.flushReadingSession(current.sessionId)
             game.pauseReading()
@@ -94,26 +107,66 @@ class ReaderViewModel(
         publishActiveMillis()
     }
 
-    fun onLocatorChanged(
+    internal fun onLocatorUpdate(
         bookId: String,
         progression: Double,
         locatorJson: String,
         locationKey: String,
-        countPageTurn: Boolean = true
-    ) {
-        val current = tracker?.takeIf { it.bookId == bookId } ?: return
+        event: ReaderLocatorEvent
+    ): ReaderLocatorCommit? {
+        val current = tracker?.takeIf { it.bookId == bookId } ?: return null
+
+        if (!event.commitsLocator) {
+            ReaderTrace.event(
+                "locator_observed_uncommitted",
+                bookId = bookId,
+                sessionId = current.sessionId,
+                details = "event=$event"
+            )
+            return null
+        }
+
+        if (!locatorDeduplicator.acceptCommit(locationKey)) {
+            ReaderTrace.event(
+                "locator_duplicate_commit_ignored",
+                bookId = bookId,
+                sessionId = current.sessionId,
+                details = "event=$event"
+            )
+            return null
+        }
+
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
 
-        if (countPageTurn && resumed && game.recordPageTurn(locationKey)) {
+        if (event.countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
             current.recordPacedPageTurn()
         }
 
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
-        val completed = library.saveProgress(bookId, safe.toDouble(), locatorJson)
+        val sequence = ++locatorSequence
+        ReaderTrace.event(
+            "locator_committed",
+            bookId = bookId,
+            sessionId = current.sessionId,
+            details = "seq=$sequence progress=$safe event=$event"
+        )
+        val completed = library.saveProgress(
+            id = bookId,
+            progression = safe.toDouble(),
+            locatorJson = locatorJson,
+            traceSequence = sequence
+        )
+        ReaderTrace.event(
+            "locator_save_enqueued",
+            bookId = bookId,
+            sessionId = current.sessionId,
+            details = "seq=$sequence progress=$safe event=$event"
+        )
         if (completed) game.recordBookFinished()
         _uiState.value = _uiState.value.copy(progress = safe, activeMillis = current.activeMillis)
         persistSession()
+        return ReaderLocatorCommit(sequence, locatorJson, safe)
     }
 
     fun onHighlightAdded() {
@@ -135,8 +188,13 @@ class ReaderViewModel(
     }
 
     fun closeBook() {
+        tracker?.let { current ->
+            ReaderTrace.event("reader_close_requested", bookId = current.bookId, sessionId = current.sessionId)
+        }
         finishCurrentSession()
     }
+
+    fun traceSessionId(): String? = tracker?.sessionId
 
     private fun heartbeat() {
         val current = tracker ?: return
@@ -156,8 +214,11 @@ class ReaderViewModel(
         library.flushProgress(current.bookId)
         library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
         library.flushReadingSession(current.sessionId)
+        ReaderTrace.event("reader_closed", bookId = current.bookId, sessionId = current.sessionId)
         tracker = null
         uncreditedActiveMillis = 0L
+        locatorDeduplicator.reset()
+        locatorSequence = 0L
     }
 
     private fun creditActive(deltaMillis: Long) {

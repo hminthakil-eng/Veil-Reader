@@ -20,7 +20,8 @@ class BaselineProfileGenerator {
      */
     @Test
     fun generate() = baselineProfileRule.collect(
-        packageName = TARGET_PACKAGE
+        packageName = TARGET_PACKAGE,
+        includeInStartupProfile = true
     ) {
         startActivityAndWait()
         device.waitForIdle()
