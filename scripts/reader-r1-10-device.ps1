@@ -39,7 +39,10 @@ if (-not (Test-Path $appApk)) { throw "App APK missing: $appApk" }
 if (-not (Test-Path $testApk)) { throw "AndroidTest APK missing: $testApk" }
 
 Write-Output "R1.10 gate 2/5: clean install and seed EPUB fixture"
-& $adb shell pm clear com.veilreader.app | Out-Null
+$installedPath = (& $adb shell pm path com.veilreader.app 2>$null | Out-String).Trim()
+if ($installedPath) {
+    & $adb shell pm clear com.veilreader.app | Out-Null
+}
 & $adb install -r $appApk | Out-Null
 if ($LASTEXITCODE -ne 0) { throw "App APK installation failed." }
 & $adb install -r $testApk | Out-Null
@@ -62,16 +65,49 @@ Invoke-ReaderInstrumentation "com.veilreader.app.ReaderSafImportInstrumentedTest
 Write-Output "R1.10 gate 4/5: real PDF zoom/layout/page + Activity recreation"
 Invoke-ReaderInstrumentation "com.veilreader.app.ReaderPdfReliabilityInstrumentedTest" "pdf-reliability.txt"
 
+function Get-AppPid {
+    $pidOutput = & $adb shell pidof com.veilreader.app 2>$null
+    if ($LASTEXITCODE -ne 0) { return "" }
+    return (($pidOutput | Out-String).Trim())
+}
+
+function Assert-NonZeroReaderProgress([string]$TraceText, [string]$Stage) {
+    $readerOpenMatches = [regex]::Matches($TraceText, 'event=reader_open .*initialProgress=([0-9]+(?:\.[0-9]+)?)')
+    if ($readerOpenMatches.Count -eq 0) {
+        throw "No Reader open trace appeared during $Stage."
+    }
+    $valueText = $readerOpenMatches[$readerOpenMatches.Count - 1].Groups[1].Value
+    $value = [double]::Parse($valueText, [Globalization.CultureInfo]::InvariantCulture)
+    if ($value -le 0.0) {
+        throw "Reader progress was not non-zero during $Stage: $valueText"
+    }
+    return $valueText
+}
+
 Write-Output "R1.10 gate 5/5: background process death and Reader task restoration"
-$beforePid = (& $adb shell pidof com.veilreader.app).Trim()
-if (-not $beforePid) { throw "App process is not alive after PDF instrumentation." }
+$beforePid = Get-AppPid
+if (-not $beforePid) {
+    & $adb logcat -c
+    $preflightLaunch = & $adb shell am start -W -a android.intent.action.MAIN -c android.intent.category.LAUNCHER -f 0x10200000 -n com.veilreader.app/.MainActivity 2>&1
+    $preflightLaunch | Set-Content (Join-Path $qaDir "process-preflight-launch.txt")
+    if ($LASTEXITCODE -ne 0 -or ($preflightLaunch -join [Environment]::NewLine) -match "Error:|Exception") {
+        throw "Reader preflight launch failed after PDF instrumentation."
+    }
+    Start-Sleep -Seconds 6
+    $beforePid = Get-AppPid
+    if (-not $beforePid) { throw "App process did not start for the process-death preflight." }
+
+    $preflightTrace = & $adb logcat -d -s "VeilReaderTrace:D" "*:S"
+    $preflightTrace | Set-Content (Join-Path $qaDir "reader-trace-before-process-death.txt")
+    $null = Assert-NonZeroReaderProgress -TraceText ($preflightTrace -join [Environment]::NewLine) -Stage "process-death preflight"
+}
 
 & $adb shell input keyevent KEYCODE_HOME | Out-Null
 Start-Sleep -Seconds 2
 & $adb shell am kill com.veilreader.app | Out-Null
 Start-Sleep -Seconds 2
 
-$afterKillPid = (& $adb shell pidof com.veilreader.app).Trim()
+$afterKillPid = Get-AppPid
 if ($afterKillPid -and $afterKillPid -eq $beforePid) {
     throw "am kill did not recreate the process boundary; PID $beforePid is still alive."
 }
@@ -87,16 +123,7 @@ Start-Sleep -Seconds 6
 $trace = & $adb logcat -d -s "VeilReaderTrace:D" "*:S"
 $trace | Set-Content (Join-Path $qaDir "reader-trace-after-process-death.txt")
 $traceText = $trace -join [Environment]::NewLine
-$matches = [regex]::Matches($traceText, 'event=reader_open .*initialProgress=([0-9]+(?:\.[0-9]+)?)')
-if ($matches.Count -eq 0) {
-    throw "No Reader reopen trace appeared after process recreation. Saved Reader route may not have restored."
-}
-
-$progressText = $matches[$matches.Count - 1].Groups[1].Value
-$progress = [double]::Parse($progressText, [Globalization.CultureInfo]::InvariantCulture)
-if ($progress -le 0.0) {
-    throw "Reader reopened after process recreation but durable progress was not non-zero: $progressText"
-}
+$progressText = Assert-NonZeroReaderProgress -TraceText $traceText -Stage "process recreation"
 
 $errors = & $adb logcat -d -v brief | Select-String "FATAL EXCEPTION|ANR in com.veilreader.app|Process: com.veilreader.app"
 if ($errors) {
