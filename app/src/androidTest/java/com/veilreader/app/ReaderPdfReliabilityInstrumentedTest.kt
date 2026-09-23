@@ -76,9 +76,11 @@ class ReaderPdfReliabilityInstrumentedTest {
         SystemClock.sleep(2_000)
 
         val pdfView = waitForPdfView(activity)
-        exerciseNativePdfGestures(pdfView)
 
+        // Reveal chrome before synthetic native PDF gestures. Multi-pointer dispatch is renderer-level
+        // coverage and must not be allowed to poison the Readium tap-arbiter state used by this gate.
         revealReaderChrome(pdfView)
+        exerciseNativePdfGestures(pdfView)
         clickText("Zoom")
         waitForText("PDF zoom")
         waitForText("Fit page width")
