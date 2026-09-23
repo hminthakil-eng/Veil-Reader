@@ -12,6 +12,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -22,9 +23,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
+import com.veilreader.app.domain.ReaderAppearance
 import kotlinx.coroutines.delay
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
@@ -33,6 +37,8 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 @Composable
 internal fun PdfZoomControls(
     navigator: Navigator?,
+    appearance: ReaderAppearance,
+    onAppearanceChange: (ReaderAppearance) -> Unit,
     modifier: Modifier = Modifier,
     onDone: () -> Unit
 ) {
@@ -77,6 +83,39 @@ internal fun PdfZoomControls(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
+
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (appearance.scroll) {
+                        "Vertical flow · pages fit the screen width."
+                    } else {
+                        "Paginated · pages snap horizontally inside the viewport."
+                    },
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Switch(
+                checked = appearance.scroll,
+                onCheckedChange = { enabled ->
+                    onAppearanceChange(appearance.copy(scroll = enabled))
+                },
+                modifier = Modifier.semantics {
+                    contentDescription = "PDF continuous scroll"
+                }
+            )
+        }
+
+        HorizontalDivider()
 
         if (view == null) {
             Text(
