@@ -47,6 +47,8 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     @Test
     fun importedPdf_exposesFitLayoutAndSurvivesRotation() {
+        uiAutomation.executeShellCommand("pm clear com.google.android.documentsui").close()
+        SystemClock.sleep(500)
         seedPdfFixture()
 
         val target = instrumentation.targetContext
@@ -531,7 +533,7 @@ class ReaderPdfReliabilityInstrumentedTest {
 
         while (queue.isNotEmpty()) {
             val node = queue.removeFirst()
-            if (predicate(node) && clickableAncestor(node) != null) return node
+            if (predicate(node)) return node
             for (index in 0 until node.childCount) {
                 node.getChild(index)?.let(queue::add)
             }
@@ -563,11 +565,15 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun clickNode(node: AccessibilityNodeInfo) {
-        val current = checkNotNull(clickableAncestor(node)) {
-            "No clickable ancestor for accessibility node"
-        }
-        check(current.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            "Accessibility click failed"
+        val current = clickableAncestor(node)
+        val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+        if (!clicked) {
+            val bounds = android.graphics.Rect()
+            (current ?: node).getBoundsInScreen(bounds)
+            check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
+            uiAutomation.executeShellCommand(
+                "input tap ${bounds.centerX()} ${bounds.centerY()}"
+            ).close()
         }
         SystemClock.sleep(750)
     }
