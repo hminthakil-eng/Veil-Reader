@@ -79,7 +79,7 @@ function Assert-NonZeroReaderProgress([string]$TraceText, [string]$Stage) {
     $valueText = $readerOpenMatches[$readerOpenMatches.Count - 1].Groups[1].Value
     $value = [double]::Parse($valueText, [Globalization.CultureInfo]::InvariantCulture)
     if ($value -le 0.0) {
-        throw "Reader progress was not non-zero during $Stage: $valueText"
+        throw "Reader progress was not non-zero during ${Stage}: $valueText"
     }
     return $valueText
 }
