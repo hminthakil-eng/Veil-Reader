@@ -46,10 +46,11 @@ internal fun PdfZoomControls(
         mutableStateOf(navigator.findPdfView())
     }
     LaunchedEffect(navigator) {
-        repeat(12) {
-            if (pdfView != null) return@LaunchedEffect
-            delay(100)
+        // The PDF renderer may attach well after the bottom sheet is composed on cold or busy devices.
+        // Keep probing for the lifetime of this composition instead of giving up after 1.2 seconds.
+        while (pdfView == null) {
             pdfView = navigator.findPdfView()
+            if (pdfView == null) delay(100)
         }
     }
 
