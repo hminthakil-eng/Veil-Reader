@@ -444,7 +444,7 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun revealReaderChrome(view: PDFView) {
-        if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+        if (isReaderChromeVisible()) return
 
         val readerSurface = waitForNode("Reader surface") {
             it.contentDescription?.toString() == "Reader surface"
@@ -458,7 +458,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         uiAutomation.waitForIdle(250, 2_000)
         val deadline = SystemClock.elapsedRealtime() + 5_000L
         while (SystemClock.elapsedRealtime() < deadline) {
-            if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+            if (isReaderChromeVisible()) return
             SystemClock.sleep(POLL_MS)
         }
 
@@ -472,6 +472,11 @@ class ReaderPdfReliabilityInstrumentedTest {
                 ", size=" + view.width + "x" + view.height
         )
     }
+
+    private fun isReaderChromeVisible(): Boolean =
+        findNode {
+            it.contentDescription?.toString() == "Close reader"
+        } != null
 
     private fun tapViewCenter(view: View) {
         val location = IntArray(2)
