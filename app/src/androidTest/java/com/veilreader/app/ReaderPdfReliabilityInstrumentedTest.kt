@@ -78,7 +78,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         val pdfView = waitForPdfView(activity)
         exerciseNativePdfGestures(pdfView)
 
-        revealReaderChrome()
+        revealReaderChrome(pdfView)
         clickText("Zoom")
         waitForText("PDF zoom")
         waitForText("Fit page width")
@@ -106,7 +106,7 @@ class ReaderPdfReliabilityInstrumentedTest {
             val rotatedActivity = waitForResumedActivity(excluding = activity)
             val rotatedPdfView = waitForPdfView(rotatedActivity)
             waitForPdfPage(rotatedPdfView, 1)
-            revealReaderChrome()
+            revealReaderChrome(rotatedPdfView)
             waitForText("Zoom")
         } finally {
             uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
@@ -441,21 +441,23 @@ class ReaderPdfReliabilityInstrumentedTest {
         SystemClock.sleep(750)
     }
 
-    private fun revealReaderChrome() {
+    private fun revealReaderChrome(view: PDFView) {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
         while (SystemClock.elapsedRealtime() < deadline) {
             if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
-            tapReaderCenter()
+            tapViewCenter(view)
             SystemClock.sleep(750)
         }
-        error("Timed out revealing PDF reader chrome")
+        error("Timed out revealing PDF reader chrome; page=" + readCurrentPage(view) +
+            ", zoom=" + readZoom(view))
     }
 
-    private fun tapReaderCenter() {
-        val metrics = instrumentation.targetContext.resources.displayMetrics
-        uiAutomation.executeShellCommand(
-            "input tap ${metrics.widthPixels / 2} ${metrics.heightPixels / 2}"
-        ).close()
+    private fun tapViewCenter(view: View) {
+        val location = IntArray(2)
+        instrumentation.runOnMainSync { view.getLocationOnScreen(location) }
+        val x = location[0] + view.width / 2
+        val y = location[1] + view.height / 2
+        uiAutomation.executeShellCommand("input tap $x $y").close()
         SystemClock.sleep(500)
     }
 
