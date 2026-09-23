@@ -19,6 +19,8 @@ import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.github.barteksc.pdfviewer.PDFView
 import kotlin.math.abs
+import org.junit.After
+import org.junit.Before
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotEquals
@@ -31,6 +33,17 @@ class ReaderPdfReliabilityInstrumentedTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val uiAutomation: UiAutomation
         get() = instrumentation.uiAutomation
+
+    @Before
+    fun forcePortraitStart() {
+        uiAutomation.setRotation(UiAutomation.ROTATION_FREEZE_0)
+        SystemClock.sleep(500)
+    }
+
+    @After
+    fun releaseRotation() {
+        uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
+    }
 
     @Test
     fun importedPdf_exposesFitLayoutAndSurvivesRotation() {
