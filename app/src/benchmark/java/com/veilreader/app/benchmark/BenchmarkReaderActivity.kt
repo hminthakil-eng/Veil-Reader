@@ -5,17 +5,23 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /**
  * Performance-only entry point that opens a deterministic local EPUB in the real Readium
@@ -33,17 +39,24 @@ class BenchmarkReaderActivity : FragmentActivity() {
             val engine = ReadiumEngine(context)
             val game = GameRepository(context)
 
-            val inspected = engine.inspectAndCreateBook(Uri.fromFile(ensureFixture())).getOrThrow()
-            val committed = library.addImportedBook(inspected).book
-            library.flushWrites()
-            val opened = engine.openBook(committed).getOrThrow()
+            val opened = withContext(Dispatchers.IO) {
+                val inspected = engine.inspectAndCreateBook(Uri.fromFile(ensureFixture())).getOrThrow()
+                val committed = library.addImportedBook(inspected).book
+                library.flushWrites()
+                engine.openBook(committed).getOrThrow()
+            }
 
             setContent {
+                val readerAppearance = remember {
+                    mutableStateOf(ReaderAppearance(pageTurnStyle = PageTurnStyle.SLIDE))
+                }
                 VeilTheme {
                     ReaderScreen(
                         opened = opened,
                         library = library,
                         game = game,
+                        readerAppearance = readerAppearance.value,
+                        onReaderAppearanceChange = { readerAppearance.value = it },
                         onClose = ::finish
                     )
                 }
