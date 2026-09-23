@@ -1,0 +1,47 @@
+name: Firebase Test Lab Pilot
+
+on:
+  workflow_dispatch:
+    inputs:
+      device:
+        description: "Firebase Test Lab device model"
+        required: false
+        default: "MediumPhone.arm"
+      version:
+        description: "Android version"
+        required: false
+        default: "35"
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  firebase-instrumentation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: "9.6.0"
+      - name: Build app and instrumentation APKs
+        run: gradle :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_TESTLAB_SERVICE_ACCOUNT }}
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v3
+      - name: Verify Test Lab target
+        run: |
+          gcloud config set project "${{ secrets.FIREBASE_PROJECT_ID }}"
+          gcloud firebase test android models describe "${{ inputs.device }}" || gcloud firebase test android models list --filter=virtual
+      - name: Run Veil instrumentation in Firebase Test Lab
+        run: |
+          gcloud firebase test android run             --type instrumentation             --app app/build/outputs/apk/debug/app-debug.apk             --test app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk             --device model="${{ inputs.device }}",version="${{ inputs.version }}",locale=en,orientation=portrait             --timeout 30m             --num-flaky-test-attempts 1             --client-details matrixLabel="Veil RC v3 ${{ github.sha }}"
