@@ -5,10 +5,13 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.fragment.app.FragmentActivity
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
@@ -39,11 +42,14 @@ class BenchmarkReaderActivity : FragmentActivity() {
             val opened = engine.openBook(committed).getOrThrow()
 
             setContent {
+                val readerAppearance = remember { mutableStateOf(ReaderAppearance()) }
                 VeilTheme {
                     ReaderScreen(
                         opened = opened,
                         library = library,
                         game = game,
+                        readerAppearance = readerAppearance.value,
+                        onReaderAppearanceChange = { readerAppearance.value = it },
                         onClose = ::finish
                     )
                 }
