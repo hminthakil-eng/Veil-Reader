@@ -445,13 +445,34 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     private fun revealReaderChrome(view: PDFView) {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        var attempts = 0
         while (SystemClock.elapsedRealtime() < deadline) {
             if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
-            tapViewCenter(view)
-            SystemClock.sleep(750)
+
+            // The PDF renderer owns native touch dispatch and can consume shell taps before
+            // Readium's input listener sees them. Drive the same chrome state through the
+            // reader surface accessibility action instead of retrying a renderer-owned tap.
+            val readerSurface = findNode {
+                it.contentDescription?.toString() == "Reader surface"
+            }
+            if (readerSurface != null) {
+                clickNode(readerSurface)
+            } else {
+                // Retain one real-tap fallback for diagnostics on older APKs.
+                tapViewCenter(view)
+            }
+            attempts++
+            SystemClock.sleep(250)
         }
-        error("Timed out revealing PDF reader chrome; page=" + readCurrentPage(view) +
-            ", zoom=" + readZoom(view))
+        error(
+            "Timed out revealing PDF reader chrome; page=" + readCurrentPage(view) +
+                ", zoom=" + readZoom(view) +
+                ", attached=" + view.isAttachedToWindow +
+                ", shown=" + view.isShown +
+                ", windowFocus=" + view.hasWindowFocus() +
+                ", size=" + view.width + "x" + view.height +
+                ", attempts=" + attempts
+        )
     }
 
     private fun tapViewCenter(view: View) {
