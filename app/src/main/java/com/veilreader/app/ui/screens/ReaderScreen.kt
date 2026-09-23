@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -504,7 +505,19 @@ fun ReaderScreen(
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .semantics {
+                contentDescription = "Reader surface"
+                onClick(label = "Toggle reader controls") {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = !controlsVisible
+                    true
+                }
+            }
+    ) {
         ReaderFragmentHost(
             activity = activity,
             fragmentFactory = fragmentFactory,
