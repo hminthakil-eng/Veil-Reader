@@ -453,6 +453,45 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun lifecycleFlush_persistsLatestPendingLocator_beforeCoalescingDelayExpires() = runBlocking<Unit> {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "pause-flush-book",
+                title = "Pause Flush",
+                author = "Reliability",
+                totalPages = 100,
+                sourceUri = "file:///pause-flush.epub"
+            )
+        )
+
+        repository.saveProgress(
+            "pause-flush-book",
+            0.20,
+            "{\"href\":\"chapter-4.xhtml\"}",
+            traceSequence = 1L
+        )
+        repository.saveProgress(
+            "pause-flush-book",
+            0.21,
+            "{\"href\":\"chapter-5.xhtml\"}",
+            traceSequence = 2L
+        )
+
+        // Deliberately do not wait for the repository's 250 ms coalescing timer. Reader lifecycle
+        // boundaries call flushProgress() synchronously after recording FINAL_SNAPSHOT, so the
+        // newest pending locator must cross the durable queue immediately.
+        repository.flushProgress("pause-flush-book")
+        repository.flushWrites()
+
+        val stored = db.books().findEntity("pause-flush-book")
+            ?: error("pause-flush book missing")
+        assertEquals(0.21f, stored.progress)
+        assertEquals(21, stored.pagesRead)
+        assertEquals("{\"href\":\"chapter-5.xhtml\"}", stored.locatorJson)
+    }
+
+    @Test
     fun rapidReadingSessionSnapshots_coalesceToOneDatabaseWrite_withLatestState() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
