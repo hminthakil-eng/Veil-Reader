@@ -213,20 +213,16 @@ jobs:
           & $emulatorExe -accel-check 2>&1 | Out-Host
           $ErrorActionPreference = $previousPreference
 
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","off","-gpu","swiftshader","-no-cache","-cores","2","-memory","1536")
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-gpu","swiftshader","-no-cache","-cores","2","-memory","1536")
           $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
           $deadline = (Get-Date).AddMinutes(10)
           $serial = $null
           do {
-            if ($emulator.HasExited) {
-              Write-Host "=== emulator stdout ==="
-              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 250 | Out-Host }
-              Write-Host "=== emulator stderr ==="
-              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 250 | Out-Host }
-              throw "Emulator exited before boot completed. ExitCode=$($emulator.ExitCode)"
-            }
+            # emulator.exe can act as a launcher on Windows and exit after spawning the
+            # actual qemu process. Do not treat launcher exit as device failure; ADB boot
+            # readiness is the authoritative signal.
             if ((Get-Date) -gt $deadline) {
               Write-Host "=== emulator stdout ==="
               if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 250 | Out-Host }
