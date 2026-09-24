@@ -1,0 +1,174 @@
+name: Reader Release Hardening Fallback
+
+on:
+  push:
+    branches:
+      - "release/reader-hardening-rc"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reader-release-hardening-fallback
+  cancel-in-progress: false
+
+jobs:
+  ubuntu-release-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v7
+        with:
+          ref: release/reader-hardening-rc
+          fetch-depth: 0
+
+      - name: Guard against superseded run
+        id: superseded
+        shell: bash
+        run: |
+          remote="$(git ls-remote origin refs/heads/release/reader-hardening-rc | awk '{print $1}')"
+          if [[ -z "$remote" ]]; then
+            echo "Could not resolve remote hardening branch tip" >&2
+            exit 1
+          fi
+          if [[ "$remote" != "$GITHUB_SHA" ]]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Superseded run: $GITHUB_SHA; current branch tip is $remote"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.superseded.outputs.skip != 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Android SDK
+        if: steps.superseded.outputs.skip != 'true'
+        uses: android-actions/setup-android@v4
+
+      - name: Install compile SDK and build tools
+        if: steps.superseded.outputs.skip != 'true'
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
+
+      - name: Enable KVM access
+        if: steps.superseded.outputs.skip != 'true'
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Set up Gradle 9.6
+        if: steps.superseded.outputs.skip != 'true'
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Policy and parser checks
+        if: steps.superseded.outputs.skip != 'true'
+        shell: bash
+        run: |
+          bash tools/test-policy.sh
+          python tools/test_performance_budget.py
+          python tools/test_performance_delta.py
+          python tools/test_performance_dashboard.py
+
+      - name: Generate profiles and verify release on API 35 emulator
+        if: steps.superseded.outputs.skip != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          emulator-options: -no-window -no-audio -no-boot-anim -no-snapshot -gpu swiftshader_indirect
+          disable-animations: true
+          script: |
+            gradle :app:generateBaselineProfile --stacktrace
+
+            test -s app/src/main/generated/baselineProfiles/baseline-prof.txt
+            test -s app/src/main/generated/baselineProfiles/startup-prof.txt
+
+            git add -- 'app/src/**/generated/baselineProfiles/*.txt'
+            if ! git diff --cached --quiet; then
+              git config user.name "github-actions[bot]"
+              git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+              git commit -m "perf(release): commit generated Baseline Profile"
+            fi
+
+            gradle :app:testDebugUnitTest --stacktrace
+            git diff --exit-code -- app/schemas/
+            gradle :app:lintDebug --stacktrace
+            gradle :app:assembleDebug --stacktrace
+            gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
+            gradle :app:assembleRelease :app:bundleRelease --stacktrace
+            python tools/verify_release_profile.py
+
+      - name: Record release evidence
+        if: success() && steps.superseded.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          head_sha="$(git rev-parse HEAD)"
+          echo "verified_commit=$head_sha" > release-evidence.txt
+
+          mapfile -t artifacts < <(
+            find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' 2>/dev/null
+            find app/build/outputs/bundle/release -maxdepth 1 -type f -name '*.aab' 2>/dev/null
+            find app/src -type f -path '*/generated/baselineProfiles/*' 2>/dev/null
+          )
+
+          if [[ "${#artifacts[@]}" -eq 0 ]]; then
+            echo "No release/profile artifacts found for evidence capture" >&2
+            exit 1
+          fi
+
+          for artifact in "${artifacts[@]}"; do
+            hash="$(sha256sum "$artifact" | awk '{print $1}')"
+            bytes="$(stat -c%s "$artifact")"
+            echo "$artifact sha256=$hash bytes=$bytes" >> release-evidence.txt
+          done
+
+          cat release-evidence.txt
+
+      - name: Upload verified release evidence
+        if: success() && steps.superseded.outputs.skip != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-release-hardening-fallback-${{ github.run_id }}
+          path: |
+            release-evidence.txt
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+            app/src/**/generated/baselineProfiles/*.txt
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Push generated profile commit
+        if: success() && steps.superseded.outputs.skip != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="$(git ls-remote origin refs/heads/release/reader-hardening-rc | awk '{print $1}')"
+          parent="$(git rev-parse HEAD^)"
+
+          if [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]; then
+            echo "No generated profile commit to push."
+            exit 0
+          fi
+
+          if [[ "$remote" != "$parent" ]]; then
+            echo "Hardening branch moved while fallback verification ran; refusing non-fast-forward push." >&2
+            exit 1
+          fi
+
+          git push origin HEAD:release/reader-hardening-rc
