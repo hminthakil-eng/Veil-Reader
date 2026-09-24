@@ -146,7 +146,7 @@ jobs:
           }
 
       - name: Commit generated Baseline Profile to hardening branch
-        if: github.event_name == 'push' && github.ref == 'refs/heads/release/reader-hardening-rc'
+        if: steps.superseded.outputs.skip != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/release/reader-hardening-rc'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -199,7 +199,7 @@ jobs:
         run: python tools/verify_release_profile.py
 
       - name: Record release evidence
-        if: success()
+        if: success() && steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -223,7 +223,7 @@ jobs:
           Get-Content release-evidence.txt
 
       - name: Upload verified release evidence
-        if: success()
+        if: success() && steps.superseded.outputs.skip != 'true'
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-release-hardening-${{ github.run_id }}
@@ -236,7 +236,7 @@ jobs:
           retention-days: 7
 
       - name: Stop profile emulator
-        if: always()
+        if: always() && steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           $sdk = $env:ANDROID_SDK_ROOT
