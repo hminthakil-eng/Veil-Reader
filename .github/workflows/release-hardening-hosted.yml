@@ -1,0 +1,174 @@
+name: Reader Release Hardening (GitHub-hosted)
+
+on:
+  push:
+    branches:
+      - "release/reader-hardening-rc"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reader-release-hardening-hosted
+  cancel-in-progress: true
+
+jobs:
+  hosted-release-verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android platform and build tools
+        shell: bash
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-37" "build-tools;37.0.0" "platform-tools"
+
+      - name: Reading policy regression checks
+        shell: bash
+        run: bash tools/test-policy.sh
+
+      - name: Performance budget parser checks
+        shell: bash
+        run: |
+          python tools/test_performance_budget.py
+          python tools/test_performance_delta.py
+          python tools/test_performance_dashboard.py
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Enable KVM access
+        shell: bash
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Generate Baseline and Startup Profile
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
+          script: |
+            gradle :app:generateBaselineProfile --stacktrace
+            test -s app/src/main/generated/baselineProfiles/baseline-prof.txt
+            test -s app/src/main/generated/baselineProfiles/startup-prof.txt
+
+      - name: Commit generated profile sources when changed
+        id: profile_commit
+        shell: bash
+        run: |
+          git add -- 'app/src/**/generated/baselineProfiles/*.txt'
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "Generated Baseline/Startup Profile sources already match git."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit -m "perf(release): commit generated Baseline Profile"
+            git push origin HEAD:release/reader-hardening-rc
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Profile sources changed; the push starts a fresh verification run on the committed HEAD."
+          fi
+
+      - name: Unit tests
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: gradle :app:testDebugUnitTest --stacktrace
+
+      - name: Verify committed Room schema
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: git diff --exit-code -- app/schemas/
+
+      - name: Android lint
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: gradle :app:lintDebug --stacktrace
+
+      - name: Build debug APK
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: gradle :app:assembleDebug --stacktrace
+
+      - name: Compile performance harness
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
+
+      - name: Build release APK and AAB
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Verify release Baseline Profile packaging
+        if: steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: python tools/verify_release_profile.py
+
+      - name: Record release evidence
+        if: success() && steps.profile_commit.outputs.changed != 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          head_sha="$(git rev-parse HEAD)"
+          printf 'verified_commit=%s\n' "$head_sha" > release-evidence.txt
+
+          mapfile -t artifacts < <(
+            find app/build/outputs/apk/release -maxdepth 1 -type f -name '*.apk' -print 2>/dev/null
+            find app/build/outputs/bundle/release -maxdepth 1 -type f -name '*.aab' -print 2>/dev/null
+            find app/src -type f -path '*/generated/baselineProfiles/*.txt' -print 2>/dev/null
+          )
+
+          if [ "${#artifacts[@]}" -eq 0 ]; then
+            echo "No release/profile artifacts found for evidence capture" >&2
+            exit 1
+          fi
+
+          for artifact in "${artifacts[@]}"; do
+            hash="$(sha256sum "$artifact" | awk '{print $1}')"
+            bytes="$(stat -c%s "$artifact")"
+            printf '%s sha256=%s bytes=%s\n' "$artifact" "$hash" "$bytes" >> release-evidence.txt
+          done
+
+          cat release-evidence.txt
+
+      - name: Upload verified release evidence
+        if: success() && steps.profile_commit.outputs.changed != 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-release-hardening-hosted-${{ github.run_id }}
+          path: |
+            release-evidence.txt
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+            app/src/**/generated/baselineProfiles/*.txt
+          if-no-files-found: error
+          retention-days: 7
