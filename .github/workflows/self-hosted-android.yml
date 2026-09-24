@@ -86,7 +86,7 @@ jobs:
           & $sdkManager --version
           if ($LASTEXITCODE -ne 0) { throw "sdkmanager version check failed" }
 
-      - name: Install Android platform, emulator and build tools
+      - name: Verify Android SDK packages
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
@@ -96,29 +96,59 @@ jobs:
           if (-not $sdk) { throw "ANDROID_SDK_ROOT/ANDROID_HOME is not set" }
 
           $androidCli = Join-Path $sdk "cmdline-tools\latest\bin\android.bat"
-          if (-not (Test-Path $androidCli)) {
-            $androidCli = Join-Path $sdk "cmdline-tools\latest\bin\android.exe"
-          }
-          if (-not (Test-Path $androidCli)) {
-            $androidCli = "android"
+          if (-not (Test-Path $androidCli)) { $androidCli = "android" }
+
+          $sdkManager = Join-Path $sdk "cmdline-tools\latest\bin\sdkmanager.bat"
+          if (-not (Test-Path $sdkManager)) { throw "sdkmanager.bat not found at $sdkManager" }
+
+          function Ensure-AndroidComponent {
+            param([string]$Name, [string]$Probe, [string]$AndroidCliPackage)
+            if (Test-Path $Probe) {
+              Write-Host "Android SDK component already present: $Name -> $Probe"
+              return
+            }
+            Write-Host "Installing missing Android SDK component: $Name ($AndroidCliPackage)"
+            & $androidCli sdk install $AndroidCliPackage | Out-Host
+            if (-not (Test-Path $Probe)) {
+              throw "Android SDK component still missing after install attempt: $Name ($Probe)"
+            }
+            Write-Host "Android SDK component installed: $Name"
           }
 
-          $packages = @(
-            "platforms/android-37.0",
-            "build-tools/37.0.0",
-            "platform-tools",
-            "emulator",
-            "system-images/android-35/google_apis/x86_64"
-          )
+          $platformProbe = @(
+            (Join-Path $sdk "platforms\android-37.0\android.jar"),
+            (Join-Path $sdk "platforms\android-37\android.jar")
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
 
-          foreach ($package in $packages) {
-            Write-Host "Ensuring Android SDK package: $package"
-            & $androidCli sdk install $package
-            if ($LASTEXITCODE -ne 0) {
-              throw "Android SDK package installation failed: $package"
+          if (-not $platformProbe) {
+            & $androidCli sdk install "platforms/android-37.0" | Out-Host
+            $platformProbe = @(
+              (Join-Path $sdk "platforms\android-37.0\android.jar"),
+              (Join-Path $sdk "platforms\android-37\android.jar")
+            ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          }
+          if (-not $platformProbe) { throw "Android API 37 platform android.jar is missing" }
+          Write-Host "Android API 37 platform present: $platformProbe"
+
+          Ensure-AndroidComponent -Name "Build Tools 37.0.0" -Probe (Join-Path $sdk "build-tools\37.0.0\aapt2.exe") -AndroidCliPackage "build-tools/37.0.0"
+          Ensure-AndroidComponent -Name "Platform Tools" -Probe (Join-Path $sdk "platform-tools\adb.exe") -AndroidCliPackage "platform-tools"
+          Ensure-AndroidComponent -Name "Android Emulator" -Probe (Join-Path $sdk "emulator\emulator.exe") -AndroidCliPackage "emulator"
+
+          $systemImageDir = Join-Path $sdk "system-images\android-35\google_apis\x86_64"
+          $systemImageProbe = Join-Path $systemImageDir "package.xml"
+          if (-not (Test-Path $systemImageProbe)) {
+            Write-Host "Installing missing API 35 Google APIs x86_64 system image with sdkmanager."
+            1..50 | ForEach-Object { "y" } | & $sdkManager "system-images;android-35;google_apis;x86_64" | Out-Host
+            if (-not (Test-Path $systemImageProbe)) {
+              throw "API 35 Google APIs x86_64 system image is still missing: $systemImageDir"
             }
           }
 
+          Write-Host "Android SDK package verification: GREEN"
+          Write-Host "Platform: $platformProbe"
+          Write-Host "Build tools: $(Join-Path $sdk 'build-tools\37.0.0')"
+          Write-Host "Emulator: $(Join-Path $sdk 'emulator\emulator.exe')"
+          Write-Host "System image: $systemImageDir"
       - name: Start deterministic API 35 profile emulator
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
@@ -292,7 +322,13 @@ jobs:
         run: |
           $sdk = $env:ANDROID_SDK_ROOT
           if (-not $sdk) { $sdk = $env:ANDROID_HOME }
-          if ($sdk -and (Test-Path "$sdk\platform-tools\adb.exe")) {
-            & "$sdk\platform-tools\adb.exe" emu kill 2>$null
+          if ($sdk) {
+            $adb = Join-Path $sdk "platform-tools\adb.exe"
+            if (Test-Path $adb) {
+              $previousPreference = $ErrorActionPreference
+              $ErrorActionPreference = "SilentlyContinue"
+              & $adb emu kill *> $null
+              $ErrorActionPreference = $previousPreference
+            }
           }
           exit 0
