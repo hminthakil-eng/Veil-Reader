@@ -183,11 +183,28 @@ jobs:
           $ErrorActionPreference = $previousPreference
 
           $avdDir = Join-Path $avdHome "$avdName.avd"
+          $configIni = Join-Path $avdDir "config.ini"
+          if (-not (Test-Path $configIni)) { throw "AVD config.ini not found: $configIni" }
+
+          $configLines = @(Get-Content $configIni) | Where-Object {
+            $_ -notmatch '^disk\.dataPartition\.size=' -and
+            $_ -notmatch '^disk\.cachePartition\.size=' -and
+            $_ -notmatch '^sdcard\.size='
+          }
+          $configLines += "disk.dataPartition.size=1024M"
+          $configLines += "disk.cachePartition.size=64M"
+          $configLines += "sdcard.size=128M"
+          Set-Content -Path $configIni -Value $configLines -Encoding ASCII
+
+          Write-Host "Dedicated AVD storage overrides:"
+          Get-Content $configIni | Select-String -Pattern '^disk\.dataPartition\.size=|^disk\.cachePartition\.size=|^sdcard\.size=' | Out-Host
+
           $dedicatedDataFiles = @(
             (Join-Path $avdDir "userdata-qemu.img"),
             (Join-Path $avdDir "userdata-qemu.img.qcow2"),
             (Join-Path $avdDir "cache.img"),
-            (Join-Path $avdDir "cache.img.qcow2")
+            (Join-Path $avdDir "cache.img.qcow2"),
+            (Join-Path $avdDir "sdcard.img")
           )
           Remove-Item $dedicatedDataFiles -Force -ErrorAction SilentlyContinue
 
@@ -196,10 +213,20 @@ jobs:
             Get-ChildItem $androidCache -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
           }
 
-          $freeBefore = (Get-PSDrive -Name C).Free
-          Write-Host ("Free disk before emulator: {0:N2} GB" -f ($freeBefore / 1GB))
+          $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -and $_.Free -gt 0 } | Sort-Object Free -Descending
+          Write-Host "Runner filesystem free space:"
+          $drives | ForEach-Object { Write-Host ("  {0} free={1:N2} GB" -f $_.Root, ($_.Free / 1GB)) }
+          $bestDrive = $drives | Select-Object -First 1
+          if (-not $bestDrive) { throw "No writable filesystem drive found for emulator userdata" }
 
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","on","-gpu","swiftshader","-partition-size","1024","-wipe-data")
+          $dataRoot = Join-Path $bestDrive.Root "VeilReader-AVD-Data"
+          New-Item -ItemType Directory -Force -Path $dataRoot | Out-Null
+          $dataPath = Join-Path $dataRoot "$avdName-userdata.img"
+          Remove-Item $dataPath -Force -ErrorAction SilentlyContinue
+          "VEIL_EMULATOR_DATA_PATH=$dataPath" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host ("Using emulator userdata drive: {0} ({1:N2} GB free)" -f $bestDrive.Root, ($bestDrive.Free / 1GB))
+
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","on","-gpu","swiftshader","-partition-size","1024","-data",$dataPath,"-no-cache")
           $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
