@@ -213,11 +213,11 @@ jobs:
           & $emulatorExe -accel-check 2>&1 | Out-Host
           $ErrorActionPreference = $previousPreference
 
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","on","-gpu","swiftshader","-no-cache")
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","off","-gpu","swiftshader","-no-cache","-cores","2","-memory","1536")
           $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-          $deadline = (Get-Date).AddMinutes(5)
+          $deadline = (Get-Date).AddMinutes(10)
           $serial = $null
           do {
             if ($emulator.HasExited) {
@@ -232,7 +232,7 @@ jobs:
               if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 250 | Out-Host }
               Write-Host "=== emulator stderr ==="
               if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 250 | Out-Host }
-              throw "Emulator boot timed out after 5 minutes"
+              throw "Emulator boot timed out after 10 minutes"
             }
 
             $deviceLines = @(& $adb devices 2>$null)
