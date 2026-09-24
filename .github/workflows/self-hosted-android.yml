@@ -1,9 +1,6 @@
 name: Self-hosted Android Verification
 
 on:
-  push:
-    branches:
-      - "release/reader-hardening-rc"
   workflow_dispatch:
     inputs:
       ref:
