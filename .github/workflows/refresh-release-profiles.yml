@@ -1,4 +1,4 @@
-name: Refresh Release Baseline Profiles
+name: Refresh Release Baseline Profiles v2
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: reader-profile-refresh
+  group: reader-profile-refresh-v2
   cancel-in-progress: true
 
 jobs:
