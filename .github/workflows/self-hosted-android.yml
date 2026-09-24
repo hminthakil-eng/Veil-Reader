@@ -14,6 +14,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: reader-release-hardening
+  cancel-in-progress: true
+
 jobs:
   windows-verify:
     runs-on: [self-hosted, Windows, X64, veil-reader]
@@ -164,6 +168,43 @@ jobs:
       - name: Verify release Baseline Profile packaging
         shell: powershell
         run: python tools/verify_release_profile.py
+
+      - name: Record release evidence
+        if: success()
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $head = (git rev-parse HEAD).Trim()
+          "verified_commit=$head" | Out-File -FilePath release-evidence.txt -Encoding utf8
+
+          $artifacts = @()
+          $artifacts += @(Get-ChildItem "app\build\outputs\apk\release" -Filter "*.apk" -File -ErrorAction SilentlyContinue)
+          $artifacts += @(Get-ChildItem "app\build\outputs\bundle\release" -Filter "*.aab" -File -ErrorAction SilentlyContinue)
+          $artifacts += @(Get-ChildItem "app\src" -Recurse -File | Where-Object { $_.FullName -match "generated\\baselineProfiles" })
+
+          if (-not $artifacts) { throw "No release/profile artifacts found for evidence capture" }
+
+          foreach ($artifact in $artifacts) {
+            $hash = Get-FileHash -Algorithm SHA256 $artifact.FullName
+            $relative = Resolve-Path -Relative $artifact.FullName
+            "$relative sha256=$($hash.Hash.ToLowerInvariant()) bytes=$($artifact.Length)" |
+              Out-File -FilePath release-evidence.txt -Append -Encoding utf8
+          }
+
+          Get-Content release-evidence.txt
+
+      - name: Upload verified release evidence
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-release-hardening-${{ github.run_id }}
+          path: |
+            release-evidence.txt
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/bundle/release/*.aab
+            app/src/**/generated/baselineProfiles/*.txt
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Stop profile emulator
         if: always()
