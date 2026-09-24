@@ -159,18 +159,49 @@ jobs:
           if (-not $sdk) { throw "ANDROID_SDK_ROOT/ANDROID_HOME is not set" }
 
           $avdName = "VeilReleaseProfile_API35"
-          $avdHome = Join-Path $env:USERPROFILE ".android\avd"
-          $ini = Join-Path $avdHome "$avdName.ini"
           $avdManager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
           $adb = Join-Path $sdk "platform-tools\adb.exe"
           $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
           $emulatorStdout = Join-Path $env:RUNNER_TEMP "veil-profile-emulator.stdout.log"
           $emulatorStderr = Join-Path $env:RUNNER_TEMP "veil-profile-emulator.stderr.log"
 
-          if (-not (Test-Path $ini)) {
-            "no" | & $avdManager create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6" | Out-Host
-            if ($LASTEXITCODE -ne 0 -or -not (Test-Path $ini)) { throw "Failed to create AVD: $avdName" }
+          $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -and $_.Free -gt 0 } | Sort-Object Free -Descending
+          Write-Host "Runner filesystem free space:"
+          $drives | ForEach-Object { Write-Host ("  {0} free={1:N2} GB" -f $_.Root, ($_.Free / 1GB)) }
+          $bestDrive = $drives | Select-Object -First 1
+          if (-not $bestDrive) { throw "No writable filesystem drive found for emulator AVD" }
+
+          $avdHome = Join-Path $bestDrive.Root "VeilReader-AVD"
+          New-Item -ItemType Directory -Force -Path $avdHome | Out-Null
+          $env:ANDROID_AVD_HOME = $avdHome
+          "ANDROID_AVD_HOME=$avdHome" | Out-File -FilePath $env:GITHUB_ENV -Append
+          Write-Host ("Using ANDROID_AVD_HOME={0} ({1:N2} GB free)" -f $avdHome, ($bestDrive.Free / 1GB))
+
+          $ini = Join-Path $avdHome "$avdName.ini"
+          $avdDir = Join-Path $avdHome "$avdName.avd"
+          Remove-Item $ini -Force -ErrorAction SilentlyContinue
+          Remove-Item $avdDir -Recurse -Force -ErrorAction SilentlyContinue
+
+          "no" | & $avdManager create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6" | Out-Host
+          if ($LASTEXITCODE -ne 0 -or -not (Test-Path $avdDir)) {
+            throw "Failed to create dedicated AVD under $avdHome"
           }
+
+          $configIni = Join-Path $avdDir "config.ini"
+          if (-not (Test-Path $configIni)) { throw "AVD config.ini not found: $configIni" }
+
+          $configLines = @(Get-Content $configIni) | Where-Object {
+            $_ -notmatch '^disk\.dataPartition\.size=' -and
+            $_ -notmatch '^disk\.cachePartition\.size=' -and
+            $_ -notmatch '^sdcard\.size='
+          }
+          $configLines += "disk.dataPartition.size=2048M"
+          $configLines += "disk.cachePartition.size=128M"
+          $configLines += "sdcard.size=256M"
+          Set-Content -Path $configIni -Value $configLines -Encoding ASCII
+
+          Write-Host "Dedicated AVD storage overrides:"
+          Get-Content $configIni | Select-String -Pattern '^disk\.dataPartition\.size=|^disk\.cachePartition\.size=|^sdcard\.size=' | Out-Host
 
           Remove-Item $emulatorStdout,$emulatorStderr -Force -ErrorAction SilentlyContinue
 
@@ -182,51 +213,7 @@ jobs:
           & $emulatorExe -accel-check 2>&1 | Out-Host
           $ErrorActionPreference = $previousPreference
 
-          $avdDir = Join-Path $avdHome "$avdName.avd"
-          $configIni = Join-Path $avdDir "config.ini"
-          if (-not (Test-Path $configIni)) { throw "AVD config.ini not found: $configIni" }
-
-          $configLines = @(Get-Content $configIni) | Where-Object {
-            $_ -notmatch '^disk\.dataPartition\.size=' -and
-            $_ -notmatch '^disk\.cachePartition\.size=' -and
-            $_ -notmatch '^sdcard\.size='
-          }
-          $configLines += "disk.dataPartition.size=1024M"
-          $configLines += "disk.cachePartition.size=64M"
-          $configLines += "sdcard.size=128M"
-          Set-Content -Path $configIni -Value $configLines -Encoding ASCII
-
-          Write-Host "Dedicated AVD storage overrides:"
-          Get-Content $configIni | Select-String -Pattern '^disk\.dataPartition\.size=|^disk\.cachePartition\.size=|^sdcard\.size=' | Out-Host
-
-          $dedicatedDataFiles = @(
-            (Join-Path $avdDir "userdata-qemu.img"),
-            (Join-Path $avdDir "userdata-qemu.img.qcow2"),
-            (Join-Path $avdDir "cache.img"),
-            (Join-Path $avdDir "cache.img.qcow2"),
-            (Join-Path $avdDir "sdcard.img")
-          )
-          Remove-Item $dedicatedDataFiles -Force -ErrorAction SilentlyContinue
-
-          $androidCache = Join-Path $env:USERPROFILE ".android\cache"
-          if (Test-Path $androidCache) {
-            Get-ChildItem $androidCache -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-          }
-
-          $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Root -and $_.Free -gt 0 } | Sort-Object Free -Descending
-          Write-Host "Runner filesystem free space:"
-          $drives | ForEach-Object { Write-Host ("  {0} free={1:N2} GB" -f $_.Root, ($_.Free / 1GB)) }
-          $bestDrive = $drives | Select-Object -First 1
-          if (-not $bestDrive) { throw "No writable filesystem drive found for emulator userdata" }
-
-          $dataRoot = Join-Path $bestDrive.Root "VeilReader-AVD-Data"
-          New-Item -ItemType Directory -Force -Path $dataRoot | Out-Null
-          $dataPath = Join-Path $dataRoot "$avdName-userdata.img"
-          Remove-Item $dataPath -Force -ErrorAction SilentlyContinue
-          "VEIL_EMULATOR_DATA_PATH=$dataPath" | Out-File -FilePath $env:GITHUB_ENV -Append
-          Write-Host ("Using emulator userdata drive: {0} ({1:N2} GB free)" -f $bestDrive.Root, ($bestDrive.Free / 1GB))
-
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","on","-gpu","swiftshader","-partition-size","1024","-data",$dataPath,"-no-cache")
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","on","-gpu","swiftshader","-no-cache")
           $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
@@ -235,16 +222,16 @@ jobs:
           do {
             if ($emulator.HasExited) {
               Write-Host "=== emulator stdout ==="
-              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 200 | Out-Host }
+              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 250 | Out-Host }
               Write-Host "=== emulator stderr ==="
-              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 200 | Out-Host }
+              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 250 | Out-Host }
               throw "Emulator exited before boot completed. ExitCode=$($emulator.ExitCode)"
             }
             if ((Get-Date) -gt $deadline) {
               Write-Host "=== emulator stdout ==="
-              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 200 | Out-Host }
+              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 250 | Out-Host }
               Write-Host "=== emulator stderr ==="
-              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 200 | Out-Host }
+              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 250 | Out-Host }
               throw "Emulator boot timed out after 5 minutes"
             }
 
