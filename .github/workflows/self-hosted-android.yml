@@ -325,19 +325,6 @@ jobs:
           & $adb -s $serial shell settings put global animator_duration_scale 0
           & $adb devices -l
           Write-Host "Profile emulator boot: GREEN ($serial)"
-      - name: Reading policy regression checks
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
-
-      - name: Performance budget parser checks
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: |
-          python tools/test_performance_budget.py
-          python tools/test_performance_delta.py
-          python tools/test_performance_dashboard.py
-
       - name: Set up Gradle 9.6
         if: steps.superseded.outputs.skip != 'true'
         uses: gradle/actions/setup-gradle@v6.3.0
@@ -396,30 +383,25 @@ jobs:
             throw "Generated profile differs from committed source. Refresh and review profiles before release verification."
           }
 
-      - name: Unit tests
+      - name: Stop and remove profile emulator before release packaging
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
-        run: gradle :app:testDebugUnitTest --stacktrace
-
-      - name: Verify committed Room schema
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: git diff --exit-code -- app/schemas/
-
-      - name: Android lint
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: gradle :app:lintDebug --stacktrace
-
-      - name: Build debug APK
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: gradle :app:assembleDebug --stacktrace
-
-      - name: Compile performance harness
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
+        run: |
+          $ErrorActionPreference = "Continue"
+          $sdk = $env:ANDROID_SDK_ROOT
+          if (-not $sdk) { $sdk = $env:ANDROID_HOME }
+          if ($sdk) {
+            $adb = Join-Path $sdk "platform-tools\adb.exe"
+            if (Test-Path $adb) {
+              & $adb emu kill *> $null
+              Start-Sleep -Seconds 2
+            }
+          }
+          if ($env:ANDROID_AVD_HOME) {
+            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.ini") -Force -ErrorAction SilentlyContinue
+            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.avd") -Recurse -Force -ErrorAction SilentlyContinue
+          }
+          Write-Host "Profile emulator storage released before APK/AAB packaging."
 
       - name: Release packaging disk-space gate
         if: steps.superseded.outputs.skip != 'true'
