@@ -21,6 +21,17 @@ jobs:
     timeout-minutes: 40
 
     steps:
+      - name: Runner heartbeat
+        shell: powershell
+        run: |
+          Write-Host "runner=$env:RUNNER_NAME"
+          Write-Host "machine=$env:COMPUTERNAME"
+          Write-Host "job=$env:GITHUB_JOB run=$env:GITHUB_RUN_ID"
+          Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
+            ForEach-Object {
+              Write-Host ("{0}\ free={1:N2} GB size={2:N2} GB" -f $_.DeviceID, ([int64]$_.FreeSpace/1GB), ([int64]$_.Size/1GB))
+            }
+
       - name: Checkout hardening branch
         uses: actions/checkout@v7
         with:
