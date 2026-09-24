@@ -322,10 +322,16 @@ jobs:
               throw "Emulator boot timed out after 10 minutes"
             }
 
-            $deviceLines = @(& $adb devices 2>$null)
+            $previousPreference = $ErrorActionPreference
+            $ErrorActionPreference = "SilentlyContinue"
+            $deviceLines = @(& $adb devices 2>&1)
+            $ErrorActionPreference = $previousPreference
             $serial = $deviceLines | Where-Object { $_ -match "^(emulator-\d+)\s+device$" } | ForEach-Object { $Matches[1] } | Select-Object -First 1
             if ($serial) {
-              $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>$null).Trim()
+              $previousPreference = $ErrorActionPreference
+              $ErrorActionPreference = "SilentlyContinue"
+              $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Select-Object -Last 1).ToString().Trim()
+              $ErrorActionPreference = $previousPreference
               if ($boot -eq "1") { break }
             }
             Start-Sleep -Seconds 2
