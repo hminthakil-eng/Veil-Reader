@@ -52,10 +52,10 @@ jobs:
           (Join-Path $sdk "emulator") | Out-File -FilePath $env:GITHUB_PATH -Append
           (Join-Path $sdk "cmdline-tools\latest\bin") | Out-File -FilePath $env:GITHUB_PATH -Append
 
-      - name: Prepare profile scratch on roomiest local drive
+      - name: Prepare profile scratch on E drive
         shell: powershell
         run: |
-          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 0.5
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
@@ -72,24 +72,6 @@ jobs:
             Where-Object { $_.DeviceID -eq $env:VEIL_CI_SCRATCH_DRIVE } |
             Select-Object -First 1
           if (-not $scratch) { throw "Could not resolve CI scratch drive $env:VEIL_CI_SCRATCH_DRIVE" }
-
-          $workspaceRoot = [System.IO.Path]::GetPathRoot((Get-Location).Path)
-          $workspaceId = $workspaceRoot.TrimEnd("\")
-          $workspace = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
-            Where-Object { $_.DeviceID -eq $workspaceId } |
-            Select-Object -First 1
-
-          $scratchFreeGB = [int64]$scratch.FreeSpace / 1GB
-          $workspaceFreeGB = if ($workspace) { [int64]$workspace.FreeSpace / 1GB } else { 0 }
-
-          Write-Host ("Profile refresh: scratch {0}\ free={1:N2} GB; workspace {2} free={3:N2} GB" -f $env:VEIL_CI_SCRATCH_DRIVE, $scratchFreeGB, $workspaceRoot, $workspaceFreeGB)
-
-          if ($scratchFreeGB -lt 12) {
-            throw ("Insufficient scratch disk for profile refresh: {0:N2} GB free; require >= 12 GB" -f $scratchFreeGB)
-          }
-          if ($workspaceFreeGB -lt 0.5) {
-            throw ("Workspace drive headroom too low: {0:N2} GB free; require >= 0.5 GB" -f $workspaceFreeGB)
-          }
 
       - name: Verify profile emulator prerequisites
         shell: powershell
@@ -118,13 +100,10 @@ jobs:
           $adb = Join-Path $sdk "platform-tools\adb.exe"
           $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
 
-          $bestDrive = Get-PSDrive -PSProvider FileSystem |
-            Where-Object { $_.Root -and $_.Free -gt 0 } |
-            Sort-Object Free -Descending |
-            Select-Object -First 1
-          if (-not $bestDrive) { throw "No writable drive available for AVD" }
+          $bestDrive = Get-PSDrive E
+          if (-not $bestDrive) { throw "Required E: drive is unavailable for AVD" }
 
-          $avdHome = Join-Path $bestDrive.Root "VeilReader-AVD"
+          $avdHome = "E:\VeilReader-CI\avd"
           New-Item -ItemType Directory -Force -Path $avdHome | Out-Null
           $env:ANDROID_AVD_HOME = $avdHome
           "ANDROID_AVD_HOME=$avdHome" | Out-File -FilePath $env:GITHUB_ENV -Append
@@ -146,8 +125,8 @@ jobs:
           $lines += "sdcard.size=256M"
           Set-Content -Path $configIni -Value $lines -Encoding ASCII
 
-          $stdout = Join-Path $env:RUNNER_TEMP "veil-profile-refresh-emulator.stdout.log"
-          $stderr = Join-Path $env:RUNNER_TEMP "veil-profile-refresh-emulator.stderr.log"
+          $stdout = Join-Path $env:TEMP "veil-profile-refresh-emulator.stdout.log"
+          $stderr = Join-Path $env:TEMP "veil-profile-refresh-emulator.stderr.log"
           $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-gpu","swiftshader","-no-cache","-cores","2","-memory","1536")
           Start-Process -FilePath $emulatorExe -ArgumentList $args -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
 
