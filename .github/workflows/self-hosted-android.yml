@@ -53,7 +53,7 @@ jobs:
       - name: Prepare CI scratch on roomiest local drive
         shell: powershell
         run: |
-          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 2
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 0.5
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
@@ -177,7 +177,7 @@ jobs:
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
-          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 2
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 0.5
 
       - name: Verify Android SDK packages
         if: steps.superseded.outputs.skip != 'true'
@@ -442,8 +442,8 @@ jobs:
           if ($scratchFreeGB -lt 12) {
             throw ("Insufficient scratch disk before release packaging: {0:N2} GB free; require >= 12 GB" -f $scratchFreeGB)
           }
-          if ($workspaceFreeGB -lt 2) {
-            throw ("Workspace drive headroom too low: {0:N2} GB free; require >= 2 GB" -f $workspaceFreeGB)
+          if ($workspaceFreeGB -lt 0.5) {
+            throw ("Workspace drive headroom too low: {0:N2} GB free; require >= 0.5 GB" -f $workspaceFreeGB)
           }
 
       - name: Build release APK and AAB
