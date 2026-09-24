@@ -12,7 +12,7 @@ on:
         default: "main"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   windows-verify:
@@ -38,12 +38,50 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v4
 
-      - name: Install Android platform and build tools
+      - name: Install Android platform, emulator and build tools
         shell: powershell
         run: |
           android sdk install "platforms/android-37.0"
           android sdk install "build-tools/37.0.0"
           android sdk install "platform-tools"
+          android sdk install "emulator"
+          android sdk install "system-images;android-35;google_apis;x86_64"
+
+      - name: Start deterministic API 35 profile emulator
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $sdk = $env:ANDROID_SDK_ROOT
+          if (-not $sdk) { $sdk = $env:ANDROID_HOME }
+          if (-not $sdk) { throw "ANDROID_SDK_ROOT/ANDROID_HOME is not set" }
+
+          $avdName = "VeilReleaseProfile_API35"
+          $avdHome = Join-Path $env:USERPROFILE ".android\avd"
+          $ini = Join-Path $avdHome "$avdName.ini"
+
+          if (-not (Test-Path $ini)) {
+            "no" | & "$sdk\cmdline-tools\latest\bin\avdmanager.bat" create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6"
+          }
+
+          & "$sdk\platform-tools\adb.exe" kill-server | Out-Null
+          & "$sdk\platform-tools\adb.exe" start-server | Out-Null
+
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-gpu","swiftshader_indirect","-wipe-data")
+          $emulator = Start-Process -FilePath "$sdk\emulator\emulator.exe" -ArgumentList $args -PassThru
+          "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+          & "$sdk\platform-tools\adb.exe" wait-for-device
+          $deadline = (Get-Date).AddMinutes(5)
+          do {
+            if ((Get-Date) -gt $deadline) { throw "Emulator boot timed out" }
+            Start-Sleep -Seconds 2
+            $boot = (& "$sdk\platform-tools\adb.exe" shell getprop sys.boot_completed 2>$null).Trim()
+          } until ($boot -eq "1")
+
+          & "$sdk\platform-tools\adb.exe" shell settings put global window_animation_scale 0
+          & "$sdk\platform-tools\adb.exe" shell settings put global transition_animation_scale 0
+          & "$sdk\platform-tools\adb.exe" shell settings put global animator_duration_scale 0
+          & "$sdk\platform-tools\adb.exe" devices -l
 
       - name: Reading policy regression checks
         shell: powershell
@@ -60,6 +98,44 @@ jobs:
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: "9.6.0"
+
+      - name: Generate Baseline and Startup Profile
+        shell: powershell
+        run: |
+          gradle :app:generateBaselineProfile --stacktrace
+          if ($LASTEXITCODE -ne 0) { throw "Baseline Profile generation failed" }
+
+          $profiles = Get-ChildItem "app\src" -Recurse -File | Where-Object {
+            $_.FullName -match "generated\\baselineProfiles" -and
+            ($_.Name -eq "baseline-prof.txt" -or $_.Name -eq "startup-prof.txt")
+          }
+
+          if (-not $profiles) {
+            throw "Baseline Profile task completed but produced no source profile under app/src/**/generated/baselineProfiles"
+          }
+
+          $profiles | ForEach-Object {
+            if ($_.Length -le 0) { throw "Generated profile is empty: $($_.FullName)" }
+            Write-Host "Generated profile: $($_.FullName) ($($_.Length) bytes)"
+          }
+
+      - name: Commit generated Baseline Profile to hardening branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/release/reader-hardening-rc'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          git add -- "app/src/**/generated/baselineProfiles/*.txt"
+
+          git diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Generated Baseline Profile is already committed."
+            exit 0
+          }
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "perf(release): commit generated Baseline Profile"
+          git push origin HEAD:release/reader-hardening-rc
 
       - name: Unit tests
         shell: powershell
@@ -88,3 +164,13 @@ jobs:
       - name: Verify release Baseline Profile packaging
         shell: powershell
         run: python tools/verify_release_profile.py
+
+      - name: Stop profile emulator
+        if: always()
+        shell: powershell
+        run: |
+          $sdk = $env:ANDROID_SDK_ROOT
+          if (-not $sdk) { $sdk = $env:ANDROID_HOME }
+          if ($sdk) {
+            & "$sdk\platform-tools\adb.exe" emu kill 2>$null
+          }
