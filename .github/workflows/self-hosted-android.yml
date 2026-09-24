@@ -9,7 +9,7 @@ on:
       ref:
         description: "Branch or commit to verify"
         required: false
-        default: "main"
+        default: "release/reader-hardening-rc"
 
 permissions:
   contents: read
@@ -20,14 +20,62 @@ concurrency:
 
 jobs:
   windows-preflight:
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'perf(release): refresh Baseline')
     runs-on: [self-hosted, Windows, X64, veil-reader]
     timeout-minutes: 35
     steps:
+      - name: Inventory runner storage before checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Host "Runner=$env:RUNNER_NAME OS=$env:RUNNER_OS Architecture=$env:RUNNER_ARCH"
+          Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
+            Select-Object DeviceID,FreeSpace,Size | Format-Table -AutoSize
+          Get-CimInstance Win32_Service | Where-Object { $_.Name -like "actions.runner*" } |
+            Select-Object Name,State,PathName | Format-List
+          $paths = [ordered]@{
+            GITHUB_WORKSPACE = $env:GITHUB_WORKSPACE
+            RUNNER_TEMP = $env:RUNNER_TEMP
+            RUNNER_TOOL_CACHE = $env:RUNNER_TOOL_CACHE
+            GRADLE_USER_HOME = $env:GRADLE_USER_HOME
+            ANDROID_SDK_ROOT = $env:ANDROID_SDK_ROOT
+            ANDROID_HOME = $env:ANDROID_HOME
+            ANDROID_AVD_HOME = $env:ANDROID_AVD_HOME
+            TEMP = $env:TEMP
+            TMP = $env:TMP
+          }
+          foreach ($entry in $paths.GetEnumerator()) { Write-Host "$($entry.Key)=$($entry.Value)" }
+          $invalid = @()
+          foreach ($name in @("GITHUB_WORKSPACE", "RUNNER_TEMP", "RUNNER_TOOL_CACHE")) {
+            $path = $paths[$name]
+            if (-not $path -or [IO.Path]::GetPathRoot($path) -ne "E:\") { $invalid += $name }
+            if ($path) {
+              $ancestor = $path
+              while ($ancestor) {
+                if (Test-Path -LiteralPath $ancestor) {
+                  $item = Get-Item -LiteralPath $ancestor -Force
+                  if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                    Write-Host "Unverified reparse point: $ancestor -> $($item.Target)"
+                    $invalid += $name
+                  }
+                }
+                $ancestor = Split-Path -Path $ancestor -Parent
+              }
+            }
+          }
+          if ($invalid.Count) {
+            throw "Runner storage migration required before checkout/build: $($invalid -join ', '). Configure runner work and tool cache on E: and restart the runner. No Android work has started."
+          }
+
       - name: Checkout release candidate
         uses: actions/checkout@v7
         with:
           ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.sha }}
+
+      - name: Prepare CI scratch on E drive
+        shell: powershell
+        run: |
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12
+
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -42,18 +90,15 @@ jobs:
           $candidates = @(
             $env:ANDROID_SDK_ROOT,
             $env:ANDROID_HOME,
-            (Join-Path $env:LOCALAPPDATA "Android\Sdk")
+            "E:\VeilReader-CI\android-sdk"
           ) | Where-Object { $_ -and (Test-Path $_) }
           $sdk = $candidates | Select-Object -First 1
           if (-not $sdk) { throw "Android SDK not found" }
           $sdk = (Resolve-Path $sdk).Path
+          if ([IO.Path]::GetPathRoot($sdk) -ne "E:\") { throw "Android SDK must be migrated to E: before this job can run: $sdk" }
           "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
           "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Prepare CI scratch on E drive
-        shell: powershell
-        run: |
-          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
@@ -110,6 +155,49 @@ jobs:
     runs-on: [self-hosted, Windows, X64, veil-reader]
     timeout-minutes: 45
     steps:
+      - name: Inventory runner storage before checkout
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Host "Runner=$env:RUNNER_NAME OS=$env:RUNNER_OS Architecture=$env:RUNNER_ARCH"
+          Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
+            Select-Object DeviceID,FreeSpace,Size | Format-Table -AutoSize
+          Get-CimInstance Win32_Service | Where-Object { $_.Name -like "actions.runner*" } |
+            Select-Object Name,State,PathName | Format-List
+          $paths = [ordered]@{
+            GITHUB_WORKSPACE = $env:GITHUB_WORKSPACE
+            RUNNER_TEMP = $env:RUNNER_TEMP
+            RUNNER_TOOL_CACHE = $env:RUNNER_TOOL_CACHE
+            GRADLE_USER_HOME = $env:GRADLE_USER_HOME
+            ANDROID_SDK_ROOT = $env:ANDROID_SDK_ROOT
+            ANDROID_HOME = $env:ANDROID_HOME
+            ANDROID_AVD_HOME = $env:ANDROID_AVD_HOME
+            TEMP = $env:TEMP
+            TMP = $env:TMP
+          }
+          foreach ($entry in $paths.GetEnumerator()) { Write-Host "$($entry.Key)=$($entry.Value)" }
+          $invalid = @()
+          foreach ($name in @("GITHUB_WORKSPACE", "RUNNER_TEMP", "RUNNER_TOOL_CACHE")) {
+            $path = $paths[$name]
+            if (-not $path -or [IO.Path]::GetPathRoot($path) -ne "E:\") { $invalid += $name }
+            if ($path) {
+              $ancestor = $path
+              while ($ancestor) {
+                if (Test-Path -LiteralPath $ancestor) {
+                  $item = Get-Item -LiteralPath $ancestor -Force
+                  if ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) {
+                    Write-Host "Unverified reparse point: $ancestor -> $($item.Target)"
+                    $invalid += $name
+                  }
+                }
+                $ancestor = Split-Path -Path $ancestor -Parent
+              }
+            }
+          }
+          if ($invalid.Count) {
+            throw "Runner storage migration required before checkout/build: $($invalid -join ', '). Configure runner work and tool cache on E: and restart the runner. No Android work has started."
+          }
+
       - name: Checkout requested ref
         if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v7
@@ -134,6 +222,13 @@ jobs:
             "skip=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
           }
 
+      - name: Prepare release scratch on E drive
+        if: steps.superseded.outputs.skip != 'true'
+        shell: powershell
+        run: |
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12
+
+
       - name: Set up JDK 17
         if: steps.superseded.outputs.skip != 'true'
         uses: actions/setup-java@v6
@@ -149,7 +244,7 @@ jobs:
           $candidates = @(
             $env:ANDROID_SDK_ROOT,
             $env:ANDROID_HOME,
-            (Join-Path $env:LOCALAPPDATA "Android\Sdk")
+            "E:\VeilReader-CI\android-sdk"
           ) | Where-Object { $_ -and (Test-Path $_) }
 
           $sdk = $candidates | Select-Object -First 1
@@ -158,6 +253,7 @@ jobs:
           }
 
           $sdk = (Resolve-Path $sdk).Path
+          if ([IO.Path]::GetPathRoot($sdk) -ne "E:\") { throw "Android SDK must be migrated to E: before this job can run: $sdk" }
           "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
           "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
           (Join-Path $sdk "platform-tools") | Out-File -FilePath $env:GITHUB_PATH -Append
@@ -173,11 +269,6 @@ jobs:
           & $sdkManager --version
           if ($LASTEXITCODE -ne 0) { throw "sdkmanager version check failed" }
 
-      - name: Prepare release scratch on E drive
-        if: steps.superseded.outputs.skip != 'true'
-        shell: powershell
-        run: |
-          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12
 
       - name: Verify Android SDK packages
         if: steps.superseded.outputs.skip != 'true'
@@ -414,7 +505,7 @@ jobs:
           }
 
           foreach ($profile in $profiles) {
-            $relative = [System.IO.Path]::GetRelativePath((Get-Location).Path, $profile.FullName).Replace("\\","/")
+            $relative = (Resolve-Path -LiteralPath $profile.FullName -Relative).Replace("\","/")
             git ls-files --error-unmatch -- "$relative" *> $null
             if ($LASTEXITCODE -ne 0) {
               throw "Generated profile is not committed to git: $relative"
@@ -461,6 +552,10 @@ jobs:
             Where-Object { $_.DeviceID -eq $env:VEIL_CI_SCRATCH_DRIVE } |
             Select-Object -First 1
           if (-not $scratch) { throw "Could not resolve CI scratch drive $env:VEIL_CI_SCRATCH_DRIVE" }
+          $freeGB = [int64]$scratch.FreeSpace / 1GB
+          Write-Host ("Release packaging E: free={0:N2} GB" -f $freeGB)
+          if ($freeGB -lt 12) { throw ("Release packaging requires >=12 GB on E:, found {0:N2} GB" -f $freeGB) }
+
 
       - name: Build release APK and AAB
         if: steps.superseded.outputs.skip != 'true'
@@ -552,3 +647,4 @@ jobs:
             Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.avd") -Recurse -Force -ErrorAction SilentlyContinue
           }
           exit 0
+
