@@ -5,4 +5,5 @@ plugins {
     id("com.google.devtools.ksp") version "2.3.9" apply false
     id("androidx.room") version "2.8.5" apply false
     id("androidx.baselineprofile") version "1.5.0" apply false
+    id("com.google.firebase.testlab") version "0.0.1-alpha05" apply false
 }
