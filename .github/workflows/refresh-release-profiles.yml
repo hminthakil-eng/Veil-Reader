@@ -1,4 +1,4 @@
-name: Refresh Release Baseline Profiles v2
+name: Refresh Release Baseline Profiles Hosted
 
 on:
   push:
@@ -12,26 +12,15 @@ permissions:
   contents: write
 
 concurrency:
-  group: reader-profile-refresh-v2
+  group: reader-profile-refresh-hosted
   cancel-in-progress: true
 
 jobs:
   refresh-profiles:
-    runs-on: [self-hosted, Windows, X64, veil-reader]
-    timeout-minutes: 40
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
-      - name: Runner heartbeat
-        shell: powershell
-        run: |
-          Write-Host "runner=$env:RUNNER_NAME"
-          Write-Host "machine=$env:COMPUTERNAME"
-          Write-Host "job=$env:GITHUB_JOB run=$env:GITHUB_RUN_ID"
-          Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
-            ForEach-Object {
-              Write-Host ("{0}\ free={1:N2} GB size={2:N2} GB" -f $_.DeviceID, ([int64]$_.FreeSpace/1GB), ([int64]$_.Size/1GB))
-            }
-
       - name: Checkout hardening branch
         uses: actions/checkout@v7
         with:
@@ -43,249 +32,89 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Configure existing Android SDK
-        shell: powershell
+      - name: Enable KVM for Gradle Managed Device
         run: |
-          $ErrorActionPreference = "Stop"
-          $candidates = @(
-            $env:ANDROID_SDK_ROOT,
-            $env:ANDROID_HOME,
-            (Join-Path $env:LOCALAPPDATA "Android\Sdk")
-          ) | Where-Object { $_ -and (Test-Path $_) }
-
-          $sdk = $candidates | Select-Object -First 1
-          if (-not $sdk) { throw "Android SDK not found" }
-
-          $sdk = (Resolve-Path $sdk).Path
-          "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
-          (Join-Path $sdk "platform-tools") | Out-File -FilePath $env:GITHUB_PATH -Append
-          (Join-Path $sdk "emulator") | Out-File -FilePath $env:GITHUB_PATH -Append
-          (Join-Path $sdk "cmdline-tools\latest\bin") | Out-File -FilePath $env:GITHUB_PATH -Append
-
-      - name: Prepare profile scratch on E drive
-        shell: powershell
-        run: |
-          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          else
+            echo "::error::/dev/kvm is unavailable on this hosted runner"
+            exit 1
+          fi
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: "9.6.0"
 
-      - name: Disk-space gate
-        shell: powershell
+      - name: Hosted runner disk inventory
         run: |
-          $ErrorActionPreference = "Stop"
-          if (-not $env:VEIL_CI_SCRATCH_DRIVE) { throw "VEIL_CI_SCRATCH_DRIVE is not set" }
+          df -h
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME"
 
-          $scratch = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
-            Where-Object { $_.DeviceID -eq $env:VEIL_CI_SCRATCH_DRIVE } |
-            Select-Object -First 1
-          if (-not $scratch) { throw "Could not resolve CI scratch drive $env:VEIL_CI_SCRATCH_DRIVE" }
-
-      - name: Verify profile emulator prerequisites
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          $sdk = $env:ANDROID_SDK_ROOT
-          $sdkManager = Join-Path $sdk "cmdline-tools\latest\bin\sdkmanager.bat"
-          if (-not (Test-Path $sdkManager)) { throw "sdkmanager.bat not found" }
-
-          $systemImageProbe = Join-Path $sdk "system-images\android-35\google_apis\x86_64\package.xml"
-          if (-not (Test-Path $systemImageProbe)) {
-            1..50 | ForEach-Object { "y" } |
-              & $sdkManager "system-images;android-35;google_apis;x86_64" | Out-Host
-          }
-          if (-not (Test-Path $systemImageProbe)) {
-            throw "API 35 Google APIs x86_64 system image is unavailable"
-          }
-
-      - name: Start deterministic API 35 emulator
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          $sdk = $env:ANDROID_SDK_ROOT
-          if (-not $sdk) { $sdk = $env:ANDROID_HOME }
-          if (-not $sdk) { throw "ANDROID_SDK_ROOT/ANDROID_HOME is not set" }
-
-          $avdName = "VeilReleaseProfile_API35"
-          $avdManager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
-          $adb = Join-Path $sdk "platform-tools\adb.exe"
-          $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
-
-          $stdout = Join-Path $env:TEMP "veil-profile-emulator.stdout.log"
-          $stderr = Join-Path $env:TEMP "veil-profile-emulator.stderr.log"
-
-          # Reuse an already booted emulator when one is available.
-          $previousPreference = $ErrorActionPreference
-          $ErrorActionPreference = "SilentlyContinue"
-          & $adb start-server *> $null
-          $deviceLines = @(& $adb devices 2>&1)
-          $ErrorActionPreference = $previousPreference
-
-          $serial = $deviceLines |
-            Where-Object { $_ -match "^(emulator-\d+)\s+device$" } |
-            ForEach-Object { $Matches[1] } |
-            Select-Object -First 1
-
-          if ($serial) {
-            $previousPreference = $ErrorActionPreference
-            $ErrorActionPreference = "SilentlyContinue"
-            $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Select-Object -Last 1).ToString().Trim()
-            $ErrorActionPreference = $previousPreference
-            if ($boot -eq "1") {
-              Write-Host "Reusing already-booted emulator: $serial"
-              "VEIL_PROFILE_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
-              exit 0
-            }
-          }
-
-          $avdHome = "E:\VeilReader-CI\avd"
-          New-Item -ItemType Directory -Force -Path $avdHome | Out-Null
-          $env:ANDROID_AVD_HOME = $avdHome
-          "ANDROID_AVD_HOME=$avdHome" | Out-File -FilePath $env:GITHUB_ENV -Append
-
-          $ini = Join-Path $avdHome "$avdName.ini"
-          $avdDir = Join-Path $avdHome "$avdName.avd"
-          Remove-Item $ini -Force -ErrorAction SilentlyContinue
-          Remove-Item $avdDir -Recurse -Force -ErrorAction SilentlyContinue
-
-          "no" | & $avdManager create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6" | Out-Host
-          if ($LASTEXITCODE -ne 0 -or -not (Test-Path $avdDir)) {
-            throw "Failed to create dedicated AVD under $avdHome"
-          }
-
-          $configIni = Join-Path $avdDir "config.ini"
-          if (-not (Test-Path $configIni)) { throw "AVD config.ini not found: $configIni" }
-
-          $configLines = @(Get-Content $configIni) | Where-Object {
-            $_ -notmatch '^disk\.dataPartition\.size=' -and
-            $_ -notmatch '^disk\.cachePartition\.size=' -and
-            $_ -notmatch '^sdcard\.size='
-          }
-          $configLines += "disk.dataPartition.size=2048M"
-          $configLines += "disk.cachePartition.size=128M"
-          $configLines += "sdcard.size=256M"
-          Set-Content -Path $configIni -Value $configLines -Encoding ASCII
-
-          Remove-Item $stdout,$stderr -Force -ErrorAction SilentlyContinue
-
-          Write-Host "=== Emulator acceleration check ==="
-          & $emulatorExe -accel-check 2>&1 | Out-Host
-
-          # Pin the ADB console port so polling is deterministic.
-          $args = @(
-            "-avd",$avdName,
-            "-port","5554",
-            "-no-window",
-            "-no-audio",
-            "-no-boot-anim",
-            "-no-snapshot",
-            "-no-metrics",
-            "-gpu","swiftshader_indirect",
-            "-cores","2",
-            "-memory","1536"
-          )
-
-          Start-Process -FilePath $emulatorExe -ArgumentList $args -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
-
-          $serial = "emulator-5554"
-          $deadline = (Get-Date).AddMinutes(3)
-          do {
-            if ((Get-Date) -gt $deadline) {
-              Write-Host "=== adb devices ==="
-              $previousPreference = $ErrorActionPreference
-              $ErrorActionPreference = "SilentlyContinue"
-              & $adb devices -l 2>&1 | Out-Host
-              $ErrorActionPreference = $previousPreference
-
-              if (Test-Path $stdout) {
-                Write-Host "=== emulator stdout ==="
-                Get-Content $stdout -Tail 250 | Out-Host
-              }
-              if (Test-Path $stderr) {
-                Write-Host "=== emulator stderr ==="
-                Get-Content $stderr -Tail 250 | Out-Host
-              }
-              throw "Emulator did not become ADB-ready within 3 minutes"
-            }
-
-            $previousPreference = $ErrorActionPreference
-            $ErrorActionPreference = "SilentlyContinue"
-            $state = (& $adb -s $serial get-state 2>&1 | Select-Object -Last 1).ToString().Trim()
-            $ErrorActionPreference = $previousPreference
-
-            if ($state -eq "device") {
-              $previousPreference = $ErrorActionPreference
-              $ErrorActionPreference = "SilentlyContinue"
-              $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Select-Object -Last 1).ToString().Trim()
-              $ErrorActionPreference = $previousPreference
-              if ($boot -eq "1") { break }
-            }
-
-            Start-Sleep -Seconds 2
-          } while ($true)
-
-          "VEIL_PROFILE_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
-          Write-Host "Profile emulator boot: GREEN ($serial)"
-
-      - name: Generate Baseline and Startup Profiles
-        shell: powershell
+      - name: Generate Baseline and Startup Profiles on managed Pixel 6 API 35
         run: |
           gradle :app:generateBaselineProfile --stacktrace
-          if ($LASTEXITCODE -ne 0) { throw "Baseline Profile generation failed" }
 
       - name: Validate generated profile sources
-        shell: powershell
         run: |
-          $ErrorActionPreference = "Stop"
-          $baseline = @(Get-ChildItem "app\src" -Recurse -File -Filter "baseline-prof.txt" |
-            Where-Object { $_.FullName -match "generated\\baselineProfiles" })
-          $startup = @(Get-ChildItem "app\src" -Recurse -File -Filter "startup-prof.txt" |
-            Where-Object { $_.FullName -match "generated\\baselineProfiles" })
+          set -euo pipefail
 
-          if (-not $baseline) { throw "baseline-prof.txt was not generated" }
-          if (-not $startup) { throw "startup-prof.txt was not generated" }
+          mapfile -t baseline < <(find app/src -type f -path '*/generated/baselineProfiles/baseline-prof.txt' -print)
+          mapfile -t startup < <(find app/src -type f -path '*/generated/baselineProfiles/startup-prof.txt' -print)
 
-          foreach ($file in @($baseline + $startup)) {
-            if ($file.Length -le 0) { throw "Generated profile is empty: $($file.FullName)" }
-            Write-Host "Generated: $($file.FullName) bytes=$($file.Length)"
-          }
+          if [ "${#baseline[@]}" -lt 1 ]; then
+            echo "::error::baseline-prof.txt was not generated"
+            exit 1
+          fi
+          if [ "${#startup[@]}" -lt 1 ]; then
+            echo "::error::startup-prof.txt was not generated"
+            exit 1
+          fi
 
-      - name: Commit reviewed profile output to hardening branch
-        shell: powershell
+          for file in "${baseline[@]}" "${startup[@]}"; do
+            if [ ! -s "$file" ]; then
+              echo "::error::Generated profile is empty: $file"
+              exit 1
+            fi
+            echo "Generated: $file bytes=$(wc -c < "$file")"
+          done
+
+      - name: Stage generated profile sources
         run: |
-          $ErrorActionPreference = "Stop"
-          git add -- "app/src/**/generated/baselineProfiles/*.txt"
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            git add -- "$file"
+          done < <(find app/src -type f \( -name 'baseline-prof.txt' -o -name 'startup-prof.txt' \) -path '*/generated/baselineProfiles/*' -print0)
 
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Profile sources already match the committed branch."
-            exit 0
-          }
-
-          Write-Host "=== Generated profile diff summary ==="
+          echo "=== staged profile diff ==="
           git diff --cached --stat
+          git diff --cached --check
+
+      - name: Build release APK and AAB
+        run: |
+          gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Verify packaged Baseline Profile
+        run: |
+          python3 tools/verify_release_profile.py
+
+      - name: Record release hashes
+        run: |
+          sha256sum app/build/outputs/apk/release/*.apk
+          sha256sum app/build/outputs/bundle/release/*.aab
+
+      - name: Commit verified profile sources
+        run: |
+          set -euo pipefail
+
+          if git diff --cached --quiet; then
+            echo "Profile sources already match the branch."
+            exit 0
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git commit -m "perf(release): refresh Baseline and Startup Profiles"
           git push origin HEAD:release/reader-hardening-rc
-
-      - name: Stop and remove profile emulator
-        if: always()
-        shell: powershell
-        run: |
-          $sdk = $env:ANDROID_SDK_ROOT
-          if ($sdk) {
-            $adb = Join-Path $sdk "platform-tools\adb.exe"
-            if (Test-Path $adb) {
-              $ErrorActionPreference = "SilentlyContinue"
-              & $adb emu kill *> $null
-            }
-          }
-          if ($env:ANDROID_AVD_HOME) {
-            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.ini") -Force -ErrorAction SilentlyContinue
-            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.avd") -Recurse -Force -ErrorAction SilentlyContinue
-          }
-          exit 0
