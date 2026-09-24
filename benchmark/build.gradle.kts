@@ -1,15 +1,7 @@
 plugins {
     id("com.android.test")
     id("androidx.baselineprofile")
-    id("com.google.firebase.testlab")
 }
-
-val useFirebaseTestLab = providers.gradleProperty("veilUseFirebaseTestLab")
-    .map(String::toBoolean)
-    .orElse(false)
-
-val firebaseTestLabCredentials = providers.gradleProperty("firebaseTestLabCredentials")
-    .orElse(providers.environmentVariable("FIREBASE_TESTLAB_CREDENTIALS"))
 
 android {
     namespace = "com.veilreader.benchmark"
@@ -32,34 +24,8 @@ android {
     }
 }
 
-firebaseTestLab {
-    if (firebaseTestLabCredentials.isPresent) {
-        serviceAccountCredentials.set(file(firebaseTestLabCredentials.get()))
-    }
-
-    managedDevices {
-        create("ftlDeviceShiba34") {
-            device = "shiba"
-            apiLevel = 34
-        }
-    }
-
-    testOptions {
-        results {
-            directoriesToPull.addAll(
-                "/storage/emulated/0/Android/media/${android.namespace}"
-            )
-        }
-    }
-}
-
 baselineProfile {
-    if (useFirebaseTestLab.get()) {
-        managedDevices += "ftlDeviceShiba34"
-        useConnectedDevices = false
-    } else {
-        useConnectedDevices = true
-    }
+    useConnectedDevices = true
 }
 
 dependencies {
