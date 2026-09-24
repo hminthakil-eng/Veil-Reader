@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   windows-preflight:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.event.head_commit.message, 'perf(release): refresh Baseline')
     runs-on: [self-hosted, Windows, X64, veil-reader]
     timeout-minutes: 35
     steps:
