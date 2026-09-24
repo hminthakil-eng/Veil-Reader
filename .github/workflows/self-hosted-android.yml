@@ -1,6 +1,9 @@
 name: Self-hosted Android Verification
 
 on:
+  push:
+    branches:
+      - "release/reader-hardening-rc"
   workflow_dispatch:
     inputs:
       ref:
@@ -17,9 +20,14 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout requested ref
+        if: github.event_name == 'workflow_dispatch'
         uses: actions/checkout@v7
         with:
           ref: ${{ inputs.ref }}
+
+      - name: Checkout triggering ref
+        if: github.event_name == 'push'
+        uses: actions/checkout@v7
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -72,3 +80,11 @@ jobs:
       - name: Compile performance harness
         shell: powershell
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
+
+      - name: Build release APK and AAB
+        shell: powershell
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Verify release Baseline Profile packaging
+        shell: powershell
+        run: python tools/verify_release_profile.py
