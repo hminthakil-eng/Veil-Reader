@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: reader-release-hardening
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   windows-verify:
@@ -33,16 +33,33 @@ jobs:
         if: github.event_name == 'push'
         uses: actions/checkout@v7
 
+      - name: Skip superseded push run
+        if: github.event_name == 'push'
+        id: superseded
+        shell: powershell
+        run: |
+          $remote = (git ls-remote origin refs/heads/release/reader-hardening-rc).Split()[0]
+          if (-not $remote) { throw "Could not resolve remote hardening branch tip" }
+          if ($remote -ne $env:GITHUB_SHA) {
+            "skip=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+            Write-Host "Superseded run: $env:GITHUB_SHA; current branch tip is $remote"
+          } else {
+            "skip=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
+
       - name: Set up JDK 17
+        if: steps.superseded.outputs.skip != 'true'
         uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "17"
 
       - name: Set up Android SDK
+        if: steps.superseded.outputs.skip != 'true'
         uses: android-actions/setup-android@v4
 
       - name: Install Android platform, emulator and build tools
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           android sdk install "platforms/android-37.0"
@@ -52,6 +69,7 @@ jobs:
           android sdk install "system-images;android-35;google_apis;x86_64"
 
       - name: Start deterministic API 35 profile emulator
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -88,10 +106,12 @@ jobs:
           & "$sdk\platform-tools\adb.exe" devices -l
 
       - name: Reading policy regression checks
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
 
       - name: Performance budget parser checks
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           python tools/test_performance_budget.py
@@ -99,11 +119,13 @@ jobs:
           python tools/test_performance_dashboard.py
 
       - name: Set up Gradle 9.6
+        if: steps.superseded.outputs.skip != 'true'
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: "9.6.0"
 
       - name: Generate Baseline and Startup Profile
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           gradle :app:generateBaselineProfile --stacktrace
@@ -142,30 +164,37 @@ jobs:
           git push origin HEAD:release/reader-hardening-rc
 
       - name: Unit tests
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: gradle :app:testDebugUnitTest --stacktrace
 
       - name: Verify committed Room schema
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: git diff --exit-code -- app/schemas/
 
       - name: Android lint
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: gradle :app:lintDebug --stacktrace
 
       - name: Build debug APK
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: gradle :app:assembleDebug --stacktrace
 
       - name: Compile performance harness
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
       - name: Build release APK and AAB
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
 
       - name: Verify release Baseline Profile packaging
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: python tools/verify_release_profile.py
 
