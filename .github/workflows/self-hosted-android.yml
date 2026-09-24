@@ -164,29 +164,43 @@ jobs:
           $avdManager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
           $adb = Join-Path $sdk "platform-tools\adb.exe"
           $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
+          $emulatorStdout = Join-Path $env:RUNNER_TEMP "veil-profile-emulator.stdout.log"
+          $emulatorStderr = Join-Path $env:RUNNER_TEMP "veil-profile-emulator.stderr.log"
 
           if (-not (Test-Path $ini)) {
             "no" | & $avdManager create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6" | Out-Host
             if ($LASTEXITCODE -ne 0 -or -not (Test-Path $ini)) { throw "Failed to create AVD: $avdName" }
           }
 
+          Remove-Item $emulatorStdout,$emulatorStderr -Force -ErrorAction SilentlyContinue
+
           $previousPreference = $ErrorActionPreference
           $ErrorActionPreference = "SilentlyContinue"
           & $adb kill-server *> $null
           & $adb start-server *> $null
+          Write-Host "Emulator acceleration diagnostic:"
+          & $emulatorExe -accel-check 2>&1 | Out-Host
           $ErrorActionPreference = $previousPreference
 
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-gpu","swiftshader_indirect","-wipe-data")
-          $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","off","-gpu","swiftshader","-wipe-data")
+          $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
           $deadline = (Get-Date).AddMinutes(5)
           $serial = $null
           do {
             if ($emulator.HasExited) {
+              Write-Host "=== emulator stdout ==="
+              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 200 | Out-Host }
+              Write-Host "=== emulator stderr ==="
+              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 200 | Out-Host }
               throw "Emulator exited before boot completed. ExitCode=$($emulator.ExitCode)"
             }
             if ((Get-Date) -gt $deadline) {
+              Write-Host "=== emulator stdout ==="
+              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 200 | Out-Host }
+              Write-Host "=== emulator stderr ==="
+              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 200 | Out-Host }
               throw "Emulator boot timed out after 5 minutes"
             }
 
