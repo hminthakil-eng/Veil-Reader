@@ -1,6 +1,6 @@
 param(
   [double]$MinimumScratchGB = 12,
-  [double]$MinimumWorkspaceGB = 2
+  [double]$MinimumWorkspaceGB = 0.5
 )
 
 $ErrorActionPreference = "Stop"
