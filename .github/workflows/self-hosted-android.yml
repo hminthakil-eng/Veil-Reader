@@ -88,9 +88,9 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $candidates = @(
+            "E:\VeilReader-CI\android-sdk",
             $env:ANDROID_SDK_ROOT,
-            $env:ANDROID_HOME,
-            "E:\VeilReader-CI\android-sdk"
+            $env:ANDROID_HOME
           ) | Where-Object { $_ -and (Test-Path $_) }
           $sdk = $candidates | Select-Object -First 1
           if (-not $sdk) { throw "Android SDK not found" }
@@ -125,9 +125,10 @@ jobs:
       - name: Performance budget parser checks
         shell: powershell
         run: |
-          python tools/test_performance_budget.py
-          python tools/test_performance_delta.py
-          python tools/test_performance_dashboard.py
+          foreach ($test in @("tools/test_performance_budget.py", "tools/test_performance_delta.py", "tools/test_performance_dashboard.py")) {
+            python $test
+            if ($LASTEXITCODE -ne 0) { throw "Performance parser check failed: $test" }
+          }
 
       - name: Unit tests
         shell: powershell
@@ -242,9 +243,9 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           $candidates = @(
+            "E:\VeilReader-CI\android-sdk",
             $env:ANDROID_SDK_ROOT,
-            $env:ANDROID_HOME,
-            "E:\VeilReader-CI\android-sdk"
+            $env:ANDROID_HOME
           ) | Where-Object { $_ -and (Test-Path $_) }
 
           $sdk = $candidates | Select-Object -First 1
@@ -342,7 +343,6 @@ jobs:
           if (-not $sdk) { $sdk = $env:ANDROID_HOME }
           if (-not $sdk) { throw "ANDROID_SDK_ROOT/ANDROID_HOME is not set" }
 
-          $avdName = "VeilReleaseProfile_API35"
           $avdManager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
           $adb = Join-Path $sdk "platform-tools\adb.exe"
           $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
@@ -350,29 +350,15 @@ jobs:
           $stdout = Join-Path $env:TEMP "veil-profile-emulator.stdout.log"
           $stderr = Join-Path $env:TEMP "veil-profile-emulator.stderr.log"
 
-          # Reuse an already booted emulator when one is available.
-          $previousPreference = $ErrorActionPreference
-          $ErrorActionPreference = "SilentlyContinue"
-          & $adb start-server *> $null
-          $deviceLines = @(& $adb devices 2>&1)
-          $ErrorActionPreference = $previousPreference
-
-          $serial = $deviceLines |
-            Where-Object { $_ -match "^(emulator-\d+)\s+device$" } |
-            ForEach-Object { $Matches[1] } |
-            Select-Object -First 1
-
-          if ($serial) {
-            $previousPreference = $ErrorActionPreference
-            $ErrorActionPreference = "SilentlyContinue"
-            $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Select-Object -Last 1).ToString().Trim()
-            $ErrorActionPreference = $previousPreference
-            if ($boot -eq "1") {
-              Write-Host "Reusing already-booted emulator: $serial"
-              "VEIL_PROFILE_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
-              exit 0
-            }
-          }
+          # Never reuse or terminate a user-owned emulator.
+          $serial = "emulator-5580"
+          $devices = @(& $adb devices)
+          if ($LASTEXITCODE -ne 0) { throw "Cannot inventory ADB devices" }
+          if ($devices -match '^emulator-5580\s') { throw "Profile emulator port 5580 is already occupied" }
+          $avdName = "VeilReleaseProfile_$($env:GITHUB_RUN_ID)_$($env:GITHUB_RUN_ATTEMPT)"
+          "VEIL_PROFILE_AVD=$avdName" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "VEIL_PROFILE_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "ANDROID_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
 
           $avdHome = "E:\VeilReader-CI\avd"
           New-Item -ItemType Directory -Force -Path $avdHome | Out-Null
@@ -381,8 +367,7 @@ jobs:
 
           $ini = Join-Path $avdHome "$avdName.ini"
           $avdDir = Join-Path $avdHome "$avdName.avd"
-          Remove-Item $ini -Force -ErrorAction SilentlyContinue
-          Remove-Item $avdDir -Recurse -Force -ErrorAction SilentlyContinue
+          if ((Test-Path $ini) -or (Test-Path $avdDir)) { throw "Preserve existing AVD; use a fresh run attempt: $avdName" }
 
           "no" | & $avdManager create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6" | Out-Host
           if ($LASTEXITCODE -ne 0 -or -not (Test-Path $avdDir)) {
@@ -410,7 +395,7 @@ jobs:
           # Pin the ADB console port so polling is deterministic.
           $args = @(
             "-avd",$avdName,
-            "-port","5554",
+            "-port","5580",
             "-no-window",
             "-no-audio",
             "-no-boot-anim",
@@ -423,7 +408,7 @@ jobs:
 
           Start-Process -FilePath $emulatorExe -ArgumentList $args -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
 
-          $serial = "emulator-5554"
+          $serial = "emulator-5580"
           $deadline = (Get-Date).AddMinutes(3)
           do {
             if ((Get-Date) -gt $deadline) {
@@ -473,7 +458,7 @@ jobs:
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
-          gradle :app:generateBaselineProfile --stacktrace
+          gradle :app:generateBaselineProfile -Pveil.profile.connected=true --stacktrace
           if ($LASTEXITCODE -ne 0) { throw "Baseline Profile generation failed" }
 
           $profiles = Get-ChildItem "app\src" -Recurse -File | Where-Object {
@@ -490,6 +475,34 @@ jobs:
             Write-Host "Generated profile: $($_.FullName) ($($_.Length) bytes)"
           }
 
+      - name: Preserve generated profile sources for review
+        if: steps.superseded.outputs.skip != 'true'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $destination = Join-Path $env:VEIL_CI_ROOT "profiles\$($env:GITHUB_RUN_ID)-$($env:GITHUB_RUN_ATTEMPT)"
+          New-Item -ItemType Directory -Force -Path $destination | Out-Null
+          $profiles = @(Get-ChildItem "app\src" -Recurse -File | Where-Object {
+            $_.FullName -match "generated\\baselineProfiles" -and $_.Name -in @("baseline-prof.txt", "startup-prof.txt")
+          })
+          foreach ($profile in $profiles) {
+            $relative = (Resolve-Path -LiteralPath $profile.FullName -Relative)
+            $target = Join-Path $destination $relative
+            New-Item -ItemType Directory -Force -Path (Split-Path $target -Parent) | Out-Null
+            Copy-Item -LiteralPath $profile.FullName -Destination $target
+            Write-Host "Profile evidence: $target bytes=$($profile.Length) sha256=$((Get-FileHash $target -Algorithm SHA256).Hash)"
+          }
+
+      - name: Upload generated profiles for review
+        if: steps.superseded.outputs.skip != 'true'
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: veil-reader-profile-sources-${{ github.run_id }}
+          path: app/src/**/generated/baselineProfiles/*.txt
+          if-no-files-found: error
+          retention-days: 3
+
       - name: Verify generated profiles match committed sources
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
@@ -500,8 +513,10 @@ jobs:
             ($_.Name -eq "baseline-prof.txt" -or $_.Name -eq "startup-prof.txt")
           })
 
-          if ($profiles.Count -lt 2) {
-            throw "Expected committed Baseline and Startup Profile sources were not both generated"
+          foreach ($required in @("baseline-prof.txt", "startup-prof.txt")) {
+            if (-not ($profiles | Where-Object { $_.Name -eq $required -and $_.Length -gt 0 })) {
+              throw "Expected non-empty generated profile: $required"
+            }
           }
 
           foreach ($profile in $profiles) {
@@ -521,25 +536,11 @@ jobs:
             throw "Generated profile differs from committed source. Refresh and review profiles before release verification."
           }
 
-      - name: Stop and remove profile emulator before release packaging
+      - name: Stop owned profile emulator before release packaging
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
-          $ErrorActionPreference = "Continue"
-          $sdk = $env:ANDROID_SDK_ROOT
-          if (-not $sdk) { $sdk = $env:ANDROID_HOME }
-          if ($sdk) {
-            $adb = Join-Path $sdk "platform-tools\adb.exe"
-            if (Test-Path $adb) {
-              & $adb emu kill *> $null
-              Start-Sleep -Seconds 2
-            }
-          }
-          if ($env:ANDROID_AVD_HOME) {
-            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.ini") -Force -ErrorAction SilentlyContinue
-            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.avd") -Recurse -Force -ErrorAction SilentlyContinue
-          }
-          Write-Host "Profile emulator storage released before APK/AAB packaging."
+          & ".\tools\stop_ci_profile_emulator.ps1"
 
       - name: Release packaging disk-space gate
         if: steps.superseded.outputs.skip != 'true'
@@ -630,21 +631,4 @@ jobs:
         if: always() && steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
-          $sdk = $env:ANDROID_SDK_ROOT
-          if (-not $sdk) { $sdk = $env:ANDROID_HOME }
-          if ($sdk) {
-            $adb = Join-Path $sdk "platform-tools\adb.exe"
-            if (Test-Path $adb) {
-              $previousPreference = $ErrorActionPreference
-              $ErrorActionPreference = "SilentlyContinue"
-              & $adb emu kill *> $null
-              $ErrorActionPreference = $previousPreference
-            }
-          }
-
-          if ($env:ANDROID_AVD_HOME) {
-            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.ini") -Force -ErrorAction SilentlyContinue
-            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.avd") -Recurse -Force -ErrorAction SilentlyContinue
-          }
-          exit 0
-
+          & ".\tools\stop_ci_profile_emulator.ps1"

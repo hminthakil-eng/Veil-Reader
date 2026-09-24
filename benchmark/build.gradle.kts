@@ -33,8 +33,10 @@ android {
 }
 
 baselineProfile {
-    managedDevices += "pixel6Api35"
-    useConnectedDevices = false
+    // Windows CI starts one owned emulator; hosted generation keeps its GMD.
+    val connected = providers.gradleProperty("veil.profile.connected").orNull == "true"
+    if (!connected) managedDevices += "pixel6Api35"
+    useConnectedDevices = connected
 }
 
 dependencies {
@@ -43,3 +45,4 @@ dependencies {
     implementation("androidx.test.ext:junit:1.3.0")
     implementation("androidx.test:runner:1.7.0")
 }
+

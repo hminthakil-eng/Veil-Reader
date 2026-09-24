@@ -36,6 +36,11 @@ if (-not $drive -or ([int64]$drive.FreeSpace / 1GB) -lt $MinimumScratchGB) {
 Assert-EPath "workspace" $env:GITHUB_WORKSPACE
 Assert-EPath "runner temp" $env:RUNNER_TEMP
 Assert-EPath "tool cache" $env:RUNNER_TOOL_CACHE
+$sdk = @("E:\VeilReader-CI\android-sdk", $env:ANDROID_SDK_ROOT, $env:ANDROID_HOME) |
+  Where-Object { $_ -and (Test-Path -LiteralPath $_) } | Select-Object -First 1
+Assert-EPath "Android SDK" $sdk
+Set-GithubEnv "ANDROID_SDK_ROOT" $sdk
+Set-GithubEnv "ANDROID_HOME" $sdk
 $ciRoot = "E:\VeilReader-CI"
 $tempRoot = Join-Path $ciRoot ("temp\{0}-{1}-{2}" -f $env:GITHUB_RUN_ID,$env:GITHUB_RUN_ATTEMPT,$env:GITHUB_JOB)
 $paths = [ordered]@{
@@ -56,6 +61,7 @@ Set-GithubEnv "VEIL_CI_SCRATCH_DRIVE" "E:"
 # Builds stay inside the E: checkout. Preserve previous outputs/caches; never
 # delete a run directory shared with the preceding preflight job.
 $inventory = @(
+  @{Name="Android SDK"; Path=$sdk; Class="required SDK; preserve"},
   @{Name="workspace"; Path=$env:GITHUB_WORKSPACE; Class="required source"},
   @{Name="runner temp"; Path=$env:RUNNER_TEMP; Class="CI temp; inventory only"},
   @{Name="tool cache"; Path=$env:RUNNER_TOOL_CACHE; Class="rebuildable cache"},
