@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 import zipfile
 from pathlib import Path
 
@@ -14,6 +15,19 @@ APP = ROOT / "app"
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
     raise SystemExit(1)
+
+
+def require_git_tracked(path: Path) -> None:
+    relative = path.relative_to(ROOT).as_posix()
+    result = subprocess.run(
+        ["git", "ls-files", "--error-unmatch", relative],
+        cwd=ROOT,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
+    if result.returncode != 0:
+        fail(f"Generated profile is not committed to git: {relative}")
 
 
 source_candidates = sorted(
@@ -28,6 +42,7 @@ if not source_candidates:
 
 print("Committed Baseline Profile source:")
 for path in source_candidates:
+    require_git_tracked(path)
     print(f"  {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
 startup_candidates = sorted(
@@ -43,6 +58,7 @@ if not startup_candidates:
 
 print("Startup Profile source:")
 for path in startup_candidates:
+    require_git_tracked(path)
     print(f"  {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
 apk_candidates = sorted((APP / "build" / "outputs" / "apk" / "release").glob("*.apk"))
