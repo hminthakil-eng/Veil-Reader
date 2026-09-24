@@ -49,91 +49,28 @@ jobs:
           "ANDROID_SDK_ROOT=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
           "ANDROID_HOME=$sdk" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Conservative runner disk cleanup
+      - name: Prepare CI scratch on roomiest local drive
         shell: powershell
         run: |
-          $ErrorActionPreference = "Stop"
-
-          function Show-FreeSpace {
-            Write-Host "=== runner filesystem free space ==="
-            Get-PSDrive -PSProvider FileSystem |
-              Where-Object { $_.Root } |
-              Sort-Object Name |
-              ForEach-Object {
-                Write-Host ("{0} free={1:N2} GB used={2:N2} GB" -f $_.Root, ($_.Free / 1GB), ($_.Used / 1GB))
-              }
-          }
-
-          Show-FreeSpace
-
-          # Only delete outputs owned by this repository/workflow.
-          $repoOwned = @(
-            (Join-Path (Get-Location).Path "app\build"),
-            (Join-Path (Get-Location).Path "benchmark\build"),
-            (Join-Path (Get-Location).Path ".gradle")
-          )
-
-          foreach ($target in $repoOwned) {
-            if (Test-Path $target) {
-              Write-Host "Removing reproducible repository output: $target"
-              Remove-Item $target -Recurse -Force -ErrorAction Stop
-            }
-          }
-
-          # Remove the dedicated AVD directory created only by this workflow.
-          Get-PSDrive -PSProvider FileSystem |
-            Where-Object { $_.Root } |
-            ForEach-Object {
-              $target = Join-Path $_.Root "VeilReader-AVD"
-              if (Test-Path $target) {
-                Write-Host "Removing stale Veil Reader CI AVD: $target"
-                Remove-Item $target -Recurse -Force -ErrorAction Stop
-              }
-            }
-
-          # Remove only stale runner-temp entries; leave current-job temp files alone.
-          if ($env:RUNNER_TEMP -and (Test-Path $env:RUNNER_TEMP)) {
-            $cutoff = (Get-Date).AddHours(-24)
-            Get-ChildItem $env:RUNNER_TEMP -Force -ErrorAction SilentlyContinue |
-              Where-Object { $_.LastWriteTime -lt $cutoff } |
-              ForEach-Object {
-                Write-Host "Removing stale runner temp: $($_.FullName)"
-                Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-              }
-          }
-
-          # If still critically low, clear only Gradle's regenerable local build-cache.
-          $workspaceRoot = [System.IO.Path]::GetPathRoot((Get-Location).Path)
-          $workspaceDrive = Get-PSDrive ($workspaceRoot.Substring(0,1))
-          if (($workspaceDrive.Free / 1GB) -lt 12) {
-            $gradleHome = if ($env:GRADLE_USER_HOME) { $env:GRADLE_USER_HOME } else { Join-Path $HOME ".gradle" }
-            if (Test-Path $gradleHome) {
-              Get-ChildItem (Join-Path $gradleHome "caches") -Directory -Filter "build-cache-*" -ErrorAction SilentlyContinue |
-                ForEach-Object {
-                  Write-Host "Low disk: removing regenerable Gradle build cache $($_.FullName)"
-                  Remove-Item $_.FullName -Recurse -Force -ErrorAction SilentlyContinue
-                }
-            }
-          }
-
-          Show-FreeSpace
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 2
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
         with:
           gradle-version: "9.6.0"
 
-      - name: Preflight disk-space gate
+      - name: Verify relocated preflight disk headroom
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-          $workspaceRoot = [System.IO.Path]::GetPathRoot((Get-Location).Path)
-          $workspaceDrive = Get-PSDrive ($workspaceRoot.Substring(0,1))
-          $freeGB = $workspaceDrive.Free / 1GB
-          Write-Host ("Workspace drive {0} free={1:N2} GB" -f $workspaceRoot, $freeGB)
-          if ($freeGB -lt 12) {
-            throw ("Insufficient free disk for Android verification: {0:N2} GB free; require >= 12 GB" -f $freeGB)
-          }
+          if (-not $env:VEIL_CI_SCRATCH_DRIVE) { throw "VEIL_CI_SCRATCH_DRIVE is not set" }
+          $scratch = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
+            Where-Object { $_.DeviceID -eq $env:VEIL_CI_SCRATCH_DRIVE } |
+            Select-Object -First 1
+          if (-not $scratch) { throw "Could not resolve CI scratch drive $env:VEIL_CI_SCRATCH_DRIVE" }
+          $freeGB = [int64]$scratch.FreeSpace / 1GB
+          Write-Host ("CI scratch {0}\ free={1:N2} GB" -f $env:VEIL_CI_SCRATCH_DRIVE, $freeGB)
+          if ($freeGB -lt 12) { throw ("CI scratch has only {0:N2} GB free; require >= 12 GB" -f $freeGB) }
 
       - name: Reading policy regression checks
         shell: powershell
@@ -234,6 +171,12 @@ jobs:
           Write-Host "Using Android SDK: $sdk"
           & $sdkManager --version
           if ($LASTEXITCODE -ne 0) { throw "sdkmanager version check failed" }
+
+      - name: Prepare release scratch on roomiest local drive
+        if: steps.superseded.outputs.skip != 'true'
+        shell: powershell
+        run: |
+          & ".\tools\prepare_ci_scratch.ps1" -MinimumScratchGB 12 -MinimumWorkspaceGB 2
 
       - name: Verify Android SDK packages
         if: steps.superseded.outputs.skip != 'true'
@@ -477,12 +420,29 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
+          if (-not $env:VEIL_CI_SCRATCH_DRIVE) { throw "VEIL_CI_SCRATCH_DRIVE is not set" }
+
+          $scratch = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
+            Where-Object { $_.DeviceID -eq $env:VEIL_CI_SCRATCH_DRIVE } |
+            Select-Object -First 1
+          if (-not $scratch) { throw "Could not resolve CI scratch drive $env:VEIL_CI_SCRATCH_DRIVE" }
+
           $workspaceRoot = [System.IO.Path]::GetPathRoot((Get-Location).Path)
-          $workspaceDrive = Get-PSDrive ($workspaceRoot.Substring(0,1))
-          $freeGB = $workspaceDrive.Free / 1GB
-          Write-Host ("Before release packaging: {0} free={1:N2} GB" -f $workspaceRoot, $freeGB)
-          if ($freeGB -lt 12) {
-            throw ("Insufficient disk before release packaging: {0:N2} GB free; require >= 12 GB" -f $freeGB)
+          $workspaceId = $workspaceRoot.TrimEnd("\")
+          $workspace = Get-CimInstance Win32_LogicalDisk -Filter "DriveType=3" |
+            Where-Object { $_.DeviceID -eq $workspaceId } |
+            Select-Object -First 1
+
+          $scratchFreeGB = [int64]$scratch.FreeSpace / 1GB
+          $workspaceFreeGB = if ($workspace) { [int64]$workspace.FreeSpace / 1GB } else { 0 }
+
+          Write-Host ("Before release packaging: scratch {0}\ free={1:N2} GB; workspace {2} free={3:N2} GB" -f $env:VEIL_CI_SCRATCH_DRIVE, $scratchFreeGB, $workspaceRoot, $workspaceFreeGB)
+
+          if ($scratchFreeGB -lt 12) {
+            throw ("Insufficient scratch disk before release packaging: {0:N2} GB free; require >= 12 GB" -f $scratchFreeGB)
+          }
+          if ($workspaceFreeGB -lt 2) {
+            throw ("Workspace drive headroom too low: {0:N2} GB free; require >= 2 GB" -f $workspaceFreeGB)
           }
 
       - name: Build release APK and AAB
