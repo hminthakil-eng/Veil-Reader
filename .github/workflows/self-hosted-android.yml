@@ -182,7 +182,24 @@ jobs:
           & $emulatorExe -accel-check 2>&1 | Out-Host
           $ErrorActionPreference = $previousPreference
 
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","off","-gpu","swiftshader","-wipe-data")
+          $avdDir = Join-Path $avdHome "$avdName.avd"
+          $dedicatedDataFiles = @(
+            (Join-Path $avdDir "userdata-qemu.img"),
+            (Join-Path $avdDir "userdata-qemu.img.qcow2"),
+            (Join-Path $avdDir "cache.img"),
+            (Join-Path $avdDir "cache.img.qcow2")
+          )
+          Remove-Item $dedicatedDataFiles -Force -ErrorAction SilentlyContinue
+
+          $androidCache = Join-Path $env:USERPROFILE ".android\cache"
+          if (Test-Path $androidCache) {
+            Get-ChildItem $androidCache -Force -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+          }
+
+          $freeBefore = (Get-PSDrive -Name C).Free
+          Write-Host ("Free disk before emulator: {0:N2} GB" -f ($freeBefore / 1GB))
+
+          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-accel","on","-gpu","swiftshader","-partition-size","1024","-wipe-data")
           $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
