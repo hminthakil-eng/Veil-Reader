@@ -12,7 +12,7 @@ on:
         default: "main"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: reader-release-hardening
@@ -54,6 +54,18 @@ jobs:
         with:
           gradle-version: "9.6.0"
 
+      - name: Preflight disk-space gate
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $workspaceRoot = [System.IO.Path]::GetPathRoot((Get-Location).Path)
+          $workspaceDrive = Get-PSDrive ($workspaceRoot.Substring(0,1))
+          $freeGB = $workspaceDrive.Free / 1GB
+          Write-Host ("Workspace drive {0} free={1:N2} GB" -f $workspaceRoot, $freeGB)
+          if ($freeGB -lt 12) {
+            throw ("Insufficient free disk for Android verification: {0:N2} GB free; require >= 12 GB" -f $freeGB)
+          }
+
       - name: Reading policy regression checks
         shell: powershell
         run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
@@ -85,45 +97,6 @@ jobs:
         shell: powershell
         run: gradle :app:assembleBenchmark :benchmark:assembleBenchmarkBenchmark --stacktrace
 
-      - name: Build release APK and AAB with R8/resource shrinking
-        shell: powershell
-        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
-
-      - name: Audit merged release manifest
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          $manifests = @(Get-ChildItem "app\build\intermediates" -Recurse -Filter "AndroidManifest.xml" -File -ErrorAction SilentlyContinue |
-            Where-Object { $_.FullName -match "\\release\\" })
-
-          if (-not $manifests) { throw "No merged release AndroidManifest.xml found" }
-
-          $manifest = $manifests | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-          Write-Host "Merged release manifest: $($manifest.FullName)"
-          $content = Get-Content $manifest.FullName -Raw
-          $content | Out-File -FilePath "release-merged-manifest.xml" -Encoding utf8
-
-          if ($content -match 'android.permission.INTERNET') {
-            throw "Offline contract regression: release manifest requests INTERNET"
-          }
-
-          Write-Host "=== release permissions ==="
-          Select-String -Path $manifest.FullName -Pattern '<uses-permission' | ForEach-Object { $_.Line.Trim() }
-          Write-Host "=== notable merged components ==="
-          Select-String -Path $manifest.FullName -Pattern 'BluetoothValidationActivity|android.permission.DUMP|ACCESS_NETWORK_STATE|android:exported="true"' |
-            ForEach-Object { $_.Line.Trim() }
-
-      - name: Upload simple release preflight evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: veil-reader-release-preflight-${{ github.run_id }}
-          path: |
-            release-merged-manifest.xml
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
-          if-no-files-found: warn
-          retention-days: 7
 
   windows-verify:
     needs: windows-preflight
@@ -392,23 +365,36 @@ jobs:
             Write-Host "Generated profile: $($_.FullName) ($($_.Length) bytes)"
           }
 
-      - name: Commit generated Baseline Profile to hardening branch
-        if: steps.superseded.outputs.skip != 'true' && github.event_name == 'push' && github.ref == 'refs/heads/release/reader-hardening-rc'
+      - name: Verify generated profiles match committed sources
+        if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
-          git add -- "app/src/**/generated/baselineProfiles/*.txt"
+          $profiles = @(Get-ChildItem "app\src" -Recurse -File | Where-Object {
+            $_.FullName -match "generated\\baselineProfiles" -and
+            ($_.Name -eq "baseline-prof.txt" -or $_.Name -eq "startup-prof.txt")
+          })
 
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host "Generated Baseline Profile is already committed."
-            exit 0
+          if ($profiles.Count -lt 2) {
+            throw "Expected committed Baseline and Startup Profile sources were not both generated"
           }
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "perf(release): commit generated Baseline Profile"
-          git push origin HEAD:release/reader-hardening-rc
+          foreach ($profile in $profiles) {
+            $relative = [System.IO.Path]::GetRelativePath((Get-Location).Path, $profile.FullName).Replace("\\","/")
+            git ls-files --error-unmatch -- "$relative" *> $null
+            if ($LASTEXITCODE -ne 0) {
+              throw "Generated profile is not committed to git: $relative"
+            }
+            if ($profile.Length -le 0) {
+              throw "Generated profile is empty: $relative"
+            }
+            Write-Host "Committed generated profile: $relative ($($profile.Length) bytes)"
+          }
+
+          git diff --exit-code -- app/src
+          if ($LASTEXITCODE -ne 0) {
+            throw "Generated profile differs from committed source. Refresh and review profiles before release verification."
+          }
 
       - name: Unit tests
         if: steps.superseded.outputs.skip != 'true'
@@ -435,10 +421,45 @@ jobs:
         shell: powershell
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
+      - name: Release packaging disk-space gate
+        if: steps.superseded.outputs.skip != 'true'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $workspaceRoot = [System.IO.Path]::GetPathRoot((Get-Location).Path)
+          $workspaceDrive = Get-PSDrive ($workspaceRoot.Substring(0,1))
+          $freeGB = $workspaceDrive.Free / 1GB
+          Write-Host ("Before release packaging: {0} free={1:N2} GB" -f $workspaceRoot, $freeGB)
+          if ($freeGB -lt 12) {
+            throw ("Insufficient disk before release packaging: {0:N2} GB free; require >= 12 GB" -f $freeGB)
+          }
+
       - name: Build release APK and AAB
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
         run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Audit merged release manifest
+        if: steps.superseded.outputs.skip != 'true'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          $manifests = @(Get-ChildItem "app\build\intermediates" -Recurse -Filter "AndroidManifest.xml" -File -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\release\\" })
+
+          if (-not $manifests) { throw "No merged release AndroidManifest.xml found" }
+
+          $manifest = $manifests | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+          Write-Host "Merged release manifest: $($manifest.FullName)"
+          $content = Get-Content $manifest.FullName -Raw
+          $content | Out-File -FilePath "release-merged-manifest.xml" -Encoding utf8
+
+          if ($content -match 'android.permission.INTERNET') {
+            throw "Offline contract regression: release manifest requests INTERNET"
+          }
+
+          Write-Host "Release manifest offline contract: GREEN"
+
 
       - name: Verify release Baseline Profile packaging
         if: steps.superseded.outputs.skip != 'true'
@@ -471,16 +492,16 @@ jobs:
 
       - name: Upload verified release evidence
         if: success() && steps.superseded.outputs.skip != 'true'
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: veil-reader-release-hardening-${{ github.run_id }}
           path: |
             release-evidence.txt
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
+            release-merged-manifest.xml
             app/src/**/generated/baselineProfiles/*.txt
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 3
 
       - name: Stop profile emulator
         if: always() && steps.superseded.outputs.skip != 'true'
@@ -496,5 +517,10 @@ jobs:
               & $adb emu kill *> $null
               $ErrorActionPreference = $previousPreference
             }
+          }
+
+          if ($env:ANDROID_AVD_HOME) {
+            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.ini") -Force -ErrorAction SilentlyContinue
+            Remove-Item (Join-Path $env:ANDROID_AVD_HOME "VeilReleaseProfile_API35.avd") -Recurse -Force -ErrorAction SilentlyContinue
           }
           exit 0
