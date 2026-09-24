@@ -16,6 +16,14 @@ android {
     targetProjectPath = ":app"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 
+    testOptions.managedDevices.devices {
+        create<com.android.build.api.dsl.ManagedVirtualDevice>("pixel6Api35") {
+            device = "Pixel 6"
+            apiLevel = 35
+            systemImageSource = "aosp"
+        }
+    }
+
     buildTypes {
         create("benchmark") {
             isDebuggable = true
@@ -25,7 +33,8 @@ android {
 }
 
 baselineProfile {
-    useConnectedDevices = true
+    managedDevices += "pixel6Api35"
+    useConnectedDevices = false
 }
 
 dependencies {
