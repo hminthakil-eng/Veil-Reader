@@ -255,18 +255,38 @@ jobs:
           $avdManager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
           $adb = Join-Path $sdk "platform-tools\adb.exe"
           $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
-          $emulatorStdout = Join-Path $env:TEMP "veil-profile-emulator.stdout.log"
-          $emulatorStderr = Join-Path $env:TEMP "veil-profile-emulator.stderr.log"
 
-          $bestDrive = Get-PSDrive E
-          if (-not $bestDrive) { throw "Required E: drive is unavailable for AVD" }
-          Write-Host ("E:\ free={0:N2} GB" -f ($bestDrive.Free / 1GB))
+          $stdout = Join-Path $env:TEMP "veil-profile-emulator.stdout.log"
+          $stderr = Join-Path $env:TEMP "veil-profile-emulator.stderr.log"
+
+          # Reuse an already booted emulator when one is available.
+          $previousPreference = $ErrorActionPreference
+          $ErrorActionPreference = "SilentlyContinue"
+          & $adb start-server *> $null
+          $deviceLines = @(& $adb devices 2>&1)
+          $ErrorActionPreference = $previousPreference
+
+          $serial = $deviceLines |
+            Where-Object { $_ -match "^(emulator-\d+)\s+device$" } |
+            ForEach-Object { $Matches[1] } |
+            Select-Object -First 1
+
+          if ($serial) {
+            $previousPreference = $ErrorActionPreference
+            $ErrorActionPreference = "SilentlyContinue"
+            $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Select-Object -Last 1).ToString().Trim()
+            $ErrorActionPreference = $previousPreference
+            if ($boot -eq "1") {
+              Write-Host "Reusing already-booted emulator: $serial"
+              "VEIL_PROFILE_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
+              exit 0
+            }
+          }
 
           $avdHome = "E:\VeilReader-CI\avd"
           New-Item -ItemType Directory -Force -Path $avdHome | Out-Null
           $env:ANDROID_AVD_HOME = $avdHome
           "ANDROID_AVD_HOME=$avdHome" | Out-File -FilePath $env:GITHUB_ENV -Append
-          Write-Host ("Using ANDROID_AVD_HOME={0} ({1:N2} GB free)" -f $avdHome, ($bestDrive.Free / 1GB))
 
           $ini = Join-Path $avdHome "$avdName.ini"
           $avdDir = Join-Path $avdHome "$avdName.avd"
@@ -291,57 +311,67 @@ jobs:
           $configLines += "sdcard.size=256M"
           Set-Content -Path $configIni -Value $configLines -Encoding ASCII
 
-          Write-Host "Dedicated AVD storage overrides:"
-          Get-Content $configIni | Select-String -Pattern '^disk\.dataPartition\.size=|^disk\.cachePartition\.size=|^sdcard\.size=' | Out-Host
+          Remove-Item $stdout,$stderr -Force -ErrorAction SilentlyContinue
 
-          Remove-Item $emulatorStdout,$emulatorStderr -Force -ErrorAction SilentlyContinue
-
-          $previousPreference = $ErrorActionPreference
-          $ErrorActionPreference = "SilentlyContinue"
-          & $adb kill-server *> $null
-          & $adb start-server *> $null
-          Write-Host "Emulator acceleration diagnostic:"
+          Write-Host "=== Emulator acceleration check ==="
           & $emulatorExe -accel-check 2>&1 | Out-Host
-          $ErrorActionPreference = $previousPreference
 
-          $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-gpu","swiftshader","-no-cache","-cores","2","-memory","1536")
-          $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru -RedirectStandardOutput $emulatorStdout -RedirectStandardError $emulatorStderr
-          "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          # Pin the ADB console port so polling is deterministic.
+          $args = @(
+            "-avd",$avdName,
+            "-port","5554",
+            "-no-window",
+            "-no-audio",
+            "-no-boot-anim",
+            "-no-snapshot",
+            "-no-metrics",
+            "-gpu","swiftshader_indirect",
+            "-cores","2",
+            "-memory","1536"
+          )
 
-          $deadline = (Get-Date).AddMinutes(10)
-          $serial = $null
+          Start-Process -FilePath $emulatorExe -ArgumentList $args -RedirectStandardOutput $stdout -RedirectStandardError $stderr | Out-Null
+
+          $serial = "emulator-5554"
+          $deadline = (Get-Date).AddMinutes(3)
           do {
-            # emulator.exe can act as a launcher on Windows and exit after spawning the
-            # actual qemu process. Do not treat launcher exit as device failure; ADB boot
-            # readiness is the authoritative signal.
             if ((Get-Date) -gt $deadline) {
-              Write-Host "=== emulator stdout ==="
-              if (Test-Path $emulatorStdout) { Get-Content $emulatorStdout -Tail 250 | Out-Host }
-              Write-Host "=== emulator stderr ==="
-              if (Test-Path $emulatorStderr) { Get-Content $emulatorStderr -Tail 250 | Out-Host }
-              throw "Emulator boot timed out after 10 minutes"
+              Write-Host "=== adb devices ==="
+              $previousPreference = $ErrorActionPreference
+              $ErrorActionPreference = "SilentlyContinue"
+              & $adb devices -l 2>&1 | Out-Host
+              $ErrorActionPreference = $previousPreference
+
+              if (Test-Path $stdout) {
+                Write-Host "=== emulator stdout ==="
+                Get-Content $stdout -Tail 250 | Out-Host
+              }
+              if (Test-Path $stderr) {
+                Write-Host "=== emulator stderr ==="
+                Get-Content $stderr -Tail 250 | Out-Host
+              }
+              throw "Emulator did not become ADB-ready within 3 minutes"
             }
 
             $previousPreference = $ErrorActionPreference
             $ErrorActionPreference = "SilentlyContinue"
-            $deviceLines = @(& $adb devices 2>&1)
+            $state = (& $adb -s $serial get-state 2>&1 | Select-Object -Last 1).ToString().Trim()
             $ErrorActionPreference = $previousPreference
-            $serial = $deviceLines | Where-Object { $_ -match "^(emulator-\d+)\s+device$" } | ForEach-Object { $Matches[1] } | Select-Object -First 1
-            if ($serial) {
+
+            if ($state -eq "device") {
               $previousPreference = $ErrorActionPreference
               $ErrorActionPreference = "SilentlyContinue"
               $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>&1 | Select-Object -Last 1).ToString().Trim()
               $ErrorActionPreference = $previousPreference
               if ($boot -eq "1") { break }
             }
+
             Start-Sleep -Seconds 2
           } while ($true)
 
-          & $adb -s $serial shell settings put global window_animation_scale 0
-          & $adb -s $serial shell settings put global transition_animation_scale 0
-          & $adb -s $serial shell settings put global animator_duration_scale 0
-          & $adb devices -l
+          "VEIL_PROFILE_SERIAL=$serial" | Out-File -FilePath $env:GITHUB_ENV -Append
           Write-Host "Profile emulator boot: GREEN ($serial)"
+
       - name: Set up Gradle 9.6
         if: steps.superseded.outputs.skip != 'true'
         uses: gradle/actions/setup-gradle@v6.3.0
