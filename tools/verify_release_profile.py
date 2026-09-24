@@ -34,12 +34,16 @@ startup_candidates = sorted(
     p for p in APP.glob("src/**/startup-prof.txt")
     if "build" not in p.parts and p.is_file() and p.stat().st_size > 0
 )
-if startup_candidates:
-    print("Startup Profile source:")
-    for path in startup_candidates:
-        print(f"  {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
-else:
-    print("INFO: no standalone startup-prof.txt found; verify generated output for the configured plugin version.")
+if not startup_candidates:
+    fail(
+        "No committed non-empty startup-prof.txt found under app/src/. "
+        "The launcher generator uses includeInStartupProfile=true, so the release hardening gate "
+        "requires the generated Startup Profile source as well."
+    )
+
+print("Startup Profile source:")
+for path in startup_candidates:
+    print(f"  {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
 apk_candidates = sorted((APP / "build" / "outputs" / "apk" / "release").glob("*.apk"))
 aab_candidates = sorted((APP / "build" / "outputs" / "bundle" / "release").glob("*.aab"))
@@ -50,6 +54,8 @@ if not aab_candidates:
     fail("No release AAB found. Run :app:bundleRelease first.")
 
 
+MAX_BASELINE_PROFILE_BYTES = 1_500_000
+
 def require_zip_entry(path: Path, entry: str) -> None:
     with zipfile.ZipFile(path) as archive:
         names = set(archive.namelist())
@@ -58,6 +64,11 @@ def require_zip_entry(path: Path, entry: str) -> None:
         info = archive.getinfo(entry)
         if info.file_size <= 0:
             fail(f"{path.name} contains empty {entry}")
+        if info.file_size >= MAX_BASELINE_PROFILE_BYTES:
+            fail(
+                f"{path.name} contains oversized {entry}: {info.file_size} bytes "
+                f"(must stay below {MAX_BASELINE_PROFILE_BYTES} bytes)"
+            )
         print(f"OK: {path.relative_to(ROOT)} -> {entry} ({info.file_size} bytes)")
 
 
