@@ -161,31 +161,49 @@ jobs:
           $avdName = "VeilReleaseProfile_API35"
           $avdHome = Join-Path $env:USERPROFILE ".android\avd"
           $ini = Join-Path $avdHome "$avdName.ini"
+          $avdManager = Join-Path $sdk "cmdline-tools\latest\bin\avdmanager.bat"
+          $adb = Join-Path $sdk "platform-tools\adb.exe"
+          $emulatorExe = Join-Path $sdk "emulator\emulator.exe"
 
           if (-not (Test-Path $ini)) {
-            "no" | & "$sdk\cmdline-tools\latest\bin\avdmanager.bat" create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6"
+            "no" | & $avdManager create avd --force --name $avdName --package "system-images;android-35;google_apis;x86_64" --device "pixel_6" | Out-Host
+            if ($LASTEXITCODE -ne 0 -or -not (Test-Path $ini)) { throw "Failed to create AVD: $avdName" }
           }
 
-          & "$sdk\platform-tools\adb.exe" kill-server | Out-Null
-          & "$sdk\platform-tools\adb.exe" start-server | Out-Null
+          $previousPreference = $ErrorActionPreference
+          $ErrorActionPreference = "SilentlyContinue"
+          & $adb kill-server *> $null
+          & $adb start-server *> $null
+          $ErrorActionPreference = $previousPreference
 
           $args = @("-avd",$avdName,"-no-window","-no-audio","-no-boot-anim","-no-snapshot","-gpu","swiftshader_indirect","-wipe-data")
-          $emulator = Start-Process -FilePath "$sdk\emulator\emulator.exe" -ArgumentList $args -PassThru
+          $emulator = Start-Process -FilePath $emulatorExe -ArgumentList $args -PassThru
           "VEIL_EMULATOR_PID=$($emulator.Id)" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-          & "$sdk\platform-tools\adb.exe" wait-for-device
           $deadline = (Get-Date).AddMinutes(5)
+          $serial = $null
           do {
-            if ((Get-Date) -gt $deadline) { throw "Emulator boot timed out" }
+            if ($emulator.HasExited) {
+              throw "Emulator exited before boot completed. ExitCode=$($emulator.ExitCode)"
+            }
+            if ((Get-Date) -gt $deadline) {
+              throw "Emulator boot timed out after 5 minutes"
+            }
+
+            $deviceLines = @(& $adb devices 2>$null)
+            $serial = $deviceLines | Where-Object { $_ -match "^(emulator-\d+)\s+device$" } | ForEach-Object { $Matches[1] } | Select-Object -First 1
+            if ($serial) {
+              $boot = (& $adb -s $serial shell getprop sys.boot_completed 2>$null).Trim()
+              if ($boot -eq "1") { break }
+            }
             Start-Sleep -Seconds 2
-            $boot = (& "$sdk\platform-tools\adb.exe" shell getprop sys.boot_completed 2>$null).Trim()
-          } until ($boot -eq "1")
+          } while ($true)
 
-          & "$sdk\platform-tools\adb.exe" shell settings put global window_animation_scale 0
-          & "$sdk\platform-tools\adb.exe" shell settings put global transition_animation_scale 0
-          & "$sdk\platform-tools\adb.exe" shell settings put global animator_duration_scale 0
-          & "$sdk\platform-tools\adb.exe" devices -l
-
+          & $adb -s $serial shell settings put global window_animation_scale 0
+          & $adb -s $serial shell settings put global transition_animation_scale 0
+          & $adb -s $serial shell settings put global animator_duration_scale 0
+          & $adb devices -l
+          Write-Host "Profile emulator boot: GREEN ($serial)"
       - name: Reading policy regression checks
         if: steps.superseded.outputs.skip != 'true'
         shell: powershell
