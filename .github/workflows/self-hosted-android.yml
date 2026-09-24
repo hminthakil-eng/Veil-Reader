@@ -13,7 +13,10 @@ permissions:
 
 concurrency:
   group: reader-release-hardening
-  cancel-in-progress: false
+  # Cancel stale/manual pushes so an offline runner cannot accumulate a blocking queue.
+  # The workflow's own profile commit is authored by github-actions[bot]; do not let
+  # that follow-up push cancel the run that is still producing release evidence.
+  cancel-in-progress: ${{ github.event_name == 'push' && github.actor != 'github-actions[bot]' }}
 
 jobs:
   windows-verify:
