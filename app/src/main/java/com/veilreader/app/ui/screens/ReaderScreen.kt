@@ -897,9 +897,13 @@ private fun ReaderChromeButton(
         onClick = onClick,
         modifier = Modifier
             .size(48.dp)
-            .semantics { contentDescription = accessibilityLabel }
+            .semantics { contentDescription = accessibilityLabel },
+        colors = IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+            contentColor = MaterialTheme.colorScheme.onSurface
+        )
     ) {
-        ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSecondaryContainer)
+        ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSurface)
     }
 }
 
@@ -1032,8 +1036,8 @@ private fun EpubAppearancePanel(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
                 "Reading appearance",
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold
             )
             Text(
                 "Quick controls stay close to the page. Advanced controls are there when you want to fine-tune the book.",
@@ -1067,21 +1071,35 @@ private fun EpubAppearancePanel(
         if (!showAdvanced) {
             Text("Theme", fontWeight = FontWeight.SemiBold)
             Row(
-                Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                AppearancePreset("Paper", draft.theme == ReaderTheme.PAPER) {
+                AppearancePreset(
+                    label = "Paper",
+                    selected = draft.theme == ReaderTheme.PAPER,
+                    modifier = Modifier.weight(1f)
+                ) {
                     updateDraft(draft.withTheme(ReaderTheme.PAPER))
                 }
-                AppearancePreset("Sepia", draft.theme == ReaderTheme.SEPIA) {
+                AppearancePreset(
+                    label = "Sepia",
+                    selected = draft.theme == ReaderTheme.SEPIA,
+                    modifier = Modifier.weight(1f)
+                ) {
                     updateDraft(draft.withTheme(ReaderTheme.SEPIA))
                 }
-                AppearancePreset("Dusk", draft.theme == ReaderTheme.DUSK) {
+                AppearancePreset(
+                    label = "Dusk",
+                    selected = draft.theme == ReaderTheme.DUSK,
+                    modifier = Modifier.weight(1f)
+                ) {
                     updateDraft(draft.withTheme(ReaderTheme.DUSK))
                 }
-                AppearancePreset("OLED", draft.theme == ReaderTheme.OLED) {
+                AppearancePreset(
+                    label = "OLED",
+                    selected = draft.theme == ReaderTheme.OLED,
+                    modifier = Modifier.weight(1f)
+                ) {
                     updateDraft(draft.withTheme(ReaderTheme.OLED))
                 }
             }
@@ -1220,12 +1238,17 @@ private fun EpubAppearancePanel(
 }
 
 @Composable
-private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun AppearancePreset(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label) },
-        modifier = Modifier.heightIn(min = 48.dp)
+        label = { Text(label, maxLines = 1) },
+        modifier = modifier.heightIn(min = 48.dp)
     )
 }
 
