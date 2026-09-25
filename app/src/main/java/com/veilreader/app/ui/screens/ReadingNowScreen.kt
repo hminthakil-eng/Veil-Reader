@@ -9,7 +9,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,35 +60,47 @@ fun ReadingNowScreen(
                 .padding(top = VeilSpacing.xl, bottom = VeilSpacing.xxl),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
         ) {
-        ThresholdHeader(hasCurrentBook = current != null)
+        VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
+            ThresholdHeader(hasCurrentBook = current != null)
+        }
 
-        if (current == null) {
-            EmptyReadingState(onOpenLibrary)
-        } else {
-            ContinueReadingHero(
-                current = current,
-                onOpenBook = onOpenBook,
-                onOpenLibrary = onOpenLibrary
-            )
+        VeilReveal(delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
+            if (current == null) {
+                EmptyReadingState(onOpenLibrary)
+            } else {
+                ContinueReadingHero(
+                    current = current,
+                    onOpenBook = onOpenBook,
+                    onOpenLibrary = onOpenLibrary
+                )
+            }
         }
 
         if (snapshot.recent.isNotEmpty()) {
-            RecentBooksShelf(
-                books = snapshot.recent,
-                onOpenBook = onOpenBook,
-                onOpenLibrary = onOpenLibrary
+            VeilReveal(delayMillis = 160, modifier = Modifier.fillMaxWidth()) {
+                RecentBooksShelf(
+                    books = snapshot.recent,
+                    onOpenBook = onOpenBook,
+                    onOpenLibrary = onOpenLibrary
+                )
+            }
+        }
+
+        VeilReveal(delayMillis = 220, modifier = Modifier.fillMaxWidth()) {
+            ReadingPulse(profile)
+        }
+
+        VeilReveal(delayMillis = 280, modifier = Modifier.fillMaxWidth()) {
+            PathSummary(
+                profile = profile,
+                onOpenCastle = onOpenCastle
             )
         }
 
-        ReadingPulse(profile)
-
-        PathSummary(
-            profile = profile,
-            onOpenCastle = onOpenCastle
-        )
-
         if (quests.isNotEmpty()) {
-            WhispersSection(quests)
+            VeilReveal(delayMillis = 340, modifier = Modifier.fillMaxWidth()) {
+                WhispersSection(quests)
+            }
         }
         }
     }
@@ -188,6 +208,18 @@ private fun HeroDetails(
     onOpenLibrary: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var progressRevealed by remember(current.id) { mutableStateOf(false) }
+    LaunchedEffect(current.id) { progressRevealed = true }
+    val animatedProgress by animateFloatAsState(
+        targetValue = if (progressRevealed) progress else 0f,
+        animationSpec = tween(
+            durationMillis = 720,
+            delayMillis = 180,
+            easing = FastOutSlowInEasing
+        ),
+        label = "hero-progress-reveal"
+    )
+
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
         Text(
             current.title,
@@ -206,7 +238,7 @@ private fun HeroDetails(
 
         Spacer(Modifier.height(VeilSpacing.xs))
         LinearProgressIndicator(
-            progress = { progress },
+            progress = { animatedProgress },
             modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
             color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
