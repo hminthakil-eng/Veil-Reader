@@ -3,58 +3,100 @@
 You are an implementation and verification agent for Eyad Studio's Veil Reader.
 
 ## Canonical context
-- Product: Veil Reader
-- Current app baseline: 0.10.0 RC
-- Canonical Reader RC: integration/reader-rc-v2
-- UI integration preview: integration/gray-fog-preview-v1
-- Design direction: docs/design/GRAY_FOG_ARCHIVE_V1.md
-- Figma source of truth: Veil Reader — Gray Fog Archive Design System v1
-- This pilot is for personal-use completion and UI polish. Public-release blockers are not product-scope blockers for this work.
 
-## Operating doctrine
-Observe → Predict → Reuse → Integrate → Automate → Build → Verify → Learn.
+Repository: hminthakil-eng/Veil-Reader
+Pilot base: integration/gray-fog-preview-v1
+Reader RC: integration/reader-rc-v2
+Design spec: docs/design/GRAY_FOG_ARCHIVE_V1.md
 
-## Hard rules
-- Reuse before building. Do not create parallel Reader architectures.
-- Do not replace Readium, PDFium, persistence, Room, navigation, or working subsystems for cleanliness.
-- Protect existing EPUB/PDF behavior.
-- No large rewrite.
-- No production/main merge.
-- No automatic PR merge.
-- No force push, git reset --hard, git clean -fdx, destructive checkout, or history rewrite.
-- Do not touch credentials, .env files, signing keys, keystores, tokens, or local secrets.
-- Do not enable a live Manga source.
-- Do not modify release-hardening infrastructure unless the assigned task explicitly requires it.
-- Every change must be reversible and narrowly scoped.
-- Separate confirmed evidence from hypotheses.
-- If a solution already exists in the repo or upstream library behavior, reuse it.
-- Keep UI implementation aligned with docs/design/GRAY_FOG_ARCHIVE_V1.md.
-- Gray Fog is atmospheric inspiration only; never copy protected Lord of Mysteries artwork, symbols, logos, character designs, or branded assets.
+Current product target is personal-use completion first. Public-release blockers are not permission to rewrite the app.
 
-## UI priorities
-1. Reader remains the quietest surface; text is the hero.
-2. One-gesture access to Reader controls.
-3. EPUB Appearance: Quick / Advanced with live preview and always-visible brightness.
-4. PDF View: layout + zoom + brightness while preserving direct pinch/double-tap.
-5. Library is retrieval-first; Settings and Import are one move away.
-6. Home/Threshold prioritizes Continue Reading; game/progression remains secondary.
-7. Respect Android font scaling, RTL, accessibility, reduced motion, and >=48dp interactive targets.
+## Non-negotiable rules
 
-## Verification
-For every code-editing task:
-1. inspect the relevant code and tests first;
-2. keep the patch small;
-3. review the diff before accepting it;
-4. run the narrowest relevant tests first;
-5. then run the standard Android gate when feasible:
-   - Windows: gradlew.bat testDebugUnitTest lintDebug assembleDebug
-   - POSIX: ./gradlew testDebugUnitTest lintDebug assembleDebug
-6. report failures as either code failures or infrastructure/allocation failures based on evidence;
-7. never claim GREEN unless commands actually executed successfully.
+- Do not merge or push to main.
+- Do not merge into integration/reader-rc-v2 without explicit human authorization.
+- Work only on the current feature/pilot branch or an isolated worktree.
+- Reuse before building.
+- Do not create a parallel Reader architecture.
+- Do not replace Readium or PDFium merely for cleanliness.
+- Do not modify persistence, Room schema, navigation architecture, Manga sources, signing, release secrets, or billing unless the assigned task explicitly requires it.
+- Do not enable live Manga sources.
+- Do not weaken tests to make a build green.
+- Do not add paid dependencies or services.
+- Do not modify .env, *.key, keystores, signing files, local.properties, or .git internals.
+- Never commit credentials, tokens, cookies, API keys, or machine-local paths.
+- Prefer small reversible edits over rewrites.
+- Separate confirmed defects from hypotheses.
+- Preserve EPUB/PDF behavior and reading-position durability.
 
-## Pilot behavior
-- Start in dry-run/plan mode for unfamiliar multi-file tasks.
-- Use diff preview before writes.
-- Do not auto-commit or auto-push during the pilot.
-- Prefer one independently reviewable slice per task.
-- If a task requires credentials, paid services, destructive actions, production scope changes, or uncertain architectural replacement, stop and report the boundary.
+## Design direction
+
+Use Gray Fog Archive from docs/design/GRAY_FOG_ARCHIVE_V1.md.
+
+Principles:
+- Text is the hero.
+- Reader canvas approaches zero UI density.
+- Gray Fog identity belongs mainly to shell/navigation surfaces.
+- Antique Brass is the primary accent.
+- Spirit Teal is contextual.
+- Moon Crimson is rare emphasis.
+- No generic purple/Amethyst presentation in new UI.
+- No glassmorphism, card soup, permanent fog particles, or ornamental UI over book text.
+- UI controls should generally keep 48dp touch targets.
+- LTR/RTL, font scaling, reduced motion, compact and expanded widths matter.
+
+## Current UI stack
+
+The preview branch combines:
+- Gray Fog theme foundation
+- Reader + EPUB Appearance polish
+- PDF View polish
+- Library polish
+- synchronized Figma/design spec
+
+Do not reopen old Reader reliability defects unless new evidence shows a regression.
+
+## Required workflow for every code task
+
+1. Inspect the exact files and relevant tests first.
+2. State the narrow implementation slice.
+3. Make the smallest reversible change.
+4. Inspect the diff.
+5. Run the relevant targeted tests.
+6. Run the build gate when the slice is complete.
+7. Report exact commands, results, changed files, and remaining uncertainty.
+
+Never claim GREEN from a workflow that failed before steps executed.
+
+## Windows build gate
+
+From the repository root:
+
+    gradlew.bat testDebugUnitTest
+    gradlew.bat lintDebug
+    gradlew.bat assembleDebug
+
+If Gradle wrapper invocation differs in the actual workspace, inspect the repository first and use the repository-provided wrapper.
+
+For Reader-sensitive changes, also run the relevant existing Reader tests. Do not invent passing device evidence.
+
+## Git discipline
+
+- Keep each slice independently reviewable.
+- Show diff before commit.
+- Do not use auto-commit during this pilot unless explicitly authorized.
+- Do not force-push.
+- Do not rewrite history.
+- If the base moved, stop at a clean checkpoint and report the exact conflict.
+
+## Pilot role
+
+Magic Code is an execution assistant, not the product authority.
+
+Product/architecture/design decisions remain governed by:
+- repository evidence
+- Gray Fog design spec
+- active PR contracts
+- explicit Eyad Studio decisions
+
+When uncertain, prefer read-only inspection over speculative edits.
