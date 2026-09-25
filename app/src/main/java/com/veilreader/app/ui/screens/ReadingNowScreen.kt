@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,7 +45,7 @@ fun ReadingNowScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.lg)
             .padding(top = VeilSpacing.xl, bottom = VeilSpacing.xxl),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xxl)
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
     ) {
         ThresholdHeader(hasCurrentBook = current != null)
 
@@ -88,13 +87,13 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
         Text(
-            text = if (hasCurrentBook) "Return to your book" else "Build your private library",
+            text = if (hasCurrentBook) "Continue reading" else "Your private library",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = if (hasCurrentBook) {
-                "Continue in one tap. Your library and the world around it can wait until you are ready."
+                "Pick up exactly where you stopped. Everything else stays quietly out of the way."
             } else {
                 "Import an EPUB or PDF. Your books, notes, and reading progress stay on this device."
             },
@@ -114,26 +113,18 @@ private fun ContinueReadingHero(
     val colors = MaterialTheme.colorScheme
     val progress = current.progress.coerceIn(0f, 1f)
     val progressPercent = (progress * 100).toInt()
-    val shape = MaterialTheme.shapes.extraLarge
+    val shape = MaterialTheme.shapes.large
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        colors.primaryContainer.copy(alpha = 0.62f),
-                        colors.surfaceVariant.copy(alpha = 0.76f),
-                        colors.surface.copy(alpha = 0.98f)
-                    )
-                )
-            )
+            .background(colors.surface.copy(alpha = 0.90f))
             .border(
                 BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
                 shape
             )
-            .padding(VeilSpacing.xl)
+            .padding(VeilSpacing.lg)
     ) {
         val wide = maxWidth >= 590.dp
         if (wide) {
@@ -174,27 +165,12 @@ private fun ContinueReadingHero(
 
 @Composable
 private fun HeroCover(current: Book) {
-    Box(contentAlignment = Alignment.Center) {
-        Box(
-            Modifier
-                .size(width = 190.dp, height = 250.dp)
-                .clip(MaterialTheme.shapes.extraLarge)
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.13f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-        BookCover(
-            title = current.title,
-            subtitle = current.author,
-            imagePath = current.coverCachePath,
-            modifier = Modifier.width(152.dp).height(222.dp)
-        )
-    }
+    BookCover(
+        title = current.title,
+        subtitle = current.author,
+        imagePath = current.coverCachePath,
+        modifier = Modifier.width(144.dp).height(210.dp)
+    )
 }
 
 @Composable
@@ -226,7 +202,7 @@ private fun HeroDetails(
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
         )
         Text(
@@ -243,12 +219,14 @@ private fun HeroDetails(
         ) {
             Button(
                 onClick = { onOpenBook(current) },
+                shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
                 Text(if (progress > 0f && !current.finished) "Continue" else "Open book")
             }
             TextButton(
                 onClick = onOpenLibrary,
+                shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
                 Text("Library")
@@ -348,9 +326,9 @@ private fun recentBookStatus(book: Book): String {
 private fun ReadingPulse(profile: ReaderProfile) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f))
+        shape = MaterialTheme.shapes.medium,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f))
     ) {
         BoxWithConstraints(
             modifier = Modifier
@@ -474,9 +452,9 @@ private fun QuestRow(quest: Quest) {
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.68f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f))
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.46f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.36f))
     ) {
         Column(
             modifier = Modifier.padding(VeilSpacing.md),
