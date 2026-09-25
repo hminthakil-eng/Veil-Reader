@@ -10,9 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
@@ -80,19 +82,19 @@ fun ArchiveScreen(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text("‹ Back")
+                Text(stringResource(R.string.common_back))
             }
             Text(
-                "HIDDEN ARCHIVE",
+                stringResource(R.string.notebook_eyebrow),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Notebook", style = MaterialTheme.typography.headlineLarge)
+            Text(stringResource(R.string.notebook_title), style = MaterialTheme.typography.headlineLarge)
             Text(
-                highlights.size.toString() + " highlights · " + bookmarks.size + " bookmarks",
+                stringResource(R.string.notebook_counts, highlights.size, bookmarks.size),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -101,7 +103,7 @@ fun ArchiveScreen(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            label = { Text("Search books, passages and notes") },
+            label = { Text(stringResource(R.string.notebook_search_label)) },
             singleLine = true,
             shape = MaterialTheme.shapes.small,
             modifier = Modifier.fillMaxWidth()
@@ -114,13 +116,13 @@ fun ArchiveScreen(
             FilterChip(
                 selected = selectedSection == NotebookSection.HIGHLIGHTS,
                 onClick = { selectedSectionName = NotebookSection.HIGHLIGHTS.name },
-                label = { Text("Highlights " + highlights.size) },
+                label = { Text(stringResource(R.string.notebook_highlights_count, highlights.size)) },
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp)
             )
             FilterChip(
                 selected = selectedSection == NotebookSection.BOOKMARKS,
                 onClick = { selectedSectionName = NotebookSection.BOOKMARKS.name },
-                label = { Text("Bookmarks " + bookmarks.size) },
+                label = { Text(stringResource(R.string.notebook_bookmarks_count, bookmarks.size)) },
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp)
             )
         }
@@ -137,11 +139,11 @@ fun ArchiveScreen(
                     if (matchingHighlights.isEmpty()) {
                         item {
                             NotebookEmptyState(
-                                title = if (highlights.isEmpty()) "No highlights yet" else "No matching highlights",
+                                title = if (highlights.isEmpty()) stringResource(R.string.notebook_no_highlights_title) else stringResource(R.string.notebook_no_matching_highlights_title),
                                 body = if (highlights.isEmpty()) {
-                                    "Select text while reading to save a passage. Notes added to highlights will gather here too."
+                                    stringResource(R.string.notebook_no_highlights_body)
                                 } else {
-                                    "Try a book title, author, quote or note."
+                                    stringResource(R.string.notebook_no_matching_highlights_body)
                                 }
                             )
                         }
@@ -165,11 +167,11 @@ fun ArchiveScreen(
                     if (matchingBookmarks.isEmpty()) {
                         item {
                             NotebookEmptyState(
-                                title = if (bookmarks.isEmpty()) "No bookmarks yet" else "No matching bookmarks",
+                                title = if (bookmarks.isEmpty()) stringResource(R.string.notebook_no_bookmarks_title) else stringResource(R.string.notebook_no_matching_bookmarks_title),
                                 body = if (bookmarks.isEmpty()) {
-                                    "Use Bookmark in the Reader chrome to keep important locations one gesture away."
+                                    stringResource(R.string.notebook_no_bookmarks_body)
                                 } else {
-                                    "Try searching by book title, author or bookmark label."
+                                    stringResource(R.string.notebook_no_matching_bookmarks_body)
                                 }
                             )
                         }
@@ -191,12 +193,12 @@ fun ArchiveScreen(
     editingHighlightId?.let { highlightId ->
         AlertDialog(
             onDismissRequest = { editingHighlightId = null; noteDraft = "" },
-            title = { Text("Note on this passage") },
+            title = { Text(stringResource(R.string.notebook_note_dialog_title)) },
             text = {
                 OutlinedTextField(
                     value = noteDraft,
                     onValueChange = { noteDraft = it },
-                    label = { Text("Your note") },
+                    label = { Text(stringResource(R.string.notebook_note_field_label)) },
                     minLines = 4,
                     maxLines = 8,
                     modifier = Modifier.fillMaxWidth()
@@ -207,18 +209,18 @@ fun ArchiveScreen(
                     onSaveNote(highlightId, noteDraft)
                     editingHighlightId = null
                     noteDraft = ""
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.common_save)) }
             },
             dismissButton = {
-                TextButton(onClick = { editingHighlightId = null; noteDraft = "" }) { Text("Cancel") }
+                TextButton(onClick = { editingHighlightId = null; noteDraft = "" }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
 
     deleteHighlightId?.let { highlightId ->
         DeleteNotebookItemDialog(
-            title = "Delete highlight?",
-            body = "This removes the saved passage and its note from your local library.",
+            title = stringResource(R.string.notebook_delete_highlight_title),
+            body = stringResource(R.string.notebook_delete_highlight_body),
             onConfirm = { onDeleteHighlight(highlightId); deleteHighlightId = null },
             onDismiss = { deleteHighlightId = null }
         )
@@ -226,8 +228,8 @@ fun ArchiveScreen(
 
     deleteBookmarkId?.let { bookmarkId ->
         DeleteNotebookItemDialog(
-            title = "Delete bookmark?",
-            body = "This removes the saved location from your local library.",
+            title = stringResource(R.string.notebook_delete_bookmark_title),
+            body = stringResource(R.string.notebook_delete_bookmark_body),
             onConfirm = { onDeleteBookmark(bookmarkId); deleteBookmarkId = null },
             onDismiss = { deleteBookmarkId = null }
         )
@@ -254,7 +256,7 @@ private fun NotebookHighlightCard(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    book?.title ?: "Unknown book",
+                    book?.title ?: stringResource(R.string.common_unknown_book),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
@@ -281,7 +283,7 @@ private fun NotebookHighlightCard(
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
-                            "NOTE",
+                            stringResource(R.string.notebook_note_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -294,14 +296,14 @@ private fun NotebookHighlightCard(
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 if (onRead != null) {
-                    TextButton(onClick = onRead, modifier = Modifier.heightIn(min = 48.dp)) { Text("Read") }
+                    TextButton(onClick = onRead, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.common_read)) }
                 }
                 TextButton(onClick = onEditNote, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text(if (highlight.note.isBlank()) "Add note" else "Edit note")
+                    Text(if (highlight.note.isBlank()) stringResource(R.string.notebook_add_note) else stringResource(R.string.notebook_edit_note))
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = onDelete, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -326,14 +328,14 @@ private fun NotebookBookmarkCard(
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             Text(
-                book?.title ?: "Unknown book",
+                book?.title ?: stringResource(R.string.common_unknown_book),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                bookmark.label.ifBlank { "Saved location" },
+                bookmark.label.ifBlank { stringResource(R.string.notebook_saved_location) },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -342,11 +344,11 @@ private fun NotebookBookmarkCard(
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 if (onRead != null) {
-                    TextButton(onClick = onRead, modifier = Modifier.heightIn(min = 48.dp)) { Text("Read") }
+                    TextButton(onClick = onRead, modifier = Modifier.heightIn(min = 48.dp)) { Text(stringResource(R.string.common_read)) }
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = onDelete, modifier = Modifier.heightIn(min = 48.dp)) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             }
         }
@@ -382,10 +384,10 @@ private fun DeleteNotebookItemDialog(
         title = { Text(title) },
         text = { Text(body) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
     )
 }
