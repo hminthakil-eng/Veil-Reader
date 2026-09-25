@@ -57,6 +57,8 @@ public final class ReadingPolicy {
             long budget = (long) Math.max(0, todayMinutes) * 6L + 6L;
             return !first && unique && dwell >= 8_000 && todayPages < budget;
         }
+        /** Re-establishes the dwell-time baseline after resume or an intentional reader reset. */
+        public void rebase(long elapsedMs) { lastSeenAt = elapsedMs >= 0 ? elapsedMs : -1; }
         public void pause() { lastSeenAt = -1; }
     }
 }
