@@ -86,6 +86,83 @@ fun VeilReveal(
 }
 
 @Composable
+fun BrassRule(
+    modifier: Modifier = Modifier,
+    strong: Boolean = false
+) {
+    Box(
+        modifier = modifier
+            .height(1.dp)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        VeilPalette.Brass.copy(alpha = if (strong) 0.82f else 0.46f),
+                        VeilPalette.Brass.copy(alpha = if (strong) 0.82f else 0.46f),
+                        Color.Transparent
+                    )
+                )
+            )
+    )
+}
+
+@Composable
+fun ArchivePanel(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val colors = MaterialTheme.colorScheme
+    val shape = RoundedCornerShape(10.dp)
+
+    Box(
+        modifier = modifier
+            .animateContentSize(tween(VeilMotion.STANDARD_MS))
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        colors.surfaceVariant.copy(alpha = 0.50f),
+                        colors.surface.copy(alpha = 0.96f),
+                        colors.background.copy(alpha = 0.88f)
+                    )
+                )
+            )
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f)),
+                shape
+            )
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Brass.copy(alpha = 0.72f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .align(Alignment.TopCenter)
+        )
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .width(2.dp)
+                .background(VeilPalette.Brass.copy(alpha = 0.22f))
+                .align(Alignment.CenterStart)
+        )
+        Column(
+            modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+            content = content
+        )
+    }
+}
+
+@Composable
 fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -112,44 +189,13 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
     }
 }
 
-/** Shared quiet panel for the world around the book. */
+/** Shared archival panel for the world around the book. */
 @Composable
 fun MysteryCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = MaterialTheme.shapes.large
-    val colors = MaterialTheme.colorScheme
-    val panelBrush = Brush.verticalGradient(
-        listOf(
-            colors.surfaceVariant.copy(alpha = 0.74f),
-            colors.surface.copy(alpha = 0.94f)
-        )
-    )
-
-    Box(
-        modifier = modifier
-            .animateContentSize(tween(VeilMotion.STANDARD_MS))
-            .clip(shape)
-            .background(panelBrush)
-            .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
-                shape
-            )
-    ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.White.copy(alpha = 0.055f))
-                .align(Alignment.TopCenter)
-        )
-        Column(
-            modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
-            content = content
-        )
-    }
+    ArchivePanel(modifier = modifier, content = content)
 }
 
 /**
@@ -223,46 +269,69 @@ fun BookCover(
 
 @Composable
 private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
-    val hue = ((title.hashCode().ushr(1) % 260) + 235).toFloat() % 360f
-    val accent = Color.hsv(hue, 0.38f, 0.58f)
-    val middle = Color.hsv((hue + 18f) % 360f, 0.46f, 0.31f)
-    val deep = Color.hsv((hue + 34f) % 360f, 0.48f, 0.13f)
+    val palettes = listOf(
+        listOf(Color(0xFF26313A), Color(0xFF12181E), Color(0xFF090C10)),
+        listOf(Color(0xFF372529), Color(0xFF1B1417), Color(0xFF0C0A0B)),
+        listOf(Color(0xFF303126), Color(0xFF191A14), Color(0xFF0B0C09)),
+        listOf(Color(0xFF242A33), Color(0xFF141820), Color(0xFF080B0F))
+    )
+    val palette = palettes[(title.hashCode().ushr(1) % palettes.size)]
 
     Box(
         Modifier
             .matchParentSize()
-            .background(Brush.linearGradient(listOf(accent, middle, deep)))
+            .background(Brush.verticalGradient(palette))
+    )
+
+    Box(
+        Modifier
+            .matchParentSize()
+            .padding(8.dp)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                RoundedCornerShape(5.dp)
+            )
+    )
+
+    Box(
+        Modifier
+            .width(2.dp)
+            .fillMaxHeight()
+            .background(VeilPalette.Brass.copy(alpha = 0.38f))
+            .align(Alignment.CenterStart)
     )
 
     Column(
         Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 13.dp, top = 15.dp, bottom = 15.dp),
+            .padding(start = 17.dp, end = 14.dp, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            "VEIL",
-            color = VeilPalette.Moon.copy(alpha = 0.72f),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 8.sp,
-                letterSpacing = 1.8.sp,
-                fontWeight = FontWeight.Bold
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(
+                "GRAYFOG ARCHIVE",
+                color = VeilPalette.Brass.copy(alpha = 0.82f),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 7.sp,
+                    letterSpacing = 1.45.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
             )
-        )
+            BrassRule(Modifier.width(42.dp))
+        }
+
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
                 title,
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 14.sp,
-                lineHeight = 17.sp,
+                color = VeilPalette.Moon,
+                style = MaterialTheme.typography.titleMedium,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
             subtitle?.takeIf { it.isNotBlank() }?.let {
                 Text(
                     it,
-                    color = Color.White.copy(alpha = 0.72f),
+                    color = VeilPalette.Mist.copy(alpha = 0.82f),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
