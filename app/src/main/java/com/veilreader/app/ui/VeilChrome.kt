@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.VeilMotion
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
 /**
@@ -75,8 +76,8 @@ fun VeilWorldBackdrop(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            colors.primary.copy(alpha = 0.12f),
-                            colors.primary.copy(alpha = 0.035f),
+                            VeilPalette.Brass.copy(alpha = 0.10f),
+                            VeilPalette.Brass.copy(alpha = 0.025f),
                             Color.Transparent
                         )
                     )
@@ -91,7 +92,7 @@ fun VeilWorldBackdrop(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            colors.secondary.copy(alpha = 0.09f),
+                            VeilPalette.Spirit.copy(alpha = 0.055f),
                             Color.Transparent
                         )
                     )
@@ -113,14 +114,14 @@ fun VeilAnimatedTabHost(
         transitionSpec = {
             val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
             (
-                fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 35)) +
-                    slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
-                        direction * (fullWidth / 14)
+                fadeIn(tween(190, delayMillis = 20)) +
+                    slideInHorizontally(tween(220)) { fullWidth ->
+                        direction * (fullWidth / 24)
                     }
                 ) togetherWith (
-                fadeOut(tween(VeilMotion.QUICK_MS)) +
-                    slideOutHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
-                        -direction * (fullWidth / 20)
+                fadeOut(tween(120)) +
+                    slideOutHorizontally(tween(180)) { fullWidth ->
+                        -direction * (fullWidth / 30)
                     }
                 ) using SizeTransform(clip = false)
         },
@@ -141,28 +142,33 @@ fun VeilBottomDock(
             .fillMaxWidth()
             .navigationBarsPadding()
             .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 16.dp,
-        tonalElevation = 1.dp,
+        shadowElevation = 8.dp,
+        tonalElevation = 0.dp,
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.68f)
+            VeilPalette.Brass.copy(alpha = 0.30f)
         )
     ) {
-        Row(
-            modifier = Modifier.padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
-            VeilTab.entries.forEach { tab ->
-                VeilDockItem(
-                    tab = tab,
-                    selected = selected == tab,
-                    onClick = { onSelect(tab) },
-                    modifier = Modifier.weight(1f)
-                )
+            GrayfogRule(Modifier.fillMaxWidth())
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                VeilTab.entries.forEach { tab ->
+                    VeilDockItem(
+                        tab = tab,
+                        selected = selected == tab,
+                        onClick = { onSelect(tab) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }
@@ -176,17 +182,17 @@ private fun VeilDockItem(
     modifier: Modifier = Modifier
 ) {
     val scale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.94f,
+        targetValue = if (selected) 1f else 0.97f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
         label = "dock-scale"
     )
     val background = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f)
+        VeilPalette.DeepBrass.copy(alpha = 0.48f)
     } else {
         Color.Transparent
     }
     val foreground = if (selected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
+        VeilPalette.Brass
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -194,7 +200,7 @@ private fun VeilDockItem(
     Column(
         modifier = modifier
             .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(21.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(background)
             .clickable(role = Role.Tab, onClick = onClick)
             .padding(horizontal = 2.dp, vertical = 7.dp)
@@ -208,12 +214,21 @@ private fun VeilDockItem(
             tab.label,
             style = MaterialTheme.typography.labelMedium.copy(
                 fontSize = 10.sp,
-                letterSpacing = 0.1.sp,
+                letterSpacing = 0.25.sp,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
             ),
             color = foreground,
             maxLines = 1
         )
+        if (selected) {
+            Spacer(Modifier.height(3.dp))
+            Box(
+                Modifier
+                    .width(28.dp)
+                    .height(1.dp)
+                    .background(VeilPalette.Brass.copy(alpha = 0.86f))
+            )
+        }
     }
 }
 
@@ -226,14 +241,14 @@ fun VeilNavigationRail(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(104.dp)
+            .width(96.dp)
             .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
-        shape = RoundedCornerShape(30.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-        shadowElevation = 12.dp,
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+        shadowElevation = 8.dp,
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.64f)
+            VeilPalette.Brass.copy(alpha = 0.30f)
         )
     ) {
         Column(
@@ -249,17 +264,17 @@ fun VeilNavigationRail(
                 VeilTab.entries.forEach { tab ->
                     val isSelected = selected == tab
                     val foreground = if (isSelected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
+                        VeilPalette.Brass
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
                     Column(
                         modifier = Modifier
                             .width(80.dp)
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(8.dp))
                             .background(
                                 if (isSelected) {
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.80f)
+                                    VeilPalette.DeepBrass.copy(alpha = 0.48f)
                                 } else {
                                     Color.Transparent
                                 }
@@ -290,24 +305,48 @@ private fun VeilBrandMark() {
     Box(
         modifier = Modifier
             .size(52.dp)
-            .clip(RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(8.dp))
             .background(
-                Brush.linearGradient(
+                Brush.verticalGradient(
                     listOf(
-                        MaterialTheme.colorScheme.primaryContainer,
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.88f)
+                        MaterialTheme.colorScheme.surfaceVariant,
+                        MaterialTheme.colorScheme.surface
                     )
                 )
-            ),
+            )
+            .background(Color.Transparent),
         contentAlignment = Alignment.Center
     ) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .padding(2.dp)
+                .background(Color.Transparent)
+        )
         Text(
             "V",
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Black,
-            color = MaterialTheme.colorScheme.onPrimaryContainer
+            color = VeilPalette.Brass
         )
     }
+}
+
+@Composable
+private fun GrayfogRule(modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .height(1.dp)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        VeilPalette.Brass.copy(alpha = 0.58f),
+                        Color.Transparent
+                    )
+                )
+            )
+    )
 }
 
 @Composable
