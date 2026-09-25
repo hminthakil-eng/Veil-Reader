@@ -55,7 +55,7 @@ workflows:
 
           echo "Resolved platform package: $PLATFORM_37"
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --channel=3             "$PLATFORM_37"             "build-tools;37.0.0"             "platform-tools"             "emulator"             "system-images;android-35;default;arm64-v8a"
+          "$SDKMANAGER" --channel=3             "$PLATFORM_37"             "build-tools;37.0.0"             "platform-tools"             "emulator"
 
           echo "=== Required SDK packages installed ==="
           "$SDKMANAGER" --list_installed | grep -E 'platforms;android-37|build-tools;37\.0\.0|system-images;android-35;default;arm64-v8a|platform-tools' || true
@@ -86,99 +86,35 @@ workflows:
           python3 tools/test_performance_delta.py
           python3 tools/test_performance_dashboard.py
 
-      - name: Generate Baseline and Startup Profile on connected ARM64 emulator
+      - name: Generate Baseline and Startup Profile on Firebase Test Lab
         script: |
           set -euo pipefail
           cd "$CM_BUILD_DIR"
 
-          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
-          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
+          if [ -z "${FIREBASE_TESTLAB_SERVICE_ACCOUNT_JSON:-}" ]; then
+            echo "FIREBASE_TESTLAB_SERVICE_ACCOUNT_JSON is not configured in Codemagic." >&2
+            exit 2
+          fi
 
-          AVD_NAME="VeilProfile_API35"
-          echo "no" | avdmanager create avd --force             --name "$AVD_NAME"             --package "system-images;android-35;default;arm64-v8a"             --device "pixel_6"
-
-          adb kill-server || true
-          adb start-server
-
-          nohup emulator             -avd "$AVD_NAME"             -no-window             -no-audio             -no-boot-anim             -no-snapshot             -gpu swiftshader_indirect             -memory 2048             > "$CM_BUILD_DIR/emulator-release-profile.log" 2>&1 &
-          EMULATOR_PID=$!
-
-          cleanup() {
-            adb emu kill >/dev/null 2>&1 || true
-            kill "$EMULATOR_PID" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-
-          adb wait-for-device
-          deadline=$((SECONDS + 360))
-          while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
-            if [ "$SECONDS" -ge "$deadline" ]; then
-              echo "Emulator boot timed out" >&2
-              adb devices -l || true
-              tail -250 "$CM_BUILD_DIR/emulator-release-profile.log" || true
-              exit 1
-            fi
-            sleep 2
-          done
-
-          adb shell settings put global window_animation_scale 0
-          adb shell settings put global transition_animation_scale 0
-          adb shell settings put global animator_duration_scale 0
-          adb devices -l
-
-          echo "=== Connected device before profile generation ==="
-          adb devices -l
-          adb shell getprop ro.product.cpu.abi || true
-          adb shell getprop ro.build.version.sdk || true
+          mkdir -p "$CM_BUILD_DIR/.secrets"
+          CREDENTIALS="$CM_BUILD_DIR/.secrets/firebase-testlab.json"
+          printf '%s' "$FIREBASE_TESTLAB_SERVICE_ACCOUNT_JSON" > "$CREDENTIALS"
+          chmod 600 "$CREDENTIALS"
+          export FIREBASE_TESTLAB_CREDENTIALS="$CREDENTIALS"
 
           python3 - <<'PY'
-          import os, subprocess, sys, time
-          log_path = os.path.join(os.environ["CM_BUILD_DIR"], "profile-generation.log")
-          cmd = [
-              "./gradlew", ":app:generateBaselineProfile",
-              "-Pveil.profile.connected=true",
-              "--stacktrace", "--info",
-              "--no-daemon",
-          ]
-          started = time.time()
-          with open(log_path, "w", buffering=1) as log:
-              p = subprocess.Popen(
-                  cmd,
-                  stdout=subprocess.PIPE,
-                  stderr=subprocess.STDOUT,
-                  text=True,
-                  bufsize=1,
-              )
-              try:
-                  for line in iter(p.stdout.readline, ""):
-                      sys.stdout.write(line)
-                      log.write(line)
-                      if time.time() - started > 900:
-                          p.kill()
-                          raise TimeoutError("Baseline Profile generation exceeded 15 minutes")
-                  rc = p.wait(timeout=10)
-              except TimeoutError as e:
-                  print(str(e), file=sys.stderr)
-                  try:
-                      p.kill()
-                  except Exception:
-                      pass
-                  sys.exit(124)
-          sys.exit(rc)
+          import json, os
+          p=os.environ["FIREBASE_TESTLAB_CREDENTIALS"]
+          with open(p, "r", encoding="utf-8") as f:
+              data=json.load(f)
+          for key in ("type","project_id","client_email","private_key"):
+              if not data.get(key):
+                  raise SystemExit(f"Missing service-account field: {key}")
+          print("Firebase service account JSON: valid")
+          print("Firebase project:", data["project_id"])
           PY
-          GRADLE_STATUS=$?
 
-          if [ "$GRADLE_STATUS" -ne 0 ]; then
-            echo "=== ADB diagnostics ==="
-            adb devices -l || true
-            adb shell getprop sys.boot_completed || true
-            adb shell dumpsys activity activities | tail -120 || true
-            echo "=== Emulator log tail ==="
-            tail -250 "$CM_BUILD_DIR/emulator-release-profile.log" || true
-            echo "=== Profile generation log tail ==="
-            tail -250 "$CM_BUILD_DIR/profile-generation.log" || true
-            exit "$GRADLE_STATUS"
-          fi
+          ./gradlew :app:generateBaselineProfile             -PveilUseFirebaseTestLab=true             -PfirebaseTestLabCredentials="$FIREBASE_TESTLAB_CREDENTIALS"             --stacktrace --info --no-daemon 2>&1 | tee "$CM_BUILD_DIR/profile-generation.log"
 
           BASELINE="$(find app/src -type f -path '*/generated/baselineProfiles/baseline-prof.txt' -print -quit)"
           STARTUP="$(find app/src -type f -path '*/generated/baselineProfiles/startup-prof.txt' -print -quit)"
@@ -240,7 +176,6 @@ workflows:
 
     artifacts:
       - profile-generation.log
-      - emulator-release-profile.log
       - release-evidence.txt
       - app/src/**/generated/baselineProfiles/*.txt
       - app/build/outputs/apk/release/*.apk
