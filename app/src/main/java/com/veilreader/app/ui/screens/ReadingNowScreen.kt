@@ -40,14 +40,19 @@ fun ReadingNowScreen(
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg)
-            .padding(top = VeilSpacing.xl, bottom = VeilSpacing.xxl),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xxl)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 960.dp)
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VeilSpacing.lg)
+                .padding(top = VeilSpacing.xl, bottom = VeilSpacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xxl)
+        ) {
         ThresholdHeader(hasCurrentBook = current != null)
 
         if (current == null) {
@@ -77,6 +82,7 @@ fun ReadingNowScreen(
 
         if (quests.isNotEmpty()) {
             WhispersSection(quests)
+        }
         }
     }
 }
