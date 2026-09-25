@@ -18,6 +18,7 @@ import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
 private enum class NotebookSection { HIGHLIGHTS, BOOKMARKS }
@@ -82,39 +83,48 @@ fun ArchiveScreen(
                 .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
         ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) {
-                Text(stringResource(R.string.common_back))
+        VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    TextButton(onClick = onClose, modifier = Modifier.heightIn(min = 48.dp)) {
+                        Text(stringResource(R.string.common_back))
+                    }
+                    Text(
+                        stringResource(R.string.notebook_eyebrow),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass
+                    )
+                }
+
+                Text(
+                    stringResource(R.string.notebook_title),
+                    style = MaterialTheme.typography.headlineLarge
+                )
+                BrassRule(Modifier.width(88.dp), strong = true)
+                Text(
+                    stringResource(R.string.notebook_counts, highlights.size, bookmarks.size),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            Text(
-                stringResource(R.string.notebook_eyebrow),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(stringResource(R.string.notebook_title), style = MaterialTheme.typography.headlineLarge)
-            Text(
-                stringResource(R.string.notebook_counts, highlights.size, bookmarks.size),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
+        VeilReveal(delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
             label = { Text(stringResource(R.string.notebook_search_label)) },
             singleLine = true,
-            shape = MaterialTheme.shapes.small,
+            shape = MaterialTheme.shapes.extraSmall,
             modifier = Modifier.fillMaxWidth()
         )
+        }
 
+        VeilReveal(delayMillis = 150, modifier = Modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
@@ -123,17 +133,40 @@ fun ArchiveScreen(
                 selected = selectedSection == NotebookSection.HIGHLIGHTS,
                 onClick = { selectedSectionName = NotebookSection.HIGHLIGHTS.name },
                 label = { Text(stringResource(R.string.notebook_highlights_count, highlights.size)) },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedSection == NotebookSection.HIGHLIGHTS,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
+                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.70f)
+                ),
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp)
             )
             FilterChip(
                 selected = selectedSection == NotebookSection.BOOKMARKS,
                 onClick = { selectedSectionName = NotebookSection.BOOKMARKS.name },
                 label = { Text(stringResource(R.string.notebook_bookmarks_count, bookmarks.size)) },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedSection == NotebookSection.BOOKMARKS,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
+                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.70f)
+                ),
                 modifier = Modifier.weight(1f).heightIn(min = 48.dp)
             )
         }
+        }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+        BrassRule(Modifier.fillMaxWidth())
 
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -251,21 +284,12 @@ private fun NotebookHighlightCard(
     onEditNote: () -> Unit,
     onDelete: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-    ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-        ) {
+    ArchivePanel(modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     book?.title ?: stringResource(R.string.common_unknown_book),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = VeilPalette.Brass,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -292,7 +316,7 @@ private fun NotebookHighlightCard(
                         Text(
                             stringResource(R.string.notebook_note_label),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.secondary
+                            color = VeilPalette.Brass
                         )
                         Text(highlight.note, style = MaterialTheme.typography.bodyMedium)
                     }
@@ -313,7 +337,6 @@ private fun NotebookHighlightCard(
                     Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             }
-        }
     }
 }
 
@@ -324,20 +347,11 @@ private fun NotebookBookmarkCard(
     onRead: (() -> Unit)?,
     onDelete: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.58f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.44f))
-    ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-        ) {
+    ArchivePanel(modifier = Modifier.fillMaxWidth()) {
             Text(
                 book?.title ?: stringResource(R.string.common_unknown_book),
                 style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary,
+                color = VeilPalette.Brass,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -358,24 +372,14 @@ private fun NotebookBookmarkCard(
                     Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             }
-        }
     }
 }
 
 @Composable
 private fun NotebookEmptyState(title: String, body: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.24f)
-    ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-        ) {
+    ArchivePanel(modifier = Modifier.fillMaxWidth()) {
             Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
             Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
     }
 }
 
