@@ -358,7 +358,8 @@ fun VeilApp(
                 onImportUri = ::importBook,
                 onOpenBook = { requestOpenBook(it) },
                 onFavorite = library::toggleFavorite,
-                onEditMetadata = library::editMetadata
+                onEditMetadata = library::editMetadata,
+                onOpenSettings = routeViewModel::openSettings
             )
 
             VeilTab.CASTLE -> CastleScreen(
