@@ -55,10 +55,10 @@ workflows:
 
           echo "Resolved platform package: $PLATFORM_37"
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --channel=3             "$PLATFORM_37"             "build-tools;37.0.0"             "platform-tools"             "emulator"             "system-images;android-35;google_apis;arm64-v8a"
+          "$SDKMANAGER" --channel=3             "$PLATFORM_37"             "build-tools;37.0.0"             "platform-tools"             "emulator"             "system-images;android-35;default;arm64-v8a"
 
           echo "=== Required SDK packages installed ==="
-          "$SDKMANAGER" --list_installed | grep -E 'platforms;android-37|build-tools;37\.0\.0|system-images;android-35;google_apis;arm64-v8a|platform-tools' || true
+          "$SDKMANAGER" --list_installed | grep -E 'platforms;android-37|build-tools;37\.0\.0|system-images;android-35;default;arm64-v8a|platform-tools' || true
 
           if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
             GRADLE_VERSION="9.6.0"
@@ -95,7 +95,7 @@ workflows:
           export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
 
           AVD_NAME="VeilProfile_API35"
-          echo "no" | avdmanager create avd --force             --name "$AVD_NAME"             --package "system-images;android-35;google_apis;arm64-v8a"             --device "pixel_6"
+          echo "no" | avdmanager create avd --force             --name "$AVD_NAME"             --package "system-images;android-35;default;arm64-v8a"             --device "pixel_6"
 
           adb kill-server || true
           adb start-server
