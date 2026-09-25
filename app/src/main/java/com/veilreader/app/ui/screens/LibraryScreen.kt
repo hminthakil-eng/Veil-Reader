@@ -341,7 +341,10 @@ fun LibraryScreen(
                 onOpenBook(book)
             },
             onFavorite = { onFavorite(book.id) },
-            onEditMetadata = { beginMetadataEdit(book) }
+            onEditMetadata = {
+                detailBookId = null
+                beginMetadataEdit(book)
+            }
         )
     }
 
