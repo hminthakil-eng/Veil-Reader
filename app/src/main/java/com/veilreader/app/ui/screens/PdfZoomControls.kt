@@ -74,49 +74,52 @@ internal fun PdfZoomControls(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            "PDF zoom",
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            "PDF view",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.SemiBold
         )
-        
+
         Text(
-            "Pinch or double-tap the page at any time. These controls give you a reliable manual fallback.",
+            "Keep layout, zoom, and screen brightness close to the page. Pinch and double-tap still work directly on the PDF.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
 
+        Text("Layout", fontWeight = FontWeight.SemiBold)
         Row(
             Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Column(
-                Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text(
-                    if (appearance.scroll) {
-                        "Vertical flow · pages fit the screen width."
-                    } else {
-                        "Paginated · pages snap horizontally inside the viewport."
-                    },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            Switch(
-                checked = appearance.scroll,
-                onCheckedChange = { enabled ->
-                    onAppearanceChange(appearance.copy(scroll = enabled))
-                },
-                modifier = Modifier.semantics {
-                    contentDescription = "PDF continuous scroll"
-                }
+            FilterChip(
+                selected = !appearance.scroll,
+                onClick = { onAppearanceChange(appearance.copy(scroll = false)) },
+                label = { Text("Paginated") },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .semantics { contentDescription = "PDF paginated layout" }
+            )
+            FilterChip(
+                selected = appearance.scroll,
+                onClick = { onAppearanceChange(appearance.copy(scroll = true)) },
+                label = { Text("Continuous") },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .semantics { contentDescription = "PDF continuous scroll" }
             )
         }
+        Text(
+            if (appearance.scroll) {
+                "Vertical flow · pages fit the screen width."
+            } else {
+                "Paginated · pages snap horizontally inside the viewport."
+            },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall
+        )
 
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
 
         if (view == null) {
             Text(
@@ -139,7 +142,10 @@ internal fun PdfZoomControls(
                     view.zoomTo(requested)
                     zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                 },
-                valueRange = minZoom..maxZoom
+                valueRange = minZoom..maxZoom,
+                modifier = Modifier.semantics {
+                    contentDescription = "PDF zoom"
+                }
             )
 
             Row(
@@ -157,13 +163,18 @@ internal fun PdfZoomControls(
                         )
                         view.zoomWithAnimation(requested)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics { contentDescription = "Zoom out" }
                 ) { Text("−") }
                 OutlinedButton(
                     onClick = {
                         view.resetZoomWithAnimation()
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 ) { Text("Reset") }
                 OutlinedButton(
                     onClick = {
@@ -175,7 +186,10 @@ internal fun PdfZoomControls(
                         )
                         view.zoomWithAnimation(requested)
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics { contentDescription = "Zoom in" }
                 ) { Text("+") }
             }
 
@@ -188,7 +202,15 @@ internal fun PdfZoomControls(
             ) { Text("Fit page width") }
         }
 
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+
+        ReaderBrightnessControls(
+            appearance = appearance,
+            onChange = onAppearanceChange
+        )
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+
         Button(
             onClick = onDone,
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
