@@ -40,6 +40,7 @@ import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
 private data class PathPresentation(
@@ -76,7 +77,7 @@ fun PathScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
     ) {
         ScreenHeader(
-            eyebrow = "Path",
+            eyebrow = "THE ORACLE PATH",
             title = profile.path.name,
             subtitle = "${profile.path.epithet} · ${profile.rankName}"
         )
@@ -144,7 +145,7 @@ fun PathScreen(
 private fun PathIdentityPanel(profile: ReaderProfile) {
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
-    val shape = MaterialTheme.shapes.extraLarge
+    val shape = MaterialTheme.shapes.large
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
@@ -160,14 +161,14 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             .background(
                 Brush.linearGradient(
                     listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.66f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.84f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+                        VeilPalette.DeepBrass.copy(alpha = 0.50f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.99f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.70f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
                 shape
             )
             .padding(VeilSpacing.xl)
@@ -181,16 +182,16 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
                 Modifier
                     .size(94.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f))
+                    .background(VeilPalette.DeepBrass.copy(alpha = 0.50f))
                     .border(
-                        BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.48f)),
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
                         CircleShape
                     ),
                 contentAlignment = Alignment.Center
             ) {
                 PathIcon(
                     pathId = profile.path.id,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = VeilPalette.Brass,
                     modifier = Modifier.size(48.dp)
                 )
             }
@@ -237,7 +238,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             LinearProgressIndicator(
                 progress = { xpProgress },
                 modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-                color = MaterialTheme.colorScheme.primary,
+                color = VeilPalette.Brass,
                 trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.36f)
             )
         }
