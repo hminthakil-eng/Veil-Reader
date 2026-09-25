@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
 import kotlin.math.cos
@@ -196,8 +197,8 @@ fun LibraryScreen(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
-            label = { Text("Search library") },
-            placeholder = { Text("Title, author, series, or collection") },
+            label = { Text("Search the archive") },
+            placeholder = { Text("Title, author, series, collection, or language") },
             leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
@@ -654,8 +655,8 @@ private fun LibraryHeader(
         if (compact) {
             Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
                 ScreenHeader(
-                    eyebrow = "Library",
-                    title = "Your books",
+                    eyebrow = "GRAYFOG ARCHIVE",
+                    title = "The Grand Library",
                     subtitle = subtitle
                 )
                 Row(
@@ -687,8 +688,8 @@ private fun LibraryHeader(
             ) {
                 Box(Modifier.weight(1f)) {
                     ScreenHeader(
-                        eyebrow = "Library",
-                        title = "Your books",
+                        eyebrow = "GRAYFOG ARCHIVE",
+                        title = "The Grand Library",
                         subtitle = subtitle
                     )
                 }
@@ -720,21 +721,20 @@ private fun ArchiveOverview(
     collections: Int,
     modifier: Modifier = Modifier
 ) {
-    val shape = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.medium
     Box(
         modifier
             .fillMaxWidth()
             .clip(shape)
             .background(
-                Brush.linearGradient(
+                Brush.verticalGradient(
                     listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.54f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.74f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.46f),
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                     )
                 )
             )
-            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.66f)), shape)
+            .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f)), shape)
             .padding(VeilSpacing.lg)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
@@ -750,8 +750,8 @@ private fun ArchiveOverview(
                         .background(MaterialTheme.colorScheme.tertiary)
                 )
                 Column(Modifier.weight(1f)) {
-                    Text("LIBRARY READY", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
-                    Text("Your collection stays private and available offline.", style = MaterialTheme.typography.bodyMedium)
+                    Text("ARCHIVE STATUS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+                    Text("Catalogued locally. Private, offline, and ready to reopen.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
             BoxWithConstraints(Modifier.fillMaxWidth()) {
