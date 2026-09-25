@@ -57,7 +57,8 @@ fun LibraryScreen(
     onImportUri: (Uri) -> Unit,
     onOpenBook: (Book) -> Unit,
     onFavorite: (String) -> Unit,
-    onEditMetadata: (BookMetadataUpdate) -> Unit
+    onEditMetadata: (BookMetadataUpdate) -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
@@ -142,7 +143,8 @@ fun LibraryScreen(
         LibraryHeader(
             bookCount = books.size,
             isImporting = isImporting,
-            onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) }
+            onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+            onOpenSettings = onOpenSettings
         )
 
         if (books.isNotEmpty()) {
@@ -396,7 +398,8 @@ fun LibraryScreen(
 private fun LibraryHeader(
     bookCount: Int,
     isImporting: Boolean,
-    onImport: () -> Unit
+    onImport: () -> Unit,
+    onOpenSettings: () -> Unit
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val compact = maxWidth < 520.dp
@@ -413,12 +416,23 @@ private fun LibraryHeader(
                     title = "Your books",
                     subtitle = subtitle
                 )
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
-                    Text(if (isImporting) "Importing…" else "Import")
+                    OutlinedButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    ) {
+                        Text("Settings")
+                    }
+                    Button(
+                        onClick = onImport,
+                        enabled = !isImporting,
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    ) {
+                        Text(if (isImporting) "Importing…" else "Import")
+                    }
                 }
             }
         } else {
@@ -433,6 +447,12 @@ private fun LibraryHeader(
                         title = "Your books",
                         subtitle = subtitle
                     )
+                }
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text("Settings")
                 }
                 Button(
                     onClick = onImport,
