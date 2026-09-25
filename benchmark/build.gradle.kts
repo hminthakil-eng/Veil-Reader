@@ -1,7 +1,15 @@
 plugins {
     id("com.android.test")
     id("androidx.baselineprofile")
+    id("com.google.firebase.testlab")
 }
+
+val useFirebaseTestLab = providers.gradleProperty("veilUseFirebaseTestLab")
+    .map(String::toBoolean)
+    .orElse(false)
+
+val firebaseTestLabCredentials = providers.gradleProperty("firebaseTestLabCredentials")
+    .orElse(providers.environmentVariable("FIREBASE_TESTLAB_CREDENTIALS"))
 
 android {
     namespace = "com.veilreader.benchmark"
@@ -32,11 +40,37 @@ android {
     }
 }
 
+firebaseTestLab {
+    if (firebaseTestLabCredentials.isPresent) {
+        serviceAccountCredentials.set(file(firebaseTestLabCredentials.get()))
+    }
+
+    managedDevices {
+        create("ftlDeviceShiba34") {
+            device = "shiba"
+            apiLevel = 34
+        }
+    }
+
+    testOptions {
+        results {
+            directoriesToPull.addAll(
+                "/storage/emulated/0/Android/media/${android.namespace}"
+            )
+        }
+    }
+}
+
 baselineProfile {
-    // Windows CI starts one owned emulator; hosted generation keeps its GMD.
-    val connected = providers.gradleProperty("veil.profile.connected").orNull == "true"
-    if (!connected) managedDevices += "pixel6Api35"
-    useConnectedDevices = connected
+    if (useFirebaseTestLab.get()) {
+        managedDevices += "ftlDeviceShiba34"
+        useConnectedDevices = false
+    } else {
+        // Local/hosted fallback path.
+        val connected = providers.gradleProperty("veil.profile.connected").orNull == "true"
+        if (!connected) managedDevices += "pixel6Api35"
+        useConnectedDevices = connected
+    }
 }
 
 dependencies {
