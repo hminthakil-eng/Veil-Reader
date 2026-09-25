@@ -455,10 +455,10 @@ private fun BookDetailSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.surface,
+        containerColor = MaterialTheme.colorScheme.background,
         dragHandle = {
             BottomSheetDefaults.DragHandle(
-                color = MaterialTheme.colorScheme.outlineVariant
+                color = VeilPalette.Brass.copy(alpha = 0.58f)
             )
         }
     ) {
@@ -492,8 +492,8 @@ private fun BookDetailSheet(
                 ) {
                     Text(
                         if (book.isImported) stringResource(R.string.book_detail_local_publication_format, book.format.name) else stringResource(R.string.book_detail_sample_entry),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.15.sp),
+                        color = VeilPalette.Brass
                     )
                     Text(
                         book.title,
@@ -515,7 +515,7 @@ private fun BookDetailSheet(
                                 book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
                             },
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = VeilPalette.Brass,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -523,7 +523,9 @@ private fun BookDetailSheet(
                 }
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+            BrassRule(Modifier.fillMaxWidth())
+
+            ArchivePanel(modifier = Modifier.fillMaxWidth()) {
                 LinearProgressIndicator(
                     progress = { progress },
                     modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
@@ -558,7 +560,7 @@ private fun BookDetailSheet(
             Button(
                 onClick = onOpen,
                 enabled = book.isImported,
-                shape = MaterialTheme.shapes.small,
+                shape = MaterialTheme.shapes.extraSmall,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
                 Text(if (book.isImported) primaryAction else stringResource(R.string.book_detail_publication_unavailable))
@@ -570,14 +572,14 @@ private fun BookDetailSheet(
             ) {
                 OutlinedButton(
                     onClick = onFavorite,
-                    shape = MaterialTheme.shapes.small,
+                    shape = MaterialTheme.shapes.extraSmall,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
                     Text(if (book.favorite) stringResource(R.string.book_detail_favorited) else stringResource(R.string.book_detail_favorite))
                 }
                 OutlinedButton(
                     onClick = onEditMetadata,
-                    shape = MaterialTheme.shapes.small,
+                    shape = MaterialTheme.shapes.extraSmall,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
                     Text(stringResource(R.string.book_detail_edit_details))
@@ -588,8 +590,12 @@ private fun BookDetailSheet(
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
             )
 
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-                Text(stringResource(R.string.book_detail_publication_details), style = MaterialTheme.typography.titleLarge)
+            ArchivePanel(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    stringResource(R.string.book_detail_publication_details),
+                    style = MaterialTheme.typography.titleLarge
+                )
+                BrassRule(Modifier.width(72.dp))
                 BookDetailFact(stringResource(R.string.book_detail_format), book.format.name)
                 book.language?.takeIf { it.isNotBlank() }?.let {
                     BookDetailFact(stringResource(R.string.book_detail_language), it)
@@ -615,11 +621,11 @@ private fun BookDetailSheet(
                     ) {
                         book.allCollections.forEach { collection ->
                             Surface(
-                                shape = MaterialTheme.shapes.small,
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
                                 border = BorderStroke(
                                     1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                    VeilPalette.Brass.copy(alpha = 0.34f)
                                 )
                             ) {
                                 Text(
