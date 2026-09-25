@@ -126,13 +126,56 @@ workflows:
           adb shell settings put global animator_duration_scale 0
           adb devices -l
 
-          set +e
-          ./gradlew :app:generateBaselineProfile             -Pveil.profile.connected=true             --stacktrace --info 2>&1 | tee "$CM_BUILD_DIR/profile-generation.log"
-          GRADLE_STATUS=${PIPESTATUS[0]}
-          set -e
+          echo "=== Connected device before profile generation ==="
+          adb devices -l
+          adb shell getprop ro.product.cpu.abi || true
+          adb shell getprop ro.build.version.sdk || true
+
+          python3 - <<'PY'
+          import os, subprocess, sys, time
+          log_path = os.path.join(os.environ["CM_BUILD_DIR"], "profile-generation.log")
+          cmd = [
+              "./gradlew", ":app:generateBaselineProfile",
+              "-Pveil.profile.connected=true",
+              "--stacktrace", "--info",
+              "--no-daemon",
+          ]
+          started = time.time()
+          with open(log_path, "w", buffering=1) as log:
+              p = subprocess.Popen(
+                  cmd,
+                  stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT,
+                  text=True,
+                  bufsize=1,
+              )
+              try:
+                  for line in iter(p.stdout.readline, ""):
+                      sys.stdout.write(line)
+                      log.write(line)
+                      if time.time() - started > 900:
+                          p.kill()
+                          raise TimeoutError("Baseline Profile generation exceeded 15 minutes")
+                  rc = p.wait(timeout=10)
+              except TimeoutError as e:
+                  print(str(e), file=sys.stderr)
+                  try:
+                      p.kill()
+                  except Exception:
+                      pass
+                  sys.exit(124)
+          sys.exit(rc)
+          PY
+          GRADLE_STATUS=$?
 
           if [ "$GRADLE_STATUS" -ne 0 ]; then
-            echo "Baseline Profile generation failed with status $GRADLE_STATUS" >&2
+            echo "=== ADB diagnostics ==="
+            adb devices -l || true
+            adb shell getprop sys.boot_completed || true
+            adb shell dumpsys activity activities | tail -120 || true
+            echo "=== Emulator log tail ==="
+            tail -250 "$CM_BUILD_DIR/emulator-release-profile.log" || true
+            echo "=== Profile generation log tail ==="
             tail -250 "$CM_BUILD_DIR/profile-generation.log" || true
             exit "$GRADLE_STATUS"
           fi
