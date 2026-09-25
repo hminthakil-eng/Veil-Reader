@@ -1,6 +1,6 @@
-import android.view.HapticFeedbackConstants
 package com.veilreader.app.ui.screens
 
+import android.view.HapticFeedbackConstants
 import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
