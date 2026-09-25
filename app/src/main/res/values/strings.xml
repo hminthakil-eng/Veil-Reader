@@ -55,4 +55,15 @@
     <string name="book_detail_private_local_copy">Private local copy</string>
     <string name="book_detail_sample_metadata_only">Sample metadata only</string>
     <string name="book_detail_collections">Collections</string>
+
+    <string name="book_metadata_dialog_title">Book details</string>
+    <string name="book_metadata_title">Title</string>
+    <string name="book_metadata_author">Author</string>
+    <string name="book_metadata_collections">Collections</string>
+    <string name="book_metadata_collections_hint">Separate multiple collections with commas.</string>
+    <string name="book_metadata_series">Series (optional)</string>
+    <string name="book_metadata_series_number">Series number (optional)</string>
+    <string name="book_metadata_series_number_error">Use a number such as 1 or 2.5.</string>
+    <string name="book_metadata_language">Language tag (optional)</string>
+    <string name="book_metadata_language_hint">BCP-47, for example en, fa, tr, or en-US.</string>
 </resources>
