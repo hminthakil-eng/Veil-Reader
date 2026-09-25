@@ -474,7 +474,7 @@ private fun BookDetailSheet(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        book.author.ifBlank { stringResource(R.string.common_unknown_author) },
+                        if (book.author.isBlank()) stringResource(R.string.common_unknown_author) else book.author,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
