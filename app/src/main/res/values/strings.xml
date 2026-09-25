@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Veil Reader</string>
+    <string name="common_back">Back</string>
+    <string name="common_read">Read</string>
+    <string name="common_delete">Delete</string>
+    <string name="common_save">Save</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_unknown_book">Unknown book</string>
+    <string name="common_unknown_author">Unknown author</string>
+
+    <string name="notebook_eyebrow">HIDDEN ARCHIVE</string>
+    <string name="notebook_title">Notebook</string>
+    <string name="notebook_counts">%1$d highlights · %2$d bookmarks</string>
+    <string name="notebook_search_label">Search books, passages and notes</string>
+    <string name="notebook_highlights_count">Highlights %1$d</string>
+    <string name="notebook_bookmarks_count">Bookmarks %1$d</string>
+    <string name="notebook_no_highlights_title">No highlights yet</string>
+    <string name="notebook_no_matching_highlights_title">No matching highlights</string>
+    <string name="notebook_no_highlights_body">Select text while reading to save a passage. Notes added to highlights will gather here too.</string>
+    <string name="notebook_no_matching_highlights_body">Try a book title, author, quote or note.</string>
+    <string name="notebook_no_bookmarks_title">No bookmarks yet</string>
+    <string name="notebook_no_matching_bookmarks_title">No matching bookmarks</string>
+    <string name="notebook_no_bookmarks_body">Use Bookmark in the Reader chrome to keep important locations one gesture away.</string>
+    <string name="notebook_no_matching_bookmarks_body">Try searching by book title, author or bookmark label.</string>
+    <string name="notebook_note_label">NOTE</string>
+    <string name="notebook_add_note">Add note</string>
+    <string name="notebook_edit_note">Edit note</string>
+    <string name="notebook_note_dialog_title">Note on this passage</string>
+    <string name="notebook_note_field_label">Your note</string>
+    <string name="notebook_delete_highlight_title">Delete highlight?</string>
+    <string name="notebook_delete_highlight_body">This removes the saved passage and its note from your local library.</string>
+    <string name="notebook_delete_bookmark_title">Delete bookmark?</string>
+    <string name="notebook_delete_bookmark_body">This removes the saved location from your local library.</string>
+    <string name="notebook_saved_location">Saved location</string>
+
+    <string name="book_detail_local_publication_format">LOCAL PUBLICATION · %1$s</string>
+    <string name="book_detail_sample_entry">SAMPLE ENTRY</string>
+    <string name="book_detail_finished">Finished</string>
+    <string name="book_detail_percent_read">%1$d%% read</string>
+    <string name="book_detail_not_started">Not started</string>
+    <string name="book_detail_read_again">Read again</string>
+    <string name="book_detail_continue_reading">Continue reading</string>
+    <string name="book_detail_open_book">Open book</string>
+    <string name="book_detail_publication_unavailable">Publication file unavailable</string>
+    <string name="book_detail_favorited">Favorited</string>
+    <string name="book_detail_favorite">Favorite</string>
+    <string name="book_detail_edit_details">Edit details</string>
+    <string name="book_detail_publication_details">Publication details</string>
+    <string name="book_detail_format">Format</string>
+    <string name="book_detail_language">Language</string>
+    <string name="book_detail_pages">Pages</string>
+    <string name="book_detail_page_progress">%1$d / %2$d</string>
+    <string name="book_detail_stored">Stored</string>
+    <string name="book_detail_private_local_copy">Private local copy</string>
+    <string name="book_detail_sample_metadata_only">Sample metadata only</string>
+    <string name="book_detail_collections">Collections</string>
+</resources>
