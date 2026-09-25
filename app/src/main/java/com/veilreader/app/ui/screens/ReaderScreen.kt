@@ -1006,6 +1006,7 @@ private fun EpubAppearancePanel(
 ) {
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
+    var showAdvanced by remember { mutableStateOf(false) }
 
     LaunchedEffect(appearance) {
         when {
@@ -1035,129 +1036,144 @@ private fun EpubAppearancePanel(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "Tune the page once, then get back to the book. These choices stay on your device.",
+                "Quick controls stay close to the page. Advanced controls are there when you want to fine-tune the book.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
-        Text("Presets", fontWeight = FontWeight.SemiBold)
-            Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+        Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AppearancePreset("Book", draft.theme == ReaderTheme.PAPER) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.PAPER).copy(
-                        fontScale = 1.0,
-                        lineHeight = 1.45,
-                        pageMargins = 1.0,
-                        scroll = false
-                    )
-                )
-            }
-            AppearancePreset("Comfort", draft.theme == ReaderTheme.SEPIA) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.SEPIA).copy(
-                        fontScale = 1.08,
-                        lineHeight = 1.6,
-                        pageMargins = 1.15,
-                        scroll = false
-                    )
-                )
-            }
-            AppearancePreset("Night", draft.theme == ReaderTheme.DUSK) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.DUSK).copy(
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1
-                    )
-                )
-            }
-            AppearancePreset("OLED", draft.theme == ReaderTheme.OLED) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.OLED).copy(
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1
-                    )
-                )
-            }
-        }
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Text("Text size · ${(draft.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = draft.fontScale.toFloat(),
-            onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
-            valueRange = .75f..1.8f
-        )
-
-        Text("Line height · ${"%.2f".format(draft.lineHeight)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = draft.lineHeight.toFloat(),
-            onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
-            valueRange = 1.1f..2.0f
-        )
-
-        Text("Page margins · ${"%.2f".format(draft.pageMargins)}", fontWeight = FontWeight.SemiBold)
-        Slider(
-            value = draft.pageMargins.toFloat(),
-            onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
-            valueRange = .5f..2.0f
-        )
-
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Turn this off for paginated reading without the slide-like transition.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = draft.scroll,
-                onCheckedChange = { updateDraft(draft.copy(scroll = it)) },
-                modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
+            FilterChip(
+                selected = !showAdvanced,
+                onClick = { showAdvanced = false },
+                label = { Text("Quick") },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+            )
+            FilterChip(
+                selected = showAdvanced,
+                onClick = { showAdvanced = true },
+                label = { Text("Advanced") },
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
             )
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Page turn", fontWeight = FontWeight.SemiBold)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = draft.pageTurnStyle == PageTurnStyle.PAPER,
-                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
-                        enabled = !draft.scroll,
-                        label = { Text("Paper curl") },
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    )
-                    FilterChip(
-                        selected = draft.pageTurnStyle == PageTurnStyle.SLIDE,
-                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
-                        enabled = !draft.scroll,
-                        label = { Text("Simple slide") },
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    )
+        if (!showAdvanced) {
+            Text("Theme", fontWeight = FontWeight.SemiBold)
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                AppearancePreset("Paper", draft.theme == ReaderTheme.PAPER) {
+                    updateDraft(draft.withTheme(ReaderTheme.PAPER))
                 }
-                Text(
-                    if (draft.scroll) {
-                        "Page-turn effects are paused while continuous scroll is on."
-                    } else {
-                        "Paper curl follows your drag; Simple slide keeps Readium's native animated fallback."
-                    },
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                AppearancePreset("Sepia", draft.theme == ReaderTheme.SEPIA) {
+                    updateDraft(draft.withTheme(ReaderTheme.SEPIA))
+                }
+                AppearancePreset("Dusk", draft.theme == ReaderTheme.DUSK) {
+                    updateDraft(draft.withTheme(ReaderTheme.DUSK))
+                }
+                AppearancePreset("OLED", draft.theme == ReaderTheme.OLED) {
+                    updateDraft(draft.withTheme(ReaderTheme.OLED))
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            Text(
+                "Text size · ${(draft.fontScale * 100).toInt()}%",
+                fontWeight = FontWeight.SemiBold
+            )
+            Slider(
+                value = draft.fontScale.toFloat(),
+                onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
+                valueRange = .75f..1.8f
+            )
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            Text("Reading mode", fontWeight = FontWeight.SemiBold)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FilterChip(
+                    selected = !draft.scroll,
+                    onClick = { updateDraft(draft.copy(scroll = false)) },
+                    label = { Text("Paginated") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                )
+                FilterChip(
+                    selected = draft.scroll,
+                    onClick = { updateDraft(draft.copy(scroll = true)) },
+                    label = { Text("Scroll") },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
                 )
             }
+
+            if (!draft.scroll) {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Page turn", fontWeight = FontWeight.SemiBold)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = draft.pageTurnStyle == PageTurnStyle.PAPER,
+                            onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
+                            label = { Text("Paper curl") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                        )
+                        FilterChip(
+                            selected = draft.pageTurnStyle == PageTurnStyle.SLIDE,
+                            onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
+                            label = { Text("Simple slide") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                        )
+                    }
+                    Text(
+                        "Paper curl follows your drag. Simple slide keeps the lighter native transition.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        } else {
+            Text(
+                "Typography & layout",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
+
+            Text("Line height · ${"%.2f".format(draft.lineHeight)}", fontWeight = FontWeight.SemiBold)
+            Slider(
+                value = draft.lineHeight.toFloat(),
+                onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
+                valueRange = 1.1f..2.0f
+            )
+
+            Text("Page margins · ${"%.2f".format(draft.pageMargins)}", fontWeight = FontWeight.SemiBold)
+            Slider(
+                value = draft.pageMargins.toFloat(),
+                onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
+                valueRange = .5f..2.0f
+            )
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -1175,13 +1191,29 @@ private fun EpubAppearancePanel(
                 )
             }
 
+            OutlinedButton(
+                onClick = { updateDraft(ReaderAppearance()) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+            ) {
+                Text("Reset reading appearance")
+            }
+        }
+
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
         ReaderBrightnessControls(
             appearance = draft,
             onChange = ::updateDraft
         )
 
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
+        Button(
+            onClick = onDone,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp)
+        ) {
             Text("Back to reading")
         }
     }
