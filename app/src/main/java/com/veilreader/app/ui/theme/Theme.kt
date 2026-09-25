@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -44,9 +45,29 @@ object VeilSpacing {
 }
 
 object VeilMotion {
-    const val QUICK_MS = 150
-    const val STANDARD_MS = 250
-    const val CEREMONIAL_MS = 480
+    /** Immediate tactile response: taps, chrome reveal, small state changes. */
+    const val RESPONSE_MS = 120
+
+    /** Spatial continuity: controls entering/leaving without calling attention to themselves. */
+    const val CONTINUITY_MS = 180
+
+    /** Rare narrative transition outside the reading sanctuary. */
+    const val THRESHOLD_MS = 360
+
+    // Compatibility aliases for existing screens; new work should use the semantic names above.
+    const val QUICK_MS = RESPONSE_MS
+    const val STANDARD_MS = CONTINUITY_MS
+    const val CEREMONIAL_MS = THRESHOLD_MS
+}
+
+object VeilGeometry {
+    /** Reader chrome attaches to the screen edge instead of floating as a generic pill. */
+    val readerTopChrome = RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp)
+    val readerBottomChrome = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
+
+    /** Quiet editorial containers used for dense reading tools, not decorative cards. */
+    val readerTool = RoundedCornerShape(12.dp)
+    val readerSheet = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp)
 }
 
 private val VeilDarkColors = darkColorScheme(
