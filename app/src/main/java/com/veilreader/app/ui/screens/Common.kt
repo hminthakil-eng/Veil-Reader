@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
@@ -112,26 +113,42 @@ fun ArchivePanel(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(10.dp)
+    val shape = RoundedCornerShape(12.dp)
 
     Box(
         modifier = modifier
             .animateContentSize(tween(VeilMotion.STANDARD_MS))
             .clip(shape)
             .background(
-                Brush.verticalGradient(
+                Brush.linearGradient(
                     listOf(
-                        colors.surfaceVariant.copy(alpha = 0.50f),
-                        colors.surface.copy(alpha = 0.96f),
-                        colors.background.copy(alpha = 0.88f)
+                        VeilPalette.DeepBrass.copy(alpha = 0.34f),
+                        colors.surfaceVariant.copy(alpha = 0.68f),
+                        colors.surface.copy(alpha = 0.98f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
                 shape
             )
     ) {
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-42).dp)
+                .size(180.dp)
+                .clip(RoundedCornerShape(90.dp))
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.11f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
         Box(
             Modifier
                 .fillMaxWidth()
@@ -140,20 +157,49 @@ fun ArchivePanel(
                     Brush.horizontalGradient(
                         listOf(
                             Color.Transparent,
-                            VeilPalette.Brass.copy(alpha = 0.72f),
+                            VeilPalette.Brass.copy(alpha = 0.86f),
+                            VeilPalette.Brass.copy(alpha = 0.46f),
                             Color.Transparent
                         )
                     )
                 )
                 .align(Alignment.TopCenter)
         )
+
         Box(
             Modifier
                 .fillMaxHeight()
                 .width(2.dp)
-                .background(VeilPalette.Brass.copy(alpha = 0.22f))
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Brass.copy(alpha = 0.34f),
+                            Color.Transparent
+                        )
+                    )
+                )
                 .align(Alignment.CenterStart)
         )
+
+        Box(
+            Modifier
+                .size(7.dp)
+                .rotate(45f)
+                .background(VeilPalette.Brass.copy(alpha = 0.82f))
+                .align(Alignment.TopStart)
+                .offset(x = 10.dp, y = 10.dp)
+        )
+
+        Box(
+            Modifier
+                .size(7.dp)
+                .rotate(45f)
+                .background(VeilPalette.Brass.copy(alpha = 0.82f))
+                .align(Alignment.BottomEnd)
+                .offset(x = (-10).dp, y = (-10).dp)
+        )
+
         Column(
             modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
