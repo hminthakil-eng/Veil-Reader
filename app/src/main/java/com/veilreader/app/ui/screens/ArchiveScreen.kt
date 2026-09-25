@@ -335,7 +335,7 @@ private fun NotebookBookmarkCard(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                bookmark.label.ifBlank { stringResource(R.string.notebook_saved_location) },
+                if (bookmark.label.isBlank()) stringResource(R.string.notebook_saved_location) else bookmark.label,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
