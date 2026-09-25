@@ -155,44 +155,51 @@ fun LibraryScreen(
             .padding(horizontal = VeilSpacing.lg)
             .padding(top = VeilSpacing.lg)
     ) {
-        LibraryHeader(
-            bookCount = books.size,
-            isImporting = isImporting,
-            onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-            onOpenSettings = onOpenSettings
-        )
-
-        if (books.isNotEmpty()) {
-            ArchiveOverview(
-                total = books.size,
-                reading = books.count { !it.finished && it.progress > 0f },
-                finished = books.count { it.finished },
-                collections = collections.size,
-                modifier = Modifier.padding(top = VeilSpacing.lg)
+        VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
+            LibraryHeader(
+                bookCount = books.size,
+                isImporting = isImporting,
+                onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                onOpenSettings = onOpenSettings
             )
         }
 
-        if (recentReading.isNotEmpty()) {
-            Column(
-                Modifier.padding(top = VeilSpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-            ) {
-                LibrarySectionHeading(
-                    eyebrow = "Continue",
-                    title = "In progress",
-                    trailing = "${recentReading.size} active"
+        if (books.isNotEmpty()) {
+            VeilReveal(delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
+                ArchiveOverview(
+                    total = books.size,
+                    reading = books.count { !it.finished && it.progress > 0f },
+                    finished = books.count { it.finished },
+                    collections = collections.size,
+                    modifier = Modifier.padding(top = VeilSpacing.lg)
                 )
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            }
+        }
+
+        if (recentReading.isNotEmpty()) {
+            VeilReveal(delayMillis = 150, modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    Modifier.padding(top = VeilSpacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
-                    recentReading.forEach { book ->
-                        RecentReadingBook(book = book, onOpen = { onOpenBook(book) })
+                    LibrarySectionHeading(
+                        eyebrow = "Recently opened",
+                        title = "Volumes in progress",
+                        trailing = "${recentReading.size} active"
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                    ) {
+                        recentReading.forEach { book ->
+                            RecentReadingBook(book = book, onOpen = { onOpenBook(book) })
+                        }
                     }
                 }
             }
         }
 
+        VeilReveal(delayMillis = 210, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -210,7 +217,9 @@ fun LibraryScreen(
             shape = MaterialTheme.shapes.small,
             modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
         )
+        }
 
+        VeilReveal(delayMillis = 260, modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -223,12 +232,24 @@ fun LibraryScreen(
                     selected = shelf == label,
                     onClick = { shelf = label },
                     label = { Text(label) },
-                    shape = MaterialTheme.shapes.small,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = shelf == label,
+                        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f),
+                        selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
+                    ),
                     modifier = Modifier.heightIn(min = 48.dp)
                 )
             }
         }
+        }
 
+        VeilReveal(delayMillis = 300, modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier
                 .fillMaxWidth()
@@ -279,6 +300,7 @@ fun LibraryScreen(
                 mode = viewMode,
                 onChange = { viewModeName = it.name }
             )
+        }
         }
 
         if (filtered.isEmpty()) {
@@ -750,7 +772,7 @@ private fun ArchiveOverview(
                         .background(MaterialTheme.colorScheme.tertiary)
                 )
                 Column(Modifier.weight(1f)) {
-                    Text("ARCHIVE STATUS", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.tertiary)
+                    Text("ARCHIVE STATUS", style = MaterialTheme.typography.labelMedium, color = VeilPalette.Brass)
                     Text("Catalogued locally. Private, offline, and ready to reopen.", style = MaterialTheme.typography.bodyMedium)
                 }
             }
@@ -808,7 +830,7 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
             Text(
                 eyebrow.uppercase(),
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
-                color = MaterialTheme.colorScheme.secondary
+                color = VeilPalette.Brass
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
         }
