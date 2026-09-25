@@ -68,14 +68,20 @@ fun ArchiveScreen(
 
     BackHandler { onClose() }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
-            .navigationBarsPadding()
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            .navigationBarsPadding(),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Column(
+            modifier = Modifier
+                .widthIn(max = 840.dp)
+                .fillMaxSize()
+                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+        ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
@@ -187,6 +193,7 @@ fun ArchiveScreen(
                     }
                 }
             }
+        }
         }
     }
 
