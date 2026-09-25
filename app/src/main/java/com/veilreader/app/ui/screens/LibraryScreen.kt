@@ -192,7 +192,7 @@ fun LibraryScreen(
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium,
+            shape = MaterialTheme.shapes.small,
             modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
         )
 
@@ -208,6 +208,7 @@ fun LibraryScreen(
                     selected = shelf == label,
                     onClick = { shelf = label },
                     label = { Text(label) },
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.heightIn(min = 48.dp)
                 )
             }
@@ -422,6 +423,7 @@ private fun LibraryHeader(
                 ) {
                     OutlinedButton(
                         onClick = onOpenSettings,
+                        shape = MaterialTheme.shapes.small,
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
                         Text("Settings")
@@ -429,6 +431,7 @@ private fun LibraryHeader(
                     Button(
                         onClick = onImport,
                         enabled = !isImporting,
+                        shape = MaterialTheme.shapes.small,
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
                         Text(if (isImporting) "Importing…" else "Import")
@@ -450,6 +453,7 @@ private fun LibraryHeader(
                 }
                 OutlinedButton(
                     onClick = onOpenSettings,
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text("Settings")
@@ -457,6 +461,7 @@ private fun LibraryHeader(
                 Button(
                     onClick = onImport,
                     enabled = !isImporting,
+                    shape = MaterialTheme.shapes.small,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(if (isImporting) "Importing…" else "Import")
