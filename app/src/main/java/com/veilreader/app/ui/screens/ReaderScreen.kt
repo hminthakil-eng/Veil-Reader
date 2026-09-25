@@ -461,7 +461,7 @@ fun ReaderScreen(
     }
 
     LaunchedEffect(navigator, readerAppearance, opened.format) {
-        game.pauseReading()
+        game.rebasePagePacing()
         readerViewModel.onUserInteraction()
         val traceDetails = "format=${opened.format} theme=${readerAppearance.theme} publisherStyles=${readerAppearance.publisherStyles} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
         ReaderTrace.event(
@@ -749,7 +749,7 @@ fun ReaderScreen(
             onDismiss = { showNotebook = false },
             onGo = { json ->
                 readerViewModel.onUserInteraction()
-                game.pauseReading()
+                game.rebasePagePacing()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
                 if (locator != null && navigator?.go(locator, animated = true) == true) {
                     showNotebook = false
@@ -760,7 +760,7 @@ fun ReaderScreen(
             },
             onChapter = { link ->
                 readerViewModel.onUserInteraction()
-                game.pauseReading()
+                game.rebasePagePacing()
                 if (navigator?.go(link, animated = true) == true) {
                     showNotebook = false
                 } else {
