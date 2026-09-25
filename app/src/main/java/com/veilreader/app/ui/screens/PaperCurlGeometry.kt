@@ -67,7 +67,9 @@ internal data class PaperCurlPolygon(
 }
 
 internal fun paperFoldLift(progress: Float): Float =
-    sin(progress.coerceIn(0f, 1f) * PI.toFloat()).coerceIn(0f, 1f)
+    sin(progress.coerceIn(0f, 1f).toDouble() * PI)
+        .toFloat()
+        .coerceIn(0f, 1f)
 
 internal fun paperWeightedDragCurrent(
     start: Offset,
