@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -41,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -353,33 +355,33 @@ fun LibraryScreen(
         val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text("Book details") },
+            title = { Text(stringResource(R.string.book_metadata_dialog_title)) },
             text = {
                 Column(
                     Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = title.isBlank())
-                    OutlinedTextField(author, { author = it }, label = { Text("Author") })
+                    OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.book_metadata_title)) }, isError = title.isBlank())
+                    OutlinedTextField(author, { author = it }, label = { Text(stringResource(R.string.book_metadata_author)) })
                     OutlinedTextField(
                         collectionNames,
                         { collectionNames = it },
-                        label = { Text("Collections") },
-                        supportingText = { Text("Separate multiple collections with commas.") }
+                        label = { Text(stringResource(R.string.book_metadata_collections)) },
+                        supportingText = { Text(stringResource(R.string.book_metadata_collections_hint)) }
                     )
-                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text("Series (optional)") })
+                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text(stringResource(R.string.book_metadata_series)) })
                     OutlinedTextField(
                         seriesIndex,
                         { seriesIndex = it },
-                        label = { Text("Series number (optional)") },
+                        label = { Text(stringResource(R.string.book_metadata_series_number)) },
                         isError = seriesIndexInvalid,
-                        supportingText = { if (seriesIndexInvalid) Text("Use a number such as 1 or 2.5.") }
+                        supportingText = { if (seriesIndexInvalid) Text(stringResource(R.string.book_metadata_series_number_error)) }
                     )
                     OutlinedTextField(
                         language,
                         { language = it },
-                        label = { Text("Language tag (optional)") },
-                        supportingText = { Text("BCP-47, for example en, fa, tr, or en-US.") }
+                        label = { Text(stringResource(R.string.book_metadata_language)) },
+                        supportingText = { Text(stringResource(R.string.book_metadata_language_hint)) }
                     )
                 }
             },
@@ -400,9 +402,9 @@ fun LibraryScreen(
                         )
                         editing = null
                     }
-                ) { Text("Save") }
+                ) { Text(stringResource(R.string.common_save)) }
             },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { editing = null }) { Text(stringResource(R.string.common_cancel)) } }
         )
     }
 }
@@ -418,14 +420,14 @@ private fun BookDetailSheet(
 ) {
     val progress = book.progress.coerceIn(0f, 1f)
     val status = when {
-        book.finished -> "Finished"
-        progress > 0f -> "${(progress * 100).toInt()}% read"
-        else -> "Not started"
+        book.finished -> stringResource(R.string.book_detail_finished)
+        progress > 0f -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
+        else -> stringResource(R.string.book_detail_not_started)
     }
     val primaryAction = when {
-        book.finished -> "Read again"
-        progress > 0f -> "Continue reading"
-        else -> "Open book"
+        book.finished -> stringResource(R.string.book_detail_read_again)
+        progress > 0f -> stringResource(R.string.book_detail_continue_reading)
+        else -> stringResource(R.string.book_detail_open_book)
     }
 
     ModalBottomSheet(
@@ -461,7 +463,7 @@ private fun BookDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     Text(
-                        if (book.isImported) "LOCAL PUBLICATION · ${book.format.name}" else "SAMPLE ENTRY",
+                        if (book.isImported) stringResource(R.string.book_detail_local_publication_format, book.format.name) else stringResource(R.string.book_detail_sample_entry),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -472,7 +474,7 @@ private fun BookDetailSheet(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        book.author.ifBlank { "Unknown author" },
+                        book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 2,
@@ -531,7 +533,7 @@ private fun BookDetailSheet(
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
-                Text(if (book.isImported) primaryAction else "Publication file unavailable")
+                Text(if (book.isImported) primaryAction else stringResource(R.string.book_detail_publication_unavailable))
             }
 
             Row(
@@ -543,14 +545,14 @@ private fun BookDetailSheet(
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
-                    Text(if (book.favorite) "Favorited" else "Favorite")
+                    Text(if (book.favorite) stringResource(R.string.book_detail_favorited) else stringResource(R.string.book_detail_favorite))
                 }
                 OutlinedButton(
                     onClick = onEditMetadata,
                     shape = MaterialTheme.shapes.small,
                     modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                 ) {
-                    Text("Edit details")
+                    Text(stringResource(R.string.book_detail_edit_details))
                 }
             }
 
@@ -559,26 +561,26 @@ private fun BookDetailSheet(
             )
 
             Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-                Text("Publication details", style = MaterialTheme.typography.titleLarge)
-                BookDetailFact("Format", book.format.name)
+                Text(stringResource(R.string.book_detail_publication_details), style = MaterialTheme.typography.titleLarge)
+                BookDetailFact(stringResource(R.string.book_detail_format), book.format.name)
                 book.language?.takeIf { it.isNotBlank() }?.let {
-                    BookDetailFact("Language", it)
+                    BookDetailFact(stringResource(R.string.book_detail_language), it)
                 }
                 if (book.totalPages > 0) {
                     BookDetailFact(
-                        "Pages",
-                        "${book.pagesRead.coerceAtLeast(0).coerceAtMost(book.totalPages)} / ${book.totalPages}"
+                        stringResource(R.string.book_detail_pages),
+                        stringResource(R.string.book_detail_page_progress, book.pagesRead.coerceAtLeast(0).coerceAtMost(book.totalPages), book.totalPages)
                     )
                 }
                 BookDetailFact(
-                    "Stored",
-                    if (book.isImported) "Private local copy" else "Sample metadata only"
+                    stringResource(R.string.book_detail_stored),
+                    if (book.isImported) stringResource(R.string.book_detail_private_local_copy) else stringResource(R.string.book_detail_sample_metadata_only)
                 )
             }
 
             if (book.allCollections.isNotEmpty()) {
                 Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                    Text("Collections", style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.book_detail_collections), style = MaterialTheme.typography.titleMedium)
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
@@ -905,7 +907,7 @@ private fun BookLibraryTile(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    book.author.ifBlank { "Unknown author" },
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
@@ -968,7 +970,7 @@ private fun BookLibraryRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(book.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
-                    book.author.ifBlank { "Unknown author" },
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -1023,7 +1025,7 @@ private fun BookProgress(book: Book) {
     ) {
         Text(
             when {
-                book.finished -> "Finished"
+                book.finished -> stringResource(R.string.book_detail_finished)
                 book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
                 else -> "Unopened"
             },
