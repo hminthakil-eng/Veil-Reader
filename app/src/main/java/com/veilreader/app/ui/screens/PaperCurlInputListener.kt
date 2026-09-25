@@ -1,3 +1,4 @@
+import android.view.HapticFeedbackConstants
 package com.veilreader.app.ui.screens
 
 import kotlin.math.abs
@@ -34,6 +35,7 @@ internal class PaperCurlInputListener(
     private var navigationJob: Job? = null
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
+    private var commitHapticSent = false
 
     override fun onTap(event: TapEvent): Boolean {
         if (!paperModeEnabled()) return false
@@ -97,6 +99,7 @@ internal class PaperCurlInputListener(
         activeDrag = spec
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
+        commitHapticSent = false
         state.updateDrag(event.start, event.offset)
         onInteraction()
 
@@ -110,8 +113,10 @@ internal class PaperCurlInputListener(
     }
 
     private fun onDragMove(event: DragEvent): Boolean {
-        if (activeDrag == null || !state.active) return false
+        val spec = activeDrag ?: return false
+        if (!state.active) return false
         state.updateDrag(event.start, event.offset)
+        maybeSignalCommitThreshold(spec, event)
         return true
     }
 
@@ -132,6 +137,7 @@ internal class PaperCurlInputListener(
             density = density,
             curlProgress = state.dragProgress()
         )
+        if (commit) signalCommitThreshold()
 
         scope.launch {
             navigationJob?.join()
@@ -163,6 +169,35 @@ internal class PaperCurlInputListener(
             state.clear()
         }
         return true
+    }
+
+    private fun maybeSignalCommitThreshold(
+        spec: TurnSpec,
+        event: DragEvent
+    ) {
+        if (commitHapticSent) return
+        val view = navigator.publicationView
+        val width = view.width.toFloat()
+        if (width <= 0f) return
+        val inward = when (spec.side) {
+            PaperCurlSide.RIGHT -> -event.offset.x
+            PaperCurlSide.LEFT -> event.offset.x
+        }
+        val crossed = shouldCommitPaperTurn(
+            inwardDistance = inward,
+            width = width,
+            density = view.resources.displayMetrics.density,
+            curlProgress = state.dragProgress()
+        )
+        if (crossed) signalCommitThreshold()
+    }
+
+    private fun signalCommitThreshold() {
+        if (commitHapticSent) return
+        commitHapticSent = true
+        navigator.publicationView.performHapticFeedback(
+            HapticFeedbackConstants.CLOCK_TICK
+        )
     }
 
     private fun restoreDragStart(spec: TurnSpec) {
@@ -259,6 +294,7 @@ internal class PaperCurlInputListener(
         navigationJob = null
         previewNavigationSucceeded = false
         dragStartLocator = null
+        commitHapticSent = false
     }
 
     private data class TurnSpec(
