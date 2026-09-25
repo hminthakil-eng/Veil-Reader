@@ -472,6 +472,11 @@ private fun PathSummary(profile: ReaderProfile, onOpenCastle: () -> Unit) {
             }
             FilledTonalButton(
                 onClick = onOpenCastle,
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = VeilPalette.DeepBrass.copy(alpha = 0.64f),
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 modifier = Modifier.heightIn(min = 48.dp)
             ) {
                 Text("Castle")
