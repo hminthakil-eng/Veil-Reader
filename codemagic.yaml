@@ -55,10 +55,10 @@ workflows:
 
           echo "Resolved platform package: $PLATFORM_37"
           yes | "$SDKMANAGER" --licenses >/dev/null 2>&1 || true
-          "$SDKMANAGER" --channel=3             "$PLATFORM_37"             "build-tools;37.0.0"             "platform-tools"             "emulator"             "system-images;android-35;default;arm64-v8a"
+          "$SDKMANAGER" --channel=3             "$PLATFORM_37"             "build-tools;37.0.0"             "platform-tools"             "emulator"             "system-images;android-35;google_apis;arm64-v8a"
 
           echo "=== Required SDK packages installed ==="
-          "$SDKMANAGER" --list_installed | grep -E 'platforms;android-37|build-tools;37\.0\.0|system-images;android-35;default;arm64-v8a|platform-tools' || true
+          "$SDKMANAGER" --list_installed | grep -E 'platforms;android-37|build-tools;37\.0\.0|system-images;android-35;google_apis;arm64-v8a|platform-tools' || true
 
           if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
             GRADLE_VERSION="9.6.0"
@@ -86,12 +86,56 @@ workflows:
           python3 tools/test_performance_delta.py
           python3 tools/test_performance_dashboard.py
 
-      - name: Generate Baseline and Startup Profile on Gradle Managed Device
+      - name: Generate Baseline and Startup Profile on connected ARM64 emulator
         script: |
           set -euo pipefail
           cd "$CM_BUILD_DIR"
 
-          ./gradlew :app:generateBaselineProfile --stacktrace
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-/usr/local/share/android-sdk}}"
+          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
+
+          AVD_NAME="VeilProfile_API35"
+          echo "no" | avdmanager create avd --force             --name "$AVD_NAME"             --package "system-images;android-35;google_apis;arm64-v8a"             --device "pixel_6"
+
+          adb kill-server || true
+          adb start-server
+
+          nohup emulator             -avd "$AVD_NAME"             -no-window             -no-audio             -no-boot-anim             -no-snapshot             -gpu swiftshader_indirect             -memory 2048             > "$CM_BUILD_DIR/emulator-release-profile.log" 2>&1 &
+          EMULATOR_PID=$!
+
+          cleanup() {
+            adb emu kill >/dev/null 2>&1 || true
+            kill "$EMULATOR_PID" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          adb wait-for-device
+          deadline=$((SECONDS + 360))
+          while [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+            if [ "$SECONDS" -ge "$deadline" ]; then
+              echo "Emulator boot timed out" >&2
+              adb devices -l || true
+              tail -250 "$CM_BUILD_DIR/emulator-release-profile.log" || true
+              exit 1
+            fi
+            sleep 2
+          done
+
+          adb shell settings put global window_animation_scale 0
+          adb shell settings put global transition_animation_scale 0
+          adb shell settings put global animator_duration_scale 0
+          adb devices -l
+
+          set +e
+          ./gradlew :app:generateBaselineProfile             -Pveil.profile.connected=true             --stacktrace --info 2>&1 | tee "$CM_BUILD_DIR/profile-generation.log"
+          GRADLE_STATUS=${PIPESTATUS[0]}
+          set -e
+
+          if [ "$GRADLE_STATUS" -ne 0 ]; then
+            echo "Baseline Profile generation failed with status $GRADLE_STATUS" >&2
+            tail -250 "$CM_BUILD_DIR/profile-generation.log" || true
+            exit "$GRADLE_STATUS"
+          fi
 
           BASELINE="$(find app/src -type f -path '*/generated/baselineProfiles/baseline-prof.txt' -print -quit)"
           STARTUP="$(find app/src -type f -path '*/generated/baselineProfiles/startup-prof.txt' -print -quit)"
@@ -152,6 +196,8 @@ workflows:
           cat release-evidence.txt
 
     artifacts:
+      - profile-generation.log
+      - emulator-release-profile.log
       - release-evidence.txt
       - app/src/**/generated/baselineProfiles/*.txt
       - app/build/outputs/apk/release/*.apk
