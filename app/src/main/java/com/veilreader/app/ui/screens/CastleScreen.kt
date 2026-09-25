@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
 /** A progression world that stays useful: every room maps to a real reader feature. */
@@ -59,8 +60,8 @@ fun CastleScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
     ) {
         ScreenHeader(
-            eyebrow = "Castle",
-            title = "Your reading world",
+            eyebrow = "CASTLE · LIVING ARCHIVE",
+            title = "Your Reading World",
             subtitle = "The Castle grows with real reading progress. Every awakened room opens a useful part of Veil Reader."
         )
 
@@ -70,7 +71,7 @@ fun CastleScreen(
             Text(
                 "CHAMBERS",
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp),
-                color = MaterialTheme.colorScheme.secondary
+                color = VeilPalette.Spirit
             )
             Text("Explore the Castle", style = MaterialTheme.typography.titleLarge)
             Text(
@@ -114,19 +115,19 @@ private fun CastleKeep(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraLarge)
+            .clip(MaterialTheme.shapes.large)
             .background(
                 Brush.linearGradient(
                     listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.62f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+                        VeilPalette.DeepBrass.copy(alpha = 0.50f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.84f),
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.99f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.70f)),
-                MaterialTheme.shapes.extraLarge
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
+                MaterialTheme.shapes.large
             )
             .padding(VeilSpacing.xl)
     ) {
@@ -139,16 +140,16 @@ private fun CastleKeep(
                     modifier = Modifier
                         .size(72.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f))
+                        .background(VeilPalette.DeepBrass.copy(alpha = 0.46f))
                         .border(
-                            BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.42f)),
+                            BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
                             CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     CastleCrest(
                         modifier = Modifier.size(38.dp),
-                        tint = MaterialTheme.colorScheme.secondary
+                        tint = VeilPalette.Brass
                     )
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -159,7 +160,7 @@ private fun CastleKeep(
                     Text(
                         "${profile.path.name} · ${profile.rankName}",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = VeilPalette.Spirit
                     )
                     Text(
                         "${profile.booksFinished} finished ${if (profile.booksFinished == 1) "book" else "books"}",
@@ -172,7 +173,7 @@ private fun CastleKeep(
             LinearProgressIndicator(
                 progress = { castleProgress },
                 modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-                color = MaterialTheme.colorScheme.secondary,
+                color = VeilPalette.Spirit,
                 trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.38f)
             )
 
@@ -188,7 +189,7 @@ private fun CastleKeep(
                 Text(
                     "${profile.rankIndex + 1}/${profile.path.ranks.size} tiers",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = VeilPalette.Spirit
                 )
             }
 
@@ -213,18 +214,19 @@ private fun CastleMap(rankIndex: Int, onOpenRoom: (String) -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraLarge)
+            .clip(MaterialTheme.shapes.large)
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.84f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.58f)
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f),
+                        VeilPalette.DeepBrass.copy(alpha = 0.24f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)),
-                MaterialTheme.shapes.extraLarge
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.36f)),
+                MaterialTheme.shapes.large
             )
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.xl)
     ) {
@@ -361,7 +363,7 @@ private fun CastleRoomNode(
                 .size(48.dp)
                 .clip(CircleShape)
                 .background(
-                    if (unlocked) MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f)
+                    if (unlocked) VeilPalette.DeepBrass.copy(alpha = 0.46f)
                     else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
                 ),
             contentAlignment = Alignment.Center
