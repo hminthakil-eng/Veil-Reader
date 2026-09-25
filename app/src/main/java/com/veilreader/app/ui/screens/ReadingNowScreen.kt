@@ -116,22 +116,22 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
         Text(
-            "GRAYFOG ARCHIVE",
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
+            "VEIL READER · GRAYFOG ARCHIVE",
+            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.9.sp),
             color = VeilPalette.Brass
         )
-        BrassRule(Modifier.width(92.dp), strong = true)
-        Spacer(Modifier.height(2.dp))
+        BrassRule(Modifier.width(118.dp), strong = true)
+        Spacer(Modifier.height(4.dp))
         Text(
-            text = if (hasCurrentBook) "The Library Awaits" else "Enter the Archive",
+            text = if (hasCurrentBook) "Return to the Grand Archive" else "Enter the Grand Archive",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = if (hasCurrentBook) {
-                "Return to the volume you left open. The rest of the archive can wait in silence."
+                "Your last volume is still open beneath the lantern light. Return exactly where you left it."
             } else {
-                "Bring an EPUB or PDF into your private archive. Your books, notes, and progress remain on this device."
+                "A private library between worlds. Bring in an EPUB or PDF; your books, notes, and progress remain on this device."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -158,14 +158,14 @@ private fun ContinueReadingHero(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        colors.surfaceVariant.copy(alpha = 0.52f),
-                        colors.surface.copy(alpha = 0.96f),
-                        colors.background.copy(alpha = 0.90f)
+                        VeilPalette.DeepBrass.copy(alpha = 0.44f),
+                        colors.surfaceVariant.copy(alpha = 0.78f),
+                        colors.surface.copy(alpha = 0.985f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
                 shape
             )
             .padding(VeilSpacing.lg)
