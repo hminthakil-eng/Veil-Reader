@@ -12,6 +12,8 @@ workflows:
           source: true
       cancel_previous_builds: true
     environment:
+      groups:
+        - firebase_testlab
       java: 17
     scripts:
       - name: Configure Android SDK and Gradle
