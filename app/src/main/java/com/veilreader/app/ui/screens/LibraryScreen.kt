@@ -439,14 +439,19 @@ private fun BookDetailSheet(
             )
         }
     ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = VeilSpacing.lg)
-                .padding(bottom = VeilSpacing.xxl),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                Modifier
+                    .widthIn(max = 720.dp)
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = VeilSpacing.lg)
+                    .padding(bottom = VeilSpacing.xxl),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+            ) {
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
@@ -603,6 +608,7 @@ private fun BookDetailSheet(
                         }
                     }
                 }
+            }
             }
         }
     }
