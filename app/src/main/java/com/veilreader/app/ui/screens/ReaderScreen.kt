@@ -937,7 +937,7 @@ private fun ReaderChromeButton(
             contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
     ) {
-        ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSurface)
+        ReaderActionIcon(action, Modifier.size(22.dp), LocalContentColor.current)
     }
 }
 
