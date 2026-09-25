@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -61,43 +62,108 @@ fun VeilWorldBackdrop(
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    0f to colors.background,
-                    0.56f to colors.background,
-                    1f to colors.surface.copy(alpha = 0.92f)
+                    listOf(
+                        Color(0xFF080A0D),
+                        colors.background,
+                        Color(0xFF0D1116),
+                        colors.surface.copy(alpha = 0.96f)
+                    )
                 )
             )
     ) {
+        Canvas(Modifier.fillMaxSize()) {
+            val w = size.width
+            val h = size.height
+            val brass = VeilPalette.Brass.copy(alpha = 0.075f)
+            val stone = colors.outlineVariant.copy(alpha = 0.10f)
+            val stroke = 1.dp.toPx()
+
+            // Tall archive pillars.
+            drawLine(stone, Offset(w * 0.08f, 0f), Offset(w * 0.08f, h), stroke)
+            drawLine(stone, Offset(w * 0.16f, 0f), Offset(w * 0.16f, h), stroke)
+            drawLine(stone, Offset(w * 0.84f, 0f), Offset(w * 0.84f, h), stroke)
+            drawLine(stone, Offset(w * 0.92f, 0f), Offset(w * 0.92f, h), stroke)
+
+            // Gothic arch silhouette.
+            drawArc(
+                color = brass,
+                startAngle = 195f,
+                sweepAngle = 150f,
+                useCenter = false,
+                topLeft = Offset(w * 0.14f, -h * 0.10f),
+                size = Size(w * 0.72f, h * 0.52f),
+                style = Stroke(width = 1.2.dp.toPx())
+            )
+            drawArc(
+                color = brass.copy(alpha = 0.045f),
+                startAngle = 195f,
+                sweepAngle = 150f,
+                useCenter = false,
+                topLeft = Offset(w * 0.20f, -h * 0.035f),
+                size = Size(w * 0.60f, h * 0.40f),
+                style = Stroke(width = stroke)
+            )
+
+            // Shelves recede into the lower hall.
+            listOf(0.64f, 0.73f, 0.82f, 0.91f).forEach { y ->
+                drawLine(
+                    colors.outlineVariant.copy(alpha = 0.065f),
+                    Offset(0f, h * y),
+                    Offset(w, h * y),
+                    stroke
+                )
+            }
+        }
+
         Box(
             Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 150.dp, y = (-170).dp)
-                .size(430.dp)
+                .offset(x = 120.dp, y = (-130).dp)
+                .size(360.dp)
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            VeilPalette.Brass.copy(alpha = 0.10f),
-                            VeilPalette.Brass.copy(alpha = 0.025f),
+                            VeilPalette.Spirit.copy(alpha = 0.11f),
+                            VeilPalette.Spirit.copy(alpha = 0.025f),
                             Color.Transparent
                         )
                     )
                 )
         )
+
         Box(
             Modifier
-                .align(Alignment.BottomStart)
-                .offset(x = (-150).dp, y = 190.dp)
-                .size(420.dp)
+                .align(Alignment.CenterStart)
+                .offset(x = (-130).dp, y = 40.dp)
+                .size(300.dp)
                 .clip(CircleShape)
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            VeilPalette.Spirit.copy(alpha = 0.055f),
+                            Color(0xFFD18B3E).copy(alpha = 0.10f),
                             Color.Transparent
                         )
                     )
                 )
         )
+
+        Box(
+            Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 130.dp, y = 150.dp)
+                .size(320.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.08f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
         content()
     }
 }
