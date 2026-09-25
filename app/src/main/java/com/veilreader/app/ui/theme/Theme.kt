@@ -15,22 +15,55 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.AppThemeMode
 
-/** Veil Reader visual system: quiet reading utility wrapped in a mysterious world. */
+/**
+ * Veil Reader visual system.
+ *
+ * Gray Fog Archive v1.1 keeps the reading surface calm and legible while the app shell
+ * carries restrained archival mystery. Publication/Reader themes remain independent.
+ */
 object VeilPalette {
-    val Ink = Color(0xFF0B0A0F)
-    val Obsidian = Color(0xFF121117)
-    val Slate = Color(0xFF1B1921)
-    val RaisedSlate = Color(0xFF24212B)
-    val Moon = Color(0xFFF5F0F7)
-    val Mist = Color(0xFFCFC6D3)
-    val Amethyst = Color(0xFFD5BCFF)
-    val DeepAmethyst = Color(0xFF4C2D6D)
-    val OldGold = Color(0xFFE5C97B)
-    val Jade = Color(0xFF8EDBC7)
-    val AshLine = Color(0xFF514A58)
-    val Parchment = Color(0xFFF6F1EA)
-    val WarmPaper = Color(0xFFFFFBF6)
-    val InkOnPaper = Color(0xFF252128)
+    // Gray Fog semantic foundation.
+    val Ink = Color(0xFF0B0E12)
+    val Archive = Color(0xFF12171E)
+    val Iron = Color(0xFF1B222B)
+    val RaisedIron = Color(0xFF242C36)
+
+    val Moon = Color(0xFFF2EFE7)
+    val Mist = Color(0xFFAEB4B8)
+    val BorderDark = Color(0xFF313A45)
+    val StrongBorderDark = Color(0xFF596572)
+
+    val Brass = Color(0xFFC4A260)
+    val DeepBrass = Color(0xFF56472E)
+    val Spirit = Color(0xFF74B6B8)
+    val MoonCrimson = Color(0xFFC25C6C)
+
+    val LightCanvas = Color(0xFFF2EFE7)
+    val LightSurface = Color(0xFFFBF8F1)
+    val LightElevated = Color(0xFFEEE8DD)
+    val LightInk = Color(0xFF15191F)
+    val LightMist = Color(0xFF67675F)
+    val BorderLight = Color(0xFFC9C1B4)
+    val StrongBorderLight = Color(0xFF81786A)
+    val LightBrass = Color(0xFF8A6A35)
+    val LightSpirit = Color(0xFF2C6E73)
+    val LightCrimson = Color(0xFF7B2838)
+
+    // Reader paper stays separate from the app-shell surfaces.
+    val ReaderPaper = Color(0xFFF7F1E3)
+
+    // Compatibility aliases: existing screens can migrate incrementally without a parallel theme.
+    val Obsidian = Archive
+    val Slate = Iron
+    val RaisedSlate = RaisedIron
+    val Amethyst = Brass
+    val DeepAmethyst = DeepBrass
+    val OldGold = Brass
+    val Jade = Spirit
+    val AshLine = BorderDark
+    val Parchment = LightCanvas
+    val WarmPaper = ReaderPaper
+    val InkOnPaper = LightInk
 }
 
 object VeilSpacing {
@@ -50,47 +83,51 @@ object VeilMotion {
 }
 
 private val VeilDarkColors = darkColorScheme(
-    primary = VeilPalette.Amethyst,
-    onPrimary = Color(0xFF251538),
-    primaryContainer = Color(0xFF372349),
-    onPrimaryContainer = Color(0xFFF0E2FF),
-    secondary = VeilPalette.OldGold,
-    onSecondary = Color(0xFF342906),
-    secondaryContainer = Color(0xFF443712),
-    onSecondaryContainer = Color(0xFFFFEBB2),
-    tertiary = VeilPalette.Jade,
-    onTertiary = Color(0xFF07342A),
+    primary = VeilPalette.Brass,
+    onPrimary = Color(0xFF16120C),
+    primaryContainer = VeilPalette.DeepBrass,
+    onPrimaryContainer = Color(0xFFF4E4BE),
+    secondary = VeilPalette.Spirit,
+    onSecondary = Color(0xFF082E31),
+    secondaryContainer = Color(0xFF17383B),
+    onSecondaryContainer = Color(0xFFD4EEEE),
+    tertiary = VeilPalette.MoonCrimson,
+    onTertiary = VeilPalette.Ink,
+    tertiaryContainer = Color(0xFF55212B),
+    onTertiaryContainer = Color(0xFFF8DDE2),
     background = VeilPalette.Ink,
     onBackground = VeilPalette.Moon,
-    surface = VeilPalette.Obsidian,
+    surface = VeilPalette.Archive,
     onSurface = VeilPalette.Moon,
-    surfaceVariant = VeilPalette.Slate,
+    surfaceVariant = VeilPalette.Iron,
     onSurfaceVariant = VeilPalette.Mist,
-    outline = VeilPalette.AshLine,
-    outlineVariant = Color(0xFF332E39),
+    outline = VeilPalette.StrongBorderDark,
+    outlineVariant = VeilPalette.BorderDark,
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005)
 )
 
 private val VeilLightColors = lightColorScheme(
-    primary = Color(0xFF68438D),
+    primary = VeilPalette.LightBrass,
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFEBD9FF),
-    onPrimaryContainer = Color(0xFF28113F),
-    secondary = Color(0xFF755D12),
+    primaryContainer = Color(0xFFE8D9B8),
+    onPrimaryContainer = Color(0xFF2B2113),
+    secondary = VeilPalette.LightSpirit,
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFE8A7),
-    onSecondaryContainer = Color(0xFF251C00),
-    tertiary = Color(0xFF276D5E),
+    secondaryContainer = Color(0xFFD6ECEC),
+    onSecondaryContainer = Color(0xFF103235),
+    tertiary = VeilPalette.LightCrimson,
     onTertiary = Color.White,
-    background = VeilPalette.Parchment,
-    onBackground = VeilPalette.InkOnPaper,
-    surface = VeilPalette.WarmPaper,
-    onSurface = VeilPalette.InkOnPaper,
-    surfaceVariant = Color(0xFFECE6ED),
-    onSurfaceVariant = Color(0xFF514A54),
-    outline = Color(0xFF807781),
-    outlineVariant = Color(0xFFD3CAD5)
+    tertiaryContainer = Color(0xFFF5DCE1),
+    onTertiaryContainer = Color(0xFF48111D),
+    background = VeilPalette.LightCanvas,
+    onBackground = VeilPalette.LightInk,
+    surface = VeilPalette.LightSurface,
+    onSurface = VeilPalette.LightInk,
+    surfaceVariant = VeilPalette.LightElevated,
+    onSurfaceVariant = VeilPalette.LightMist,
+    outline = VeilPalette.StrongBorderLight,
+    outlineVariant = VeilPalette.BorderLight
 )
 
 private val VeilTypography = Typography(
