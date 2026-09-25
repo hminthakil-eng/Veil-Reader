@@ -1,0 +1,30 @@
+# Veil Reader Magic Code pilot
+# Merge/copy these values into the config created by: magic-code --init
+# Provider/model are intentionally omitted because they belong to the local operator.
+
+[default]
+permission_mode = "workspace-write"
+
+[context]
+instruction_files = [".magic-code/instructions.md"]
+ignore_patterns = [
+  ".git/**",
+  ".gradle/**",
+  "**/build/**",
+  "**/.idea/**",
+  "**/*.apk",
+  "**/*.aab"
+]
+
+[managed_agents]
+enabled = false
+
+# Pilot workflow after startup:
+#   /doctor
+#   /diff-preview
+#   /auto-test
+#   /plan
+#
+# Keep auto-commit disabled during the pilot.
+# Never use full-access without explicit human approval.
+# Credentials belong in local environment variables only, never in this repository.
