@@ -1,8 +1,9 @@
-# Veil Reader — Gray Fog Archive Design Direction v1
+# Veil Reader — Gray Fog Archive Design Direction v1.1
 
-Status: design execution baseline
+Status: synchronized to Veil Reader 0.10.0 RC
 Figma: https://www.figma.com/design/5IlRC6CFN0PRyue0Tig3s3
-Base integration target: integration/reader-rc-v2
+Canonical integration target: integration/reader-rc-v2
+Synchronization date: 2026-09-25
 
 ## Intent
 Create a premium, calm, mysterious reading experience inspired by the atmospheric DNA of Lord of Mysteries without copying protected artwork, symbols, characters, layouts, or branded assets.
@@ -28,6 +29,40 @@ The product identity is **Gray Fog Archive**:
 10. Design LTR/RTL, normal/large text, compact/expanded widths together.
 11. Never show Castle/Path/progression UI over publication content.
 12. No nested-card, gradient, glass, or shadow soup.
+
+## Current app baseline
+- app version: 0.10.0 / versionCode 10
+- compileSdk / targetSdk: 37
+- minSdk: 26
+- Jetpack Compose UI: 1.10.5
+- Material 3: 1.4.0
+- Material 3 Adaptive: 1.3.0
+- Readium Kotlin Toolkit: 3.4.0
+- PDFium adapter: 3.4.0
+- AndroidPdfViewer: 3.2.8
+
+## Active product-completion alignment
+### PR #268 — Library Settings shortcut
+Design contract:
+- Settings and Import are both one move away from Library.
+- Compact width: Settings + Import share one row.
+- Wider layout: discrete actions remain visible.
+- Minimum action height: 48dp.
+
+### PR #269 — EPUB Appearance Quick / Advanced
+Design contract:
+- Quick: Theme, Text size, Reading mode, Page turn.
+- Advanced: Line height, Page margins, Publisher styling, Reset.
+- Brightness remains visible in both modes.
+- Theme chips change theme only.
+- Appearance changes remain live-previewed.
+
+### PR #270 — PDF View controls
+Design contract:
+- Surface is named PDF view, not PDF zoom.
+- Layout, zoom and brightness are grouped together.
+- Pinch/double-tap remain native direct-manipulation paths.
+- Zoom actions use 48dp+ targets and explicit semantics.
 
 ## Color direction
 
@@ -76,25 +111,21 @@ The product identity is **Gray Fog Archive**:
 - Reduced Motion: no decorative depth/curl; use immediate transition or subtle fade.
 - Fog is a progressive-disclosure metaphor, not a permanent particle effect.
 
-## Current implementation mapping
-- PR #269: Quick/Advanced EPUB appearance controls — visual polish should follow this spec.
-- PR #270: PDF view controls — reuse the same hierarchy and brightness language.
-- Issue #34: reader chrome simplification remains the interaction contract.
-- Issue #30: deterministic app UI typography remains mandatory.
-- Issue #123: page-curl is optional/feature-flagged and must preserve selection, RTL, annotations and reduced-motion behavior.
-- Issue #133: visual QA matrix is required before product sign-off.
-
-## Figma v1
+## Figma v1.1
 Pages:
 1. 01 Foundations
 2. 02 Screens
 3. 03 Components
 
-Initial screens:
+Screens:
 - Home — Gray Fog
 - Library — Retrieval First
 - Reader — Sanctuary
 - Appearance — Quick
+- Appearance — Advanced
+- PDF View — Controls
+
+The Library mockup now includes Settings + Import. Quick Appearance includes always-visible brightness. Advanced Appearance mirrors PR #269. PDF View mirrors PR #270.
 
 Starter components:
 - Primary / Secondary button
@@ -104,12 +135,33 @@ Starter components:
 - Reader actions
 - Library book row
 
+## Code/design delta discovered during synchronization
+The current 0.10.0 theme foundation still uses the earlier Amethyst/Purple identity in `Theme.kt`.
+Gray Fog v1.1 therefore moves into implementation through a compatibility-first theme migration:
+- introduce semantic Gray Fog palette names
+- remap MaterialTheme primary/secondary/tertiary to Brass / Spirit / Crimson
+- preserve legacy palette aliases temporarily so existing screens keep compiling
+- keep Reader publication themes independent from app-shell palette
+- no Reader engine, persistence, Room, navigation, Manga, or release-hardening change
+
+## Implementation phase 1 — Gray Fog Theme Foundation
+Goal: make the existing Compose app visually match the approved Gray Fog system without creating a second theme architecture.
+
+Acceptance:
+- Material dark/light schemes use Gray Fog colors.
+- Existing code that references legacy VeilPalette names still compiles via compatibility aliases.
+- Typography hierarchy stays deterministic and accessible.
+- No publication typography behavior changes.
+- No schema or navigation changes.
+- Change remains independently reversible.
+
 ## Next execution order
-1. Reader chrome and Appearance production polish.
-2. Library retrieval states, search/filter/sort and empty states.
-3. Home / Continue Reading and quiet milestones.
-4. Book Detail + Notebook.
-5. Responsive tablet / foldable / desktop-window variants.
-6. RTL Persian/Arabic validation.
-7. Accessibility / large-text / reduced-motion QA.
-8. Compose implementation slice behind reversible feature gates where needed.
+1. Gray Fog Theme Foundation in Compose.
+2. Reader chrome + Appearance visual polish on top of PR #269.
+3. PDF View visual polish on top of PR #270.
+4. Library retrieval states + Settings/Import polish on top of PR #268.
+5. Home / Continue Reading and quiet milestones.
+6. Book Detail + Notebook.
+7. Tablet / foldable / desktop-window variants.
+8. RTL Persian/Arabic validation.
+9. Accessibility / large-text / reduced-motion QA.
