@@ -45,6 +45,11 @@ public final class ReadingPolicy {
 
     /** Per-session uniqueness plus dwell time, with a daily budget tied to reading minutes. */
     public static final class PageGate {
+        private static final long MIN_INTERVAL_MS = 8_000L;
+        private static final int MAX_SEEN_LOCATIONS = 2_048;
+        private static final long MAX_PAGES_PER_READING_MINUTE = 6L;
+        private static final long DAILY_PAGE_HEADROOM = 6L;
+
         private final Set<String> seen = new LinkedHashSet<>();
         private long lastSeenAt = -1;
         public boolean visit(String key, long elapsedMs, int todayPages, int todayMinutes) {
@@ -53,9 +58,10 @@ public final class ReadingPolicy {
             long dwell = first ? 0 : elapsedMs - lastSeenAt;
             boolean unique = seen.add(key);
             lastSeenAt = elapsedMs;
-            if (seen.size() > 2048) seen.remove(seen.iterator().next());
-            long budget = (long) Math.max(0, todayMinutes) * 6L + 6L;
-            return !first && unique && dwell >= 8_000 && todayPages < budget;
+            if (seen.size() > MAX_SEEN_LOCATIONS) seen.remove(seen.iterator().next());
+            long budget = (long) Math.max(0, todayMinutes) * MAX_PAGES_PER_READING_MINUTE
+                + DAILY_PAGE_HEADROOM;
+            return !first && unique && dwell >= MIN_INTERVAL_MS && todayPages < budget;
         }
         /** Re-establishes the dwell-time baseline after resume or an intentional reader reset. */
         public void rebase(long elapsedMs) { lastSeenAt = elapsedMs >= 0 ? elapsedMs : -1; }
