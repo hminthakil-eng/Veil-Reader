@@ -586,9 +586,7 @@ private fun BookDetailSheet(
                 }
             }
 
-            HorizontalDivider(
-                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
-            )
+            BrassRule(Modifier.fillMaxWidth())
 
             ArchivePanel(modifier = Modifier.fillMaxWidth()) {
                 Text(
