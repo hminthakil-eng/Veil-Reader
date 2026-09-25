@@ -28,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -41,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -69,12 +71,23 @@ fun LibraryScreen(
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Book?>(null) }
+    var detailBookId by rememberSaveable { mutableStateOf<String?>(null) }
     var title by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
     var collectionNames by remember { mutableStateOf("") }
     var seriesName by remember { mutableStateOf("") }
     var seriesIndex by remember { mutableStateOf("") }
     var language by remember { mutableStateOf("") }
+
+    fun beginMetadataEdit(book: Book) {
+        editing = book
+        title = book.title
+        author = book.author
+        collectionNames = book.allCollections.joinToString(", ")
+        seriesName = book.seriesName.orEmpty()
+        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
+        language = book.language.orEmpty()
+    }
 
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImportUri)
@@ -133,6 +146,7 @@ fun LibraryScreen(
         .sortedByDescending { it.lastOpenedAtEpochMs }
         .take(5)
         .toList()
+    val detailBook = detailBookId?.let { id -> books.firstOrNull { it.id == id } }
 
     Column(
         Modifier
@@ -294,15 +308,7 @@ fun LibraryScreen(
                                     book = book,
                                     onOpen = { onOpenBook(book) },
                                     onFavorite = { onFavorite(book.id) },
-                                    onEdit = {
-                                        editing = book
-                                        title = book.title
-                                        author = book.author
-                                        collectionNames = book.allCollections.joinToString(", ")
-                                        seriesName = book.seriesName.orEmpty()
-                                        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
-                                        language = book.language.orEmpty()
-                                    }
+                                    onDetails = { detailBookId = book.id }
                                 )
                             }
                         }
@@ -318,15 +324,7 @@ fun LibraryScreen(
                                     book = book,
                                     onOpen = { onOpenBook(book) },
                                     onFavorite = { onFavorite(book.id) },
-                                    onEdit = {
-                                        editing = book
-                                        title = book.title
-                                        author = book.author
-                                        collectionNames = book.allCollections.joinToString(", ")
-                                        seriesName = book.seriesName.orEmpty()
-                                        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
-                                        language = book.language.orEmpty()
-                                    }
+                                    onDetails = { detailBookId = book.id }
                                 )
                             }
                         }
@@ -336,38 +334,54 @@ fun LibraryScreen(
         }
     }
 
+    detailBook?.let { book ->
+        BookDetailSheet(
+            book = book,
+            onDismiss = { detailBookId = null },
+            onOpen = {
+                detailBookId = null
+                onOpenBook(book)
+            },
+            onFavorite = { onFavorite(book.id) },
+            onEditMetadata = {
+                detailBookId = null
+                beginMetadataEdit(book)
+            }
+        )
+    }
+
     editing?.let { book ->
         val parsedSeriesIndex = seriesIndex.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
         val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text("Book details") },
+            title = { Text(stringResource(R.string.book_metadata_dialog_title)) },
             text = {
                 Column(
                     Modifier.verticalScroll(rememberScrollState()),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    OutlinedTextField(title, { title = it }, label = { Text("Title") }, isError = title.isBlank())
-                    OutlinedTextField(author, { author = it }, label = { Text("Author") })
+                    OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.book_metadata_title)) }, isError = title.isBlank())
+                    OutlinedTextField(author, { author = it }, label = { Text(stringResource(R.string.book_metadata_author)) })
                     OutlinedTextField(
                         collectionNames,
                         { collectionNames = it },
-                        label = { Text("Collections") },
-                        supportingText = { Text("Separate multiple collections with commas.") }
+                        label = { Text(stringResource(R.string.book_metadata_collections)) },
+                        supportingText = { Text(stringResource(R.string.book_metadata_collections_hint)) }
                     )
-                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text("Series (optional)") })
+                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text(stringResource(R.string.book_metadata_series)) })
                     OutlinedTextField(
                         seriesIndex,
                         { seriesIndex = it },
-                        label = { Text("Series number (optional)") },
+                        label = { Text(stringResource(R.string.book_metadata_series_number)) },
                         isError = seriesIndexInvalid,
-                        supportingText = { if (seriesIndexInvalid) Text("Use a number such as 1 or 2.5.") }
+                        supportingText = { if (seriesIndexInvalid) Text(stringResource(R.string.book_metadata_series_number_error)) }
                     )
                     OutlinedTextField(
                         language,
                         { language = it },
-                        label = { Text("Language tag (optional)") },
-                        supportingText = { Text("BCP-47, for example en, fa, tr, or en-US.") }
+                        label = { Text(stringResource(R.string.book_metadata_language)) },
+                        supportingText = { Text(stringResource(R.string.book_metadata_language_hint)) }
                     )
                 }
             },
@@ -388,9 +402,230 @@ fun LibraryScreen(
                         )
                         editing = null
                     }
-                ) { Text("Save") }
+                ) { Text(stringResource(R.string.common_save)) }
             },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { editing = null }) { Text(stringResource(R.string.common_cancel)) } }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BookDetailSheet(
+    book: Book,
+    onDismiss: () -> Unit,
+    onOpen: () -> Unit,
+    onFavorite: () -> Unit,
+    onEditMetadata: () -> Unit
+) {
+    val progress = book.progress.coerceIn(0f, 1f)
+    val status = when {
+        book.finished -> stringResource(R.string.book_detail_finished)
+        progress > 0f -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
+        else -> stringResource(R.string.book_detail_not_started)
+    }
+    val primaryAction = when {
+        book.finished -> stringResource(R.string.book_detail_read_again)
+        progress > 0f -> stringResource(R.string.book_detail_continue_reading)
+        else -> stringResource(R.string.book_detail_open_book)
+    }
+
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.surface,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+        }
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VeilSpacing.lg)
+                .padding(bottom = VeilSpacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BookCover(
+                    title = book.title,
+                    subtitle = book.author,
+                    imagePath = book.coverCachePath,
+                    modifier = Modifier.width(112.dp).height(164.dp)
+                )
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                ) {
+                    Text(
+                        if (book.isImported) stringResource(R.string.book_detail_local_publication_format, book.format.name) else stringResource(R.string.book_detail_sample_entry),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        book.title,
+                        style = MaterialTheme.typography.headlineMedium,
+                        maxLines = 4,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        if (book.author.isBlank()) stringResource(R.string.common_unknown_author) else book.author,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                        Text(
+                            buildString {
+                                append(series)
+                                book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                            },
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.secondary,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+                LinearProgressIndicator(
+                    progress = { progress },
+                    modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+                    color = if (book.finished) MaterialTheme.colorScheme.tertiary
+                    else MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        status,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    book.currentChapter
+                        .takeIf { it.isNotBlank() && it != "Not started" }
+                        ?.let { chapter ->
+                            Text(
+                                chapter,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.widthIn(max = 210.dp)
+                            )
+                        }
+                }
+            }
+
+            Button(
+                onClick = onOpen,
+                enabled = book.isImported,
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+            ) {
+                Text(if (book.isImported) primaryAction else stringResource(R.string.book_detail_publication_unavailable))
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                OutlinedButton(
+                    onClick = onFavorite,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text(if (book.favorite) stringResource(R.string.book_detail_favorited) else stringResource(R.string.book_detail_favorite))
+                }
+                OutlinedButton(
+                    onClick = onEditMetadata,
+                    shape = MaterialTheme.shapes.small,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.book_detail_edit_details))
+                }
+            }
+
+            HorizontalDivider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)
+            )
+
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+                Text(stringResource(R.string.book_detail_publication_details), style = MaterialTheme.typography.titleLarge)
+                BookDetailFact(stringResource(R.string.book_detail_format), book.format.name)
+                book.language?.takeIf { it.isNotBlank() }?.let {
+                    BookDetailFact(stringResource(R.string.book_detail_language), it)
+                }
+                if (book.totalPages > 0) {
+                    BookDetailFact(
+                        stringResource(R.string.book_detail_pages),
+                        stringResource(R.string.book_detail_page_progress, book.pagesRead.coerceAtLeast(0).coerceAtMost(book.totalPages), book.totalPages)
+                    )
+                }
+                BookDetailFact(
+                    stringResource(R.string.book_detail_stored),
+                    if (book.isImported) stringResource(R.string.book_detail_private_local_copy) else stringResource(R.string.book_detail_sample_metadata_only)
+                )
+            }
+
+            if (book.allCollections.isNotEmpty()) {
+                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                    Text(stringResource(R.string.book_detail_collections), style = MaterialTheme.typography.titleMedium)
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    ) {
+                        book.allCollections.forEach { collection ->
+                            Surface(
+                                shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                                )
+                            ) {
+                                Text(
+                                    collection,
+                                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookDetailFact(label: String, value: String) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+        verticalAlignment = Alignment.Top
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(78.dp)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -610,7 +845,7 @@ private fun BookLibraryTile(
     book: Book,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
-    onEdit: () -> Unit
+    onDetails: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth()) {
         Box {
@@ -672,7 +907,7 @@ private fun BookLibraryTile(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    book.author.ifBlank { "Unknown author" },
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
@@ -692,10 +927,10 @@ private fun BookLibraryTile(
                 }
             }
             IconButton(
-                onClick = onEdit,
+                onClick = onDetails,
                 modifier = Modifier
                     .size(48.dp)
-                    .semantics { contentDescription = "Edit details for ${book.title}" }
+                    .semantics { contentDescription = "Book details for ${book.title}" }
             ) {
                 EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -711,7 +946,7 @@ private fun BookLibraryRow(
     book: Book,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
-    onEdit: () -> Unit
+    onDetails: () -> Unit
 ) {
     Surface(
         modifier = Modifier
@@ -735,7 +970,7 @@ private fun BookLibraryRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(book.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
-                    book.author.ifBlank { "Unknown author" },
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -766,8 +1001,8 @@ private fun BookLibraryRow(
                     FavoriteIcon(book.favorite, Modifier.size(20.dp))
                 }
                 IconButton(
-                    onClick = onEdit,
-                    modifier = Modifier.semantics { contentDescription = "Edit details for ${book.title}" }
+                    onClick = onDetails,
+                    modifier = Modifier.semantics { contentDescription = "Book details for ${book.title}" }
                 ) {
                     EllipsisIcon(Modifier.size(19.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -790,7 +1025,7 @@ private fun BookProgress(book: Book) {
     ) {
         Text(
             when {
-                book.finished -> "Finished"
+                book.finished -> stringResource(R.string.book_detail_finished)
                 book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
                 else -> "Unopened"
             },
