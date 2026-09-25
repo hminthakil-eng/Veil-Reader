@@ -170,9 +170,10 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
     ) {
         Text(
             eyebrow.uppercase(),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp)
+            color = VeilPalette.Brass,
+            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.75.sp)
         )
+        BrassRule(Modifier.width(72.dp))
         Text(
             title,
             style = MaterialTheme.typography.headlineLarge,
