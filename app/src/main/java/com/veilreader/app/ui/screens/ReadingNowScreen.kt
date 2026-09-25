@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -29,6 +30,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
 /**
@@ -113,15 +115,22 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
         Text(
-            text = if (hasCurrentBook) "Continue reading" else "Your private library",
+            "GRAYFOG ARCHIVE",
+            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.sp),
+            color = VeilPalette.Brass
+        )
+        BrassRule(Modifier.width(92.dp), strong = true)
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = if (hasCurrentBook) "The Library Awaits" else "Enter the Archive",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = if (hasCurrentBook) {
-                "Pick up exactly where you stopped. Everything else stays quietly out of the way."
+                "Return to the volume you left open. The rest of the archive can wait in silence."
             } else {
-                "Import an EPUB or PDF. Your books, notes, and reading progress stay on this device."
+                "Bring an EPUB or PDF into your private archive. Your books, notes, and progress remain on this device."
             },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -139,15 +148,23 @@ private fun ContinueReadingHero(
     val colors = MaterialTheme.colorScheme
     val progress = current.progress.coerceIn(0f, 1f)
     val progressPercent = (progress * 100).toInt()
-    val shape = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.medium
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(colors.surface.copy(alpha = 0.90f))
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        colors.surfaceVariant.copy(alpha = 0.52f),
+                        colors.surface.copy(alpha = 0.96f),
+                        colors.background.copy(alpha = 0.90f)
+                    )
+                )
+            )
             .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
                 shape
             )
             .padding(VeilSpacing.lg)
@@ -222,6 +239,12 @@ private fun HeroDetails(
 
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
         Text(
+            "CURRENT VOLUME",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
+            color = VeilPalette.Brass
+        )
+        BrassRule(Modifier.width(58.dp))
+        Text(
             current.title,
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
@@ -260,14 +283,14 @@ private fun HeroDetails(
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
-                Text(if (progress > 0f && !current.finished) "Continue" else "Open book")
+                Text(if (progress > 0f && !current.finished) "Return to the volume" else "Open the volume")
             }
             TextButton(
                 onClick = onOpenLibrary,
                 shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
-                Text("Library")
+                Text("Enter Grayfog Archive")
             }
         }
     }
@@ -293,7 +316,7 @@ private fun RecentBooksShelf(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Recent books",
+                "Recent tomes",
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
