@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import android.graphics.BitmapFactory
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -13,11 +14,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -27,6 +34,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.theme.VeilMotion
@@ -34,7 +42,48 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.io.File
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+@Composable
+fun VeilReveal(
+    delayMillis: Int = 0,
+    distance: Dp = 14.dp,
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit
+) {
+    var revealed by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (delayMillis > 0) delay(delayMillis.toLong())
+        revealed = true
+    }
+
+    val alpha by animateFloatAsState(
+        targetValue = if (revealed) 1f else 0f,
+        animationSpec = tween(
+            durationMillis = 360,
+            easing = FastOutSlowInEasing
+        ),
+        label = "veil-reveal-alpha"
+    )
+    val distancePx = with(LocalDensity.current) { distance.toPx() }
+    val translationY by animateFloatAsState(
+        targetValue = if (revealed) 0f else distancePx,
+        animationSpec = tween(
+            durationMillis = 420,
+            easing = FastOutSlowInEasing
+        ),
+        label = "veil-reveal-y"
+    )
+
+    Box(
+        modifier = modifier.graphicsLayer {
+            this.alpha = alpha
+            this.translationY = translationY
+        },
+        content = content
+    )
+}
 
 @Composable
 fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
