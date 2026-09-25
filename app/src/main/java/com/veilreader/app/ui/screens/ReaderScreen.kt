@@ -12,8 +12,10 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -61,6 +63,7 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -551,16 +554,21 @@ fun ReaderScreen(
                     .fillMaxWidth()
                     .widthIn(max = 760.dp)
                     .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 1.dp,
-                shadowElevation = 10.dp
+                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
+                        RoundedCornerShape(12.dp)
+                    ),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+                shape = RoundedCornerShape(12.dp),
+                tonalElevation = 0.dp,
+                shadowElevation = 6.dp
             ) {
                 Column(
                     Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
+                    BrassRule(Modifier.fillMaxWidth())
                     Row(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -587,8 +595,8 @@ fun ReaderScreen(
                             modifier = Modifier.semantics {
                                 contentDescription = "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
                             },
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
+                            shape = RoundedCornerShape(6.dp),
+                            color = VeilPalette.DeepBrass.copy(alpha = 0.72f)
                         ) {
                             Text(
                                 "${(progress * 100).toInt()}%",
@@ -601,7 +609,7 @@ fun ReaderScreen(
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(3.dp),
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = VeilPalette.Brass,
                         trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
                     )
                 }
@@ -619,17 +627,26 @@ fun ReaderScreen(
                     .fillMaxWidth()
                     .widthIn(max = 560.dp)
                     .navigationBarsPadding()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                tonalElevation = 2.dp,
-                shadowElevation = 12.dp,
-                shape = RoundedCornerShape(28.dp)
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
+                        RoundedCornerShape(14.dp)
+                    ),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+                tonalElevation = 0.dp,
+                shadowElevation = 7.dp,
+                shape = RoundedCornerShape(14.dp)
             ) {
-                Row(
+                Column(
                     Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
+                    BrassRule(Modifier.fillMaxWidth())
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                     ReaderControl(
                         action = ReaderAction.NOTEBOOK,
                         label = "Notebook",
@@ -671,6 +688,7 @@ fun ReaderScreen(
                         } else {
                             showPdfZoom = true
                         }
+                    }
                     }
                 }
             }
@@ -780,7 +798,15 @@ fun ReaderScreen(
     }
 
     if (showAppearance) {
-        ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { showAppearance = false },
+            containerColor = MaterialTheme.colorScheme.background,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = VeilPalette.Brass.copy(alpha = 0.58f)
+                )
+            }
+        ) {
             EpubAppearancePanel(
                 appearance = readerAppearance,
                 onChange = {
@@ -793,7 +819,15 @@ fun ReaderScreen(
     }
 
     if (showPdfZoom) {
-        ModalBottomSheet(onDismissRequest = { showPdfZoom = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { showPdfZoom = false },
+            containerColor = MaterialTheme.colorScheme.background,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = VeilPalette.Brass.copy(alpha = 0.58f)
+                )
+            }
+        ) {
             PdfZoomControls(
                 navigator = navigator,
                 appearance = readerAppearance,
@@ -899,8 +933,8 @@ private fun ReaderChromeButton(
             .size(48.dp)
             .semantics { contentDescription = accessibilityLabel },
         colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-            contentColor = MaterialTheme.colorScheme.onSurface
+            containerColor = VeilPalette.DeepBrass.copy(alpha = 0.52f),
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         )
     ) {
         ReaderActionIcon(action, Modifier.size(22.dp), MaterialTheme.colorScheme.onSurface)
@@ -1033,7 +1067,13 @@ private fun EpubAppearancePanel(
             .padding(bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                "READING INSTRUMENTS",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
+                color = VeilPalette.Brass
+            )
+            BrassRule(Modifier.width(74.dp))
             Text(
                 "Reading appearance",
                 style = MaterialTheme.typography.headlineMedium,
@@ -1054,6 +1094,11 @@ private fun EpubAppearancePanel(
                 selected = !showAdvanced,
                 onClick = { showAdvanced = false },
                 label = { Text("Quick") },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp)
@@ -1062,6 +1107,11 @@ private fun EpubAppearancePanel(
                 selected = showAdvanced,
                 onClick = { showAdvanced = true },
                 label = { Text("Advanced") },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp)
