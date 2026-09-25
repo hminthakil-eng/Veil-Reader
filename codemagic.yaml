@@ -59,8 +59,17 @@ workflows:
 
       - name: Unit tests
         script: |
+          set -o pipefail
           cd "$CM_BUILD_DIR"
-          ./gradlew :app:testDebugUnitTest --stacktrace --no-daemon
+          ./gradlew :app:testDebugUnitTest --stacktrace --console=plain --no-daemon 2>&1 | tee "$CM_BUILD_DIR/unit-test.log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo
+            echo "===== UNIT TEST ROOT-CAUSE SUMMARY ====="
+            grep -E -i "^(e:|FAILURE:|\* What went wrong:|Execution failed for task|There were failing tests|.*FAILED.*|Caused by:)" "$CM_BUILD_DIR/unit-test.log" | tail -n 120 || true
+            echo "===== END SUMMARY ====="
+            exit "$status"
+          fi
         test_report: app/build/test-results/**/*.xml
 
       - name: Android lint
@@ -74,6 +83,7 @@ workflows:
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
 
     artifacts:
+      - unit-test.log
       - app/build/outputs/apk/debug/*.apk
       - app/build/reports/**
       - app/build/test-results/**
@@ -137,8 +147,17 @@ workflows:
 
       - name: Unit tests and lint
         script: |
+          set -o pipefail
           cd "$CM_BUILD_DIR"
-          ./gradlew :app:testDebugUnitTest :app:lintDebug --stacktrace --no-daemon
+          ./gradlew :app:testDebugUnitTest :app:lintDebug --stacktrace --console=plain --no-daemon 2>&1 | tee "$CM_BUILD_DIR/full-verify.log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            echo
+            echo "===== FULL VERIFY ROOT-CAUSE SUMMARY ====="
+            grep -E -i "^(e:|FAILURE:|\* What went wrong:|Execution failed for task|There were failing tests|.*FAILED.*|Caused by:)" "$CM_BUILD_DIR/full-verify.log" | tail -n 160 || true
+            echo "===== END SUMMARY ====="
+            exit "$status"
+          fi
         test_report: app/build/test-results/**/*.xml
 
       - name: Build app and instrumentation APKs
@@ -175,6 +194,7 @@ workflows:
           ./gradlew :benchmark:assembleBenchmarkBenchmark --stacktrace --no-daemon
 
     artifacts:
+      - full-verify.log
       - app/build/outputs/apk/debug/*.apk
       - app/build/outputs/apk/androidTest/**/*.apk
       - benchmark/build/outputs/**/*.apk
