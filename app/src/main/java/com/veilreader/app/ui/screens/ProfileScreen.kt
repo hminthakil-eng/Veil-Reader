@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
 private data class VeiledDiscovery(
@@ -104,9 +105,14 @@ fun ProfileScreen(
 
         FilledTonalButton(
             onClick = onOpenSettings,
+            shape = MaterialTheme.shapes.small,
+            colors = ButtonDefaults.filledTonalButtonColors(
+                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.64f),
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            ),
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .heightIn(min = 50.dp)
         ) {
             Text("Reader & app settings")
         }
