@@ -55,4 +55,15 @@
     <string name="book_detail_private_local_copy">نسخهٔ خصوصی و محلی</string>
     <string name="book_detail_sample_metadata_only">فقط فرادادهٔ نمونه</string>
     <string name="book_detail_collections">مجموعه‌ها</string>
+
+    <string name="book_metadata_dialog_title">جزئیات کتاب</string>
+    <string name="book_metadata_title">عنوان</string>
+    <string name="book_metadata_author">نویسنده</string>
+    <string name="book_metadata_collections">مجموعه‌ها</string>
+    <string name="book_metadata_collections_hint">چند مجموعه را با ویرگول از هم جدا کنید.</string>
+    <string name="book_metadata_series">مجموعه/سری (اختیاری)</string>
+    <string name="book_metadata_series_number">شماره در سری (اختیاری)</string>
+    <string name="book_metadata_series_number_error">عددی مانند ۱ یا ۲٫۵ وارد کنید.</string>
+    <string name="book_metadata_language">برچسب زبان (اختیاری)</string>
+    <string name="book_metadata_language_hint">BCP-47، برای نمونه fa، en، tr یا en-US.</string>
 </resources>
