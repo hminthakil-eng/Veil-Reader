@@ -141,9 +141,9 @@ private val VeilTypography = Typography(
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 30.sp,
-        lineHeight = 35.sp,
-        letterSpacing = (-0.25).sp
+        fontSize = 32.sp,
+        lineHeight = 37.sp,
+        letterSpacing = (-0.35).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Serif,
@@ -158,11 +158,11 @@ private val VeilTypography = Typography(
         lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 19.sp,
-        lineHeight = 24.sp,
-        letterSpacing = (-0.1).sp
+        fontSize = 20.sp,
+        lineHeight = 25.sp,
+        letterSpacing = (-0.12).sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
@@ -206,11 +206,11 @@ private val VeilTypography = Typography(
 )
 
 private val VeilShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
 )
 
 @Composable
