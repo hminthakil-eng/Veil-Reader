@@ -39,6 +39,7 @@ fun buildSealedReadingCycle(
     sessions: List<ReadingSessionSnapshot>,
     highlights: List<Highlight>,
     bookmarks: List<Bookmark>,
+    milestones: List<ReadingMilestoneRecord> = emptyList(),
     completedAtEpochMs: Long,
     finalLocatorJson: String
 ): ReadingCycleRecord {
@@ -106,6 +107,25 @@ fun buildSealedReadingCycle(
                 )
             )
         }
+        milestones
+            .asSequence()
+            .filter { it.bookId == book.id && it.reachedAtEpochMs in 1L..completedAtEpochMs }
+            .sortedBy { it.reachedAtEpochMs }
+            .forEach { milestone ->
+                add(
+                    ReadingHistoryEvent(
+                        id = milestone.id,
+                        kind = ReadingHistoryEventKind.READING_MILESTONE,
+                        timestampEpochMs = milestone.reachedAtEpochMs,
+                        title = when (milestone.kind) {
+                            ReadingMilestoneKind.FIRST_OPENED -> "First opened"
+                            ReadingMilestoneKind.PROGRESS_25 -> "Reached 25%"
+                            ReadingMilestoneKind.PROGRESS_50 -> "Reached 50%"
+                            ReadingMilestoneKind.PROGRESS_75 -> "Reached 75%"
+                        }
+                    )
+                )
+            }
         add(
             ReadingHistoryEvent(
                 id = "completed:${book.id}:$cycleIndex",
