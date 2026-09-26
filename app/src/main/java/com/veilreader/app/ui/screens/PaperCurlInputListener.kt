@@ -29,6 +29,7 @@ internal class PaperCurlInputListener(
     private val state: PaperCurlState,
     private val isEnabled: () -> Boolean,
     private val scope: CoroutineScope,
+    private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
     private val onCommittedTurn: () -> Unit
 ) : InputListener {
@@ -71,9 +72,13 @@ internal class PaperCurlInputListener(
 
         if (visualReady) {
             scope.launch {
-                delay(PAGE_REVEAL_DELAY_MS)
-                state.animateTapTurn()
-                state.clear()
+                if (isReducedMotion()) {
+                    state.clear()
+                } else {
+                    delay(PAGE_REVEAL_DELAY_MS)
+                    state.animateTapTurn()
+                    state.clear()
+                }
             }
         }
         return true
@@ -155,25 +160,29 @@ internal class PaperCurlInputListener(
                 commit && previewNavigationSucceeded -> {
                     // Persist/count the committed destination before finishing the visual tail.
                     onCommittedTurn()
-                    state.animateComplete(
-                        releaseVelocityDpPerSec =
-                            releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
-                    )
+                    if (!isReducedMotion()) {
+                        state.animateComplete(
+                            releaseVelocityDpPerSec =
+                                releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                        )
+                    }
                 }
 
                 previewNavigationSucceeded -> {
                     restoreDragStart(spec)
-                    delay(PAGE_REVEAL_DELAY_MS)
-                    state.animateCancel()
+                    if (!isReducedMotion()) {
+                        delay(PAGE_REVEAL_DELAY_MS)
+                        state.animateCancel()
+                    }
                 }
 
                 commit -> {
                     // End-of-book / navigation refusal should still feel intentional.
-                    state.animateBoundaryBounce()
+                    if (!isReducedMotion()) state.animateBoundaryBounce()
                 }
 
                 else -> {
-                    state.animateCancel()
+                    if (!isReducedMotion()) state.animateCancel()
                 }
             }
 
