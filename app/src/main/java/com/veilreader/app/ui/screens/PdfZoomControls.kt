@@ -2,17 +2,24 @@ package com.veilreader.app.ui.screens
 
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,13 +30,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.delay
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
@@ -47,8 +57,6 @@ internal fun PdfZoomControls(
         mutableStateOf(navigator.findPdfView())
     }
     LaunchedEffect(navigator) {
-        // The PDF renderer may attach well after the bottom sheet is composed on cold or busy devices.
-        // Keep probing for the lifetime of this composition instead of giving up after 1.2 seconds.
         while (pdfView == null) {
             pdfView = navigator.findPdfView()
             if (pdfView == null) delay(100)
@@ -58,8 +66,6 @@ internal fun PdfZoomControls(
     val view = pdfView
     var zoomMirror by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
 
-    // AndroidPdfViewer 3.2.8 exposes zoom getters/mutators but no zoom-change callback.
-    // Keep PDFView authoritative and mirror its current zoom only while this sheet is composed.
     LaunchedEffect(view) {
         val target = view ?: return@LaunchedEffect
         while (true) {
@@ -74,68 +80,130 @@ internal fun PdfZoomControls(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            "PDF view",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-
-        Text(
-            "Keep layout, zoom, and screen brightness close to the page. Pinch and double-tap still work directly on the PDF.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Text("Layout", fontWeight = FontWeight.SemiBold)
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            FilterChip(
-                selected = !appearance.scroll,
-                onClick = { onAppearanceChange(appearance.copy(scroll = false)) },
-                label = { Text("Paginated") },
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .semantics { contentDescription = "PDF paginated layout" }
+        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            Text(
+                "PDF READING INSTRUMENTS",
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Brass
             )
-            FilterChip(
-                selected = appearance.scroll,
-                onClick = { onAppearanceChange(appearance.copy(scroll = true)) },
-                label = { Text("Continuous") },
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 48.dp)
-                    .semantics { contentDescription = "PDF continuous scroll" }
+            BrassRule(Modifier.fillMaxWidth())
+            Text(
+                "PDF view",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            Text(
+                "Fit, zoom, layout, and brightness stay close to the page. Pinch and double-tap remain available directly on the document.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium
             )
         }
+
+        Text(
+            "LAYOUT",
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Brass
+        )
+
+        Row(
+            Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            listOf(
+                false to "Page",
+                true to "Scroll"
+            ).forEach { (scrollMode, label) ->
+                val selected = appearance.scroll == scrollMode
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .selectable(
+                            selected = selected,
+                            role = Role.RadioButton
+                        ) {
+                            onAppearanceChange(appearance.copy(scroll = scrollMode))
+                        }
+                        .semantics {
+                            contentDescription =
+                                if (scrollMode) "PDF continuous scroll" else "PDF paginated layout"
+                        },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = if (selected) {
+                        VeilPalette.DeepBrass.copy(alpha = 0.76f)
+                    } else {
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+                    },
+                    border = BorderStroke(
+                        1.dp,
+                        if (selected) VeilPalette.Brass.copy(alpha = 0.82f)
+                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            label.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (selected) VeilPalette.Moon
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+
         Text(
             if (appearance.scroll) {
-                "Vertical flow · pages fit the screen width."
+                "Continuous vertical flow · pages fit the reading width."
             } else {
-                "Paginated · pages snap horizontally inside the viewport."
+                "Single-page focus · pages remain contained in the viewport."
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+        BrassRule(Modifier.fillMaxWidth())
 
         if (view == null) {
-            Text(
-                "Zoom controls are still connecting to the PDF renderer.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+                )
+            ) {
+                Text(
+                    "Connecting to the PDF renderer…",
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         } else {
             val minZoom = view.minZoom.coerceAtLeast(0.5f)
             val maxZoom = view.maxZoom.coerceAtLeast(minZoom + 0.5f)
             val displayedZoom = normalizedPdfZoom(zoomMirror, minZoom, maxZoom)
 
-            Text(
-                "Zoom · ${(displayedZoom * 100).toInt()}%",
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "ZOOM",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "${(displayedZoom * 100).toInt()}%",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+
             Slider(
                 value = displayedZoom,
                 onValueChange = {
@@ -151,7 +219,7 @@ internal fun PdfZoomControls(
 
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
@@ -166,17 +234,31 @@ internal fun PdfZoomControls(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .semantics { contentDescription = "Zoom out" }
-                ) { Text("−") }
+                        .heightIn(min = 46.dp)
+                        .semantics { contentDescription = "Zoom out" },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f)
+                    )
+                ) {
+                    Text("−", style = MaterialTheme.typography.titleLarge)
+                }
+
                 OutlinedButton(
-                    onClick = {
-                        view.resetZoomWithAnimation()
-                    },
+                    onClick = { view.resetZoomWithAnimation() },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp)
-                ) { Text("Reset") }
+                        .heightIn(min = 46.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.44f)
+                    )
+                ) {
+                    Text("100%")
+                }
+
                 OutlinedButton(
                     onClick = {
                         val requested = nextPdfZoom(
@@ -189,33 +271,56 @@ internal fun PdfZoomControls(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .semantics { contentDescription = "Zoom in" }
-                ) { Text("+") }
+                        .heightIn(min = 46.dp)
+                        .semantics { contentDescription = "Zoom in" },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    border = BorderStroke(
+                        1.dp,
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f)
+                    )
+                ) {
+                    Text("+", style = MaterialTheme.typography.titleLarge)
+                }
             }
 
-            OutlinedButton(
+            Button(
                 onClick = {
                     view.fitToWidth(view.currentPage)
                     zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                 },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            ) { Text("Fit page width") }
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VeilPalette.DeepBrass.copy(alpha = 0.78f),
+                    contentColor = VeilPalette.Moon
+                )
+            ) {
+                Text("Fit page width")
+            }
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+        BrassRule(Modifier.fillMaxWidth())
 
         ReaderBrightnessControls(
             appearance = appearance,
             onChange = onAppearanceChange
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
-
         Button(
             onClick = onDone,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-        ) { Text("Back to reading") }
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 52.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilPalette.Brass,
+                contentColor = Color(0xFF17120A)
+            )
+        ) {
+            Text("Back to reading")
+        }
     }
 }
 
