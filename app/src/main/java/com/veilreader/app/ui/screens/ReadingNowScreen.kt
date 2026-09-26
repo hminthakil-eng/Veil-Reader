@@ -460,37 +460,49 @@ private fun recentBookStatus(book: Book): String {
 
 @Composable
 private fun ReadingPulse(profile: ReaderProfile) {
-    Surface(
+    Column(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.30f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f))
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            if (maxWidth < 420.dp) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    ReadingPulseValue("${profile.streakDays}", "day streak", Modifier.fillMaxWidth())
-                    ReadingPulseValue(formatReadingTime(profile.minutesRead), "reading", Modifier.fillMaxWidth())
-                    ReadingPulseValue("${profile.booksFinished}", "finished", Modifier.fillMaxWidth())
-                }
-            } else {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ReadingPulseValue("${profile.streakDays}", "day streak", Modifier.weight(1f))
-                    ReadingPulseValue(formatReadingTime(profile.minutesRead), "reading", Modifier.weight(1f))
-                    ReadingPulseValue("${profile.booksFinished}", "finished", Modifier.weight(1f))
-                }
-            }
+            Text(
+                "READING RECORD",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                color = VeilPalette.Brass,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                "Private · on device",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        BrassRule(Modifier.fillMaxWidth())
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.Top
+        ) {
+            ReadingPulseValue(
+                value = "${profile.streakDays}",
+                label = "day streak",
+                modifier = Modifier.weight(1f)
+            )
+            ReadingPulseValue(
+                value = formatReadingTime(profile.minutesRead),
+                label = "reading",
+                modifier = Modifier.weight(1f)
+            )
+            ReadingPulseValue(
+                value = "${profile.booksFinished}",
+                label = "finished",
+                modifier = Modifier.weight(1f)
+            )
         }
     }
 }
@@ -506,7 +518,7 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            label,
+            label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
