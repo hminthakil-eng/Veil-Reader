@@ -19,6 +19,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -32,6 +33,7 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.data.settings.AppSettings
+import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderAppearance
@@ -47,6 +49,8 @@ import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
+import com.veilreader.app.ui.sensory.VeilSensoryEvent
+import com.veilreader.app.ui.sensory.VeilSensoryFeedback
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -57,11 +61,21 @@ fun VeilApp(
     onExternalOpenUriConsumed: () -> Unit = {},
     appSettings: AppSettings = AppSettings(),
     onSetAppThemeMode: (AppThemeMode) -> Unit = {},
-    onSaveReaderAppearance: (ReaderAppearance) -> Unit = {}
+    onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
+    onSaveSensorySettings: (SensorySettings) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
     val activity = LocalActivity.current
+    val view = LocalView.current
     val scope = rememberCoroutineScope()
+    val sensory = remember(context) { VeilSensoryFeedback(context) }
+
+    LaunchedEffect(appSettings.sensory) {
+        sensory.update(appSettings.sensory)
+    }
+    DisposableEffect(sensory) {
+        onDispose { sensory.dispose() }
+    }
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
     val readerEngine = remember(context) { ReadiumEngine(context) }
@@ -144,6 +158,25 @@ fun VeilApp(
     val castleTitle = castleTitleState?.value
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
+
+    DisposableEffect(lifecycle, sensory) {
+        sensory.setForeground(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+        val sensoryObserver = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_START,
+                Lifecycle.Event.ON_RESUME -> sensory.setForeground(true)
+                Lifecycle.Event.ON_STOP,
+                Lifecycle.Event.ON_DESTROY -> sensory.setForeground(false)
+                else -> Unit
+            }
+        }
+        lifecycle.addObserver(sensoryObserver)
+        onDispose {
+            lifecycle.removeObserver(sensoryObserver)
+            sensory.setForeground(false)
+        }
+    }
+
     DisposableEffect(lifecycle) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) game.refresh()
@@ -384,6 +417,8 @@ fun VeilApp(
                 onAdvanceRank = {
                     if (!game.advanceRank()) {
                         errorMessage = "Complete the current advancement ritual first."
+                    } else {
+                        sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
                     }
                 }
             )
@@ -393,6 +428,8 @@ fun VeilApp(
                 onAdvanceRank = {
                     if (!game.advanceRank()) {
                         errorMessage = "Complete the current advancement ritual first."
+                    } else {
+                        sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
                     }
                 },
                 onChoosePath = { pathId ->
@@ -423,6 +460,7 @@ fun VeilApp(
             game = game,
             readerAppearance = appSettings.readerAppearance,
             onReaderAppearanceChange = onSaveReaderAppearance,
+            onSensoryEvent = { event -> sensory.perform(view, event) },
             onClose = {
                 openedPublication = null
                 routeViewModel.closeReader()
@@ -439,6 +477,7 @@ fun VeilApp(
                 restoring = restoring,
                 onSetAppThemeMode = onSetAppThemeMode,
                 onSaveReaderAppearance = onSaveReaderAppearance,
+                onSaveSensorySettings = onSaveSensorySettings,
                 onExportBackup = { exportData(it, true) },
                 onRestoreBackup = ::restoreData,
                 onExportNotes = { exportData(it, false) },
@@ -482,7 +521,11 @@ fun VeilApp(
             profile = requireNotNull(profile),
             equippedSigil = equippedSigil,
             onEquip = { id ->
-                if (!game.equipSigil(id)) errorMessage = "That sigil has not awakened yet."
+                if (!game.equipSigil(id)) {
+                    errorMessage = "That sigil has not awakened yet."
+                } else {
+                    sensory.perform(view, VeilSensoryEvent.RELIC)
+                }
             },
             onClose = routeViewModel::closeChamber
         )
@@ -492,7 +535,11 @@ fun VeilApp(
             castleTitle = requireNotNull(castleTitle),
             availableTitles = game.availableCastleTitles(),
             onSelectTitle = { title ->
-                if (!game.selectCastleTitle(title)) errorMessage = "That Castle title is still sealed."
+                if (!game.selectCastleTitle(title)) {
+                    errorMessage = "That Castle title is still sealed."
+                } else {
+                    sensory.perform(view, VeilSensoryEvent.RELIC)
+                }
             },
             onClose = routeViewModel::closeChamber
         )
