@@ -68,7 +68,7 @@ class SettingsStore(private val context: Context) {
             }.getOrDefault(AppThemeMode.SYSTEM),
             readerAppearance = ReaderAppearance(
                 theme = runCatching {
-                    ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.DUSK.name)
+                    ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.PAPER.name)
                 }.getOrDefault(ReaderTheme.DUSK),
                 fontScale = (prefs[Keys.fontScale] ?: 1.0).coerceIn(0.75, 1.8),
                 lineHeight = (prefs[Keys.lineHeight] ?: 1.45).coerceIn(1.1, 2.0),
