@@ -83,12 +83,12 @@ internal fun PdfZoomControls(
             "Page & Zoom",
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
-            color = VeilPalette.Moon
+            color = MaterialTheme.colorScheme.onSurface
         )
         VeilOrnamentDivider()
-        
+
         Text(
-            "Pinch or double-tap the page at any time. These controls give you a reliable manual fallback.",
+            "Pinch or double-tap to zoom. Use the controls below for precise adjustments.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )

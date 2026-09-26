@@ -561,11 +561,12 @@ fun ReaderScreen(
                     .widthIn(max = 760.dp)
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                color = VeilPalette.Obsidian.copy(alpha = .94f),
+                color = VeilPalette.Obsidian.copy(alpha = .98f),
+                contentColor = VeilPalette.Moon,
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .68f)),
-                tonalElevation = 1.dp,
-                shadowElevation = 10.dp
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
             ) {
                 Column(
                     Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -630,9 +631,10 @@ fun ReaderScreen(
                     .widthIn(max = 560.dp)
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 8.dp),
-                color = VeilPalette.Obsidian.copy(alpha = .94f),
-                tonalElevation = 2.dp,
-                shadowElevation = 12.dp,
+                color = VeilPalette.Obsidian.copy(alpha = .98f),
+                contentColor = VeilPalette.Moon,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .68f))
             ) {
@@ -925,6 +927,7 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
+        colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.OldGold),
         modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 58.dp),
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
     ) {
@@ -1058,50 +1061,9 @@ private fun EpubAppearancePanel(
         }
 
         VeilOrnamentDivider()
-        Text("Page atmosphere", fontWeight = FontWeight.SemiBold, color = VeilPalette.Moon)
-            Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            AppearancePreset("Paper", draft.theme == ReaderTheme.PAPER) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.PAPER).copy(
-                        fontScale = 1.0,
-                        lineHeight = 1.45,
-                        pageMargins = 1.0,
-                        scroll = false
-                    )
-                )
-            }
-            AppearancePreset("Sepia", draft.theme == ReaderTheme.SEPIA) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.SEPIA).copy(
-                        fontScale = 1.08,
-                        lineHeight = 1.6,
-                        pageMargins = 1.15,
-                        scroll = false
-                    )
-                )
-            }
-            AppearancePreset("Dusk", draft.theme == ReaderTheme.DUSK) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.DUSK).copy(
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1
-                    )
-                )
-            }
-            AppearancePreset("OLED", draft.theme == ReaderTheme.OLED) {
-                updateDraft(
-                    draft.withTheme(ReaderTheme.OLED).copy(
-                        fontScale = 1.05,
-                        lineHeight = 1.55,
-                        pageMargins = 1.1
-                    )
-                )
-            }
-        }
+        Text("Page atmosphere", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurface)
+        ReaderThemeChoices(draft, ::updateDraft)
+        ReaderPageSample(draft)
 
         VeilOrnamentDivider()
 
@@ -1128,53 +1090,8 @@ private fun EpubAppearancePanel(
 
         VeilOrnamentDivider()
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
-                Text(
-                    "Turn this off for paginated reading without the slide-like transition.",
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Switch(
-                checked = draft.scroll,
-                onCheckedChange = { updateDraft(draft.copy(scroll = it)) },
-                modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
-            )
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Page turn", fontWeight = FontWeight.SemiBold)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    FilterChip(
-                        selected = draft.pageTurnStyle == PageTurnStyle.PAPER,
-                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
-                        enabled = !draft.scroll,
-                        label = { Text("Paper curl") },
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    )
-                    FilterChip(
-                        selected = draft.pageTurnStyle == PageTurnStyle.SLIDE,
-                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
-                        enabled = !draft.scroll,
-                        label = { Text("Simple slide") },
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    )
-                }
-                Text(
-                    if (draft.scroll) {
-                        "Page-turn effects are paused while continuous scroll is on."
-                    } else {
-                        "Paper curl follows your drag; Simple slide keeps Readium's native animated fallback."
-                    },
-                    fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        Text("Reading motion", fontWeight = FontWeight.SemiBold)
+        ReaderMotionChoices(draft, ::updateDraft)
 
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
@@ -1210,28 +1127,6 @@ private fun EpubAppearancePanel(
             Text("Return to the Book")
         }
     }
-}
-
-@Composable
-private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Unit) {
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label) },
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = VeilPalette.Obsidian.copy(alpha = .70f),
-            labelColor = VeilPalette.Mist,
-            selectedContainerColor = VeilPalette.DeepAmethyst,
-            selectedLabelColor = VeilPalette.BrightGold
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = VeilPalette.TarnishedBrass.copy(alpha = .62f),
-            selectedBorderColor = VeilPalette.OldGold
-        ),
-        modifier = Modifier.heightIn(min = 48.dp)
-    )
 }
 
 @OptIn(ExperimentalReadiumApi::class)
@@ -1272,3 +1167,4 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
+

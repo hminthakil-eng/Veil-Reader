@@ -67,6 +67,7 @@ fun LibraryScreen(
     onOpenSettings: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    var showShelves by rememberSaveable { mutableStateOf(false) }
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
@@ -192,6 +193,7 @@ fun LibraryScreen(
                     bookCount = books.size,
                     isImporting = isImporting,
                     onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    onOpenShelves = { showShelves = true },
                     onOpenSettings = onOpenSettings
                 )
             }
@@ -399,6 +401,12 @@ fun LibraryScreen(
         }
     }
 
+    if (showShelves) {
+        LibraryShelvesDialog(books, collections, onDismiss = { showShelves = false },
+            onShelf = { selected -> shelf = selected; collection = ""; query = ""; showShelves = false },
+            onCollection = { selected -> collection = selected; shelf = "All"; query = ""; showShelves = false })
+    }
+
     detailBookId?.let { id -> books.firstOrNull { it.id == id } }?.let { book ->
         ArchiveBookDetail(
             book = book,
@@ -538,68 +546,23 @@ private fun LibraryHeader(
     bookCount: Int,
     isImporting: Boolean,
     onImport: () -> Unit,
+    onOpenShelves: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val compact = maxWidth < 520.dp
-        val subtitle = if (bookCount == 0) {
-            "Import an EPUB or PDF to begin. Everything stays local on this device."
-        } else {
-            "$bookCount ${if (bookCount == 1) "book" else "books"} · search, filter, organize, and continue reading."
-        }
-
-        if (compact) {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-                ScreenHeader(
-                    eyebrow = "Library",
-                    title = "Your books",
-                    subtitle = subtitle
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    OutlinedButton(
-                        onClick = onOpenSettings,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text("Settings")
-                    }
-                    Button(
-                        onClick = onImport,
-                        enabled = !isImporting,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(if (isImporting) "Importing…" else "Import")
-                    }
-                }
-            }
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                Box(Modifier.weight(1f)) {
-                    ScreenHeader(
-                        eyebrow = "Library",
-                        title = "Your books",
-                        subtitle = subtitle
-                    )
-                }
-                OutlinedButton(
-                    onClick = onOpenSettings,
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text("Settings")
-                }
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text(if (isImporting) "Importing…" else "Import")
-                }
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("$bookCount ${if (bookCount == 1) "volume" else "volumes"} in your archive",
+            style = MaterialTheme.typography.bodySmall, color = VeilPalette.Mist)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = onOpenShelves, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.OldGold)) { Text("Shelves") }
+            OutlinedButton(onClick = onOpenSettings, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.OldGold)) { Text("Settings") }
+            Button(onClick = onImport, enabled = !isImporting, modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = VeilPalette.OldGold, contentColor = VeilPalette.Ink)) {
+                Text(if (isImporting) "Importing…" else "Import")
             }
         }
     }

@@ -148,14 +148,10 @@ fun SettingsScreen(
             description = "These are the defaults used when a publication opens. Book content still follows its own metadata and direction."
         ) {
             Text("Publication theme", style = MaterialTheme.typography.labelLarge)
-            ChoiceRow(
-                entries = ReaderTheme.entries,
-                selected = appearance.theme,
-                label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
-                onSelected = { theme ->
-                    commitReaderAppearance { current -> current.withTheme(theme) }
-                }
-            )
+            ReaderThemeChoices(appearance) { selected ->
+                commitReaderAppearance { current -> current.withTheme(selected.theme) }
+            }
+            ReaderPageSample(appearance)
 
             ReaderSlider(
                 label = "Text size",
@@ -186,22 +182,11 @@ fun SettingsScreen(
             )
 
             Text("Reading motion", style = MaterialTheme.typography.labelLarge)
-            ChoiceRow(
-                entries = listOf("Paper curl", "Slide", "Scroll"),
-                selected = if (appearance.scroll) "Scroll" else if (appearance.pageTurnStyle == PageTurnStyle.PAPER) "Paper curl" else "Slide",
-                label = { it },
-                onSelected = { motion ->
-                    commitReaderAppearance { current ->
-                        when (motion) {
-                            "Scroll" -> current.copy(scroll = true)
-                            "Paper curl" -> current.copy(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
-                            else -> current.copy(scroll = false, pageTurnStyle = PageTurnStyle.SLIDE)
-                        }
-                    }
+            ReaderMotionChoices(appearance) { selected ->
+                commitReaderAppearance { current ->
+                    current.copy(scroll = selected.scroll, pageTurnStyle = selected.pageTurnStyle)
                 }
-            )
-            Text("Curl turns a paper page. Slide moves between pages. Scroll reads continuously.",
-                color = VeilPalette.Mist, style = MaterialTheme.typography.bodySmall)
+            }
 
             SettingsSwitchRow(
                 title = "Publisher styles",
