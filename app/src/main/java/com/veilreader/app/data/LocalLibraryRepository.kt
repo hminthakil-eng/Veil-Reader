@@ -81,6 +81,8 @@ class LocalLibraryRepository internal constructor(
     private val _bookmarks = MutableStateFlow<List<Bookmark>>(emptyList())
     val bookmarks: StateFlow<List<Bookmark>> = _bookmarks
 
+    private val _readingSessions = MutableStateFlow<List<ReadingSessionSnapshot>>(emptyList())
+    val readingSessions: StateFlow<List<ReadingSessionSnapshot>> = _readingSessions
 
     init {
         scope.launch {
@@ -111,6 +113,11 @@ class LocalLibraryRepository internal constructor(
         }
         scope.launch {
             database.bookmarks().observeAll().collect { rows -> _bookmarks.value = rows.map { it.toDomain() } }
+        }
+        scope.launch {
+            database.readingSessions().observeAll().collect { rows ->
+                _readingSessions.value = rows.map { it.toSnapshot() }
+            }
         }
     }
 
