@@ -53,7 +53,7 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         Text(
             title,
             style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
+            color = VeilPalette.Moon
         )
         subtitle?.takeIf(String::isNotBlank)?.let {
             Text(
