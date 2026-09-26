@@ -138,7 +138,14 @@ fun SettingsScreen(
             ChoiceRow(
                 entries = ReaderTheme.entries,
                 selected = appearance.theme,
-                label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
+                label = { theme ->
+                    when (theme) {
+                        ReaderTheme.PAPER -> "Paper"
+                        ReaderTheme.SEPIA -> "Sepia"
+                        ReaderTheme.DUSK -> "Dark"
+                        ReaderTheme.OLED -> "Night"
+                    }
+                },
                 onSelected = { theme ->
                     commitReaderAppearance { current -> current.withTheme(theme) }
                 }
