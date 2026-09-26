@@ -1127,7 +1127,7 @@ private fun EpubAppearancePanel(
             // Two columns keep theme names readable at larger system font sizes.
             listOf(
                 listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
-                listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "OLED")
+                listOf(ReaderTheme.DUSK to "Dark", ReaderTheme.OLED to "Night")
             ).forEach { presets ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
