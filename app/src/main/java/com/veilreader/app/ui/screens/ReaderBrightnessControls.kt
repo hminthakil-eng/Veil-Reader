@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -23,7 +24,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.ui.theme.VeilPalette
 
 @Composable
 internal fun ReaderBrightnessEffect(
@@ -73,25 +76,38 @@ internal fun ReaderBrightnessControls(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
+        Text(
+            "BRIGHTNESS",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+            color = VeilPalette.Brass
+        )
+
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Column(Modifier.weight(1f)) {
-                Text("Use system brightness", fontWeight = FontWeight.SemiBold)
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "Use system brightness",
+                    style = MaterialTheme.typography.titleSmall
+                )
                 Text(
                     if (customBrightness == null) {
-                        "Reader follows the device brightness."
+                        "Follows the device and restores naturally."
                     } else {
-                        "Reader uses its own brightness and restores the previous level when you leave."
+                        "Reader brightness is isolated to this reading session."
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+
             Switch(
                 checked = customBrightness == null,
                 onCheckedChange = { useSystem ->
@@ -101,6 +117,14 @@ internal fun ReaderBrightnessControls(
                         )
                     )
                 },
+                colors = SwitchDefaults.colors(
+                    checkedThumbColor = VeilPalette.Moon,
+                    checkedTrackColor = VeilPalette.DeepBrass,
+                    checkedBorderColor = VeilPalette.Brass,
+                    uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    uncheckedTrackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                ),
                 modifier = Modifier.semantics {
                     contentDescription = "Use system brightness"
                 }
@@ -108,10 +132,22 @@ internal fun ReaderBrightnessControls(
         }
 
         if (customBrightness != null) {
-            Text(
-                "Reading brightness · ${(draft * 100).toInt()}%",
-                fontWeight = FontWeight.SemiBold
-            )
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "Reading brightness",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    "${(draft * 100).toInt()}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = VeilPalette.Brass
+                )
+            }
+
             Slider(
                 value = draft,
                 onValueChange = {
