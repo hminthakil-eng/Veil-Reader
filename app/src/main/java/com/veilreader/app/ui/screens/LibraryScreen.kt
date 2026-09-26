@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,7 +25,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -684,64 +687,113 @@ private fun LibraryHeader(
         val subtitle = if (bookCount == 0) {
             "Import an EPUB or PDF to begin. Everything stays local on this device."
         } else {
-            "$bookCount ${if (bookCount == 1) "book" else "books"} · search, filter, organize, and continue reading."
+            "$bookCount ${if (bookCount == 1) "volume" else "volumes"} · fragments, records, and stories kept close."
         }
+        val shape = MaterialTheme.shapes.small
 
-        if (compact) {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-                ScreenHeader(
-                    eyebrow = "GRAYFOG ARCHIVE",
-                    title = "The Grand Library",
-                    subtitle = subtitle
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    OutlinedButton(
-                        onClick = onOpenSettings,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text("Settings")
-                    }
-                    Button(
-                        onClick = onImport,
-                        enabled = !isImporting,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(if (isImporting) "Importing…" else "Import")
-                    }
-                }
-            }
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                Box(Modifier.weight(1f)) {
-                    ScreenHeader(
-                        eyebrow = "GRAYFOG ARCHIVE",
-                        title = "The Grand Library",
-                        subtitle = subtitle
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = if (compact) 210.dp else 190.dp)
+                .clip(shape)
+                .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)), shape)
+        ) {
+            Image(
+                painter = painterResource(R.drawable.grayfog_threshold_v1),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+            Box(
+                Modifier.matchParentSize().background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.36f),
+                            VeilPalette.Ink.copy(alpha = 0.72f),
+                            VeilPalette.Ink.copy(alpha = 0.97f)
+                        )
                     )
-                }
-                OutlinedButton(
-                    onClick = onOpenSettings,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text("Settings")
-                }
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text(if (isImporting) "Importing…" else "Import")
+                )
+            )
+            Box(
+                Modifier.matchParentSize().background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.74f),
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.28f)
+                        )
+                    )
+                )
+            )
+
+            Column(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(VeilSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                Text(
+                    "GRAYFOG ARCHIVE",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "The Grand Library",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Moon.copy(alpha = 0.82f)
+                )
+                BrassRule(Modifier.width(86.dp), strong = true)
+
+                if (compact) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        OutlinedButton(
+                            onClick = onOpenSettings,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.Moon)
+                        ) {
+                            Text("Settings")
+                        }
+                        Button(
+                            onClick = onImport,
+                            enabled = !isImporting,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                        ) {
+                            Text(if (isImporting) "Importing…" else "Import volume")
+                        }
+                    }
+                } else {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        Button(
+                            onClick = onImport,
+                            enabled = !isImporting,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) {
+                            Text(if (isImporting) "Importing…" else "Import volume")
+                        }
+                        OutlinedButton(
+                            onClick = onOpenSettings,
+                            shape = MaterialTheme.shapes.extraSmall,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.Moon)
+                        ) {
+                            Text("Settings")
+                        }
+                    }
                 }
             }
         }
