@@ -1212,7 +1212,7 @@ private fun LibraryShelfCard(
                 .background(
                     Brush.verticalGradient(
                         listOf(
-                            VeilPalette.Midnight.copy(alpha = if (selected) 0.44f else 0.26f),
+                            VeilPalette.RaisedIron.copy(alpha = if (selected) 0.44f else 0.26f),
                             Color.Transparent
                         )
                     )
