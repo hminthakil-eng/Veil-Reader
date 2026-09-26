@@ -28,6 +28,8 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.HighlightMemory
+import com.veilreader.app.domain.PassageVisit
+import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
@@ -43,6 +45,8 @@ fun ArchiveScreen(
     highlights: List<Highlight>,
     bookmarks: List<Bookmark>,
     readingSessions: List<ReadingSessionSnapshot>,
+    readingCycles: List<ReadingCycleRecord>,
+    passageVisits: List<PassageVisit>,
     onClose: () -> Unit,
     onOpenPassage: (Book, String) -> Unit,
     onSaveNote: (String, String) -> Unit,
@@ -55,7 +59,7 @@ fun ArchiveScreen(
     var noteDraft by rememberSaveable { mutableStateOf("") }
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteBookmarkId by rememberSaveable { mutableStateOf<String?>(null) }
-    var selectedCapsuleBookId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCapsuleSealCode by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
         .getOrDefault(NotebookSection.HIGHLIGHTS)
@@ -64,12 +68,13 @@ fun ArchiveScreen(
     val echoes = remember(highlights, booksById, archiveNow) {
         deriveArchiveEchoes(highlights, booksById, archiveNow)
     }
-    val capsules = remember(books, readingSessions, highlights, bookmarks) {
+    val capsules = remember(books, readingSessions, highlights, bookmarks, readingCycles) {
         deriveReadingTimeCapsules(
             books = books,
             sessions = readingSessions,
             highlights = highlights,
-            bookmarks = bookmarks
+            bookmarks = bookmarks,
+            sealedCycles = readingCycles
         )
     }
     val cleanQuery = query.trim()
@@ -263,7 +268,12 @@ fun ArchiveScreen(
                         key = { _, item -> "note:${item.id}" }
                     ) { index, highlight ->
                         val book = booksById[highlight.bookId]
-                        val memory = deriveHighlightMemory(highlight, book, archiveNow)
+                        val memory = deriveHighlightMemory(
+                            highlight = highlight,
+                            book = book,
+                            nowEpochMs = archiveNow,
+                            passageVisits = passageVisits
+                        )
                         NotebookHighlightCard(
                             highlight = highlight,
                             book = book,
@@ -298,7 +308,12 @@ fun ArchiveScreen(
                         key = { _, item -> item.id }
                     ) { index, highlight ->
                         val book = booksById[highlight.bookId]
-                        val memory = deriveHighlightMemory(highlight, book, archiveNow)
+                        val memory = deriveHighlightMemory(
+                            highlight = highlight,
+                            book = book,
+                            nowEpochMs = archiveNow,
+                            passageVisits = passageVisits
+                        )
                         NotebookHighlightCard(
                             highlight = highlight,
                             book = book,
@@ -334,7 +349,12 @@ fun ArchiveScreen(
                         NotebookHighlightCard(
                             highlight = echo.highlight,
                             book = echo.book,
-                            memory = echo.memory,
+                            memory = deriveHighlightMemory(
+                                highlight = echo.highlight,
+                                book = echo.book,
+                                nowEpochMs = archiveNow,
+                                passageVisits = passageVisits
+                            ),
                             onRead = { onOpenPassage(echo.book, echo.highlight.locatorJson) },
                             onEditNote = {
                                 editingHighlightId = echo.highlight.id
@@ -367,11 +387,11 @@ fun ArchiveScreen(
 
                     items(
                         matchingCapsules,
-                        key = { capsule -> "capsule:${capsule.book.id}" }
+                        key = { capsule -> "capsule:${capsule.sealCode}" }
                     ) { capsule ->
                         ReadingTimeCapsuleCard(
                             capsule = capsule,
-                            onOpen = { selectedCapsuleBookId = capsule.book.id }
+                            onOpen = { selectedCapsuleSealCode = capsule.sealCode }
                         )
                     }
                 }
@@ -461,12 +481,12 @@ fun ArchiveScreen(
         )
     }
 
-    selectedCapsuleBookId
-        ?.let { id -> capsules.firstOrNull { it.book.id == id } }
+    selectedCapsuleSealCode
+        ?.let { seal -> capsules.firstOrNull { it.sealCode == seal } }
         ?.let { capsule ->
             ReadingTimeCapsuleSheet(
                 capsule = capsule,
-                onDismiss = { selectedCapsuleBookId = null }
+                onDismiss = { selectedCapsuleSealCode = null }
             )
         }
 
@@ -750,7 +770,17 @@ private fun LivingMarginMemoryStrip(
             color = if (echoMode) VeilPalette.Brass
             else VeilPalette.Mist.copy(alpha = 0.64f)
         )
-        if (memory.bookActivityAfterMark) {
+        if (memory.revisitCount > 0) {
+            Text(
+                buildString {
+                    append("REVISITED ").append(memory.revisitCount)
+                    append(if (memory.revisitCount == 1) " TIME" else " TIMES")
+                    memory.lastViewedLabel?.let { append(" · ").append(it) }
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Spirit.copy(alpha = 0.72f)
+            )
+        } else if (memory.bookActivityAfterMark) {
             Text(
                 "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
                 style = MaterialTheme.typography.labelSmall,
