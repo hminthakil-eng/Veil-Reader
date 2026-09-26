@@ -116,10 +116,22 @@ fun VeilApp(
     } else {
         null
     }
+    val readingCyclesState = if (openedPublication == null) {
+        library.readingCycles.collectAsStateWithLifecycle()
+    } else {
+        null
+    }
+    val passageVisitsState = if (openedPublication == null) {
+        library.passageVisits.collectAsStateWithLifecycle()
+    } else {
+        null
+    }
     val books = booksState?.value.orEmpty()
     val highlights = highlightsState?.value.orEmpty()
     val bookmarks = bookmarksState?.value.orEmpty()
     val readingSessions = readingSessionsState?.value.orEmpty()
+    val readingCycles = readingCyclesState?.value.orEmpty()
+    val passageVisits = passageVisitsState?.value.orEmpty()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
 
     // Existing libraries and restored backups may have no cached covers. Process one book at a time
@@ -380,6 +392,12 @@ fun VeilApp(
             library.saveProgress(targetId, recoveredProgress, persistedLocator)
         }
         library.markOpened(targetId)
+        if (locatorOverride != null) {
+            library.recordPassageVisitForLocator(
+                bookId = targetId,
+                locatorJson = locatorOverride
+            )
+        }
         openedPublication = opened
         if (activeReturnRitual != null) {
             sensory.perform(view, VeilSensoryEvent.RETURN_RITUAL)
@@ -550,6 +568,8 @@ fun VeilApp(
             highlights = highlights,
             bookmarks = bookmarks,
             readingSessions = readingSessions,
+            readingCycles = readingCycles,
+            passageVisits = passageVisits,
             onClose = routeViewModel::closeArchive,
             onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
             onSaveNote = { id, note ->
