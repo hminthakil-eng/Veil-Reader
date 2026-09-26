@@ -99,6 +99,7 @@ import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Fit
+import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -487,7 +488,7 @@ fun ReaderScreen(
                 val event = when {
                     continuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
                     opened.format != BookFormat.EPUB ||
-                        latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE ->
+                        latestAppearance.value.pageTurnStyle != PageTurnStyle.PAPER ->
                         ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
                     else -> ReaderLocatorEvent.NAVIGATOR_POSITION
                 }
@@ -667,6 +668,12 @@ fun ReaderScreen(
         if (opened.format == BookFormat.EPUB) {
             ReaderPageAtmosphere(
                 theme = readerAppearance.theme,
+                progress = progress,
+                progression = (navigator as? OverflowableNavigator)
+                    ?.overflow
+                    ?.value
+                    ?.readingProgression
+                    ?: ReadingProgression.LTR,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -1133,9 +1140,12 @@ private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
 @Composable
 private fun ReaderPageAtmosphere(
     theme: ReaderTheme,
+    progress: Float,
+    progression: ReadingProgression,
     modifier: Modifier = Modifier
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
+    val stack = paperPageStackDepth(progress, progression)
 
     Canvas(modifier) {
         val edge = if (dark) {
@@ -1148,26 +1158,49 @@ private fun ReaderPageAtmosphere(
         } else {
             Color.White.copy(alpha = 0.135f)
         }
-        val edgeWidth = 16.dp.toPx()
+        val leftStackWidth = stack.leftDp.dp.toPx()
+        val rightStackWidth = stack.rightDp.dp.toPx()
 
-        // Book-block depth at the outer edges.
+        // Physical page stack: 2–8dp, transferred from unread to read side as
+        // total progression changes. RTL mirrors the physical book semantics.
         drawRect(
             brush = Brush.horizontalGradient(
                 listOf(edge, Color.Transparent),
                 startX = 0f,
-                endX = edgeWidth
+                endX = leftStackWidth
             ),
-            size = Size(edgeWidth, size.height)
+            size = Size(leftStackWidth, size.height)
         )
         drawRect(
             brush = Brush.horizontalGradient(
                 listOf(Color.Transparent, edge),
-                startX = size.width - edgeWidth,
+                startX = size.width - rightStackWidth,
                 endX = size.width
             ),
-            topLeft = Offset(size.width - edgeWidth, 0f),
-            size = Size(edgeWidth, size.height)
+            topLeft = Offset(size.width - rightStackWidth, 0f),
+            size = Size(rightStackWidth, size.height)
         )
+
+        val sheetLine = if (dark) {
+            Color.White.copy(alpha = 0.018f)
+        } else {
+            Color(0xFF4A3923).copy(alpha = 0.035f)
+        }
+        repeat(3) { index ->
+            val fraction = (index + 1) / 4f
+            drawLine(
+                color = sheetLine,
+                start = Offset(leftStackWidth * fraction, 0f),
+                end = Offset(leftStackWidth * fraction, size.height),
+                strokeWidth = 0.45.dp.toPx()
+            )
+            drawLine(
+                color = sheetLine,
+                start = Offset(size.width - rightStackWidth * fraction, 0f),
+                end = Offset(size.width - rightStackWidth * fraction, size.height),
+                strokeWidth = 0.45.dp.toPx()
+            )
+        }
 
         // Very soft top/bottom page falloff. Keep it below the threshold where it
         // competes with body text.
@@ -1741,6 +1774,7 @@ private fun ReaderAppearancePreview(
                     when (appearance.navigationMode) {
                         ReaderNavigationMode.PAPER_CURL -> "CURL"
                         ReaderNavigationMode.SLIDE -> "SLIDE"
+                        ReaderNavigationMode.PAGED -> "PAGE"
                         ReaderNavigationMode.SCROLL -> "SCROLL"
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -1805,6 +1839,7 @@ private fun ReaderMotionSelector(
             val label = when (mode) {
                 ReaderNavigationMode.PAPER_CURL -> "Curl"
                 ReaderNavigationMode.SLIDE -> "Slide"
+                ReaderNavigationMode.PAGED -> "Page"
                 ReaderNavigationMode.SCROLL -> "Scroll"
             }
             Surface(
@@ -1836,6 +1871,7 @@ private fun ReaderMotionSelector(
                         when (mode) {
                             ReaderNavigationMode.PAPER_CURL -> "⌁"
                             ReaderNavigationMode.SLIDE -> "↔"
+                            ReaderNavigationMode.PAGED -> "□"
                             ReaderNavigationMode.SCROLL -> "↕"
                         },
                         style = MaterialTheme.typography.titleMedium,
