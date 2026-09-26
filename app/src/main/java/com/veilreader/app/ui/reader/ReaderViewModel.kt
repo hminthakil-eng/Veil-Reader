@@ -160,11 +160,14 @@ class ReaderViewModel(
             sessionId = current.sessionId,
             details = "seq=$sequence progress=$safe event=$event"
         )
+        val completionNow = System.currentTimeMillis()
         val completed = library.saveProgress(
             id = bookId,
             progression = safe.toDouble(),
             locatorJson = locatorJson,
-            traceSequence = sequence
+            traceSequence = sequence,
+            completionSessionSnapshot = current.snapshot(completionNow),
+            nowEpochMs = completionNow
         )
         ReaderTrace.event(
             "locator_save_enqueued",
