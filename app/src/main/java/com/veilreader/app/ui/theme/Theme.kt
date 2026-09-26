@@ -203,7 +203,7 @@ private val VeilTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = VeilType.Display,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 47.sp,
+        fontSize = 48.sp,
         lineHeight = 51.sp,
         letterSpacing = (-0.80).sp
     ),
@@ -237,40 +237,55 @@ private val VeilTypography = Typography(
         fontFamily = VeilType.Display,
         fontWeight = FontWeight.SemiBold,
         fontSize = 17.sp,
-        lineHeight = 22.sp
+        lineHeight = 22.sp,
+        letterSpacing = (-0.06).sp
+    ),
+    titleSmall = TextStyle(
+        fontFamily = VeilType.Display,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
+        lineHeight = 19.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = VeilType.Ui,
         fontWeight = FontWeight.Normal,
-        fontSize = 15.5.sp,
-        lineHeight = 23.sp
+        fontSize = 16.sp,
+        lineHeight = 24.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = VeilType.Ui,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
-        lineHeight = 20.sp
+        lineHeight = 21.sp,
+        letterSpacing = 0.02.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = VeilType.Ui,
+        fontWeight = FontWeight.Normal,
+        fontSize = 12.sp,
+        lineHeight = 18.sp,
+        letterSpacing = 0.04.sp
     ),
     labelLarge = TextStyle(
         fontFamily = VeilType.Ui,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 12.5.sp,
-        lineHeight = 17.5.sp,
-        letterSpacing = 0.12.sp
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.24.sp
     ),
     labelMedium = TextStyle(
         fontFamily = VeilType.Ui,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 11.5.sp,
-        lineHeight = 16.5.sp,
-        letterSpacing = 0.55.sp
+        fontSize = 10.5.sp,
+        lineHeight = 15.sp,
+        letterSpacing = 0.62.sp
     ),
     labelSmall = TextStyle(
         fontFamily = VeilType.Ui,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 9.5.sp,
-        lineHeight = 13.5.sp,
-        letterSpacing = 1.10.sp
+        fontSize = 9.sp,
+        lineHeight = 13.sp,
+        letterSpacing = 1.05.sp
     )
 )
 
