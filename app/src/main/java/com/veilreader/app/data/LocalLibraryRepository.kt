@@ -22,9 +22,12 @@ import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.ReadingMilestoneRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildSealedReadingCycle
+import com.veilreader.app.domain.crossedReadingMilestones
 import com.veilreader.app.domain.deriveReadingContinuity
+import com.veilreader.app.domain.firstOpenedMilestone
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Locale
@@ -93,6 +96,9 @@ class LocalLibraryRepository internal constructor(
     private val _passageVisits = MutableStateFlow<List<PassageVisit>>(emptyList())
     val passageVisits: StateFlow<List<PassageVisit>> = _passageVisits
 
+    private val _readingMilestones = MutableStateFlow<List<ReadingMilestoneRecord>>(emptyList())
+    val readingMilestones: StateFlow<List<ReadingMilestoneRecord>> = _readingMilestones
+
     init {
         scope.launch {
             for (write in writes) {
@@ -136,6 +142,11 @@ class LocalLibraryRepository internal constructor(
         scope.launch {
             database.passageVisits().observeAll().collect { rows ->
                 _passageVisits.value = rows.map { it.toDomain() }
+            }
+        }
+        scope.launch {
+            database.readingMilestones().observeAll().collect { rows ->
+                _readingMilestones.value = rows.map { it.toDomain() }
             }
         }
     }
@@ -244,11 +255,25 @@ class LocalLibraryRepository internal constructor(
 
     fun markOpened(id: String) {
         flushProgress(id)
+        val current = getBook(id) ?: return
         val openedAtEpochMs = System.currentTimeMillis()
-        updateBookCached(id) { it.copy(lastOpenedAtEpochMs = openedAtEpochMs) } ?: return
+        val firstOpen = current.lastOpenedAtEpochMs <= 0L
+        val updated = current.copy(lastOpenedAtEpochMs = openedAtEpochMs)
+        replaceBookCached(updated)
         enqueue {
-            check(database.books().updateLastOpened(id, openedAtEpochMs) == 1) {
-                "Book disappeared before its opened timestamp could be persisted: $id"
+            database.withTransaction {
+                check(database.books().updateLastOpened(id, openedAtEpochMs) == 1) {
+                    "Book disappeared before its opened timestamp could be persisted: $id"
+                }
+                if (firstOpen) {
+                    firstOpenedMilestone(
+                        bookId = id,
+                        openedAtEpochMs = openedAtEpochMs,
+                        locatorJson = current.locatorJson
+                    )?.let { milestone ->
+                        database.readingMilestones().insertIfAbsent(milestone.toEntity())
+                    }
+                }
             }
         }
     }
@@ -284,6 +309,13 @@ class LocalLibraryRepository internal constructor(
             finished = current.finished || finishedNow
         )
         replaceBookCached(updated)
+        val crossedMilestones = crossedReadingMilestones(
+            bookId = id,
+            previousProgress = current.progress,
+            newProgress = safe,
+            reachedAtEpochMs = nowEpochMs,
+            locatorJson = locatorJson
+        )
         queueProgressWrite(
             PendingProgressWrite(
                 id = id,
@@ -295,7 +327,8 @@ class LocalLibraryRepository internal constructor(
                 traceSequence = traceSequence,
                 completionAtEpochMs = nowEpochMs.takeIf { newlyFinished },
                 completionSessionSnapshot = completionSessionSnapshot.takeIf { newlyFinished },
-                completionBookSnapshot = updated.takeIf { newlyFinished }
+                completionBookSnapshot = updated.takeIf { newlyFinished },
+                milestones = crossedMilestones
             ),
             immediate = newlyFinished
         )
@@ -554,7 +587,22 @@ class LocalLibraryRepository internal constructor(
      */
     private fun queueProgressWrite(value: PendingProgressWrite, immediate: Boolean) {
         synchronized(coalescingLock) {
-            pendingProgress[value.id] = value
+            val previous = pendingProgress[value.id]
+            val merged = if (previous == null) {
+                value
+            } else {
+                value.copy(
+                    milestones = (previous.milestones + value.milestones)
+                        .distinctBy { it.id },
+                    completionAtEpochMs =
+                        value.completionAtEpochMs ?: previous.completionAtEpochMs,
+                    completionSessionSnapshot =
+                        value.completionSessionSnapshot ?: previous.completionSessionSnapshot,
+                    completionBookSnapshot =
+                        value.completionBookSnapshot ?: previous.completionBookSnapshot
+                )
+            }
+            pendingProgress[value.id] = merged
 
             if (immediate) {
                 progressFlushJobs.remove(value.id)?.cancel()
@@ -639,6 +687,11 @@ class LocalLibraryRepository internal constructor(
             if (completionAt != null && completionBook != null) {
                 database.withTransaction {
                     persistProgress()
+                    if (value.milestones.isNotEmpty()) {
+                        database.readingMilestones().insertAllIfAbsent(
+                            value.milestones.map { it.toEntity() }
+                        )
+                    }
                     value.completionSessionSnapshot?.let { session ->
                         database.readingSessions().upsert(session.toEntity())
                     }
@@ -654,10 +707,19 @@ class LocalLibraryRepository internal constructor(
                         bookmarks = database.bookmarks().listAll()
                             .filter { it.bookId == value.id }
                             .map { it.toDomain() },
+                        milestones = database.readingMilestones().listForBook(value.id)
+                            .map { it.toDomain() },
                         completedAtEpochMs = completionAt,
                         finalLocatorJson = value.locatorJson
                     )
                     database.readingCycles().upsert(cycle.toEntity())
+                }
+            } else if (value.milestones.isNotEmpty()) {
+                database.withTransaction {
+                    persistProgress()
+                    database.readingMilestones().insertAllIfAbsent(
+                        value.milestones.map { it.toEntity() }
+                    )
                 }
             } else {
                 persistProgress()
@@ -760,7 +822,8 @@ data class LibrarySnapshot(
     val appearance: ReaderAppearance,
     val readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     val readingCycles: List<ReadingCycleRecord> = emptyList(),
-    val passageVisits: List<PassageVisit> = emptyList()
+    val passageVisits: List<PassageVisit> = emptyList(),
+    val readingMilestones: List<ReadingMilestoneRecord> = emptyList()
 ) {
     companion object
 }
@@ -771,7 +834,8 @@ private data class DatabaseLibraryState(
     val bookmarks: List<Bookmark>,
     val readingSessions: List<ReadingSessionSnapshot>,
     val readingCycles: List<ReadingCycleRecord>,
-    val passageVisits: List<PassageVisit>
+    val passageVisits: List<PassageVisit>,
+    val readingMilestones: List<ReadingMilestoneRecord>
 )
 
 private data class PendingProgressWrite(
@@ -784,7 +848,8 @@ private data class PendingProgressWrite(
     val traceSequence: Long? = null,
     val completionAtEpochMs: Long? = null,
     val completionSessionSnapshot: ReadingSessionSnapshot? = null,
-    val completionBookSnapshot: Book? = null
+    val completionBookSnapshot: Book? = null,
+    val milestones: List<ReadingMilestoneRecord> = emptyList()
 )
 
 private const val PROGRESS_WRITE_INTERVAL_MS = 250L
