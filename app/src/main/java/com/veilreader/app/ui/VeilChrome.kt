@@ -140,11 +140,11 @@ fun VeilBottomDock(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(28.dp),
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 16.dp,
+        shadowElevation = 8.dp,
         tonalElevation = 1.dp,
         border = BorderStroke(
             1.dp,
@@ -152,7 +152,7 @@ fun VeilBottomDock(
         )
     ) {
         Row(
-            modifier = Modifier.padding(6.dp),
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -193,17 +193,17 @@ private fun VeilDockItem(
 
     Column(
         modifier = modifier
-            .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(21.dp))
+            .heightIn(min = 50.dp)
+            .clip(RoundedCornerShape(16.dp))
             .background(background)
             .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 7.dp)
+            .padding(horizontal = 2.dp, vertical = 5.dp)
             .scale(scale),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(22.dp))
-        Spacer(Modifier.height(3.dp))
+        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.height(2.dp))
         Text(
             tab.label,
             style = MaterialTheme.typography.labelMedium.copy(
