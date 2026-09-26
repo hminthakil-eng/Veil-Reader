@@ -28,6 +28,16 @@ fun veilScriptGroupFor(language: String): VeilScriptGroup =
         else -> VeilScriptGroup.LATIN
     }
 
+fun usesArabicScript(text: String): Boolean =
+    text.any { character ->
+        val code = character.code
+        code in 0x0600..0x06FF ||
+            code in 0x0750..0x077F ||
+            code in 0x08A0..0x08FF ||
+            code in 0xFB50..0xFDFF ||
+            code in 0xFE70..0xFEFF
+    }
+
 /** Stable optical measures shared across phone/tablet layouts. */
 object VeilMeasure {
     val EditorialText = 680.dp
