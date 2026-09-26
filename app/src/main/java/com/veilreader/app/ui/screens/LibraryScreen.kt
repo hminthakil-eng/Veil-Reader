@@ -209,15 +209,23 @@ fun LibraryScreen(
             singleLine = true,
             label = { Text("Search the archive") },
             placeholder = { Text("Title, author, series, collection…") },
-            leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
+            leadingIcon = { SearchIcon(Modifier.size(20.dp), VeilPalette.OldGold) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
                     TextButton(onClick = { query = "" }, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                        Text("Clear", style = MaterialTheme.typography.labelMedium)
+                        Text("Clear", style = MaterialTheme.typography.labelMedium, color = VeilPalette.OldGold)
                     }
                 }
             },
-            shape = MaterialTheme.shapes.medium,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = VeilPalette.OldGold,
+                unfocusedBorderColor = VeilPalette.TarnishedBrass.copy(alpha = .72f),
+                focusedLabelColor = VeilPalette.BrightGold,
+                cursorColor = VeilPalette.OldGold,
+                focusedContainerColor = VeilPalette.Obsidian.copy(alpha = .76f),
+                unfocusedContainerColor = VeilPalette.Obsidian.copy(alpha = .58f)
+            ),
+            shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
         )
 
@@ -233,6 +241,18 @@ fun LibraryScreen(
                     selected = shelf == label,
                     onClick = { shelf = label },
                     label = { Text(label) },
+                    colors = FilterChipDefaults.filterChipColors(
+                        containerColor = VeilPalette.Obsidian.copy(alpha = .68f),
+                        labelColor = VeilPalette.Mist,
+                        selectedContainerColor = VeilPalette.DeepAmethyst.copy(alpha = .92f),
+                        selectedLabelColor = VeilPalette.BrightGold
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = shelf == label,
+                        borderColor = VeilPalette.TarnishedBrass.copy(alpha = .62f),
+                        selectedBorderColor = VeilPalette.OldGold
+                    ),
                     modifier = Modifier.heightIn(min = 48.dp)
                 )
             }
@@ -499,22 +519,9 @@ private fun ArchiveOverview(
     collections: Int,
     modifier: Modifier = Modifier
 ) {
-    val shape = MaterialTheme.shapes.large
-    Box(
-        modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.54f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.74f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-                    )
-                )
-            )
-            .border(BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.66f)), shape)
-            .padding(VeilSpacing.lg)
+    GrayfogPanel(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(VeilSpacing.lg)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
             Row(
