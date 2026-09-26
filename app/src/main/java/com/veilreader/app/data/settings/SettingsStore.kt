@@ -21,6 +21,7 @@ data class AppSettings(
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
+    val welcomeSeen: Boolean = false,
     val legacyLibraryImported: Boolean = false,
     val legacyGameImported: Boolean = false
 )
@@ -38,6 +39,7 @@ class SettingsStore(private val context: Context) {
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
+        val welcomeSeen = booleanPreferencesKey("welcome_seen")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
         val legacyGameImported = booleanPreferencesKey("legacy_game_imported")
     }
@@ -65,6 +67,7 @@ class SettingsStore(private val context: Context) {
             ),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
+            welcomeSeen = prefs[Keys.welcomeSeen] ?: false,
             legacyLibraryImported = prefs[Keys.legacyLibraryImported] ?: false,
             legacyGameImported = prefs[Keys.legacyGameImported] ?: false
         )
@@ -95,6 +98,10 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setGameVisible(visible: Boolean) {
         context.veilSettingsDataStore.edit { it[Keys.gameVisible] = visible }
+    }
+
+    suspend fun markWelcomeSeen() {
+        context.veilSettingsDataStore.edit { it[Keys.welcomeSeen] = true }
     }
 
     suspend fun markLegacyLibraryImported() {
