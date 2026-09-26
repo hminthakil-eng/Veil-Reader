@@ -17,6 +17,25 @@ import org.junit.runner.RunWith
 class SettingsStoreInstrumentedTest {
 
     @Test
+    fun unanimatedPagedMode_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.NONE
+        )
+
+        try {
+            store.saveReaderAppearance(expected)
+
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerAppearance)
+        } finally {
+            store.saveReaderAppearance(ReaderAppearance())
+        }
+    }
+
+    @Test
     fun themeAndReaderMode_surviveSettingsStoreRecreation() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val store = SettingsStore(context)
