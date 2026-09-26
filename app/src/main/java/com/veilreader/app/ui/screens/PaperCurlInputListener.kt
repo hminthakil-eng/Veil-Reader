@@ -303,7 +303,7 @@ internal class PaperCurlInputListener(
     )
 
     private companion object {
-        const val EDGE_FRACTION = 0.24f
+        const val EDGE_FRACTION = 0.22f
         const val HORIZONTAL_BIAS = 0.90f
         const val DRAG_DIRECTION_SLOP_PX = 4f
         const val FRAME_DELAY_MS = 18L
@@ -339,7 +339,7 @@ internal fun shouldCommitPaperTurn(
 ): Boolean {
     // Returning to the origin or dragging outward must never commit a turn.
     if (inwardDistance <= 0f) return false
-    val commitDistance = max(92f * density, width * 0.20f)
+    val commitDistance = max(96f * density, width * 0.22f)
     return inwardDistance >= commitDistance ||
-        curlProgress >= 0.34f
+        curlProgress >= 0.36f
 }
