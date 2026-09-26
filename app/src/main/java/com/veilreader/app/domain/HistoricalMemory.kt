@@ -155,3 +155,68 @@ fun exactPassageVisits(
         }
         .sortedBy { it.viewedAtEpochMs }
         .toList()
+
+
+enum class ReadingMilestoneKind(val progression: Float) {
+    FIRST_OPENED(0f),
+    PROGRESS_25(0.25f),
+    PROGRESS_50(0.50f),
+    PROGRESS_75(0.75f)
+}
+
+data class ReadingMilestoneRecord(
+    val id: String,
+    val bookId: String,
+    val kind: ReadingMilestoneKind,
+    val reachedAtEpochMs: Long,
+    val progression: Float,
+    val locatorJson: String?
+)
+
+fun crossedReadingMilestones(
+    bookId: String,
+    previousProgress: Float,
+    newProgress: Float,
+    reachedAtEpochMs: Long,
+    locatorJson: String
+): List<ReadingMilestoneRecord> {
+    if (reachedAtEpochMs <= 0L) return emptyList()
+    val from = previousProgress.coerceIn(0f, 1f)
+    val to = newProgress.coerceIn(0f, 1f)
+    if (to <= from) return emptyList()
+
+    return listOf(
+        ReadingMilestoneKind.PROGRESS_25,
+        ReadingMilestoneKind.PROGRESS_50,
+        ReadingMilestoneKind.PROGRESS_75
+    ).mapNotNull { kind ->
+        if (from < kind.progression && to >= kind.progression) {
+            ReadingMilestoneRecord(
+                id = "milestone:$bookId:${kind.name}",
+                bookId = bookId,
+                kind = kind,
+                reachedAtEpochMs = reachedAtEpochMs,
+                progression = kind.progression,
+                locatorJson = locatorJson
+            )
+        } else {
+            null
+        }
+    }
+}
+
+fun firstOpenedMilestone(
+    bookId: String,
+    openedAtEpochMs: Long,
+    locatorJson: String?
+): ReadingMilestoneRecord? =
+    openedAtEpochMs.takeIf { it > 0L }?.let {
+        ReadingMilestoneRecord(
+            id = "milestone:$bookId:${ReadingMilestoneKind.FIRST_OPENED.name}",
+            bookId = bookId,
+            kind = ReadingMilestoneKind.FIRST_OPENED,
+            reachedAtEpochMs = it,
+            progression = 0f,
+            locatorJson = locatorJson
+        )
+    }
