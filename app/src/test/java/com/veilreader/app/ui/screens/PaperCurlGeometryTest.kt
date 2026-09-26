@@ -154,6 +154,54 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun paperResistanceStartsHeavyAndReleasesWithTheTurn() {
+        val earlyHorizontal = paperHorizontalDragResponse(0.05f)
+        val midHorizontal = paperHorizontalDragResponse(0.50f)
+        val lateHorizontal = paperHorizontalDragResponse(0.95f)
+
+        val earlyVertical = paperVerticalDragResponse(0.05f)
+        val lateVertical = paperVerticalDragResponse(0.95f)
+
+        assertTrue(earlyHorizontal < midHorizontal)
+        assertTrue(midHorizontal < lateHorizontal)
+        assertTrue(earlyHorizontal < 0.80f)
+        assertTrue(lateHorizontal > 0.90f)
+        assertTrue(earlyVertical < lateVertical)
+        assertTrue(earlyVertical < earlyHorizontal)
+    }
+
+    @Test
+    fun inwardFractionIsStableAndClamped() {
+        val start = Offset(900f, 500f)
+        assertEquals(
+            0.25f,
+            paperInwardDragFraction(start, Offset(650f, 620f), 1000f),
+            0.0001f
+        )
+        assertEquals(
+            1f,
+            paperInwardDragFraction(start, Offset(-500f, 620f), 1000f),
+            0.0001f
+        )
+        assertEquals(
+            0f,
+            paperInwardDragFraction(start, Offset(300f, 620f), 0f),
+            0.0001f
+        )
+    }
+
+    @Test
+    fun paperMaterialEffectsPeakDuringTheFold() {
+        assertEquals(0f, paperEdgeThicknessIntensity(0f), 0.0001f)
+        assertEquals(0f, paperEdgeThicknessIntensity(1f), 0.0001f)
+        assertEquals(0f, paperBacksideInkIntensity(0f), 0.0001f)
+        assertEquals(0f, paperBacksideInkIntensity(1f), 0.0001f)
+
+        assertTrue(paperEdgeThicknessIntensity(0.5f) > 0.90f)
+        assertTrue(paperBacksideInkIntensity(0.5f) > 0.70f)
+    }
+
+    @Test
     fun creaseAndContactShadowDisappearAtRest() {
         assertEquals(0f, paperCreaseIntensity(0f), 0.0001f)
         assertEquals(0f, paperCreaseIntensity(1f), 0.0001f)
