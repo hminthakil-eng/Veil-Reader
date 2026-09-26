@@ -89,7 +89,9 @@ fun ProfileScreen(
     equippedSigilName: String?,
     onSetDailyGoal: (Int) -> Unit,
     onOpenArchive: () -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenCastle: () -> Unit,
+    onOpenPath: () -> Unit
 ) {
     val p = profile
     val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
@@ -101,21 +103,56 @@ fun ProfileScreen(
             .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
-        ScreenHeader("Reader profile", castleTitle, "${p.path.name} · ${p.rankName}")
+        ScreenHeader(
+            eyebrow = "MORE",
+            title = "Veil Reader",
+            subtitle = "Reading tools, private archive, settings, and progression — without crowding the library."
+        )
 
-        FilledTonalButton(
-            onClick = onOpenSettings,
-            shape = MaterialTheme.shapes.small,
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.64f),
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 50.dp)
-        ) {
-            Text("Reader & app settings")
+        ArchivePanel(Modifier.fillMaxWidth()) {
+            Text("Quick access", style = MaterialTheme.typography.titleLarge)
+            BrassRule(Modifier.width(72.dp), strong = true)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                FilledTonalButton(
+                    onClick = onOpenArchive,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text("Hidden Archive")
+                }
+                OutlinedButton(
+                    onClick = onOpenSettings,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text("Settings")
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                OutlinedButton(
+                    onClick = onOpenCastle,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text("Castle")
+                }
+                OutlinedButton(
+                    onClick = onOpenPath,
+                    shape = MaterialTheme.shapes.extraSmall,
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                ) {
+                    Text("Path")
+                }
+            }
         }
+
+        ScreenHeader("Reader profile", castleTitle, "${p.path.name} · ${p.rankName}")
 
         MysteryCard(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
