@@ -39,7 +39,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
+import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
@@ -55,6 +57,7 @@ fun SettingsScreen(
     restoring: Boolean,
     onSetAppThemeMode: (AppThemeMode) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
+    onSaveSensorySettings: (SensorySettings) -> Unit,
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
     onExportNotes: (Uri) -> Unit,
@@ -234,6 +237,74 @@ fun SettingsScreen(
                         current.withScreenBrightness(proposed.screenBrightness)
                     }
                 }
+            )
+        }
+
+        SettingsSection(
+            title = "Sound & touch",
+            description = "Keep feedback subtle, optional, and fully local. Haptics never require sound; ambient playback is off by default."
+        ) {
+            SettingsSwitchRow(
+                title = "Haptic feedback",
+                subtitle = "A restrained tactile cue for page turns, saved marks, and major unlocks.",
+                checked = settings.sensory.hapticsEnabled,
+                onCheckedChange = { enabled ->
+                    onSaveSensorySettings(
+                        settings.sensory.copy(hapticsEnabled = enabled)
+                    )
+                }
+            )
+            SettingsSwitchRow(
+                title = "Interaction sounds",
+                subtitle = "Soft paper and archive cues. Disabled by default and never required for reading.",
+                checked = settings.sensory.interactionSoundsEnabled,
+                onCheckedChange = { enabled ->
+                    onSaveSensorySettings(
+                        settings.sensory.copy(interactionSoundsEnabled = enabled)
+                    )
+                }
+            )
+
+            Text("Ambient room", style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = AmbientSound.entries,
+                selected = settings.sensory.ambientSound,
+                label = { mode ->
+                    when (mode) {
+                        AmbientSound.OFF -> "Off"
+                        AmbientSound.LIBRARY -> "Library hush"
+                        AmbientSound.RAIN -> "Rain"
+                        AmbientSound.FIRE -> "Fireplace"
+                    }
+                },
+                onSelected = { mode ->
+                    onSaveSensorySettings(
+                        settings.sensory.copy(ambientSound = mode)
+                    )
+                }
+            )
+
+            if (
+                settings.sensory.interactionSoundsEnabled ||
+                settings.sensory.ambientSound != AmbientSound.OFF
+            ) {
+                ReaderSlider(
+                    label = "Audio level",
+                    value = settings.sensory.audioVolume.toFloat(),
+                    valueRange = 0.05f..0.55f,
+                    displayValue = { "${(it * 100).toInt()}%" },
+                    onCommit = { value ->
+                        onSaveSensorySettings(
+                            settings.sensory.copy(audioVolume = value.toDouble())
+                        )
+                    }
+                )
+            }
+
+            Text(
+                "Set Ambient room to Off and disable Interaction sounds for complete audio silence.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
             )
         }
 
