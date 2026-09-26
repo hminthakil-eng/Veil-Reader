@@ -18,7 +18,9 @@ import kotlinx.coroutines.launch
 data class ReaderUiState(
     val bookId: String? = null,
     val progress: Float = 0f,
-    val activeMillis: Long = 0L
+    val activeMillis: Long = 0L,
+    val sessionStartProgress: Float = 0f,
+    val sessionProgressDelta: Float = 0f
 )
 
 /**
@@ -71,7 +73,13 @@ class ReaderViewModel(
         uncreditedActiveMillis = 0L
         locatorDeduplicator.reset()
         locatorSequence = 0L
-        _uiState.value = ReaderUiState(bookId = bookId, progress = initialProgress.coerceIn(0f, 1f))
+        val startProgress = initialProgress.coerceIn(0f, 1f)
+        _uiState.value = ReaderUiState(
+            bookId = bookId,
+            progress = startProgress,
+            sessionStartProgress = startProgress,
+            sessionProgressDelta = 0f
+        )
         persistSession(immediate = true)
     }
 
@@ -165,7 +173,12 @@ class ReaderViewModel(
             details = "seq=$sequence progress=$safe event=$event"
         )
         if (completed) game.recordBookFinished()
-        _uiState.value = _uiState.value.copy(progress = safe, activeMillis = current.activeMillis)
+        val sessionStart = _uiState.value.sessionStartProgress
+        _uiState.value = _uiState.value.copy(
+            progress = safe,
+            activeMillis = current.activeMillis,
+            sessionProgressDelta = (safe - sessionStart).coerceIn(-1f, 1f)
+        )
         persistSession()
         return ReaderLocatorCommit(sequence, locatorJson, safe)
     }
