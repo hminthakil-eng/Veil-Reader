@@ -4,7 +4,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,18 +28,21 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.HighlightMemory
+import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
+import com.veilreader.app.domain.deriveReadingTimeCapsules
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
-private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES }
+private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
 @Composable
 fun ArchiveScreen(
     books: List<Book>,
     highlights: List<Highlight>,
     bookmarks: List<Bookmark>,
+    readingSessions: List<ReadingSessionSnapshot>,
     onClose: () -> Unit,
     onOpenPassage: (Book, String) -> Unit,
     onSaveNote: (String, String) -> Unit,
@@ -50,6 +55,7 @@ fun ArchiveScreen(
     var noteDraft by rememberSaveable { mutableStateOf("") }
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteBookmarkId by rememberSaveable { mutableStateOf<String?>(null) }
+    var selectedCapsuleBookId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
         .getOrDefault(NotebookSection.HIGHLIGHTS)
@@ -57,6 +63,14 @@ fun ArchiveScreen(
     val archiveNow = remember { System.currentTimeMillis() }
     val echoes = remember(highlights, booksById, archiveNow) {
         deriveArchiveEchoes(highlights, booksById, archiveNow)
+    }
+    val capsules = remember(books, readingSessions, highlights, bookmarks) {
+        deriveReadingTimeCapsules(
+            books = books,
+            sessions = readingSessions,
+            highlights = highlights,
+            bookmarks = bookmarks
+        )
     }
     val cleanQuery = query.trim()
 
@@ -87,6 +101,14 @@ fun ArchiveScreen(
 
     val matchingEchoes = remember(matchingHighlights, booksById, archiveNow) {
         deriveArchiveEchoes(matchingHighlights, booksById, archiveNow)
+    }
+
+    val matchingCapsules = remember(capsules, cleanQuery) {
+        if (cleanQuery.isBlank()) capsules
+        else capsules.filter { capsule ->
+            listOf(capsule.book.title, capsule.book.author, capsule.sealCode)
+                .any { it.contains(cleanQuery, ignoreCase = true) }
+        }
     }
 
     BackHandler { onClose() }
@@ -142,7 +164,8 @@ fun ArchiveScreen(
                     notes = highlights.count { it.note.isNotBlank() },
                     highlights = highlights.size,
                     bookmarks = bookmarks.size,
-                    echoes = echoes.size
+                    echoes = echoes.size,
+                    capsules = capsules.size
                 )
             }
         }
@@ -168,36 +191,45 @@ fun ArchiveScreen(
 
         VeilReveal(delayMillis = 150, modifier = Modifier.fillMaxWidth()) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 ArchiveSectionTab(
                     label = "Notes",
                     count = highlights.count { it.note.isNotBlank() },
                     selected = selectedSection == NotebookSection.NOTES,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.NOTES.name }
 
                 ArchiveSectionTab(
                     label = "Passages",
                     count = highlights.size,
                     selected = selectedSection == NotebookSection.HIGHLIGHTS,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.HIGHLIGHTS.name }
 
                 ArchiveSectionTab(
                     label = "Marks",
                     count = bookmarks.size,
                     selected = selectedSection == NotebookSection.BOOKMARKS,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.BOOKMARKS.name }
 
                 ArchiveSectionTab(
                     label = "Echoes",
                     count = echoes.size,
                     selected = selectedSection == NotebookSection.ECHOES,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.ECHOES.name }
+
+                ArchiveSectionTab(
+                    label = "Capsules",
+                    count = capsules.size,
+                    selected = selectedSection == NotebookSection.CAPSULES,
+                    modifier = Modifier.widthIn(min = 104.dp)
+                ) { selectedSectionName = NotebookSection.CAPSULES.name }
             }
         }
 
@@ -315,6 +347,35 @@ fun ArchiveScreen(
                     }
                 }
 
+                NotebookSection.CAPSULES -> {
+                    if (matchingCapsules.isEmpty()) {
+                        item {
+                            NotebookEmptyState(
+                                title = if (capsules.isEmpty()) {
+                                    "No sealed capsules yet"
+                                } else {
+                                    "No matching capsules"
+                                },
+                                body = if (capsules.isEmpty()) {
+                                    "When a volume is completed, Veil can preserve its durable reading history here without inventing missing dates."
+                                } else {
+                                    "Try a different title, author, or seal code."
+                                }
+                            )
+                        }
+                    }
+
+                    items(
+                        matchingCapsules,
+                        key = { capsule -> "capsule:${capsule.book.id}" }
+                    ) { capsule ->
+                        ReadingTimeCapsuleCard(
+                            capsule = capsule,
+                            onOpen = { selectedCapsuleBookId = capsule.book.id }
+                        )
+                    }
+                }
+
                 NotebookSection.BOOKMARKS -> {
                     if (matchingBookmarks.isEmpty()) {
                         item {
@@ -400,6 +461,15 @@ fun ArchiveScreen(
         )
     }
 
+    selectedCapsuleBookId
+        ?.let { id -> capsules.firstOrNull { it.book.id == id } }
+        ?.let { capsule ->
+            ReadingTimeCapsuleSheet(
+                capsule = capsule,
+                onDismiss = { selectedCapsuleBookId = null }
+            )
+        }
+
     deleteHighlightId?.let { highlightId ->
         DeleteNotebookItemDialog(
             title = stringResource(R.string.notebook_delete_highlight_title),
@@ -424,11 +494,13 @@ private fun ArchiveRegister(
     notes: Int,
     highlights: Int,
     bookmarks: Int,
-    echoes: Int
+    echoes: Int,
+    capsules: Int
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
             .clip(MaterialTheme.shapes.extraSmall)
             .background(VeilPalette.Archive.copy(alpha = 0.56f))
             .border(
@@ -442,6 +514,7 @@ private fun ArchiveRegister(
         ArchiveRegisterStat("PASSAGES", highlights)
         ArchiveRegisterStat("MARKS", bookmarks)
         ArchiveRegisterStat("ECHOES", echoes)
+        ArchiveRegisterStat("SEALED", capsules)
     }
 }
 
