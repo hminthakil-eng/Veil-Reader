@@ -510,7 +510,24 @@ fun LibraryScreen(
         val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text(stringResource(R.string.book_metadata_dialog_title)) },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            tonalElevation = 0.dp,
+            title = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "ARCHIVE RECORD",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        stringResource(R.string.book_metadata_dialog_title),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            },
             text = {
                 Column(
                     Modifier.verticalScroll(rememberScrollState()),
