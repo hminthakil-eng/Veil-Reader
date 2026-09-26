@@ -430,7 +430,9 @@ fun VeilApp(
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
                 onOpenArchive = { routeViewModel.selectTab(VeilTab.ARCHIVE) },
-                onOpenSettings = routeViewModel::openSettings
+                onOpenSettings = routeViewModel::openSettings,
+                onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
+                onOpenPath = { routeViewModel.selectTab(VeilTab.PATH) }
             )
         }
     }
