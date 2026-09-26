@@ -253,12 +253,20 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    /** Returns true when this update completed the book for the first time. */
+    /**
+     * Returns true when this update completed the book for the first time.
+     *
+     * The completion edge is special: progress, the latest session snapshot, and the sealed
+     * reading-cycle record are committed in one Room transaction so process death cannot leave
+     * "finished=true" without its historical completion record.
+     */
     fun saveProgress(
         id: String,
         progression: Double,
         locatorJson: String,
-        traceSequence: Long? = null
+        traceSequence: Long? = null,
+        completionSessionSnapshot: ReadingSessionSnapshot? = null,
+        nowEpochMs: Long = System.currentTimeMillis()
     ): Boolean {
         val current = getBook(id) ?: return false
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
@@ -272,7 +280,7 @@ class LocalLibraryRepository internal constructor(
             progress = safe,
             pagesRead = estimatedRead,
             locatorJson = locatorJson,
-            lastOpenedAtEpochMs = System.currentTimeMillis(),
+            lastOpenedAtEpochMs = nowEpochMs,
             finished = current.finished || finishedNow
         )
         replaceBookCached(updated)
@@ -284,7 +292,10 @@ class LocalLibraryRepository internal constructor(
                 locatorJson = locatorJson,
                 lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
                 finished = updated.finished,
-                traceSequence = traceSequence
+                traceSequence = traceSequence,
+                completionAtEpochMs = nowEpochMs.takeIf { newlyFinished },
+                completionSessionSnapshot = completionSessionSnapshot.takeIf { newlyFinished },
+                completionBookSnapshot = updated.takeIf { newlyFinished }
             ),
             immediate = newlyFinished
         )
@@ -596,24 +607,57 @@ class LocalLibraryRepository internal constructor(
 
     private fun enqueueProgressWrite(value: PendingProgressWrite) {
         enqueue {
-            check(
-                database.books().updateProgress(
-                    id = value.id,
-                    progress = value.progress,
-                    pagesRead = value.pagesRead,
-                    locatorJson = value.locatorJson,
-                    lastOpenedAtEpochMs = value.lastOpenedAtEpochMs,
-                    finished = value.finished
-                ) == 1
-            ) {
-                "Book disappeared before its progress could be persisted: ${value.id}"
+            val persistProgress: suspend () -> Unit = {
+                check(
+                    database.books().updateProgress(
+                        id = value.id,
+                        progress = value.progress,
+                        pagesRead = value.pagesRead,
+                        locatorJson = value.locatorJson,
+                        lastOpenedAtEpochMs = value.lastOpenedAtEpochMs,
+                        finished = value.finished
+                    ) == 1
+                ) {
+                    "Book disappeared before its progress could be persisted: ${value.id}"
+                }
             }
+
+            val completionAt = value.completionAtEpochMs
+            val completionBook = value.completionBookSnapshot
+            if (completionAt != null && completionBook != null) {
+                database.withTransaction {
+                    persistProgress()
+                    value.completionSessionSnapshot?.let { session ->
+                        database.readingSessions().upsert(session.toEntity())
+                    }
+
+                    val cycleIndex = database.readingCycles().maxCycleIndex(value.id) + 1
+                    val cycle = buildSealedReadingCycle(
+                        book = completionBook,
+                        cycleIndex = cycleIndex,
+                        sessions = database.readingSessions().listForBook(value.id).map { it.toSnapshot() },
+                        highlights = database.highlights().listAll()
+                            .filter { it.bookId == value.id }
+                            .map { it.toDomain() },
+                        bookmarks = database.bookmarks().listAll()
+                            .filter { it.bookId == value.id }
+                            .map { it.toDomain() },
+                        completedAtEpochMs = completionAt,
+                        finalLocatorJson = value.locatorJson
+                    )
+                    database.readingCycles().upsert(cycle.toEntity())
+                }
+            } else {
+                persistProgress()
+            }
+
             ReaderTrace.event(
                 "locator_persisted",
                 bookId = value.id,
                 details = buildString {
                     value.traceSequence?.let { append("seq=").append(it).append(' ') }
                     append("progress=").append(value.progress)
+                    if (completionAt != null) append(" completionSealed=true")
                 }
             )
         }
@@ -721,11 +765,16 @@ private data class PendingProgressWrite(
     val locatorJson: String,
     val lastOpenedAtEpochMs: Long,
     val finished: Boolean,
-    val traceSequence: Long? = null
+    val traceSequence: Long? = null,
+    val completionAtEpochMs: Long? = null,
+    val completionSessionSnapshot: ReadingSessionSnapshot? = null,
+    val completionBookSnapshot: Book? = null
 )
 
 private const val PROGRESS_WRITE_INTERVAL_MS = 250L
 private const val SESSION_WRITE_INTERVAL_MS = 1_000L
+private const val PASSAGE_REVISIT_MIN_AGE_MS = 30_000L
+private const val PASSAGE_REVISIT_DEDUPE_MS = 5L * 60L * 1000L
 
 private fun stableCollectionId(normalizedName: String): String = UUID.nameUUIDFromBytes(
     "veil-collection:$normalizedName".toByteArray(StandardCharsets.UTF_8)
