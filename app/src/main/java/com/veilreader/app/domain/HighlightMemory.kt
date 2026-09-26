@@ -97,10 +97,10 @@ fun deriveHighlightMemory(
         0
     } else {
         ageDays.coerceAtMost(365) +
-            if (annotated) 80 else 0 +
-            if (book?.finished == true) 45 else 0 +
-            if (book?.favorite == true) 25 else 0 +
-            if (laterActivity) 20 else 0
+            (if (annotated) 80 else 0) +
+            (if (book?.finished == true) 45 else 0) +
+            (if (book?.favorite == true) 25 else 0) +
+            (if (laterActivity) 20 else 0)
     }
 
     return HighlightMemory(

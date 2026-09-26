@@ -7,6 +7,35 @@ import org.junit.Test
 
 class MemoryAtlasTest {
     @Test
+    fun `completed and favorite books retain passage and session engagement`() {
+        for (finished in listOf(false, true)) {
+            for (favorite in listOf(false, true)) {
+                val book = Book("a", "A", "Author", progress = 0.5f,
+                    finished = finished, favorite = favorite)
+                val highlights = (1..2).map { Highlight("h$it", "a", "Passage", "{}") }
+                val sessions = (1..3).map {
+                    ReadingSessionSnapshot("s$it", "a", 1, 2, 1000, 1, 0, 0)
+                }
+                val expected = 1f + (if (finished) 1.5f else 0f) +
+                    (if (favorite) 0.45f else 0f) + 0.44f + 0.54f
+                assertEquals("finished=$finished favorite=$favorite", expected,
+                    buildMemoryAtlas(listOf(book), highlights, sessions)
+                        .nodes.single().engagementScore, 0.0001f)
+            }
+        }
+    }
+
+    @Test
+    fun `node cap retains the more engaged completed book`() {
+        val quiet = Book("quiet", "A", "Author", finished = true)
+        val marked = Book("marked", "Z", "Author", finished = true)
+        val atlas = buildMemoryAtlas(listOf(quiet, marked),
+            listOf(Highlight("h", "marked", "A preserved passage", "{}")),
+            emptyList(), maxNodes = 1)
+        assertEquals("marked", atlas.nodes.single().book.id)
+    }
+
+    @Test
     fun `metadata relations remain explicit and additive`() {
         val books = listOf(
             Book(
@@ -31,7 +60,8 @@ class MemoryAtlasTest {
         assertTrue(MemoryRelationKind.AUTHOR in edge.reasons)
         assertTrue(MemoryRelationKind.SERIES in edge.reasons)
         assertTrue(MemoryRelationKind.COLLECTION in edge.reasons)
-        assertEquals(10, edge.strength)
+        // Author (3) + series (4) + one collection (2); no passage-pattern bonus.
+        assertEquals(9, edge.strength)
     }
 
     @Test

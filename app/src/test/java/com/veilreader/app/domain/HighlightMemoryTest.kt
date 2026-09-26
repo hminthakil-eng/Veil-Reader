@@ -11,6 +11,31 @@ class HighlightMemoryTest {
     private val now = 500L * day
 
     @Test
+    fun `all echo bonuses contribute independently`() {
+        for (flags in 0 until 16) {
+            val annotated = flags and 1 != 0
+            val finished = flags and 2 != 0
+            val favorite = flags and 4 != 0
+            val laterActivity = flags and 8 != 0
+            val book = Book(
+                id = "book", title = "Archive", author = "Veil",
+                finished = finished, favorite = favorite,
+                lastOpenedAtEpochMs = if (laterActivity) now - day else 0L
+            )
+            val highlight = Highlight(
+                "mark", "book", "Remember this", "{}",
+                note = if (annotated) "A note" else "",
+                createdAtEpochMs = now - 120L * day
+            )
+            val expected = 120 + (if (annotated) 80 else 0) +
+                (if (finished) 45 else 0) + (if (favorite) 25 else 0) +
+                (if (laterActivity) 20 else 0)
+            assertEquals("bonus flags=$flags", expected,
+                deriveHighlightMemory(highlight, book, now).resonanceScore)
+        }
+    }
+
+    @Test
     fun `fresh marks do not become echoes prematurely`() {
         val highlight = Highlight(
             id = "fresh",
