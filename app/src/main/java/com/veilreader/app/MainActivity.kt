@@ -37,7 +37,8 @@ class MainActivity : FragmentActivity() {
                     onExternalOpenUriConsumed = { externalOpenUri = null },
                     appSettings = appSettings,
                     onSetAppThemeMode = settingsViewModel::setAppThemeMode,
-                    onSaveReaderAppearance = settingsViewModel::saveReaderAppearance
+                    onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
+                    onSaveSensorySettings = settingsViewModel::saveSensorySettings
                 )
             }
         }
