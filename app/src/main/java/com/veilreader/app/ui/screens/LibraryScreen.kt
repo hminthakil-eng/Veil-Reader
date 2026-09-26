@@ -155,15 +155,15 @@ fun LibraryScreen(
 
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
-        columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(108.dp) else GridCells.Fixed(1),
+        columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(112.dp) else GridCells.Fixed(1),
         modifier = Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         contentPadding = PaddingValues(
-            start = VeilSpacing.md,
-            end = VeilSpacing.md,
-            top = VeilSpacing.sm,
-            bottom = 28.dp
+            start = VeilSpacing.sm,
+            end = VeilSpacing.sm,
+            top = VeilSpacing.xs,
+            bottom = 24.dp
         )
     ) {
         item(key = "library:heading", span = { GridItemSpan(maxLineSpan) }) {
@@ -217,45 +217,6 @@ fun LibraryScreen(
             )
         }
 
-        item(key = "library:shelves", span = { GridItemSpan(maxLineSpan) }) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(top = 2.dp),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-            ) {
-                listOf("All", "Reading", "Unread", "Finished", "Favorites").forEach { label ->
-                    val selectedShelf = shelf == label
-                    FilterChip(
-                        selected = selectedShelf,
-                        onClick = { shelf = label },
-                        label = {
-                            Text(
-                                label,
-                                style = MaterialTheme.typography.labelMedium,
-                                maxLines = 1
-                            )
-                        },
-                        shape = MaterialTheme.shapes.extraSmall,
-                        colors = FilterChipDefaults.filterChipColors(
-                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
-                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.92f),
-                            selectedLabelColor = VeilPalette.Moon
-                        ),
-                        border = FilterChipDefaults.filterChipBorder(
-                            enabled = true,
-                            selected = selectedShelf,
-                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
-                            selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.86f)
-                        ),
-                        modifier = Modifier.heightIn(min = 44.dp)
-                    )
-                }
-            }
-        }
-
         item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier
@@ -264,15 +225,16 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibrarySectionHeading(
-                    eyebrow = "Collections",
-                    title = "Shelves"
+                    eyebrow = "Archive",
+                    title = "Shelves",
+                    trailing = "Tap to filter"
                 )
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     LibraryShelfCard(
                         title = "Favorites",
@@ -309,46 +271,39 @@ fun LibraryScreen(
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 BrassRule(Modifier.fillMaxWidth())
 
                 Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-                ) {
-                    Text(
-                        "${filtered.size} VOLUMES",
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
-                        color = VeilPalette.Brass,
-                        modifier = Modifier.weight(1f)
-                    )
-
-                    ViewModeToggle(
-                        mode = viewMode,
-                        onChange = { viewModeName = it.name }
-                    )
-                }
-
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Text(
+                        "${filtered.size.toString().padStart(2, '0')} VOLUMES",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                        color = VeilPalette.Brass,
+                        modifier = Modifier.padding(end = 4.dp)
+                    )
+
                     if (collections.isNotEmpty()) {
-                        Box(Modifier.weight(1f)) {
+                        Box {
                             OutlinedButton(
                                 onClick = { collectionMenu = true },
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                                modifier = Modifier.heightIn(min = 38.dp),
                                 shape = MaterialTheme.shapes.extraSmall,
+                                contentPadding = PaddingValues(horizontal = 10.dp),
                                 border = BorderStroke(
                                     1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
                                 )
                             ) {
                                 Text(
-                                    if (collection.isBlank()) "Collections" else collection,
+                                    if (collection.isBlank()) "Collection" else collection,
+                                    style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -371,21 +326,22 @@ fun LibraryScreen(
                         }
                     }
 
-                    Box(Modifier.weight(1f)) {
+                    Box {
                         OutlinedButton(
                             onClick = { sortMenu = true },
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 44.dp)
+                                .heightIn(min = 38.dp)
                                 .semantics { contentDescription = "Sort books: $sort" },
                             shape = MaterialTheme.shapes.extraSmall,
+                            contentPadding = PaddingValues(horizontal = 10.dp),
                             border = BorderStroke(
                                 1.dp,
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
                             )
                         ) {
                             Text(
-                                "Sort · $sort",
+                                sort,
+                                style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -402,34 +358,20 @@ fun LibraryScreen(
                             }
                         }
                     }
-                }
 
-                if (trimmedQuery.isNotBlank() || shelf != "All" || collection.isNotEmpty()) {
-                    TextButton(
-                        onClick = { query = ""; shelf = "All"; collection = "" },
-                        modifier = Modifier.align(Alignment.End),
-                        colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
-                    ) {
-                        Text("Clear active filters")
-                    }
-                }
-            }
-        }
+                    ViewModeToggle(
+                        mode = viewMode,
+                        onChange = { viewModeName = it.name }
+                    )
 
-        item(key = "library:overview", span = { GridItemSpan(maxLineSpan) }) {
-            if (books.isNotEmpty()) {
-                Column(Modifier.fillMaxWidth()) {
-                    TextButton(onClick = { overviewExpanded = !overviewExpanded }) {
-                        Text(if (overviewExpanded) "Hide archive overview" else "Archive overview")
-                    }
-                    if (overviewExpanded) {
-                        ArchiveOverview(
-                            total = books.size,
-                            reading = books.count { !it.finished && it.progress > 0f },
-                            finished = books.count { it.finished },
-                            collections = collections.size,
-                            modifier = Modifier.padding(top = VeilSpacing.xs)
-                        )
+                    if (trimmedQuery.isNotBlank() || shelf != "All" || collection.isNotEmpty()) {
+                        TextButton(
+                            onClick = { query = ""; shelf = "All"; collection = "" },
+                            contentPadding = PaddingValues(horizontal = 8.dp),
+                            colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
+                        ) {
+                            Text("Reset", style = MaterialTheme.typography.labelMedium)
+                        }
                     }
                 }
             }
@@ -486,6 +428,25 @@ fun LibraryScreen(
                     )
                 }
             }
+        item(key = "library:overview", span = { GridItemSpan(maxLineSpan) }) {
+            if (books.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth()) {
+                    TextButton(onClick = { overviewExpanded = !overviewExpanded }) {
+                        Text(if (overviewExpanded) "Hide archive overview" else "Archive overview")
+                    }
+                    if (overviewExpanded) {
+                        ArchiveOverview(
+                            total = books.size,
+                            reading = books.count { !it.finished && it.progress > 0f },
+                            finished = books.count { it.finished },
+                            collections = collections.size,
+                            modifier = Modifier.padding(top = VeilSpacing.xs)
+                        )
+                    }
+                }
+            }
+        }
+
         }
     }
 
@@ -761,7 +722,7 @@ private fun BookDetailSheet(
                                     chapter,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                    maxLines = 2,
+                                    maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.widthIn(max = 240.dp)
                                 )
@@ -1012,7 +973,7 @@ private fun LibraryHeader(
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 178.dp else 214.dp
+        val headerHeight = if (compact) 158.dp else 190.dp
 
         Box(Modifier.fillMaxWidth().height(headerHeight)) {
             Image(
@@ -1076,8 +1037,8 @@ private fun LibraryHeader(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     "VEIL READER",
@@ -1207,8 +1168,8 @@ private fun LibraryShelfCard(
     Surface(
         onClick = onClick,
         modifier = Modifier
-            .width(176.dp)
-            .heightIn(min = 112.dp),
+            .width(142.dp)
+            .heightIn(min = 78.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.62f)
@@ -1234,7 +1195,7 @@ private fun LibraryShelfCard(
                         )
                     )
                 )
-                .padding(VeilSpacing.md)
+                .padding(horizontal = VeilSpacing.sm, vertical = 10.dp)
         ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -1247,7 +1208,7 @@ private fun LibraryShelfCard(
                 )
                 Text(
                     title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = if (selected) VeilPalette.Moon
                     else MaterialTheme.colorScheme.onSurface
                 )
@@ -1283,7 +1244,7 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
 @Composable
 private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
     Surface(
-        modifier = Modifier.width(272.dp).clickable(
+        modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
             onClickLabel = "Continue ${book.title}",
             onClick = onOpen
@@ -1301,7 +1262,7 @@ private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
-                modifier = Modifier.width(56.dp).height(80.dp)
+                modifier = Modifier.width(48.dp).height(70.dp)
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text("Continue reading", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -1376,12 +1337,14 @@ private fun BookLibraryTile(
             overflow = TextOverflow.Ellipsis
         )
 
-        LinearProgressIndicator(
-            progress = { book.progress.coerceIn(0f, 1f) },
-            modifier = Modifier.fillMaxWidth().height(2.dp),
-            color = if (book.finished) VeilPalette.Brass else MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
-        )
+        if (book.progress > 0f || book.finished) {
+            LinearProgressIndicator(
+                progress = { book.progress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = if (book.finished) VeilPalette.Brass else MaterialTheme.colorScheme.secondary,
+                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
+            )
+        }
 
         Row(
             Modifier.fillMaxWidth(),
@@ -1401,7 +1364,7 @@ private fun BookLibraryTile(
             IconButton(
                 onClick = onFavorite,
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(30.dp)
                     .semantics {
                         contentDescription = if (book.favorite) {
                             "Remove ${book.title} from favorites"
@@ -1410,7 +1373,7 @@ private fun BookLibraryTile(
                         }
                     }
             ) {
-                FavoriteIcon(book.favorite, Modifier.size(16.dp))
+                FavoriteIcon(book.favorite, Modifier.size(15.dp))
             }
 
             IconButton(
@@ -1422,7 +1385,7 @@ private fun BookLibraryTile(
                     }
             ) {
                 EllipsisIcon(
-                    Modifier.size(16.dp),
+                    Modifier.size(15.dp),
                     MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
