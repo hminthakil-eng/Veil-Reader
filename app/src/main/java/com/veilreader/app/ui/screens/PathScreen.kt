@@ -65,6 +65,8 @@ fun PathScreen(
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
+    val presentation = pathPresentations[profile.path.id]
+        ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
     var showCeremony by rememberSaveable { mutableStateOf(false) }
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { reveal = true }
@@ -73,11 +75,11 @@ fun PathScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
+            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         ScreenHeader(
-            eyebrow = "THE ORACLE PATH",
+            eyebrow = "THE ${presentation.aspect.uppercase()} PATH",
             title = profile.path.name,
             subtitle = "${profile.path.epithet} · ${profile.rankName}"
         )
@@ -145,7 +147,6 @@ fun PathScreen(
 private fun PathIdentityPanel(profile: ReaderProfile) {
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
-    val shape = MaterialTheme.shapes.small
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
@@ -155,97 +156,212 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
     )
 
     Box(
-        Modifier
+        modifier = Modifier
             .fillMaxWidth()
-            .clip(shape)
+            .heightIn(min = 300.dp)
+            .clip(MaterialTheme.shapes.small)
             .background(
-                Brush.linearGradient(
+                Brush.verticalGradient(
                     listOf(
-                        VeilPalette.DeepBrass.copy(alpha = 0.50f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.82f),
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.99f)
+                        Color(0xFF121017),
+                        VeilPalette.Archive.copy(alpha = 0.98f),
+                        VeilPalette.Ink
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
-                shape
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                MaterialTheme.shapes.small
             )
-            .padding(VeilSpacing.xl)
     ) {
-        Column(
-            Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-        ) {
-            Box(
-                Modifier
-                    .size(94.dp)
-                    .clip(CircleShape)
-                    .background(VeilPalette.DeepBrass.copy(alpha = 0.50f))
-                    .border(
-                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
-                        CircleShape
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                PathIcon(
-                    pathId = profile.path.id,
-                    tint = VeilPalette.Brass,
-                    modifier = Modifier.size(48.dp)
-                )
-            }
+        PathRitualBackdrop(
+            pathId = profile.path.id,
+            rankIndex = profile.rankIndex,
+            modifier = Modifier.matchParentSize()
+        )
 
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.74f)
-            ) {
-                Text(
-                    presentation.aspect.uppercase(),
-                    modifier = Modifier.padding(horizontal = 11.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-            }
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                presentation.aspect.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.75.sp),
+                color = VeilPalette.Brass
+            )
+
+            PathSigil(
+                pathId = profile.path.id,
+                modifier = Modifier.size(128.dp),
+                active = true
+            )
 
             Text(
                 profile.rankName,
                 style = MaterialTheme.typography.headlineMedium,
+                color = VeilPalette.Moon,
                 textAlign = TextAlign.Center
             )
             Text(
                 presentation.invocation,
                 style = MaterialTheme.typography.bodyLarge,
-                color = VeilPalette.Mist,
+                color = VeilPalette.Moon.copy(alpha = 0.72f),
                 textAlign = TextAlign.Center
             )
             Text(
                 profile.path.description,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 460.dp)
             )
 
-            Spacer(Modifier.height(VeilSpacing.xs))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Spacer(Modifier.height(4.dp))
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
                 Text(
-                    "Level ${profile.level}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = VeilPalette.Moon
+                    "LEVEL ${profile.level}",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                    color = VeilPalette.Brass.copy(alpha = 0.84f)
                 )
                 Text(
                     "${profile.xp}/$xpTarget XP",
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist
                 )
             }
             LinearProgressIndicator(
                 progress = { xpProgress },
-                modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
+                modifier = Modifier.fillMaxWidth().height(2.dp),
                 color = VeilPalette.Brass,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.36f)
+                trackColor = VeilPalette.Moon.copy(alpha = 0.09f),
+                drawStopIndicator = {}
             )
         }
+    }
+}
+
+@Composable
+private fun PathRitualBackdrop(
+    pathId: String,
+    rankIndex: Int,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val center = Offset(w * 0.5f, h * 0.39f)
+        val brass = VeilPalette.Brass
+        val stone = VeilPalette.StrongBorderDark
+
+        drawCircle(
+            color = brass.copy(alpha = 0.045f),
+            radius = size.minDimension * 0.31f,
+            center = center,
+            style = Stroke(1.dp.toPx())
+        )
+        drawCircle(
+            color = brass.copy(alpha = 0.025f),
+            radius = size.minDimension * 0.23f,
+            center = center,
+            style = Stroke(1.dp.toPx())
+        )
+
+        repeat(8) { index ->
+            val angle = Math.toRadians(-90.0 + index * 45.0)
+            val inner = size.minDimension * 0.19f
+            val outer = size.minDimension * 0.33f
+            val x1 = center.x + kotlin.math.cos(angle).toFloat() * inner
+            val y1 = center.y + kotlin.math.sin(angle).toFloat() * inner
+            val x2 = center.x + kotlin.math.cos(angle).toFloat() * outer
+            val y2 = center.y + kotlin.math.sin(angle).toFloat() * outer
+            drawLine(
+                brass.copy(alpha = 0.032f),
+                Offset(x1, y1),
+                Offset(x2, y2),
+                1.dp.toPx(),
+                StrokeCap.Round
+            )
+        }
+
+        val constellationAlpha = 0.06f + rankIndex.coerceAtLeast(0) * 0.01f
+        repeat(9) { index ->
+            val x = w * (0.10f + ((index * 31) % 80) / 100f)
+            val y = h * (0.12f + ((index * 47) % 72) / 100f)
+            drawCircle(
+                color = brass.copy(alpha = constellationAlpha.coerceAtMost(0.16f)),
+                radius = if (index % 3 == 0) 1.2.dp.toPx() else 0.8.dp.toPx(),
+                center = Offset(x, y)
+            )
+        }
+
+        drawLine(
+            stone.copy(alpha = 0.12f),
+            Offset(w * 0.08f, h * 0.86f),
+            Offset(w * 0.92f, h * 0.86f),
+            1.dp.toPx()
+        )
+    }
+}
+
+@Composable
+private fun PathSigil(
+    pathId: String,
+    modifier: Modifier = Modifier,
+    active: Boolean
+) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.matchParentSize()) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val tint = if (active) VeilPalette.Brass else VeilPalette.Mist
+            val stroke = Stroke(1.1.dp.toPx())
+
+            drawCircle(
+                tint.copy(alpha = if (active) 0.58f else 0.24f),
+                size.minDimension * 0.45f,
+                center,
+                style = stroke
+            )
+            drawCircle(
+                tint.copy(alpha = if (active) 0.30f else 0.16f),
+                size.minDimension * 0.34f,
+                center,
+                style = stroke
+            )
+
+            repeat(4) { index ->
+                val angle = Math.toRadians(45.0 + index * 90.0)
+                val r1 = size.minDimension * 0.36f
+                val r2 = size.minDimension * 0.48f
+                val start = Offset(
+                    center.x + kotlin.math.cos(angle).toFloat() * r1,
+                    center.y + kotlin.math.sin(angle).toFloat() * r1
+                )
+                val end = Offset(
+                    center.x + kotlin.math.cos(angle).toFloat() * r2,
+                    center.y + kotlin.math.sin(angle).toFloat() * r2
+                )
+                drawLine(
+                    tint.copy(alpha = if (active) 0.42f else 0.20f),
+                    start,
+                    end,
+                    stroke.width,
+                    StrokeCap.Round
+                )
+            }
+        }
+
+        PathIcon(
+            pathId = pathId,
+            tint = if (active) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.60f),
+            modifier = Modifier.size(52.dp)
+        )
     }
 }
 
@@ -264,65 +380,110 @@ private fun RitualPanel(
         label = "ritual-progress"
     )
 
-    MysteryCard(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    if (nextRank == null) "FINAL RANK" else "NEXT RANK",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-                Text(
-                    if (nextRank == null) "Path complete" else nextRank,
-                    style = MaterialTheme.typography.titleLarge,
-                    color = VeilPalette.Moon
-                )
-            }
-            Surface(
-                shape = CircleShape,
-                color = if (canAdvance) {
-                    MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f)
-                } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.72f)
-                }
-            ) {
-                Text(
-                    "${profile.ritualProgress}/$target",
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (canAdvance) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
-                )
-            }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(VeilPalette.Archive.copy(alpha = 0.94f))
+            .border(
+                BorderStroke(
+                    1.dp,
+                    if (canAdvance) VeilPalette.Brass.copy(alpha = 0.62f)
+                    else VeilPalette.BorderDark.copy(alpha = 0.86f)
+                ),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            val center = Offset(size.width * 0.84f, size.height * 0.50f)
+            drawCircle(
+                color = VeilPalette.Brass.copy(alpha = if (canAdvance) 0.085f else 0.035f),
+                radius = size.minDimension * 0.34f,
+                center = center,
+                style = Stroke(1.dp.toPx())
+            )
+            drawCircle(
+                color = VeilPalette.Brass.copy(alpha = if (canAdvance) 0.055f else 0.025f),
+                radius = size.minDimension * 0.23f,
+                center = center,
+                style = Stroke(1.dp.toPx())
+            )
         }
 
-        LinearProgressIndicator(
-            progress = { progress },
-            modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-            color = if (canAdvance) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
-        )
+        Column(
+            modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(9.dp)
+        ) {
+            Text(
+                if (nextRank == null) "RITUAL COMPLETE" else "NEXT THRESHOLD",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                color = VeilPalette.Brass
+            )
 
-        Text(
-            if (nextRank == null) {
-                "No higher rank remains. Reading continues without another gate."
-            } else {
-                ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex)
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = VeilPalette.Mist
-        )
-
-        if (nextRank != null) {
-            Button(
-                onClick = onPrepareCeremony,
-                enabled = canAdvance,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(top = VeilSpacing.xs)
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
             ) {
-                Text(if (canAdvance) "Advance to $nextRank" else "Keep reading · ${profile.ritualProgress}/$target")
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        if (nextRank == null) "The Path remains open" else nextRank,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        if (nextRank == null) {
+                            "No higher rank remains."
+                        } else {
+                            ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Text(
+                    "${profile.ritualProgress}/$target",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (canAdvance) VeilPalette.Brass else VeilPalette.Mist
+                )
+            }
+
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = if (canAdvance) VeilPalette.Brass else VeilPalette.Spirit,
+                trackColor = VeilPalette.Moon.copy(alpha = 0.08f),
+                drawStopIndicator = {}
+            )
+
+            if (nextRank != null) {
+                Button(
+                    onClick = onPrepareCeremony,
+                    enabled = canAdvance,
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .heightIn(min = 42.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = Color(0xFF17120A),
+                        disabledContainerColor = VeilPalette.RaisedIron.copy(alpha = 0.50f),
+                        disabledContentColor = VeilPalette.Mist.copy(alpha = 0.62f)
+                    ),
+                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
+                ) {
+                    Text(
+                        if (canAdvance) "Perform advancement"
+                        else "Keep reading · ${profile.ritualProgress}/$target",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
         }
     }
@@ -330,77 +491,112 @@ private fun RitualPanel(
 
 @Composable
 private fun RankConstellation(profile: ReaderProfile) {
-    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-        profile.path.ranks.forEachIndexed { index, rank ->
-            val mastered = index < profile.rankIndex
-            val current = index == profile.rankIndex
-            val accent = when {
-                mastered -> MaterialTheme.colorScheme.tertiary
-                current -> MaterialTheme.colorScheme.secondary
-                else -> MaterialTheme.colorScheme.outline
-            }
-            val state = when {
-                mastered -> "MASTERED"
-                current -> "CURRENT"
-                else -> "SEALED"
-            }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(VeilPalette.Ink.copy(alpha = 0.42f))
+            .border(
+                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.72f)),
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(horizontal = 10.dp, vertical = 18.dp)
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            val centerX = size.width * 0.5f
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.13f),
+                start = Offset(centerX, 20.dp.toPx()),
+                end = Offset(centerX, size.height - 20.dp.toPx()),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
 
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-                verticalAlignment = Alignment.Top
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            profile.path.ranks.forEachIndexed { index, rank ->
+                val mastered = index < profile.rankIndex
+                val current = index == profile.rankIndex
+                val awakened = mastered || current
+                val alignLeft = index % 2 == 0
+
+                VeilReveal(
+                    delayMillis = 70 + index * 55,
+                    distance = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Box(
-                        Modifier
-                            .size(42.dp)
-                            .clip(CircleShape)
-                            .background(accent.copy(alpha = if (current) 0.18f else 0.09f))
-                            .border(BorderStroke(1.dp, accent.copy(alpha = 0.72f)), CircleShape),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 78.dp)
                     ) {
-                        if (mastered) {
-                            CheckMarkIcon(Modifier.size(18.dp), accent)
-                        } else {
-                            Text(
-                                (index + 1).toString(),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = accent
-                            )
-                        }
-                    }
-                    if (index != profile.path.ranks.lastIndex) {
                         Box(
-                            Modifier
-                                .width(2.dp)
-                                .height(38.dp)
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(if (current) 18.dp else 14.dp)
+                                .clip(CircleShape)
                                 .background(
-                                    if (mastered) MaterialTheme.colorScheme.tertiary.copy(alpha = 0.48f)
-                                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.68f)
+                                    when {
+                                        current -> VeilPalette.Brass
+                                        mastered -> VeilPalette.Spirit
+                                        else -> VeilPalette.BorderDark
+                                    }
+                                )
+                                .border(
+                                    BorderStroke(
+                                        1.dp,
+                                        if (awakened) VeilPalette.Moon.copy(alpha = 0.34f)
+                                        else VeilPalette.StrongBorderDark.copy(alpha = 0.54f)
+                                    ),
+                                    CircleShape
                                 )
                         )
-                    }
-                }
 
-                Surface(
-                    modifier = Modifier.weight(1f).padding(bottom = 10.dp),
-                    color = if (current) {
-                        MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.28f)
-                    } else {
-                        Color.Transparent
-                    },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Column(
-                        Modifier.padding(horizontal = if (current) VeilSpacing.sm else 0.dp, vertical = 7.dp),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(rank, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            state,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = accent
-                        )
+                        Column(
+                            modifier = Modifier
+                                .align(
+                                    if (alignLeft) Alignment.CenterStart
+                                    else Alignment.CenterEnd
+                                )
+                                .widthIn(max = 156.dp)
+                                .padding(
+                                    start = if (alignLeft) 6.dp else 30.dp,
+                                    end = if (alignLeft) 30.dp else 6.dp
+                                ),
+                            horizontalAlignment = if (alignLeft) Alignment.Start else Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                "RANK ${(index + 1).toString().padStart(2, '0')}",
+                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
+                                color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f)
+                            )
+                            Text(
+                                rank,
+                                style = if (current) {
+                                    MaterialTheme.typography.titleMedium
+                                } else {
+                                    MaterialTheme.typography.titleSmall
+                                },
+                                color = if (awakened) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.52f),
+                                textAlign = if (alignLeft) TextAlign.Start else TextAlign.End
+                            )
+                            Text(
+                                when {
+                                    mastered -> "MASTERED"
+                                    current -> "CURRENT SEAL"
+                                    else -> "SEALED"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = when {
+                                    mastered -> VeilPalette.Spirit
+                                    current -> VeilPalette.Brass
+                                    else -> VeilPalette.Mist.copy(alpha = 0.40f)
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -415,13 +611,13 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.74f),
+        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.78f))
     ) {
         Column(
-            Modifier.padding(VeilSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -430,15 +626,23 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
             ) {
                 Box(
                     Modifier
-                        .size(52.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (enabled) 0.48f else 0.24f)),
+                        .size(46.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(VeilPalette.Ink.copy(alpha = if (enabled) 0.52f else 0.34f))
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                if (enabled) VeilPalette.Brass.copy(alpha = 0.36f)
+                                else VeilPalette.BorderDark
+                            ),
+                            MaterialTheme.shapes.extraSmall
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     PathIcon(
                         pathId = path.id,
-                        tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(30.dp)
+                        tint = if (enabled) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.44f),
+                        modifier = Modifier.size(26.dp)
                     )
                 }
                 Column(Modifier.weight(1f)) {
@@ -446,7 +650,7 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
                     Text(
                         "${presentation.aspect} · ${path.epithet}",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary,
+                        color = VeilPalette.Brass.copy(alpha = 0.78f),
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -460,7 +664,8 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
             OutlinedButton(
                 onClick = onChoose,
                 enabled = enabled,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                shape = MaterialTheme.shapes.extraSmall
             ) {
                 Text(if (enabled) "Choose this Path" else "Locked after first advancement")
             }
@@ -480,10 +685,13 @@ private fun AdvancementCeremonyDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        shape = MaterialTheme.shapes.small,
+        containerColor = VeilPalette.Archive,
+        tonalElevation = 0.dp,
         icon = {
             PathIcon(
                 pathId = profile.path.id,
-                tint = MaterialTheme.colorScheme.secondary,
+                tint = VeilPalette.Brass,
                 modifier = Modifier.size(44.dp)
             )
         },
@@ -510,13 +718,26 @@ private fun AdvancementCeremonyDialog(
                 Text(
                     presentation.invocation,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = VeilPalette.Brass,
                     textAlign = TextAlign.Center
                 )
             }
         },
-        confirmButton = { Button(onClick = onConfirm) { Text("Advance") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Not yet") } }
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VeilPalette.Brass,
+                    contentColor = Color(0xFF17120A)
+                )
+            ) { Text("Advance") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Not yet", color = VeilPalette.Moon.copy(alpha = 0.72f))
+            }
+        }
     )
 }
 
@@ -596,7 +817,7 @@ private fun SectionHeading(eyebrow: String, title: String) {
         Text(
             eyebrow.uppercase(),
             style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
-            color = MaterialTheme.colorScheme.secondary
+            color = VeilPalette.Brass
         )
         Text(title, style = MaterialTheme.typography.titleLarge)
     }
