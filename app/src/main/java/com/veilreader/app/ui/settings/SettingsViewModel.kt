@@ -8,15 +8,22 @@ import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReaderAppearance
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
     private val store = SettingsStore(application.applicationContext)
+    private val _settingsLoaded = MutableStateFlow(false)
+    val settingsLoaded: StateFlow<Boolean> = _settingsLoaded.asStateFlow()
 
-    val settings: StateFlow<AppSettings> = store.settings.stateIn(
+    val settings: StateFlow<AppSettings> = store.settings
+        .onEach { _settingsLoaded.value = true }
+        .stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
         initialValue = AppSettings()
@@ -24,6 +31,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setAppThemeMode(mode: AppThemeMode) {
         viewModelScope.launch { store.setAppThemeMode(mode) }
+    }
+
+    fun markWelcomeSeen() {
+        viewModelScope.launch { store.markWelcomeSeen() }
     }
 
     fun saveReaderAppearance(appearance: ReaderAppearance) {
