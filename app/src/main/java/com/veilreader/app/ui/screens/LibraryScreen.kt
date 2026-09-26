@@ -537,187 +537,370 @@ private fun BookDetailSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = VeilPalette.Ink,
         dragHandle = {
             BottomSheetDefaults.DragHandle(
-                color = VeilPalette.Brass.copy(alpha = 0.58f)
+                color = VeilPalette.Brass.copy(alpha = 0.48f)
             )
         }
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = VeilSpacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
         ) {
-            Column(
+            BoxWithConstraints(
                 Modifier
-                    .widthIn(max = 720.dp)
                     .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = VeilSpacing.lg)
-                    .padding(bottom = VeilSpacing.xxl),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+                    .heightIn(min = 320.dp)
             ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                BookCover(
-                    title = book.title,
-                    subtitle = book.author,
-                    imagePath = book.coverCachePath,
-                    modifier = Modifier.width(112.dp).height(164.dp)
+                val compact = maxWidth < 520.dp
+
+                Image(
+                    painter = painterResource(R.drawable.grayfog_threshold_v1),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize()
                 )
+
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.verticalGradient(
+                                0f to VeilPalette.Ink.copy(alpha = 0.18f),
+                                0.48f to VeilPalette.Ink.copy(alpha = 0.72f),
+                                1f to VeilPalette.Ink
+                            )
+                        )
+                )
+
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    VeilPalette.Ink.copy(alpha = 0.36f),
+                                    Color.Transparent,
+                                    VeilPalette.Ink.copy(alpha = 0.28f)
+                                )
+                            )
+                        )
+                )
+
                 Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     Text(
-                        if (book.isImported) stringResource(R.string.book_detail_local_publication_format, book.format.name) else stringResource(R.string.book_detail_sample_entry),
-                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.15.sp),
+                        "GRAYFOG ARCHIVE · ${book.format.name}",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
-                    Text(
-                        book.title,
-                        style = MaterialTheme.typography.headlineMedium,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        if (book.author.isBlank()) stringResource(R.string.common_unknown_author) else book.author,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
-                        Text(
-                            buildString {
-                                append(series)
-                                book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
-                            },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = VeilPalette.Brass,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
+
+                    if (compact) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                        ) {
+                            BookCover(
+                                title = book.title,
+                                subtitle = book.author,
+                                imagePath = book.coverCachePath,
+                                modifier = Modifier.width(142.dp).height(208.dp)
+                            )
+                            BookDetailIdentity(book)
+                        }
+                    } else {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            BookCover(
+                                title = book.title,
+                                subtitle = book.author,
+                                imagePath = book.coverCachePath,
+                                modifier = Modifier.width(154.dp).height(226.dp)
+                            )
+                            BookDetailIdentity(
+                                book = book,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
 
-            BrassRule(Modifier.fillMaxWidth())
+            Column(
+                modifier = Modifier
+                    .widthIn(max = 720.dp)
+                    .fillMaxWidth()
+                    .align(Alignment.CenterHorizontally)
+                    .padding(horizontal = VeilSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "READING PROGRESS",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                            color = VeilPalette.Brass,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            "${(progress * 100).toInt()}%",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
 
-            ArchivePanel(modifier = Modifier.fillMaxWidth()) {
-                LinearProgressIndicator(
-                    progress = { progress },
-                    modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
-                    color = if (book.finished) MaterialTheme.colorScheme.tertiary
-                    else MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth().height(3.dp),
+                        color = VeilPalette.Brass,
+                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f),
+                        drawStopIndicator = {}
+                    )
+
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        book.currentChapter
+                            .takeIf { it.isNotBlank() && it != "Not started" }
+                            ?.let { chapter ->
+                                Text(
+                                    chapter,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = VeilPalette.Brass.copy(alpha = 0.82f),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.widthIn(max = 240.dp)
+                                )
+                            }
+                    }
+                }
+
+                Button(
+                    onClick = onOpen,
+                    enabled = book.isImported,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 54.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = Color(0xFF17120A)
+                    )
                 ) {
                     Text(
-                        status,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    book.currentChapter
-                        .takeIf { it.isNotBlank() && it != "Not started" }
-                        ?.let { chapter ->
-                            Text(
-                                chapter,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.widthIn(max = 210.dp)
-                            )
-                        }
-                }
-            }
-
-            Button(
-                onClick = onOpen,
-                enabled = book.isImported,
-                shape = MaterialTheme.shapes.extraSmall,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-            ) {
-                Text(if (book.isImported) primaryAction else stringResource(R.string.book_detail_publication_unavailable))
-            }
-
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-            ) {
-                OutlinedButton(
-                    onClick = onFavorite,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                ) {
-                    Text(if (book.favorite) stringResource(R.string.book_detail_favorited) else stringResource(R.string.book_detail_favorite))
-                }
-                OutlinedButton(
-                    onClick = onEditMetadata,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                ) {
-                    Text(stringResource(R.string.book_detail_edit_details))
-                }
-            }
-
-            BrassRule(Modifier.fillMaxWidth())
-
-            ArchivePanel(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    stringResource(R.string.book_detail_publication_details),
-                    style = MaterialTheme.typography.titleLarge
-                )
-                BrassRule(Modifier.width(72.dp))
-                BookDetailFact(stringResource(R.string.book_detail_format), book.format.name)
-                book.language?.takeIf { it.isNotBlank() }?.let {
-                    BookDetailFact(stringResource(R.string.book_detail_language), it)
-                }
-                if (book.totalPages > 0) {
-                    BookDetailFact(
-                        stringResource(R.string.book_detail_pages),
-                        stringResource(R.string.book_detail_page_progress, book.pagesRead.coerceAtLeast(0).coerceAtMost(book.totalPages), book.totalPages)
+                        if (book.isImported) primaryAction
+                        else stringResource(R.string.book_detail_publication_unavailable)
                     )
                 }
-                BookDetailFact(
-                    stringResource(R.string.book_detail_stored),
-                    if (book.isImported) stringResource(R.string.book_detail_private_local_copy) else stringResource(R.string.book_detail_sample_metadata_only)
-                )
-            }
 
-            if (book.allCollections.isNotEmpty()) {
-                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                    Text(stringResource(R.string.book_detail_collections), style = MaterialTheme.typography.titleMedium)
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    OutlinedButton(
+                        onClick = onFavorite,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        modifier = Modifier.weight(1f).heightIn(min = 46.dp),
+                        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface
+                        )
                     ) {
-                        book.allCollections.forEach { collection ->
-                            Surface(
-                                shape = MaterialTheme.shapes.extraSmall,
-                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.34f),
-                                border = BorderStroke(
-                                    1.dp,
-                                    VeilPalette.Brass.copy(alpha = 0.34f)
-                                )
-                            ) {
-                                Text(
-                                    collection,
-                                    Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    style = MaterialTheme.typography.labelLarge
-                                )
+                        Text(
+                            if (book.favorite) {
+                                stringResource(R.string.book_detail_favorited)
+                            } else {
+                                stringResource(R.string.book_detail_favorite)
+                            }
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = onEditMetadata,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        modifier = Modifier.weight(1f).heightIn(min = 46.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
+                        )
+                    ) {
+                        Text(stringResource(R.string.book_detail_edit_details))
+                    }
+                }
+
+                BrassRule(Modifier.fillMaxWidth())
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    Text(
+                        "ARCHIVE RECORD",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                        color = VeilPalette.Brass
+                    )
+                    BookDetailFact(stringResource(R.string.book_detail_format), book.format.name)
+                    book.language?.takeIf { it.isNotBlank() }?.let {
+                        BookDetailFact(stringResource(R.string.book_detail_language), it)
+                    }
+                    if (book.totalPages > 0) {
+                        BookDetailFact(
+                            stringResource(R.string.book_detail_pages),
+                            stringResource(
+                                R.string.book_detail_page_progress,
+                                book.pagesRead.coerceAtLeast(0).coerceAtMost(book.totalPages),
+                                book.totalPages
+                            )
+                        )
+                    }
+                    BookDetailFact(
+                        stringResource(R.string.book_detail_stored),
+                        if (book.isImported) {
+                            stringResource(R.string.book_detail_private_local_copy)
+                        } else {
+                            stringResource(R.string.book_detail_sample_metadata_only)
+                        }
+                    )
+                }
+
+                if (book.allCollections.isNotEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        Text(
+                            stringResource(R.string.book_detail_collections).uppercase(),
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                            color = VeilPalette.Brass
+                        )
+
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                        ) {
+                            book.allCollections.forEach { collection ->
+                                Surface(
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.54f),
+                                    border = BorderStroke(
+                                        1.dp,
+                                        VeilPalette.Brass.copy(alpha = 0.32f)
+                                    )
+                                ) {
+                                    Text(
+                                        collection,
+                                        Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun BookDetailIdentity(
+    book: Book,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            book.title,
+            style = MaterialTheme.typography.headlineMedium,
+            color = VeilPalette.Moon,
+            maxLines = 4,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Text(
+            if (book.author.isBlank()) {
+                stringResource(R.string.common_unknown_author)
+            } else {
+                book.author
+            },
+            style = MaterialTheme.typography.bodyMedium,
+            color = VeilPalette.Moon.copy(alpha = 0.76f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+            Text(
+                buildString {
+                    append(series)
+                    book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                },
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Brass,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+
+        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+            Surface(
+                shape = MaterialTheme.shapes.extraSmall,
+                color = VeilPalette.Ink.copy(alpha = 0.58f),
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.32f))
+            ) {
+                Text(
+                    book.format.name,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Moon.copy(alpha = 0.84f)
+                )
+            }
+
+            if (book.favorite) {
+                Surface(
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = VeilPalette.DeepBrass.copy(alpha = 0.54f),
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
+                ) {
+                    Text(
+                        "FAVORITE",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass
+                    )
+                }
             }
         }
     }
