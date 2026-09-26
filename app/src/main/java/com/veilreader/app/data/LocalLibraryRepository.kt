@@ -18,9 +18,12 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReadingContinuitySummary
+import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.buildSealedReadingCycle
 import com.veilreader.app.domain.deriveReadingContinuity
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -84,6 +87,12 @@ class LocalLibraryRepository internal constructor(
     private val _readingSessions = MutableStateFlow<List<ReadingSessionSnapshot>>(emptyList())
     val readingSessions: StateFlow<List<ReadingSessionSnapshot>> = _readingSessions
 
+    private val _readingCycles = MutableStateFlow<List<ReadingCycleRecord>>(emptyList())
+    val readingCycles: StateFlow<List<ReadingCycleRecord>> = _readingCycles
+
+    private val _passageVisits = MutableStateFlow<List<PassageVisit>>(emptyList())
+    val passageVisits: StateFlow<List<PassageVisit>> = _passageVisits
+
     init {
         scope.launch {
             for (write in writes) {
@@ -117,6 +126,16 @@ class LocalLibraryRepository internal constructor(
         scope.launch {
             database.readingSessions().observeAll().collect { rows ->
                 _readingSessions.value = rows.map { it.toSnapshot() }
+            }
+        }
+        scope.launch {
+            database.readingCycles().observeAll().collect { rows ->
+                _readingCycles.value = rows.map { it.toDomain() }
+            }
+        }
+        scope.launch {
+            database.passageVisits().observeAll().collect { rows ->
+                _passageVisits.value = rows.map { it.toDomain() }
             }
         }
     }
@@ -289,6 +308,40 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
+
+    /**
+     * Records only a verified return to an already-preserved locator.
+     *
+     * The locator must match an existing highlight exactly. Recomposition, process restoration,
+     * and repeated taps inside a short window are deduplicated so "revisit" remains a factual event.
+     */
+    fun recordPassageVisitForLocator(
+        bookId: String,
+        locatorJson: String,
+        viewedAtEpochMs: Long = System.currentTimeMillis()
+    ): PassageVisit? {
+        val highlight = _highlights.value.firstOrNull {
+            it.bookId == bookId && it.locatorJson == locatorJson
+        } ?: return null
+        if (viewedAtEpochMs <= highlight.createdAtEpochMs + PASSAGE_REVISIT_MIN_AGE_MS) return null
+
+        val lastVisit = _passageVisits.value
+            .asSequence()
+            .filter { it.highlightId == highlight.id }
+            .maxOfOrNull { it.viewedAtEpochMs }
+        if (lastVisit != null && viewedAtEpochMs - lastVisit < PASSAGE_REVISIT_DEDUPE_MS) return null
+
+        val visit = PassageVisit(
+            id = UUID.randomUUID().toString(),
+            highlightId = highlight.id,
+            bookId = bookId,
+            locatorJson = locatorJson,
+            viewedAtEpochMs = viewedAtEpochMs
+        )
+        _passageVisits.value = listOf(visit) + _passageVisits.value
+        enqueue { database.passageVisits().upsert(visit.toEntity()) }
+        return visit
+    }
 
     suspend fun readingContinuity(
         book: Book,
