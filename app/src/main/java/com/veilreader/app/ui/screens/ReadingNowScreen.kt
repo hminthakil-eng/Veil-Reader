@@ -28,6 +28,9 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.VeilRealm
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -48,7 +51,12 @@ fun ReadingNowScreen(
     val current = snapshot.hero
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.THRESHOLD,
+                seed = books.size + profile.level
+            ),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
@@ -149,6 +157,11 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
                             )
                         )
                     )
+            )
+
+            GrayfogOrnamentFrame(
+                modifier = Modifier.matchParentSize(),
+                strength = 0.74f
             )
 
             Text(
