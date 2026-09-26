@@ -138,6 +138,31 @@ class PaperCurlGeometryTest {
         assertTrue(weighted.y < finger.y)
     }
 
+
+    @Test
+    fun weightedDragDampsVerticalWobbleMoreThanHorizontalPull() {
+        val start = Offset(900f, 500f)
+        val finger = Offset(300f, 700f)
+        val weighted = paperWeightedDragCurrent(start, finger)
+
+        val rawX = kotlin.math.abs(finger.x - start.x)
+        val rawY = kotlin.math.abs(finger.y - start.y)
+        val weightedX = kotlin.math.abs(weighted.x - start.x)
+        val weightedY = kotlin.math.abs(weighted.y - start.y)
+
+        assertTrue(weightedX / rawX > weightedY / rawY)
+    }
+
+    @Test
+    fun creaseAndContactShadowDisappearAtRest() {
+        assertEquals(0f, paperCreaseIntensity(0f), 0.0001f)
+        assertEquals(0f, paperCreaseIntensity(1f), 0.0001f)
+        assertEquals(0f, paperContactShadowIntensity(0f), 0.0001f)
+        assertEquals(0f, paperContactShadowIntensity(1f), 0.0001f)
+        assertTrue(paperCreaseIntensity(0.5f) > 0.75f)
+        assertTrue(paperContactShadowIntensity(0.5f) > 0.50f)
+    }
+
     @Test
     fun pageEdgeMovesInwardAsPointerPullsPage() {
         val start = Offset(980f, 500f)
