@@ -132,11 +132,11 @@ fun BookCover(
         label = "cover-fade"
     )
 
-    val shape = RoundedCornerShape(11.dp)
+    val shape = RoundedCornerShape(3.dp)
     Box(
         modifier = modifier
             .shadow(
-                elevation = 10.dp,
+                elevation = 4.dp,
                 shape = shape,
                 ambientColor = Color.Black.copy(alpha = 0.22f),
                 spotColor = Color.Black.copy(alpha = 0.30f)
@@ -177,16 +177,40 @@ fun BookCover(
 
 @Composable
 private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
-    val hue = ((title.hashCode().ushr(1) % 260) + 235).toFloat() % 360f
-    val accent = Color.hsv(hue, 0.38f, 0.58f)
-    val middle = Color.hsv((hue + 18f) % 360f, 0.46f, 0.31f)
-    val deep = Color.hsv((hue + 34f) % 360f, 0.48f, 0.13f)
+    val pigments = listOf(VeilPalette.MidnightBlue, VeilPalette.BloodRed, VeilPalette.DeepAmethyst)
+    val accent = pigments[title.hashCode().ushr(1) % pigments.size]
+    val middle = VeilPalette.GrayfogBlue
+    val deep = VeilPalette.VeilBlack
 
     Box(
         Modifier
             .matchParentSize()
             .background(Brush.linearGradient(listOf(accent, middle, deep)))
     )
+
+    Canvas(Modifier.matchParentSize()) {
+        val edge = 6.dp.toPx()
+        val gold = VeilPalette.OldGold.copy(alpha = .60f)
+        drawRect(gold, topLeft = androidx.compose.ui.geometry.Offset(edge, edge),
+            size = androidx.compose.ui.geometry.Size((size.width - edge * 2).coerceAtLeast(0f),
+                (size.height - edge * 2).coerceAtLeast(0f)), style = Stroke(.6.dp.toPx()))
+        val center = androidx.compose.ui.geometry.Offset(size.width * .5f, size.height * .30f)
+        val radius = size.width * .23f
+        drawCircle(gold, radius, center, style = Stroke(.7.dp.toPx()))
+        drawCircle(gold.copy(alpha = .25f), radius * .76f, center, style = Stroke(.5.dp.toPx()))
+        val star = Path().apply {
+            moveTo(center.x, center.y - radius * 1.20f)
+            lineTo(center.x + radius * .20f, center.y - radius * .20f)
+            lineTo(center.x + radius, center.y)
+            lineTo(center.x + radius * .20f, center.y + radius * .20f)
+            lineTo(center.x, center.y + radius * 1.20f)
+            lineTo(center.x - radius * .20f, center.y + radius * .20f)
+            lineTo(center.x - radius, center.y)
+            lineTo(center.x - radius * .20f, center.y - radius * .20f)
+            close()
+        }
+        drawPath(star, gold, style = Stroke(.7.dp.toPx()))
+    }
 
     Column(
         Modifier
@@ -208,6 +232,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
                 title,
                 color = Color.White,
                 fontWeight = FontWeight.SemiBold,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Serif,
                 fontSize = 14.sp,
                 lineHeight = 17.sp,
                 maxLines = 4,
@@ -234,7 +259,7 @@ fun GrayfogPanel(
     contentPadding: PaddingValues = PaddingValues(VeilSpacing.lg),
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(14.dp)
+    val shape = RoundedCornerShape(6.dp)
     Box(
         modifier = modifier
             .clip(shape)
@@ -251,7 +276,7 @@ fun GrayfogPanel(
                 color = VeilPalette.TarnishedBrass.copy(alpha = .30f),
                 topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
                 size = androidx.compose.ui.geometry.Size(size.width - inset * 2, size.height - inset * 2),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(3.dp.toPx()),
                 style = Stroke(.7.dp.toPx())
             )
         }
@@ -285,16 +310,27 @@ fun ParchmentSurface(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = RoundedCornerShape(6.dp)
-    Column(
-        modifier = modifier
-            .clip(shape)
-            .background(
-                Brush.verticalGradient(listOf(VeilPalette.WarmPaper, VeilPalette.Parchment, VeilPalette.AgedPaper))
-            )
-            .border(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .55f), shape)
-            .padding(VeilSpacing.lg),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
-        content = content
-    )
+    val shape = RoundedCornerShape(4.dp)
+    Box(modifier.clip(shape).background(
+        Brush.verticalGradient(listOf(VeilPalette.WarmPaper, VeilPalette.Parchment, VeilPalette.AgedPaper))
+    ).border(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .65f), shape)) {
+        Canvas(Modifier.matchParentSize()) {
+            val inset = 5.dp.toPx()
+            val gold = VeilPalette.TarnishedBrass.copy(alpha = .28f)
+            drawRect(gold, topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                size = androidx.compose.ui.geometry.Size((size.width - inset * 2).coerceAtLeast(0f),
+                    (size.height - inset * 2).coerceAtLeast(0f)), style = Stroke(.6.dp.toPx()))
+            val r = 3.dp.toPx()
+            for (x in listOf(inset, size.width - inset)) {
+                for (y in listOf(inset, size.height - inset)) {
+                    val diamond = Path().apply {
+                        moveTo(x, y-r); lineTo(x+r, y); lineTo(x, y+r); lineTo(x-r, y); close()
+                    }
+                    drawPath(diamond, VeilPalette.TarnishedBrass.copy(alpha = .55f))
+                }
+            }
+        }
+        Column(Modifier.padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm), content = content)
+    }
 }

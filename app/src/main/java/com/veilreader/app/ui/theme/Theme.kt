@@ -96,10 +96,10 @@ private val VeilLightColors = lightColorScheme(
     onBackground = VeilPalette.InkOnPaper,
     surface = VeilPalette.WarmPaper,
     onSurface = VeilPalette.InkOnPaper,
-    surfaceVariant = Color(0xFFECE6ED),
-    onSurfaceVariant = Color(0xFF514A54),
-    outline = Color(0xFF807781),
-    outlineVariant = Color(0xFFD3CAD5)
+    surfaceVariant = Color(0xFFE0D1B5),
+    onSurfaceVariant = Color(0xFF625440),
+    outline = Color(0xFF897252),
+    outlineVariant = Color(0xFFC5B18E)
 )
 
 private val VeilTypography = Typography(
@@ -124,13 +124,13 @@ private val VeilTypography = Typography(
         lineHeight = 29.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Bold,
         fontSize = 20.sp,
         lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 19.sp,
         lineHeight = 24.sp,
@@ -178,11 +178,11 @@ private val VeilTypography = Typography(
 )
 
 private val VeilShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(3.dp),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(6.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
 )
 
 @Composable
@@ -203,3 +203,4 @@ fun VeilTheme(
         content = content
     )
 }
+

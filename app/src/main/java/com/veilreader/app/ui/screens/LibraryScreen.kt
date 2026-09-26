@@ -3,6 +3,10 @@ package com.veilreader.app.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.veilreader.app.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -163,23 +167,22 @@ fun LibraryScreen(
     ) {
         item(key = "library:heading", span = { GridItemSpan(maxLineSpan) }) {
             Column {
-                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
-                    Text(
-                        "VEIL READER",
-                        color = VeilPalette.OldGold,
-                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.2.sp)
-                    )
-                    Text(
-                        "Grayfog Archive",
-                        color = VeilPalette.Moon,
-                        style = MaterialTheme.typography.headlineLarge
-                    )
-                    Text(
-                        "Fragments · Records · Truths",
-                        color = VeilPalette.Mist,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                    VeilOrnamentDivider()
+                Box(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)) {
+                    Image(painterResource(R.drawable.grayfog_threshold_v1), contentDescription = null,
+                        contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
+                    Box(Modifier.matchParentSize().background(Brush.verticalGradient(
+                        listOf(VeilPalette.Ink.copy(alpha = .48f), VeilPalette.Ink.copy(alpha = .96f)))))
+                    Column(Modifier.fillMaxWidth().padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+                        Text("VEIL READER", color = VeilPalette.OldGold,
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 2.2.sp))
+                        Spacer(Modifier.height(28.dp))
+                        Text("Grayfog Archive", color = VeilPalette.Moon,
+                            style = MaterialTheme.typography.headlineLarge)
+                        Text("Fragments · Records · Truths", color = VeilPalette.Mist,
+                            style = MaterialTheme.typography.bodyMedium)
+                        VeilOrnamentDivider()
+                    }
                 }
 
                 LibraryHeader(
@@ -672,8 +675,7 @@ private fun BookLibraryTile(
     Column(
         Modifier
             .fillMaxWidth()
-            .border(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .42f), RoundedCornerShape(12.dp))
-            .padding(7.dp)
+            .padding(2.dp)
     ) {
         Box {
             BookCover(
@@ -729,7 +731,7 @@ private fun BookLibraryTile(
             Column(Modifier.weight(1f)) {
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(fontFamily = androidx.compose.ui.text.font.FontFamily.Serif),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )

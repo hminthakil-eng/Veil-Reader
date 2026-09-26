@@ -1,19 +1,19 @@
 package com.veilreader.app.ui
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.text.style.TextAlign
+import com.veilreader.app.ui.theme.VeilPalette
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -22,11 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -111,18 +109,7 @@ fun VeilAnimatedTabHost(
         targetState = selectedTab,
         modifier = modifier,
         transitionSpec = {
-            val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
-            (
-                fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 35)) +
-                    slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
-                        direction * (fullWidth / 14)
-                    }
-                ) togetherWith (
-                fadeOut(tween(VeilMotion.QUICK_MS)) +
-                    slideOutHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
-                        -direction * (fullWidth / 20)
-                    }
-                ) using SizeTransform(clip = false)
+            fadeIn(tween(VeilMotion.QUICK_MS)) togetherWith fadeOut(tween(VeilMotion.QUICK_MS))
         },
         label = "veil-tab"
     ) { tab ->
@@ -140,19 +127,19 @@ fun VeilBottomDock(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-        shape = RoundedCornerShape(20.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(6.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 8.dp,
-        tonalElevation = 1.dp,
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         border = BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.68f)
         )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 5.dp, vertical = 4.dp),
+            modifier = Modifier.selectableGroup().padding(horizontal = 5.dp, vertical = 4.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -175,13 +162,8 @@ private fun VeilDockItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scale by animateFloatAsState(
-        targetValue = if (selected) 1f else 0.94f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "dock-scale"
-    )
     val background = if (selected) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.82f)
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)
     } else {
         Color.Transparent
     }
@@ -194,14 +176,16 @@ private fun VeilDockItem(
     Column(
         modifier = modifier
             .heightIn(min = 50.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(4.dp))
             .background(background)
-            .clickable(role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 5.dp)
-            .scale(scale),
+            .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+            .padding(horizontal = 2.dp, vertical = 5.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+        Box(Modifier.width(18.dp).height(1.dp).background(
+            if (selected) MaterialTheme.colorScheme.primary else Color.Transparent))
+        Spacer(Modifier.height(4.dp))
         VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(20.dp))
         Spacer(Modifier.height(2.dp))
         Text(
@@ -212,7 +196,8 @@ private fun VeilDockItem(
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
             ),
             color = foreground,
-            maxLines = 1
+            maxLines = 2,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -228,9 +213,9 @@ fun VeilNavigationRail(
             .fillMaxHeight()
             .width(104.dp)
             .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
-        shape = RoundedCornerShape(30.dp),
+        shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-        shadowElevation = 12.dp,
+        shadowElevation = 0.dp,
         border = BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.64f)
@@ -243,7 +228,7 @@ fun VeilNavigationRail(
             VeilBrandMark()
             Spacer(Modifier.height(VeilSpacing.xl))
             Column(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).selectableGroup(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 VeilTab.entries.forEach { tab ->
@@ -256,7 +241,7 @@ fun VeilNavigationRail(
                     Column(
                         modifier = Modifier
                             .width(80.dp)
-                            .clip(RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(4.dp))
                             .background(
                                 if (isSelected) {
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.80f)
@@ -264,7 +249,7 @@ fun VeilNavigationRail(
                                     Color.Transparent
                                 }
                             )
-                            .clickable(role = Role.Tab) { onSelect(tab) }
+                            .selectable(selected = isSelected, role = Role.Tab) { onSelect(tab) }
                             .padding(vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -419,3 +404,4 @@ private fun VeilTabIcon(
         }
     }
 }
+
