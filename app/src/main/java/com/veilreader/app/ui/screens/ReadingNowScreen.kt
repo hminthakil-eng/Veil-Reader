@@ -110,7 +110,7 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
                 "Import an EPUB or PDF. Your books, notes, and reading progress stay on this device."
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = VeilPalette.Mist,
             modifier = Modifier.widthIn(max = 680.dp)
         )
     }
@@ -208,7 +208,7 @@ private fun HeroDetails(
         Text(
             current.title,
             style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = VeilPalette.Moon,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
@@ -224,8 +224,8 @@ private fun HeroDetails(
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-            color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
+            color = VeilPalette.OldGold,
+            trackColor = VeilPalette.TarnishedBrass.copy(alpha = .28f)
         )
         Text(
             heroProgressLabel(current, progressPercent, progress),
@@ -241,15 +241,23 @@ private fun HeroDetails(
         ) {
             Button(
                 onClick = { onOpenBook(current) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VeilPalette.OldGold,
+                    contentColor = VeilPalette.Ink
+                ),
+                shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
-                Text(if (progress > 0f && !current.finished) "Continue" else "Open book")
+                Text(if (progress > 0f && !current.finished) "Continue Reading" else "Open the Book")
             }
-            TextButton(
+            OutlinedButton(
                 onClick = onOpenLibrary,
+                border = BorderStroke(1.dp, VeilPalette.TarnishedBrass),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.Mist),
+                shape = MaterialTheme.shapes.small,
                 modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
             ) {
-                Text("Library")
+                Text("Enter the Archive")
             }
         }
     }
@@ -275,8 +283,9 @@ private fun RecentBooksShelf(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                "Recent books",
+                "Recent Tomes",
                 style = MaterialTheme.typography.titleLarge,
+                color = VeilPalette.Moon,
                 modifier = Modifier.weight(1f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -284,7 +293,7 @@ private fun RecentBooksShelf(
             TextButton(
                 onClick = onOpenLibrary,
                 modifier = Modifier.heightIn(min = 48.dp)
-            ) { Text("View all") }
+            ) { Text("View Archive", color = VeilPalette.OldGold) }
         }
 
         Row(
@@ -304,11 +313,15 @@ private fun RecentBooksShelf(
 private fun RecentBookCard(book: Book, onOpenBook: (Book) -> Unit) {
     Card(
         onClick = { onOpenBook(book) },
-        modifier = Modifier.width(124.dp),
+        modifier = Modifier.width(132.dp),
         shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        colors = CardDefaults.cardColors(containerColor = VeilPalette.Obsidian.copy(alpha = .62f)),
+        border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .48f))
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        Column(
+            Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
             BookCover(
                 title = book.title,
                 subtitle = book.author,
