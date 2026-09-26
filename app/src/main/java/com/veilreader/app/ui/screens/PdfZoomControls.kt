@@ -14,6 +14,11 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.sp
+import com.veilreader.app.ui.theme.VeilPalette
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -73,11 +78,14 @@ internal fun PdfZoomControls(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        Text("PDF READER", style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.8.sp), color = VeilPalette.OldGold)
         Text(
-            "PDF zoom",
+            "Page & Zoom",
             style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold
+            fontWeight = FontWeight.Bold,
+            color = VeilPalette.Moon
         )
+        VeilOrnamentDivider()
         
         Text(
             "Pinch or double-tap the page at any time. These controls give you a reliable manual fallback.",
@@ -116,7 +124,7 @@ internal fun PdfZoomControls(
             )
         }
 
-        HorizontalDivider()
+        VeilOrnamentDivider()
 
         if (view == null) {
             Text(
@@ -188,11 +196,13 @@ internal fun PdfZoomControls(
             ) { Text("Fit page width") }
         }
 
-        HorizontalDivider()
+        VeilOrnamentDivider()
         Button(
             onClick = onDone,
+            colors = ButtonDefaults.buttonColors(containerColor = VeilPalette.OldGold, contentColor = VeilPalette.Ink),
+            shape = RoundedCornerShape(10.dp),
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-        ) { Text("Back to reading") }
+        ) { Text("Return to the Page") }
     }
 }
 
