@@ -270,7 +270,24 @@ fun ArchiveScreen(
     editingHighlightId?.let { highlightId ->
         AlertDialog(
             onDismissRequest = { editingHighlightId = null; noteDraft = "" },
-            title = { Text(stringResource(R.string.notebook_note_dialog_title)) },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            tonalElevation = 0.dp,
+            title = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "HIDDEN ARCHIVE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        stringResource(R.string.notebook_note_dialog_title),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            },
             text = {
                 OutlinedTextField(
                     value = noteDraft,
@@ -598,7 +615,21 @@ private fun DeleteNotebookItemDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title) },
+        shape = MaterialTheme.shapes.small,
+        containerColor = VeilPalette.Archive,
+        titleContentColor = VeilPalette.Moon,
+        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        tonalElevation = 0.dp,
+        title = {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    "REMOVE RECORD",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+                Text(title, style = MaterialTheme.typography.titleLarge)
+            }
+        },
         text = { Text(body) },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
