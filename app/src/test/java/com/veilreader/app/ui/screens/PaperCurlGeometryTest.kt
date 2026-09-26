@@ -77,6 +77,37 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun fastFlickCanCommitBeforeSlowDistanceThreshold() {
+        assertTrue(
+            shouldCommitPaperTurn(
+                inwardDistance = 50f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.05f,
+                releaseVelocityPxPerSec = 1400f
+            )
+        )
+        assertFalse(
+            shouldCommitPaperTurn(
+                inwardDistance = 50f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.05f,
+                releaseVelocityPxPerSec = 300f
+            )
+        )
+        assertFalse(
+            shouldCommitPaperTurn(
+                inwardDistance = 8f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.02f,
+                releaseVelocityPxPerSec = 3000f
+            )
+        )
+    }
+
+    @Test
     fun stationaryBodyDragDoesNotPreCurlOrCommit() {
         for (startX in listOf(100f, 250f, 500f, 750f, 980f)) {
             val start = Offset(startX, 500f)
