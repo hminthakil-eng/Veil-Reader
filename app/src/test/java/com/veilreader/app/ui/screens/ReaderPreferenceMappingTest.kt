@@ -10,6 +10,14 @@ import org.junit.Test
 
 class ReaderPreferenceMappingTest {
     @Test
+    fun `new reader sessions default to the paper sanctuary`() {
+        val appearance = ReaderAppearance()
+
+        assertEquals(ReaderTheme.PAPER, appearance.theme)
+        assertEquals(ReaderNavigationMode.PAPER_CURL, appearance.navigationMode)
+    }
+
+    @Test
     fun `font size uses Readium ratio and clamps supported range`() {
         assertEquals(1.0, readiumFontSizeRatio(1.0), 0.0001)
         assertEquals(1.4, readiumFontSizeRatio(1.4), 0.0001)
