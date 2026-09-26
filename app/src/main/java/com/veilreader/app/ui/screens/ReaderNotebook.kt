@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.ui.theme.VeilPalette
+import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -111,12 +113,15 @@ fun ReaderNotebook(
                 .fillMaxHeight(.85f)
                 .padding(horizontal = 20.dp)
         ) {
-            Text("Reading tools", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text("HIDDEN ARCHIVE", style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.8.sp), color = VeilPalette.OldGold)
+            Text("Notebook", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = VeilPalette.Moon)
             Text(
                 opened.book.title,
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            VeilOrnamentDivider()
 
             Row(
                 Modifier
