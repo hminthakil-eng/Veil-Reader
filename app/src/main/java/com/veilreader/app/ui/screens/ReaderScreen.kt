@@ -74,6 +74,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
@@ -194,6 +195,18 @@ fun ReaderScreen(
         )
     }
     ReaderBrightnessEffect(activity, readerAppearance.screenBrightness)
+
+    LaunchedEffect(controlsVisible, showNotebook, showAppearance, showPdfZoom) {
+        if (
+            controlsVisible &&
+            !showNotebook &&
+            !showAppearance &&
+            !showPdfZoom
+        ) {
+            delay(3600)
+            controlsVisible = false
+        }
+    }
 
     LaunchedEffect(readerAppearance.scroll, readerAppearance.pageTurnStyle) {
         if (
@@ -601,8 +614,8 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
-            enter = fadeIn(tween(120)) + slideInVertically(tween(160)) { -it / 3 },
-            exit = fadeOut(tween(90)) + slideOutVertically(tween(130)) { -it / 3 }
+            enter = fadeIn(tween(100)) + slideInVertically(tween(140)) { -it / 4 },
+            exit = fadeOut(tween(80)) + slideOutVertically(tween(110)) { -it / 4 }
         ) {
             Surface(
                 modifier = Modifier
@@ -616,7 +629,7 @@ fun ReaderScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 52.dp)
+                            .heightIn(min = 48.dp)
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -633,8 +646,8 @@ fun ReaderScreen(
                             Text(
                                 opened.book.title,
                                 style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = 15.sp,
-                                    lineHeight = 18.sp
+                                    fontSize = 13.5.sp,
+                                    lineHeight = 16.sp
                                 ),
                                 color = VeilPalette.Moon,
                                 maxLines = 1,
@@ -644,7 +657,7 @@ fun ReaderScreen(
                                 locationTitle.ifBlank {
                                     opened.book.author.ifBlank { opened.format.name }
                                 },
-                                color = VeilPalette.Moon.copy(alpha = 0.62f),
+                                color = VeilPalette.Moon.copy(alpha = 0.54f),
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -676,8 +689,8 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = fadeIn(tween(120)) + slideInVertically(tween(160)) { it / 3 },
-            exit = fadeOut(tween(90)) + slideOutVertically(tween(130)) { it / 3 }
+            enter = fadeIn(tween(100)) + slideInVertically(tween(140)) { it / 4 },
+            exit = fadeOut(tween(80)) + slideOutVertically(tween(110)) { it / 4 }
         ) {
             Surface(
                 modifier = Modifier
@@ -706,7 +719,7 @@ fun ReaderScreen(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                            .padding(horizontal = 10.dp, vertical = 2.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
@@ -1006,8 +1019,8 @@ fun ReaderScreen(
 }
 
 private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
-    ReaderTheme.PAPER -> Color(0xFFE8DCC0)
-    ReaderTheme.SEPIA -> Color(0xFFE1CFAB)
+    ReaderTheme.PAPER -> Color(0xFFE9DEC5)
+    ReaderTheme.SEPIA -> Color(0xFFE2D0AA)
     ReaderTheme.DUSK -> Color(0xFF18151D)
     ReaderTheme.OLED -> Color.Black
 }
@@ -1018,11 +1031,21 @@ private fun ReaderPageAtmosphere(
     modifier: Modifier = Modifier
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
-    Canvas(modifier) {
-        val edge = if (dark) Color.Black.copy(alpha = 0.18f) else Color(0xFF4A3923).copy(alpha = 0.10f)
-        val highlight = if (dark) Color.White.copy(alpha = 0.025f) else Color.White.copy(alpha = 0.16f)
-        val edgeWidth = 14.dp.toPx()
 
+    Canvas(modifier) {
+        val edge = if (dark) {
+            Color.Black.copy(alpha = 0.20f)
+        } else {
+            Color(0xFF4A3923).copy(alpha = 0.085f)
+        }
+        val highlight = if (dark) {
+            Color.White.copy(alpha = 0.020f)
+        } else {
+            Color.White.copy(alpha = 0.135f)
+        }
+        val edgeWidth = 16.dp.toPx()
+
+        // Book-block depth at the outer edges.
         drawRect(
             brush = Brush.horizontalGradient(
                 listOf(edge, Color.Transparent),
@@ -1040,6 +1063,61 @@ private fun ReaderPageAtmosphere(
             topLeft = Offset(size.width - edgeWidth, 0f),
             size = Size(edgeWidth, size.height)
         )
+
+        // Very soft top/bottom page falloff. Keep it below the threshold where it
+        // competes with body text.
+        val falloff = if (dark) {
+            Color.Black.copy(alpha = 0.075f)
+        } else {
+            Color(0xFF7C6544).copy(alpha = 0.040f)
+        }
+        val band = 28.dp.toPx()
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(falloff, Color.Transparent),
+                startY = 0f,
+                endY = band
+            ),
+            size = Size(size.width, band)
+        )
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(Color.Transparent, falloff),
+                startY = size.height - band,
+                endY = size.height
+            ),
+            topLeft = Offset(0f, size.height - band),
+            size = Size(size.width, band)
+        )
+
+        // Deterministic micro-fibres: deliberately sparse and nearly invisible.
+        // They add material character without turning the page into a texture image.
+        if (!dark) {
+            val fibre = Color(0xFF6F5A3D).copy(alpha = 0.012f)
+            repeat(18) { index ->
+                val y = ((index * 71f + 29f) % size.height)
+                val x = ((index * 43f + 17f) % (size.width * 0.55f))
+                val length = 24.dp.toPx() + (index % 4) * 9.dp.toPx()
+                drawLine(
+                    color = fibre,
+                    start = Offset(x, y),
+                    end = Offset((x + length).coerceAtMost(size.width), y + (index % 3 - 1) * 0.6f),
+                    strokeWidth = 0.55.dp.toPx()
+                )
+            }
+
+            val speck = Color(0xFF59462F).copy(alpha = 0.015f)
+            repeat(24) { index ->
+                val x = ((index * 97f + 31f) % size.width)
+                val y = ((index * 137f + 47f) % size.height)
+                drawCircle(
+                    color = speck,
+                    radius = if (index % 5 == 0) 0.75.dp.toPx() else 0.45.dp.toPx(),
+                    center = Offset(x, y)
+                )
+            }
+        }
+
         drawLine(
             color = highlight,
             start = Offset(0f, 1.dp.toPx()),
@@ -1156,7 +1234,7 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 50.dp),
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 46.dp),
         contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
         colors = ButtonDefaults.textButtonColors(
             contentColor = VeilPalette.Moon,
@@ -1170,7 +1248,7 @@ private fun ReaderControl(
             ReaderActionIcon(
                 action = action,
                 modifier = Modifier.size(
-                    if (action == ReaderAction.APPEARANCE) 26.dp else 19.dp
+                    if (action == ReaderAction.APPEARANCE) 24.dp else 18.dp
                 ),
                 tint = if (enabled) VeilPalette.Brass else VeilPalette.Moon.copy(alpha = 0.28f)
             )
@@ -1773,8 +1851,8 @@ internal fun readiumFontSizeRatio(scale: Double): Double =
     (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
 
 internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
-    ReaderTheme.PAPER -> 0xFFE8DCC0.toInt() to 0xFF2C261F.toInt()
-    ReaderTheme.SEPIA -> 0xFFE1CFAB.toInt() to 0xFF382F24.toInt()
+    ReaderTheme.PAPER -> 0xFFE9DEC5.toInt() to 0xFF2A251F.toInt()
+    ReaderTheme.SEPIA -> 0xFFE2D0AA.toInt() to 0xFF362E24.toInt()
     ReaderTheme.DUSK -> 0xFF18151D.toInt() to 0xFFF5F0F7.toInt()
     ReaderTheme.OLED -> 0xFF000000.toInt() to 0xFFF5F0F7.toInt()
 }
