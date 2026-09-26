@@ -39,8 +39,14 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.data.SampleData
+import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.Bookmark
+import com.veilreader.app.domain.CastleMemoryState
 import com.veilreader.app.domain.GamificationEngine
+import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -52,10 +58,22 @@ import com.veilreader.app.ui.theme.VeilSpacing
 fun CastleScreen(
     profile: ReaderProfile,
     onAdvanceRank: () -> Unit,
-    onOpenRoom: (String) -> Unit
+    onOpenRoom: (String) -> Unit,
+    books: List<Book> = emptyList(),
+    highlights: List<Highlight> = emptyList(),
+    bookmarks: List<Bookmark> = emptyList(),
+    readingSessions: List<ReadingSessionSnapshot> = emptyList()
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
+    val memoryState = remember(books, highlights, bookmarks, readingSessions) {
+        deriveCastleMemoryState(
+            books = books,
+            highlights = highlights,
+            bookmarks = bookmarks,
+            sessions = readingSessions
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -67,16 +85,19 @@ fun CastleScreen(
         ScreenHeader(
             eyebrow = "CASTLE · LIVING ARCHIVE",
             title = "The Keep Remembers",
-            subtitle = "Every finished volume leaves a mark. Chambers awaken as your Path deepens."
+            subtitle = memoryState.inscription
         )
 
         CastleKeep(
             profile = profile,
+            memoryState = memoryState,
             canAdvance = canAdvance,
             awakenedRooms = awakenedRooms,
             totalRooms = SampleData.rooms.size,
             onAdvanceRank = onAdvanceRank
         )
+
+        CastleMemoryInscription(memoryState)
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
@@ -98,6 +119,7 @@ fun CastleScreen(
 
         CastleWorldMap(
             rankIndex = profile.rankIndex,
+            memoryState = memoryState,
             onOpenRoom = onOpenRoom
         )
 
@@ -115,6 +137,7 @@ fun CastleScreen(
 @Composable
 private fun CastleKeep(
     profile: ReaderProfile,
+    memoryState: CastleMemoryState,
     canAdvance: Boolean,
     awakenedRooms: Int,
     totalRooms: Int,
@@ -150,7 +173,8 @@ private fun CastleKeep(
         CastleKeepBackdrop(
             modifier = Modifier.matchParentSize(),
             rankIndex = profile.rankIndex,
-            rankCount = profile.path.ranks.size
+            rankCount = profile.path.ranks.size,
+            memoryState = memoryState
         )
 
         Column(
@@ -257,9 +281,56 @@ private fun CastleKeep(
 }
 
 @Composable
+private fun CastleMemoryInscription(memory: CastleMemoryState) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            "FOUNDATION MEMORY",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+            color = VeilPalette.Brass.copy(alpha = 0.78f)
+        )
+        Text(
+            buildString {
+                append(memory.volumeCount).append(" volumes")
+                if (memory.passageCount > 0) {
+                    append(" · ").append(memory.passageCount).append(" preserved passages")
+                }
+                if (memory.sealedCapsuleCount > 0) {
+                    append(" · ").append(memory.sealedCapsuleCount).append(" sealed records")
+                }
+                if (memory.atlasLinkCount > 0) {
+                    append(" · ").append(memory.atlasLinkCount).append(" atlas links")
+                }
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.72f)
+        )
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.34f),
+                            VeilPalette.Brass.copy(alpha = 0.06f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+    }
+}
+
+@Composable
 private fun CastleKeepBackdrop(
     rankIndex: Int,
     rankCount: Int,
+    memoryState: CastleMemoryState,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier) {
@@ -269,7 +340,9 @@ private fun CastleKeepBackdrop(
         val stone = VeilPalette.StrongBorderDark
         val baseY = h * 0.86f
         val towerBottom = h * 0.78f
-        val glow = ((rankIndex + 1f) / rankCount.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val rankGlow = ((rankIndex + 1f) / rankCount.coerceAtLeast(1)).coerceIn(0f, 1f)
+        val memoryGlow = memoryState.overallPresence
+        val glow = (rankGlow * 0.52f + memoryGlow * 0.48f).coerceIn(0f, 1f)
 
         drawRect(
             color = Color(0xFF07090C).copy(alpha = 0.54f),
@@ -294,40 +367,88 @@ private fun CastleKeepBackdrop(
         }
         drawPath(
             roof,
-            color = brass.copy(alpha = 0.20f + glow * 0.12f),
-            style = Stroke(width = 1.25.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+            color = brass.copy(alpha = 0.18f + glow * 0.20f),
+            style = Stroke(
+                width = 1.25.dp.toPx(),
+                cap = StrokeCap.Round,
+                join = StrokeJoin.Round
+            )
         )
 
         listOf(0.18f, 0.34f, 0.50f, 0.66f, 0.82f).forEachIndexed { index, x ->
             drawLine(
-                stone.copy(alpha = if (index == 2) 0.18f else 0.10f),
+                stone.copy(alpha = if (index == 2) 0.20f else 0.11f),
                 Offset(w * x, h * 0.34f),
                 Offset(w * x, towerBottom),
                 1.dp.toPx()
             )
         }
 
-        val windows = 7
-        repeat(windows) { index ->
+        repeat(memoryState.shelfRibs) { index ->
+            val fraction = (index + 1f) / (memoryState.shelfRibs + 1f)
+            val y = h * (0.51f + fraction * 0.24f)
+            val alpha = 0.045f + memoryState.libraryResonance * 0.08f
+            drawLine(
+                brass.copy(alpha = alpha),
+                Offset(w * 0.115f, y),
+                Offset(w * 0.245f, y),
+                0.75.dp.toPx()
+            )
+            drawLine(
+                brass.copy(alpha = alpha),
+                Offset(w * 0.755f, y),
+                Offset(w * 0.885f, y),
+                0.75.dp.toPx()
+            )
+        }
+
+        repeat(9) { index ->
             val row = index / 3
             val col = index % 3
             val x = w * (0.38f + col * 0.12f)
-            val y = h * (0.48f + row * 0.105f)
-            val lit = index <= rankIndex
+            val y = h * (0.47f + row * 0.095f)
+            val lit = index < memoryState.litWindows
             drawRoundRect(
                 color = if (lit) {
-                    brass.copy(alpha = 0.15f + glow * 0.13f)
+                    brass.copy(alpha = 0.14f + memoryGlow * 0.18f)
                 } else {
-                    stone.copy(alpha = 0.08f)
+                    stone.copy(alpha = 0.075f)
                 },
                 topLeft = Offset(x, y),
-                size = Size(w * 0.035f, h * 0.050f),
+                size = Size(w * 0.035f, h * 0.046f),
                 cornerRadius = CornerRadius(2.dp.toPx())
             )
         }
 
+        repeat(memoryState.starPoints) { index ->
+            val xUnit = ((index * 37 + 11) % 97) / 96f
+            val yUnit = ((index * 53 + 7) % 29) / 28f
+            drawCircle(
+                color = VeilPalette.Spirit.copy(
+                    alpha = 0.12f + memoryState.observatoryResonance * 0.22f
+                ),
+                radius = if (index % 4 == 0) 1.2.dp.toPx() else 0.72.dp.toPx(),
+                center = Offset(
+                    w * (0.12f + xUnit * 0.76f),
+                    h * (0.08f + yUnit * 0.20f)
+                )
+            )
+        }
+
+        repeat(memoryState.sealedCapsuleCount.coerceAtMost(7)) { index ->
+            val x = w * (0.34f + index * 0.053f)
+            drawCircle(
+                color = brass.copy(
+                    alpha = 0.16f + memoryState.treasuryResonance * 0.18f
+                ),
+                radius = 3.2.dp.toPx(),
+                center = Offset(x, baseY - 6.dp.toPx()),
+                style = Stroke(0.8.dp.toPx())
+            )
+        }
+
         drawLine(
-            brass.copy(alpha = 0.18f),
+            brass.copy(alpha = 0.16f + memoryGlow * 0.10f),
             Offset(w * 0.08f, baseY),
             Offset(w * 0.92f, baseY),
             1.dp.toPx()
@@ -336,13 +457,13 @@ private fun CastleKeepBackdrop(
             brush = Brush.verticalGradient(
                 listOf(
                     Color.Transparent,
-                    VeilPalette.Ink.copy(alpha = 0.56f)
+                    VeilPalette.Ink.copy(alpha = memoryState.fogAlpha)
                 ),
-                startY = h * 0.60f,
+                startY = h * 0.58f,
                 endY = h
             ),
-            topLeft = Offset(0f, h * 0.58f),
-            size = Size(w, h * 0.42f)
+            topLeft = Offset(0f, h * 0.56f),
+            size = Size(w, h * 0.44f)
         )
     }
 }
@@ -350,6 +471,7 @@ private fun CastleKeepBackdrop(
 @Composable
 private fun CastleWorldMap(
     rankIndex: Int,
+    memoryState: CastleMemoryState,
     onOpenRoom: (String) -> Unit
 ) {
     val rooms = SampleData.rooms
@@ -378,7 +500,8 @@ private fun CastleWorldMap(
         CastleArchitectureBackdrop(
             modifier = Modifier.matchParentSize(),
             rankIndex = rankIndex,
-            roomCount = rooms.size
+            roomCount = rooms.size,
+            memoryState = memoryState
         )
 
         AnimatedVisibility(
@@ -409,6 +532,7 @@ private fun CastleWorldMap(
                             purpose = room.purpose,
                             unlockRank = room.unlockRankIndex,
                             unlocked = rankIndex >= room.unlockRankIndex,
+                            resonance = memoryState.resonanceFor(room.id),
                             roomOnLeft = index % 2 == 0,
                             isLast = index == rooms.lastIndex,
                             onOpenRoom = onOpenRoom
@@ -429,6 +553,7 @@ private fun CastleWorldMap(
 private fun CastleArchitectureBackdrop(
     rankIndex: Int,
     roomCount: Int,
+    memoryState: CastleMemoryState,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier) {
@@ -494,11 +619,38 @@ private fun CastleArchitectureBackdrop(
             ((rankIndex + 1f) / roomCount.coerceAtLeast(1)).coerceIn(0f, 1f)
         val glowHeight = h * unlockedFraction * 0.42f
         drawLine(
-            VeilPalette.Brass.copy(alpha = 0.34f),
+            VeilPalette.Brass.copy(
+                alpha = 0.24f + memoryState.overallPresence * 0.18f
+            ),
             Offset(centerX, h - 34.dp.toPx()),
             Offset(centerX, h - 34.dp.toPx() - glowHeight),
             2.dp.toPx(),
             StrokeCap.Round
+        )
+
+        repeat(memoryState.starPoints.coerceAtMost(14)) { index ->
+            val x = w * (0.16f + ((index * 41 + 13) % 71) / 100f)
+            val y = h * (0.035f + ((index * 29 + 5) % 18) / 100f)
+            drawCircle(
+                color = VeilPalette.Spirit.copy(
+                    alpha = 0.09f + memoryState.observatoryResonance * 0.16f
+                ),
+                radius = if (index % 5 == 0) 1.dp.toPx() else 0.6.dp.toPx(),
+                center = Offset(x, y)
+            )
+        }
+
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(
+                    Color.Transparent,
+                    VeilPalette.Ink.copy(alpha = memoryState.fogAlpha * 0.66f)
+                ),
+                startY = h * 0.72f,
+                endY = h
+            ),
+            topLeft = Offset(0f, h * 0.70f),
+            size = Size(w, h * 0.30f)
         )
     }
 }
@@ -511,6 +663,7 @@ private fun CastleFloor(
     purpose: String,
     unlockRank: Int,
     unlocked: Boolean,
+    resonance: Float,
     roomOnLeft: Boolean,
     isLast: Boolean,
     onOpenRoom: (String) -> Unit
@@ -525,11 +678,19 @@ private fun CastleFloor(
             Box(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(if (unlocked) 18.dp else 14.dp)
+                    .size(
+                        if (unlocked) (15f + resonance.coerceIn(0f, 1f) * 5f).dp
+                        else 14.dp
+                    )
                     .clip(CircleShape)
                     .background(
-                        if (unlocked) VeilPalette.Brass
-                        else VeilPalette.BorderDark
+                        if (unlocked) {
+                            VeilPalette.Brass.copy(
+                                alpha = 0.62f + resonance.coerceIn(0f, 1f) * 0.38f
+                            )
+                        } else {
+                            VeilPalette.BorderDark
+                        }
                     )
                     .border(
                         BorderStroke(
@@ -554,10 +715,11 @@ private fun CastleFloor(
                         purpose = purpose,
                         unlockRank = unlockRank,
                         unlocked = unlocked,
+                        resonance = resonance,
                         onOpenRoom = onOpenRoom,
                         modifier = Modifier.weight(1f)
                     )
-                    CastleBridge(unlocked = unlocked)
+                    CastleBridge(unlocked = unlocked, resonance = resonance)
                     FloorInscription(
                         floor = floor,
                         unlocked = unlocked,
@@ -569,13 +731,14 @@ private fun CastleFloor(
                         unlocked = unlocked,
                         modifier = Modifier.weight(1f)
                     )
-                    CastleBridge(unlocked = unlocked)
+                    CastleBridge(unlocked = unlocked, resonance = resonance)
                     CastleChamberNode(
                         id = id,
                         name = name,
                         purpose = purpose,
                         unlockRank = unlockRank,
                         unlocked = unlocked,
+                        resonance = resonance,
                         onOpenRoom = onOpenRoom,
                         modifier = Modifier.weight(1f)
                     )
@@ -601,14 +764,22 @@ private fun CastleFloor(
 }
 
 @Composable
-private fun CastleBridge(unlocked: Boolean) {
+private fun CastleBridge(
+    unlocked: Boolean,
+    resonance: Float
+) {
     Box(
         Modifier
             .width(20.dp)
             .height(1.dp)
             .background(
-                if (unlocked) VeilPalette.Brass.copy(alpha = 0.42f)
-                else VeilPalette.BorderDark.copy(alpha = 0.62f)
+                if (unlocked) {
+                    VeilPalette.Brass.copy(
+                        alpha = 0.24f + resonance.coerceIn(0f, 1f) * 0.34f
+                    )
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.62f)
+                }
             )
     )
 }
@@ -652,11 +823,13 @@ private fun CastleChamberNode(
     purpose: String,
     unlockRank: Int,
     unlocked: Boolean,
+    resonance: Float,
     onOpenRoom: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val safeResonance = resonance.coerceIn(0f, 1f)
     val edge = if (unlocked) {
-        VeilPalette.Brass.copy(alpha = 0.60f)
+        VeilPalette.Brass.copy(alpha = 0.42f + safeResonance * 0.36f)
     } else {
         VeilPalette.BorderDark.copy(alpha = 0.86f)
     }
@@ -669,8 +842,8 @@ private fun CastleChamberNode(
                 Brush.verticalGradient(
                     if (unlocked) {
                         listOf(
-                            VeilPalette.DeepBrass.copy(alpha = 0.22f),
-                            VeilPalette.RaisedIron.copy(alpha = 0.30f),
+                            VeilPalette.DeepBrass.copy(alpha = 0.12f + safeResonance * 0.26f),
+                            VeilPalette.RaisedIron.copy(alpha = 0.24f + safeResonance * 0.14f),
                             VeilPalette.Archive.copy(alpha = 0.93f)
                         )
                     } else {
@@ -713,7 +886,27 @@ private fun CastleChamberNode(
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(7.dp))
+
+        if (unlocked && safeResonance > 0.01f) {
+            Box(
+                Modifier
+                    .width((26f + safeResonance * 34f).dp)
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                VeilPalette.Brass.copy(
+                                    alpha = 0.24f + safeResonance * 0.46f
+                                ),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+            Spacer(Modifier.height(5.dp))
+        }
 
         Text(
             name,
