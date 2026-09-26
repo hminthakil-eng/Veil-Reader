@@ -497,7 +497,9 @@ class LocalLibraryRepository internal constructor(
                     books = database.books().listAllWithCollections().map { it.toDomain() },
                     highlights = database.highlights().listAll().map { it.toDomain() },
                     bookmarks = database.bookmarks().listAll().map { it.toDomain() },
-                    readingSessions = database.readingSessions().listAll().map { it.toSnapshot() }
+                    readingSessions = database.readingSessions().listAll().map { it.toSnapshot() },
+                    readingCycles = database.readingCycles().listAll().map { it.toDomain() },
+                    passageVisits = database.passageVisits().listAll().map { it.toDomain() }
                 )
             }
             val appearance = settings.settings.first().readerAppearance
@@ -506,7 +508,9 @@ class LocalLibraryRepository internal constructor(
                 highlights = databaseState.highlights,
                 bookmarks = databaseState.bookmarks,
                 appearance = appearance,
-                readingSessions = databaseState.readingSessions
+                readingSessions = databaseState.readingSessions,
+                readingCycles = databaseState.readingCycles,
+                passageVisits = databaseState.passageVisits
             )
         }
     }
@@ -517,6 +521,8 @@ class LocalLibraryRepository internal constructor(
         discardAllPendingReadingSessions()
         orderedWrite {
             database.withTransaction {
+                database.passageVisits().deleteAll()
+                database.readingCycles().deleteAll()
                 database.highlights().deleteAll()
                 database.bookmarks().deleteAll()
                 database.collections().clearAllLinks()
@@ -530,6 +536,12 @@ class LocalLibraryRepository internal constructor(
                 if (snapshot.bookmarks.isNotEmpty()) database.bookmarks().upsertAll(snapshot.bookmarks.map { it.toEntity() })
                 if (snapshot.readingSessions.isNotEmpty()) {
                     database.readingSessions().upsertAll(snapshot.readingSessions.map { it.toEntity() })
+                }
+                if (snapshot.readingCycles.isNotEmpty()) {
+                    database.readingCycles().upsertAll(snapshot.readingCycles.map { it.toEntity() })
+                }
+                if (snapshot.passageVisits.isNotEmpty()) {
+                    database.passageVisits().upsertAll(snapshot.passageVisits.map { it.toEntity() })
                 }
             }
             settings.saveReaderAppearance(snapshot.appearance)
@@ -746,7 +758,9 @@ data class LibrarySnapshot(
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
     val appearance: ReaderAppearance,
-    val readingSessions: List<ReadingSessionSnapshot> = emptyList()
+    val readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    val readingCycles: List<ReadingCycleRecord> = emptyList(),
+    val passageVisits: List<PassageVisit> = emptyList()
 ) {
     companion object
 }
@@ -755,7 +769,9 @@ private data class DatabaseLibraryState(
     val books: List<Book>,
     val highlights: List<Highlight>,
     val bookmarks: List<Bookmark>,
-    val readingSessions: List<ReadingSessionSnapshot>
+    val readingSessions: List<ReadingSessionSnapshot>,
+    val readingCycles: List<ReadingCycleRecord>,
+    val passageVisits: List<PassageVisit>
 )
 
 private data class PendingProgressWrite(
