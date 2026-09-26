@@ -1549,40 +1549,93 @@ private fun LibraryEmptyState(
     onImport: () -> Unit,
     onReset: () -> Unit
 ) {
-    MysteryCard(Modifier.fillMaxWidth()) {
-        Box(
-            Modifier
-                .size(54.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.secondary.copy(alpha = 0.10f)),
-            contentAlignment = Alignment.Center
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.34f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            ShelfIcon(Modifier.size(28.dp), MaterialTheme.colorScheme.secondary)
-        }
-        Text(
-            if (hasBooks) "No books match" else "Your library is empty",
-            style = MaterialTheme.typography.titleLarge
-        )
-        Text(
-            if (hasBooks) {
-                "Try another search, shelf, or collection filter."
-            } else {
-                "Import an EPUB or PDF. Reading state, notes, and cached publication data stay on this device."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (hasBooks) {
-            OutlinedButton(onClick = onReset, modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
-                Text("Clear filters")
-            }
-        } else {
-            Button(
-                onClick = onImport,
-                enabled = !isImporting,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            Box(
+                Modifier
+                    .width(64.dp)
+                    .height(48.dp),
+                contentAlignment = Alignment.CenterStart
             ) {
-                Text(if (isImporting) "Importing…" else "Import a book")
+                ShelfIcon(
+                    Modifier.size(32.dp),
+                    VeilPalette.Brass.copy(alpha = 0.88f)
+                )
+                Box(
+                    Modifier
+                        .align(Alignment.BottomStart)
+                        .width(64.dp)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    VeilPalette.Brass.copy(alpha = 0.72f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+            }
+
+            Text(
+                if (hasBooks) "NO MATCHING VOLUMES" else "THE SHELVES ARE QUIET",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                color = VeilPalette.Brass
+            )
+
+            Text(
+                if (hasBooks) "Nothing in this part of the archive" else "Begin the Grayfog Archive",
+                style = MaterialTheme.typography.titleLarge
+            )
+
+            Text(
+                if (hasBooks) {
+                    "No book matches the current search, shelf, or collection. Clear the filters and the archive will return."
+                } else {
+                    "Import an EPUB or PDF. Books, progress, highlights, and notes remain local on this device."
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (hasBooks) {
+                OutlinedButton(
+                    onClick = onReset,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.44f)
+                    )
+                ) {
+                    Text("Clear active filters")
+                }
+            } else {
+                Button(
+                    onClick = onImport,
+                    enabled = !isImporting,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = Color(0xFF17120A)
+                    )
+                ) {
+                    Text(if (isImporting) "Opening Android Files…" else "Import your first volume")
+                }
             }
         }
     }
