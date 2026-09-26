@@ -294,8 +294,12 @@ private fun SettingsSection(
     description: String,
     content: @Composable () -> Unit
 ) {
-    MysteryCard(Modifier.fillMaxWidth()) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
+    ArchivePanel(Modifier.fillMaxWidth()) {
+        Text(
+            title,
+            style = MaterialTheme.typography.titleLarge
+        )
+        BrassRule(Modifier.fillMaxWidth())
         Text(
             description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
