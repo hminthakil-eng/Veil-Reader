@@ -19,7 +19,8 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 internal class VeilDirectionalNavigationInputListener(
     private val navigator: OverflowableNavigator,
     private val isAnimated: () -> Boolean,
-    private val isTapNavigationEnabled: () -> Boolean = { true }
+    private val isTapNavigationEnabled: () -> Boolean = { true },
+    private val onNavigationCommitted: () -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
@@ -43,8 +44,8 @@ internal class VeilDirectionalNavigationInputListener(
         }
 
         return when (event.key) {
-            Key.ArrowUp -> navigator.goBackward(animated = isAnimated())
-            Key.ArrowDown, Key.Space -> navigator.goForward(animated = isAnimated())
+            Key.ArrowUp -> navigate { navigator.goBackward(animated = isAnimated()) }
+            Key.ArrowDown, Key.Space -> navigate { navigator.goForward(animated = isAnimated()) }
             Key.ArrowLeft -> goLeft()
             Key.ArrowRight -> goRight()
             else -> false
@@ -54,18 +55,24 @@ internal class VeilDirectionalNavigationInputListener(
     private fun goLeft(): Boolean =
         when (navigator.overflow.value.readingProgression) {
             ReadingProgression.LTR ->
-                navigator.goBackward(animated = isAnimated())
+                navigate { navigator.goBackward(animated = isAnimated()) }
             ReadingProgression.RTL ->
-                navigator.goForward(animated = isAnimated())
+                navigate { navigator.goForward(animated = isAnimated()) }
         }
 
     private fun goRight(): Boolean =
         when (navigator.overflow.value.readingProgression) {
             ReadingProgression.LTR ->
-                navigator.goForward(animated = isAnimated())
+                navigate { navigator.goForward(animated = isAnimated()) }
             ReadingProgression.RTL ->
-                navigator.goBackward(animated = isAnimated())
+                navigate { navigator.goBackward(animated = isAnimated()) }
         }
+
+    private inline fun navigate(block: () -> Boolean): Boolean {
+        val committed = block()
+        if (committed) onNavigationCommitted()
+        return committed
+    }
 
     private companion object {
         const val MIN_EDGE_PX = 80.0
