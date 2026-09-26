@@ -773,6 +773,8 @@ fun ReaderScreen(
     }
 
     pendingNoteHighlightId?.let { highlightId ->
+        val pendingHighlight = bookHighlights.firstOrNull { it.id == highlightId }
+
         AlertDialog(
             onDismissRequest = {
                 if (!noteSaving) {
@@ -780,20 +782,97 @@ fun ReaderScreen(
                     pendingNoteText = ""
                 }
             },
-            title = { Text("Note on this passage") },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            tonalElevation = 0.dp,
+            title = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "HIDDEN ARCHIVE · PASSAGE NOTE",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            letterSpacing = 1.25.sp
+                        ),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        "Note on this passage",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = VeilPalette.Moon
+                    )
+                }
+            },
             text = {
-                OutlinedTextField(
-                    value = pendingNoteText,
-                    onValueChange = { pendingNoteText = it },
-                    enabled = !noteSaving,
-                    label = { Text("Your note") },
-                    minLines = 4,
-                    maxLines = 8,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    pendingHighlight?.quote
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { quote ->
+                            Surface(
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = VeilPalette.Ink.copy(alpha = 0.54f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    VeilPalette.Brass.copy(alpha = 0.28f)
+                                ),
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        "SELECTED PASSAGE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = VeilPalette.Brass.copy(alpha = 0.82f)
+                                    )
+                                    Text(
+                                        "“$quote”",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = VeilPalette.Moon.copy(alpha = 0.78f),
+                                        maxLines = 4,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                        }
+
+                    OutlinedTextField(
+                        value = pendingNoteText,
+                        onValueChange = { pendingNoteText = it },
+                        enabled = !noteSaving,
+                        placeholder = { Text("Write what you want to remember…") },
+                        minLines = 4,
+                        maxLines = 8,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.84f),
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
+                            focusedContainerColor = VeilPalette.Ink.copy(alpha = 0.36f),
+                            unfocusedContainerColor = VeilPalette.Ink.copy(alpha = 0.24f)
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        Text(
+                            "${pendingNoteText.length} characters",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
+                        )
+                    }
+                }
             },
             confirmButton = {
-                TextButton(
+                Button(
                     enabled = !noteSaving,
                     onClick = {
                         scope.launch {
@@ -808,13 +887,20 @@ fun ReaderScreen(
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (error: Exception) {
-                                readerMessage = error.message ?: "Note could not be saved."
+                                readerMessage = error.message ?: "The note could not be saved."
                             } finally {
                                 noteSaving = false
                             }
                         }
-                    }
-                ) { Text(if (noteSaving) "Saving…" else "Save") }
+                    },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = Color(0xFF17120A)
+                    )
+                ) {
+                    Text(if (noteSaving) "Saving…" else "Save note")
+                }
             },
             dismissButton = {
                 TextButton(
@@ -823,7 +909,12 @@ fun ReaderScreen(
                         pendingNoteHighlightId = null
                         pendingNoteText = ""
                     }
-                ) { Text("Cancel") }
+                ) {
+                    Text(
+                        "Cancel",
+                        color = VeilPalette.Moon.copy(alpha = 0.72f)
+                    )
+                }
             }
         )
     }
