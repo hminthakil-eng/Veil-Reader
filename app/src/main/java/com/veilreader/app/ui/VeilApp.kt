@@ -46,6 +46,7 @@ import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
+import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -465,6 +466,16 @@ fun VeilApp(
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
         )
+    } else if (
+        profile == null ||
+        dailyGoalMinutes == null ||
+        castleTitle == null
+    ) {
+        VeilWorldBackdrop {
+            VeilLoadingState(
+                label = if (restoring) "Restoring the archive" else "Opening the archive"
+            )
+        }
     } else if (route.activeChamber == "treasury") {
         TreasuryScreen(
             profile = requireNotNull(profile),
@@ -545,10 +556,34 @@ fun VeilApp(
     errorMessage?.let { message ->
         AlertDialog(
             onDismissRequest = { errorMessage = null },
-            title = { Text("Veil Reader") },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            tonalElevation = 0.dp,
+            title = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(
+                        "ARCHIVE NOTICE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        "Veil Reader",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            },
             text = { Text(message) },
             confirmButton = {
-                Button(onClick = { errorMessage = null }) { Text("OK") }
+                Button(
+                    onClick = { errorMessage = null },
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
+                    Text("Close")
+                }
             }
         )
     }
