@@ -23,6 +23,7 @@ import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.VeilPalette
 
 /**
  * Threshold is the calm front door to reading: resume first, recent books second, world progress last.
@@ -44,6 +45,11 @@ fun ReadingNowScreen(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .background(
+                Brush.verticalGradient(
+                    listOf(VeilPalette.VeilBlack, VeilPalette.Obsidian, VeilPalette.GrayfogBlue.copy(alpha = .62f))
+                )
+            )
             .padding(horizontal = VeilSpacing.lg)
             .padding(top = VeilSpacing.xl, bottom = VeilSpacing.xxl),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xxl)
@@ -88,7 +94,12 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
         Text(
-            text = if (hasCurrentBook) "Return to your book" else "Build your private library",
+            text = "THE THRESHOLD",
+            style = MaterialTheme.typography.labelMedium,
+            color = VeilPalette.OldGold
+        )
+        Text(
+            text = if (hasCurrentBook) "The Library Awaits" else "Enter the Grayfog Archive",
             style = MaterialTheme.typography.headlineLarge,
             color = MaterialTheme.colorScheme.onBackground
         )
@@ -111,30 +122,20 @@ private fun ContinueReadingHero(
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val progress = current.progress.coerceIn(0f, 1f)
     val progressPercent = (progress * 100).toInt()
-    val shape = MaterialTheme.shapes.extraLarge
 
-    BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        colors.primaryContainer.copy(alpha = 0.62f),
-                        colors.surfaceVariant.copy(alpha = 0.76f),
-                        colors.surface.copy(alpha = 0.98f)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
-                shape
-            )
-            .padding(VeilSpacing.xl)
+    GrayfogPanel(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(VeilSpacing.xl)
     ) {
+        Text(
+            "CONTINUE READING",
+            color = VeilPalette.OldGold,
+            style = MaterialTheme.typography.labelMedium
+        )
+        VeilOrnamentDivider()
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
         val wide = maxWidth >= 590.dp
         if (wide) {
             Row(
@@ -181,10 +182,7 @@ private fun HeroCover(current: Book) {
                 .clip(MaterialTheme.shapes.extraLarge)
                 .background(
                     Brush.radialGradient(
-                        listOf(
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.13f),
-                            Color.Transparent
-                        )
+                        listOf(VeilPalette.OldGold.copy(alpha = .18f), Color.Transparent)
                     )
                 )
         )
