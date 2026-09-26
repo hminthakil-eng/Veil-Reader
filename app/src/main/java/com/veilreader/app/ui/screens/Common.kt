@@ -8,6 +8,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +24,8 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -221,4 +224,77 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             }
         }
     }
+}
+
+
+/** Reference-match surface: restrained brass edge over an obsidian/grayfog panel. */
+@Composable
+fun GrayfogPanel(
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(VeilSpacing.lg),
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(14.dp)
+    Box(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(VeilPalette.GrayfogBlue.copy(alpha = .92f), VeilPalette.Obsidian)
+                )
+            )
+            .border(1.dp, VeilPalette.AntiqueBrass.copy(alpha = .72f), shape)
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            val inset = 5.dp.toPx()
+            drawRoundRect(
+                color = VeilPalette.TarnishedBrass.copy(alpha = .30f),
+                topLeft = androidx.compose.ui.geometry.Offset(inset, inset),
+                size = androidx.compose.ui.geometry.Size(size.width - inset * 2, size.height - inset * 2),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
+                style = Stroke(.7.dp.toPx())
+            )
+        }
+        Column(
+            modifier = Modifier.padding(contentPadding),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+            content = content
+        )
+    }
+}
+
+@Composable
+fun VeilOrnamentDivider(modifier: Modifier = Modifier) {
+    Canvas(modifier.fillMaxWidth().height(18.dp)) {
+        val y = size.height / 2f
+        val cx = size.width / 2f
+        val gold = VeilPalette.OldGold.copy(alpha = .72f)
+        drawLine(gold, androidx.compose.ui.geometry.Offset(0f, y), androidx.compose.ui.geometry.Offset(cx - 14.dp.toPx(), y), 1.dp.toPx())
+        drawLine(gold, androidx.compose.ui.geometry.Offset(cx + 14.dp.toPx(), y), androidx.compose.ui.geometry.Offset(size.width, y), 1.dp.toPx())
+        val r = 5.dp.toPx()
+        val p = Path().apply {
+            moveTo(cx, y-r); lineTo(cx+r, y); lineTo(cx, y+r); lineTo(cx-r, y); close()
+        }
+        drawPath(p, gold, style = Stroke(1.dp.toPx()))
+        drawCircle(VeilPalette.BrightGold, radius = 1.5.dp.toPx(), center = androidx.compose.ui.geometry.Offset(cx, y))
+    }
+}
+
+@Composable
+fun ParchmentSurface(
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    val shape = RoundedCornerShape(6.dp)
+    Column(
+        modifier = modifier
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(listOf(VeilPalette.WarmPaper, VeilPalette.Parchment, VeilPalette.AgedPaper))
+            )
+            .border(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .55f), shape)
+            .padding(VeilSpacing.lg),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+        content = content
+    )
 }
