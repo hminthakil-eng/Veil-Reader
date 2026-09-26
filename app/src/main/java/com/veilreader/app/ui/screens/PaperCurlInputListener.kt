@@ -32,6 +32,7 @@ internal class PaperCurlInputListener(
     private val onCommittedTurn: () -> Unit
 ) : InputListener {
     private var activeDrag: TurnSpec? = null
+    private var dragReserved = false
     private var navigationJob: Job? = null
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
@@ -89,39 +90,43 @@ internal class PaperCurlInputListener(
 
     private fun onDragStart(event: DragEvent): Boolean {
         if (state.active) return true
-        if (!isMostlyHorizontal(event)) return false
 
-        val spec = resolveDragTurn(event) ?: return false
-        if (!state.begin(navigator.publicationView, spec.side, spec.direction)) {
-            return false
-        }
-
-        activeDrag = spec
-        dragStartLocator = navigator.currentLocator.value
-        previewNavigationSucceeded = false
-        commitHapticSent = false
-        state.updateDrag(event.start, event.offset)
-        onInteraction()
-
-        // Let the captured source page become visible first, then reveal the live
-        // destination underneath it. This stays inside Readium's input pipeline.
-        navigationJob = scope.launch {
-            delay(FRAME_DELAY_MS)
-            previewNavigationSucceeded = navigate(spec.direction)
-        }
+        // Reserve the whole drag sequence for PAPER mode immediately.
+        //
+        // Readium sends Start before a body swipe has enough offset to know its
+        // direction. Returning false here lets the renderer start its native slide,
+        // then our curl can begin on Move — visually mixing SLIDE and CURL.
+        //
+        // PAPER mode is paginated, so we intentionally claim the gesture at Start
+        // and decide the curl direction once horizontal intent is measurable.
+        dragReserved = true
+        beginReservedDragIfReady(event)
         return true
     }
 
     private fun onDragMove(event: DragEvent): Boolean {
-        val spec = activeDrag ?: return false
-        if (!state.active) return false
+        if (!dragReserved && activeDrag == null) return false
+
+        val spec = activeDrag ?: run {
+            beginReservedDragIfReady(event)
+            return true
+        }
+
+        if (!state.active) return true
         state.updateDrag(event.start, event.offset)
         maybeSignalCommitThreshold(spec, event)
         return true
     }
 
     private fun onDragEnd(event: DragEvent): Boolean {
-        val spec = activeDrag ?: return false
+        val spec = activeDrag
+        if (spec == null) {
+            // A reserved gesture that never became a horizontal turn is still
+            // consumed so the native renderer cannot finish it as a slide.
+            resetDrag()
+            return true
+        }
+
         state.updateDrag(event.start, event.offset)
 
         val view = navigator.publicationView
@@ -167,6 +172,33 @@ internal class PaperCurlInputListener(
 
             resetDrag()
             state.clear()
+        }
+        return true
+    }
+
+    private fun beginReservedDragIfReady(event: DragEvent): Boolean {
+        if (activeDrag != null || state.active) return activeDrag != null
+        if (!isMostlyHorizontal(event)) return false
+
+        val spec = resolveDragTurn(event) ?: return false
+        if (!state.begin(navigator.publicationView, spec.side, spec.direction)) {
+            // Keep the gesture reserved even if the visual snapshot cannot start;
+            // falling through would re-enable native slide in PAPER mode.
+            return false
+        }
+
+        activeDrag = spec
+        dragStartLocator = navigator.currentLocator.value
+        previewNavigationSucceeded = false
+        commitHapticSent = false
+        state.updateDrag(event.start, event.offset)
+        onInteraction()
+
+        // Let the captured source page become visible first, then reveal the live
+        // destination underneath it. This stays inside Readium's input pipeline.
+        navigationJob = scope.launch {
+            delay(FRAME_DELAY_MS)
+            previewNavigationSucceeded = navigate(spec.direction)
         }
         return true
     }
@@ -291,6 +323,7 @@ internal class PaperCurlInputListener(
 
     private fun resetDrag() {
         activeDrag = null
+        dragReserved = false
         navigationJob = null
         previewNavigationSucceeded = false
         dragStartLocator = null
