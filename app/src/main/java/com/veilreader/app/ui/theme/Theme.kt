@@ -4,15 +4,12 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
-import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.AppThemeMode
@@ -80,9 +77,15 @@ object VeilSpacing {
 }
 
 object VeilMotion {
-    const val QUICK_MS = 120
-    const val STANDARD_MS = 180
-    const val CEREMONIAL_MS = 320
+    const val TAP_MS = 110
+    const val FUNCTIONAL_MS = 160
+    const val SPATIAL_MS = 320
+    const val RITUAL_MS = 900
+
+    // Compatibility aliases while existing call sites migrate to semantic motion roles.
+    const val QUICK_MS = TAP_MS
+    const val STANDARD_MS = FUNCTIONAL_MS
+    const val CEREMONIAL_MS = SPATIAL_MS
 }
 
 object VeilStroke {
@@ -145,107 +148,6 @@ private val VeilLightColors = lightColorScheme(
     outlineVariant = VeilPalette.BorderLight
 )
 
-private object VeilType {
-    // Generic sans-serif can inherit a user-selected system font on some Android skins.
-    // Keep the Grayfog shell deterministic with serif reading/editorial faces and a
-    // restrained monospace utility face until bundled font resources land.
-    val Editorial = FontFamily.Serif
-    val Reading = FontFamily.Serif
-    val Utility = FontFamily.Monospace
-}
-
-private val VeilTypography = Typography(
-    displayLarge = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 48.sp,
-        lineHeight = 51.sp,
-        letterSpacing = (-0.82).sp
-    ),
-    headlineLarge = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.48).sp
-    ),
-    headlineMedium = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 25.sp,
-        lineHeight = 30.sp,
-        letterSpacing = (-0.22).sp
-    ),
-    headlineSmall = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.Medium,
-        fontSize = 20.sp,
-        lineHeight = 25.sp
-    ),
-    titleLarge = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 22.sp,
-        lineHeight = 27.sp,
-        letterSpacing = (-0.18).sp
-    ),
-    titleMedium = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 17.sp,
-        lineHeight = 22.sp,
-        letterSpacing = (-0.06).sp
-    ),
-    titleSmall = TextStyle(
-        fontFamily = VeilType.Editorial,
-        fontWeight = FontWeight.Medium,
-        fontSize = 14.sp,
-        lineHeight = 19.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = VeilType.Reading,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = VeilType.Reading,
-        fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 21.sp,
-        letterSpacing = 0.02.sp
-    ),
-    bodySmall = TextStyle(
-        fontFamily = VeilType.Reading,
-        fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.04.sp
-    ),
-    labelLarge = TextStyle(
-        fontFamily = VeilType.Utility,
-        fontWeight = FontWeight.Medium,
-        fontSize = 12.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.32.sp
-    ),
-    labelMedium = TextStyle(
-        fontFamily = VeilType.Utility,
-        fontWeight = FontWeight.Medium,
-        fontSize = 10.5.sp,
-        lineHeight = 15.sp,
-        letterSpacing = 0.72.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = VeilType.Utility,
-        fontWeight = FontWeight.Medium,
-        fontSize = 9.sp,
-        lineHeight = 13.sp,
-        letterSpacing = 1.05.sp
-    )
-)
-
 private val VeilShapes = Shapes(
     extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(2.dp),
     small = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
@@ -266,14 +168,18 @@ fun VeilTheme(
     }
 
     val colors = if (useDarkTheme) VeilDarkColors else VeilLightColors
+    val language = LocalConfiguration.current.locales[0].language
+    val scriptGroup = veilScriptGroupFor(language)
+    val typography = veilTypographyFor(scriptGroup)
 
     MaterialTheme(
         colorScheme = colors,
-        typography = VeilTypography,
+        typography = typography,
         shapes = VeilShapes
     ) {
         CompositionLocalProvider(
-            LocalContentColor provides colors.onBackground
+            LocalContentColor provides colors.onBackground,
+            LocalVeilScriptGroup provides scriptGroup
         ) {
             content()
         }
