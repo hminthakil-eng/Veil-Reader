@@ -850,10 +850,10 @@ fun ReaderScreen(
     if (showAppearance) {
         ModalBottomSheet(
             onDismissRequest = { showAppearance = false },
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = VeilPalette.Ink,
             dragHandle = {
                 BottomSheetDefaults.DragHandle(
-                    color = VeilPalette.Brass.copy(alpha = 0.58f)
+                    color = VeilPalette.Brass.copy(alpha = 0.48f)
                 )
             }
         ) {
@@ -871,10 +871,10 @@ fun ReaderScreen(
     if (showPdfZoom) {
         ModalBottomSheet(
             onDismissRequest = { showPdfZoom = false },
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = VeilPalette.Ink,
             dragHandle = {
                 BottomSheetDefaults.DragHandle(
-                    color = VeilPalette.Brass.copy(alpha = 0.58f)
+                    color = VeilPalette.Brass.copy(alpha = 0.48f)
                 )
             }
         ) {
