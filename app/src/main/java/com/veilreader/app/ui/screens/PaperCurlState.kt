@@ -79,9 +79,17 @@ internal class PaperCurlState {
             start.y + offset.y
         )
         val canonicalStart = canonical(actualStart)
+        val rawCanonicalCurrent = canonical(actualCurrent)
+        val inwardFraction = paperInwardDragFraction(
+            start = canonicalStart,
+            current = rawCanonicalCurrent,
+            pageWidth = width
+        )
         val canonicalCurrent = paperWeightedDragCurrent(
             start = canonicalStart,
-            current = canonical(actualCurrent)
+            current = rawCanonicalCurrent,
+            response = paperHorizontalDragResponse(inwardFraction),
+            verticalResponse = paperVerticalDragResponse(inwardFraction)
         ).let {
             Offset(
                 it.x.coerceIn(-width * 0.25f, width * 1.25f),
@@ -112,17 +120,17 @@ internal class PaperCurlState {
         anim.animateTo(
             targetValue = leftEdge(),
             animationSpec = keyframes {
-                durationMillis = 470
+                durationMillis = 440
                 rightEdge() at 0
                 PaperCurlEdge(
                     top = Offset(width * 0.96f, height * 0.16f),
                     bottom = Offset(width * 0.72f, height * 0.94f)
-                ) at 120
+                ) at 105
                 PaperCurlEdge(
                     top = Offset(width * 0.76f, height * 0.08f),
                     bottom = Offset(width * 0.32f, height)
-                ) at 285
-                leftEdge() at 470
+                ) at 260
+                leftEdge() at 440
             }
         ) {
             edge = value
@@ -133,7 +141,7 @@ internal class PaperCurlState {
         if (!active) return
         animateTo(
             target = leftEdge(),
-            dampingRatio = 0.80f,
+            dampingRatio = 0.88f,
             stiffness = Spring.StiffnessMediumLow
         )
     }
@@ -142,7 +150,7 @@ internal class PaperCurlState {
         if (!active) return
         animateTo(
             target = rightEdge(),
-            dampingRatio = 0.92f,
+            dampingRatio = 0.96f,
             stiffness = Spring.StiffnessMedium
         )
     }
