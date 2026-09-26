@@ -6,11 +6,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-enum class VeilTab(val label: String, val glyph: String) {
+enum class VeilTab(
+    val label: String,
+    val glyph: String,
+    val primary: Boolean = true
+) {
     READING("Home", "◉"),
     LIBRARY("Library", "▦"),
-    CASTLE("Castle", "♜"),
-    PATH("Path", "✦"),
+    ARCHIVE("Archive", "⌑"),
+    CASTLE("Castle", "♜", primary = false),
+    PATH("Path", "✦", primary = false),
     PROFILE("More", "◎")
 }
 
