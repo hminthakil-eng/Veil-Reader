@@ -60,13 +60,13 @@ object VeilMotion {
 
 private val VeilDarkColors = darkColorScheme(
     primary = VeilPalette.Amethyst,
-    onPrimary = Color(0xFF251538),
-    primaryContainer = Color(0xFF372349),
-    onPrimaryContainer = Color(0xFFF0E2FF),
+    onPrimary = VeilPalette.Ink,
+    primaryContainer = VeilPalette.DeepAmethyst,
+    onPrimaryContainer = VeilPalette.Moon,
     secondary = VeilPalette.OldGold,
-    onSecondary = Color(0xFF342906),
+    onSecondary = VeilPalette.Ink,
     secondaryContainer = VeilPalette.TarnishedBrass,
-    onSecondaryContainer = Color(0xFFFFEBB2),
+    onSecondaryContainer = VeilPalette.Moon,
     tertiary = VeilPalette.Jade,
     onTertiary = Color(0xFF07342A),
     background = VeilPalette.Ink,
