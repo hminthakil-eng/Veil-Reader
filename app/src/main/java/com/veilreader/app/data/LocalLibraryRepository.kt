@@ -532,7 +532,8 @@ class LocalLibraryRepository internal constructor(
                     bookmarks = database.bookmarks().listAll().map { it.toDomain() },
                     readingSessions = database.readingSessions().listAll().map { it.toSnapshot() },
                     readingCycles = database.readingCycles().listAll().map { it.toDomain() },
-                    passageVisits = database.passageVisits().listAll().map { it.toDomain() }
+                    passageVisits = database.passageVisits().listAll().map { it.toDomain() },
+                    readingMilestones = database.readingMilestones().listAll().map { it.toDomain() }
                 )
             }
             val appearance = settings.settings.first().readerAppearance
@@ -543,7 +544,8 @@ class LocalLibraryRepository internal constructor(
                 appearance = appearance,
                 readingSessions = databaseState.readingSessions,
                 readingCycles = databaseState.readingCycles,
-                passageVisits = databaseState.passageVisits
+                passageVisits = databaseState.passageVisits,
+                readingMilestones = databaseState.readingMilestones
             )
         }
     }
@@ -556,6 +558,7 @@ class LocalLibraryRepository internal constructor(
             database.withTransaction {
                 database.passageVisits().deleteAll()
                 database.readingCycles().deleteAll()
+                database.readingMilestones().deleteAll()
                 database.highlights().deleteAll()
                 database.bookmarks().deleteAll()
                 database.collections().clearAllLinks()
@@ -575,6 +578,11 @@ class LocalLibraryRepository internal constructor(
                 }
                 if (snapshot.passageVisits.isNotEmpty()) {
                     database.passageVisits().upsertAll(snapshot.passageVisits.map { it.toEntity() })
+                }
+                if (snapshot.readingMilestones.isNotEmpty()) {
+                    database.readingMilestones().insertAllIfAbsent(
+                        snapshot.readingMilestones.map { it.toEntity() }
+                    )
                 }
             }
             settings.saveReaderAppearance(snapshot.appearance)
