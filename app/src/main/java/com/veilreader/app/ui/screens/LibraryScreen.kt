@@ -918,6 +918,12 @@ private fun BookDetailIdentity(
             )
         }
 
+        Text(
+            bookArtifactRecordLabel(bookArtifactState(book)),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp),
+            color = VeilPalette.Mist.copy(alpha = 0.72f)
+        )
+
         Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
             Surface(
                 shape = MaterialTheme.shapes.extraSmall,
