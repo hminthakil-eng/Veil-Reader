@@ -21,7 +21,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
-private enum class NotebookSection { HIGHLIGHTS, BOOKMARKS }
+private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS }
 
 @Composable
 fun ArchiveScreen(
@@ -35,14 +35,14 @@ fun ArchiveScreen(
     onDeleteBookmark: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.HIGHLIGHTS.name) }
+    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.NOTES.name) }
     var editingHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var noteDraft by rememberSaveable { mutableStateOf("") }
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var deleteBookmarkId by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
-        .getOrDefault(NotebookSection.HIGHLIGHTS)
+        .getOrDefault(NotebookSection.NOTES)
     val booksById = remember(books) { books.associateBy { it.id } }
     val cleanQuery = query.trim()
 
@@ -55,6 +55,10 @@ fun ArchiveScreen(
                 booksById[highlight.bookId]?.author.orEmpty()
             ).any { text -> text.contains(cleanQuery, ignoreCase = true) }
         }
+    }
+
+    val matchingNotes = remember(matchingHighlights) {
+        matchingHighlights.filter { it.note.isNotBlank() }
     }
 
     val matchingBookmarks = remember(bookmarks, booksById, cleanQuery) {
@@ -129,40 +133,29 @@ fun ArchiveScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
-            FilterChip(
-                selected = selectedSection == NotebookSection.HIGHLIGHTS,
-                onClick = { selectedSectionName = NotebookSection.HIGHLIGHTS.name },
-                label = { Text(stringResource(R.string.notebook_highlights_count, highlights.size)) },
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selectedSection == NotebookSection.HIGHLIGHTS,
-                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
-                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.70f)
-                ),
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-            )
-            FilterChip(
-                selected = selectedSection == NotebookSection.BOOKMARKS,
-                onClick = { selectedSectionName = NotebookSection.BOOKMARKS.name },
-                label = { Text(stringResource(R.string.notebook_bookmarks_count, bookmarks.size)) },
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                border = FilterChipDefaults.filterChipBorder(
-                    enabled = true,
-                    selected = selectedSection == NotebookSection.BOOKMARKS,
-                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
-                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.70f)
-                ),
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-            )
+            listOf(
+                NotebookSection.NOTES to "Notes · ${highlights.count { it.note.isNotBlank() }}",
+                NotebookSection.HIGHLIGHTS to "Highlights · ${highlights.size}",
+                NotebookSection.BOOKMARKS to "Bookmarks · ${bookmarks.size}"
+            ).forEach { (section, label) ->
+                FilterChip(
+                    selected = selectedSection == section,
+                    onClick = { selectedSectionName = section.name },
+                    label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = selectedSection == section,
+                        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.60f),
+                        selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.70f)
+                    ),
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                )
+            }
         }
         }
 
@@ -174,6 +167,34 @@ fun ArchiveScreen(
             contentPadding = PaddingValues(bottom = VeilSpacing.xl)
         ) {
             when (selectedSection) {
+                NotebookSection.NOTES -> {
+                    if (matchingNotes.isEmpty()) {
+                        item {
+                            NotebookEmptyState(
+                                title = if (highlights.none { it.note.isNotBlank() }) "No notes yet" else "No matching notes",
+                                body = if (highlights.none { it.note.isNotBlank() }) {
+                                    "Add a note to a highlight while reading and it will appear here."
+                                } else {
+                                    "Try a different search term."
+                                }
+                            )
+                        }
+                    }
+                    items(matchingNotes, key = { "note:${it.id}" }) { highlight ->
+                        val book = booksById[highlight.bookId]
+                        NotebookHighlightCard(
+                            highlight = highlight,
+                            book = book,
+                            onRead = if (book == null) null else { { onOpenPassage(book, highlight.locatorJson) } },
+                            onEditNote = {
+                                editingHighlightId = highlight.id
+                                noteDraft = highlight.note
+                            },
+                            onDelete = { deleteHighlightId = highlight.id }
+                        )
+                    }
+                }
+
                 NotebookSection.HIGHLIGHTS -> {
                     if (matchingHighlights.isEmpty()) {
                         item {
