@@ -4,8 +4,17 @@ workflows:
     instance_type: mac_mini_m2
     max_build_duration: 45
 
-    # Manual-first on purpose: preserves the 500 free M2 minutes for useful runs.
-    # Start this workflow from Codemagic and choose the branch you want to verify.
+    # Temporary single-branch webhook gate for the locked reference-fidelity checkpoint.
+    # Keeping the branch pattern exact prevents unrelated pushes from consuming build minutes.
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: 'design/grayfog-reference-fidelity-v1'
+          include: true
+          source: true
+      cancel_previous_builds: true
+
     environment:
       java: 17
 
