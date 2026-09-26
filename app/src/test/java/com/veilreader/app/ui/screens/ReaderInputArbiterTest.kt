@@ -26,6 +26,14 @@ class ReaderInputArbiterTest {
             )
         )
 
+        assertTrue(
+            shouldUseDirectionalTapNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+
         assertFalse(
             shouldUseDirectionalTapNavigation(
                 format = BookFormat.EPUB,
@@ -79,6 +87,12 @@ class ReaderInputArbiterTest {
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
                 pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+        assertFalse(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.EPUB,
+                pageTurnStyle = PageTurnStyle.NONE
             )
         )
     }
