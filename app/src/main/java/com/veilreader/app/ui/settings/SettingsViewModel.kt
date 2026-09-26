@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SettingsStore
+import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReaderAppearance
@@ -33,5 +34,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             store.saveReaderAppearance(appearance)
             ReaderTrace.event("appearance_persisted", details = details)
         }
+    }
+
+    fun saveSensorySettings(settings: SensorySettings) {
+        viewModelScope.launch { store.saveSensorySettings(settings) }
     }
 }
