@@ -1,6 +1,6 @@
 workflows:
-  veil-reader-fast-verify:
-    name: Veil Reader — Fast Verify
+  WORKMODE-BUILD:
+    name: WORK MODE — BUILD APK
     instance_type: mac_mini_m2
     max_build_duration: 45
 
@@ -88,8 +88,8 @@ workflows:
       - app/build/reports/**
       - app/build/test-results/**
 
-  veil-reader-full-verify:
-    name: Veil Reader — Full Verify
+  WORKMODE-FULL-VERIFY:
+    name: WORK MODE — FULL VERIFY
     instance_type: mac_mini_m2
     max_build_duration: 60
 
