@@ -42,7 +42,9 @@ internal data class PaperCurlVisualConfig(
     val creaseHighlightAlpha: Float = 0.26f,
     val creaseShadowAlpha: Float = 0.20f,
     val backPageShadeAlpha: Float = 0.16f,
-    val contactShadowAlpha: Float = 0.18f
+    val contactShadowAlpha: Float = 0.18f,
+    val edgeThicknessAlpha: Float = 0.20f,
+    val backsideFiberAlpha: Float = 0.040f
 )
 
 internal fun Modifier.paperCurl(
@@ -93,11 +95,14 @@ internal fun Modifier.paperCurl(
     val foldLift = paperFoldLift(progress)
     val crease = paperCreaseIntensity(progress)
     val contactShadow = paperContactShadowIntensity(progress)
+    val edgeThickness = paperEdgeThicknessIntensity(progress)
+    val backsideInk = paperBacksideInkIntensity(progress)
     val drawCurl = prepareCurl(
         config,
         topCurl,
         bottomCurl,
-        foldLift
+        foldLift,
+        backsideInk
     )
     onDrawWithContent {
         drawClippedContent()
@@ -107,29 +112,46 @@ internal fun Modifier.paperCurl(
             val lightAlpha = (config.creaseHighlightAlpha * crease).coerceIn(0f, 0.34f)
             val darkAlpha = (config.creaseShadowAlpha * crease).coerceIn(0f, 0.30f)
 
+            if (edgeThickness > 0.001f) {
+                drawLine(
+                    color = config.shadowColor.copy(
+                        alpha = (config.edgeThicknessAlpha * edgeThickness).coerceIn(0f, 0.22f)
+                    ),
+                    start = topCurl + Offset(0.55.dp.toPx(), 0f),
+                    end = bottomCurl + Offset(0.55.dp.toPx(), 0f),
+                    strokeWidth = (1.8f + edgeThickness * 1.2f).dp.toPx()
+                )
+            }
+
             drawLine(
                 color = config.edgeHighlight.copy(alpha = lightAlpha),
-                start = topCurl - Offset(0.75.dp.toPx(), 0f),
-                end = bottomCurl - Offset(0.75.dp.toPx(), 0f),
-                strokeWidth = 1.35.dp.toPx()
+                start = topCurl - Offset(0.85.dp.toPx(), 0f),
+                end = bottomCurl - Offset(0.85.dp.toPx(), 0f),
+                strokeWidth = 1.15.dp.toPx()
             )
             drawLine(
                 color = config.shadowColor.copy(alpha = darkAlpha),
-                start = topCurl + Offset(1.5.dp.toPx(), 0f),
-                end = bottomCurl + Offset(1.5.dp.toPx(), 0f),
-                strokeWidth = 1.15.dp.toPx()
+                start = topCurl + Offset(1.7.dp.toPx(), 0f),
+                end = bottomCurl + Offset(1.7.dp.toPx(), 0f),
+                strokeWidth = 1.05.dp.toPx()
             )
         }
 
         if (contactShadow > 0.001f) {
-            drawLine(
-                color = config.shadowColor.copy(
-                    alpha = (config.contactShadowAlpha * contactShadow).coerceIn(0f, 0.24f)
-                ),
-                start = topCurl + Offset(5.dp.toPx(), 0f),
-                end = bottomCurl + Offset(5.dp.toPx(), 0f),
-                strokeWidth = (3.5f + contactShadow * 4f).dp.toPx()
-            )
+            val baseAlpha =
+                (config.contactShadowAlpha * contactShadow).coerceIn(0f, 0.24f)
+            listOf(
+                Triple(3.5f, 3.8f, 1.00f),
+                Triple(6.5f, 5.2f, 0.52f),
+                Triple(10.0f, 7.0f, 0.22f)
+            ).forEach { (offsetDp, widthDp, alphaScale) ->
+                drawLine(
+                    color = config.shadowColor.copy(alpha = baseAlpha * alphaScale),
+                    start = topCurl + Offset(offsetDp.dp.toPx(), 0f),
+                    end = bottomCurl + Offset(offsetDp.dp.toPx(), 0f),
+                    strokeWidth = widthDp.dp.toPx()
+                )
+            }
         }
     }
 }
@@ -162,7 +184,8 @@ private fun CacheDrawScope.prepareCurl(
     config: PaperCurlVisualConfig,
     topCurl: Offset,
     bottomCurl: Offset,
-    foldLift: Float
+    foldLift: Float,
+    backsideInk: Float
 ): ContentDrawScope.() -> Unit {
     val polygon = PaperCurlPolygon(
         sequence {
@@ -211,8 +234,8 @@ private fun CacheDrawScope.prepareCurl(
             clipPath(polygon.toPath()) {
                 this@result.drawContent()
                 val visibleBackContentAlpha =
-                    (config.backPageContentAlpha + foldLift * 0.06f)
-                        .coerceIn(0f, 0.32f)
+                    (config.backPageContentAlpha + backsideInk * 0.085f)
+                        .coerceIn(0f, 0.34f)
                 val overlayAlpha =
                     (1f - visibleBackContentAlpha)
                         .coerceIn(0f, 1f)
@@ -221,17 +244,53 @@ private fun CacheDrawScope.prepareCurl(
                 )
                 drawRect(
                     brush = Brush.horizontalGradient(
-                        listOf(
-                            config.edgeHighlight.copy(alpha = 0.05f + foldLift * 0.08f),
-                            Color.Transparent,
-                            config.shadowColor.copy(
-                                alpha = (config.backPageShadeAlpha * foldLift).coerceIn(0f, 0.22f)
+                        colorStops = arrayOf(
+                            0.00f to config.edgeHighlight.copy(
+                                alpha = 0.045f + foldLift * 0.085f
+                            ),
+                            0.20f to config.edgeHighlight.copy(
+                                alpha = 0.018f + foldLift * 0.025f
+                            ),
+                            0.56f to Color.Transparent,
+                            0.82f to config.shadowColor.copy(
+                                alpha = (config.backPageShadeAlpha * foldLift * 0.46f)
+                                    .coerceIn(0f, 0.12f)
+                            ),
+                            1.00f to config.shadowColor.copy(
+                                alpha = (config.backPageShadeAlpha * foldLift)
+                                    .coerceIn(0f, 0.22f)
                             )
                         ),
                         startX = 0f,
                         endX = size.width
                     )
                 )
+
+                // Sparse deterministic fibres on the reverse side. They only become
+                // visible while the sheet is lifted, so they read as material rather
+                // than a permanent texture stamped over the publication.
+                if (backsideInk > 0.02f && config.backsideFiberAlpha > 0f) {
+                    repeat(10) { index ->
+                        val y = size.height * (0.10f + index * 0.082f)
+                        val x = size.width * (0.08f + (index % 4) * 0.07f)
+                        val length = size.width * (0.10f + (index % 3) * 0.025f)
+                        drawLine(
+                            color = config.shadowColor.copy(
+                                alpha = (
+                                    config.backsideFiberAlpha *
+                                        backsideInk *
+                                        (0.55f + (index % 3) * 0.16f)
+                                    ).coerceIn(0f, 0.07f)
+                            ),
+                            start = Offset(x, y),
+                            end = Offset(
+                                (x + length).coerceAtMost(size.width),
+                                y + ((index % 3) - 1) * 0.7.dp.toPx()
+                            ),
+                            strokeWidth = 0.45.dp.toPx()
+                        )
+                    }
+                }
             }
         }
     }
