@@ -10,6 +10,7 @@ import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
@@ -258,6 +259,97 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(4, restoredSession.pacedPageTurns)
         assertEquals(1, restoredSession.highlightCount)
         assertEquals(1, restoredSession.noteCount)
+        backupFile.delete()
+    }
+
+    @Test
+    fun historicalMemory_completionAndBackup_preserveImmutableCycleAndExactRevisit() = runBlocking<Unit> {
+        val repository = repository()
+        val publications = File(context.filesDir, "publications").apply { mkdirs() }
+        val publication = File(publications, "history.epub").apply {
+            writeBytes("history publication".toByteArray())
+        }
+        repository.addImportedBook(
+            Book(
+                id = "history-book",
+                title = "History Tome",
+                author = "Archivist",
+                sourceUri = Uri.fromFile(publication).toString(),
+                addedAtEpochMs = 100L
+            )
+        )
+        val locator = "{\"href\":\"chapter.xhtml\"}"
+        val highlight = repository.addHighlight("history-book", "Preserved line", locator)
+        repository.flushWrites()
+
+        val visit = repository.recordPassageVisitForLocator(
+            bookId = "history-book",
+            locatorJson = locator,
+            viewedAtEpochMs = highlight.createdAtEpochMs + 31_000L
+        )
+        assertTrue(visit != null)
+
+        val completionSession = ReadingSessionSnapshot(
+            id = "completion-session",
+            bookId = "history-book",
+            startedAtEpochMs = 200L,
+            endedAtEpochMs = 900L,
+            activeMillis = 700L,
+            pacedPageTurns = 12,
+            highlightCount = 1,
+            noteCount = 0
+        )
+        assertTrue(
+            repository.saveProgress(
+                id = "history-book",
+                progression = 1.0,
+                locatorJson = "{\"href\":\"end.xhtml\"}",
+                completionSessionSnapshot = completionSession,
+                nowEpochMs = 1_000L
+            )
+        )
+        repository.flushWrites()
+
+        val sealed = db.readingCycles().listAll().single()
+        assertEquals(1, sealed.cycleIndex)
+        assertEquals(1_000L, sealed.completedAtEpochMs)
+        assertEquals(1, sealed.sessionCount)
+        assertEquals(12, sealed.pacedPageTurns)
+        assertEquals(1, db.passageVisits().listAll().size)
+
+        // Later mutable activity cannot rewrite the sealed snapshot.
+        repository.addHighlight("history-book", "Later line", "{\"href\":\"later.xhtml\"}")
+        repository.flushWrites()
+        assertEquals(1, db.readingCycles().listAll().single().highlightCount)
+
+        settings.saveReaderAppearance(
+            ReaderAppearance().withNavigationMode(
+                com.veilreader.app.domain.ReaderNavigationMode.PAGED
+            )
+        )
+        val backupFile = File(context.cacheDir, "veil-history-${UUID.randomUUID()}.zip")
+        val exporter = LibraryExport(context, repository)
+        exporter.writeBackup(Uri.fromFile(backupFile))
+
+        repository.replaceAll(
+            LibrarySnapshot(
+                books = emptyList(),
+                highlights = emptyList(),
+                bookmarks = emptyList(),
+                appearance = ReaderAppearance()
+            )
+        )
+        assertTrue(db.readingCycles().listAll().isEmpty())
+        assertTrue(db.passageVisits().listAll().isEmpty())
+
+        exporter.restoreBackup(Uri.fromFile(backupFile))
+
+        assertEquals(1, db.readingCycles().listAll().size)
+        assertEquals(1, db.passageVisits().listAll().size)
+        assertEquals(
+            PageTurnStyle.NONE,
+            settings.settings.first().readerAppearance.pageTurnStyle
+        )
         backupFile.delete()
     }
 
