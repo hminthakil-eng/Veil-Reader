@@ -36,7 +36,10 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.deriveBookReturnRitual
+import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
@@ -87,6 +90,7 @@ fun VeilApp(
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
     var activeContinuity by remember { mutableStateOf<ReadingContinuitySummary?>(null) }
+    var activeReturnRitual by remember { mutableStateOf<BookReturnRitual?>(null) }
     var activeReturnLocatorJson by remember { mutableStateOf<String?>(null) }
 
     // While Readium owns the screen, remove these collectors from composition entirely so
@@ -298,6 +302,7 @@ fun VeilApp(
         }
 
         activeContinuity = null
+        activeReturnRitual = null
         activeReturnLocatorJson = null
 
         val book = library.getBook(targetId) ?: targetBook ?: return@LaunchedEffect
@@ -317,6 +322,20 @@ fun VeilApp(
         activeContinuity = runCatching {
             library.readingContinuity(book)
         }.getOrNull()
+
+        val ritualNow = System.currentTimeMillis()
+        val archiveMemory = deriveLibraryMemoryState(
+            books = listOf(book),
+            highlights = highlights.filter { it.bookId == book.id },
+            sessions = readingSessions,
+            nowEpochMs = ritualNow
+        ).memoryFor(book.id)
+        activeReturnRitual = deriveBookReturnRitual(
+            book = book,
+            archiveMemory = archiveMemory,
+            highlights = highlights,
+            nowEpochMs = ritualNow
+        )
 
         val initialLocatorJson = com.veilreader.app.ui.navigation.chooseReaderRestoreLocator(
             explicitOverrideJson = locatorOverride,
@@ -362,6 +381,9 @@ fun VeilApp(
         }
         library.markOpened(targetId)
         openedPublication = opened
+        if (activeReturnRitual != null) {
+            sensory.perform(view, VeilSensoryEvent.RETURN_RITUAL)
+        }
 
         when {
             locatorOverride != null -> {
@@ -492,11 +514,13 @@ fun VeilApp(
             readerAppearance = appSettings.readerAppearance,
             onReaderAppearanceChange = onSaveReaderAppearance,
             entryContinuity = activeContinuity,
+            returnRitual = activeReturnRitual,
             initialReturnLocatorJson = activeReturnLocatorJson,
             onSensoryEvent = { event -> sensory.perform(view, event) },
             onClose = {
                 openedPublication = null
                 activeContinuity = null
+                activeReturnRitual = null
                 activeReturnLocatorJson = null
                 routeViewModel.closeReader()
             },
@@ -652,6 +676,7 @@ fun VeilApp(
                 stage = BookEntryStage.PREPARING,
                 visible = true,
                 continuity = activeContinuity,
+                returnRitual = activeReturnRitual,
                 modifier = Modifier.fillMaxSize()
             )
         }
