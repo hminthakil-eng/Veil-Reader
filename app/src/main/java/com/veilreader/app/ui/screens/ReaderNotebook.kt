@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.deriveHighlightMemory
+import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -220,11 +222,46 @@ fun ReaderNotebook(
                             )
                         }
                         items(matchingHighlights, key = { it.id }) { highlight ->
-                            Card(Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    Text(highlight.quote, style = MaterialTheme.typography.bodyLarge)
+                            val marginMemory = remember(highlight, opened.book) {
+                                deriveHighlightMemory(highlight, opened.book)
+                            }
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = VeilPalette.Archive.copy(alpha = 0.72f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    VeilPalette.BorderDark.copy(alpha = 0.72f)
+                                ),
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Column(
+                                    Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        marginMemory.ageLabel,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = VeilPalette.Brass
+                                    )
+                                    if (marginMemory.bookActivityAfterMark) {
+                                        Text(
+                                            "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = VeilPalette.Mist.copy(alpha = 0.52f)
+                                        )
+                                    }
+                                    Text(
+                                        "“${highlight.quote}”",
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = VeilPalette.Moon
+                                    )
                                     if (highlight.note.isNotBlank()) {
-                                        Text(highlight.note, color = MaterialTheme.colorScheme.primary)
+                                        Text(
+                                            highlight.note,
+                                            color = VeilPalette.Brass.copy(alpha = 0.88f)
+                                        )
                                     }
                                     Row(
                                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -233,7 +270,7 @@ fun ReaderNotebook(
                                         TextButton(
                                             onClick = { onGo(highlight.locatorJson) },
                                             modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text("Go") }
+                                        ) { Text("Return to passage") }
                                         TextButton(
                                             onClick = {
                                                 editing = highlight
@@ -242,7 +279,7 @@ fun ReaderNotebook(
                                             },
                                             modifier = Modifier.heightIn(min = 48.dp)
                                         ) {
-                                            Text(if (highlight.note.isBlank()) "Add note" else "Edit note")
+                                            Text(if (highlight.note.isBlank()) "Annotate" else "Edit annotation")
                                         }
                                         TextButton(
                                             onClick = { deleting = highlight },
