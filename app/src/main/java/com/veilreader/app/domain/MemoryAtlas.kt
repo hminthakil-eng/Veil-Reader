@@ -76,12 +76,18 @@ fun buildMemoryAtlas(
             }
             .toSet()
 
+        // Keep conditional bonuses and count-derived weight independent. Without explicit
+        // terms, an if-expression can bind later additions into its else branch.
+        val completionWeight = if (book.finished) 1.5f else 0f
+        val favoriteWeight = if (book.favorite) 0.45f else 0f
+        val highlightWeight = min(2.5f, bookHighlights.size * 0.22f)
+        val sessionWeight = min(2.0f, bookSessions.size * 0.18f)
         val engagement =
             book.progress.coerceIn(0f, 1f) * 2.0f +
-                if (book.finished) 1.5f else 0f +
-                if (book.favorite) 0.45f else 0f +
-                min(2.5f, bookHighlights.size * 0.22f) +
-                min(2.0f, bookSessions.size * 0.18f)
+                completionWeight +
+                favoriteWeight +
+                highlightWeight +
+                sessionWeight
 
         AtlasDraft(
             book = book,
