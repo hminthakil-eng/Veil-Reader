@@ -18,6 +18,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +36,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
@@ -1121,37 +1124,25 @@ private fun EpubAppearancePanel(
 
         if (!showAdvanced) {
             Text("Theme", fontWeight = FontWeight.SemiBold)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                AppearancePreset(
-                    label = "Paper",
-                    selected = draft.theme == ReaderTheme.PAPER,
-                    modifier = Modifier.weight(1f)
+            // Two columns keep theme names readable at larger system font sizes.
+            listOf(
+                listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
+                listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "OLED")
+            ).forEach { presets ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    updateDraft(draft.withTheme(ReaderTheme.PAPER))
-                }
-                AppearancePreset(
-                    label = "Sepia",
-                    selected = draft.theme == ReaderTheme.SEPIA,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    updateDraft(draft.withTheme(ReaderTheme.SEPIA))
-                }
-                AppearancePreset(
-                    label = "Dusk",
-                    selected = draft.theme == ReaderTheme.DUSK,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    updateDraft(draft.withTheme(ReaderTheme.DUSK))
-                }
-                AppearancePreset(
-                    label = "OLED",
-                    selected = draft.theme == ReaderTheme.OLED,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    updateDraft(draft.withTheme(ReaderTheme.OLED))
+                    presets.forEach { (theme, label) ->
+                        AppearancePreset(
+                            label = label,
+                            theme = theme,
+                            selected = draft.theme == theme,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            updateDraft(draft.withTheme(theme))
+                        }
+                    }
                 }
             }
 
@@ -1170,53 +1161,59 @@ private fun EpubAppearancePanel(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
             Text("Reading motion", fontWeight = FontWeight.SemiBold)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Column(
+                modifier = Modifier.fillMaxWidth().selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                FilterChip(
-                    selected = draft.navigationMode == ReaderNavigationMode.PAPER_CURL,
-                    onClick = {
-                        updateDraft(draft.withNavigationMode(ReaderNavigationMode.PAPER_CURL))
-                    },
-                    label = { Text("Paper curl", maxLines = 1) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                )
-                FilterChip(
-                    selected = draft.navigationMode == ReaderNavigationMode.SLIDE,
-                    onClick = {
-                        updateDraft(draft.withNavigationMode(ReaderNavigationMode.SLIDE))
-                    },
-                    label = { Text("Slide", maxLines = 1) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                )
-                FilterChip(
-                    selected = draft.navigationMode == ReaderNavigationMode.SCROLL,
-                    onClick = {
-                        updateDraft(draft.withNavigationMode(ReaderNavigationMode.SCROLL))
-                    },
-                    label = { Text("Scroll", maxLines = 1) },
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                )
+                ReaderNavigationMode.entries.forEach { mode ->
+                    val (label, description) = when (mode) {
+                        ReaderNavigationMode.PAPER_CURL -> "Paper curl" to "Turn pages with the weighted paper effect."
+                        ReaderNavigationMode.SLIDE -> "Slide" to "Move between pages horizontally, without a curl."
+                        ReaderNavigationMode.SCROLL -> "Scroll" to "Read continuously with vertical scrolling."
+                    }
+                    val selected = draft.navigationMode == mode
+                    Surface(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = MaterialTheme.shapes.small,
+                        color = if (selected) MaterialTheme.colorScheme.primaryContainer
+                            else MaterialTheme.colorScheme.surface,
+                        border = BorderStroke(
+                            1.dp,
+                            if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outlineVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(selected = selected, role = Role.RadioButton) {
+                                    updateDraft(draft.withNavigationMode(mode))
+                                }
+                                .heightIn(min = 64.dp)
+                                .padding(horizontal = 12.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(selected = selected, onClick = null)
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                                Text(
+                                    label,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    description,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (selected) MaterialTheme.colorScheme.onPrimaryContainer
+                                        else MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
             }
-            Text(
-                when (draft.navigationMode) {
-                    ReaderNavigationMode.PAPER_CURL ->
-                        "Paper curl is a physical page-turn gesture with the weighted paper effect."
-                    ReaderNavigationMode.SLIDE ->
-                        "Slide changes pages with the lighter horizontal transition and no curl."
-                    ReaderNavigationMode.SCROLL ->
-                        "Scroll uses continuous vertical reading instead of page-by-page navigation."
-                },
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+
         } else {
             Text(
                 "Typography & layout",
@@ -1285,6 +1282,7 @@ private fun EpubAppearancePanel(
 @Composable
 private fun AppearancePreset(
     label: String,
+    theme: ReaderTheme,
     selected: Boolean,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
@@ -1292,7 +1290,18 @@ private fun AppearancePreset(
     FilterChip(
         selected = selected,
         onClick = onClick,
-        label = { Text(label, maxLines = 1) },
+        label = { Text(label) },
+        leadingIcon = {
+            val (paper, ink) = readiumThemeColors(theme)
+            Box(
+                Modifier.size(26.dp)
+                    .background(Color(paper), MaterialTheme.shapes.extraSmall)
+                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.extraSmall),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("Aa", color = Color(ink), fontSize = 11.sp)
+            }
+        },
         modifier = modifier.heightIn(min = 48.dp)
     )
 }
@@ -1335,3 +1344,4 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
+
