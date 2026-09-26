@@ -73,11 +73,15 @@ fun CastleScreen(
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp),
                 color = VeilPalette.Spirit
             )
-            Text("Explore the Castle", style = MaterialTheme.typography.titleLarge)
+            Text(
+                "Explore the Castle",
+                style = MaterialTheme.typography.titleLarge,
+                color = VeilPalette.Moon
+            )
             Text(
                 "Tap an awakened room. Sealed rooms show the rank that unlocks them.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = VeilPalette.Mist
             )
         }
 
@@ -92,7 +96,7 @@ fun CastleScreen(
                 "Nothing here is sold or time-gated. Rooms awaken through lasting reading progress on your Path.",
                 modifier = Modifier.padding(VeilSpacing.md),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = VeilPalette.Mist
             )
         }
     }
@@ -155,7 +159,8 @@ private fun CastleKeep(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         "Castle Tier ${profile.rankIndex + 1}",
-                        style = MaterialTheme.typography.headlineMedium
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = VeilPalette.Moon
                     )
                     Text(
                         "${profile.path.name} · ${profile.rankName}",
@@ -165,7 +170,7 @@ private fun CastleKeep(
                     Text(
                         "${profile.booksFinished} finished ${if (profile.booksFinished == 1) "book" else "books"}",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = VeilPalette.Mist
                     )
                 }
             }
@@ -184,7 +189,7 @@ private fun CastleKeep(
                 Text(
                     "Castle growth",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = VeilPalette.Mist
                 )
                 Text(
                     "${profile.rankIndex + 1}/${profile.path.ranks.size} tiers",
@@ -325,7 +330,7 @@ private fun CastleRoomNode(
     onOpenRoom: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shape = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.small
     val edge = if (unlocked) {
         MaterialTheme.colorScheme.secondary.copy(alpha = 0.50f)
     } else {
@@ -389,7 +394,7 @@ private fun CastleRoomNode(
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = VeilPalette.Mist
         )
         Spacer(Modifier.height(5.dp))
         Surface(
