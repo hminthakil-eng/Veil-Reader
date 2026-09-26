@@ -74,10 +74,28 @@ internal fun paperFoldLift(progress: Float): Float =
 internal fun paperWeightedDragCurrent(
     start: Offset,
     current: Offset,
-    response: Float = 0.92f
+    response: Float = 0.90f,
+    verticalResponse: Float = 0.68f
 ): Offset {
     val safeResponse = response.coerceIn(0f, 1f)
-    return start + (current - start) * safeResponse
+    val safeVerticalResponse = verticalResponse.coerceIn(0f, 1f)
+    val delta = current - start
+    return Offset(
+        x = start.x + delta.x * safeResponse,
+        y = start.y + delta.y * safeVerticalResponse
+    )
+}
+
+internal fun paperCreaseIntensity(progress: Float): Float {
+    val lift = paperFoldLift(progress)
+    val p = progress.coerceIn(0f, 1f)
+    return (lift * (0.78f + p * 0.22f)).coerceIn(0f, 1f)
+}
+
+internal fun paperContactShadowIntensity(progress: Float): Float {
+    val p = progress.coerceIn(0f, 1f)
+    val lift = paperFoldLift(p)
+    return (lift * (0.62f + 0.38f * p)).coerceIn(0f, 1f)
 }
 
 internal fun Offset.paperRotate(angle: Float): Offset {
