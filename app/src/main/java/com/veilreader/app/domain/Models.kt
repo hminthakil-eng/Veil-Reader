@@ -111,6 +111,15 @@ enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
 enum class PageTurnStyle { PAPER, SLIDE }
 
+/**
+ * User-facing reader navigation modes.
+ *
+ * Persistence stays backward-compatible through [ReaderAppearance.scroll] and
+ * [ReaderAppearance.pageTurnStyle]; this enum gives the UI one clear,
+ * mutually-exclusive mode selector.
+ */
+enum class ReaderNavigationMode { PAPER_CURL, SLIDE, SCROLL }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
     val fontScale: Double = 1.0,
@@ -121,6 +130,22 @@ data class ReaderAppearance(
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
     val screenBrightness: Double? = null
 ) {
+    val navigationMode: ReaderNavigationMode
+        get() = when {
+            scroll -> ReaderNavigationMode.SCROLL
+            pageTurnStyle == PageTurnStyle.SLIDE -> ReaderNavigationMode.SLIDE
+            else -> ReaderNavigationMode.PAPER_CURL
+        }
+
+    fun withNavigationMode(mode: ReaderNavigationMode): ReaderAppearance =
+        when (mode) {
+            ReaderNavigationMode.PAPER_CURL ->
+                copy(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
+            ReaderNavigationMode.SLIDE ->
+                copy(scroll = false, pageTurnStyle = PageTurnStyle.SLIDE)
+            ReaderNavigationMode.SCROLL ->
+                copy(scroll = true)
+        }
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
 
