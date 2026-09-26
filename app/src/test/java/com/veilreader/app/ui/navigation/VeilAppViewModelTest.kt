@@ -134,6 +134,22 @@ class VeilAppViewModelTest {
         assertFalse(model.route.value.showArchive)
     }
     @Test
+    fun archiveTab_isRestorable_andGameTabsStaySecondary() {
+        val handle = SavedStateHandle()
+        val first = VeilAppViewModel(handle)
+
+        first.selectTab(VeilTab.ARCHIVE)
+        assertEquals(VeilTab.ARCHIVE, first.route.value.selectedTab)
+        assertTrue(VeilTab.ARCHIVE.primary)
+        assertFalse(VeilTab.CASTLE.primary)
+        assertFalse(VeilTab.PATH.primary)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(VeilTab.ARCHIVE, recreated.route.value.selectedTab)
+        assertFalse(recreated.route.value.showArchive)
+    }
+
+    @Test
     fun explicitFlushAck_preservesNewerReaderCheckpoint() {
         val handle = SavedStateHandle()
         val model = VeilAppViewModel(handle)
