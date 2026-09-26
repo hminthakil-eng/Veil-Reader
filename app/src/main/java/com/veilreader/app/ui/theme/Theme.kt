@@ -149,10 +149,10 @@ private val VeilLightColors = lightColorScheme(
 )
 
 private val VeilShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(2.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Plate),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Architectural),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Chamber),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Hero),
     extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
 )
 
