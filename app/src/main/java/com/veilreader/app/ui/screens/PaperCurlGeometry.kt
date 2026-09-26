@@ -82,7 +82,7 @@ internal data class PaperCurlPolygon(
 }
 
 internal fun paperReleaseProfile(releaseVelocityDpPerSec: Float): PaperReleaseProfile {
-    val speed = kotlin.math.abs(releaseVelocityDpPerSec)
+    val speed = releaseVelocityDpPerSec.coerceAtLeast(0f)
     return if (speed >= 900f) {
         val normalized = ((speed - 900f) / 2200f).coerceIn(0f, 1f)
         PaperReleaseProfile(
