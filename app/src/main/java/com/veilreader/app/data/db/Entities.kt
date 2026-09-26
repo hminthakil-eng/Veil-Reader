@@ -196,3 +196,27 @@ data class PassageVisitEntity(
     val locatorJson: String,
     val viewedAtEpochMs: Long
 )
+
+
+@Entity(
+    tableName = "reading_milestones",
+    foreignKeys = [ForeignKey(
+        entity = BookEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["bookId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [
+        Index("bookId"),
+        Index(value = ["bookId", "kind"], unique = true),
+        Index("reachedAtEpochMs")
+    ]
+)
+data class ReadingMilestoneEntity(
+    @PrimaryKey val id: String,
+    val bookId: String,
+    val kind: String,
+    val reachedAtEpochMs: Long,
+    val progression: Float,
+    val locatorJson: String?
+)
