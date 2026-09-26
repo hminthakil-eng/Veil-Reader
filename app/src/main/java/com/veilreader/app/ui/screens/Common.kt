@@ -49,7 +49,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun VeilReveal(
     delayMillis: Int = 0,
-    distance: Dp = 14.dp,
+    distance: Dp = 8.dp,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -62,7 +62,7 @@ fun VeilReveal(
     val alpha by animateFloatAsState(
         targetValue = if (revealed) 1f else 0f,
         animationSpec = tween(
-            durationMillis = 360,
+            durationMillis = 180,
             easing = FastOutSlowInEasing
         ),
         label = "veil-reveal-alpha"
@@ -71,7 +71,7 @@ fun VeilReveal(
     val translationY by animateFloatAsState(
         targetValue = if (revealed) 0f else distancePx,
         animationSpec = tween(
-            durationMillis = 420,
+            durationMillis = 210,
             easing = FastOutSlowInEasing
         ),
         label = "veil-reveal-y"
@@ -113,7 +113,7 @@ fun ArchivePanel(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(8.dp)
 
     Box(
         modifier = modifier
@@ -271,7 +271,7 @@ fun BookCover(
         label = "cover-fade"
     )
 
-    val shape = RoundedCornerShape(11.dp)
+    val shape = RoundedCornerShape(6.dp)
     Box(
         modifier = modifier
             .shadow(
