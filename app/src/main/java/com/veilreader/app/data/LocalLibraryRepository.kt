@@ -19,7 +19,9 @@ import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.deriveReadingContinuity
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Locale
@@ -280,6 +282,23 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
+
+    suspend fun readingContinuity(
+        book: Book,
+        nowEpochMs: Long = System.currentTimeMillis()
+    ): ReadingContinuitySummary {
+        initialized.await()
+        return withContext(Dispatchers.IO) {
+            val sessions = database.readingSessions()
+                .listForBook(book.id)
+                .map { it.toSnapshot() }
+            deriveReadingContinuity(
+                book = book,
+                sessions = sessions,
+                nowEpochMs = nowEpochMs
+            )
+        }
+    }
 
     suspend fun locatorJsonsForBook(bookId: String): Set<String> = orderedWrite {
         buildSet {
