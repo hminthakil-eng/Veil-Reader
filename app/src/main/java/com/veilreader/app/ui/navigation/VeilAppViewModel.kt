@@ -7,11 +7,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 enum class VeilTab(val label: String, val glyph: String) {
-    READING("Reading", "◉"),
+    READING("Home", "◉"),
     LIBRARY("Library", "▦"),
     CASTLE("Castle", "♜"),
     PATH("Path", "✦"),
-    PROFILE("Profile", "◎")
+    PROFILE("More", "◎")
 }
 
 data class VeilRouteState(
