@@ -442,6 +442,7 @@ fun VeilApp(
             VeilTab.LIBRARY -> LibraryScreen(
                 books = books,
                 highlights = highlights,
+                bookmarks = bookmarks,
                 readingSessions = readingSessions,
                 isImporting = isImporting,
                 onImportUri = ::importBook,
