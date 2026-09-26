@@ -52,7 +52,7 @@ object VeilPalette {
     val LightCrimson = Color(0xFF7B2838)
 
     // Reader paper stays separate from the app-shell surfaces.
-    val ReaderPaper = Color(0xFFE8DCC0)
+    val ReaderPaper = Color(0xFFE9DEC5)
 
     // Compatibility aliases: existing screens can migrate incrementally without a parallel theme.
     val Obsidian = Archive
