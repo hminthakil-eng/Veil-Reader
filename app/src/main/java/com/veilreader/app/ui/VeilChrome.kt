@@ -228,7 +228,7 @@ fun VeilBottomDock(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                VeilTab.entries.forEach { tab ->
+                VeilTab.entries.filter { it.primary }.forEach { tab ->
                     VeilDockItem(
                         tab = tab,
                         selected = selected == tab,
@@ -323,7 +323,7 @@ fun VeilNavigationRail(
                 modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).selectableGroup(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
-                VeilTab.entries.forEach { tab ->
+                VeilTab.entries.filter { it.primary }.forEach { tab ->
                     val isSelected = selected == tab
                     val foreground = if (isSelected) {
                         VeilPalette.Brass
@@ -462,6 +462,37 @@ private fun VeilTabIcon(
                         style = stroke
                     )
                 }
+            }
+
+            VeilTab.ARCHIVE -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.14f, h * 0.20f),
+                    size = androidx.compose.ui.geometry.Size(w * 0.72f, h * 0.62f),
+                    cornerRadius = CornerRadius(3.dp.toPx()),
+                    style = stroke
+                )
+                drawLine(
+                    tint,
+                    Offset(w * 0.22f, h * 0.38f),
+                    Offset(w * 0.78f, h * 0.38f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(w * 0.28f, h * 0.54f),
+                    Offset(w * 0.72f, h * 0.54f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(w * 0.28f, h * 0.67f),
+                    Offset(w * 0.62f, h * 0.67f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
             }
 
             VeilTab.CASTLE -> {
