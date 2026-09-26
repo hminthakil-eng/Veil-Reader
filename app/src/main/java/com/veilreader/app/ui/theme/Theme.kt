@@ -11,10 +11,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.AppThemeMode
 
 /**
@@ -97,6 +100,57 @@ object VeilOpacity {
     const val Glow = 0.10f
 }
 
+object VeilType {
+    val Display = FontFamily(
+        Font(R.font.veil_display, FontWeight.Normal),
+        Font(R.font.veil_display, FontWeight.Medium),
+        Font(R.font.veil_display, FontWeight.SemiBold),
+        Font(R.font.veil_display, FontWeight.Bold)
+    )
+
+    val Ui = FontFamily(
+        Font(R.font.veil_ui, FontWeight.Normal),
+        Font(R.font.veil_ui, FontWeight.Medium),
+        Font(R.font.veil_ui, FontWeight.SemiBold),
+        Font(R.font.veil_ui, FontWeight.Bold)
+    )
+
+    val Lore = FontFamily(
+        Font(R.font.veil_lore, FontWeight.Normal, FontStyle.Italic),
+        Font(R.font.veil_lore, FontWeight.Medium, FontStyle.Italic),
+        Font(R.font.veil_lore, FontWeight.SemiBold, FontStyle.Italic)
+    )
+}
+
+object VeilTextStyles {
+    val LoreLarge = TextStyle(
+        fontFamily = VeilType.Lore,
+        fontStyle = FontStyle.Italic,
+        fontWeight = FontWeight.Medium,
+        fontSize = 18.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.08.sp
+    )
+
+    val LoreMedium = TextStyle(
+        fontFamily = VeilType.Lore,
+        fontStyle = FontStyle.Italic,
+        fontWeight = FontWeight.Medium,
+        fontSize = 15.sp,
+        lineHeight = 21.sp,
+        letterSpacing = 0.06.sp
+    )
+
+    val LoreSmall = TextStyle(
+        fontFamily = VeilType.Lore,
+        fontStyle = FontStyle.Italic,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 17.sp,
+        letterSpacing = 0.10.sp
+    )
+}
+
 private val VeilDarkColors = darkColorScheme(
     primary = VeilPalette.Brass,
     onPrimary = Color(0xFF16120C),
@@ -147,76 +201,76 @@ private val VeilLightColors = lightColorScheme(
 
 private val VeilTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 46.sp,
-        lineHeight = 50.sp,
-        letterSpacing = (-0.72).sp
+        fontFamily = VeilType.Display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 47.sp,
+        lineHeight = 51.sp,
+        letterSpacing = (-0.80).sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 30.sp,
-        lineHeight = 35.sp,
-        letterSpacing = (-0.42).sp
+        fontFamily = VeilType.Display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp,
+        lineHeight = 37.sp,
+        letterSpacing = (-0.48).sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 24.sp,
-        lineHeight = 29.sp
+        fontFamily = VeilType.Display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 25.sp,
+        lineHeight = 30.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilType.Display,
         fontWeight = FontWeight.Medium,
         fontSize = 20.sp,
         lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 21.sp,
-        lineHeight = 26.sp,
-        letterSpacing = (-0.16).sp
+        fontFamily = VeilType.Display,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 22.sp,
+        lineHeight = 27.sp,
+        letterSpacing = (-0.18).sp
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilType.Display,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 16.sp,
-        lineHeight = 21.sp
-    ),
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
+        fontSize = 17.sp,
         lineHeight = 22.sp
     ),
-    bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+    bodyLarge = TextStyle(
+        fontFamily = VeilType.Ui,
         fontWeight = FontWeight.Normal,
-        fontSize = 13.sp,
-        lineHeight = 19.sp
+        fontSize = 15.5.sp,
+        lineHeight = 23.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = VeilType.Ui,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 20.sp
     ),
     labelLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilType.Ui,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 12.sp,
-        lineHeight = 17.sp,
-        letterSpacing = 0.18.sp
+        fontSize = 12.5.sp,
+        lineHeight = 17.5.sp,
+        letterSpacing = 0.12.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilType.Ui,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.78.sp
+        fontSize = 11.5.sp,
+        lineHeight = 16.5.sp,
+        letterSpacing = 0.55.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 9.sp,
-        lineHeight = 13.sp,
-        letterSpacing = 1.05.sp
+        fontFamily = VeilType.Ui,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 9.5.sp,
+        lineHeight = 13.5.sp,
+        letterSpacing = 1.10.sp
     )
 )
 
