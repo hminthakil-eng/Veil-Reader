@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import android.view.View
 import android.view.ViewGroup
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.delay
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
@@ -75,13 +78,19 @@ internal fun PdfZoomControls(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            "PDF view",
+            "PDF READER",
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Brass
+        )
+        BrassRule(Modifier.fillMaxWidth(), strong = true)
+        Text(
+            "Page controls",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.SemiBold
         )
 
         Text(
-            "Keep layout, zoom, and screen brightness close to the page. Pinch and double-tap still work directly on the PDF.",
+            "Fit, flow, zoom, and brightness stay close to the page. Pinch and double-tap still work directly on the PDF.",
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -95,6 +104,17 @@ internal fun PdfZoomControls(
                 selected = !appearance.scroll,
                 onClick = { onAppearanceChange(appearance.copy(scroll = false)) },
                 label = { Text("Paginated") },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = !appearance.scroll,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f),
+                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp)
@@ -104,6 +124,17 @@ internal fun PdfZoomControls(
                 selected = appearance.scroll,
                 onClick = { onAppearanceChange(appearance.copy(scroll = true)) },
                 label = { Text("Continuous") },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = appearance.scroll,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f),
+                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
+                ),
                 modifier = Modifier
                     .weight(1f)
                     .heightIn(min = 48.dp)
@@ -120,7 +151,7 @@ internal fun PdfZoomControls(
             style = MaterialTheme.typography.bodySmall
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+        BrassRule(Modifier.fillMaxWidth())
 
         if (view == null) {
             Text(
