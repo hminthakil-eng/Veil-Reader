@@ -10,6 +10,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -23,6 +25,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -57,6 +62,7 @@ fun LibraryScreen(
     onEditMetadata: (BookMetadataUpdate) -> Unit,
     onOpenSettings: () -> Unit
 ) {
+    val focusManager = LocalFocusManager.current
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
@@ -171,6 +177,8 @@ fun LibraryScreen(
                 value = query,
                 onValueChange = { query = it },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 label = { Text("Search the archive") },
                 placeholder = { Text("Title, author, series, collection, or language") },
                 leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
@@ -236,6 +244,14 @@ fun LibraryScreen(
                         mode = viewMode,
                         onChange = { viewModeName = it.name }
                     )
+                }
+                if (trimmedQuery.isNotBlank() || shelf != "All" || collection.isNotEmpty()) {
+                    TextButton(
+                        onClick = { query = ""; shelf = "All"; collection = "" },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Clear filters")
+                    }
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
                     if (collections.isNotEmpty()) {
@@ -839,29 +855,55 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
 
 @Composable
 private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
-    Column(
-        Modifier
-            .width(112.dp)
-            .clickable(onClickLabel = "Continue ${book.title}", onClick = onOpen)
+    Surface(
+        modifier = Modifier.width(272.dp).clickable(
+            role = Role.Button,
+            onClickLabel = "Continue ${book.title}",
+            onClick = onOpen
+        ),
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f))
     ) {
-        BookCover(
-            title = book.title,
-            subtitle = book.author,
-            imagePath = book.coverCachePath,
-            modifier = Modifier.width(112.dp).height(160.dp)
-        )
-        Spacer(Modifier.height(VeilSpacing.xs))
-        Text(
-            book.title,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.secondary
-        )
+        Row(
+            Modifier.padding(VeilSpacing.sm),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            BookCover(
+                title = book.title,
+                subtitle = book.author,
+                imagePath = book.coverCachePath,
+                modifier = Modifier.width(56.dp).height(80.dp)
+            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("Continue reading", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(
+                    book.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                LinearProgressIndicator(
+                    progress = { book.progress.coerceIn(0f, 1f) },
+                    modifier = Modifier.fillMaxWidth().height(2.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                )
+                Text(
+                    "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 
@@ -891,7 +933,7 @@ private fun BookLibraryTile(
                 Text(
                     book.format.name,
                     Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 9.sp)
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp)
                 )
             }
             Surface(
@@ -900,7 +942,7 @@ private fun BookLibraryTile(
                     .padding(4.dp)
                     .size(48.dp),
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                shape = CircleShape
+                shape = MaterialTheme.shapes.small
             ) {
                 IconButton(
                     onClick = onFavorite,
@@ -920,44 +962,55 @@ private fun BookLibraryTile(
                     )
                 }
             }
+            Surface(
+                modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).size(48.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
+                shape = MaterialTheme.shapes.small,
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f))
+            ) {
+                IconButton(
+                    onClick = onDetails,
+                    modifier = Modifier.fillMaxSize().semantics {
+                        contentDescription = "Book details for ${book.title}"
+                    }
+                ) {
+                    EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurface)
+                }
+            }
         }
 
         Spacer(Modifier.height(VeilSpacing.xs))
-        Row(verticalAlignment = Alignment.Top) {
-            Column(Modifier.weight(1f)) {
+        Column(
+            Modifier.fillMaxWidth().clickable(
+                role = Role.Button,
+                onClickLabel = "Read ${book.title}",
+                onClick = onOpen
+            )
+        ) {
+            Text(
+                book.title,
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                book.author.ifBlank { stringResource(R.string.common_unknown_author) },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelLarge,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                 Text(
-                    book.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelLarge,
+                    buildString {
+                        append(series)
+                        book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                    },
+                    color = MaterialTheme.colorScheme.secondary,
+                    style = MaterialTheme.typography.labelMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
-                    Text(
-                        buildString {
-                            append(series)
-                            book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
-                        },
-                        color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-            IconButton(
-                onClick = onDetails,
-                modifier = Modifier
-                    .size(48.dp)
-                    .semantics { contentDescription = "Book details for ${book.title}" }
-            ) {
-                EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
 
@@ -977,9 +1030,9 @@ private fun BookLibraryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen),
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.72f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.50f))
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.24f))
     ) {
         Row(
             Modifier.padding(VeilSpacing.sm),
@@ -1130,6 +1183,11 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
                 onClick = { onChange(LibraryViewMode.GRID) },
                 modifier = Modifier
                     .size(48.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(
+                        if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.primaryContainer
+                        else Color.Transparent
+                    )
                     .semantics {
                         contentDescription = "Grid view"
                         selected = mode == LibraryViewMode.GRID
@@ -1137,7 +1195,7 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
             ) {
                 GridIcon(
                     Modifier.size(18.dp),
-                    if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.primary
+                    if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.onPrimaryContainer
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1145,6 +1203,11 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
                 onClick = { onChange(LibraryViewMode.LIST) },
                 modifier = Modifier
                     .size(48.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(
+                        if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.primaryContainer
+                        else Color.Transparent
+                    )
                     .semantics {
                         contentDescription = "List view"
                         selected = mode == LibraryViewMode.LIST
@@ -1152,7 +1215,7 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
             ) {
                 ListIcon(
                     Modifier.size(18.dp),
-                    if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.primary
+                    if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.onPrimaryContainer
                     else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
