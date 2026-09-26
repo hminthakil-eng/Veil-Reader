@@ -6,6 +6,7 @@ import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -84,6 +85,49 @@ internal fun paperWeightedDragCurrent(
         x = start.x + delta.x * safeResponse,
         y = start.y + delta.y * safeVerticalResponse
     )
+}
+
+/**
+ * Real paper resists the first pull, then yields as the fold becomes established.
+ * Keep this deterministic: the visual sheet must never outrun the user's finger.
+ */
+internal fun paperHorizontalDragResponse(inwardFraction: Float): Float {
+    val t = inwardFraction.coerceIn(0f, 1f)
+    val smooth = t * t * (3f - 2f * t)
+    return 0.74f + smooth * 0.20f
+}
+
+/**
+ * Vertical finger wobble should influence the fold, but much less than the inward pull.
+ * The fold loosens slightly once the page is already moving.
+ */
+internal fun paperVerticalDragResponse(inwardFraction: Float): Float {
+    val t = inwardFraction.coerceIn(0f, 1f)
+    val smooth = t * t * (3f - 2f * t)
+    return 0.46f + smooth * 0.20f
+}
+
+internal fun paperInwardDragFraction(
+    start: Offset,
+    current: Offset,
+    pageWidth: Float
+): Float {
+    if (pageWidth <= 0f) return 0f
+    return (abs(current.x - start.x) / pageWidth).coerceIn(0f, 1f)
+}
+
+/** Visible paper-edge thickness is strongest around the middle of a turn. */
+internal fun paperEdgeThicknessIntensity(progress: Float): Float {
+    val p = progress.coerceIn(0f, 1f)
+    val centerWeight = 1f - abs(p - 0.5f) * 2f
+    return (paperFoldLift(p) * (0.70f + 0.30f * centerWeight)).coerceIn(0f, 1f)
+}
+
+/** Backside ink is most visible while light can pass through a lifted sheet. */
+internal fun paperBacksideInkIntensity(progress: Float): Float {
+    val p = progress.coerceIn(0f, 1f)
+    val lift = paperFoldLift(p)
+    return (lift * (0.72f + 0.28f * p)).coerceIn(0f, 1f)
 }
 
 internal fun paperCreaseIntensity(progress: Float): Float {
