@@ -643,22 +643,83 @@ private fun QuestRow(quest: Quest) {
 
 @Composable
 private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
-    MysteryCard(Modifier.fillMaxWidth()) {
-        Text("Your first book is one tap away", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "Open the Library to import an EPUB or PDF. Once you begin reading, this screen becomes your fastest way back in.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Button(
-            onClick = onOpenLibrary,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp).padding(top = VeilSpacing.xs)
+    val paper = VeilPalette.ReaderPaper
+    val ink = Color(0xFF29231C)
+    val mutedInk = Color(0xFF6A5A43)
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = Color.Transparent,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.72f))
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFFF3E9D5),
+                            paper,
+                            Color(0xFFD7C6A4)
+                        )
+                    )
+                )
+                .padding(VeilSpacing.lg)
         ) {
-            Text("Open Library")
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                Text(
+                    "THE FIRST THRESHOLD",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    color = mutedInk
+                )
+                Text(
+                    "Your first volume is waiting",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = ink
+                )
+                Text(
+                    "Import an EPUB or PDF. Once you begin, this page becomes the shortest path back into the book.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = mutedInk
+                )
+                Box(
+                    Modifier
+                        .width(86.dp)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    ink.copy(alpha = 0.74f),
+                                    ink.copy(alpha = 0.24f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+                Button(
+                    onClick = onOpenLibrary,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 50.dp)
+                        .padding(top = 2.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ink,
+                        contentColor = Color(0xFFF3E9D5)
+                    )
+                ) {
+                    Text("Enter the Library")
+                }
+            }
         }
     }
 }
-
 private fun formatReadingTime(minutes: Int): String = when {
     minutes >= 6000 -> "${minutes / 60}h"
     minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
