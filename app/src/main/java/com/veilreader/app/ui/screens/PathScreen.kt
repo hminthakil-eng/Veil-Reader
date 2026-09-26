@@ -116,7 +116,7 @@ fun PathScreen(
                     "Other Paths stay visible as lore. Your current Path remains fixed for this journey."
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = VeilPalette.Mist
             )
             SampleData.paths.filterNot { it.id == profile.path.id }.forEach { path ->
                 PathChoiceCard(
@@ -145,7 +145,7 @@ fun PathScreen(
 private fun PathIdentityPanel(profile: ReaderProfile) {
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
-    val shape = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.small
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
@@ -216,23 +216,27 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             Text(
                 presentation.invocation,
                 style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = VeilPalette.Mist,
                 textAlign = TextAlign.Center
             )
             Text(
                 profile.path.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = VeilPalette.Mist,
                 textAlign = TextAlign.Center
             )
 
             Spacer(Modifier.height(VeilSpacing.xs))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Level ${profile.level}", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    "Level ${profile.level}",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = VeilPalette.Moon
+                )
                 Text(
                     "${profile.xp}/$xpTarget XP",
                     style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = VeilPalette.Mist
                 )
             }
             LinearProgressIndicator(
@@ -274,7 +278,8 @@ private fun RitualPanel(
                 )
                 Text(
                     if (nextRank == null) "Path complete" else nextRank,
-                    style = MaterialTheme.typography.titleLarge
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Moon
                 )
             }
             Surface(
@@ -308,7 +313,7 @@ private fun RitualPanel(
                 ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex)
             },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = VeilPalette.Mist
         )
 
         if (nextRank != null) {
@@ -410,7 +415,7 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.small,
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f))
     ) {
@@ -450,7 +455,7 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
             Text(
                 path.description,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = VeilPalette.Mist
             )
             OutlinedButton(
                 onClick = onChoose,
@@ -499,7 +504,7 @@ private fun AdvancementCeremonyDialog(
                 Text(
                     ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = VeilPalette.Mist,
                     textAlign = TextAlign.Center
                 )
                 Text(
