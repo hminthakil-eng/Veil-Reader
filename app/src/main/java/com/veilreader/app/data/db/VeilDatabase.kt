@@ -16,7 +16,8 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         BookCollectionCrossRef::class,
         ReadingSessionEntity::class,
         ReadingCycleEntity::class,
-        PassageVisitEntity::class
+        PassageVisitEntity::class,
+        ReadingMilestoneEntity::class
     ],
     version = 2,
     exportSchema = true
@@ -29,6 +30,7 @@ abstract class VeilDatabase : RoomDatabase() {
     abstract fun readingSessions(): ReadingSessionDao
     abstract fun readingCycles(): ReadingCycleDao
     abstract fun passageVisits(): PassageVisitDao
+    abstract fun readingMilestones(): ReadingMilestoneDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -83,6 +85,28 @@ abstract class VeilDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_passage_visits_viewedAtEpochMs " +
                         "ON passage_visits(viewedAtEpochMs)"
+                )
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS reading_milestones (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        bookId TEXT NOT NULL,
+                        kind TEXT NOT NULL,
+                        reachedAtEpochMs INTEGER NOT NULL,
+                        progression REAL NOT NULL,
+                        locatorJson TEXT,
+                        FOREIGN KEY(bookId) REFERENCES books(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_reading_milestones_bookId ON reading_milestones(bookId)")
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_reading_milestones_bookId_kind " +
+                        "ON reading_milestones(bookId, kind)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_reading_milestones_reachedAtEpochMs " +
+                        "ON reading_milestones(reachedAtEpochMs)"
                 )
             }
         }
