@@ -54,13 +54,14 @@ fun CastleScreen(
     onOpenRoom: (String) -> Unit
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
+    val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
     ) {
         ScreenHeader(
             eyebrow = "CASTLE · LIVING ARCHIVE",
@@ -71,6 +72,8 @@ fun CastleScreen(
         CastleKeep(
             profile = profile,
             canAdvance = canAdvance,
+            awakenedRooms = awakenedRooms,
+            totalRooms = SampleData.rooms.size,
             onAdvanceRank = onAdvanceRank
         )
 
@@ -112,6 +115,8 @@ fun CastleScreen(
 private fun CastleKeep(
     profile: ReaderProfile,
     canAdvance: Boolean,
+    awakenedRooms: Int,
+    totalRooms: Int,
     onAdvanceRank: () -> Unit
 ) {
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
@@ -125,23 +130,32 @@ private fun CastleKeep(
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = 220.dp)
             .clip(MaterialTheme.shapes.small)
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        VeilPalette.DeepBrass.copy(alpha = 0.44f),
-                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f),
-                        VeilPalette.Ink.copy(alpha = 0.96f)
+                        Color(0xFF17140F),
+                        VeilPalette.Archive.copy(alpha = 0.98f),
+                        VeilPalette.Ink
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
                 MaterialTheme.shapes.small
             )
-            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+        CastleKeepBackdrop(
+            modifier = Modifier.matchParentSize(),
+            rankIndex = profile.rankIndex,
+            rankCount = profile.path.ranks.size
+        )
+
+        Column(
+            modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
@@ -191,6 +205,23 @@ private fun CastleKeep(
                 )
             }
 
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    "AWAKENED CHAMBERS",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
+                    color = VeilPalette.Mist.copy(alpha = 0.72f)
+                )
+                Text(
+                    "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = VeilPalette.Brass
+                )
+            }
+
             LinearProgressIndicator(
                 progress = { castleProgress },
                 modifier = Modifier
@@ -221,6 +252,97 @@ private fun CastleKeep(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CastleKeepBackdrop(
+    rankIndex: Int,
+    rankCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val brass = VeilPalette.Brass
+        val stone = VeilPalette.StrongBorderDark
+        val baseY = h * 0.86f
+        val towerBottom = h * 0.78f
+        val glow = ((rankIndex + 1f) / rankCount.coerceAtLeast(1)).coerceIn(0f, 1f)
+
+        drawRect(
+            color = Color(0xFF07090C).copy(alpha = 0.54f),
+            topLeft = Offset(w * 0.17f, h * 0.38f),
+            size = Size(w * 0.66f, h * 0.44f)
+        )
+        drawRect(
+            color = Color(0xFF07090C).copy(alpha = 0.66f),
+            topLeft = Offset(w * 0.10f, h * 0.48f),
+            size = Size(w * 0.16f, h * 0.34f)
+        )
+        drawRect(
+            color = Color(0xFF07090C).copy(alpha = 0.66f),
+            topLeft = Offset(w * 0.74f, h * 0.48f),
+            size = Size(w * 0.16f, h * 0.34f)
+        )
+
+        val roof = Path().apply {
+            moveTo(w * 0.30f, h * 0.38f)
+            lineTo(w * 0.50f, h * 0.20f)
+            lineTo(w * 0.70f, h * 0.38f)
+        }
+        drawPath(
+            roof,
+            color = brass.copy(alpha = 0.20f + glow * 0.12f),
+            style = Stroke(width = 1.25.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+
+        listOf(0.18f, 0.34f, 0.50f, 0.66f, 0.82f).forEachIndexed { index, x ->
+            drawLine(
+                stone.copy(alpha = if (index == 2) 0.18f else 0.10f),
+                Offset(w * x, h * 0.34f),
+                Offset(w * x, towerBottom),
+                1.dp.toPx()
+            )
+        }
+
+        val windows = 7
+        repeat(windows) { index ->
+            val row = index / 3
+            val col = index % 3
+            val x = w * (0.38f + col * 0.12f)
+            val y = h * (0.48f + row * 0.105f)
+            val lit = index <= rankIndex
+            drawRoundRect(
+                color = if (lit) {
+                    brass.copy(alpha = 0.15f + glow * 0.13f)
+                } else {
+                    stone.copy(alpha = 0.08f)
+                },
+                topLeft = Offset(x, y),
+                size = Size(w * 0.035f, h * 0.050f),
+                cornerRadius = CornerRadius(2.dp.toPx())
+            )
+        }
+
+        drawLine(
+            brass.copy(alpha = 0.18f),
+            Offset(w * 0.08f, baseY),
+            Offset(w * 0.92f, baseY),
+            1.dp.toPx()
+        )
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(
+                    Color.Transparent,
+                    VeilPalette.Ink.copy(alpha = 0.56f)
+                ),
+                startY = h * 0.60f,
+                endY = h
+            ),
+            topLeft = Offset(0f, h * 0.58f),
+            size = Size(w, h * 0.42f)
+        )
     }
 }
 
@@ -265,7 +387,7 @@ private fun CastleWorldMap(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.lg),
+                    .padding(horizontal = 10.dp, vertical = 26.dp),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 CastleGateLabel(
@@ -274,17 +396,23 @@ private fun CastleWorldMap(
                 )
 
                 rooms.forEachIndexed { index, room ->
-                    CastleFloor(
-                        floor = rooms.size - index,
-                        id = room.id,
-                        name = room.name,
-                        purpose = room.purpose,
-                        unlockRank = room.unlockRankIndex,
-                        unlocked = rankIndex >= room.unlockRankIndex,
-                        roomOnLeft = index % 2 == 0,
-                        isLast = index == rooms.lastIndex,
-                        onOpenRoom = onOpenRoom
-                    )
+                    VeilReveal(
+                        delayMillis = 90 + index * 70,
+                        distance = 10.dp,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        CastleFloor(
+                            floor = rooms.size - index,
+                            id = room.id,
+                            name = room.name,
+                            purpose = room.purpose,
+                            unlockRank = room.unlockRankIndex,
+                            unlocked = rankIndex >= room.unlockRankIndex,
+                            roomOnLeft = index % 2 == 0,
+                            isLast = index == rooms.lastIndex,
+                            onOpenRoom = onOpenRoom
+                        )
+                    }
                 }
 
                 CastleGateLabel(
@@ -321,11 +449,24 @@ private fun CastleArchitectureBackdrop(
         )
 
         drawLine(
-            VeilPalette.Brass.copy(alpha = 0.20f),
+            VeilPalette.Brass.copy(alpha = 0.14f),
             Offset(centerX, 26.dp.toPx()),
             Offset(centerX, h - 26.dp.toPx()),
             1.dp.toPx()
         )
+
+        repeat(3) { index ->
+            val inset = 0.12f + index * 0.055f
+            drawArc(
+                color = VeilPalette.Brass.copy(alpha = 0.045f + index * 0.012f),
+                startAngle = 190f,
+                sweepAngle = 160f,
+                useCenter = false,
+                topLeft = Offset(w * inset, h * (0.03f + index * 0.045f)),
+                size = Size(w * (1f - inset * 2f), h * (0.34f + index * 0.03f)),
+                style = Stroke(1.dp.toPx())
+            )
+        }
 
         val floors = roomCount.coerceAtLeast(1)
         repeat(floors + 1) { index ->
@@ -521,15 +662,15 @@ private fun CastleChamberNode(
 
     Column(
         modifier = modifier
-            .heightIn(min = 128.dp)
+            .heightIn(min = 116.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
                 Brush.verticalGradient(
                     if (unlocked) {
                         listOf(
-                            VeilPalette.DeepBrass.copy(alpha = 0.32f),
-                            VeilPalette.RaisedIron.copy(alpha = 0.42f),
-                            VeilPalette.Archive.copy(alpha = 0.96f)
+                            VeilPalette.DeepBrass.copy(alpha = 0.22f),
+                            VeilPalette.RaisedIron.copy(alpha = 0.30f),
+                            VeilPalette.Archive.copy(alpha = 0.93f)
                         )
                     } else {
                         listOf(
@@ -547,26 +688,27 @@ private fun CastleChamberNode(
     ) {
         Box(
             Modifier
-                .size(42.dp)
-                .clip(CircleShape)
+                .width(50.dp)
+                .height(44.dp)
+                .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 3.dp, bottomEnd = 3.dp))
                 .background(
-                    if (unlocked) VeilPalette.DeepBrass.copy(alpha = 0.48f)
-                    else VeilPalette.Ink.copy(alpha = 0.72f)
+                    if (unlocked) VeilPalette.DeepBrass.copy(alpha = 0.38f)
+                    else VeilPalette.Ink.copy(alpha = 0.74f)
                 )
                 .border(
                     BorderStroke(
                         1.dp,
-                        if (unlocked) VeilPalette.Brass.copy(alpha = 0.42f)
+                        if (unlocked) VeilPalette.Brass.copy(alpha = 0.46f)
                         else VeilPalette.BorderDark
                     ),
-                    CircleShape
+                    RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 3.dp, bottomEnd = 3.dp)
                 ),
             contentAlignment = Alignment.Center
         ) {
             CastleRoomIcon(
                 id = id,
                 unlocked = unlocked,
-                modifier = Modifier.size(25.dp)
+                modifier = Modifier.size(24.dp)
             )
         }
 
