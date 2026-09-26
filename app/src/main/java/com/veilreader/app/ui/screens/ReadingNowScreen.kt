@@ -25,6 +25,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
@@ -338,6 +339,7 @@ private fun HeroCover(current: Book) {
         title = current.title,
         subtitle = current.author,
         imagePath = current.coverCachePath,
+        artifact = bookArtifactState(current),
         modifier = Modifier.width(96.dp).height(142.dp)
     )
 }
@@ -442,6 +444,7 @@ private fun RecentBookCard(book: Book, onOpenBook: (Book) -> Unit) {
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
+                artifact = bookArtifactState(book),
                 modifier = Modifier.width(108.dp).height(158.dp)
             )
             Text(
