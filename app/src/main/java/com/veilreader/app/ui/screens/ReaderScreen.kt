@@ -512,10 +512,12 @@ fun ReaderScreen(
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
     }
 
+    val readerCanvas = readerCanvasColor(readerAppearance.theme)
+
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(readerCanvas)
             .semantics {
                 contentDescription = "Reader surface"
                 onClick(label = "Toggle reader controls") {
@@ -547,74 +549,80 @@ fun ReaderScreen(
             )
         }
 
+        if (opened.format == BookFormat.EPUB) {
+            ReaderPageAtmosphere(
+                theme = readerAppearance.theme,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
-            enter = fadeIn(tween(170)) + slideInVertically(tween(220)) { -it / 2 },
-            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { -it / 2 }
+            enter = fadeIn(tween(120)) + slideInVertically(tween(160)) { -it / 3 },
+            exit = fadeOut(tween(90)) + slideOutVertically(tween(130)) { -it / 3 }
         ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 760.dp)
-                    .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .border(
-                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                        RoundedCornerShape(12.dp)
-                    ),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
-                shape = RoundedCornerShape(12.dp),
+                    .statusBarsPadding(),
+                color = VeilPalette.Ink.copy(alpha = 0.955f),
                 tonalElevation = 0.dp,
-                shadowElevation = 6.dp
+                shadowElevation = 0.dp
             ) {
-                Column(
-                    Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                    verticalArrangement = Arrangement.spacedBy(7.dp)
-                ) {
-                    BrassRule(Modifier.fillMaxWidth())
+                Column {
                     Row(
-                        Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 58.dp)
+                            .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        ReaderChromeButton(ReaderAction.BACK, "Close reader") { closeReader() }
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                opened.book.title,
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                locationTitle.ifBlank { opened.book.author.ifBlank { opened.format.name } },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                style = MaterialTheme.typography.bodySmall,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                        Surface(
-                            modifier = Modifier.semantics {
-                                contentDescription = "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
-                            },
-                            shape = RoundedCornerShape(6.dp),
-                            color = VeilPalette.DeepBrass.copy(alpha = 0.72f)
+                        ReaderChromeButton(
+                            ReaderAction.BACK,
+                            "Close reader"
+                        ) { closeReader() }
+
+                        Column(
+                            Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             Text(
-                                "${(progress * 100).toInt()}%",
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                style = MaterialTheme.typography.labelMedium
+                                opened.book.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = VeilPalette.Moon,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                locationTitle.ifBlank {
+                                    opened.book.author.ifBlank { opened.format.name }
+                                },
+                                color = VeilPalette.Moon.copy(alpha = 0.62f),
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
+
+                        Text(
+                            "${(progress.coerceIn(0f, 1f) * 100).toInt()}%",
+                            modifier = Modifier.semantics {
+                                contentDescription =
+                                    "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
+                            },
+                            color = VeilPalette.Brass,
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
+
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(3.dp),
+                        modifier = Modifier.fillMaxWidth().height(2.dp),
                         color = VeilPalette.Brass,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+                        trackColor = VeilPalette.Moon.copy(alpha = 0.10f),
+                        drawStopIndicator = {}
                     )
                 }
             }
@@ -623,76 +631,88 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = fadeIn(tween(170)) + slideInVertically(tween(220)) { it / 2 },
-            exit = fadeOut(tween(120)) + slideOutVertically(tween(180)) { it / 2 }
+            enter = fadeIn(tween(120)) + slideInVertically(tween(160)) { it / 3 },
+            exit = fadeOut(tween(90)) + slideOutVertically(tween(130)) { it / 3 }
         ) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 560.dp)
-                    .navigationBarsPadding()
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-                    .border(
-                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                        RoundedCornerShape(14.dp)
-                    ),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+                    .navigationBarsPadding(),
+                color = VeilPalette.Ink.copy(alpha = 0.965f),
                 tonalElevation = 0.dp,
-                shadowElevation = 7.dp,
-                shape = RoundedCornerShape(14.dp)
+                shadowElevation = 0.dp
             ) {
-                Column(
-                    Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    BrassRule(Modifier.fillMaxWidth())
+                Column {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(1.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        VeilPalette.Brass.copy(alpha = 0.42f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+
                     Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                    ReaderControl(
-                        action = ReaderAction.NOTEBOOK,
-                        label = "Notebook",
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        readerViewModel.onUserInteraction()
-                        showNotebook = true
-                    }
-                    ReaderControl(
-                        action = ReaderAction.BOOKMARK,
-                        label = "Bookmark",
-                        modifier = Modifier.weight(1f),
-                        enabled = navigator != null
-                    ) {
-                        readerViewModel.onUserInteraction()
-                        val locator = navigator?.currentLocator?.value
-                        if (locator != null) {
-                            val added = library.addBookmark(
-                                opened.book.id,
-                                "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
-                                locator.toVeilPersistedJson(opened.format)
-                            )
-                            readerMessage = if (added) "Bookmark saved" else "This location is already bookmarked"
+                        ReaderControl(
+                            action = ReaderAction.NOTEBOOK,
+                            label = "Notes",
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            showNotebook = true
                         }
-                    }
-                    ReaderControl(
-                        action = if (opened.format == BookFormat.EPUB) {
-                            ReaderAction.APPEARANCE
-                        } else {
-                            ReaderAction.ZOOM
-                        },
-                        label = if (opened.format == BookFormat.EPUB) "Appearance" else "Zoom",
-                        modifier = Modifier.weight(1f),
-                        enabled = navigator != null
-                    ) {
-                        readerViewModel.onUserInteraction()
-                        if (opened.format == BookFormat.EPUB) {
-                            showAppearance = true
-                        } else {
-                            showPdfZoom = true
+
+                        ReaderControl(
+                            action = ReaderAction.BOOKMARK,
+                            label = "Mark",
+                            modifier = Modifier.weight(1f),
+                            enabled = navigator != null
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            val locator = navigator?.currentLocator?.value
+                            if (locator != null) {
+                                val added = library.addBookmark(
+                                    opened.book.id,
+                                    "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
+                                    locator.toVeilPersistedJson(opened.format)
+                                )
+                                readerMessage = if (added) {
+                                    "Bookmark saved"
+                                } else {
+                                    "This location is already bookmarked"
+                                }
+                            }
                         }
-                    }
+
+                        ReaderControl(
+                            action = if (opened.format == BookFormat.EPUB) {
+                                ReaderAction.APPEARANCE
+                            } else {
+                                ReaderAction.ZOOM
+                            },
+                            label = if (opened.format == BookFormat.EPUB) "Aa" else "Zoom",
+                            modifier = Modifier.weight(1f),
+                            enabled = navigator != null
+                        ) {
+                            readerViewModel.onUserInteraction()
+                            if (opened.format == BookFormat.EPUB) {
+                                showAppearance = true
+                            } else {
+                                showPdfZoom = true
+                            }
+                        }
                     }
                 }
             }
@@ -849,6 +869,50 @@ fun ReaderScreen(
     }
 }
 
+private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
+    ReaderTheme.PAPER -> Color(0xFFE8DCC0)
+    ReaderTheme.SEPIA -> Color(0xFFE1CFAB)
+    ReaderTheme.DUSK -> Color(0xFF18151D)
+    ReaderTheme.OLED -> Color.Black
+}
+
+@Composable
+private fun ReaderPageAtmosphere(
+    theme: ReaderTheme,
+    modifier: Modifier = Modifier
+) {
+    val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
+    Canvas(modifier) {
+        val edge = if (dark) Color.Black.copy(alpha = 0.18f) else Color(0xFF4A3923).copy(alpha = 0.10f)
+        val highlight = if (dark) Color.White.copy(alpha = 0.025f) else Color.White.copy(alpha = 0.16f)
+        val edgeWidth = 14.dp.toPx()
+
+        drawRect(
+            brush = Brush.horizontalGradient(
+                listOf(edge, Color.Transparent),
+                startX = 0f,
+                endX = edgeWidth
+            ),
+            size = Size(edgeWidth, size.height)
+        )
+        drawRect(
+            brush = Brush.horizontalGradient(
+                listOf(Color.Transparent, edge),
+                startX = size.width - edgeWidth,
+                endX = size.width
+            ),
+            topLeft = Offset(size.width - edgeWidth, 0f),
+            size = Size(edgeWidth, size.height)
+        )
+        drawLine(
+            color = highlight,
+            start = Offset(0f, 1.dp.toPx()),
+            end = Offset(size.width, 1.dp.toPx()),
+            strokeWidth = 1.dp.toPx()
+        )
+    }
+}
+
 @OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
 private fun createReaderFactory(
     opened: OpenedPublication,
@@ -931,17 +995,17 @@ private fun ReaderChromeButton(
     accessibilityLabel: String,
     onClick: () -> Unit
 ) {
-    FilledTonalIconButton(
+    IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(48.dp)
-            .semantics { contentDescription = accessibilityLabel },
-        colors = IconButtonDefaults.filledTonalIconButtonColors(
-            containerColor = VeilPalette.DeepBrass.copy(alpha = 0.52f),
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        )
+            .size(46.dp)
+            .semantics { contentDescription = accessibilityLabel }
     ) {
-        ReaderActionIcon(action, Modifier.size(22.dp), LocalContentColor.current)
+        ReaderActionIcon(
+            action = action,
+            modifier = Modifier.size(21.dp),
+            tint = VeilPalette.Brass
+        )
     }
 }
 
@@ -956,22 +1020,28 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 58.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 54.dp),
+        contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
+        colors = ButtonDefaults.textButtonColors(
+            contentColor = VeilPalette.Moon,
+            disabledContentColor = VeilPalette.Moon.copy(alpha = 0.28f)
+        )
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             ReaderActionIcon(
                 action = action,
-                modifier = Modifier.size(21.dp),
-                tint = if (enabled) LocalContentColor.current else LocalContentColor.current.copy(alpha = 0.38f)
+                modifier = Modifier.size(20.dp),
+                tint = if (enabled) VeilPalette.Brass else VeilPalette.Moon.copy(alpha = 0.28f)
             )
             Text(
                 label,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Medium,
+                color = if (enabled) VeilPalette.Moon.copy(alpha = 0.78f)
+                    else VeilPalette.Moon.copy(alpha = 0.28f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -1329,8 +1399,8 @@ internal fun readiumFontSizeRatio(scale: Double): Double =
     (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
 
 internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
-    ReaderTheme.PAPER -> 0xFFF6F1EA.toInt() to 0xFF252128.toInt()
-    ReaderTheme.SEPIA -> 0xFFF1E5C9.toInt() to 0xFF3D3325.toInt()
+    ReaderTheme.PAPER -> 0xFFE8DCC0.toInt() to 0xFF2C261F.toInt()
+    ReaderTheme.SEPIA -> 0xFFE1CFAB.toInt() to 0xFF382F24.toInt()
     ReaderTheme.DUSK -> 0xFF18151D.toInt() to 0xFFF5F0F7.toInt()
     ReaderTheme.OLED -> 0xFF000000.toInt() to 0xFFF5F0F7.toInt()
 }
