@@ -73,6 +73,7 @@ fun LibraryScreen(
     var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GRID.name) }
     val viewMode = runCatching { LibraryViewMode.valueOf(viewModeName) }.getOrDefault(LibraryViewMode.GRID)
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
+    var showShelves by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Book?>(null) }
@@ -171,6 +172,7 @@ fun LibraryScreen(
                 bookCount = books.size,
                 isImporting = isImporting,
                 onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                onOpenShelves = { showShelves = true },
                 onOpenSettings = onOpenSettings
             )
         }
@@ -381,6 +383,24 @@ fun LibraryScreen(
             onEditMetadata = {
                 detailBookId = null
                 beginMetadataEdit(book)
+            }
+        )
+    }
+
+    if (showShelves) {
+        ShelvesSheet(
+            books = books,
+            collections = collections,
+            onDismiss = { showShelves = false },
+            onSelectShelf = { selected ->
+                shelf = selected
+                collection = ""
+                showShelves = false
+            },
+            onSelectCollection = { selected ->
+                shelf = "All"
+                collection = selected
+                showShelves = false
             }
         )
     }
@@ -702,11 +722,114 @@ private fun BookDetailFact(label: String, value: String) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ShelvesSheet(
+    books: List<Book>,
+    collections: List<String>,
+    onDismiss: () -> Unit,
+    onSelectShelf: (String) -> Unit,
+    onSelectCollection: (String) -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = MaterialTheme.colorScheme.background,
+        dragHandle = {
+            BottomSheetDefaults.DragHandle(color = VeilPalette.Brass.copy(alpha = 0.58f))
+        }
+    ) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VeilSpacing.lg)
+                .padding(bottom = VeilSpacing.xxl),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+        ) {
+            Text(
+                "SHELVES",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+                color = VeilPalette.Brass
+            )
+            Text("Collections", style = MaterialTheme.typography.headlineMedium)
+            Text(
+                "Move through the archive by reading state or by the collections you created.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            BrassRule(Modifier.width(82.dp), strong = true)
+
+            ArchivePanel(Modifier.fillMaxWidth()) {
+                ShelfChoiceRow("All books", books.size) { onSelectShelf("All") }
+                ShelfChoiceRow(
+                    "Currently reading",
+                    books.count { !it.finished && it.progress > 0f }
+                ) { onSelectShelf("Reading") }
+                ShelfChoiceRow(
+                    "Favorites",
+                    books.count { it.favorite }
+                ) { onSelectShelf("Favorites") }
+                ShelfChoiceRow(
+                    "Completed",
+                    books.count { it.finished }
+                ) { onSelectShelf("Finished") }
+                ShelfChoiceRow(
+                    "Plan to read",
+                    books.count { !it.finished && it.progress == 0f }
+                ) { onSelectShelf("Unread") }
+            }
+
+            if (collections.isNotEmpty()) {
+                Text("Custom collections", style = MaterialTheme.typography.titleMedium)
+                collections.forEach { name ->
+                    ShelfChoiceRow(
+                        title = name,
+                        count = books.count { book ->
+                            book.allCollections.any { it.equals(name, ignoreCase = true) }
+                        },
+                        onClick = { onSelectCollection(name) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ShelfChoiceRow(
+    title: String,
+    count: Int,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.24f))
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            Text(title, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(
+                "$count",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text("›", style = MaterialTheme.typography.titleMedium, color = VeilPalette.Brass)
+        }
+    }
+}
+
 @Composable
 private fun LibraryHeader(
     bookCount: Int,
     isImporting: Boolean,
     onImport: () -> Unit,
+    onOpenShelves: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -784,12 +907,12 @@ private fun LibraryHeader(
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
                         OutlinedButton(
-                            onClick = onOpenSettings,
+                            onClick = onOpenShelves,
                             shape = MaterialTheme.shapes.extraSmall,
                             modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.Moon)
                         ) {
-                            Text("Settings")
+                            Text("Shelves")
                         }
                         Button(
                             onClick = onImport,
@@ -799,6 +922,13 @@ private fun LibraryHeader(
                         ) {
                             Text(if (isImporting) "Importing…" else "Import volume")
                         }
+                    }
+                    TextButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.align(Alignment.End).heightIn(min = 44.dp),
+                        colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Moon)
+                    ) {
+                        Text("Settings")
                     }
                 } else {
                     Row(
@@ -813,10 +943,17 @@ private fun LibraryHeader(
                             Text(if (isImporting) "Importing…" else "Import volume")
                         }
                         OutlinedButton(
-                            onClick = onOpenSettings,
+                            onClick = onOpenShelves,
                             shape = MaterialTheme.shapes.extraSmall,
                             modifier = Modifier.heightIn(min = 48.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.Moon)
+                        ) {
+                            Text("Shelves")
+                        }
+                        TextButton(
+                            onClick = onOpenSettings,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Moon)
                         ) {
                             Text("Settings")
                         }
