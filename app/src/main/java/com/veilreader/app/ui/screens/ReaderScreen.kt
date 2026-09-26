@@ -282,11 +282,19 @@ fun ReaderScreen(
             .map { items -> items.filter { it.bookId == opened.book.id } }
             .distinctUntilChanged()
     }
+    val bookPassageVisitsFlow = remember(library, opened.book.id) {
+        library.passageVisits
+            .map { items -> items.filter { it.bookId == opened.book.id } }
+            .distinctUntilChanged()
+    }
     val bookHighlights by bookHighlightsFlow.collectAsStateWithLifecycle(
         initialValue = library.highlightsFor(opened.book.id)
     )
     val bookBookmarks by bookBookmarksFlow.collectAsStateWithLifecycle(
         initialValue = emptyList()
+    )
+    val bookPassageVisits by bookPassageVisitsFlow.collectAsStateWithLifecycle(
+        initialValue = library.passageVisits.value.filter { it.bookId == opened.book.id }
     )
     var readerMessage by remember { mutableStateOf<String?>(null) }
     var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
@@ -1069,6 +1077,7 @@ fun ReaderScreen(
             opened = opened,
             highlights = bookHighlights,
             bookmarks = bookBookmarks,
+            passageVisits = bookPassageVisits,
             onDismiss = { showNotebook = false },
             onGo = { json ->
                 readerViewModel.onUserInteraction()
@@ -1076,6 +1085,10 @@ fun ReaderScreen(
                 val origin = currentLocatorJson()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
                 if (locator != null && navigator?.go(locator, animated = true) == true) {
+                    library.recordPassageVisitForLocator(
+                        bookId = opened.book.id,
+                        locatorJson = json
+                    )
                     previousLocationJson = origin?.takeIf { it != json }
                     showNotebook = false
                 } else {
