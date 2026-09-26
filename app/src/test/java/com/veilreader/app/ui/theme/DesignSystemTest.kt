@@ -6,6 +6,13 @@ import org.junit.Test
 
 class DesignSystemTest {
     @Test
+    fun `Arabic script detection protects connected letterforms from Latin tracking`() {
+        assertTrue(usesArabicScript("کتابخانه خاکستری"))
+        assertTrue(usesArabicScript("الأرشيف"))
+        assertEquals(false, usesArabicScript("GRAYFOG ARCHIVE"))
+    }
+
+    @Test
     fun `Persian Arabic family languages use shaping-safe typography`() {
         listOf("fa", "ar", "ur", "ps", "ckb").forEach { language ->
             assertEquals(VeilScriptGroup.PERSIAN_ARABIC, veilScriptGroupFor(language))
