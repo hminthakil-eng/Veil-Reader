@@ -2,13 +2,18 @@ package com.veilreader.app.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -85,26 +90,27 @@ fun ArchiveScreen(
             modifier = Modifier
                 .widthIn(max = 840.dp)
                 .fillMaxSize()
-                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
         VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TextButton(
                         onClick = onClose,
-                        modifier = Modifier.heightIn(min = 44.dp)
+                        modifier = Modifier.heightIn(min = 40.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text("← Back")
+                        Text("← Archive")
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
-                        "PRIVATE · LOCAL",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "PRIVATE · LOCAL · OFFLINE",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+                        color = VeilPalette.Mist.copy(alpha = 0.70f)
                     )
                 }
 
@@ -115,13 +121,15 @@ fun ArchiveScreen(
                 )
                 Text(
                     "Fragments worth keeping",
-                    style = MaterialTheme.typography.headlineLarge
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = VeilPalette.Moon
                 )
                 BrassRule(Modifier.width(92.dp), strong = true)
-                Text(
-                    "${highlights.count { it.note.isNotBlank() }} notes · ${highlights.size} highlights · ${bookmarks.size} bookmarks",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+
+                ArchiveRegister(
+                    notes = highlights.count { it.note.isNotBlank() },
+                    highlights = highlights.size,
+                    bookmarks = bookmarks.size
                 )
             }
         }
@@ -130,16 +138,18 @@ fun ArchiveScreen(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text("Search notes, quotes, and marks…") },
+            placeholder = { Text("Search the archive…") },
             singleLine = true,
             shape = MaterialTheme.shapes.extraSmall,
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.82f),
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f),
-                focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.56f),
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.40f)
+                focusedContainerColor = VeilPalette.Archive.copy(alpha = 0.70f),
+                unfocusedContainerColor = VeilPalette.Ink.copy(alpha = 0.34f)
             ),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
         )
         }
 
@@ -196,7 +206,10 @@ fun ArchiveScreen(
                             )
                         }
                     }
-                    items(matchingNotes, key = { "note:${it.id}" }) { highlight ->
+                    itemsIndexed(
+                        matchingNotes,
+                        key = { _, item -> "note:${item.id}" }
+                    ) { index, highlight ->
                         val book = booksById[highlight.bookId]
                         NotebookHighlightCard(
                             highlight = highlight,
@@ -207,7 +220,8 @@ fun ArchiveScreen(
                                 noteDraft = highlight.note
                             },
                             onDelete = { deleteHighlightId = highlight.id },
-                            emphasizeNote = true
+                            emphasizeNote = true,
+                            recordNumber = index + 1
                         )
                     }
                 }
@@ -225,7 +239,10 @@ fun ArchiveScreen(
                             )
                         }
                     }
-                    items(matchingHighlights, key = { it.id }) { highlight ->
+                    itemsIndexed(
+                        matchingHighlights,
+                        key = { _, item -> item.id }
+                    ) { index, highlight ->
                         val book = booksById[highlight.bookId]
                         NotebookHighlightCard(
                             highlight = highlight,
@@ -235,7 +252,8 @@ fun ArchiveScreen(
                                 editingHighlightId = highlight.id
                                 noteDraft = highlight.note
                             },
-                            onDelete = { deleteHighlightId = highlight.id }
+                            onDelete = { deleteHighlightId = highlight.id },
+                            recordNumber = index + 1
                         )
                     }
                 }
@@ -253,13 +271,17 @@ fun ArchiveScreen(
                             )
                         }
                     }
-                    items(matchingBookmarks, key = { it.id }) { bookmark ->
+                    itemsIndexed(
+                        matchingBookmarks,
+                        key = { _, item -> item.id }
+                    ) { index, bookmark ->
                         val book = booksById[bookmark.bookId]
                         NotebookBookmarkCard(
                             bookmark = bookmark,
                             book = book,
                             onRead = if (book == null) null else { { onOpenPassage(book, bookmark.locatorJson) } },
-                            onDelete = { deleteBookmarkId = bookmark.id }
+                            onDelete = { deleteBookmarkId = bookmark.id },
+                            recordNumber = index + 1
                         )
                     }
                 }
@@ -279,7 +301,7 @@ fun ArchiveScreen(
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "HIDDEN ARCHIVE",
+                        "MANUSCRIPT NOTE",
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
@@ -293,18 +315,27 @@ fun ArchiveScreen(
                 OutlinedTextField(
                     value = noteDraft,
                     onValueChange = { noteDraft = it },
-                    label = { Text(stringResource(R.string.notebook_note_field_label)) },
+                    placeholder = { Text("Write in the margin…") },
                     minLines = 4,
                     maxLines = 8,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    onSaveNote(highlightId, noteDraft)
-                    editingHighlightId = null
-                    noteDraft = ""
-                }) { Text(stringResource(R.string.common_save)) }
+                Button(
+                    onClick = {
+                        onSaveNote(highlightId, noteDraft)
+                        editingHighlightId = null
+                        noteDraft = ""
+                    },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = Color(0xFF17120A)
+                    )
+                ) {
+                    Text(stringResource(R.string.common_save))
+                }
             },
             dismissButton = {
                 TextButton(onClick = { editingHighlightId = null; noteDraft = "" }) { Text(stringResource(R.string.common_cancel)) }
@@ -332,6 +363,52 @@ fun ArchiveScreen(
 }
 
 @Composable
+private fun ArchiveRegister(
+    notes: Int,
+    highlights: Int,
+    bookmarks: Int
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(VeilPalette.Archive.copy(alpha = 0.56f))
+            .border(
+                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.74f)),
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(horizontal = 12.dp, vertical = 9.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        ArchiveRegisterStat("NOTES", notes)
+        ArchiveRegisterStat("HIGHLIGHTS", highlights)
+        ArchiveRegisterStat("MARKS", bookmarks)
+    }
+}
+
+@Composable
+private fun ArchiveRegisterStat(
+    label: String,
+    value: Int
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(1.dp)
+    ) {
+        Text(
+            value.toString().padStart(2, '0'),
+            style = MaterialTheme.typography.titleSmall,
+            color = VeilPalette.Moon
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
+            color = VeilPalette.Brass.copy(alpha = 0.78f)
+        )
+    }
+}
+
+@Composable
 private fun ArchiveSectionTab(
     label: String,
     count: Int,
@@ -341,23 +418,23 @@ private fun ArchiveSectionTab(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier.heightIn(min = 42.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.74f)
+            VeilPalette.DeepBrass.copy(alpha = 0.52f)
         } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.36f)
+            VeilPalette.Ink.copy(alpha = 0.24f)
         },
         border = BorderStroke(
             1.dp,
             if (selected) VeilPalette.Brass.copy(alpha = 0.84f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+            else VeilPalette.BorderDark.copy(alpha = 0.62f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
@@ -384,13 +461,14 @@ private fun NotebookHighlightCard(
     onRead: (() -> Unit)?,
     onEditNote: () -> Unit,
     onDelete: () -> Unit,
-    emphasizeNote: Boolean = false
+    emphasizeNote: Boolean = false,
+    recordNumber: Int
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.48f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
+        color = VeilPalette.Archive.copy(alpha = 0.58f),
+        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.78f)),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -407,9 +485,14 @@ private fun NotebookHighlightCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
+                        "FOLIO ${recordNumber.toString().padStart(3, '0')}",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
                         book?.title ?: stringResource(R.string.common_unknown_book),
                         style = MaterialTheme.typography.titleMedium,
-                        color = VeilPalette.Brass,
+                        color = VeilPalette.Moon,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -417,25 +500,37 @@ private fun NotebookHighlightCard(
                         Text(
                             author,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = VeilPalette.Mist.copy(alpha = 0.70f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
                 Text(
-                    if (highlight.note.isNotBlank()) "NOTE" else "HIGHLIGHT",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    if (highlight.note.isNotBlank()) "ANNOTATED" else "PASSAGE",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
+                    color = VeilPalette.Mist.copy(alpha = 0.64f)
                 )
             }
 
             if (!emphasizeNote || highlight.note.isBlank()) {
-                Text(
-                    "“${highlight.quote}”",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    Box(
+                        Modifier
+                            .width(2.dp)
+                            .heightIn(min = 54.dp)
+                            .background(VeilPalette.Brass.copy(alpha = 0.48f))
+                    )
+                    Text(
+                        "“${highlight.quote}”",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon.copy(alpha = 0.90f),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
 
             if (highlight.note.isNotBlank()) {
@@ -460,7 +555,7 @@ private fun NotebookHighlightCard(
                             highlight.note,
                             style = if (emphasizeNote) MaterialTheme.typography.bodyLarge
                             else MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = VeilPalette.Moon
                         )
                     }
                 }
@@ -475,13 +570,13 @@ private fun NotebookHighlightCard(
                     TextButton(
                         onClick = onRead,
                         modifier = Modifier.heightIn(min = 44.dp)
-                    ) { Text("Open passage") }
+                    ) { Text("Return to passage") }
                 }
                 TextButton(
                     onClick = onEditNote,
                     modifier = Modifier.heightIn(min = 44.dp)
                 ) {
-                    Text(if (highlight.note.isBlank()) "Add note" else "Edit note")
+                    Text(if (highlight.note.isBlank()) "Annotate" else "Edit annotation")
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(
@@ -503,13 +598,14 @@ private fun NotebookBookmarkCard(
     bookmark: Bookmark,
     book: Book?,
     onRead: (() -> Unit)?,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    recordNumber: Int
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.24f)),
+        color = VeilPalette.Archive.copy(alpha = 0.54f),
+        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -521,18 +617,27 @@ private fun NotebookBookmarkCard(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        "FOLIO ${recordNumber.toString().padStart(3, '0')}",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        book?.title ?: stringResource(R.string.common_unknown_book),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = VeilPalette.Moon,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
                 Text(
-                    book?.title ?: stringResource(R.string.common_unknown_book),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = VeilPalette.Brass,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "MARK",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    "BOOKMARK",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.65.sp),
+                    color = VeilPalette.Mist.copy(alpha = 0.64f)
                 )
             }
 
@@ -543,7 +648,7 @@ private fun NotebookBookmarkCard(
                     bookmark.label
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = VeilPalette.Mist
             )
 
             Row(
@@ -576,10 +681,10 @@ private fun NotebookEmptyState(title: String, body: String) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.30f),
+        color = VeilPalette.Ink.copy(alpha = 0.30f),
         border = BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
+            VeilPalette.BorderDark.copy(alpha = 0.60f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
