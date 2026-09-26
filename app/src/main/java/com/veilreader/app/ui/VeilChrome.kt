@@ -203,6 +203,8 @@ fun VeilBottomDock(
     onSelect: (VeilTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val primarySelected = if (selected.primary) selected else VeilTab.PROFILE
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -231,7 +233,7 @@ fun VeilBottomDock(
                 VeilTab.entries.filter { it.primary }.forEach { tab ->
                     VeilDockItem(
                         tab = tab,
-                        selected = selected == tab,
+                        selected = primarySelected == tab,
                         onClick = { onSelect(tab) },
                         modifier = Modifier.weight(1f)
                     )
@@ -300,6 +302,8 @@ fun VeilNavigationRail(
     onSelect: (VeilTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val primarySelected = if (selected.primary) selected else VeilTab.PROFILE
+
     Surface(
         modifier = modifier
             .fillMaxHeight()
@@ -324,7 +328,7 @@ fun VeilNavigationRail(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 VeilTab.entries.filter { it.primary }.forEach { tab ->
-                    val isSelected = selected == tab
+                    val isSelected = primarySelected == tab
                     val foreground = if (isSelected) {
                         VeilPalette.Brass
                     } else {
