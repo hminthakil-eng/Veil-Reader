@@ -138,3 +138,42 @@ interface ReadingSessionDao {
     @Query("SELECT COALESCE(SUM(activeMillis), 0) FROM reading_sessions")
     suspend fun totalActiveMillis(): Long
 }
+
+
+@Dao
+interface ReadingCycleDao {
+    @Query("SELECT * FROM reading_cycles ORDER BY completedAtEpochMs DESC, cycleIndex DESC")
+    fun observeAll(): Flow<List<ReadingCycleEntity>>
+
+    @Query("SELECT * FROM reading_cycles ORDER BY completedAtEpochMs DESC, cycleIndex DESC")
+    suspend fun listAll(): List<ReadingCycleEntity>
+
+    @Query("SELECT * FROM reading_cycles WHERE bookId = :bookId ORDER BY cycleIndex ASC")
+    suspend fun listForBook(bookId: String): List<ReadingCycleEntity>
+
+    @Query("SELECT COALESCE(MAX(cycleIndex), 0) FROM reading_cycles WHERE bookId = :bookId")
+    suspend fun maxCycleIndex(bookId: String): Int
+
+    @Upsert suspend fun upsert(cycle: ReadingCycleEntity)
+    @Upsert suspend fun upsertAll(cycles: List<ReadingCycleEntity>)
+    @Query("DELETE FROM reading_cycles") suspend fun deleteAll()
+}
+
+@Dao
+interface PassageVisitDao {
+    @Query("SELECT * FROM passage_visits ORDER BY viewedAtEpochMs DESC")
+    fun observeAll(): Flow<List<PassageVisitEntity>>
+
+    @Query("SELECT * FROM passage_visits ORDER BY viewedAtEpochMs DESC")
+    suspend fun listAll(): List<PassageVisitEntity>
+
+    @Query("SELECT * FROM passage_visits WHERE highlightId = :highlightId ORDER BY viewedAtEpochMs ASC")
+    suspend fun listForHighlight(highlightId: String): List<PassageVisitEntity>
+
+    @Query("SELECT MAX(viewedAtEpochMs) FROM passage_visits WHERE highlightId = :highlightId")
+    suspend fun latestViewedAt(highlightId: String): Long?
+
+    @Upsert suspend fun upsert(visit: PassageVisitEntity)
+    @Upsert suspend fun upsertAll(visits: List<PassageVisitEntity>)
+    @Query("DELETE FROM passage_visits") suspend fun deleteAll()
+}
