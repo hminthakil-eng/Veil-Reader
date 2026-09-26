@@ -38,6 +38,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.ui.books.BookArtifactLayer
+import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
@@ -258,28 +260,89 @@ fun MysteryCard(
     ArchivePanel(modifier = modifier, content = content)
 }
 
+private data class DecodedBookCover(
+    val image: ImageBitmap,
+    val aura: Color
+)
+
+private fun extractBookAura(bitmap: android.graphics.Bitmap): Color {
+    if (bitmap.width <= 0 || bitmap.height <= 0) return VeilPalette.Brass
+
+    var red = 0L
+    var green = 0L
+    var blue = 0L
+    var count = 0L
+
+    for (xStep in 1..5) {
+        for (yStep in 1..5) {
+            val x = ((bitmap.width - 1) * xStep / 6).coerceIn(0, bitmap.width - 1)
+            val y = ((bitmap.height - 1) * yStep / 6).coerceIn(0, bitmap.height - 1)
+            val pixel = bitmap.getPixel(x, y)
+            red += (pixel shr 16) and 0xFF
+            green += (pixel shr 8) and 0xFF
+            blue += pixel and 0xFF
+            count++
+        }
+    }
+
+    if (count == 0L) return VeilPalette.Brass
+    val r = (red.toFloat() / count / 255f).coerceIn(0.08f, 0.92f)
+    val g = (green.toFloat() / count / 255f).coerceIn(0.08f, 0.92f)
+    val b = (blue.toFloat() / count / 255f).coerceIn(0.08f, 0.92f)
+
+    // Slightly lift chroma/value for dark covers; aura opacity remains very low.
+    val lift = 0.08f
+    return Color(
+        red = (r + lift).coerceAtMost(1f),
+        green = (g + lift).coerceAtMost(1f),
+        blue = (b + lift).coerceAtMost(1f),
+        alpha = 1f
+    )
+}
+
+private fun fallbackBookAura(title: String): Color {
+    val palette = listOf(
+        Color(0xFF6F8FA3),
+        Color(0xFF9B6D67),
+        Color(0xFF7F8D62),
+        Color(0xFF8C78A8),
+        Color(0xFFA17B4F)
+    )
+    val index = (title.hashCode().ushr(1) % palette.size)
+    return palette[index]
+}
+
 /**
  * Publication cover with a deterministic fallback. Cached Readium covers fade in when decoding
- * finishes so library scrolling does not visually pop.
+ * finishes so library scrolling does not visually pop. Optional [artifact] state adds only
+ * Veil-owned layers around the publication art; it never modifies the source cover.
  */
 @Composable
 fun BookCover(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
-    imagePath: String? = null
+    imagePath: String? = null,
+    artifact: BookArtifactState? = null
 ) {
-    val cachedBitmap by produceState<ImageBitmap?>(initialValue = null, key1 = imagePath) {
+    val decodedCover by produceState<DecodedBookCover?>(initialValue = null, key1 = imagePath) {
         value = withContext(Dispatchers.IO) {
             imagePath
                 ?.takeIf { it.isNotBlank() }
                 ?.let(::File)
                 ?.takeIf { it.isFile && it.length() > 0L }
-                ?.let { file -> BitmapFactory.decodeFile(file.absolutePath)?.asImageBitmap() }
+                ?.let { file ->
+                    BitmapFactory.decodeFile(file.absolutePath)?.let { bitmap ->
+                        DecodedBookCover(
+                            image = bitmap.asImageBitmap(),
+                            aura = extractBookAura(bitmap)
+                        )
+                    }
+                }
         }
     }
     val imageAlpha by animateFloatAsState(
-        targetValue = if (cachedBitmap == null) 0f else 1f,
+        targetValue = if (decodedCover == null) 0f else 1f,
         animationSpec = tween(280),
         label = "cover-fade"
     )
@@ -288,22 +351,33 @@ fun BookCover(
     Box(
         modifier = modifier
             .shadow(
-                elevation = 7.dp,
+                elevation = if (artifact?.recentlyOpened == true) 9.dp else 7.dp,
                 shape = shape,
-                ambientColor = Color.Black.copy(alpha = 0.22f),
+                ambientColor = (
+                    decodedCover?.aura ?: fallbackBookAura(title)
+                ).copy(alpha = if (artifact?.recentlyOpened == true) 0.20f else 0.08f),
                 spotColor = Color.Black.copy(alpha = 0.30f)
             )
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f)),
+                BorderStroke(
+                    1.dp,
+                    VeilPalette.Brass.copy(
+                        alpha = when {
+                            artifact?.finished == true -> 0.78f
+                            artifact?.favorite == true -> 0.62f
+                            else -> 0.48f
+                        }
+                    )
+                ),
                 shape
             )
     ) {
         GeneratedBookCover(title = title, subtitle = subtitle)
-        cachedBitmap?.let { bitmap ->
+        decodedCover?.let { decoded ->
             Image(
-                bitmap = bitmap,
+                bitmap = decoded.image,
                 contentDescription = "Cover of $title",
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().alpha(imageAlpha)
@@ -324,6 +398,14 @@ fun BookCover(
                 .background(Color.White.copy(alpha = 0.12f))
                 .align(Alignment.TopCenter)
         )
+
+        artifact?.let { state ->
+            BookArtifactLayer(
+                state = state,
+                aura = decodedCover?.aura ?: fallbackBookAura(title),
+                modifier = Modifier.matchParentSize()
+            )
+        }
     }
 }
 
