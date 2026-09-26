@@ -79,9 +79,9 @@ object VeilSpacing {
 }
 
 object VeilMotion {
-    const val QUICK_MS = 150
-    const val STANDARD_MS = 250
-    const val CEREMONIAL_MS = 480
+    const val QUICK_MS = 140
+    const val STANDARD_MS = 200
+    const val CEREMONIAL_MS = 320
 }
 
 private val VeilDarkColors = darkColorScheme(
