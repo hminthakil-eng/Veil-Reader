@@ -62,6 +62,7 @@ import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReadingContinuitySummary
@@ -112,6 +113,7 @@ fun ReaderScreen(
     readerAppearance: ReaderAppearance,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
     entryContinuity: ReadingContinuitySummary? = null,
+    returnRitual: BookReturnRitual? = null,
     initialReturnLocatorJson: String? = null,
     onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
     onClose: () -> Unit,
@@ -142,8 +144,8 @@ fun ReaderScreen(
 
     LaunchedEffect(navigatorAttached, opened.book.id) {
         if (navigatorAttached) {
-            // Minimum dwell lets the shell-to-book handoff read as one continuous action.
-            delay(520)
+            // Rare return rituals get only a slightly longer handoff; they never block reading.
+            delay(if (returnRitual != null) 760 else 520)
             entryVisible = false
         }
     }
@@ -877,6 +879,7 @@ fun ReaderScreen(
             stage = BookEntryStage.HANDOFF,
             visible = entryVisible,
             continuity = entryContinuity,
+            returnRitual = returnRitual,
             modifier = Modifier.fillMaxSize()
         )
     }
