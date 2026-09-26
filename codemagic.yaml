@@ -1,4 +1,52 @@
 workflows:
+  veil-reader-fast-verify:
+    name: Veil Reader Fast Verify
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      java: 17
+    scripts:
+      - name: Configure Android SDK and Gradle
+        script: |
+          set -e
+          SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+          echo "sdk.dir=$SDK_ROOT" > "$CM_BUILD_DIR/local.properties"
+          export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$PATH"
+
+          if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
+            GRADLE_VERSION="9.6.0"
+            GRADLE_HOME="$CM_BUILD_DIR/.gradle-dist/gradle-$GRADLE_VERSION"
+            if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
+              mkdir -p "$CM_BUILD_DIR/.gradle-dist"
+              curl --fail --location --retry 3 \
+                "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" \
+                --output "$CM_BUILD_DIR/.gradle-dist/gradle.zip"
+              unzip -q "$CM_BUILD_DIR/.gradle-dist/gradle.zip" -d "$CM_BUILD_DIR/.gradle-dist"
+            fi
+            cat > "$CM_BUILD_DIR/gradlew" <<'EOF'
+          #!/bin/sh
+          exec "$CM_BUILD_DIR/.gradle-dist/gradle-9.6.0/bin/gradle" "$@"
+          EOF
+            chmod +x "$CM_BUILD_DIR/gradlew"
+          fi
+
+          cd "$CM_BUILD_DIR"
+          ./gradlew --version
+
+      - name: Compile and build Grayfog debug APK
+        script: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: Verify debug APK
+        script: |
+          set -e
+          APK="$CM_BUILD_DIR/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK"
+          ls -lh "$APK"
+
+    artifacts:
+      - app/build/outputs/apk/debug/*.apk
+      - app/build/reports/**
+
   veil-reader-cloud-verify:
     name: Veil Reader Cloud Verify
     instance_type: mac_mini_m2
