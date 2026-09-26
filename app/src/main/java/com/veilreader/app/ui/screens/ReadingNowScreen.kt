@@ -93,17 +93,14 @@ fun ReadingNowScreen(
             ReadingPulse(profile)
         }
 
-        VeilReveal(delayMillis = 280, modifier = Modifier.fillMaxWidth()) {
-            PathSummary(
-                profile = profile,
-                onOpenCastle = onOpenCastle
-            )
-        }
-
+        // Castle, Path and quest systems remain available from More. The Threshold stays
+        // reading-first so the next book action is never visually competing with progression.
         if (quests.isNotEmpty()) {
-            VeilReveal(delayMillis = 340, modifier = Modifier.fillMaxWidth()) {
-                WhispersSection(quests)
-            }
+            Text(
+                "Your reading world is still progressing quietly in More.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
         }
     }
