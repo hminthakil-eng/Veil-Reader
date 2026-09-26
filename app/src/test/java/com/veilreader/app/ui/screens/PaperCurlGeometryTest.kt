@@ -212,6 +212,34 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun fastReleaseUsesASeparateFlingRegime() {
+        val slow = paperReleaseProfile(420f)
+        val fast = paperReleaseProfile(1800f)
+
+        assertEquals(PaperReleaseRegime.MANIPULATION, slow.regime)
+        assertEquals(PaperReleaseRegime.FLING, fast.regime)
+        assertTrue(fast.durationMillis < slow.durationMillis)
+        assertTrue(fast.completionBias > slow.completionBias)
+    }
+
+    @Test
+    fun pageStackMovesFromUnreadSideToReadSideAndMirrorsForRtl() {
+        val start = paperPageStackDepth(0f, ReadingProgression.LTR)
+        val middle = paperPageStackDepth(0.5f, ReadingProgression.LTR)
+        val end = paperPageStackDepth(1f, ReadingProgression.LTR)
+        val rtlStart = paperPageStackDepth(0f, ReadingProgression.RTL)
+
+        assertEquals(2f, start.leftDp, 0.001f)
+        assertEquals(8f, start.rightDp, 0.001f)
+        assertEquals(5f, middle.leftDp, 0.001f)
+        assertEquals(5f, middle.rightDp, 0.001f)
+        assertEquals(8f, end.leftDp, 0.001f)
+        assertEquals(2f, end.rightDp, 0.001f)
+        assertEquals(start.rightDp, rtlStart.leftDp, 0.001f)
+        assertEquals(start.leftDp, rtlStart.rightDp, 0.001f)
+    }
+
+    @Test
     fun pageEdgeMovesInwardAsPointerPullsPage() {
         val start = Offset(980f, 500f)
         val shallow = paperCurlPageEdge(
