@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.view.HapticFeedbackConstants
+import android.os.SystemClock
 import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
@@ -37,6 +38,9 @@ internal class PaperCurlInputListener(
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
     private var commitHapticSent = false
+    private var lastDragSampleAtMillis = 0L
+    private var lastInwardDistance = 0f
+    private var releaseVelocityPxPerSec = 0f
 
     override fun onTap(event: TapEvent): Boolean {
         if (!paperModeEnabled()) return false
@@ -114,6 +118,7 @@ internal class PaperCurlInputListener(
 
         if (!state.active) return true
         state.updateDrag(event.start, event.offset)
+        sampleReleaseVelocity(spec, event)
         maybeSignalCommitThreshold(spec, event)
         return true
     }
@@ -128,19 +133,18 @@ internal class PaperCurlInputListener(
         }
 
         state.updateDrag(event.start, event.offset)
+        sampleReleaseVelocity(spec, event)
 
         val view = navigator.publicationView
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
-        val inward = when (spec.side) {
-            PaperCurlSide.RIGHT -> -event.offset.x
-            PaperCurlSide.LEFT -> event.offset.x
-        }
+        val inward = inwardDistance(spec, event)
         val commit = shouldCommitPaperTurn(
             inwardDistance = inward,
             width = width,
             density = density,
-            curlProgress = state.dragProgress()
+            curlProgress = state.dragProgress(),
+            releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
         if (commit) signalCommitThreshold()
 
@@ -151,7 +155,10 @@ internal class PaperCurlInputListener(
                 commit && previewNavigationSucceeded -> {
                     // Persist/count the committed destination before finishing the visual tail.
                     onCommittedTurn()
-                    state.animateComplete()
+                    state.animateComplete(
+                        releaseVelocityDpPerSec =
+                            releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                    )
                 }
 
                 previewNavigationSucceeded -> {
@@ -191,6 +198,9 @@ internal class PaperCurlInputListener(
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
         commitHapticSent = false
+        lastDragSampleAtMillis = SystemClock.uptimeMillis()
+        lastInwardDistance = inwardDistance(spec, event)
+        releaseVelocityPxPerSec = 0f
         state.updateDrag(event.start, event.offset)
         onInteraction()
 
@@ -211,17 +221,34 @@ internal class PaperCurlInputListener(
         val view = navigator.publicationView
         val width = view.width.toFloat()
         if (width <= 0f) return
-        val inward = when (spec.side) {
-            PaperCurlSide.RIGHT -> -event.offset.x
-            PaperCurlSide.LEFT -> event.offset.x
-        }
+        val inward = inwardDistance(spec, event)
         val crossed = shouldCommitPaperTurn(
             inwardDistance = inward,
             width = width,
             density = view.resources.displayMetrics.density,
-            curlProgress = state.dragProgress()
+            curlProgress = state.dragProgress(),
+            releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
         if (crossed) signalCommitThreshold()
+    }
+
+    private fun inwardDistance(spec: TurnSpec, event: DragEvent): Float =
+        when (spec.side) {
+            PaperCurlSide.RIGHT -> -event.offset.x
+            PaperCurlSide.LEFT -> event.offset.x
+        }
+
+    private fun sampleReleaseVelocity(spec: TurnSpec, event: DragEvent) {
+        val now = SystemClock.uptimeMillis()
+        val inward = inwardDistance(spec, event)
+        val elapsed = now - lastDragSampleAtMillis
+        if (lastDragSampleAtMillis > 0L && elapsed in 1L..120L) {
+            releaseVelocityPxPerSec =
+                ((inward - lastInwardDistance) * 1000f / elapsed.toFloat())
+                    .coerceIn(-12_000f, 12_000f)
+        }
+        lastDragSampleAtMillis = now
+        lastInwardDistance = inward
     }
 
     private fun signalCommitThreshold() {
@@ -328,6 +355,9 @@ internal class PaperCurlInputListener(
         previewNavigationSucceeded = false
         dragStartLocator = null
         commitHapticSent = false
+        lastDragSampleAtMillis = 0L
+        lastInwardDistance = 0f
+        releaseVelocityPxPerSec = 0f
     }
 
     private data class TurnSpec(
@@ -368,11 +398,18 @@ internal fun shouldCommitPaperTurn(
     inwardDistance: Float,
     width: Float,
     density: Float,
-    curlProgress: Float
+    curlProgress: Float,
+    releaseVelocityPxPerSec: Float = 0f
 ): Boolean {
     // Returning to the origin or dragging outward must never commit a turn.
     if (inwardDistance <= 0f) return false
-    val commitDistance = max(96f * density, width * 0.22f)
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val commitDistance = max(96f * safeDensity, width * 0.22f)
+    val flickDistance = max(36f * safeDensity, width * 0.035f)
+    val fastInwardFlick =
+        inwardDistance >= flickDistance &&
+            releaseVelocityPxPerSec >= 900f * safeDensity
     return inwardDistance >= commitDistance ||
-        curlProgress >= 0.36f
+        curlProgress >= 0.36f ||
+        fastInwardFlick
 }
