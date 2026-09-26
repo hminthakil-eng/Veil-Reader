@@ -61,6 +61,7 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -508,7 +509,14 @@ fun ReaderScreen(
     Box(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
+            .background(
+                when (readerAppearance.theme) {
+                    ReaderTheme.PAPER -> VeilPalette.WarmPaper
+                    ReaderTheme.SEPIA -> VeilPalette.AgedPaper
+                    ReaderTheme.DUSK -> VeilPalette.Obsidian
+                    ReaderTheme.OLED -> VeilPalette.VeilBlack
+                }
+            )
             .semantics {
                 contentDescription = "Reader surface"
                 onClick(label = "Toggle reader controls") {
@@ -552,8 +560,9 @@ fun ReaderScreen(
                     .widthIn(max = 760.dp)
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                shape = RoundedCornerShape(24.dp),
+                color = VeilPalette.Obsidian.copy(alpha = .94f),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .68f)),
                 tonalElevation = 1.dp,
                 shadowElevation = 10.dp
             ) {
@@ -577,7 +586,7 @@ fun ReaderScreen(
                             )
                             Text(
                                 locationTitle.ifBlank { opened.book.author.ifBlank { opened.format.name } },
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = VeilPalette.Mist,
                                 style = MaterialTheme.typography.bodySmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -588,12 +597,12 @@ fun ReaderScreen(
                                 contentDescription = "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
                             },
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
+                            color = VeilPalette.DeepAmethyst.copy(alpha = .88f)
                         ) {
                             Text(
                                 "${(progress * 100).toInt()}%",
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                color = VeilPalette.BrightGold,
                                 style = MaterialTheme.typography.labelMedium
                             )
                         }
@@ -601,8 +610,8 @@ fun ReaderScreen(
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(3.dp),
-                        color = MaterialTheme.colorScheme.secondary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+                        color = VeilPalette.OldGold,
+                        trackColor = VeilPalette.TarnishedBrass.copy(alpha = .30f)
                     )
                 }
             }
@@ -620,10 +629,11 @@ fun ReaderScreen(
                     .widthIn(max = 560.dp)
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
+                color = VeilPalette.Obsidian.copy(alpha = .94f),
                 tonalElevation = 2.dp,
                 shadowElevation = 12.dp,
-                shape = RoundedCornerShape(28.dp)
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .68f))
             ) {
                 Row(
                     Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
