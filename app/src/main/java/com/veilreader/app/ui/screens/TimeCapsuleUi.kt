@@ -101,6 +101,16 @@ fun ReadingTimeCapsuleCard(
                     overflow = TextOverflow.Ellipsis
                 )
 
+                capsule.completedAtEpochMs
+                    ?.takeIf { capsule.exactCompletionTimeKnown && it > 0L }
+                    ?.let { completedAt ->
+                        Text(
+                            "COMPLETED · ${formatCapsuleDate(completedAt)}",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                            color = VeilPalette.Brass.copy(alpha = 0.78f)
+                        )
+                    }
+
                 Text(
                     "Open preserved history →",
                     style = MaterialTheme.typography.labelMedium,
