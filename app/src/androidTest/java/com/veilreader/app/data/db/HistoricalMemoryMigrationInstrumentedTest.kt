@@ -43,6 +43,10 @@ class HistoricalMemoryMigrationInstrumentedTest {
             cursor.moveToFirst()
             assertEquals(0, cursor.getInt(0))
         }
+        migrated.query("SELECT COUNT(*) FROM reading_milestones").use { cursor ->
+            cursor.moveToFirst()
+            assertEquals(0, cursor.getInt(0))
+        }
         migrated.close()
     }
 
