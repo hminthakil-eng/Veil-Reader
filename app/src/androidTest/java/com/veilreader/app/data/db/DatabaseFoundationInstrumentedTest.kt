@@ -220,6 +220,77 @@ class DatabaseFoundationInstrumentedTest {
     }
 
     @Test
+    fun historicalMemory_tablesPreserveCycleAndCascadeExactPassageVisits() = runBlocking {
+        val book = BookEntity(
+            id = "history-book",
+            title = "History",
+            author = "Veil",
+            progress = 1f,
+            currentChapter = "Final",
+            totalPages = 0,
+            pagesRead = 0,
+            format = BookFormat.EPUB.name,
+            sourceUri = "file:///history.epub",
+            mediaType = "application/epub+zip",
+            locatorJson = "{}",
+            addedAtEpochMs = 1L,
+            lastOpenedAtEpochMs = 20L,
+            finished = true,
+            favorite = false
+        )
+        val highlight = HighlightEntity(
+            id = "history-highlight",
+            bookId = "history-book",
+            quote = "Remember",
+            locatorJson = "{\"href\":\"chapter.xhtml\"}",
+            note = "",
+            createdAtEpochMs = 10L
+        )
+        val cycle = ReadingCycleEntity(
+            id = "cycle-1",
+            bookId = "history-book",
+            cycleIndex = 1,
+            titleSnapshot = "History",
+            authorSnapshot = "Veil",
+            startedAtEpochMs = 2L,
+            completedAtEpochMs = 20L,
+            finalLocatorJson = "{}",
+            sessionCount = 1,
+            totalActiveMillis = 5_000L,
+            pacedPageTurns = 10,
+            highlightCount = 1,
+            noteCount = 0,
+            bookmarkCount = 0,
+            sealCode = "VR-TEST",
+            timelineJson = "[]"
+        )
+        val visit = PassageVisitEntity(
+            id = "visit-1",
+            highlightId = "history-highlight",
+            bookId = "history-book",
+            locatorJson = highlight.locatorJson,
+            viewedAtEpochMs = 30L
+        )
+
+        db.withTransaction {
+            db.books().upsert(book)
+            db.highlights().upsert(highlight)
+            db.readingCycles().upsert(cycle)
+            db.passageVisits().upsert(visit)
+        }
+
+        assertEquals(1, db.readingCycles().listAll().size)
+        assertEquals(1, db.passageVisits().listAll().size)
+
+        db.highlights().deleteById("history-highlight")
+        assertTrue(db.passageVisits().listAll().isEmpty())
+        assertEquals(1, db.readingCycles().listAll().size)
+
+        db.books().deleteById("history-book")
+        assertTrue(db.readingCycles().listAll().isEmpty())
+    }
+
+    @Test
     fun deletingBook_cascadesAnnotationsAndMembership_butKeepsHistoricalSession() = runBlocking {
         val book = BookEntity(
             id = "book",
