@@ -42,6 +42,7 @@ import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.VeilTextStyles
 
 private data class PathPresentation(
     val aspect: String,
@@ -215,8 +216,8 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             )
             Text(
                 presentation.invocation,
-                style = MaterialTheme.typography.bodyLarge,
-                color = VeilPalette.Mist,
+                style = VeilTextStyles.LoreMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.82f),
                 textAlign = TextAlign.Center
             )
             Text(
@@ -509,8 +510,8 @@ private fun AdvancementCeremonyDialog(
                 )
                 Text(
                     presentation.invocation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary,
+                    style = VeilTextStyles.LoreSmall,
+                    color = VeilPalette.Brass,
                     textAlign = TextAlign.Center
                 )
             }
