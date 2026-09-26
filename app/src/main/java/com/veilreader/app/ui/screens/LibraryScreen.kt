@@ -58,6 +58,9 @@ import com.veilreader.app.domain.LibraryAtmosphereState
 import com.veilreader.app.domain.LibraryMemoryEvent
 import com.veilreader.app.domain.LibraryMemoryEventKind
 import com.veilreader.app.domain.LibraryWingState
+import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.ReadingMilestoneKind
+import com.veilreader.app.domain.ReadingMilestoneRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.domain.deriveLibraryAtmosphereState
@@ -70,6 +73,8 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import java.text.DateFormat
+import java.util.Date
 import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
@@ -82,6 +87,8 @@ fun LibraryScreen(
     highlights: List<Highlight> = emptyList(),
     bookmarks: List<Bookmark> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    readingCycles: List<ReadingCycleRecord> = emptyList(),
+    readingMilestones: List<ReadingMilestoneRecord> = emptyList(),
     isImporting: Boolean,
     onImportUri: (Uri) -> Unit,
     onOpenBook: (Book) -> Unit,
@@ -694,6 +701,8 @@ fun LibraryScreen(
             book = book,
             archiveMemory = memoryState.memoryFor(book.id),
             artifactMemory = artifactMemoryByBookId[book.id],
+            readingCycles = readingCycles.filter { it.bookId == book.id },
+            readingMilestones = readingMilestones.filter { it.bookId == book.id },
             onDismiss = { detailBookId = null },
             onOpen = {
                 detailBookId = null
@@ -789,6 +798,8 @@ private fun BookDetailSheet(
     book: Book,
     archiveMemory: BookArchiveMemory?,
     artifactMemory: BookArtifactMemory?,
+    readingCycles: List<ReadingCycleRecord>,
+    readingMilestones: List<ReadingMilestoneRecord>,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
@@ -1066,6 +1077,41 @@ private fun BookDetailSheet(
                             stringResource(R.string.book_detail_sample_metadata_only)
                         }
                     )
+                    book.addedAtEpochMs.takeIf { it > 0L }?.let { archivedAt ->
+                        BookDetailFact("Archived", formatArchiveRecordDate(archivedAt))
+                    }
+                    readingMilestones
+                        .firstOrNull { it.kind == ReadingMilestoneKind.FIRST_OPENED }
+                        ?.let { firstOpen ->
+                            BookDetailFact(
+                                "First opened",
+                                formatArchiveRecordDate(firstOpen.reachedAtEpochMs)
+                            )
+                        }
+                    val progressMarks = readingMilestones
+                        .filter { it.kind != ReadingMilestoneKind.FIRST_OPENED }
+                        .sortedBy { it.progression }
+                    if (progressMarks.isNotEmpty()) {
+                        BookDetailFact(
+                            "Journey marks",
+                            progressMarks.joinToString(" · ") {
+                                "${(it.progression * 100).toInt()}%"
+                            }
+                        )
+                    }
+                    readingCycles.maxByOrNull { it.cycleIndex }?.let { latestCycle ->
+                        BookDetailFact(
+                            if (latestCycle.cycleIndex > 1) {
+                                "Latest completion · Cycle ${latestCycle.cycleIndex}"
+                            } else {
+                                "Completed"
+                            },
+                            formatArchiveRecordDate(latestCycle.completedAtEpochMs)
+                        )
+                    }
+                    if (readingCycles.size > 1) {
+                        BookDetailFact("Reading cycles", readingCycles.size.toString())
+                    }
                     archiveMemory?.let { memory ->
                         BookDetailFact(
                             "Archive depth",
@@ -2043,6 +2089,11 @@ private fun MemoryTraceGlyph(
         )
     }
 }
+
+private fun formatArchiveRecordDate(epochMs: Long): String =
+    DateFormat.getDateInstance(DateFormat.MEDIUM)
+        .format(Date(epochMs))
+        .uppercase(Locale.getDefault())
 
 private fun archiveDepthRecord(memory: BookArchiveMemory): String {
     val age = formatArchiveSilence(memory.inactiveMillis)
