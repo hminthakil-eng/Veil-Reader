@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ArchiveDepth
+import com.veilreader.app.domain.ArchiveWing
+import com.veilreader.app.domain.ArchiveWingKind
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookArchiveMemory
 import com.veilreader.app.domain.BookArtifactMemory
@@ -55,10 +57,12 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.LibraryAtmosphereState
 import com.veilreader.app.domain.LibraryMemoryEvent
 import com.veilreader.app.domain.LibraryMemoryEventKind
+import com.veilreader.app.domain.LibraryWingState
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.domain.deriveLibraryAtmosphereState
 import com.veilreader.app.domain.deriveLibraryMemoryState
+import com.veilreader.app.domain.deriveLibraryWings
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
@@ -89,6 +93,7 @@ fun LibraryScreen(
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
+    var seriesFilter by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf("Recent") }
     var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GRID.name) }
     val viewMode = runCatching { LibraryViewMode.valueOf(viewModeName) }.getOrDefault(LibraryViewMode.GRID)
@@ -141,6 +146,9 @@ fun LibraryScreen(
     }
     val deepShelfBookIds = remember(memoryState.deepShelfBookIds) {
         memoryState.deepShelfBookIds.toSet()
+    }
+    val wingState = remember(books) {
+        deriveLibraryWings(books)
     }
     val atmosphereState = remember(
         books,
@@ -202,7 +210,9 @@ fun LibraryScreen(
         val matchesCollection = collection.isEmpty() || book.allCollections.any {
             it.equals(collection, ignoreCase = true)
         }
-        matchesQuery && matchesShelf && matchesCollection
+        val matchesSeries = seriesFilter.isEmpty() ||
+            book.seriesName?.equals(seriesFilter, ignoreCase = true) == true
+        matchesQuery && matchesShelf && matchesCollection && matchesSeries
     }.let { list ->
         when (sort) {
             "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
@@ -365,6 +375,24 @@ fun LibraryScreen(
             }
         }
 
+        item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
+            if (trimmedQuery.isBlank() && shelf == "All" && wingState.allWings.isNotEmpty()) {
+                LibraryArchiveWings(
+                    state = wingState,
+                    selectedCollection = collection,
+                    selectedSeries = seriesFilter,
+                    onCollection = { name ->
+                        collection = if (collection.equals(name, ignoreCase = true)) "" else name
+                        seriesFilter = ""
+                    },
+                    onSeries = { name ->
+                        seriesFilter = if (seriesFilter.equals(name, ignoreCase = true)) "" else name
+                        collection = ""
+                    }
+                )
+            }
+        }
+
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier.fillMaxWidth(),
@@ -463,14 +491,44 @@ fun LibraryScreen(
                         }
                     }
 
+                    if (seriesFilter.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = { seriesFilter = "" },
+                            modifier = Modifier.heightIn(min = 38.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            contentPadding = PaddingValues(horizontal = 10.dp),
+                            border = BorderStroke(
+                                1.dp,
+                                VeilPalette.Brass.copy(alpha = 0.44f)
+                            )
+                        ) {
+                            Text(
+                                "Series · $seriesFilter ×",
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+
                     ViewModeToggle(
                         mode = viewMode,
                         onChange = { viewModeName = it.name }
                     )
 
-                    if (trimmedQuery.isNotBlank() || shelf != "All" || collection.isNotEmpty()) {
+                    if (
+                        trimmedQuery.isNotBlank() ||
+                        shelf != "All" ||
+                        collection.isNotEmpty() ||
+                        seriesFilter.isNotEmpty()
+                    ) {
                         TextButton(
-                            onClick = { query = ""; shelf = "All"; collection = "" },
+                            onClick = {
+                                query = ""
+                                shelf = "All"
+                                collection = ""
+                                seriesFilter = ""
+                            },
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
                         ) {
@@ -486,7 +544,8 @@ fun LibraryScreen(
                 memoryState.events.isNotEmpty() &&
                 trimmedQuery.isBlank() &&
                 shelf == "All" &&
-                collection.isEmpty()
+                collection.isEmpty() &&
+            seriesFilter.isEmpty()
             ) {
                 Column(
                     Modifier.padding(vertical = VeilSpacing.sm),
@@ -523,7 +582,8 @@ fun LibraryScreen(
                 memoryState.deepShelfBookIds.isNotEmpty() &&
                 trimmedQuery.isBlank() &&
                 shelf == "All" &&
-                collection.isEmpty()
+                collection.isEmpty() &&
+            seriesFilter.isEmpty()
             ) {
                 val oldestBook = memoryState.deepShelfBookIds
                     .firstOrNull()
@@ -578,7 +638,12 @@ fun LibraryScreen(
                     hasBooks = books.isNotEmpty(),
                     isImporting = isImporting,
                     onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                    onReset = { query = ""; shelf = "All"; collection = "" }
+                    onReset = {
+                        query = ""
+                        shelf = "All"
+                        collection = ""
+                        seriesFilter = ""
+                    }
                 )
             }
         } else {
@@ -1562,6 +1627,216 @@ private fun RecentReadingBook(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun LibraryArchiveWings(
+    state: LibraryWingState,
+    selectedCollection: String,
+    selectedSeries: String,
+    onCollection: (String) -> Unit,
+    onSeries: (String) -> Unit
+) {
+    val visibleWings = remember(state) {
+        (state.collectionWings.take(6) + state.seriesWings.take(6))
+            .sortedWith(
+                compareByDescending<ArchiveWing> { it.volumeCount }
+                    .thenByDescending { it.lastRecordedActivityAtEpochMs }
+                    .thenBy { it.name.lowercase(Locale.ROOT) }
+            )
+    }
+    if (visibleWings.isEmpty()) return
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = VeilSpacing.sm),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        LibrarySectionHeading(
+            eyebrow = "Spatial index",
+            title = "Archive Wings",
+            trailing = "${visibleWings.size} mapped"
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
+            visibleWings.forEach { wing ->
+                val selected = when (wing.kind) {
+                    ArchiveWingKind.COLLECTION ->
+                        selectedCollection.equals(wing.name, ignoreCase = true)
+                    ArchiveWingKind.SERIES ->
+                        selectedSeries.equals(wing.name, ignoreCase = true)
+                }
+                ArchiveWingPortal(
+                    wing = wing,
+                    selected = selected,
+                    onClick = {
+                        when (wing.kind) {
+                            ArchiveWingKind.COLLECTION -> onCollection(wing.name)
+                            ArchiveWingKind.SERIES -> onSeries(wing.name)
+                        }
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveWingPortal(
+    wing: ArchiveWing,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .width(154.dp)
+            .heightIn(min = 116.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (selected) {
+            VeilPalette.DeepBrass.copy(alpha = 0.26f)
+        } else {
+            VeilPalette.Ink.copy(alpha = 0.44f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (selected) {
+                VeilPalette.Brass.copy(alpha = 0.72f)
+            } else {
+                VeilPalette.BorderDark.copy(alpha = 0.74f)
+            }
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 116.dp)
+                .padding(10.dp)
+        ) {
+            ArchiveWingArchitecture(
+                wing = wing,
+                selected = selected,
+                modifier = Modifier.matchParentSize()
+            )
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    when (wing.kind) {
+                        ArchiveWingKind.COLLECTION -> "COLLECTION WING"
+                        ArchiveWingKind.SERIES -> "SERIES CORRIDOR"
+                    },
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
+                    color = VeilPalette.Brass.copy(alpha = if (selected) 0.96f else 0.72f)
+                )
+                Text(
+                    wing.name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = VeilPalette.Moon,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    buildString {
+                        append(wing.volumeCount)
+                            .append(if (wing.volumeCount == 1) " volume" else " volumes")
+                        if (wing.activeCount > 0) {
+                            append(" · ").append(wing.activeCount).append(" active")
+                        }
+                        if (wing.completedCount > 0) {
+                            append(" · ").append(wing.completedCount).append(" sealed")
+                        }
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.58f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveWingArchitecture(
+    wing: ArchiveWing,
+    selected: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val presence = wing.archivePresence.coerceIn(0f, 1f)
+        val brass = VeilPalette.Brass
+        val mist = VeilPalette.Mist
+        val ink = VeilPalette.Ink
+        val w = size.width
+        val h = size.height
+
+        val arch = Path().apply {
+            moveTo(w * 0.14f, h * 0.48f)
+            cubicTo(
+                w * 0.14f, h * 0.13f,
+                w * 0.86f, h * 0.13f,
+                w * 0.86f, h * 0.48f
+            )
+        }
+        drawPath(
+            path = arch,
+            color = brass.copy(alpha = 0.09f + presence * 0.12f),
+            style = Stroke(
+                width = if (selected) 1.25.dp.toPx() else 0.8.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+        )
+
+        val bays = (2 + (presence * 4f).toInt()).coerceIn(2, 6)
+        repeat(bays) { index ->
+            val fraction = (index + 1f) / (bays + 1f)
+            val x = w * (0.20f + fraction * 0.60f)
+            drawLine(
+                color = mist.copy(alpha = 0.035f + presence * 0.055f),
+                start = Offset(x, h * 0.24f),
+                end = Offset(x, h * 0.56f),
+                strokeWidth = 0.65.dp.toPx()
+            )
+        }
+
+        repeat(wing.completedCount.coerceAtMost(4)) { index ->
+            val x = w * (0.27f + index * 0.14f)
+            drawCircle(
+                color = brass.copy(alpha = 0.11f + presence * 0.10f),
+                radius = 2.2.dp.toPx(),
+                center = Offset(x, h * 0.36f),
+                style = Stroke(0.7.dp.toPx())
+            )
+        }
+
+        val sealX = w * 0.82f
+        val sealY = h * 0.17f
+        val sealRadius = if (selected) 6.dp.toPx() else 4.5.dp.toPx()
+        drawCircle(
+            color = ink.copy(alpha = 0.62f),
+            radius = sealRadius + 1.5.dp.toPx(),
+            center = Offset(sealX, sealY)
+        )
+        drawCircle(
+            color = brass.copy(alpha = if (selected) 0.82f else 0.44f),
+            radius = sealRadius,
+            center = Offset(sealX, sealY),
+            style = Stroke(0.8.dp.toPx())
+        )
     }
 }
 
