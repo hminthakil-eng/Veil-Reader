@@ -105,6 +105,61 @@ class ReadingTimeCapsuleTest {
     }
 
     @Test
+    fun `persisted cycle wins over later mutable book history`() {
+        val book = Book(
+            id = "done",
+            title = "Renamed Later",
+            author = "New Metadata",
+            finished = true
+        )
+        val sealed = ReadingCycleRecord(
+            id = "cycle",
+            bookId = "done",
+            cycleIndex = 1,
+            titleSnapshot = "Original Title",
+            authorSnapshot = "Original Author",
+            startedAtEpochMs = 2L * day,
+            completedAtEpochMs = 8L * day,
+            finalLocatorJson = "{\"end\":true}",
+            sessionCount = 2,
+            totalActiveMillis = 90_000L,
+            pacedPageTurns = 42,
+            highlightCount = 3,
+            noteCount = 1,
+            bookmarkCount = 2,
+            sealCode = "VR-SEALED01",
+            timeline = listOf(
+                ReadingHistoryEvent(
+                    id = "completed",
+                    kind = ReadingHistoryEventKind.COMPLETED,
+                    timestampEpochMs = 8L * day,
+                    title = "Reading cycle completed"
+                )
+            )
+        )
+
+        val capsule = deriveReadingTimeCapsules(
+            books = listOf(book),
+            sessions = listOf(
+                ReadingSessionSnapshot("late", "done", 20L * day, 21L * day, day, 999, 9, 9)
+            ),
+            highlights = listOf(
+                Highlight("late-h", "done", "Later", "{}", createdAtEpochMs = 22L * day)
+            ),
+            bookmarks = emptyList(),
+            sealedCycles = listOf(sealed)
+        ).single()
+
+        assertTrue(capsule.exactCompletionTimeKnown)
+        assertEquals(8L * day, capsule.completedAtEpochMs)
+        assertEquals("Original Title", capsule.book.title)
+        assertEquals("Original Author", capsule.book.author)
+        assertEquals(2, capsule.sessionCount)
+        assertEquals(3, capsule.highlightCount)
+        assertEquals("VR-SEALED01", capsule.sealCode)
+    }
+
+    @Test
     fun `seal code is stable for the same durable record`() {
         val first = readingCapsuleSealCode("book", 10L, 20L)
         val second = readingCapsuleSealCode("book", 10L, 20L)
