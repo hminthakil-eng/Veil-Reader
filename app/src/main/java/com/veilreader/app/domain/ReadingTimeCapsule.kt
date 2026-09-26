@@ -5,6 +5,7 @@ enum class ReadingHistoryEventKind {
     READING_SESSION,
     PASSAGE_PRESERVED,
     LOCATION_MARKED,
+    COMPLETED,
     LATEST_VOLUME_ACTIVITY
 }
 
@@ -28,6 +29,8 @@ data class ReadingTimeCapsule(
     val noteCount: Int,
     val bookmarkCount: Int,
     val timeline: List<ReadingHistoryEvent>,
+    val cycleIndex: Int = 1,
+    val completedAtEpochMs: Long? = null,
     /**
      * Veil currently persists completion state but not the exact instant it first became complete.
      * Never present latestRecordedAtEpochMs as a completion timestamp.
@@ -39,17 +42,25 @@ fun deriveReadingTimeCapsules(
     books: List<Book>,
     sessions: List<ReadingSessionSnapshot>,
     highlights: List<Highlight>,
-    bookmarks: List<Bookmark>
+    bookmarks: List<Bookmark>,
+    sealedCycles: List<ReadingCycleRecord> = emptyList()
 ): List<ReadingTimeCapsule> {
+    val booksById = books.associateBy { it.id }
     val sessionsByBook = sessions
         .filter { !it.bookId.isNullOrBlank() }
         .groupBy { requireNotNull(it.bookId) }
     val highlightsByBook = highlights.groupBy { it.bookId }
     val bookmarksByBook = bookmarks.groupBy { it.bookId }
+    val sealedBookIds = sealedCycles.mapTo(mutableSetOf()) { it.bookId }
 
-    return books
+    val exact = sealedCycles.mapNotNull { cycle ->
+        booksById[cycle.bookId]?.let { book ->
+            deriveReadingTimeCapsule(book, cycle)
+        }
+    }
+    val legacy = books
         .asSequence()
-        .filter { it.finished }
+        .filter { it.finished && it.id !in sealedBookIds }
         .map { book ->
             deriveReadingTimeCapsule(
                 book = book,
@@ -58,11 +69,43 @@ fun deriveReadingTimeCapsules(
                 bookmarks = bookmarksByBook[book.id].orEmpty()
             )
         }
+        .toList()
+
+    return (exact + legacy)
         .sortedWith(
-            compareByDescending<ReadingTimeCapsule> { it.latestRecordedAtEpochMs ?: 0L }
+            compareByDescending<ReadingTimeCapsule> {
+                it.completedAtEpochMs ?: it.latestRecordedAtEpochMs ?: 0L
+            }
+                .thenByDescending { it.cycleIndex }
                 .thenBy { it.book.title.lowercase() }
         )
-        .toList()
+}
+
+fun deriveReadingTimeCapsule(
+    book: Book,
+    cycle: ReadingCycleRecord
+): ReadingTimeCapsule {
+    require(cycle.bookId == book.id)
+    return ReadingTimeCapsule(
+        book = book.copy(
+            title = cycle.titleSnapshot,
+            author = cycle.authorSnapshot,
+            finished = true
+        ),
+        sealCode = cycle.sealCode,
+        firstRecordedAtEpochMs = cycle.startedAtEpochMs,
+        latestRecordedAtEpochMs = cycle.completedAtEpochMs,
+        sessionCount = cycle.sessionCount,
+        totalActiveMillis = cycle.totalActiveMillis,
+        pacedPageTurns = cycle.pacedPageTurns,
+        highlightCount = cycle.highlightCount,
+        noteCount = cycle.noteCount,
+        bookmarkCount = cycle.bookmarkCount,
+        timeline = cycle.timeline,
+        cycleIndex = cycle.cycleIndex,
+        completedAtEpochMs = cycle.completedAtEpochMs,
+        exactCompletionTimeKnown = true
+    )
 }
 
 fun deriveReadingTimeCapsule(
