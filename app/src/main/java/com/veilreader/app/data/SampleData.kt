@@ -76,7 +76,7 @@ object SampleData {
     val rooms = listOf(
         CastleRoom("library", "Grand Library", "Your books, collections, finished tomes, and reading history.", 0, "📚"),
         CastleRoom("ritual", "Ritual Chamber", "Perform advancement challenges when your Path is ready.", 1, "🕯️"),
-        CastleRoom("observatory", "Observatory", "Reading statistics, prediction records, and long-term trends.", 2, "🔭"),
+        CastleRoom("observatory", "Observatory", "A private Memory Atlas of recorded relations between your books and preserved passages.", 2, "🔭"),
         CastleRoom("archive", "Hidden Archive", "Highlights, notes, entities, maps, and personal lore.", 3, "🗝️"),
         CastleRoom("treasury", "Treasury", "Themes, profile frames, sigils, page effects, and collectibles.", 4, "💎"),
         CastleRoom("sanctum", "Inner Sanctum", "Endgame challenges and the deepest Castle customizations.", 5, "👁️")
