@@ -12,6 +12,7 @@ import androidx.compose.ui.draw.DrawResult
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.toRect
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
@@ -32,12 +33,16 @@ import kotlin.math.max
 
 internal data class PaperCurlVisualConfig(
     val backPageColor: Color,
-    val backPageContentAlpha: Float = 0.12f,
+    val backPageContentAlpha: Float = 0.11f,
     val shadowColor: Color = Color.Black,
-    val shadowAlpha: Float = 0.30f,
-    val shadowRadius: Dp = 22.dp,
-    val shadowOffset: DpOffset = DpOffset((-4).dp, 1.dp),
-    val edgeHighlight: Color = Color.White
+    val shadowAlpha: Float = 0.36f,
+    val shadowRadius: Dp = 28.dp,
+    val shadowOffset: DpOffset = DpOffset((-5).dp, 2.dp),
+    val edgeHighlight: Color = Color.White,
+    val creaseHighlightAlpha: Float = 0.26f,
+    val creaseShadowAlpha: Float = 0.20f,
+    val backPageShadeAlpha: Float = 0.16f,
+    val contactShadowAlpha: Float = 0.18f
 )
 
 internal fun Modifier.paperCurl(
@@ -86,28 +91,44 @@ internal fun Modifier.paperCurl(
     val centerX = (topCurl.x + bottomCurl.x) * 0.5f
     val progress = (1f - centerX / size.width).coerceIn(0f, 1f)
     val foldLift = paperFoldLift(progress)
+    val crease = paperCreaseIntensity(progress)
+    val contactShadow = paperContactShadowIntensity(progress)
     val drawCurl = prepareCurl(
         config,
         topCurl,
         bottomCurl,
         foldLift
     )
-    val foldAlpha = (foldLift * 0.22f).coerceIn(0f, 0.22f)
     onDrawWithContent {
         drawClippedContent()
         drawCurl()
-        if (foldAlpha > 0f) {
+
+        if (crease > 0.001f) {
+            val lightAlpha = (config.creaseHighlightAlpha * crease).coerceIn(0f, 0.34f)
+            val darkAlpha = (config.creaseShadowAlpha * crease).coerceIn(0f, 0.30f)
+
             drawLine(
-                color = config.edgeHighlight.copy(alpha = foldAlpha),
-                start = topCurl,
-                end = bottomCurl,
-                strokeWidth = 1.25.dp.toPx()
+                color = config.edgeHighlight.copy(alpha = lightAlpha),
+                start = topCurl - Offset(0.75.dp.toPx(), 0f),
+                end = bottomCurl - Offset(0.75.dp.toPx(), 0f),
+                strokeWidth = 1.35.dp.toPx()
             )
             drawLine(
-                color = config.shadowColor.copy(alpha = foldAlpha * 0.55f),
+                color = config.shadowColor.copy(alpha = darkAlpha),
                 start = topCurl + Offset(1.5.dp.toPx(), 0f),
                 end = bottomCurl + Offset(1.5.dp.toPx(), 0f),
-                strokeWidth = 0.75.dp.toPx()
+                strokeWidth = 1.15.dp.toPx()
+            )
+        }
+
+        if (contactShadow > 0.001f) {
+            drawLine(
+                color = config.shadowColor.copy(
+                    alpha = (config.contactShadowAlpha * contactShadow).coerceIn(0f, 0.24f)
+                ),
+                start = topCurl + Offset(5.dp.toPx(), 0f),
+                end = bottomCurl + Offset(5.dp.toPx(), 0f),
+                strokeWidth = (3.5f + contactShadow * 4f).dp.toPx()
             )
         }
     }
@@ -197,6 +218,19 @@ private fun CacheDrawScope.prepareCurl(
                         .coerceIn(0f, 1f)
                 drawRect(
                     config.backPageColor.copy(alpha = overlayAlpha)
+                )
+                drawRect(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            config.edgeHighlight.copy(alpha = 0.05f + foldLift * 0.08f),
+                            Color.Transparent,
+                            config.shadowColor.copy(
+                                alpha = (config.backPageShadeAlpha * foldLift).coerceIn(0f, 0.22f)
+                            )
+                        ),
+                        startX = 0f,
+                        endX = size.width
+                    )
                 )
             }
         }
