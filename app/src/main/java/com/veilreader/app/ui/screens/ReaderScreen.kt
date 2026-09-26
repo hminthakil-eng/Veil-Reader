@@ -59,6 +59,7 @@ import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -1168,60 +1169,54 @@ private fun EpubAppearancePanel(
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-            Text("Reading mode", fontWeight = FontWeight.SemiBold)
+            Text("Reading motion", fontWeight = FontWeight.SemiBold)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 FilterChip(
-                    selected = !draft.scroll,
-                    onClick = { updateDraft(draft.copy(scroll = false)) },
-                    label = { Text("Paginated") },
+                    selected = draft.navigationMode == ReaderNavigationMode.PAPER_CURL,
+                    onClick = {
+                        updateDraft(draft.withNavigationMode(ReaderNavigationMode.PAPER_CURL))
+                    },
+                    label = { Text("Paper curl", maxLines = 1) },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 )
                 FilterChip(
-                    selected = draft.scroll,
-                    onClick = { updateDraft(draft.copy(scroll = true)) },
-                    label = { Text("Scroll") },
+                    selected = draft.navigationMode == ReaderNavigationMode.SLIDE,
+                    onClick = {
+                        updateDraft(draft.withNavigationMode(ReaderNavigationMode.SLIDE))
+                    },
+                    label = { Text("Slide", maxLines = 1) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                )
+                FilterChip(
+                    selected = draft.navigationMode == ReaderNavigationMode.SCROLL,
+                    onClick = {
+                        updateDraft(draft.withNavigationMode(ReaderNavigationMode.SCROLL))
+                    },
+                    label = { Text("Scroll", maxLines = 1) },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
                 )
             }
-
-            if (!draft.scroll) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Page turn", fontWeight = FontWeight.SemiBold)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        FilterChip(
-                            selected = draft.pageTurnStyle == PageTurnStyle.PAPER,
-                            onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
-                            label = { Text("Paper curl") },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 48.dp)
-                        )
-                        FilterChip(
-                            selected = draft.pageTurnStyle == PageTurnStyle.SLIDE,
-                            onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
-                            label = { Text("Simple slide") },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 48.dp)
-                        )
-                    }
-                    Text(
-                        "Paper curl follows your drag. Simple slide keeps the lighter native transition.",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            Text(
+                when (draft.navigationMode) {
+                    ReaderNavigationMode.PAPER_CURL ->
+                        "Paper curl is a physical page-turn gesture with the weighted paper effect."
+                    ReaderNavigationMode.SLIDE ->
+                        "Slide changes pages with the lighter horizontal transition and no curl."
+                    ReaderNavigationMode.SCROLL ->
+                        "Scroll uses continuous vertical reading instead of page-by-page navigation."
+                },
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         } else {
             Text(
                 "Typography & layout",
