@@ -46,6 +46,41 @@ class HistoricalMemoryTest {
     }
 
     @Test
+    fun `progress milestones preserve the first factual threshold crossing`() {
+        val crossed = crossedReadingMilestones(
+            bookId = "book",
+            previousProgress = 0.18f,
+            newProgress = 0.76f,
+            reachedAtEpochMs = 42L,
+            locatorJson = "{\"href\":\"chapter.xhtml\"}"
+        )
+
+        assertEquals(
+            listOf(
+                ReadingMilestoneKind.PROGRESS_25,
+                ReadingMilestoneKind.PROGRESS_50,
+                ReadingMilestoneKind.PROGRESS_75
+            ),
+            crossed.map { it.kind }
+        )
+        assertTrue(crossed.all { it.reachedAtEpochMs == 42L })
+        assertTrue(crossed.all { it.id.startsWith("milestone:book:") })
+    }
+
+    @Test
+    fun `backward reading motion never fabricates a milestone`() {
+        assertTrue(
+            crossedReadingMilestones(
+                bookId = "book",
+                previousProgress = 0.80f,
+                newProgress = 0.40f,
+                reachedAtEpochMs = 50L,
+                locatorJson = "{}"
+            ).isEmpty()
+        )
+    }
+
+    @Test
     fun `passage revisits require the exact preserved object and occur after marking`() {
         val highlight = Highlight(
             id = "h",
