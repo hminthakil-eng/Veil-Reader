@@ -25,20 +25,20 @@ import com.veilreader.app.domain.AppThemeMode
  */
 object VeilPalette {
     // Gray Fog semantic foundation.
-    val Ink = Color(0xFF0B0E12)
-    val Archive = Color(0xFF12171E)
-    val Iron = Color(0xFF1B222B)
-    val RaisedIron = Color(0xFF242C36)
+    val Ink = Color(0xFF0B0D12)
+    val Archive = Color(0xFF111821)
+    val Iron = Color(0xFF1B2230)
+    val RaisedIron = Color(0xFF263247)
 
-    val Moon = Color(0xFFF2EFE7)
-    val Mist = Color(0xFFAEB4B8)
-    val BorderDark = Color(0xFF313A45)
-    val StrongBorderDark = Color(0xFF596572)
+    val Moon = Color(0xFFEEE9DE)
+    val Mist = Color(0xFFA7A9AA)
+    val BorderDark = Color(0xFF2F3947)
+    val StrongBorderDark = Color(0xFF5C6672)
 
-    val Brass = Color(0xFFC4A260)
-    val DeepBrass = Color(0xFF56472E)
-    val Spirit = Color(0xFF74B6B8)
-    val MoonCrimson = Color(0xFFC25C6C)
+    val Brass = Color(0xFFC9A96B)
+    val DeepBrass = Color(0xFF5A4526)
+    val Spirit = Color(0xFF7BA8B1)
+    val MoonCrimson = Color(0xFF7A2E2E)
 
     val LightCanvas = Color(0xFFF2EFE7)
     val LightSurface = Color(0xFFFBF8F1)
@@ -52,7 +52,7 @@ object VeilPalette {
     val LightCrimson = Color(0xFF7B2838)
 
     // Reader paper stays separate from the app-shell surfaces.
-    val ReaderPaper = Color(0xFFF7F1E3)
+    val ReaderPaper = Color(0xFFE8DCC0)
 
     // Compatibility aliases: existing screens can migrate incrementally without a parallel theme.
     val Obsidian = Archive
@@ -76,12 +76,25 @@ object VeilSpacing {
     val lg = 20.dp
     val xl = 24.dp
     val xxl = 32.dp
+    val xxxl = 40.dp
 }
 
 object VeilMotion {
-    const val QUICK_MS = 150
-    const val STANDARD_MS = 250
-    const val CEREMONIAL_MS = 480
+    const val QUICK_MS = 120
+    const val STANDARD_MS = 180
+    const val CEREMONIAL_MS = 320
+}
+
+object VeilStroke {
+    val Hairline = 1.dp
+    val Emphasis = 1.5.dp
+}
+
+object VeilOpacity {
+    const val Secondary = 0.78f
+    const val Muted = 0.62f
+    const val Hairline = 0.34f
+    const val Glow = 0.10f
 }
 
 private val VeilDarkColors = darkColorScheme(
@@ -136,16 +149,16 @@ private val VeilTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Medium,
-        fontSize = 44.sp,
+        fontSize = 46.sp,
         lineHeight = 50.sp,
-        letterSpacing = (-0.6).sp
+        letterSpacing = (-0.72).sp
     ),
     headlineLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Medium,
-        fontSize = 28.sp,
-        lineHeight = 34.sp,
-        letterSpacing = (-0.35).sp
+        fontSize = 30.sp,
+        lineHeight = 35.sp,
+        letterSpacing = (-0.42).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = FontFamily.Serif,
@@ -162,57 +175,57 @@ private val VeilTypography = Typography(
     titleLarge = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.Medium,
-        fontSize = 20.sp,
-        lineHeight = 25.sp,
-        letterSpacing = (-0.12).sp
+        fontSize = 21.sp,
+        lineHeight = 26.sp,
+        letterSpacing = (-0.16).sp
     ),
     titleMedium = TextStyle(
         fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 15.sp,
+        fontSize = 16.sp,
         lineHeight = 21.sp
     ),
     bodyLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp
+        fontSize = 15.sp,
+        lineHeight = 22.sp
     ),
     bodyMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 20.sp
+        fontSize = 13.sp,
+        lineHeight = 19.sp
     ),
     labelLarge = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 13.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.1.sp
+        fontSize = 12.sp,
+        lineHeight = 17.sp,
+        letterSpacing = 0.18.sp
     ),
     labelMedium = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.65.sp
+        letterSpacing = 0.78.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
-        fontSize = 10.sp,
-        lineHeight = 14.sp,
-        letterSpacing = 0.35.sp
+        fontSize = 9.sp,
+        lineHeight = 13.sp,
+        letterSpacing = 1.05.sp
     )
 )
 
 private val VeilShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(24.dp)
+    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(2.dp),
+    small = androidx.compose.foundation.shape.RoundedCornerShape(4.dp),
+    medium = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+    large = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
 )
 
 @Composable
