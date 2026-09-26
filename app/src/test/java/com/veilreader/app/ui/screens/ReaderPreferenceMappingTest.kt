@@ -1,6 +1,8 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -41,6 +43,31 @@ class ReaderPreferenceMappingTest {
         assertEquals(0.05, ReaderAppearance().withScreenBrightness(0.01).screenBrightness!!, 0.0001)
         assertEquals(0.42, ReaderAppearance().withScreenBrightness(0.42).screenBrightness!!, 0.0001)
         assertEquals(1.0, ReaderAppearance().withScreenBrightness(2.0).screenBrightness!!, 0.0001)
+    }
+
+    @Test
+    fun `navigation modes keep paper curl slide and scroll mutually exclusive`() {
+        val original = ReaderAppearance(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
+
+        val curl = original.withNavigationMode(ReaderNavigationMode.PAPER_CURL)
+        assertEquals(ReaderNavigationMode.PAPER_CURL, curl.navigationMode)
+        assertFalse(curl.scroll)
+        assertEquals(PageTurnStyle.PAPER, curl.pageTurnStyle)
+
+        val slide = curl.withNavigationMode(ReaderNavigationMode.SLIDE)
+        assertEquals(ReaderNavigationMode.SLIDE, slide.navigationMode)
+        assertFalse(slide.scroll)
+        assertEquals(PageTurnStyle.SLIDE, slide.pageTurnStyle)
+
+        val scroll = slide.withNavigationMode(ReaderNavigationMode.SCROLL)
+        assertEquals(ReaderNavigationMode.SCROLL, scroll.navigationMode)
+        assertEquals(true, scroll.scroll)
+        assertEquals(PageTurnStyle.SLIDE, scroll.pageTurnStyle)
+
+        val backToCurl = scroll.withNavigationMode(ReaderNavigationMode.PAPER_CURL)
+        assertEquals(ReaderNavigationMode.PAPER_CURL, backToCurl.navigationMode)
+        assertFalse(backToCurl.scroll)
+        assertEquals(PageTurnStyle.PAPER, backToCurl.pageTurnStyle)
     }
 
     @Test
