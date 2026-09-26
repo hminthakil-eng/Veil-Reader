@@ -69,7 +69,7 @@ class SettingsStore(private val context: Context) {
             readerAppearance = ReaderAppearance(
                 theme = runCatching {
                     ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.PAPER.name)
-                }.getOrDefault(ReaderTheme.DUSK),
+                }.getOrDefault(ReaderTheme.PAPER),
                 fontScale = (prefs[Keys.fontScale] ?: 1.0).coerceIn(0.75, 1.8),
                 lineHeight = (prefs[Keys.lineHeight] ?: 1.45).coerceIn(1.1, 2.0),
                 pageMargins = (prefs[Keys.pageMargins] ?: 1.0).coerceIn(0.5, 2.0),
