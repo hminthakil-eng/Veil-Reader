@@ -120,6 +120,25 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun foldLiftPeaksAtMidTurnAndFallsAtRest() {
+        assertEquals(0f, paperFoldLift(0f), 0.0001f)
+        assertEquals(1f, paperFoldLift(0.5f), 0.0001f)
+        assertEquals(0f, paperFoldLift(1f), 0.0001f)
+    }
+
+    @Test
+    fun weightedDragTrailsTheFingerWithoutChangingDirection() {
+        val start = Offset(900f, 500f)
+        val finger = Offset(300f, 620f)
+        val weighted = paperWeightedDragCurrent(start, finger)
+
+        assertTrue(weighted.x < start.x)
+        assertTrue(weighted.x > finger.x)
+        assertTrue(weighted.y > start.y)
+        assertTrue(weighted.y < finger.y)
+    }
+
+    @Test
     fun pageEdgeMovesInwardAsPointerPullsPage() {
         val start = Offset(980f, 500f)
         val shallow = paperCurlPageEdge(
