@@ -93,14 +93,20 @@ fun deriveHighlightMemory(
     val eligible = depth != EchoDepth.FRESH
 
     // A deterministic resurfacing priority, not a claim about the passage's importance.
+    // Keep each bonus explicit so Kotlin's if-expression grammar cannot accidentally absorb
+    // a following addition into an else branch.
+    val annotationBonus = if (annotated) 80 else 0
+    val completionBonus = if (book?.finished == true) 45 else 0
+    val favoriteBonus = if (book?.favorite == true) 25 else 0
+    val laterActivityBonus = if (laterActivity) 20 else 0
     val resonance = if (!eligible) {
         0
     } else {
         ageDays.coerceAtMost(365) +
-            if (annotated) 80 else 0 +
-            if (book?.finished == true) 45 else 0 +
-            if (book?.favorite == true) 25 else 0 +
-            if (laterActivity) 20 else 0
+            annotationBonus +
+            completionBonus +
+            favoriteBonus +
+            laterActivityBonus
     }
 
     return HighlightMemory(
