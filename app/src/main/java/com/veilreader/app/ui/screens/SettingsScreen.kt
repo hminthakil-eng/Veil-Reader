@@ -18,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
@@ -40,6 +41,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
 
@@ -330,10 +332,23 @@ private fun <T> ChoiceRow(
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
         entries.forEach { entry ->
+            val active = entry == selected
             FilterChip(
-                selected = entry == selected,
+                selected = active,
                 onClick = { onSelected(entry) },
-                label = { Text(label(entry)) }
+                label = { Text(label(entry)) },
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = active,
+                    borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f),
+                    selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
+                ),
+                modifier = Modifier.heightIn(min = 44.dp)
             )
         }
     }
