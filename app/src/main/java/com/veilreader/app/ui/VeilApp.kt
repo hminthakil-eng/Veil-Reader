@@ -45,6 +45,7 @@ import com.veilreader.app.ui.screens.BookEntryStage
 import com.veilreader.app.ui.screens.BookThresholdTransitionOverlay
 import com.veilreader.app.ui.screens.CastleScreen
 import com.veilreader.app.ui.screens.LibraryScreen
+import com.veilreader.app.ui.screens.ObservatoryScreen
 import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
@@ -432,7 +433,7 @@ fun VeilApp(
                     when (room) {
                         "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
                         "ritual" -> routeViewModel.selectTab(VeilTab.PATH)
-                        "observatory" -> routeViewModel.selectTab(VeilTab.PROFILE)
+                        "observatory" -> routeViewModel.openChamber(room)
                         "archive" -> routeViewModel.openArchive()
                         "treasury", "sanctum" -> routeViewModel.openChamber(room)
                     }
@@ -545,6 +546,14 @@ fun VeilApp(
                 label = if (restoring) "Restoring the archive" else "Opening the archive"
             )
         }
+    } else if (route.activeChamber == "observatory") {
+        ObservatoryScreen(
+            books = books,
+            highlights = highlights,
+            readingSessions = readingSessions,
+            onOpenBook = { book -> requestOpenBook(book) },
+            onClose = routeViewModel::closeChamber
+        )
     } else if (route.activeChamber == "treasury") {
         TreasuryScreen(
             profile = requireNotNull(profile),
