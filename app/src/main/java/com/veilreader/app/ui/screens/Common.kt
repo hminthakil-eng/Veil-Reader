@@ -113,7 +113,7 @@ fun ArchivePanel(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(12.dp)
+    val shape = MaterialTheme.shapes.small
 
     Box(
         modifier = modifier
@@ -122,14 +122,14 @@ fun ArchivePanel(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        VeilPalette.DeepBrass.copy(alpha = 0.34f),
-                        colors.surfaceVariant.copy(alpha = 0.68f),
-                        colors.surface.copy(alpha = 0.98f)
+                        colors.surface.copy(alpha = 0.995f),
+                        colors.surfaceVariant.copy(alpha = 0.76f),
+                        colors.surface.copy(alpha = 0.995f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.56f)),
                 shape
             )
     ) {
@@ -142,7 +142,7 @@ fun ArchivePanel(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            VeilPalette.Brass.copy(alpha = 0.11f),
+                            VeilPalette.Brass.copy(alpha = 0.07f),
                             Color.Transparent
                         )
                     )
@@ -201,7 +201,7 @@ fun ArchivePanel(
         )
 
         Column(
-            modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
+            modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
             content = content
         )
@@ -271,11 +271,11 @@ fun BookCover(
         label = "cover-fade"
     )
 
-    val shape = RoundedCornerShape(11.dp)
+    val shape = RoundedCornerShape(4.dp)
     Box(
         modifier = modifier
             .shadow(
-                elevation = 10.dp,
+                elevation = 6.dp,
                 shape = shape,
                 ambientColor = Color.Black.copy(alpha = 0.22f),
                 spotColor = Color.Black.copy(alpha = 0.30f)
@@ -283,7 +283,7 @@ fun BookCover(
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
                 shape
             )
     ) {
@@ -336,7 +336,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             .padding(8.dp)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
-                RoundedCornerShape(5.dp)
+                RoundedCornerShape(2.dp)
             )
     )
 
