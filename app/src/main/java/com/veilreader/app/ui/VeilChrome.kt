@@ -254,7 +254,7 @@ fun VeilBottomDock(
             .fillMaxWidth()
             .navigationBarsPadding()
             .padding(top = 4.dp),
-        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.995f),
         contentColor = MaterialTheme.colorScheme.onSurface,
         shadowElevation = 0.dp,
@@ -265,7 +265,7 @@ fun VeilBottomDock(
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             GrayfogRule(Modifier.fillMaxWidth())
@@ -303,7 +303,7 @@ private fun VeilDockItem(
 
     Column(
         modifier = modifier
-            .heightIn(min = 56.dp)
+            .heightIn(min = 52.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(background)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
@@ -311,13 +311,13 @@ private fun VeilDockItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(22.dp))
+        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(21.dp))
         Spacer(Modifier.height(3.dp))
         Text(
             tab.label,
             style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 11.sp,
-                letterSpacing = 0.25.sp,
+                fontSize = 9.5.sp,
+                letterSpacing = 0.48.sp,
                 fontWeight = FontWeight.Medium
             ),
             color = foreground,
@@ -329,8 +329,8 @@ private fun VeilDockItem(
         Spacer(Modifier.height(3.dp))
         Box(
             Modifier
-                .width(24.dp)
-                .height(2.dp)
+                .width(18.dp)
+                .height(1.dp)
                 .background(if (selected) VeilPalette.Brass.copy(alpha = 0.86f) else Color.Transparent)
         )
     }
@@ -345,7 +345,7 @@ fun VeilNavigationRail(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(92.dp)
+            .width(88.dp)
             .padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.975f),
@@ -381,13 +381,13 @@ fun VeilNavigationRail(
                             .padding(vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        VeilTabIcon(tab, foreground, Modifier.size(24.dp))
+                        VeilTabIcon(tab, foreground, Modifier.size(22.dp))
                         Spacer(Modifier.height(5.dp))
                         Text(
                             tab.label,
                             style = MaterialTheme.typography.labelMedium.copy(
-                                fontSize = 11.sp,
-                                letterSpacing = 0.1.sp
+                                fontSize = 9.5.sp,
+                                letterSpacing = 0.36.sp
                             ),
                             color = foreground,
                             maxLines = 2,
