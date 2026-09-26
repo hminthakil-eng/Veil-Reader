@@ -263,6 +263,28 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun firstOpenMilestone_isRecordedOnceEvenAcrossRepeatedOpenSignals() = runBlocking<Unit> {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "first-open-book",
+                title = "Threshold",
+                author = "Archivist",
+                sourceUri = "file:///threshold.epub"
+            )
+        )
+
+        repository.markOpened("first-open-book")
+        repository.markOpened("first-open-book")
+        repository.flushWrites()
+
+        val milestones = db.readingMilestones().listForBook("first-open-book")
+        assertEquals(1, milestones.size)
+        assertEquals("FIRST_OPENED", milestones.single().kind)
+        assertTrue(milestones.single().reachedAtEpochMs > 0L)
+    }
+
+    @Test
     fun historicalMemory_completionAndBackup_preserveImmutableCycleAndExactRevisit() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
