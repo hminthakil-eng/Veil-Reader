@@ -52,15 +52,18 @@ import com.veilreader.app.domain.BookArtifactMemory
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.LibraryAtmosphereState
 import com.veilreader.app.domain.LibraryMemoryEvent
 import com.veilreader.app.domain.LibraryMemoryEventKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
+import com.veilreader.app.domain.deriveLibraryAtmosphereState
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
@@ -138,6 +141,21 @@ fun LibraryScreen(
     }
     val deepShelfBookIds = remember(memoryState.deepShelfBookIds) {
         memoryState.deepShelfBookIds.toSet()
+    }
+    val atmosphereState = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions,
+        memoryState
+    ) {
+        deriveLibraryAtmosphereState(
+            books = books,
+            highlights = highlights,
+            bookmarks = bookmarks,
+            sessions = readingSessions,
+            memoryState = memoryState
+        )
     }
     val artifactMemoryByBookId = remember(
         books,
@@ -217,7 +235,12 @@ fun LibraryScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.ARCHIVE,
-                seed = books.size + filtered.size
+                seed = books.size + filtered.size,
+                intensity = 0.88f + atmosphereState.archiveDensity * 0.12f
+            )
+            .libraryArchiveAtmosphere(
+                state = atmosphereState,
+                seed = books.size * 31 + collections.size * 7
             ),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
@@ -229,12 +252,15 @@ fun LibraryScreen(
         )
     ) {
         item(key = "library:heading", span = { GridItemSpan(maxLineSpan) }) {
-            LibraryHeader(
-                bookCount = books.size,
-                isImporting = isImporting,
-                onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                onOpenSettings = onOpenSettings
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LibraryHeader(
+                    bookCount = books.size,
+                    isImporting = isImporting,
+                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    onOpenSettings = onOpenSettings
+                )
+                LibraryAtmosphereLedger(atmosphereState)
+            }
         }
 
         item(key = "library:search", span = { GridItemSpan(maxLineSpan) }) {
@@ -1349,6 +1375,49 @@ private fun ArchiveStat(label: String, count: Int, modifier: Modifier = Modifier
             label,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun LibraryAtmosphereLedger(state: LibraryAtmosphereState) {
+    if (state.volumeCount <= 0) return
+
+    val phrase = when {
+        state.deepQuiet >= 0.72f -> "The lower stacks are quiet and deep."
+        state.archiveDensity >= 0.72f -> "The Archive has grown into many chambers."
+        state.memoryWarmth >= 0.58f -> "Reading light is active through the stacks."
+        state.archiveDensity >= 0.32f -> "The shelves are beginning to gain depth."
+        else -> "The first shelves are taking shape."
+    }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(
+            Modifier
+                .width(34.dp)
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.42f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+        Text(
+            phrase,
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Mist.copy(alpha = 0.52f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
         )
     }
 }
