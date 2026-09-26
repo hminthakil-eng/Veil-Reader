@@ -126,12 +126,18 @@ fun VeilApp(
     } else {
         null
     }
+    val readingMilestonesState = if (openedPublication == null) {
+        library.readingMilestones.collectAsStateWithLifecycle()
+    } else {
+        null
+    }
     val books = booksState?.value.orEmpty()
     val highlights = highlightsState?.value.orEmpty()
     val bookmarks = bookmarksState?.value.orEmpty()
     val readingSessions = readingSessionsState?.value.orEmpty()
     val readingCycles = readingCyclesState?.value.orEmpty()
     val passageVisits = passageVisitsState?.value.orEmpty()
+    val readingMilestones = readingMilestonesState?.value.orEmpty()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
 
     // Existing libraries and restored backups may have no cached covers. Process one book at a time
@@ -462,6 +468,8 @@ fun VeilApp(
                 highlights = highlights,
                 bookmarks = bookmarks,
                 readingSessions = readingSessions,
+                readingCycles = readingCycles,
+                readingMilestones = readingMilestones,
                 isImporting = isImporting,
                 onImportUri = ::importBook,
                 onOpenBook = { requestOpenBook(it) },
