@@ -109,7 +109,7 @@ enum class AppThemeMode { SYSTEM, LIGHT, DARK }
 
 enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
-enum class PageTurnStyle { PAPER, SLIDE }
+enum class PageTurnStyle { PAPER, SLIDE, NONE }
 
 /**
  * User-facing reader navigation modes.
@@ -118,7 +118,7 @@ enum class PageTurnStyle { PAPER, SLIDE }
  * [ReaderAppearance.pageTurnStyle]; this enum gives the UI one clear,
  * mutually-exclusive mode selector.
  */
-enum class ReaderNavigationMode { PAPER_CURL, SLIDE, SCROLL }
+enum class ReaderNavigationMode { PAPER_CURL, SLIDE, PAGED, SCROLL }
 
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.PAPER,
@@ -134,6 +134,7 @@ data class ReaderAppearance(
         get() = when {
             scroll -> ReaderNavigationMode.SCROLL
             pageTurnStyle == PageTurnStyle.SLIDE -> ReaderNavigationMode.SLIDE
+            pageTurnStyle == PageTurnStyle.NONE -> ReaderNavigationMode.PAGED
             else -> ReaderNavigationMode.PAPER_CURL
         }
 
@@ -143,6 +144,8 @@ data class ReaderAppearance(
                 copy(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
             ReaderNavigationMode.SLIDE ->
                 copy(scroll = false, pageTurnStyle = PageTurnStyle.SLIDE)
+            ReaderNavigationMode.PAGED ->
+                copy(scroll = false, pageTurnStyle = PageTurnStyle.NONE)
             ReaderNavigationMode.SCROLL ->
                 copy(scroll = true)
         }
