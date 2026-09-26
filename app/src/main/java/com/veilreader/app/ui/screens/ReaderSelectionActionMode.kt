@@ -64,7 +64,6 @@ internal class ReaderSelectionActionModeCallback(
 
     override fun onDestroyActionMode(mode: ActionMode) {
         onModeChanged(false)
-        super.onDestroyActionMode(mode)
     }
 
     private companion object {
