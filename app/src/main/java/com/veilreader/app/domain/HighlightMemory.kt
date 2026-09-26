@@ -116,6 +116,9 @@ fun deriveHighlightMemory(
     val completionBonus = if (book?.finished == true) 45 else 0
     val favoriteBonus = if (book?.favorite == true) 25 else 0
     val laterActivityBonus = if (laterActivity) 20 else 0
+    // Exact passage returns are a stronger factual signal than generic later book activity,
+    // but stay bounded so age and annotation history remain the dominant archival signals.
+    val revisitBonus = (exactVisits.size * 15).coerceAtMost(60)
     val resonance = if (!eligible) {
         0
     } else {
@@ -123,7 +126,8 @@ fun deriveHighlightMemory(
             annotationBonus +
             completionBonus +
             favoriteBonus +
-            laterActivityBonus
+            laterActivityBonus +
+            revisitBonus
     }
 
     return HighlightMemory(
@@ -146,14 +150,20 @@ fun deriveArchiveEchoes(
     highlights: List<Highlight>,
     booksById: Map<String, Book>,
     nowEpochMs: Long = System.currentTimeMillis(),
-    limit: Int = 24
+    limit: Int = 24,
+    passageVisits: List<PassageVisit> = emptyList()
 ): List<ArchiveEcho> {
     if (limit <= 0) return emptyList()
 
     return highlights
         .mapNotNull { highlight ->
             val book = booksById[highlight.bookId] ?: return@mapNotNull null
-            val memory = deriveHighlightMemory(highlight, book, nowEpochMs)
+            val memory = deriveHighlightMemory(
+                highlight = highlight,
+                book = book,
+                nowEpochMs = nowEpochMs,
+                passageVisits = passageVisits
+            )
             if (!memory.eligibleForEcho) return@mapNotNull null
             ArchiveEcho(highlight, book, memory)
         }
