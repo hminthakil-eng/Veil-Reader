@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -230,7 +231,7 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
                 it,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.widthIn(max = 680.dp)
+                modifier = Modifier.widthIn(max = VeilMeasure.EditorialText)
             )
         }
     }
