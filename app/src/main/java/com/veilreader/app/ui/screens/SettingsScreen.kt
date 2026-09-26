@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,10 +18,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,6 +43,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
 
@@ -110,15 +114,29 @@ fun SettingsScreen(
             Text("← Back")
         }
 
-        ScreenHeader(
-            eyebrow = "Settings",
-            title = "Reader & app",
-            subtitle = "Keep the interface quiet and set reading defaults once. Changes are stored locally."
-        )
+        Column(
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
+            Text(
+                "GRAYFOG SETTINGS",
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Brass
+            )
+            Text(
+                "The Reading Room",
+                style = MaterialTheme.typography.headlineLarge
+            )
+            BrassRule(Modifier.width(92.dp), strong = true)
+            Text(
+                "Reading, appearance, storage, privacy, and backup controls. Everything remains local unless you export it.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         SettingsSection(
-            title = "App appearance",
-            description = "Choose how Veil Reader's own interface follows your device."
+            title = "Appearance",
+            description = "Choose how the archive shell follows your device."
         ) {
             ChoiceRow(
                 entries = AppThemeMode.entries,
@@ -129,8 +147,8 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Reading surface",
-            description = "These are the defaults used when a publication opens. Book content still follows its own metadata and direction."
+            title = "Reading settings",
+            description = "Set default theme, typography, page movement, brightness, and layout."
         ) {
             Text("Publication theme", style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
@@ -219,13 +237,18 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Data & backup",
-            description = "Backups include imported books, reading positions, annotations, Path progress, quests and Castle identity."
+            title = "Library & backup",
+            description = "Export or restore your private local archive, annotations, and reading state."
         ) {
             Button(
                 enabled = !exporting && !restoring,
                 onClick = { backupPicker.launch("veil-reader-backup.zip") },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = VeilPalette.Brass,
+                    contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
+                )
             ) { Text(if (exporting) "Exporting…" else "Export library backup") }
             OutlinedButton(
                 enabled = !exporting && !restoring,
@@ -241,7 +264,7 @@ fun SettingsScreen(
 
         SettingsSection(
             title = "Privacy & about",
-            description = "Veil Reader is local-first: your library, progress and annotations stay on this device unless you explicitly export them."
+            description = "Your library, progress, and annotations stay on this device unless you explicitly export them."
         ) {
             Text("App version · $appVersion", style = MaterialTheme.typography.labelLarge)
             Text("Reader engine · Readium Kotlin Toolkit 3.4.0", style = MaterialTheme.typography.labelLarge)
@@ -253,8 +276,8 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Reset",
-            description = "Restore Veil Reader's reader defaults without touching books, progress, highlights, notes or backups."
+            title = "Reset reading defaults",
+            description = "Restore reader preferences without touching books, progress, notes, highlights, or backups."
         ) {
             OutlinedButton(
                 onClick = { commitReaderAppearance { ReaderAppearance() } },
@@ -295,20 +318,47 @@ private fun SettingsSection(
     description: String,
     content: @Composable () -> Unit
 ) {
-    MysteryCard(Modifier.fillMaxWidth()) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                title.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Brass,
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        BrassRule(Modifier.fillMaxWidth())
+
         Text(
             description,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
+            style = MaterialTheme.typography.bodySmall
         )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = VeilSpacing.xs),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraSmall,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
+            ),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
-            content()
+            Column(
+                modifier = Modifier.padding(VeilSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            ) {
+                content()
+            }
         }
     }
 }
@@ -324,14 +374,34 @@ private fun <T> ChoiceRow(
         modifier = Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         entries.forEach { entry ->
-            FilterChip(
-                selected = entry == selected,
+            val active = entry == selected
+            Surface(
                 onClick = { onSelected(entry) },
-                label = { Text(label(entry)) }
-            )
+                shape = MaterialTheme.shapes.extraSmall,
+                color = if (active) {
+                    VeilPalette.DeepBrass.copy(alpha = 0.78f)
+                } else {
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
+                },
+                border = BorderStroke(
+                    1.dp,
+                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Text(
+                    label(entry),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (active) VeilPalette.Moon
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
@@ -355,7 +425,7 @@ private fun ReaderSlider(
             Text(label, style = MaterialTheme.typography.labelLarge)
             Text(
                 displayValue(draft),
-                color = MaterialTheme.colorScheme.secondary,
+                color = VeilPalette.Brass,
                 style = MaterialTheme.typography.labelLarge
             )
         }
@@ -391,6 +461,14 @@ private fun SettingsSwitchRow(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        Switch(checked = checked, onCheckedChange = onCheckedChange)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedThumbColor = VeilPalette.Moon,
+                checkedTrackColor = VeilPalette.DeepBrass,
+                checkedBorderColor = VeilPalette.Brass
+            )
+        )
     }
 }
