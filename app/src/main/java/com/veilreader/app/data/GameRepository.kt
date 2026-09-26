@@ -58,6 +58,7 @@ class GameRepository(context: Context) {
     }
 
     fun refresh() { rollDayIfNeeded(); publish() }
+    fun rebasePagePacing() { pageGate.rebase(SystemClock.elapsedRealtime()) }
     fun pauseReading() { pageGate.pause() }
 
     fun setDailyGoal(minutes: Int) {
