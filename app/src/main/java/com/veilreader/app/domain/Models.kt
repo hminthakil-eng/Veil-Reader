@@ -121,7 +121,7 @@ enum class PageTurnStyle { PAPER, SLIDE }
 enum class ReaderNavigationMode { PAPER_CURL, SLIDE, SCROLL }
 
 data class ReaderAppearance(
-    val theme: ReaderTheme = ReaderTheme.DUSK,
+    val theme: ReaderTheme = ReaderTheme.PAPER,
     val fontScale: Double = 1.0,
     val lineHeight: Double = 1.45,
     val pageMargins: Double = 1.0,
