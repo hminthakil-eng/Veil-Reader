@@ -45,9 +45,16 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
+import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.Book
-import com.veilreader.app.ui.books.bookArtifactState
+import com.veilreader.app.domain.BookArchiveMemory
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.LibraryMemoryEvent
+import com.veilreader.app.domain.LibraryMemoryEventKind
+import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.deriveLibraryMemoryState
+import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
@@ -62,6 +69,8 @@ private enum class LibraryViewMode { GRID, LIST }
 @Composable
 fun LibraryScreen(
     books: List<Book>,
+    highlights: List<Highlight> = emptyList(),
+    readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     isImporting: Boolean,
     onImportUri: (Uri) -> Unit,
     onOpenBook: (Book) -> Unit,
@@ -112,6 +121,21 @@ fun LibraryScreen(
         }
     }
 
+    val libraryMemoryNow = remember(books, highlights, readingSessions) {
+        System.currentTimeMillis()
+    }
+    val memoryState = remember(books, highlights, readingSessions, libraryMemoryNow) {
+        deriveLibraryMemoryState(
+            books = books,
+            highlights = highlights,
+            sessions = readingSessions,
+            nowEpochMs = libraryMemoryNow
+        )
+    }
+    val deepShelfBookIds = remember(memoryState.deepShelfBookIds) {
+        memoryState.deepShelfBookIds.toSet()
+    }
+
     val trimmedQuery = query.trim()
     val filtered = books.filter { book ->
         val searchable = buildList {
@@ -129,6 +153,7 @@ fun LibraryScreen(
             "Unread" -> !book.finished && book.progress == 0f
             "Finished" -> book.finished
             "Favorites" -> book.favorite
+            "Deep Shelf" -> book.id in deepShelfBookIds
             else -> true
         }
         val matchesCollection = collection.isEmpty() || book.allCollections.any {
@@ -140,6 +165,9 @@ fun LibraryScreen(
             "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
             "Author" -> list.sortedBy { it.author.lowercase(Locale.ROOT) }
             "Progress" -> list.sortedByDescending { it.progress }
+            "Archive Depth" -> list.sortedByDescending {
+                memoryState.memoryFor(it.id)?.inactiveMillis ?: 0L
+            }
             "Series" -> list.sortedWith(
                 compareBy<Book> { it.seriesName?.lowercase(Locale.ROOT) ?: "\uffff" }
                     .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
@@ -267,6 +295,15 @@ fun LibraryScreen(
                         onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
                     )
                     LibraryShelfCard(
+                        title = "Deep Shelf",
+                        subtitle = "Long-unopened volumes",
+                        count = memoryState.deepShelfBookIds.size,
+                        selected = shelf == "Deep Shelf",
+                        onClick = {
+                            shelf = if (shelf == "Deep Shelf") "All" else "Deep Shelf"
+                        }
+                    )
+                    LibraryShelfCard(
                         title = "Plan to Read",
                         subtitle = "Still unopened",
                         count = books.count { !it.finished && it.progress <= 0f },
@@ -359,7 +396,14 @@ fun LibraryScreen(
                             expanded = sortMenu,
                             onDismissRequest = { sortMenu = false }
                         ) {
-                            listOf("Recent", "Title", "Author", "Series", "Progress").forEach { label ->
+                            listOf(
+                                "Recent",
+                                "Archive Depth",
+                                "Title",
+                                "Author",
+                                "Series",
+                                "Progress"
+                            ).forEach { label ->
                                 DropdownMenuItem(
                                     text = { Text(label) },
                                     onClick = { sort = label; sortMenu = false }
@@ -383,6 +427,68 @@ fun LibraryScreen(
                         }
                     }
                 }
+            }
+        }
+
+        item(key = "library:memory-returns", span = { GridItemSpan(maxLineSpan) }) {
+            if (
+                memoryState.events.isNotEmpty() &&
+                trimmedQuery.isBlank() &&
+                shelf == "All" &&
+                collection.isEmpty()
+            ) {
+                Column(
+                    Modifier.padding(vertical = VeilSpacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    LibrarySectionHeading(
+                        eyebrow = "Recovered memory",
+                        title = "The archive remembers",
+                        trailing = "${memoryState.events.size} traces"
+                    )
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        memoryState.events.take(4).forEach { event ->
+                            val eventBook = books.firstOrNull { it.id == event.bookId }
+                            if (eventBook != null) {
+                                MemoryReturnCard(
+                                    event = event,
+                                    book = eventBook,
+                                    onInspect = { detailBookId = eventBook.id }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        item(key = "library:deep-shelf-gate", span = { GridItemSpan(maxLineSpan) }) {
+            if (
+                memoryState.deepShelfBookIds.isNotEmpty() &&
+                trimmedQuery.isBlank() &&
+                shelf == "All" &&
+                collection.isEmpty()
+            ) {
+                val oldestBook = memoryState.deepShelfBookIds
+                    .firstOrNull()
+                    ?.let { id -> books.firstOrNull { it.id == id } }
+
+                DeepShelfPortal(
+                    count = memoryState.deepShelfBookIds.size,
+                    oldestBook = oldestBook,
+                    oldestMemory = oldestBook?.let { memoryState.memoryFor(it.id) },
+                    onOpen = {
+                        query = ""
+                        collection = ""
+                        shelf = "Deep Shelf"
+                        sort = "Archive Depth"
+                    }
+                )
             }
         }
 
@@ -425,12 +531,14 @@ fun LibraryScreen(
                 when (viewMode) {
                     LibraryViewMode.GRID -> BookLibraryTile(
                         book = book,
+                        archiveMemory = memoryState.memoryFor(book.id),
                         onOpen = { onOpenBook(book) },
                         onFavorite = { onFavorite(book.id) },
                         onDetails = { detailBookId = book.id }
                     )
                     LibraryViewMode.LIST -> BookLibraryRow(
                         book = book,
+                        archiveMemory = memoryState.memoryFor(book.id),
                         onOpen = { onOpenBook(book) },
                         onFavorite = { onFavorite(book.id) },
                         onDetails = { detailBookId = book.id }
@@ -462,6 +570,7 @@ fun LibraryScreen(
     detailBook?.let { book ->
         BookDetailSheet(
             book = book,
+            archiveMemory = memoryState.memoryFor(book.id),
             onDismiss = { detailBookId = null },
             onOpen = {
                 detailBookId = null
@@ -555,6 +664,7 @@ fun LibraryScreen(
 @Composable
 private fun BookDetailSheet(
     book: Book,
+    archiveMemory: BookArchiveMemory?,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
@@ -832,6 +942,12 @@ private fun BookDetailSheet(
                             stringResource(R.string.book_detail_sample_metadata_only)
                         }
                     )
+                    archiveMemory?.let { memory ->
+                        BookDetailFact(
+                            "Archive depth",
+                            archiveDepthRecord(memory)
+                        )
+                    }
                 }
 
                 if (book.allCollections.isNotEmpty()) {
@@ -1319,8 +1435,238 @@ private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
 }
 
 @Composable
+private fun MemoryReturnCard(
+    event: LibraryMemoryEvent,
+    book: Book,
+    onInspect: () -> Unit
+) {
+    val eyebrow = when (event.kind) {
+        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> "RETURN EVENT"
+        LibraryMemoryEventKind.OLD_MARGIN_RETURN -> "MARGIN ECHO"
+        LibraryMemoryEventKind.LONG_SILENCE_RETURN -> "ARCHIVE RETURN"
+    }
+
+    Surface(
+        onClick = onInspect,
+        modifier = Modifier
+            .width(246.dp)
+            .heightIn(min = 132.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.64f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(
+                alpha = if (
+                    event.kind == LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN
+                ) 0.58f else 0.34f
+            )
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                MemoryTraceGlyph(
+                    kind = event.kind,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    eyebrow,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        letterSpacing = 1.08.sp
+                    ),
+                    color = VeilPalette.Brass,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text(
+                event.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = VeilPalette.Moon
+            )
+            Text(
+                book.title,
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Mist.copy(alpha = 0.78f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                event.detail,
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = 0.66f),
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+@Composable
+private fun DeepShelfPortal(
+    count: Int,
+    oldestBook: Book?,
+    oldestMemory: BookArchiveMemory?,
+    onOpen: () -> Unit
+) {
+    Surface(
+        onClick = onOpen,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = VeilSpacing.xs),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Ink.copy(alpha = 0.50f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.26f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            VeilPalette.DeepBrass.copy(alpha = 0.18f),
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.20f)
+                        )
+                    )
+                )
+                .padding(horizontal = VeilSpacing.md, vertical = 12.dp)
+        ) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    "THE DEEP SHELF",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        letterSpacing = 1.32.sp
+                    ),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "$count ${if (count == 1) "volume has" else "volumes have"} gone quiet",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.Moon
+                )
+                if (oldestBook != null && oldestMemory != null) {
+                    Text(
+                        "Deepest record · ${oldestBook.title} · " +
+                            formatArchiveSilence(oldestMemory.inactiveMillis),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.66f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                Text(
+                    "DESCEND →",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass.copy(alpha = 0.82f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ArchiveDepthMark(memory: BookArchiveMemory?) {
+    val visible = memory?.takeIf {
+        it.depth == ArchiveDepth.DEEP_SHELF || it.depth == ArchiveDepth.FORGOTTEN
+    } ?: return
+
+    Text(
+        archiveDepthRecord(visible).uppercase(Locale.ROOT),
+        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.68.sp),
+        color = if (visible.depth == ArchiveDepth.FORGOTTEN) {
+            VeilPalette.Brass.copy(alpha = 0.78f)
+        } else {
+            VeilPalette.Mist.copy(alpha = 0.58f)
+        },
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+    )
+}
+
+@Composable
+private fun MemoryTraceGlyph(
+    kind: LibraryMemoryEventKind,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val tint = when (kind) {
+            LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> VeilPalette.Brass
+            LibraryMemoryEventKind.OLD_MARGIN_RETURN -> VeilPalette.Moon
+            LibraryMemoryEventKind.LONG_SILENCE_RETURN -> VeilPalette.Spirit
+        }
+        val center = Offset(size.width / 2f, size.height / 2f)
+        drawCircle(
+            color = tint.copy(alpha = 0.72f),
+            radius = size.minDimension * 0.32f,
+            center = center,
+            style = Stroke(1.1.dp.toPx())
+        )
+        drawCircle(
+            color = tint.copy(alpha = 0.92f),
+            radius = 1.8.dp.toPx(),
+            center = center
+        )
+        drawLine(
+            color = tint.copy(alpha = 0.48f),
+            start = Offset(center.x, size.height * 0.06f),
+            end = Offset(center.x, size.height * 0.24f),
+            strokeWidth = 1.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+        drawLine(
+            color = tint.copy(alpha = 0.32f),
+            start = Offset(size.width * 0.13f, center.y),
+            end = Offset(size.width * 0.28f, center.y),
+            strokeWidth = 1.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+    }
+}
+
+private fun archiveDepthRecord(memory: BookArchiveMemory): String {
+    val age = formatArchiveSilence(memory.inactiveMillis)
+    return when (memory.depth) {
+        ArchiveDepth.SURFACE -> "Surface shelf"
+        ArchiveDepth.SETTLED -> "Settled · $age"
+        ArchiveDepth.DEEP_SHELF -> "Deep Shelf · $age silent"
+        ArchiveDepth.FORGOTTEN -> "Forgotten · $age silent"
+    }
+}
+
+private fun formatArchiveSilence(inactiveMillis: Long): String {
+    val days = inactiveMillis.coerceAtLeast(0L) / 86_400_000L
+    return when {
+        days >= 365L -> {
+            val years = days / 365L
+            val months = (days % 365L) / 30L
+            if (months > 0L) "${years}y ${months}mo" else "${years}y"
+        }
+        days >= 60L -> "${days / 30L} months"
+        days >= 14L -> "${days / 7L} weeks"
+        days > 0L -> "$days days"
+        else -> "today"
+    }
+}
+
+@Composable
 private fun BookLibraryTile(
     book: Book,
+    archiveMemory: BookArchiveMemory?,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
     onDetails: () -> Unit
@@ -1360,6 +1706,8 @@ private fun BookLibraryTile(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+
+        ArchiveDepthMark(archiveMemory)
 
         if (book.progress > 0f || book.finished) {
             LinearProgressIndicator(
@@ -1420,6 +1768,7 @@ private fun BookLibraryTile(
 @Composable
 private fun BookLibraryRow(
     book: Book,
+    archiveMemory: BookArchiveMemory?,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
     onDetails: () -> Unit
@@ -1476,6 +1825,7 @@ private fun BookLibraryRow(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
+                ArchiveDepthMark(archiveMemory)
                 BookProgress(book)
             }
 
