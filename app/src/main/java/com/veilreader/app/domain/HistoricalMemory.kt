@@ -46,17 +46,17 @@ fun buildSealedReadingCycle(
     require(completedAtEpochMs > 0L)
 
     val relevantSessions = sessions
-        .filter { it.bookId == book.id && it.startedAtEpochMs in 1..completedAtEpochMs }
+        .filter { it.bookId == book.id && it.startedAtEpochMs in 1L..completedAtEpochMs }
         .sortedBy { it.startedAtEpochMs }
     val relevantHighlights = highlights
-        .filter { it.bookId == book.id && it.createdAtEpochMs in 1..completedAtEpochMs }
+        .filter { it.bookId == book.id && it.createdAtEpochMs in 1L..completedAtEpochMs }
         .sortedBy { it.createdAtEpochMs }
     val relevantBookmarks = bookmarks
-        .filter { it.bookId == book.id && it.createdAtEpochMs in 1..completedAtEpochMs }
+        .filter { it.bookId == book.id && it.createdAtEpochMs in 1L..completedAtEpochMs }
         .sortedBy { it.createdAtEpochMs }
 
     val timeline = buildList {
-        if (book.addedAtEpochMs in 1..completedAtEpochMs) {
+        if (book.addedAtEpochMs in 1L..completedAtEpochMs) {
             add(
                 ReadingHistoryEvent(
                     id = "archive:${book.id}",
