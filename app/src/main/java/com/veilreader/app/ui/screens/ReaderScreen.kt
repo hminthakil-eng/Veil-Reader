@@ -608,7 +608,7 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding(),
-                color = VeilPalette.Ink.copy(alpha = 0.955f),
+                color = VeilPalette.Ink,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp
             ) {
@@ -616,7 +616,7 @@ fun ReaderScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .heightIn(min = 58.dp)
+                            .heightIn(min = 52.dp)
                             .padding(horizontal = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -632,7 +632,10 @@ fun ReaderScreen(
                         ) {
                             Text(
                                 opened.book.title,
-                                style = MaterialTheme.typography.titleMedium,
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    fontSize = 15.sp,
+                                    lineHeight = 18.sp
+                                ),
                                 color = VeilPalette.Moon,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -661,7 +664,7 @@ fun ReaderScreen(
 
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
-                        modifier = Modifier.fillMaxWidth().height(2.dp),
+                        modifier = Modifier.fillMaxWidth().height(1.dp),
                         color = VeilPalette.Brass,
                         trackColor = VeilPalette.Moon.copy(alpha = 0.10f),
                         drawStopIndicator = {}
@@ -680,7 +683,7 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding(),
-                color = VeilPalette.Ink.copy(alpha = 0.965f),
+                color = VeilPalette.Ink,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp
             ) {
@@ -744,7 +747,7 @@ fun ReaderScreen(
                             } else {
                                 ReaderAction.ZOOM
                             },
-                            label = if (opened.format == BookFormat.EPUB) "Aa" else "Zoom",
+                            label = if (opened.format == BookFormat.EPUB) "Type" else "Zoom",
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
@@ -1062,7 +1065,7 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 54.dp),
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 50.dp),
         contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
         colors = ButtonDefaults.textButtonColors(
             contentColor = VeilPalette.Moon,
@@ -1075,7 +1078,9 @@ private fun ReaderControl(
         ) {
             ReaderActionIcon(
                 action = action,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(
+                    if (action == ReaderAction.APPEARANCE) 26.dp else 19.dp
+                ),
                 tint = if (enabled) VeilPalette.Brass else VeilPalette.Moon.copy(alpha = 0.28f)
             )
             Text(
