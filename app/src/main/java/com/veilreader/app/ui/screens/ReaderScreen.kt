@@ -195,6 +195,17 @@ fun ReaderScreen(
     }
     ReaderBrightnessEffect(activity, readerAppearance.screenBrightness)
 
+    LaunchedEffect(readerAppearance.scroll, readerAppearance.pageTurnStyle) {
+        if (
+            readerAppearance.scroll ||
+            readerAppearance.pageTurnStyle != PageTurnStyle.PAPER
+        ) {
+            if (paperCurlState.active) {
+                paperCurlState.clear()
+            }
+        }
+    }
+
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
             .map { items -> items.filter { it.bookId == opened.book.id } }
@@ -568,7 +579,11 @@ fun ReaderScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        if (opened.format == BookFormat.EPUB) {
+        if (
+            opened.format == BookFormat.EPUB &&
+            !readerAppearance.scroll &&
+            readerAppearance.pageTurnStyle == PageTurnStyle.PAPER
+        ) {
             PaperCurlOverlay(
                 state = paperCurlState,
                 config = paperCurlConfig,
