@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
@@ -37,6 +38,7 @@ fun ReaderNotebook(
     opened: OpenedPublication,
     highlights: List<Highlight>,
     bookmarks: List<Bookmark>,
+    passageVisits: List<PassageVisit>,
     onDismiss: () -> Unit,
     onGo: (String) -> Unit,
     onChapter: (Link) -> Unit,
@@ -222,8 +224,12 @@ fun ReaderNotebook(
                             )
                         }
                         items(matchingHighlights, key = { it.id }) { highlight ->
-                            val marginMemory = remember(highlight, opened.book) {
-                                deriveHighlightMemory(highlight, opened.book)
+                            val marginMemory = remember(highlight, opened.book, passageVisits) {
+                                deriveHighlightMemory(
+                                    highlight = highlight,
+                                    book = opened.book,
+                                    passageVisits = passageVisits
+                                )
                             }
                             Surface(
                                 modifier = Modifier.fillMaxWidth(),
@@ -245,7 +251,19 @@ fun ReaderNotebook(
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass
                                     )
-                                    if (marginMemory.bookActivityAfterMark) {
+                                    if (marginMemory.revisitCount > 0) {
+                                        Text(
+                                            buildString {
+                                                append("REVISITED ").append(marginMemory.revisitCount)
+                                                append(if (marginMemory.revisitCount == 1) " TIME" else " TIMES")
+                                                marginMemory.lastViewedLabel?.let {
+                                                    append(" · ").append(it)
+                                                }
+                                            },
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = VeilPalette.Spirit.copy(alpha = 0.72f)
+                                        )
+                                    } else if (marginMemory.bookActivityAfterMark) {
                                         Text(
                                             "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
                                             style = MaterialTheme.typography.labelSmall,
