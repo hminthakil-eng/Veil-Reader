@@ -319,6 +319,7 @@ private fun LibrarySnapshot.toJson(): JSONObject = JSONObject().apply {
     put("readingSessions", JSONArray().apply { readingSessions.forEach { put(it.toJson()) } })
     put("readingCycles", JSONArray().apply { readingCycles.forEach { put(it.toJson()) } })
     put("passageVisits", JSONArray().apply { passageVisits.forEach { put(it.toJson()) } })
+    put("readingMilestones", JSONArray().apply { readingMilestones.forEach { put(it.toJson()) } })
 }
 
 private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -328,7 +329,10 @@ private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapsho
     appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject()),
     readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty(),
     readingCycles = json.optJSONArray("readingCycles")?.mapObjects(::readingCycleFromJson).orEmpty(),
-    passageVisits = json.optJSONArray("passageVisits")?.mapObjects(::passageVisitFromJson).orEmpty()
+    passageVisits = json.optJSONArray("passageVisits")?.mapObjects(::passageVisitFromJson).orEmpty(),
+    readingMilestones = json.optJSONArray("readingMilestones")
+        ?.mapObjects(::readingMilestoneFromJson)
+        .orEmpty()
 )
 
 private fun parseLegacySchemaOne(prefs: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -397,6 +401,26 @@ private fun ReadingHistoryEvent.toJson(): JSONObject = JSONObject().apply {
     put("title", title)
     put("detail", detail ?: JSONObject.NULL)
 }
+
+private fun ReadingMilestoneRecord.toJson(): JSONObject = JSONObject().apply {
+    put("id", id)
+    put("bookId", bookId)
+    put("kind", kind.name)
+    put("reachedAt", reachedAtEpochMs)
+    put("progression", progression.toDouble())
+    put("locatorJson", locatorJson ?: JSONObject.NULL)
+}
+
+private fun readingMilestoneFromJson(o: JSONObject): ReadingMilestoneRecord = ReadingMilestoneRecord(
+    id = o.getString("id"),
+    bookId = o.getString("bookId"),
+    kind = runCatching {
+        ReadingMilestoneKind.valueOf(o.getString("kind"))
+    }.getOrDefault(ReadingMilestoneKind.FIRST_OPENED),
+    reachedAtEpochMs = o.optLong("reachedAt", 0L),
+    progression = o.optDouble("progression", 0.0).toFloat().coerceIn(0f, 1f),
+    locatorJson = o.optNullableString("locatorJson")
+)
 
 private fun PassageVisit.toJson(): JSONObject = JSONObject().apply {
     put("id", id)
