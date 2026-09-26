@@ -111,32 +111,86 @@ fun ReadingNowScreen(
 
 @Composable
 private fun ThresholdHeader(hasCurrentBook: Boolean) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+    val shape = MaterialTheme.shapes.small
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 250.dp)
+            .clip(shape)
+            .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)), shape)
     ) {
-        Text(
-            "VEIL READER · GRAYFOG ARCHIVE",
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.9.sp),
-            color = VeilPalette.Brass
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
         )
-        BrassRule(Modifier.width(118.dp), strong = true)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = if (hasCurrentBook) "Return to the Grand Archive" else "Enter the Grand Archive",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(
+                    listOf(
+                        VeilPalette.Ink.copy(alpha = 0.24f),
+                        Color.Transparent,
+                        VeilPalette.Ink.copy(alpha = 0.96f)
+                    )
+                )
+            )
         )
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.horizontalGradient(
+                    listOf(
+                        VeilPalette.Ink.copy(alpha = 0.66f),
+                        Color.Transparent,
+                        VeilPalette.Ink.copy(alpha = 0.24f)
+                    )
+                )
+            )
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                "VEIL READER",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 2.sp),
+                color = VeilPalette.Brass
+            )
+            BrassRule(Modifier.width(68.dp), strong = true)
+        }
+
         Text(
-            text = if (hasCurrentBook) {
-                "Your last volume is still open beneath the lantern light. Return exactly where you left it."
-            } else {
-                "A private library between worlds. Bring in an EPUB or PDF; your books, notes, and progress remain on this device."
-            },
+            "“Some books do not merely tell stories.\nThey remember.”",
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(horizontal = 18.dp)
+                .widthIn(max = 190.dp),
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.widthIn(max = 680.dp)
+            color = VeilPalette.Moon.copy(alpha = 0.82f)
         )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                if (hasCurrentBook) "The Library Awaits" else "Your Library Begins",
+                style = MaterialTheme.typography.headlineLarge,
+                color = VeilPalette.Moon
+            )
+            Text(
+                if (hasCurrentBook) "Every book is a door. Continue where the last page left you."
+                else "Bring a book. Build a private archive that remembers with you.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.84f)
+            )
+        }
     }
 }
 
@@ -146,62 +200,90 @@ private fun ContinueReadingHero(
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val progress = current.progress.coerceIn(0f, 1f)
-    val progressPercent = (progress * 100).toInt()
-    val shape = MaterialTheme.shapes.medium
+    val paper = Color(0xFFE9DDC4)
+    val ink = Color(0xFF29251F)
+    val secondaryInk = Color(0xFF625440)
+    val shape = MaterialTheme.shapes.small
+    val fontScale = LocalDensity.current.fontScale
 
     BoxWithConstraints(
-        modifier = Modifier
+        Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        VeilPalette.DeepBrass.copy(alpha = 0.44f),
-                        colors.surfaceVariant.copy(alpha = 0.78f),
-                        colors.surface.copy(alpha = 0.985f)
+                        Color(0xFFF4EAD8),
+                        paper,
+                        Color(0xFFDDCBA8)
                     )
                 )
             )
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
-                shape
-            )
-            .padding(VeilSpacing.lg)
+            .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.92f)), shape)
+            .padding(VeilSpacing.md)
     ) {
-        val wide = maxWidth >= 590.dp
-        if (wide) {
+        val stacked = maxWidth < 300.dp || fontScale > 1.4f
+        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
-                verticalAlignment = Alignment.CenterVertically
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
-                HeroCover(current)
-                HeroDetails(
-                    current = current,
-                    progressPercent = progressPercent,
-                    progress = progress,
-                    onOpenBook = onOpenBook,
-                    onOpenLibrary = onOpenLibrary,
-                    modifier = Modifier.weight(1f)
+                BrassRule(Modifier.weight(1f), strong = true)
+                Text(
+                    "CONTINUE READING",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
+                    color = secondaryInk
                 )
+                BrassRule(Modifier.weight(1f), strong = true)
             }
-        } else {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
-                horizontalAlignment = Alignment.CenterHorizontally
+
+            if (stacked) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    HeroCover(current)
+                }
+                HeroDetails(current, ink, secondaryInk)
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HeroCover(current)
+                    HeroDetails(current, ink, secondaryInk, Modifier.weight(1f))
+                }
+            }
+
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(3.dp),
+                color = ink,
+                trackColor = secondaryInk.copy(alpha = 0.20f),
+                drawStopIndicator = {}
+            )
+            Text(
+                heroProgressLabel(current, (progress * 100).toInt(), progress),
+                style = MaterialTheme.typography.labelMedium,
+                color = secondaryInk,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+
+            Button(
+                onClick = { onOpenBook(current) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = paper)
             ) {
-                HeroCover(current)
-                HeroDetails(
-                    current = current,
-                    progressPercent = progressPercent,
-                    progress = progress,
-                    onOpenBook = onOpenBook,
-                    onOpenLibrary = onOpenLibrary,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Text(if (progress > 0f && !current.finished) "Return to the Volume" else "Open the Volume")
+            }
+            TextButton(
+                onClick = onOpenLibrary,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = ink)
+            ) {
+                Text("Browse the Grayfog Archive")
             }
         }
     }
