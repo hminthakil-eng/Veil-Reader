@@ -13,6 +13,8 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingHistoryEvent
 import com.veilreader.app.domain.ReadingHistoryEventKind
+import com.veilreader.app.domain.ReadingMilestoneKind
+import com.veilreader.app.domain.ReadingMilestoneRecord
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
