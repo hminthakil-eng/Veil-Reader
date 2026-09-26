@@ -53,7 +53,7 @@ class HighlightMemoryTest {
         assertTrue(memory.annotated)
         assertTrue(memory.bookActivityAfterMark)
         assertEquals("AN ECHO FROM 4 MONTHS AGO", memory.echoLabel)
-        assertTrue(memory.resonanceScore > 120)
+        assertEquals(290, memory.resonanceScore)
     }
 
     @Test
