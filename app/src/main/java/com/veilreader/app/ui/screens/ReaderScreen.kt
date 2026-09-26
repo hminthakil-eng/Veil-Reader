@@ -137,22 +137,48 @@ fun ReaderScreen(
     val paperCurlConfig = remember(readerAppearance.theme) {
         when (readerAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
-                backPageColor = Color(0xFFF2E8D8),
-                backPageContentAlpha = 0.13f
+                backPageColor = Color(0xFFE3D3B5),
+                backPageContentAlpha = 0.10f,
+                shadowAlpha = 0.40f,
+                shadowRadius = 30.dp,
+                edgeHighlight = Color(0xFFFFF6E5),
+                creaseHighlightAlpha = 0.28f,
+                creaseShadowAlpha = 0.22f,
+                backPageShadeAlpha = 0.17f,
+                contactShadowAlpha = 0.20f
             )
             ReaderTheme.SEPIA -> PaperCurlVisualConfig(
-                backPageColor = Color(0xFFE7D2AA),
-                backPageContentAlpha = 0.15f
+                backPageColor = Color(0xFFD8C39D),
+                backPageContentAlpha = 0.11f,
+                shadowAlpha = 0.38f,
+                shadowRadius = 29.dp,
+                edgeHighlight = Color(0xFFF8E7C8),
+                creaseHighlightAlpha = 0.26f,
+                creaseShadowAlpha = 0.22f,
+                backPageShadeAlpha = 0.18f,
+                contactShadowAlpha = 0.20f
             )
             ReaderTheme.DUSK -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFF27222C),
-                backPageContentAlpha = 0.09f,
-                edgeHighlight = Color(0xFFE8DFF0)
+                backPageContentAlpha = 0.08f,
+                shadowAlpha = 0.30f,
+                shadowRadius = 24.dp,
+                edgeHighlight = Color(0xFFE8DFF0),
+                creaseHighlightAlpha = 0.18f,
+                creaseShadowAlpha = 0.18f,
+                backPageShadeAlpha = 0.12f,
+                contactShadowAlpha = 0.14f
             )
             ReaderTheme.OLED -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFF111111),
-                backPageContentAlpha = 0.07f,
-                edgeHighlight = Color(0xFFD8D8D8)
+                backPageContentAlpha = 0.06f,
+                shadowAlpha = 0.24f,
+                shadowRadius = 20.dp,
+                edgeHighlight = Color(0xFFD8D8D8),
+                creaseHighlightAlpha = 0.14f,
+                creaseShadowAlpha = 0.16f,
+                backPageShadeAlpha = 0.10f,
+                contactShadowAlpha = 0.12f
             )
         }
     }
