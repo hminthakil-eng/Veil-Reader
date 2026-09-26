@@ -171,6 +171,7 @@ private fun ContinueReadingHero(
             }
         }
     }
+    }
 }
 
 @Composable
