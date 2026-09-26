@@ -5,6 +5,8 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +43,7 @@ import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.VeilPalette
 import java.util.Locale
 
 @Composable
@@ -98,6 +101,11 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(VeilPalette.VeilBlack, VeilPalette.Obsidian, VeilPalette.GrayfogBlue.copy(alpha = .58f))
+                )
+            )
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
@@ -111,8 +119,8 @@ fun SettingsScreen(
         }
 
         ScreenHeader(
-            eyebrow = "Settings",
-            title = "Reader & app",
+            eyebrow = "VEIL READER",
+            title = "Settings & Rituals",
             subtitle = "Keep the interface quiet and set reading defaults once. Changes are stored locally."
         )
 
@@ -295,7 +303,7 @@ private fun SettingsSection(
     description: String,
     content: @Composable () -> Unit
 ) {
-    MysteryCard(Modifier.fillMaxWidth()) {
+    GrayfogPanel(Modifier.fillMaxWidth()) {
         Text(title, style = MaterialTheme.typography.titleLarge)
         Text(
             description,
