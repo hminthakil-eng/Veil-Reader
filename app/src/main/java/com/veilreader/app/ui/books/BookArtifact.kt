@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookArtifactMemory
 import com.veilreader.app.ui.theme.VeilPalette
 
 private const val DAY_MS = 86_400_000L
@@ -38,6 +39,11 @@ data class BookArtifactState(
     val patina: BookPatina,
     val favorite: Boolean,
     val recentlyOpened: Boolean,
+    val handlingWear: Float = 0f,
+    val foreEdgeWear: Float = 0f,
+    val marginMemory: Float = 0f,
+    val bookmarkRibbons: Int = 0,
+    val marginFleckCount: Int = 0,
     val archiveSeed: Int
 ) {
     val finished: Boolean get() = readingState == BookReadingState.FINISHED
@@ -46,7 +52,8 @@ data class BookArtifactState(
 
 fun bookArtifactState(
     book: Book,
-    nowEpochMs: Long = System.currentTimeMillis()
+    nowEpochMs: Long = System.currentTimeMillis(),
+    memory: BookArtifactMemory? = null
 ): BookArtifactState {
     val normalizedProgress = when {
         book.finished -> 1f
@@ -85,6 +92,11 @@ fun bookArtifactState(
         patina = patina,
         favorite = book.favorite,
         recentlyOpened = recentlyOpened,
+        handlingWear = memory?.handlingWear?.coerceIn(0f, 1f) ?: 0f,
+        foreEdgeWear = memory?.foreEdgeWear?.coerceIn(0f, 1f) ?: 0f,
+        marginMemory = memory?.marginMemory?.coerceIn(0f, 1f) ?: 0f,
+        bookmarkRibbons = memory?.ribbonCount?.coerceIn(0, 3) ?: 0,
+        marginFleckCount = memory?.marginFleckCount?.coerceIn(0, 12) ?: 0,
         archiveSeed = book.id.hashCode() xor book.title.hashCode()
     )
 }
@@ -141,6 +153,100 @@ fun BookArtifactLayer(
                 ),
                 size = size
             )
+        }
+
+        // Durable handling history lives on the spine and fore-edge only; the cover art remains legible.
+        if (state.handlingWear > 0f) {
+            val spineWidth = (2.5f + state.handlingWear * 4.5f).dp.toPx()
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        ink.copy(alpha = 0.10f + state.handlingWear * 0.18f),
+                        Color(0xFFB99B66).copy(alpha = state.handlingWear * 0.055f),
+                        Color.Transparent
+                    ),
+                    startX = 0f,
+                    endX = spineWidth * 2.4f
+                ),
+                topLeft = Offset(0f, h * 0.035f),
+                size = Size(spineWidth * 2.4f, h * 0.93f)
+            )
+
+            repeat(5) { index ->
+                val seed = (state.archiveSeed ushr (index * 3)) and 0x1F
+                val y = h * (0.15f + index * 0.16f) + seed * 0.08f
+                drawLine(
+                    color = paper.copy(alpha = 0.025f + state.handlingWear * 0.045f),
+                    start = Offset(1.dp.toPx(), y),
+                    end = Offset(spineWidth * (1.15f + (seed % 4) * 0.16f), y + 0.8.dp.toPx()),
+                    strokeWidth = 0.55.dp.toPx(),
+                    cap = StrokeCap.Round
+                )
+            }
+        }
+
+        if (state.foreEdgeWear > 0f) {
+            drawLine(
+                color = paper.copy(alpha = 0.06f + state.foreEdgeWear * 0.12f),
+                start = Offset(w - 1.2.dp.toPx(), h * 0.10f),
+                end = Offset(w - 1.2.dp.toPx(), h * 0.90f),
+                strokeWidth = (0.7f + state.foreEdgeWear * 1.2f).dp.toPx(),
+                cap = StrokeCap.Round
+            )
+
+            repeat(7) { index ->
+                val seed = (state.archiveSeed xor (index * 0x45D9F3B)) ushr 4
+                val y = h * (0.16f + index * 0.105f) + (seed and 0x07) * 0.5f
+                val length = (1.5f + ((seed ushr 3) and 0x07) * 0.32f).dp.toPx()
+                drawLine(
+                    color = paper.copy(alpha = 0.035f + state.foreEdgeWear * 0.07f),
+                    start = Offset(w - 0.6.dp.toPx(), y),
+                    end = Offset(w - length, y + 0.4.dp.toPx()),
+                    strokeWidth = 0.5.dp.toPx()
+                )
+            }
+        }
+
+        // Preserved passages leave tiny registration flecks at the outer edge, never fake text.
+        repeat(state.marginFleckCount) { index ->
+            val lane = ((state.archiveSeed ushr (index % 12)) + index * 17) and 0x3F
+            val y = h * (0.12f + (lane / 63f) * 0.76f)
+            val alpha = 0.07f + state.marginMemory * 0.18f
+            drawLine(
+                color = if (index % 4 == 0) {
+                    brass.copy(alpha = alpha)
+                } else {
+                    paper.copy(alpha = alpha * 0.72f)
+                },
+                start = Offset(w - 4.2.dp.toPx(), y),
+                end = Offset(w - 0.8.dp.toPx(), y),
+                strokeWidth = 0.55.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+        }
+
+        // Saved places become restrained physical ribbons. At most three are ever shown.
+        repeat(state.bookmarkRibbons) { index ->
+            val x = w * (0.56f + index * 0.095f)
+            val ribbonHeight = (15f + index * 4f).dp.toPx()
+            val ribbonWidth = 3.2.dp.toPx()
+            val ribbonColor = when (index) {
+                0 -> VeilPalette.MoonCrimson
+                1 -> brass
+                else -> VeilPalette.Spirit
+            }
+            drawRect(
+                color = ribbonColor.copy(alpha = 0.62f),
+                topLeft = Offset(x, 0f),
+                size = Size(ribbonWidth, ribbonHeight)
+            )
+            val notch = Path().apply {
+                moveTo(x, ribbonHeight)
+                lineTo(x + ribbonWidth / 2f, ribbonHeight - 2.6.dp.toPx())
+                lineTo(x + ribbonWidth, ribbonHeight)
+                close()
+            }
+            drawPath(notch, ink.copy(alpha = 0.76f))
         }
 
         // Physical book block. Progress transfers apparent page mass from right to left.
