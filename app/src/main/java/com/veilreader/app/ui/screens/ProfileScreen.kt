@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.VeilTextStyles
 
 private data class VeiledDiscovery(
     val id: String,
@@ -309,8 +310,8 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                 )
                 Text(
                     if (revealed) discovery.lore else discovery.clue,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    style = VeilTextStyles.LoreMedium,
+                    color = VeilPalette.Mist
                 )
                 if (revealed) {
                     Text(
