@@ -256,6 +256,56 @@ fun LibraryScreen(
             }
         }
 
+        item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = VeilSpacing.sm),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                LibrarySectionHeading(
+                    eyebrow = "Collections",
+                    title = "Shelves"
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    LibraryShelfCard(
+                        title = "Favorites",
+                        subtitle = "Volumes kept close",
+                        count = books.count { it.favorite },
+                        selected = shelf == "Favorites",
+                        onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
+                    )
+                    LibraryShelfCard(
+                        title = "Currently Reading",
+                        subtitle = "Open journeys",
+                        count = books.count { !it.finished && it.progress > 0f },
+                        selected = shelf == "Reading",
+                        onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
+                    )
+                    LibraryShelfCard(
+                        title = "Completed",
+                        subtitle = "Closed volumes",
+                        count = books.count { it.finished },
+                        selected = shelf == "Finished",
+                        onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
+                    )
+                    LibraryShelfCard(
+                        title = "Plan to Read",
+                        subtitle = "Still unopened",
+                        count = books.count { !it.finished && it.progress <= 0f },
+                        selected = shelf == "Unread",
+                        onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
+                    )
+                }
+            }
+        }
+
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier.fillMaxWidth(),
@@ -1126,6 +1176,73 @@ private fun ArchiveStat(label: String, count: Int, modifier: Modifier = Modifier
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun LibraryShelfCard(
+    title: String,
+    subtitle: String,
+    count: Int,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .width(176.dp)
+            .heightIn(min = 112.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (selected) {
+            VeilPalette.DeepBrass.copy(alpha = 0.62f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.48f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
+            else VeilPalette.Brass.copy(alpha = 0.30f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Midnight.copy(alpha = if (selected) 0.44f else 0.26f),
+                            Color.Transparent
+                        )
+                    )
+                )
+                .padding(VeilSpacing.md)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    count.toString().padStart(2, '0'),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (selected) VeilPalette.Moon
+                    else MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
     }
 }
 
