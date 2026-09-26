@@ -21,13 +21,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
+import com.veilreader.app.domain.ArchiveEcho
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.HighlightMemory
+import com.veilreader.app.domain.deriveArchiveEchoes
+import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
-private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS }
+private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES }
 
 @Composable
 fun ArchiveScreen(
@@ -50,6 +54,10 @@ fun ArchiveScreen(
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
         .getOrDefault(NotebookSection.HIGHLIGHTS)
     val booksById = remember(books) { books.associateBy { it.id } }
+    val archiveNow = remember { System.currentTimeMillis() }
+    val echoes = remember(highlights, booksById, archiveNow) {
+        deriveArchiveEchoes(highlights, booksById, archiveNow)
+    }
     val cleanQuery = query.trim()
 
     val matchingHighlights = remember(highlights, booksById, cleanQuery) {
@@ -75,6 +83,10 @@ fun ArchiveScreen(
                 booksById[bookmark.bookId]?.author.orEmpty()
             ).any { text -> text.contains(cleanQuery, ignoreCase = true) }
         }
+    }
+
+    val matchingEchoes = remember(matchingHighlights, booksById, archiveNow) {
+        deriveArchiveEchoes(matchingHighlights, booksById, archiveNow)
     }
 
     BackHandler { onClose() }
@@ -129,7 +141,8 @@ fun ArchiveScreen(
                 ArchiveRegister(
                     notes = highlights.count { it.note.isNotBlank() },
                     highlights = highlights.size,
-                    bookmarks = bookmarks.size
+                    bookmarks = bookmarks.size,
+                    echoes = echoes.size
                 )
             }
         }
@@ -166,18 +179,25 @@ fun ArchiveScreen(
                 ) { selectedSectionName = NotebookSection.NOTES.name }
 
                 ArchiveSectionTab(
-                    label = "Highlights",
+                    label = "Passages",
                     count = highlights.size,
                     selected = selectedSection == NotebookSection.HIGHLIGHTS,
                     modifier = Modifier.weight(1f)
                 ) { selectedSectionName = NotebookSection.HIGHLIGHTS.name }
 
                 ArchiveSectionTab(
-                    label = "Bookmarks",
+                    label = "Marks",
                     count = bookmarks.size,
                     selected = selectedSection == NotebookSection.BOOKMARKS,
                     modifier = Modifier.weight(1f)
                 ) { selectedSectionName = NotebookSection.BOOKMARKS.name }
+
+                ArchiveSectionTab(
+                    label = "Echoes",
+                    count = echoes.size,
+                    selected = selectedSection == NotebookSection.ECHOES,
+                    modifier = Modifier.weight(1f)
+                ) { selectedSectionName = NotebookSection.ECHOES.name }
             }
         }
 
@@ -211,9 +231,11 @@ fun ArchiveScreen(
                         key = { _, item -> "note:${item.id}" }
                     ) { index, highlight ->
                         val book = booksById[highlight.bookId]
+                        val memory = deriveHighlightMemory(highlight, book, archiveNow)
                         NotebookHighlightCard(
                             highlight = highlight,
                             book = book,
+                            memory = memory,
                             onRead = if (book == null) null else { { onOpenPassage(book, highlight.locatorJson) } },
                             onEditNote = {
                                 editingHighlightId = highlight.id
@@ -244,9 +266,11 @@ fun ArchiveScreen(
                         key = { _, item -> item.id }
                     ) { index, highlight ->
                         val book = booksById[highlight.bookId]
+                        val memory = deriveHighlightMemory(highlight, book, archiveNow)
                         NotebookHighlightCard(
                             highlight = highlight,
                             book = book,
+                            memory = memory,
                             onRead = if (book == null) null else { { onOpenPassage(book, highlight.locatorJson) } },
                             onEditNote = {
                                 editingHighlightId = highlight.id
@@ -254,6 +278,39 @@ fun ArchiveScreen(
                             },
                             onDelete = { deleteHighlightId = highlight.id },
                             recordNumber = index + 1
+                        )
+                    }
+                }
+
+                NotebookSection.ECHOES -> {
+                    if (matchingEchoes.isEmpty()) {
+                        item {
+                            NotebookEmptyState(
+                                title = if (echoes.isEmpty()) "No echoes yet" else "No matching echoes",
+                                body = if (echoes.isEmpty()) {
+                                    "Preserved passages quietly return after they have lived in the archive for a while."
+                                } else {
+                                    "Try a different word, title, or author."
+                                }
+                            )
+                        }
+                    }
+                    itemsIndexed(
+                        matchingEchoes,
+                        key = { _, echo -> "echo:${echo.highlight.id}" }
+                    ) { index, echo ->
+                        NotebookHighlightCard(
+                            highlight = echo.highlight,
+                            book = echo.book,
+                            memory = echo.memory,
+                            onRead = { onOpenPassage(echo.book, echo.highlight.locatorJson) },
+                            onEditNote = {
+                                editingHighlightId = echo.highlight.id
+                                noteDraft = echo.highlight.note
+                            },
+                            onDelete = { deleteHighlightId = echo.highlight.id },
+                            recordNumber = index + 1,
+                            echoMode = true
                         )
                     }
                 }
@@ -366,7 +423,8 @@ fun ArchiveScreen(
 private fun ArchiveRegister(
     notes: Int,
     highlights: Int,
-    bookmarks: Int
+    bookmarks: Int,
+    echoes: Int
 ) {
     Row(
         modifier = Modifier
@@ -381,8 +439,9 @@ private fun ArchiveRegister(
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         ArchiveRegisterStat("NOTES", notes)
-        ArchiveRegisterStat("HIGHLIGHTS", highlights)
+        ArchiveRegisterStat("PASSAGES", highlights)
         ArchiveRegisterStat("MARKS", bookmarks)
+        ArchiveRegisterStat("ECHOES", echoes)
     }
 }
 
@@ -458,11 +517,13 @@ private fun ArchiveSectionTab(
 private fun NotebookHighlightCard(
     highlight: Highlight,
     book: Book?,
+    memory: HighlightMemory,
     onRead: (() -> Unit)?,
     onEditNote: () -> Unit,
     onDelete: () -> Unit,
     emphasizeNote: Boolean = false,
-    recordNumber: Int
+    recordNumber: Int,
+    echoMode: Boolean = false
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -507,11 +568,19 @@ private fun NotebookHighlightCard(
                     }
                 }
                 Text(
-                    if (highlight.note.isNotBlank()) "ANNOTATED" else "PASSAGE",
+                    if (echoMode) "ECHO"
+                    else if (highlight.note.isNotBlank()) "ANNOTATED"
+                    else "PASSAGE",
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
-                    color = VeilPalette.Mist.copy(alpha = 0.64f)
+                    color = if (echoMode) VeilPalette.Brass
+                    else VeilPalette.Mist.copy(alpha = 0.64f)
                 )
             }
+
+            LivingMarginMemoryStrip(
+                memory = memory,
+                echoMode = echoMode
+            )
 
             if (!emphasizeNote || highlight.note.isBlank()) {
                 Row(
@@ -589,6 +658,31 @@ private fun NotebookHighlightCard(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LivingMarginMemoryStrip(
+    memory: HighlightMemory,
+    echoMode: Boolean
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(
+            if (echoMode) memory.echoLabel ?: memory.ageLabel else memory.ageLabel,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+            color = if (echoMode) VeilPalette.Brass
+            else VeilPalette.Mist.copy(alpha = 0.64f)
+        )
+        if (memory.bookActivityAfterMark) {
+            Text(
+                "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Mist.copy(alpha = 0.46f)
+            )
         }
     }
 }
