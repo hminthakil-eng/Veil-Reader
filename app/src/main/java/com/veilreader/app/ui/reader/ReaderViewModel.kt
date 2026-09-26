@@ -80,6 +80,7 @@ class ReaderViewModel(
         if (resumed) return
         resumed = true
         creditActive(current.onResume(SystemClock.elapsedRealtime()))
+        game.rebasePagePacing()
         publishActiveMillis()
         persistSession()
     }
