@@ -293,7 +293,24 @@ fun SettingsScreen(
     if (confirmRestore) {
         AlertDialog(
             onDismissRequest = { confirmRestore = false },
-            title = { Text("Replace local Veil Reader data?") },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            tonalElevation = 0.dp,
+            title = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "RESTORE ARCHIVE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        "Replace local Veil Reader data?",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            },
             text = {
                 Text(
                     "Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state."
@@ -303,10 +320,17 @@ fun SettingsScreen(
                 TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
             },
             confirmButton = {
-                Button(onClick = {
-                    confirmRestore = false
-                    restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
-                }) { Text("Choose backup") }
+                Button(
+                    onClick = {
+                        confirmRestore = false
+                        restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
+                    },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
+                    )
+                ) { Text("Choose backup") }
             }
         )
     }
