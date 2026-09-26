@@ -29,7 +29,6 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.max
-import kotlin.math.sin
 
 internal data class PaperCurlVisualConfig(
     val backPageColor: Color,
@@ -84,15 +83,16 @@ internal fun Modifier.paperCurl(
         topCurl,
         bottomCurl
     )
+    val centerX = (topCurl.x + bottomCurl.x) * 0.5f
+    val progress = (1f - centerX / size.width).coerceIn(0f, 1f)
+    val foldLift = paperFoldLift(progress)
     val drawCurl = prepareCurl(
         config,
         topCurl,
-        bottomCurl
+        bottomCurl,
+        foldLift
     )
-    val centerX = (topCurl.x + bottomCurl.x) * 0.5f
-    val progress = (1f - centerX / size.width).coerceIn(0f, 1f)
-    val foldAlpha = (sin(progress * PI).toFloat() * 0.22f)
-        .coerceIn(0f, 0.22f)
+    val foldAlpha = (foldLift * 0.22f).coerceIn(0f, 0.22f)
     onDrawWithContent {
         drawClippedContent()
         drawCurl()
@@ -140,7 +140,8 @@ private fun CacheDrawScope.prepareClippedContent(
 private fun CacheDrawScope.prepareCurl(
     config: PaperCurlVisualConfig,
     topCurl: Offset,
-    bottomCurl: Offset
+    bottomCurl: Offset,
+    foldLift: Float
 ): ContentDrawScope.() -> Unit {
     val polygon = PaperCurlPolygon(
         sequence {
@@ -176,7 +177,8 @@ private fun CacheDrawScope.prepareCurl(
     val drawShadow = prepareShadow(
         config,
         polygon,
-        angle
+        angle,
+        foldLift
     )
 
     return result@{
@@ -187,8 +189,11 @@ private fun CacheDrawScope.prepareCurl(
             this@result.drawShadow()
             clipPath(polygon.toPath()) {
                 this@result.drawContent()
+                val visibleBackContentAlpha =
+                    (config.backPageContentAlpha + foldLift * 0.06f)
+                        .coerceIn(0f, 0.32f)
                 val overlayAlpha =
-                    (1f - config.backPageContentAlpha)
+                    (1f - visibleBackContentAlpha)
                         .coerceIn(0f, 1f)
                 drawRect(
                     config.backPageColor.copy(alpha = overlayAlpha)
@@ -200,24 +205,29 @@ private fun CacheDrawScope.prepareCurl(
 private fun CacheDrawScope.prepareShadow(
     config: PaperCurlVisualConfig,
     polygon: PaperCurlPolygon,
-    angle: Float
+    angle: Float,
+    foldLift: Float
 ): ContentDrawScope.() -> Unit {
+    val lift = foldLift.coerceIn(0f, 1f)
     if (config.shadowAlpha == 0f ||
-        config.shadowRadius == 0.dp
+        config.shadowRadius == 0.dp ||
+        lift <= 0.001f
     ) {
         return { }
     }
 
-    val radius = config.shadowRadius.toPx()
+    val radius = config.shadowRadius.toPx() * (0.55f + lift * 0.45f)
+    val dynamicShadowAlpha = config.shadowAlpha * lift
     val shadowColor = config.shadowColor
-        .copy(alpha = config.shadowAlpha)
+        .copy(alpha = dynamicShadowAlpha)
         .toArgb()
     val transparent = config.shadowColor
         .copy(alpha = 0f)
         .toArgb()
+    val offsetScale = 0.65f + lift * 0.35f
     val shadowOffset = Offset(
-        -config.shadowOffset.x.toPx(),
-        config.shadowOffset.y.toPx()
+        -config.shadowOffset.x.toPx() * offsetScale,
+        config.shadowOffset.y.toPx() * offsetScale
     ).paperRotate(2f * PI.toFloat() - angle)
 
     val paint = Paint().apply {
@@ -241,7 +251,7 @@ private fun CacheDrawScope.prepareShadow(
         prepareShadowLegacy(
             radius = radius,
             color = config.shadowColor,
-            alpha = config.shadowAlpha,
+            alpha = dynamicShadowAlpha,
             polygon = polygon
         )
     }
