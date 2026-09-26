@@ -112,13 +112,17 @@ internal class PaperCurlState {
         anim.animateTo(
             targetValue = leftEdge(),
             animationSpec = keyframes {
-                durationMillis = 520
+                durationMillis = 470
                 rightEdge() at 0
                 PaperCurlEdge(
-                    top = Offset(width, height * 0.48f),
-                    bottom = Offset(width * 0.46f, height)
-                ) at 205
-                leftEdge() at 520
+                    top = Offset(width * 0.96f, height * 0.16f),
+                    bottom = Offset(width * 0.72f, height * 0.94f)
+                ) at 120
+                PaperCurlEdge(
+                    top = Offset(width * 0.76f, height * 0.08f),
+                    bottom = Offset(width * 0.32f, height)
+                ) at 285
+                leftEdge() at 470
             }
         ) {
             edge = value
@@ -129,7 +133,7 @@ internal class PaperCurlState {
         if (!active) return
         animateTo(
             target = leftEdge(),
-            dampingRatio = 0.72f,
+            dampingRatio = 0.80f,
             stiffness = Spring.StiffnessMediumLow
         )
     }
@@ -138,7 +142,7 @@ internal class PaperCurlState {
         if (!active) return
         animateTo(
             target = rightEdge(),
-            dampingRatio = 0.88f,
+            dampingRatio = 0.92f,
             stiffness = Spring.StiffnessMedium
         )
     }
@@ -151,18 +155,18 @@ internal class PaperCurlState {
             PaperCurlEdge.VisibilityThreshold
         )
         val peek = PaperCurlEdge(
-            top = Offset(width * 0.92f, height * 0.12f),
-            bottom = Offset(width * 0.84f, height * 0.92f)
+            top = Offset(width * 0.94f, height * 0.16f),
+            bottom = Offset(width * 0.86f, height * 0.90f)
         )
         anim.animateTo(
             peek,
-            tween(90, easing = FastOutSlowInEasing)
+            tween(82, easing = FastOutSlowInEasing)
         ) {
             edge = value
         }
         anim.animateTo(
             rightEdge(),
-            tween(120, easing = FastOutSlowInEasing)
+            tween(108, easing = FastOutSlowInEasing)
         ) {
             edge = value
         }
