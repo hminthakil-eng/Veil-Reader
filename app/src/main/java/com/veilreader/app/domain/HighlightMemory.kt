@@ -14,6 +14,9 @@ data class HighlightMemory(
     val echoDepth: EchoDepth,
     val echoLabel: String?,
     val bookActivityAfterMark: Boolean,
+    val revisitCount: Int,
+    val lastViewedAtEpochMs: Long?,
+    val lastViewedLabel: String?,
     val annotated: Boolean,
     val eligibleForEcho: Boolean,
     val resonanceScore: Int
@@ -37,7 +40,8 @@ private const val CONTINUED_ACTIVITY_GAP_MS = 12L * 60L * 60L * 1000L
 fun deriveHighlightMemory(
     highlight: Highlight,
     book: Book?,
-    nowEpochMs: Long = System.currentTimeMillis()
+    nowEpochMs: Long = System.currentTimeMillis(),
+    passageVisits: List<PassageVisit> = emptyList()
 ): HighlightMemory {
     val created = highlight.createdAtEpochMs
     val safeNow = nowEpochMs.coerceAtLeast(0L)
@@ -89,6 +93,19 @@ fun deriveHighlightMemory(
             lastOpened - created >= CONTINUED_ACTIVITY_GAP_MS
     } ?: false
 
+    val exactVisits = exactPassageVisits(highlight, passageVisits)
+    val lastViewedAt = exactVisits.lastOrNull()?.viewedAtEpochMs
+    val lastViewedLabel = lastViewedAt?.let { viewedAt ->
+        val viewedDaysAgo = ((safeNow - viewedAt).coerceAtLeast(0L) / DAY_MS).toInt()
+        when {
+            viewedDaysAgo == 0 -> "LAST VIEWED TODAY"
+            viewedDaysAgo == 1 -> "LAST VIEWED YESTERDAY"
+            viewedDaysAgo < 60 -> "LAST VIEWED $viewedDaysAgo DAYS AGO"
+            viewedDaysAgo < 730 -> "LAST VIEWED ${(viewedDaysAgo / 30).coerceAtLeast(2)} MONTHS AGO"
+            else -> "LAST VIEWED ${(viewedDaysAgo / 365).coerceAtLeast(2)} YEARS AGO"
+        }
+    }
+
     val annotated = highlight.note.isNotBlank()
     val eligible = depth != EchoDepth.FRESH
 
@@ -116,6 +133,9 @@ fun deriveHighlightMemory(
         echoDepth = depth,
         echoLabel = echoLabel,
         bookActivityAfterMark = laterActivity,
+        revisitCount = exactVisits.size,
+        lastViewedAtEpochMs = lastViewedAt,
+        lastViewedLabel = lastViewedLabel,
         annotated = annotated,
         eligibleForEcho = eligible,
         resonanceScore = resonance
