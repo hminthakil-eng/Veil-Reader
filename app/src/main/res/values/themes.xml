@@ -3,7 +3,8 @@
     <style name="Theme.VeilReader" parent="android:style/Theme.Material.Light.NoActionBar">
         <item name="android:fontFamily">sans</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:statusBarColor">#0D0B10</item>
-        <item name="android:navigationBarColor">#0D0B10</item>
+        <item name="android:windowBackground">#0B0E12</item>
+        <item name="android:statusBarColor">#0B0E12</item>
+        <item name="android:navigationBarColor">#0B0E12</item>
     </style>
 </resources>
