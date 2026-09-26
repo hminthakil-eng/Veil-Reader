@@ -19,6 +19,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.navigation.VeilTab
+import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -164,6 +166,50 @@ fun VeilWorldBackdrop(
                 )
         )
 
+        Canvas(
+            Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 30.dp)
+                .size(148.dp)
+        ) {
+            val stroke = Stroke(width = 1.dp.toPx())
+            val center = Offset(size.width / 2f, size.height / 2f)
+            drawCircle(
+                color = VeilPalette.Brass.copy(alpha = 0.040f),
+                radius = size.minDimension * 0.34f,
+                center = center,
+                style = stroke
+            )
+            drawLine(
+                VeilPalette.Brass.copy(alpha = 0.045f),
+                Offset(center.x, size.height * 0.08f),
+                Offset(center.x, size.height * 0.92f),
+                stroke.width
+            )
+            drawLine(
+                VeilPalette.Brass.copy(alpha = 0.035f),
+                Offset(size.width * 0.18f, center.y),
+                Offset(size.width * 0.82f, center.y),
+                stroke.width
+            )
+        }
+
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(170.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.34f),
+                            VeilPalette.Ink.copy(alpha = 0.72f)
+                        )
+                    )
+                )
+        )
+
         content()
     }
 }
@@ -180,14 +226,14 @@ fun VeilAnimatedTabHost(
         transitionSpec = {
             val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
             (
-                fadeIn(tween(190, delayMillis = 20)) +
-                    slideInHorizontally(tween(220)) { fullWidth ->
-                        direction * (fullWidth / 24)
+                fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 12)) +
+                    slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
+                        direction * (fullWidth / 34)
                     }
                 ) togetherWith (
-                fadeOut(tween(120)) +
-                    slideOutHorizontally(tween(180)) { fullWidth ->
-                        -direction * (fullWidth / 30)
+                fadeOut(tween(VeilMotion.QUICK_MS)) +
+                    slideOutHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
+                        -direction * (fullWidth / 42)
                     }
                 ) using SizeTransform(clip = false)
         },
@@ -299,14 +345,14 @@ fun VeilNavigationRail(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(96.dp)
-            .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
-        shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+            .width(92.dp)
+            .padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
+        shape = RoundedCornerShape(4.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.975f),
         shadowElevation = 0.dp,
         border = BorderStroke(
             1.dp,
-            VeilPalette.Brass.copy(alpha = 0.30f)
+            VeilPalette.Brass.copy(alpha = 0.22f)
         )
     ) {
         Column(
@@ -364,22 +410,110 @@ private fun VeilBrandMark() {
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        MaterialTheme.colorScheme.surfaceVariant,
+                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.88f),
                         MaterialTheme.colorScheme.surface
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
                 RoundedCornerShape(4.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
+        VeilSigilMark(
+            modifier = Modifier.size(34.dp),
+            tint = VeilPalette.Brass
+        )
+    }
+}
+
+@Composable
+fun VeilSigilMark(
+    modifier: Modifier = Modifier,
+    tint: Color = VeilPalette.Brass
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val stroke = Stroke(
+            width = 1.35.dp.toPx(),
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round
+        )
+
+        // Open book.
+        val leftPage = Path().apply {
+            moveTo(w * 0.14f, h * 0.55f)
+            quadraticTo(w * 0.31f, h * 0.48f, w * 0.50f, h * 0.61f)
+            lineTo(w * 0.50f, h * 0.84f)
+            quadraticTo(w * 0.31f, h * 0.72f, w * 0.14f, h * 0.77f)
+            close()
+        }
+        val rightPage = Path().apply {
+            moveTo(w * 0.86f, h * 0.55f)
+            quadraticTo(w * 0.69f, h * 0.48f, w * 0.50f, h * 0.61f)
+            lineTo(w * 0.50f, h * 0.84f)
+            quadraticTo(w * 0.69f, h * 0.72f, w * 0.86f, h * 0.77f)
+            close()
+        }
+        drawPath(leftPage, tint.copy(alpha = 0.90f), style = stroke)
+        drawPath(rightPage, tint.copy(alpha = 0.90f), style = stroke)
+
+        // Eight-point threshold star.
+        val cx = w * 0.50f
+        val cy = h * 0.29f
+        val outer = size.minDimension * 0.15f
+        val inner = outer * 0.38f
+        val star = Path()
+        repeat(16) { index ->
+            val radius = if (index % 2 == 0) outer else inner
+            val angle = Math.toRadians(-90.0 + index * 22.5)
+            val x = cx + kotlin.math.cos(angle).toFloat() * radius
+            val y = cy + kotlin.math.sin(angle).toFloat() * radius
+            if (index == 0) star.moveTo(x, y) else star.lineTo(x, y)
+        }
+        star.close()
+        drawPath(star, tint.copy(alpha = 0.94f), style = stroke)
+        drawCircle(tint, radius = 1.1.dp.toPx(), center = Offset(cx, cy))
+    }
+}
+
+@Composable
+fun VeilLoadingState(
+    label: String = "Opening the archive",
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        VeilSigilMark(
+            modifier = Modifier.size(58.dp),
+            tint = VeilPalette.Brass
+        )
+        Spacer(Modifier.height(18.dp))
         Text(
-            "V",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Black,
+            "VEIL READER",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
             color = VeilPalette.Brass
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        Spacer(Modifier.height(18.dp))
+        LinearProgressIndicator(
+            modifier = Modifier
+                .width(132.dp)
+                .height(2.dp),
+            color = VeilPalette.Brass,
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.24f)
         )
     }
 }
