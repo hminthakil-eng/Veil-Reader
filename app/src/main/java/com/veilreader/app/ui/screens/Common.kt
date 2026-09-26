@@ -228,8 +228,8 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         subtitle?.takeIf(String::isNotBlank)?.let {
             Text(
                 it,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Mist,
+                style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.widthIn(max = 680.dp)
             )
         }
