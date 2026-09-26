@@ -145,74 +145,100 @@ private val VeilLightColors = lightColorScheme(
     outlineVariant = VeilPalette.BorderLight
 )
 
+private object VeilType {
+    // Generic sans-serif can inherit a user-selected system font on some Android skins.
+    // Keep the Grayfog shell deterministic with serif reading/editorial faces and a
+    // restrained monospace utility face until bundled font resources land.
+    val Editorial = FontFamily.Serif
+    val Reading = FontFamily.Serif
+    val Utility = FontFamily.Monospace
+}
+
 private val VeilTypography = Typography(
     displayLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 46.sp,
-        lineHeight = 50.sp,
-        letterSpacing = (-0.72).sp
+        fontFamily = VeilType.Editorial,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 48.sp,
+        lineHeight = 51.sp,
+        letterSpacing = (-0.82).sp
     ),
     headlineLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 30.sp,
-        lineHeight = 35.sp,
-        letterSpacing = (-0.42).sp
+        fontFamily = VeilType.Editorial,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 32.sp,
+        lineHeight = 36.sp,
+        letterSpacing = (-0.48).sp
     ),
     headlineMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 24.sp,
-        lineHeight = 29.sp
+        fontFamily = VeilType.Editorial,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 25.sp,
+        lineHeight = 30.sp,
+        letterSpacing = (-0.22).sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilType.Editorial,
         fontWeight = FontWeight.Medium,
         fontSize = 20.sp,
         lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.Serif,
-        fontWeight = FontWeight.Medium,
-        fontSize = 21.sp,
-        lineHeight = 26.sp,
-        letterSpacing = (-0.16).sp
+        fontFamily = VeilType.Editorial,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 22.sp,
+        lineHeight = 27.sp,
+        letterSpacing = (-0.18).sp
     ),
     titleMedium = TextStyle(
-        fontFamily = FontFamily.Serif,
+        fontFamily = VeilType.Editorial,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 16.sp,
-        lineHeight = 21.sp
+        fontSize = 17.sp,
+        lineHeight = 22.sp,
+        letterSpacing = (-0.06).sp
     ),
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 15.sp,
-        lineHeight = 22.sp
-    ),
-    bodyMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Normal,
-        fontSize = 13.sp,
+    titleSmall = TextStyle(
+        fontFamily = VeilType.Editorial,
+        fontWeight = FontWeight.Medium,
+        fontSize = 14.sp,
         lineHeight = 19.sp
     ),
-    labelLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
+    bodyLarge = TextStyle(
+        fontFamily = VeilType.Reading,
+        fontWeight = FontWeight.Normal,
+        fontSize = 16.sp,
+        lineHeight = 24.sp,
+        letterSpacing = 0.sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = VeilType.Reading,
+        fontWeight = FontWeight.Normal,
+        fontSize = 14.sp,
+        lineHeight = 21.sp,
+        letterSpacing = 0.02.sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = VeilType.Reading,
+        fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
-        lineHeight = 17.sp,
-        letterSpacing = 0.18.sp
+        lineHeight = 18.sp,
+        letterSpacing = 0.04.sp
+    ),
+    labelLarge = TextStyle(
+        fontFamily = VeilType.Utility,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.32.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.78.sp
+        fontFamily = VeilType.Utility,
+        fontWeight = FontWeight.Medium,
+        fontSize = 10.5.sp,
+        lineHeight = 15.sp,
+        letterSpacing = 0.72.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = VeilType.Utility,
         fontWeight = FontWeight.Medium,
         fontSize = 9.sp,
         lineHeight = 13.sp,
