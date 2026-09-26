@@ -109,6 +109,38 @@ class HighlightMemoryTest {
     }
 
     @Test
+    fun `exact passage returns add bounded resonance without replacing archival signals`() {
+        val highlight = Highlight(
+            id = "h",
+            bookId = "book",
+            quote = "A recurring line",
+            locatorJson = "{}",
+            createdAtEpochMs = now - 120L * day
+        )
+        val book = Book(id = "book", title = "Archive", author = "Veil")
+        val visits = (1..6).map { index ->
+            PassageVisit(
+                id = "v$index",
+                highlightId = "h",
+                bookId = "book",
+                locatorJson = "{}",
+                viewedAtEpochMs = now - (7L - index) * day
+            )
+        }
+
+        val withoutVisits = deriveHighlightMemory(highlight, book, now)
+        val withVisits = deriveHighlightMemory(
+            highlight = highlight,
+            book = book,
+            nowEpochMs = now,
+            passageVisits = visits
+        )
+
+        assertEquals(60, withVisits.resonanceScore - withoutVisits.resonanceScore)
+        assertEquals(6, withVisits.revisitCount)
+    }
+
+    @Test
     fun `archive echoes are ranked by real state and remain bounded`() {
         val books = mapOf(
             "a" to Book(id = "a", title = "A", author = "Veil"),
