@@ -40,6 +40,8 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
+import com.veilreader.app.ui.screens.BookEntryStage
+import com.veilreader.app.ui.screens.BookThresholdTransitionOverlay
 import com.veilreader.app.ui.screens.CastleScreen
 import com.veilreader.app.ui.screens.LibraryScreen
 import com.veilreader.app.ui.screens.PathScreen
@@ -453,7 +455,8 @@ fun VeilApp(
     }
 
     val opened = openedPublication
-    if (opened != null) {
+    Box(Modifier.fillMaxSize()) {
+        if (opened != null) {
         ReaderScreen(
             opened = opened,
             library = library,
@@ -598,6 +601,17 @@ fun VeilApp(
                     )
                 }
             }
+        }
+
+        val pendingEntryBook =
+            if (opened == null && route.activeBookId != null) targetBook else null
+        pendingEntryBook?.let { book ->
+            BookThresholdTransitionOverlay(
+                book = book,
+                stage = BookEntryStage.PREPARING,
+                visible = true,
+                modifier = Modifier.fillMaxSize()
+            )
         }
     }
 
