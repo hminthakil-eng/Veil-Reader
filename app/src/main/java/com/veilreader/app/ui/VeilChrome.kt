@@ -207,19 +207,19 @@ fun VeilBottomDock(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+            .padding(top = 4.dp),
+        shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.995f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 8.dp,
+        shadowElevation = 0.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(
             1.dp,
-            VeilPalette.Brass.copy(alpha = 0.30f)
+            VeilPalette.Brass.copy(alpha = 0.22f)
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             GrayfogRule(Modifier.fillMaxWidth())
@@ -248,11 +248,7 @@ private fun VeilDockItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val background = if (selected) {
-        VeilPalette.DeepBrass.copy(alpha = 0.48f)
-    } else {
-        Color.Transparent
-    }
+    val background = Color.Transparent
     val foreground = if (selected) {
         VeilPalette.Brass
     } else {
@@ -262,7 +258,7 @@ private fun VeilDockItem(
     Column(
         modifier = modifier
             .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(2.dp))
             .background(background)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 2.dp, vertical = 7.dp),
@@ -276,7 +272,7 @@ private fun VeilDockItem(
             style = MaterialTheme.typography.labelMedium.copy(
                 fontSize = 11.sp,
                 letterSpacing = 0.25.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                fontWeight = FontWeight.Medium
             ),
             color = foreground,
             maxLines = 2,
@@ -287,8 +283,8 @@ private fun VeilDockItem(
         Spacer(Modifier.height(3.dp))
         Box(
             Modifier
-                .width(28.dp)
-                .height(1.dp)
+                .width(24.dp)
+                .height(2.dp)
                 .background(if (selected) VeilPalette.Brass.copy(alpha = 0.86f) else Color.Transparent)
         )
     }
@@ -305,9 +301,9 @@ fun VeilNavigationRail(
             .fillMaxHeight()
             .width(96.dp)
             .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
-        shape = RoundedCornerShape(14.dp),
+        shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
-        shadowElevation = 8.dp,
+        shadowElevation = 0.dp,
         border = BorderStroke(
             1.dp,
             VeilPalette.Brass.copy(alpha = 0.30f)
@@ -333,14 +329,8 @@ fun VeilNavigationRail(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth().heightIn(min = 56.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(
-                                if (isSelected) {
-                                    VeilPalette.DeepBrass.copy(alpha = 0.48f)
-                                } else {
-                                    Color.Transparent
-                                }
-                            )
+                            .clip(RoundedCornerShape(2.dp))
+                            .background(Color.Transparent)
                             .selectable(selected = isSelected, role = Role.Tab) { onSelect(tab) }
                             .padding(vertical = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -370,7 +360,7 @@ private fun VeilBrandMark() {
     Box(
         modifier = Modifier
             .size(52.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(4.dp))
             .background(
                 Brush.verticalGradient(
                     listOf(
@@ -381,7 +371,7 @@ private fun VeilBrandMark() {
             )
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f)),
-                RoundedCornerShape(8.dp)
+                RoundedCornerShape(4.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
