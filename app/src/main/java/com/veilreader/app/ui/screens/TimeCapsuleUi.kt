@@ -62,7 +62,8 @@ fun ReadingTimeCapsuleCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "SEALED READING RECORD",
+                        if (capsule.cycleIndex > 1) "SEALED READING RECORD · CYCLE ${capsule.cycleIndex}"
+                        else "SEALED READING RECORD",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -151,7 +152,8 @@ fun ReadingTimeCapsuleSheet(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "TIME CAPSULE · SEALED",
+                        if (capsule.cycleIndex > 1) "TIME CAPSULE · CYCLE ${capsule.cycleIndex} · SEALED"
+                        else "TIME CAPSULE · SEALED",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass
                     )
@@ -362,6 +364,7 @@ private fun eventColor(kind: ReadingHistoryEventKind) = when (kind) {
     ReadingHistoryEventKind.READING_SESSION -> VeilPalette.Spirit
     ReadingHistoryEventKind.PASSAGE_PRESERVED -> VeilPalette.Moon
     ReadingHistoryEventKind.LOCATION_MARKED -> VeilPalette.MoonCrimson
+    ReadingHistoryEventKind.COMPLETED -> VeilPalette.Brass
     ReadingHistoryEventKind.LATEST_VOLUME_ACTIVITY -> VeilPalette.Brass
 }
 
