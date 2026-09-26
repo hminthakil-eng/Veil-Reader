@@ -42,6 +42,7 @@ import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.usesArabicScript
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -215,10 +216,15 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
+        val arabicScriptEyebrow = usesArabicScript(eyebrow)
         Text(
-            eyebrow.uppercase(),
+            if (arabicScriptEyebrow) eyebrow else eyebrow.uppercase(),
             color = VeilPalette.Brass,
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.75.sp)
+            style = if (arabicScriptEyebrow) {
+                MaterialTheme.typography.labelMedium
+            } else {
+                MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.75.sp)
+            }
         )
         BrassRule(Modifier.width(72.dp))
         Text(
