@@ -374,6 +374,7 @@ private fun eventColor(kind: ReadingHistoryEventKind) = when (kind) {
     ReadingHistoryEventKind.READING_SESSION -> VeilPalette.Spirit
     ReadingHistoryEventKind.PASSAGE_PRESERVED -> VeilPalette.Moon
     ReadingHistoryEventKind.LOCATION_MARKED -> VeilPalette.MoonCrimson
+    ReadingHistoryEventKind.READING_MILESTONE -> VeilPalette.Spirit
     ReadingHistoryEventKind.COMPLETED -> VeilPalette.Brass
     ReadingHistoryEventKind.LATEST_VOLUME_ACTIVITY -> VeilPalette.Brass
 }
