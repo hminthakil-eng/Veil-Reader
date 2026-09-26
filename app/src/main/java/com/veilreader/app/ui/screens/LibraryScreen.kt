@@ -48,11 +48,14 @@ import com.veilreader.app.R
 import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookArchiveMemory
+import com.veilreader.app.domain.BookArtifactMemory
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.LibraryMemoryEvent
 import com.veilreader.app.domain.LibraryMemoryEventKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -70,6 +73,7 @@ private enum class LibraryViewMode { GRID, LIST }
 fun LibraryScreen(
     books: List<Book>,
     highlights: List<Highlight> = emptyList(),
+    bookmarks: List<Bookmark> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     isImporting: Boolean,
     onImportUri: (Uri) -> Unit,
@@ -134,6 +138,27 @@ fun LibraryScreen(
     }
     val deepShelfBookIds = remember(memoryState.deepShelfBookIds) {
         memoryState.deepShelfBookIds.toSet()
+    }
+    val artifactMemoryByBookId = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions
+    ) {
+        val sessionsByBook = readingSessions
+            .filter { !it.bookId.isNullOrBlank() }
+            .groupBy { requireNotNull(it.bookId) }
+        val highlightsByBook = highlights.groupBy { it.bookId }
+        val bookmarksByBook = bookmarks.groupBy { it.bookId }
+
+        books.associate { book ->
+            book.id to deriveBookArtifactMemory(
+                book = book,
+                sessions = sessionsByBook[book.id].orEmpty(),
+                highlights = highlightsByBook[book.id].orEmpty(),
+                bookmarks = bookmarksByBook[book.id].orEmpty()
+            )
+        }
     }
 
     val trimmedQuery = query.trim()
@@ -509,7 +534,11 @@ fun LibraryScreen(
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
                             recentReading.forEach { book ->
-                                RecentReadingBook(book = book, onOpen = { onOpenBook(book) })
+                                RecentReadingBook(
+                                    book = book,
+                                    artifactMemory = artifactMemoryByBookId[book.id],
+                                    onOpen = { onOpenBook(book) }
+                                )
                             }
                         }
                     }
@@ -532,6 +561,7 @@ fun LibraryScreen(
                     LibraryViewMode.GRID -> BookLibraryTile(
                         book = book,
                         archiveMemory = memoryState.memoryFor(book.id),
+                        artifactMemory = artifactMemoryByBookId[book.id],
                         onOpen = { onOpenBook(book) },
                         onFavorite = { onFavorite(book.id) },
                         onDetails = { detailBookId = book.id }
@@ -539,6 +569,7 @@ fun LibraryScreen(
                     LibraryViewMode.LIST -> BookLibraryRow(
                         book = book,
                         archiveMemory = memoryState.memoryFor(book.id),
+                        artifactMemory = artifactMemoryByBookId[book.id],
                         onOpen = { onOpenBook(book) },
                         onFavorite = { onFavorite(book.id) },
                         onDetails = { detailBookId = book.id }
@@ -571,6 +602,7 @@ fun LibraryScreen(
         BookDetailSheet(
             book = book,
             archiveMemory = memoryState.memoryFor(book.id),
+            artifactMemory = artifactMemoryByBookId[book.id],
             onDismiss = { detailBookId = null },
             onOpen = {
                 detailBookId = null
@@ -665,6 +697,7 @@ fun LibraryScreen(
 private fun BookDetailSheet(
     book: Book,
     archiveMemory: BookArchiveMemory?,
+    artifactMemory: BookArtifactMemory?,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
@@ -766,7 +799,7 @@ private fun BookDetailSheet(
                                 title = book.title,
                                 subtitle = book.author,
                                 imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book),
+                artifact = bookArtifactState(book, memory = artifactMemory),
                                 modifier = Modifier.width(142.dp).height(208.dp)
                             )
                             BookDetailIdentity(book)
@@ -781,7 +814,7 @@ private fun BookDetailSheet(
                                 title = book.title,
                                 subtitle = book.author,
                                 imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book),
+                artifact = bookArtifactState(book, memory = artifactMemory),
                                 modifier = Modifier.width(154.dp).height(226.dp)
                             )
                             BookDetailIdentity(
@@ -946,6 +979,31 @@ private fun BookDetailSheet(
                         BookDetailFact(
                             "Archive depth",
                             archiveDepthRecord(memory)
+                        )
+                    }
+                    artifactMemory?.takeIf {
+                        it.sessionCount > 0 ||
+                            it.highlightCount > 0 ||
+                            it.bookmarkCount > 0
+                    }?.let { material ->
+                        BookDetailFact(
+                            "Material memory",
+                            buildString {
+                                if (material.sessionCount > 0) {
+                                    append(material.sessionCount)
+                                        .append(if (material.sessionCount == 1) " session" else " sessions")
+                                }
+                                if (material.highlightCount > 0) {
+                                    if (isNotEmpty()) append(" · ")
+                                    append(material.highlightCount)
+                                        .append(if (material.highlightCount == 1) " passage" else " passages")
+                                }
+                                if (material.bookmarkCount > 0) {
+                                    if (isNotEmpty()) append(" · ")
+                                    append(material.bookmarkCount)
+                                        .append(if (material.bookmarkCount == 1) " saved place" else " saved places")
+                                }
+                            }
                         )
                     }
                 }
@@ -1380,7 +1438,11 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
 }
 
 @Composable
-private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
+private fun RecentReadingBook(
+    book: Book,
+    artifactMemory: BookArtifactMemory?,
+    onOpen: () -> Unit
+) {
     Surface(
         modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
@@ -1400,7 +1462,7 @@ private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book),
+                artifact = bookArtifactState(book, memory = artifactMemory),
                 modifier = Modifier.width(48.dp).height(70.dp)
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1667,6 +1729,7 @@ private fun formatArchiveSilence(inactiveMillis: Long): String {
 private fun BookLibraryTile(
     book: Book,
     archiveMemory: BookArchiveMemory?,
+    artifactMemory: BookArtifactMemory?,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
     onDetails: () -> Unit
@@ -1685,7 +1748,7 @@ private fun BookLibraryTile(
             title = book.title,
             subtitle = book.author,
             imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book),
+                artifact = bookArtifactState(book, memory = artifactMemory),
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.69f)
@@ -1769,6 +1832,7 @@ private fun BookLibraryTile(
 private fun BookLibraryRow(
     book: Book,
     archiveMemory: BookArchiveMemory?,
+    artifactMemory: BookArtifactMemory?,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
     onDetails: () -> Unit
@@ -1792,7 +1856,7 @@ private fun BookLibraryRow(
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book),
+                artifact = bookArtifactState(book, memory = artifactMemory),
                 modifier = Modifier.width(58.dp).height(84.dp)
             )
 
