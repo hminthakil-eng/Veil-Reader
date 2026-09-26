@@ -47,6 +47,9 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.VeilRealm
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
@@ -156,7 +159,12 @@ fun LibraryScreen(
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
         columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(112.dp) else GridCells.Fixed(1),
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.ARCHIVE,
+                seed = books.size + filtered.size
+            ),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         contentPadding = PaddingValues(
@@ -617,6 +625,11 @@ private fun BookDetailSheet(
                                 )
                             )
                         )
+                )
+
+                GrayfogOrnamentFrame(
+                    modifier = Modifier.matchParentSize(),
+                    strength = 0.58f
                 )
 
                 Column(
