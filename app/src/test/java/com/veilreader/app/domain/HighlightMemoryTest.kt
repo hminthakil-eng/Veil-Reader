@@ -57,6 +57,39 @@ class HighlightMemoryTest {
     }
 
     @Test
+    fun `living margin reports exact revisits separately from later book activity`() {
+        val highlight = Highlight(
+            id = "h",
+            bookId = "book",
+            quote = "Remember",
+            locatorJson = "{}",
+            createdAtEpochMs = now - 180L * day
+        )
+        val book = Book(
+            id = "book",
+            title = "Archive",
+            author = "Veil",
+            lastOpenedAtEpochMs = now - day
+        )
+        val visits = listOf(
+            PassageVisit("v1", "h", "book", "{}", now - 90L * day),
+            PassageVisit("v2", "h", "book", "{}", now - 30L * day)
+        )
+
+        val memory = deriveHighlightMemory(
+            highlight = highlight,
+            book = book,
+            nowEpochMs = now,
+            passageVisits = visits
+        )
+
+        assertTrue(memory.bookActivityAfterMark)
+        assertEquals(2, memory.revisitCount)
+        assertEquals(now - 30L * day, memory.lastViewedAtEpochMs)
+        assertEquals("LAST VIEWED 30 DAYS AGO", memory.lastViewedLabel)
+    }
+
+    @Test
     fun `unknown or future timestamps never invent age`() {
         val unknown = deriveHighlightMemory(
             Highlight("u", "b", "quote", "{}", createdAtEpochMs = 0L),
