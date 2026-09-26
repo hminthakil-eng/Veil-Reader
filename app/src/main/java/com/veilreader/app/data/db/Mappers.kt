@@ -4,7 +4,13 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.PassageVisit
+import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.ReadingHistoryEvent
+import com.veilreader.app.domain.ReadingHistoryEventKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import org.json.JSONArray
+import org.json.JSONObject
 
 fun Book.toEntity(): BookEntity = BookEntity(
     id = id,
@@ -114,4 +120,91 @@ fun ReadingSessionEntity.toSnapshot(): ReadingSessionSnapshot = ReadingSessionSn
     pacedPageTurns = pacedPageTurns,
     highlightCount = highlightCount,
     noteCount = noteCount
+)
+
+
+fun ReadingCycleRecord.toEntity(): ReadingCycleEntity = ReadingCycleEntity(
+    id = id,
+    bookId = bookId,
+    cycleIndex = cycleIndex,
+    titleSnapshot = titleSnapshot,
+    authorSnapshot = authorSnapshot,
+    startedAtEpochMs = startedAtEpochMs,
+    completedAtEpochMs = completedAtEpochMs,
+    finalLocatorJson = finalLocatorJson,
+    sessionCount = sessionCount,
+    totalActiveMillis = totalActiveMillis,
+    pacedPageTurns = pacedPageTurns,
+    highlightCount = highlightCount,
+    noteCount = noteCount,
+    bookmarkCount = bookmarkCount,
+    sealCode = sealCode,
+    timelineJson = JSONArray().apply {
+        timeline.forEach { event ->
+            put(JSONObject().apply {
+                put("id", event.id)
+                put("kind", event.kind.name)
+                put("timestampEpochMs", event.timestampEpochMs)
+                put("title", event.title)
+                put("detail", event.detail ?: JSONObject.NULL)
+            })
+        }
+    }.toString()
+)
+
+fun ReadingCycleEntity.toDomain(): ReadingCycleRecord {
+    val events = buildList {
+        val array = runCatching { JSONArray(timelineJson) }.getOrDefault(JSONArray())
+        for (index in 0 until array.length()) {
+            val item = array.optJSONObject(index) ?: continue
+            val kind = runCatching {
+                ReadingHistoryEventKind.valueOf(item.optString("kind"))
+            }.getOrNull() ?: continue
+            add(
+                ReadingHistoryEvent(
+                    id = item.optString("id"),
+                    kind = kind,
+                    timestampEpochMs = item.optLong("timestampEpochMs", 0L),
+                    title = item.optString("title"),
+                    detail = if (item.isNull("detail")) null
+                    else item.optString("detail").takeIf { it.isNotBlank() }
+                )
+            )
+        }
+    }
+
+    return ReadingCycleRecord(
+        id = id,
+        bookId = bookId,
+        cycleIndex = cycleIndex,
+        titleSnapshot = titleSnapshot,
+        authorSnapshot = authorSnapshot,
+        startedAtEpochMs = startedAtEpochMs,
+        completedAtEpochMs = completedAtEpochMs,
+        finalLocatorJson = finalLocatorJson,
+        sessionCount = sessionCount,
+        totalActiveMillis = totalActiveMillis,
+        pacedPageTurns = pacedPageTurns,
+        highlightCount = highlightCount,
+        noteCount = noteCount,
+        bookmarkCount = bookmarkCount,
+        sealCode = sealCode,
+        timeline = events
+    )
+}
+
+fun PassageVisit.toEntity(): PassageVisitEntity = PassageVisitEntity(
+    id = id,
+    highlightId = highlightId,
+    bookId = bookId,
+    locatorJson = locatorJson,
+    viewedAtEpochMs = viewedAtEpochMs
+)
+
+fun PassageVisitEntity.toDomain(): PassageVisit = PassageVisit(
+    id = id,
+    highlightId = highlightId,
+    bookId = bookId,
+    locatorJson = locatorJson,
+    viewedAtEpochMs = viewedAtEpochMs
 )
