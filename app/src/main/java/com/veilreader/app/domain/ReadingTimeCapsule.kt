@@ -32,8 +32,8 @@ data class ReadingTimeCapsule(
     val cycleIndex: Int = 1,
     val completedAtEpochMs: Long? = null,
     /**
-     * Veil currently persists completion state but not the exact instant it first became complete.
-     * Never present latestRecordedAtEpochMs as a completion timestamp.
+     * Legacy-derived capsules may preserve completion state without the exact instant it occurred.
+     * Persisted [ReadingCycleRecord] capsules set this true and expose [completedAtEpochMs].
      */
     val exactCompletionTimeKnown: Boolean = false
 )
