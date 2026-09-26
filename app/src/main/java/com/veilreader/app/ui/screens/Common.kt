@@ -38,6 +38,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -166,6 +167,11 @@ fun ArchivePanel(
                     )
                 )
                 .align(Alignment.TopCenter)
+        )
+
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.42f
         )
 
         Box(
