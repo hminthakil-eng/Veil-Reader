@@ -30,6 +30,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -74,6 +76,7 @@ fun LibraryScreen(
     val viewMode = runCatching { LibraryViewMode.valueOf(viewModeName) }.getOrDefault(LibraryViewMode.GRID)
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
+    var detailBookId by rememberSaveable { mutableStateOf<String?>(null) }
     var editing by remember { mutableStateOf<Book?>(null) }
     var title by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
@@ -383,17 +386,27 @@ fun LibraryScreen(
                         book = book,
                         onOpen = { onOpenBook(book) },
                         onFavorite = { onFavorite(book.id) },
-                        onEdit = { beginMetadataEdit(book) }
+                        onEdit = { detailBookId = book.id }
                     )
                     LibraryViewMode.LIST -> BookLibraryRow(
                         book = book,
                         onOpen = { onOpenBook(book) },
                         onFavorite = { onFavorite(book.id) },
-                        onEdit = { beginMetadataEdit(book) }
+                        onEdit = { detailBookId = book.id }
                     )
                 }
             }
         }
+    }
+
+    detailBookId?.let { id -> books.firstOrNull { it.id == id } }?.let { book ->
+        ArchiveBookDetail(
+            book = book,
+            onDismiss = { detailBookId = null },
+            onRead = { detailBookId = null; onOpenBook(book) },
+            onFavorite = { onFavorite(book.id) },
+            onEdit = { detailBookId = null; beginMetadataEdit(book) }
+        )
     }
 
     editing?.let { book ->
@@ -452,6 +465,71 @@ fun LibraryScreen(
             },
             dismissButton = { TextButton(onClick = { editing = null }) { Text("Cancel") } }
         )
+    }
+}
+
+/** Read-only book overview; the existing metadata editor owns all edits. */
+@Composable
+private fun ArchiveBookDetail(
+    book: Book,
+    onDismiss: () -> Unit,
+    onRead: () -> Unit,
+    onFavorite: () -> Unit,
+    onEdit: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(Modifier.fillMaxWidth().fillMaxHeight(.94f)
+            .background(VeilPalette.Obsidian).systemBarsPadding().padding(horizontal = 20.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onDismiss, colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.OldGold), modifier = Modifier.heightIn(min = 48.dp)) { Text("‹ Library") }
+                Spacer(Modifier.weight(1f))
+                TextButton(onClick = onEdit, colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.OldGold), modifier = Modifier.heightIn(min = 48.dp)) { Text("Edit details") }
+            }
+            Column(Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                Box(Modifier.fillMaxWidth().height(264.dp).clip(MaterialTheme.shapes.small),
+                    contentAlignment = Alignment.Center) {
+                    Image(painterResource(R.drawable.grayfog_threshold_v1), contentDescription = null,
+                        contentScale = ContentScale.Crop, modifier = Modifier.matchParentSize())
+                    Box(Modifier.matchParentSize().background(Brush.verticalGradient(
+                        listOf(VeilPalette.Ink.copy(alpha = .35f), VeilPalette.Obsidian))))
+                    BookCover(book.title, Modifier.width(148.dp).height(216.dp),
+                        subtitle = book.author, imagePath = book.coverCachePath)
+                }
+                Text(book.title, style = MaterialTheme.typography.headlineLarge, color = VeilPalette.Moon)
+                Text(book.author.ifBlank { "Unknown author" },
+                    style = MaterialTheme.typography.bodyLarge, color = VeilPalette.Mist)
+                Text(listOfNotNull(book.format.name, book.language?.takeIf { it.isNotBlank() }).joinToString(" · "),
+                    style = MaterialTheme.typography.labelMedium, color = VeilPalette.OldGold)
+                book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                    Text(series + (book.seriesIndex?.let { " · #${formatSeriesIndex(it)}" } ?: ""),
+                        style = MaterialTheme.typography.bodyMedium, color = VeilPalette.Mist)
+                }
+                VeilOrnamentDivider()
+                GrayfogPanel(Modifier.fillMaxWidth()) {
+                    Text("Reading progress", style = MaterialTheme.typography.titleLarge, color = VeilPalette.Moon)
+                    BookProgress(book)
+                    if (book.currentChapter.isNotBlank() && book.currentChapter != "Not started") {
+                        Text(book.currentChapter, color = VeilPalette.Mist,
+                            style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+                if (book.allCollections.isNotEmpty()) {
+                    Text("Collections", style = MaterialTheme.typography.titleLarge, color = VeilPalette.Moon)
+                    Text(book.allCollections.joinToString(" · "),
+                        style = MaterialTheme.typography.bodyMedium, color = VeilPalette.Mist)
+                }
+                OutlinedButton(onClick = onFavorite, colors = ButtonDefaults.outlinedButtonColors(contentColor = VeilPalette.OldGold), modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)) {
+                    Text(if (book.favorite) "Remove from favorites" else "Add to favorites")
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+            Button(onClick = onRead, modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).heightIn(min = 52.dp),
+                shape = MaterialTheme.shapes.small,
+                colors = ButtonDefaults.buttonColors(containerColor = VeilPalette.OldGold, contentColor = VeilPalette.Ink)) {
+                Text(when { book.finished -> "Read again"; book.progress > 0f -> "Continue Reading"; else -> "Begin Reading" })
+            }
+        }
     }
 }
 
@@ -759,7 +837,7 @@ private fun BookLibraryTile(
                 onClick = onEdit,
                 modifier = Modifier
                     .size(48.dp)
-                    .semantics { contentDescription = "Edit details for ${book.title}" }
+                    .semantics { contentDescription = "Book details for ${book.title}" }
             ) {
                 EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -831,7 +909,7 @@ private fun BookLibraryRow(
                 }
                 IconButton(
                     onClick = onEdit,
-                    modifier = Modifier.semantics { contentDescription = "Edit details for ${book.title}" }
+                    modifier = Modifier.semantics { contentDescription = "Book details for ${book.title}" }
                 ) {
                     EllipsisIcon(Modifier.size(19.dp), MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -850,7 +928,7 @@ private fun BookProgress(book: Book) {
     )
     Row(
         Modifier.fillMaxWidth().padding(top = 5.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
             when {
@@ -867,6 +945,7 @@ private fun BookProgress(book: Book) {
             else "${bookCollections.first()} +${bookCollections.size - 1}"
             Text(
                 label,
+                modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,

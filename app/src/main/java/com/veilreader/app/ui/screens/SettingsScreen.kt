@@ -4,6 +4,11 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.background
 import androidx.compose.ui.graphics.Brush
@@ -26,6 +31,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -120,8 +127,8 @@ fun SettingsScreen(
 
         ScreenHeader(
             eyebrow = "VEIL READER",
-            title = "Settings & Rituals",
-            subtitle = "Keep the interface quiet and set reading defaults once. Changes are stored locally."
+            title = "Settings",
+            subtitle = "Your library. Your reading preferences."
         )
 
         SettingsSection(
@@ -178,34 +185,24 @@ fun SettingsScreen(
                 }
             )
 
-            Text("Page turn", style = MaterialTheme.typography.labelLarge)
+            Text("Reading motion", style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
-                entries = PageTurnStyle.entries,
-                selected = appearance.pageTurnStyle,
-                label = { style ->
-                    when (style) {
-                        PageTurnStyle.PAPER -> "Paper curl"
-                        PageTurnStyle.SLIDE -> "Simple slide"
+                entries = listOf("Paper curl", "Slide", "Scroll"),
+                selected = if (appearance.scroll) "Scroll" else if (appearance.pageTurnStyle == PageTurnStyle.PAPER) "Paper curl" else "Slide",
+                label = { it },
+                onSelected = { motion ->
+                    commitReaderAppearance { current ->
+                        when (motion) {
+                            "Scroll" -> current.copy(scroll = true)
+                            "Paper curl" -> current.copy(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
+                            else -> current.copy(scroll = false, pageTurnStyle = PageTurnStyle.SLIDE)
+                        }
                     }
-                },
-                onSelected = { style ->
-                    commitReaderAppearance { current -> current.copy(pageTurnStyle = style) }
                 }
             )
-            Text(
-                "Paper curl is the premium paginated mode; Simple slide remains the rollback-safe fallback. Continuous scroll ignores this setting.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
+            Text("Curl turns a paper page. Slide moves between pages. Scroll reads continuously.",
+                color = VeilPalette.Mist, style = MaterialTheme.typography.bodySmall)
 
-            SettingsSwitchRow(
-                title = "Scroll mode",
-                subtitle = "Use continuous vertical reading instead of pagination when the format supports it.",
-                checked = appearance.scroll,
-                onCheckedChange = { enabled ->
-                    commitReaderAppearance { current -> current.copy(scroll = enabled) }
-                }
-            )
             SettingsSwitchRow(
                 title = "Publisher styles",
                 subtitle = "Keep the publication's typography and styling when available. This can override Veil theme colors.",
@@ -303,20 +300,23 @@ private fun SettingsSection(
     description: String,
     content: @Composable () -> Unit
 ) {
+    var expanded by rememberSaveable(title) { mutableStateOf(false) }
     GrayfogPanel(Modifier.fillMaxWidth()) {
-        Text(title, style = MaterialTheme.typography.titleLarge)
-        Text(
-            description,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = VeilSpacing.xs),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-        ) {
-            content()
+        Row(Modifier.fillMaxWidth().heightIn(min = 56.dp)
+            .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" }
+            .clickable(role = Role.Button, onClickLabel = if (expanded) "Collapse $title" else "Expand $title") {
+                expanded = !expanded
+            }, verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+            Text(title, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleLarge, color = VeilPalette.Moon)
+            Text(if (expanded) "−" else "+", color = VeilPalette.OldGold, style = MaterialTheme.typography.titleLarge)
+        }
+        if (expanded) {
+            Text(description, color = VeilPalette.Mist, style = MaterialTheme.typography.bodyMedium)
+            Column(Modifier.fillMaxWidth().padding(top = VeilSpacing.xs),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+                CompositionLocalProvider(LocalContentColor provides VeilPalette.Moon) { content() }
+            }
         }
     }
 }
@@ -402,3 +402,4 @@ private fun SettingsSwitchRow(
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
+
