@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.VeilPalette
 import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
@@ -137,9 +138,33 @@ fun LibraryScreen(
     Column(
         Modifier
             .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    listOf(VeilPalette.VeilBlack, VeilPalette.Obsidian, VeilPalette.GrayfogBlue.copy(alpha = .72f))
+                )
+            )
             .padding(horizontal = VeilSpacing.lg)
             .padding(top = VeilSpacing.lg)
     ) {
+        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+            Text(
+                "VEIL READER",
+                color = VeilPalette.OldGold,
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 2.2.sp)
+            )
+            Text(
+                "Grayfog Archive",
+                color = VeilPalette.Moon,
+                style = MaterialTheme.typography.headlineLarge
+            )
+            Text(
+                "Fragments · Records · Truths",
+                color = VeilPalette.Mist,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            VeilOrnamentDivider()
+        }
+
         LibraryHeader(
             bookCount = books.size,
             isImporting = isImporting,
@@ -182,8 +207,8 @@ fun LibraryScreen(
             value = query,
             onValueChange = { query = it },
             singleLine = true,
-            label = { Text("Search library") },
-            placeholder = { Text("Title, author, series, or collection") },
+            label = { Text("Search the archive") },
+            placeholder = { Text("Title, author, series, collection…") },
             leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
             trailingIcon = {
                 if (query.isNotEmpty()) {
