@@ -111,9 +111,9 @@ fun SettingsScreen(
         }
 
         ScreenHeader(
-            eyebrow = "Settings",
-            title = "Reader & app",
-            subtitle = "Keep the interface quiet and set reading defaults once. Changes are stored locally."
+            eyebrow = "VEIL READER",
+            title = "Settings",
+            subtitle = "Reading, appearance, files, backup, privacy, and local-first controls."
         )
 
         SettingsSection(
