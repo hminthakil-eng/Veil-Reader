@@ -142,7 +142,7 @@ fun ArchivePanel(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            VeilPalette.Brass.copy(alpha = 0.07f),
+                            VeilPalette.Brass.copy(alpha = 0.055f),
                             Color.Transparent
                         )
                     )
@@ -186,7 +186,7 @@ fun ArchivePanel(
             Modifier
                 .size(7.dp)
                 .rotate(45f)
-                .background(VeilPalette.Brass.copy(alpha = 0.82f))
+                .background(VeilPalette.Brass.copy(alpha = 0.74f))
                 .align(Alignment.TopStart)
                 .offset(x = 10.dp, y = 10.dp)
         )
@@ -275,7 +275,7 @@ fun BookCover(
     Box(
         modifier = modifier
             .shadow(
-                elevation = 6.dp,
+                elevation = 7.dp,
                 shape = shape,
                 ambientColor = Color.Black.copy(alpha = 0.22f),
                 spotColor = Color.Black.copy(alpha = 0.30f)
@@ -283,7 +283,7 @@ fun BookCover(
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f)),
                 shape
             )
     ) {
@@ -347,6 +347,41 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             .background(VeilPalette.Brass.copy(alpha = 0.38f))
             .align(Alignment.CenterStart)
     )
+
+    Box(
+        modifier = Modifier
+            .align(Alignment.Center)
+            .size(42.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            Modifier
+                .size(21.dp)
+                .rotate(45f)
+                .border(
+                    BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                    RoundedCornerShape(1.dp)
+                )
+        )
+        Box(
+            Modifier
+                .width(1.dp)
+                .height(34.dp)
+                .background(VeilPalette.Brass.copy(alpha = 0.18f))
+        )
+        Box(
+            Modifier
+                .width(34.dp)
+                .height(1.dp)
+                .background(VeilPalette.Brass.copy(alpha = 0.18f))
+        )
+        Box(
+            Modifier
+                .size(4.dp)
+                .rotate(45f)
+                .background(VeilPalette.Brass.copy(alpha = 0.62f))
+        )
+    }
 
     Column(
         Modifier
