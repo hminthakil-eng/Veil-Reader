@@ -599,29 +599,46 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
 
 @Composable
 private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
-    Column(
-        Modifier
-            .width(112.dp)
-            .clickable(onClickLabel = "Continue ${book.title}", onClick = onOpen)
+    GrayfogPanel(
+        modifier = Modifier
+            .width(230.dp)
+            .clickable(onClickLabel = "Continue ${book.title}", onClick = onOpen),
+        contentPadding = PaddingValues(12.dp)
     ) {
-        BookCover(
-            title = book.title,
-            subtitle = book.author,
-            imagePath = book.coverCachePath,
-            modifier = Modifier.width(112.dp).height(160.dp)
-        )
-        Spacer(Modifier.height(VeilSpacing.xs))
-        Text(
-            book.title,
-            style = MaterialTheme.typography.titleMedium,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-        Text(
-            "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.secondary
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+            BookCover(
+                title = book.title,
+                subtitle = book.author,
+                imagePath = book.coverCachePath,
+                modifier = Modifier.width(78.dp).height(112.dp)
+            )
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Text(
+                    "CONTINUE READING",
+                    color = VeilPalette.OldGold,
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp)
+                )
+                Text(
+                    book.title,
+                    color = VeilPalette.Moon,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    book.author.ifBlank { "Unknown author" },
+                    color = VeilPalette.Mist,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(Modifier.weight(1f))
+                BookProgress(book)
+            }
+        }
     }
 }
 
@@ -632,7 +649,12 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onEdit: () -> Unit
 ) {
-    Column(Modifier.fillMaxWidth()) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .border(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .42f), RoundedCornerShape(12.dp))
+            .padding(7.dp)
+    ) {
         Box {
             BookCover(
                 title = book.title,
@@ -645,7 +667,7 @@ private fun BookLibraryTile(
             )
             Surface(
                 modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.91f),
+                color = VeilPalette.Obsidian.copy(alpha = 0.94f),
                 shape = MaterialTheme.shapes.extraSmall
             ) {
                 Text(
