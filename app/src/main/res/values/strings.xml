@@ -9,8 +9,8 @@
     <string name="common_unknown_book">Unknown book</string>
     <string name="common_unknown_author">Unknown author</string>
 
-    <string name="notebook_eyebrow">HIDDEN ARCHIVE</string>
-    <string name="notebook_title">Notebook</string>
+    <string name="notebook_eyebrow">NOTES · HIGHLIGHTS · BOOKMARKS</string>
+    <string name="notebook_title">Hidden Archive</string>
     <string name="notebook_counts">%1$d highlights · %2$d bookmarks</string>
     <string name="notebook_search_label">Search books, passages and notes</string>
     <string name="notebook_highlights_count">Highlights %1$d</string>
