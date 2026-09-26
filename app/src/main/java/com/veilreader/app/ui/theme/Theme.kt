@@ -17,20 +17,29 @@ import com.veilreader.app.domain.AppThemeMode
 
 /** Veil Reader visual system: quiet reading utility wrapped in a mysterious world. */
 object VeilPalette {
-    val Ink = Color(0xFF0B0A0F)
-    val Obsidian = Color(0xFF121117)
-    val Slate = Color(0xFF1B1921)
-    val RaisedSlate = Color(0xFF24212B)
-    val Moon = Color(0xFFF5F0F7)
-    val Mist = Color(0xFFCFC6D3)
-    val Amethyst = Color(0xFFD5BCFF)
-    val DeepAmethyst = Color(0xFF4C2D6D)
-    val OldGold = Color(0xFFE5C97B)
-    val Jade = Color(0xFF8EDBC7)
-    val AshLine = Color(0xFF514A58)
-    val Parchment = Color(0xFFF6F1EA)
-    val WarmPaper = Color(0xFFFFFBF6)
-    val InkOnPaper = Color(0xFF252128)
+    // Grayfog reference-match tokens. Keep semantic names stable so screens can migrate incrementally.
+    val Ink = Color(0xFF06090C)
+    val Obsidian = Color(0xFF0B1015)
+    val Slate = Color(0xFF111A22)
+    val RaisedSlate = Color(0xFF18232D)
+    val Moon = Color(0xFFF1E7D6)
+    val Mist = Color(0xFFC9BCA9)
+    val Amethyst = Color(0xFFC9A96B) // legacy primary alias -> aged brass
+    val DeepAmethyst = Color(0xFF4B3824)
+    val OldGold = Color(0xFFC9A96B)
+    val BrightGold = Color(0xFFE5C88B)
+    val AntiqueBrass = Color(0xFF9C7547)
+    val TarnishedBrass = Color(0xFF705336)
+    val Jade = Color(0xFF8FAEA5)
+    val AshLine = Color(0xFF4A4035)
+    val Parchment = Color(0xFFE8DCC0)
+    val WarmPaper = Color(0xFFF1E5C9)
+    val AgedPaper = Color(0xFFD5C29D)
+    val InkOnPaper = Color(0xFF292117)
+    val BloodRed = Color(0xFF6F2527)
+    val GrayfogBlue = Color(0xFF17232D)
+    val MidnightBlue = Color(0xFF223440)
+    val VeilBlack = Color(0xFF030608)
 }
 
 object VeilSpacing {
@@ -56,7 +65,7 @@ private val VeilDarkColors = darkColorScheme(
     onPrimaryContainer = Color(0xFFF0E2FF),
     secondary = VeilPalette.OldGold,
     onSecondary = Color(0xFF342906),
-    secondaryContainer = Color(0xFF443712),
+    secondaryContainer = VeilPalette.TarnishedBrass,
     onSecondaryContainer = Color(0xFFFFEBB2),
     tertiary = VeilPalette.Jade,
     onTertiary = Color(0xFF07342A),
@@ -67,16 +76,16 @@ private val VeilDarkColors = darkColorScheme(
     surfaceVariant = VeilPalette.Slate,
     onSurfaceVariant = VeilPalette.Mist,
     outline = VeilPalette.AshLine,
-    outlineVariant = Color(0xFF332E39),
+    outlineVariant = VeilPalette.TarnishedBrass,
     error = Color(0xFFFFB4AB),
     onError = Color(0xFF690005)
 )
 
 private val VeilLightColors = lightColorScheme(
-    primary = Color(0xFF68438D),
+    primary = Color(0xFF765A34),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFEBD9FF),
-    onPrimaryContainer = Color(0xFF28113F),
+    primaryContainer = VeilPalette.AgedPaper,
+    onPrimaryContainer = VeilPalette.InkOnPaper,
     secondary = Color(0xFF755D12),
     onSecondary = Color.White,
     secondaryContainer = Color(0xFFFFE8A7),
