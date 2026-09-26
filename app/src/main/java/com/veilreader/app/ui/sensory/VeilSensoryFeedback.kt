@@ -18,6 +18,7 @@ enum class VeilSensoryEvent {
     PAGE_TURN,
     MARK,
     NOTE,
+    RETURN_RITUAL,
     ADVANCEMENT,
     RELIC
 }
@@ -68,6 +69,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
                 VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
                 VeilSensoryEvent.MARK,
                 VeilSensoryEvent.NOTE -> HapticFeedbackConstants.KEYBOARD_TAP
+                VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
                 VeilSensoryEvent.ADVANCEMENT -> HapticFeedbackConstants.LONG_PRESS
                 VeilSensoryEvent.RELIC -> HapticFeedbackConstants.CONTEXT_CLICK
             }
@@ -118,6 +120,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
             VeilSensoryEvent.PAGE_TURN -> 0.085
             VeilSensoryEvent.MARK -> 0.070
             VeilSensoryEvent.NOTE -> 0.095
+            VeilSensoryEvent.RETURN_RITUAL -> 0.240
             VeilSensoryEvent.ADVANCEMENT -> 0.280
             VeilSensoryEvent.RELIC -> 0.180
         }
@@ -151,6 +154,16 @@ class VeilSensoryFeedback(context: android.content.Context) {
                     (
                         sin(2.0 * PI * 620.0 * t) * 0.48 +
                             sin(2.0 * PI * 930.0 * t) * 0.22
+                        ) * envelope
+                }
+                VeilSensoryEvent.RETURN_RITUAL -> {
+                    val attack = (unit / 0.18).coerceIn(0.0, 1.0)
+                    val release = (1.0 - unit).coerceIn(0.0, 1.0)
+                    val envelope = attack * release * release
+                    (
+                        sin(2.0 * PI * 196.0 * t) * 0.28 +
+                            sin(2.0 * PI * 293.66 * t) * 0.17 +
+                            smoothNoise * 0.10
                         ) * envelope
                 }
                 VeilSensoryEvent.ADVANCEMENT -> {
