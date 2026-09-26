@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -37,10 +38,15 @@ data class BookEntryMemory(
     val returning: Boolean,
     val progressPercent: Int,
     val chapter: String?,
-    val label: String
+    val label: String,
+    val returnGapLabel: String? = null,
+    val historyLabel: String? = null
 )
 
-fun bookEntryMemory(book: Book): BookEntryMemory {
+fun bookEntryMemory(
+    book: Book,
+    continuity: ReadingContinuitySummary? = null
+): BookEntryMemory {
     val progress = book.progress.coerceIn(0f, 1f)
     val percent = (progress * 100f).toInt().coerceIn(0, 100)
     val chapter = book.currentChapter
@@ -64,8 +70,40 @@ fun bookEntryMemory(book: Book): BookEntryMemory {
         returning = returning,
         progressPercent = percent,
         chapter = chapter,
-        label = label
+        label = label,
+        returnGapLabel = continuity?.let(::readingReturnGapLabel),
+        historyLabel = continuity?.let(::readingHistoryLabel)
     )
+}
+
+fun readingReturnGapLabel(summary: ReadingContinuitySummary): String? {
+    val gap = summary.returnGapMillis ?: return null
+    if (!summary.hasHistory) return null
+
+    val hour = 60L * 60L * 1000L
+    val day = 24L * hour
+    return when {
+        gap < 2L * hour -> "RETURNING TO THE PAGE"
+        gap < 2L * day -> "RETURNED AFTER ${(gap / hour).coerceAtLeast(2L)} HOURS"
+        gap < 60L * day -> "RETURNED AFTER ${(gap / day).coerceAtLeast(2L)} DAYS"
+        else -> "RETURNED AFTER ${(gap / (30L * day)).coerceAtLeast(2L)} MONTHS"
+    }
+}
+
+fun readingHistoryLabel(summary: ReadingContinuitySummary): String? {
+    if (!summary.hasHistory || summary.priorSessionCount <= 0) return null
+    val totalMinutes = summary.totalActiveMillis / 60_000L
+    val duration = when {
+        totalMinutes >= 60L -> {
+            val hours = totalMinutes / 60L
+            val minutes = totalMinutes % 60L
+            if (minutes == 0L) "${hours}H" else "${hours}H ${minutes}M"
+        }
+        totalMinutes > 0L -> "${totalMinutes}M"
+        else -> "<1M"
+    }
+    val sessionWord = if (summary.priorSessionCount == 1) "SESSION" else "SESSIONS"
+    return "${summary.priorSessionCount} PRIOR $sessionWord · $duration PRESERVED"
 }
 
 /**
@@ -79,6 +117,7 @@ fun BookThresholdTransitionOverlay(
     book: Book,
     stage: BookEntryStage,
     visible: Boolean,
+    continuity: ReadingContinuitySummary? = null,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -88,7 +127,7 @@ fun BookThresholdTransitionOverlay(
         exit = fadeOut(tween(260))
     ) {
         val artifact = remember(book) { bookArtifactState(book) }
-        val memory = remember(book) { bookEntryMemory(book) }
+        val memory = remember(book, continuity) { bookEntryMemory(book, continuity) }
         val aura = remember(artifact) { fallbackBookAura(artifact) }
         val scale = remember(book.id, stage) {
             Animatable(if (stage == BookEntryStage.PREPARING) 0.94f else 1f)
@@ -219,6 +258,16 @@ fun BookThresholdTransitionOverlay(
                     )
                 }
 
+                memory.returnGapLabel?.let { returnLabel ->
+                    Text(
+                        returnLabel,
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
+                        color = VeilPalette.Brass.copy(alpha = 0.86f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
                 Text(
                     memory.label,
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
@@ -226,6 +275,16 @@ fun BookThresholdTransitionOverlay(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
+
+                memory.historyLabel?.let { historyLabel ->
+                    Text(
+                        historyLabel,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.58f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 if (stage == BookEntryStage.PREPARING) {
                     LinearProgressIndicator(
