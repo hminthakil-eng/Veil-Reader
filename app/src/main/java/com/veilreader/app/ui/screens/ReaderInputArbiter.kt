@@ -22,7 +22,7 @@ internal fun shouldUseDirectionalTapNavigation(
 ): Boolean =
     format == BookFormat.EPUB &&
         !scroll &&
-        pageTurnStyle == PageTurnStyle.SLIDE
+        pageTurnStyle != PageTurnStyle.PAPER
 
 /**
  * Page-turn style is an EPUB-only preference.
