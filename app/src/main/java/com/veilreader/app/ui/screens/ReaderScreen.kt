@@ -118,6 +118,22 @@ fun ReaderScreen(
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
+    var entryVisible by remember(opened.book.id) { mutableStateOf(true) }
+    var navigatorAttached by remember(opened.book.id) { mutableStateOf(false) }
+
+    LaunchedEffect(opened.book.id) {
+        // Safety ceiling: a Reader failure must never leave an opaque transition permanently stuck.
+        delay(2400)
+        entryVisible = false
+    }
+
+    LaunchedEffect(navigatorAttached, opened.book.id) {
+        if (navigatorAttached) {
+            // Minimum dwell lets the shell-to-book handoff read as one continuous action.
+            delay(520)
+            entryVisible = false
+        }
+    }
     val readerViewModel: ReaderViewModel = viewModel(
         key = "veil-reader-state",
         factory = remember(library, game) { ReaderViewModel.factory(library, game) }
@@ -371,6 +387,7 @@ fun ReaderScreen(
     val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
         { ready ->
             navigator = ready
+            navigatorAttached = true
             ReaderTrace.event(
                 "navigator_attached",
                 bookId = opened.book.id,
@@ -792,6 +809,13 @@ fun ReaderScreen(
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 18.dp)
                 .padding(bottom = snackbarBottom)
+        )
+
+        BookThresholdTransitionOverlay(
+            book = opened.book,
+            stage = BookEntryStage.HANDOFF,
+            visible = entryVisible,
+            modifier = Modifier.fillMaxSize()
         )
     }
 
