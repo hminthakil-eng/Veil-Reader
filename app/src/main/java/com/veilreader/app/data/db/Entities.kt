@@ -132,3 +132,67 @@ data class ReadingSessionEntity(
     val highlightCount: Int,
     val noteCount: Int
 )
+
+
+@Entity(
+    tableName = "reading_cycles",
+    foreignKeys = [ForeignKey(
+        entity = BookEntity::class,
+        parentColumns = ["id"],
+        childColumns = ["bookId"],
+        onDelete = ForeignKey.CASCADE
+    )],
+    indices = [
+        Index("bookId"),
+        Index(value = ["bookId", "cycleIndex"], unique = true),
+        Index("completedAtEpochMs")
+    ]
+)
+data class ReadingCycleEntity(
+    @PrimaryKey val id: String,
+    val bookId: String,
+    val cycleIndex: Int,
+    val titleSnapshot: String,
+    val authorSnapshot: String,
+    val startedAtEpochMs: Long?,
+    val completedAtEpochMs: Long,
+    val finalLocatorJson: String,
+    val sessionCount: Int,
+    val totalActiveMillis: Long,
+    val pacedPageTurns: Int,
+    val highlightCount: Int,
+    val noteCount: Int,
+    val bookmarkCount: Int,
+    val sealCode: String,
+    val timelineJson: String
+)
+
+@Entity(
+    tableName = "passage_visits",
+    foreignKeys = [
+        ForeignKey(
+            entity = HighlightEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["highlightId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = BookEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["bookId"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [
+        Index("highlightId"),
+        Index("bookId"),
+        Index("viewedAtEpochMs")
+    ]
+)
+data class PassageVisitEntity(
+    @PrimaryKey val id: String,
+    val highlightId: String,
+    val bookId: String,
+    val locatorJson: String,
+    val viewedAtEpochMs: Long
+)
