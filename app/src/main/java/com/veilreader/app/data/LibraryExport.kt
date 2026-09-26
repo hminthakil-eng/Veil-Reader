@@ -7,7 +7,12 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.PassageVisit
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.ReadingHistoryEvent
+import com.veilreader.app.domain.ReadingHistoryEventKind
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
@@ -98,7 +103,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         }
     }
 
-    /** Restores both current schema-2 backups and older 0.6 schema-1 backups. */
+    /** Restores current schema-3 backups and older schema-1/2 local backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-${UUID.randomUUID()}").apply { mkdirs() }
         var installedRoot: File? = null
@@ -115,7 +120,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val incoming = when (schema) {
                 1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
-                CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
+                2, CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
                 else -> error("Unsupported backup schema.")
             }
             val gamePreferences = JSONObject(manifest.getJSONObject("gamePreferences").toString())
@@ -296,8 +301,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     companion object {
         private const val GAME_PREFS = "veil_game_v1"
-        private const val CURRENT_BACKUP_SCHEMA = 2
-        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, CURRENT_BACKUP_SCHEMA)
+        private const val CURRENT_BACKUP_SCHEMA = 3
+        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
@@ -312,6 +317,8 @@ private fun LibrarySnapshot.toJson(): JSONObject = JSONObject().apply {
     put("bookmarks", JSONArray().apply { bookmarks.forEach { put(it.toJson()) } })
     put("appearance", appearance.toJson())
     put("readingSessions", JSONArray().apply { readingSessions.forEach { put(it.toJson()) } })
+    put("readingCycles", JSONArray().apply { readingCycles.forEach { put(it.toJson()) } })
+    put("passageVisits", JSONArray().apply { passageVisits.forEach { put(it.toJson()) } })
 }
 
 private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -319,7 +326,9 @@ private fun LibrarySnapshot.Companion.fromJson(json: JSONObject): LibrarySnapsho
     highlights = json.optJSONArray("highlights")?.mapObjects(::highlightFromJson).orEmpty(),
     bookmarks = json.optJSONArray("bookmarks")?.mapObjects(::bookmarkFromJson).orEmpty(),
     appearance = appearanceFromJson(json.optJSONObject("appearance") ?: JSONObject()),
-    readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty()
+    readingSessions = json.optJSONArray("readingSessions")?.mapObjects(::readingSessionFromJson).orEmpty(),
+    readingCycles = json.optJSONArray("readingCycles")?.mapObjects(::readingCycleFromJson).orEmpty(),
+    passageVisits = json.optJSONArray("passageVisits")?.mapObjects(::passageVisitFromJson).orEmpty()
 )
 
 private fun parseLegacySchemaOne(prefs: JSONObject): LibrarySnapshot = LibrarySnapshot(
@@ -362,9 +371,81 @@ private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
     put("noteCount", noteCount)
 }
 
+private fun ReadingCycleRecord.toJson(): JSONObject = JSONObject().apply {
+    put("id", id)
+    put("bookId", bookId)
+    put("cycleIndex", cycleIndex)
+    put("titleSnapshot", titleSnapshot)
+    put("authorSnapshot", authorSnapshot)
+    put("startedAt", startedAtEpochMs ?: JSONObject.NULL)
+    put("completedAt", completedAtEpochMs)
+    put("finalLocatorJson", finalLocatorJson)
+    put("sessionCount", sessionCount)
+    put("totalActiveMillis", totalActiveMillis)
+    put("pacedPageTurns", pacedPageTurns)
+    put("highlightCount", highlightCount)
+    put("noteCount", noteCount)
+    put("bookmarkCount", bookmarkCount)
+    put("sealCode", sealCode)
+    put("timeline", JSONArray().apply { timeline.forEach { put(it.toJson()) } })
+}
+
+private fun ReadingHistoryEvent.toJson(): JSONObject = JSONObject().apply {
+    put("id", id)
+    put("kind", kind.name)
+    put("timestamp", timestampEpochMs)
+    put("title", title)
+    put("detail", detail ?: JSONObject.NULL)
+}
+
+private fun PassageVisit.toJson(): JSONObject = JSONObject().apply {
+    put("id", id)
+    put("highlightId", highlightId)
+    put("bookId", bookId)
+    put("locatorJson", locatorJson)
+    put("viewedAt", viewedAtEpochMs)
+}
+
+private fun readingCycleFromJson(o: JSONObject): ReadingCycleRecord = ReadingCycleRecord(
+    id = o.getString("id"),
+    bookId = o.getString("bookId"),
+    cycleIndex = o.optInt("cycleIndex", 1).coerceAtLeast(1),
+    titleSnapshot = o.optString("titleSnapshot"),
+    authorSnapshot = o.optString("authorSnapshot"),
+    startedAtEpochMs = if (o.isNull("startedAt")) null else o.optLong("startedAt"),
+    completedAtEpochMs = o.getLong("completedAt"),
+    finalLocatorJson = o.optString("finalLocatorJson"),
+    sessionCount = o.optInt("sessionCount", 0).coerceAtLeast(0),
+    totalActiveMillis = o.optLong("totalActiveMillis", 0L).coerceAtLeast(0L),
+    pacedPageTurns = o.optInt("pacedPageTurns", 0).coerceAtLeast(0),
+    highlightCount = o.optInt("highlightCount", 0).coerceAtLeast(0),
+    noteCount = o.optInt("noteCount", 0).coerceAtLeast(0),
+    bookmarkCount = o.optInt("bookmarkCount", 0).coerceAtLeast(0),
+    sealCode = o.getString("sealCode"),
+    timeline = o.optJSONArray("timeline")?.mapObjects(::readingHistoryEventFromJson).orEmpty()
+)
+
+private fun readingHistoryEventFromJson(o: JSONObject): ReadingHistoryEvent = ReadingHistoryEvent(
+    id = o.getString("id"),
+    kind = runCatching {
+        ReadingHistoryEventKind.valueOf(o.getString("kind"))
+    }.getOrDefault(ReadingHistoryEventKind.LATEST_VOLUME_ACTIVITY),
+    timestampEpochMs = o.optLong("timestamp", 0L),
+    title = o.optString("title"),
+    detail = o.optNullableString("detail")
+)
+
+private fun passageVisitFromJson(o: JSONObject): PassageVisit = PassageVisit(
+    id = o.getString("id"),
+    highlightId = o.getString("highlightId"),
+    bookId = o.getString("bookId"),
+    locatorJson = o.getString("locatorJson"),
+    viewedAtEpochMs = o.optLong("viewedAt", 0L)
+)
+
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
-    put("scroll", scroll); put("publisherStyles", publisherStyles)
+    put("scroll", scroll); put("publisherStyles", publisherStyles); put("pageTurnStyle", pageTurnStyle.name)
     put("screenBrightness", screenBrightness ?: JSONObject.NULL)
 }
 
@@ -430,6 +511,9 @@ private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearan
     pageMargins = (o.optDouble("pageMargins", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.5, 2.0),
     scroll = o.optBoolean("scroll", false),
     publisherStyles = o.optBoolean("publisherStyles", true),
+    pageTurnStyle = runCatching {
+        PageTurnStyle.valueOf(o.optString("pageTurnStyle", PageTurnStyle.PAPER.name))
+    }.getOrDefault(PageTurnStyle.PAPER),
     screenBrightness = o.optFiniteDouble("screenBrightness")?.coerceIn(.05, 1.0)
 )
 
