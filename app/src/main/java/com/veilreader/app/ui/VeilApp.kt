@@ -522,20 +522,20 @@ fun VeilApp(
                     }
                 }
             } else {
-                Box(Modifier.fillMaxSize()) {
+                Column(Modifier.fillMaxSize()) {
                     VeilAnimatedTabHost(
                         selectedTab = route.selectedTab,
                         modifier = Modifier
-                            .fillMaxSize()
+                            .weight(1f)
+                            .fillMaxWidth()
                             .statusBarsPadding()
-                            .padding(bottom = 88.dp)
                     ) { tab ->
                         mainContent(tab)
                     }
                     VeilBottomDock(
                         selected = route.selectedTab,
                         onSelect = routeViewModel::selectTab,
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -573,3 +573,4 @@ private fun sigilDisplayName(id: String): String = when (id) {
     "first_threshold" -> "First Threshold"
     else -> "Unknown Sigil"
 }
+

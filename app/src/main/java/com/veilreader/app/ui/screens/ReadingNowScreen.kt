@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,17 +10,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.veilreader.app.R
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -111,32 +108,39 @@ fun ReadingNowScreen(
 
 @Composable
 private fun ThresholdHeader(hasCurrentBook: Boolean) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-    ) {
-        Text(
-            "VEIL READER · GRAYFOG ARCHIVE",
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.9.sp),
-            color = VeilPalette.Brass
+    Box(Modifier.fillMaxWidth().clip(MaterialTheme.shapes.small)) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.matchParentSize()
         )
-        BrassRule(Modifier.width(118.dp), strong = true)
-        Spacer(Modifier.height(4.dp))
-        Text(
-            text = if (hasCurrentBook) "Return to the Grand Archive" else "Enter the Grand Archive",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(listOf(Color.Transparent, VeilPalette.Ink.copy(alpha = 0.94f)))
+            )
         )
-        Text(
-            text = if (hasCurrentBook) {
-                "Your last volume is still open beneath the lantern light. Return exactly where you left it."
-            } else {
-                "A private library between worlds. Bring in an EPUB or PDF; your books, notes, and progress remain on this device."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.widthIn(max = 680.dp)
-        )
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 120.dp, bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                "VEIL READER",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+                color = VeilPalette.Brass
+            )
+            Text(
+                if (hasCurrentBook) "The Library Awaits" else "Your Library Begins",
+                style = MaterialTheme.typography.headlineLarge,
+                color = VeilPalette.Moon
+            )
+            Text(
+                if (hasCurrentBook) "Every book is a door. Continue where you left off."
+                else "Bring a book. Build a world of your own.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.84f)
+            )
+        }
     }
 }
 
@@ -146,63 +150,69 @@ private fun ContinueReadingHero(
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val progress = current.progress.coerceIn(0f, 1f)
-    val progressPercent = (progress * 100).toInt()
-    val shape = MaterialTheme.shapes.medium
+    val paper = Color(0xFFE9DDC4)
+    val ink = Color(0xFF29251F)
+    val secondaryInk = Color(0xFF625440)
+    val shape = MaterialTheme.shapes.small
+    val fontScale = LocalDensity.current.fontScale
 
     BoxWithConstraints(
-        modifier = Modifier
-            .fillMaxWidth()
+        Modifier.fillMaxWidth()
             .clip(shape)
-            .background(
-                Brush.verticalGradient(
-                    listOf(
-                        VeilPalette.DeepBrass.copy(alpha = 0.44f),
-                        colors.surfaceVariant.copy(alpha = 0.78f),
-                        colors.surface.copy(alpha = 0.985f)
-                    )
-                )
-            )
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
-                shape
-            )
-            .padding(VeilSpacing.lg)
+            .background(Brush.verticalGradient(listOf(Color(0xFFF2E8D3), paper, Color(0xFFE1D0AF))))
+            .border(BorderStroke(1.dp, VeilPalette.Brass), shape)
+            .padding(VeilSpacing.md)
     ) {
-        val wide = maxWidth >= 590.dp
-        if (wide) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                HeroCover(current)
-                HeroDetails(
-                    current = current,
-                    progressPercent = progressPercent,
-                    progress = progress,
-                    onOpenBook = onOpenBook,
-                    onOpenLibrary = onOpenLibrary,
-                    modifier = Modifier.weight(1f)
-                )
+        val stacked = maxWidth < 260.dp || fontScale > 1.4f
+        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+            Text(
+                "CONTINUE READING",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                color = secondaryInk
+            )
+            if (stacked) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    HeroCover(current)
+                }
+                HeroDetails(current, ink, secondaryInk)
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HeroCover(current)
+                    HeroDetails(current, ink, secondaryInk, Modifier.weight(1f))
+                }
             }
-        } else {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
-                horizontalAlignment = Alignment.CenterHorizontally
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(3.dp),
+                color = ink,
+                trackColor = secondaryInk.copy(alpha = 0.20f),
+                drawStopIndicator = {}
+            )
+            Text(
+                heroProgressLabel(current, (progress * 100).toInt(), progress),
+                style = MaterialTheme.typography.labelMedium,
+                color = secondaryInk,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Button(
+                onClick = { onOpenBook(current) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = ButtonDefaults.buttonColors(containerColor = ink, contentColor = paper)
             ) {
-                HeroCover(current)
-                HeroDetails(
-                    current = current,
-                    progressPercent = progressPercent,
-                    progress = progress,
-                    onOpenBook = onOpenBook,
-                    onOpenLibrary = onOpenLibrary,
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Text(if (progress > 0f && !current.finished) "Continue reading" else "Open book")
             }
+            TextButton(
+                onClick = onOpenLibrary,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                colors = ButtonDefaults.textButtonColors(contentColor = ink)
+            ) { Text("Browse the archive") }
         }
     }
 }
@@ -213,86 +223,35 @@ private fun HeroCover(current: Book) {
         title = current.title,
         subtitle = current.author,
         imagePath = current.coverCachePath,
-        modifier = Modifier.width(144.dp).height(210.dp)
+        modifier = Modifier.width(88.dp).height(128.dp)
     )
 }
 
 @Composable
 private fun HeroDetails(
     current: Book,
-    progressPercent: Int,
-    progress: Float,
-    onOpenBook: (Book) -> Unit,
-    onOpenLibrary: () -> Unit,
+    ink: Color,
+    secondaryInk: Color,
     modifier: Modifier = Modifier
 ) {
-    var progressRevealed by remember(current.id) { mutableStateOf(false) }
-    LaunchedEffect(current.id) { progressRevealed = true }
-    val animatedProgress by animateFloatAsState(
-        targetValue = if (progressRevealed) progress else 0f,
-        animationSpec = tween(
-            durationMillis = 720,
-            delayMillis = 180,
-            easing = FastOutSlowInEasing
-        ),
-        label = "hero-progress-reveal"
-    )
-
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-        Text(
-            "CURRENT VOLUME",
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
-            color = VeilPalette.Brass
-        )
-        BrassRule(Modifier.width(58.dp))
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
             current.title,
-            style = MaterialTheme.typography.headlineMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge,
+            color = ink,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             current.author.ifBlank { "Unknown author" },
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = secondaryInk,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
-
-        Spacer(Modifier.height(VeilSpacing.xs))
-        LinearProgressIndicator(
-            progress = { animatedProgress },
-            modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-            color = MaterialTheme.colorScheme.primary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
-        )
-        Text(
-            heroProgressLabel(current, progressPercent, progress),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.xs),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-        ) {
-            Button(
-                onClick = { onOpenBook(current) },
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-            ) {
-                Text(if (progress > 0f && !current.finished) "Return to the volume" else "Open the volume")
-            }
-            TextButton(
-                onClick = onOpenLibrary,
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
-            ) {
-                Text("Enter Grayfog Archive")
-            }
+        current.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+            Text(series, style = MaterialTheme.typography.labelMedium, color = secondaryInk,
+                maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -300,7 +259,7 @@ private fun HeroDetails(
 private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Float): String = when {
     current.finished -> "Finished — open again anytime"
     progress <= 0f -> "Ready to begin"
-    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" -> current.currentChapter
+    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" -> "${current.currentChapter} · $progressPercent%"
     else -> "$progressPercent% complete"
 }
 
@@ -578,3 +537,4 @@ private fun formatReadingTime(minutes: Int): String = when {
     minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
     else -> "${minutes}m"
 }
+
