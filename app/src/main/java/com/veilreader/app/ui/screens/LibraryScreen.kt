@@ -487,49 +487,76 @@ private fun BookDetailSheet(
                     .padding(bottom = VeilSpacing.xxl),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
             ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.small)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                VeilPalette.DeepBrass.copy(alpha = 0.42f),
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.76f),
+                                MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+                            )
+                        )
+                    )
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
+                        MaterialTheme.shapes.small
+                    )
+                    .padding(VeilSpacing.lg)
             ) {
-                BookCover(
-                    title = book.title,
-                    subtitle = book.author,
-                    imagePath = book.coverCachePath,
-                    modifier = Modifier.width(112.dp).height(164.dp)
-                )
-                Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.lg),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        if (book.isImported) stringResource(R.string.book_detail_local_publication_format, book.format.name) else stringResource(R.string.book_detail_sample_entry),
-                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.15.sp),
-                        color = VeilPalette.Brass
+                    BookCover(
+                        title = book.title,
+                        subtitle = book.author,
+                        imagePath = book.coverCachePath,
+                        modifier = Modifier.width(122.dp).height(178.dp)
                     )
-                    Text(
-                        book.title,
-                        style = MaterialTheme.typography.headlineMedium,
-                        maxLines = 4,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        if (book.author.isBlank()) stringResource(R.string.common_unknown_author) else book.author,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                    Column(
+                        Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    ) {
                         Text(
-                            buildString {
-                                append(series)
-                                book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
-                            },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = VeilPalette.Brass,
+                            if (book.isImported) stringResource(R.string.book_detail_local_publication_format, book.format.name) else stringResource(R.string.book_detail_sample_entry),
+                            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.3.sp),
+                            color = VeilPalette.Brass
+                        )
+                        BrassRule(Modifier.width(58.dp), strong = true)
+                        Text(
+                            book.title,
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 4,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            if (book.author.isBlank()) stringResource(R.string.common_unknown_author) else book.author,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis
+                        )
+                        book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                            Text(
+                                buildString {
+                                    append(series)
+                                    book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                                color = VeilPalette.Brass,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
