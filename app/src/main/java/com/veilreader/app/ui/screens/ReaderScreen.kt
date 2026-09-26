@@ -1040,7 +1040,12 @@ private fun EpubAppearancePanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(
-                "Reading appearance",
+                "APPEARANCE",
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.8.sp),
+                color = VeilPalette.OldGold
+            )
+            Text(
+                "Shape the Page",
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
@@ -1051,12 +1056,13 @@ private fun EpubAppearancePanel(
             )
         }
 
-        Text("Presets", fontWeight = FontWeight.SemiBold)
+        VeilOrnamentDivider()
+        Text("Page atmosphere", fontWeight = FontWeight.SemiBold, color = VeilPalette.Moon)
             Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AppearancePreset("Book", draft.theme == ReaderTheme.PAPER) {
+            AppearancePreset("Paper", draft.theme == ReaderTheme.PAPER) {
                 updateDraft(
                     draft.withTheme(ReaderTheme.PAPER).copy(
                         fontScale = 1.0,
@@ -1066,7 +1072,7 @@ private fun EpubAppearancePanel(
                     )
                 )
             }
-            AppearancePreset("Comfort", draft.theme == ReaderTheme.SEPIA) {
+            AppearancePreset("Sepia", draft.theme == ReaderTheme.SEPIA) {
                 updateDraft(
                     draft.withTheme(ReaderTheme.SEPIA).copy(
                         fontScale = 1.08,
@@ -1076,7 +1082,7 @@ private fun EpubAppearancePanel(
                     )
                 )
             }
-            AppearancePreset("Night", draft.theme == ReaderTheme.DUSK) {
+            AppearancePreset("Dusk", draft.theme == ReaderTheme.DUSK) {
                 updateDraft(
                     draft.withTheme(ReaderTheme.DUSK).copy(
                         fontScale = 1.05,
@@ -1096,7 +1102,7 @@ private fun EpubAppearancePanel(
             }
         }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        VeilOrnamentDivider()
 
         Text("Text size · ${(draft.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
         Slider(
@@ -1119,7 +1125,7 @@ private fun EpubAppearancePanel(
             valueRange = .5f..2.0f
         )
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        VeilOrnamentDivider()
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -1185,14 +1191,22 @@ private fun EpubAppearancePanel(
                 )
             }
 
-        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        VeilOrnamentDivider()
         ReaderBrightnessControls(
             appearance = draft,
             onChange = ::updateDraft
         )
 
-        Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
-            Text("Back to reading")
+        Button(
+            onClick = onDone,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilPalette.OldGold,
+                contentColor = VeilPalette.Ink
+            ),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)
+        ) {
+            Text("Return to the Book")
         }
     }
 }
@@ -1203,6 +1217,18 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
         selected = selected,
         onClick = onClick,
         label = { Text(label) },
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = VeilPalette.Obsidian.copy(alpha = .70f),
+            labelColor = VeilPalette.Mist,
+            selectedContainerColor = VeilPalette.DeepAmethyst,
+            selectedLabelColor = VeilPalette.BrightGold
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = selected,
+            borderColor = VeilPalette.TarnishedBrass.copy(alpha = .62f),
+            selectedBorderColor = VeilPalette.OldGold
+        ),
         modifier = Modifier.heightIn(min = 48.dp)
     )
 }
