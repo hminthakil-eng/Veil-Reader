@@ -44,6 +44,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookMetadataUpdate
@@ -485,28 +487,50 @@ private fun BookDetailSheet(
         else -> stringResource(R.string.book_detail_open_book)
     }
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = MaterialTheme.colorScheme.background,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = VeilPalette.Brass.copy(alpha = 0.58f)
-            )
-        }
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Box(
-            modifier = Modifier.fillMaxWidth(),
-            contentAlignment = Alignment.TopCenter
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
         ) {
-            Column(
-                Modifier
-                    .widthIn(max = 720.dp)
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = VeilSpacing.lg)
-                    .padding(bottom = VeilSpacing.xxl),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding(),
+                contentAlignment = Alignment.TopCenter
             ) {
+                Column(
+                    Modifier
+                        .widthIn(max = 720.dp)
+                        .fillMaxWidth()
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = VeilSpacing.lg)
+                        .padding(top = VeilSpacing.md, bottom = VeilSpacing.xxl),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+                ) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.heightIn(min = 48.dp)
+                        ) {
+                            Text("← Back")
+                        }
+                        Text(
+                            "BOOK DETAIL",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
+                            color = VeilPalette.Brass
+                        )
+                    }
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -694,7 +718,7 @@ private fun BookDetailSheet(
                         }
                     }
                 }
-            }
+                }
             }
         }
     }
