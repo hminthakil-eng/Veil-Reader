@@ -316,6 +316,10 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(1, sealed.sessionCount)
         assertEquals(12, sealed.pacedPageTurns)
         assertEquals(1, db.passageVisits().listAll().size)
+        assertEquals(
+            listOf("PROGRESS_25", "PROGRESS_50", "PROGRESS_75"),
+            db.readingMilestones().listAll().map { it.kind }
+        )
 
         // Later mutable activity cannot rewrite the sealed snapshot.
         repository.addHighlight("history-book", "Later line", "{\"href\":\"later.xhtml\"}")
@@ -341,11 +345,13 @@ class RoomRuntimeRepositoryInstrumentedTest {
         )
         assertTrue(db.readingCycles().listAll().isEmpty())
         assertTrue(db.passageVisits().listAll().isEmpty())
+        assertTrue(db.readingMilestones().listAll().isEmpty())
 
         exporter.restoreBackup(Uri.fromFile(backupFile))
 
         assertEquals(1, db.readingCycles().listAll().size)
         assertEquals(1, db.passageVisits().listAll().size)
+        assertEquals(3, db.readingMilestones().listAll().size)
         assertEquals(
             PageTurnStyle.NONE,
             settings.settings.first().readerAppearance.pageTurnStyle
