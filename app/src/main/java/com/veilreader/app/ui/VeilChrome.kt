@@ -208,20 +208,19 @@ fun VeilBottomDock(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        shape = RoundedCornerShape(14.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+            .navigationBarsPadding(),
+        shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.995f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 8.dp,
+        shadowElevation = 0.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(
             1.dp,
-            VeilPalette.Brass.copy(alpha = 0.30f)
+            VeilPalette.Brass.copy(alpha = 0.24f)
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             GrayfogRule(Modifier.fillMaxWidth())
@@ -251,7 +250,7 @@ private fun VeilDockItem(
     modifier: Modifier = Modifier
 ) {
     val background = if (selected) {
-        VeilPalette.DeepBrass.copy(alpha = 0.48f)
+        VeilPalette.DeepBrass.copy(alpha = 0.30f)
     } else {
         Color.Transparent
     }
@@ -264,7 +263,7 @@ private fun VeilDockItem(
     Column(
         modifier = modifier
             .heightIn(min = 56.dp)
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(4.dp))
             .background(background)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
             .padding(horizontal = 2.dp, vertical = 7.dp),
