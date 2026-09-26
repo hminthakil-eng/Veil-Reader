@@ -135,6 +135,18 @@ fun ReaderNotebook(
                         selected = tab == item,
                         onClick = { tab = item },
                         label = { Text(item.label) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = VeilPalette.Obsidian.copy(alpha = .70f),
+                            labelColor = VeilPalette.Mist,
+                            selectedContainerColor = VeilPalette.DeepAmethyst,
+                            selectedLabelColor = VeilPalette.BrightGold
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = tab == item,
+                            borderColor = VeilPalette.TarnishedBrass.copy(alpha = .62f),
+                            selectedBorderColor = VeilPalette.OldGold
+                        ),
                         modifier = Modifier.heightIn(min = 48.dp)
                     )
                 }
@@ -196,7 +208,11 @@ fun ReaderNotebook(
                             Text("Save a place using Bookmark in the reader. Your bookmarks will appear here.")
                         }
                         items(bookmarks, key = { it.id }) { bookmark ->
-                            Card(Modifier.fillMaxWidth()) {
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = VeilPalette.Obsidian.copy(alpha = .72f)),
+                                border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .48f))
+                            ) {
                                 Column(Modifier.padding(14.dp)) {
                                     Text(bookmark.label, fontWeight = FontWeight.SemiBold)
                                     Row(
@@ -225,7 +241,11 @@ fun ReaderNotebook(
                             )
                         }
                         items(matchingHighlights, key = { it.id }) { highlight ->
-                            Card(Modifier.fillMaxWidth()) {
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = VeilPalette.Obsidian.copy(alpha = .72f)),
+                                border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .48f))
+                            ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     Text(highlight.quote, style = MaterialTheme.typography.bodyLarge)
                                     if (highlight.note.isNotBlank()) {
@@ -272,7 +292,11 @@ fun ReaderNotebook(
                             }
                         }
                         items(bookSearchResults) { locator ->
-                            Card(Modifier.fillMaxWidth()) {
+                            Card(
+                                Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(containerColor = VeilPalette.Obsidian.copy(alpha = .72f)),
+                                border = BorderStroke(1.dp, VeilPalette.TarnishedBrass.copy(alpha = .48f))
+                            ) {
                                 Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                                     locator.title?.takeIf { it.isNotBlank() }?.let {
                                         Text(
