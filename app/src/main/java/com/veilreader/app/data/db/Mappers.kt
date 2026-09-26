@@ -8,6 +8,8 @@ import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingHistoryEvent
 import com.veilreader.app.domain.ReadingHistoryEventKind
+import com.veilreader.app.domain.ReadingMilestoneKind
+import com.veilreader.app.domain.ReadingMilestoneRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import org.json.JSONArray
 import org.json.JSONObject
@@ -207,4 +209,24 @@ fun PassageVisitEntity.toDomain(): PassageVisit = PassageVisit(
     bookId = bookId,
     locatorJson = locatorJson,
     viewedAtEpochMs = viewedAtEpochMs
+)
+
+
+fun ReadingMilestoneRecord.toEntity(): ReadingMilestoneEntity = ReadingMilestoneEntity(
+    id = id,
+    bookId = bookId,
+    kind = kind.name,
+    reachedAtEpochMs = reachedAtEpochMs,
+    progression = progression,
+    locatorJson = locatorJson
+)
+
+fun ReadingMilestoneEntity.toDomain(): ReadingMilestoneRecord = ReadingMilestoneRecord(
+    id = id,
+    bookId = bookId,
+    kind = runCatching { ReadingMilestoneKind.valueOf(kind) }
+        .getOrDefault(ReadingMilestoneKind.FIRST_OPENED),
+    reachedAtEpochMs = reachedAtEpochMs,
+    progression = progression.coerceIn(0f, 1f),
+    locatorJson = locatorJson
 )
