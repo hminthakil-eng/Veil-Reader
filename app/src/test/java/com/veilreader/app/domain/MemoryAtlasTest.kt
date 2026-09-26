@@ -69,6 +69,35 @@ class MemoryAtlasTest {
     }
 
     @Test
+    fun `completed books keep highlight and session engagement bonuses`() {
+        val book = Book(
+            id = "a",
+            title = "A",
+            author = "One",
+            progress = 1f,
+            finished = true
+        )
+        val base = buildMemoryAtlas(listOf(book), emptyList(), emptyList())
+            .nodes.single().engagementScore
+        val highlights = listOf(
+            Highlight("h1", "a", "first preserved passage", "{}"),
+            Highlight("h2", "a", "second preserved passage", "{}")
+        )
+        val sessions = listOf(
+            ReadingSessionSnapshot("s1", "a", 1, 2, 1000, 8, 0, 0),
+            ReadingSessionSnapshot("s2", "a", 3, 4, 1000, 8, 0, 0),
+            ReadingSessionSnapshot("s3", "a", 5, 6, 1000, 8, 0, 0)
+        )
+
+        val enriched = buildMemoryAtlas(listOf(book), highlights, sessions)
+            .nodes.single().engagementScore
+
+        assertEquals(3.5f, base, 0.0001f)
+        assertEquals(4.48f, enriched, 0.0001f)
+        assertTrue(enriched > base)
+    }
+
+    @Test
     fun `orphan sessions increase no visible book engagement`() {
         val book = Book(id = "a", title = "A", author = "One")
         val base = buildMemoryAtlas(listOf(book), emptyList(), emptyList())
