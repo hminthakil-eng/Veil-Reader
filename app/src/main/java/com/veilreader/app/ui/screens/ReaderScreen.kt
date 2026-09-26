@@ -1,7 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import android.animation.ValueAnimator
 import android.graphics.Color as AndroidColor
 import android.view.ActionMode
+import android.view.accessibility.AccessibilityManager
 import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
@@ -166,6 +168,12 @@ fun ReaderScreen(
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
+    var selectionModeActive by remember(opened.book.id) { mutableStateOf(false) }
+    val accessibilityManager = remember(activity) {
+        activity.getSystemService(AccessibilityManager::class.java)
+    }
+    val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
+    val reducedMotion = !ValueAnimator.areAnimatorsEnabled()
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
@@ -230,12 +238,21 @@ fun ReaderScreen(
     }
     ReaderBrightnessEffect(activity, readerAppearance.screenBrightness)
 
-    LaunchedEffect(controlsVisible, showNotebook, showAppearance, showPdfZoom) {
+    LaunchedEffect(
+        controlsVisible,
+        showNotebook,
+        showAppearance,
+        showPdfZoom,
+        selectionModeActive,
+        touchExplorationEnabled
+    ) {
         if (
             controlsVisible &&
             !showNotebook &&
             !showAppearance &&
-            !showPdfZoom
+            !showPdfZoom &&
+            !selectionModeActive &&
+            !touchExplorationEnabled
         ) {
             delay(3600)
             controlsVisible = false
@@ -288,6 +305,10 @@ fun ReaderScreen(
         ReaderSelectionActionModeCallback(
             coroutineScope = scope,
             navigatorProvider = { navigator as? SelectableNavigator },
+            onModeChanged = { active ->
+                selectionModeActive = active
+                if (active) controlsVisible = true
+            },
             onAction = { action, locator, quote ->
                 try {
                     val locatorJson = locator.toVeilPersistedJson(opened.format)
@@ -519,6 +540,7 @@ fun ReaderScreen(
                             latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
                     },
                     scope = scope,
+                    isReducedMotion = { reducedMotion },
                     onInteraction = {
                         readerViewModel.onUserInteraction()
                         controlsVisible = false
@@ -537,10 +559,11 @@ fun ReaderScreen(
             val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
                 isAnimated = {
-                    shouldAnimateDirectionalNavigation(
-                        format = opened.format,
-                        pageTurnStyle = latestAppearance.value.pageTurnStyle
-                    )
+                    !reducedMotion &&
+                        shouldAnimateDirectionalNavigation(
+                            format = opened.format,
+                            pageTurnStyle = latestAppearance.value.pageTurnStyle
+                        )
                 },
                 isTapNavigationEnabled = {
                     shouldUseDirectionalTapNavigation(
