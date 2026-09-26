@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
@@ -655,6 +656,7 @@ private fun BookDetailSheet(
                                 title = book.title,
                                 subtitle = book.author,
                                 imagePath = book.coverCachePath,
+                artifact = bookArtifactState(book),
                                 modifier = Modifier.width(142.dp).height(208.dp)
                             )
                             BookDetailIdentity(book)
@@ -669,6 +671,7 @@ private fun BookDetailSheet(
                                 title = book.title,
                                 subtitle = book.author,
                                 imagePath = book.coverCachePath,
+                artifact = bookArtifactState(book),
                                 modifier = Modifier.width(154.dp).height(226.dp)
                             )
                             BookDetailIdentity(
@@ -1275,6 +1278,7 @@ private fun RecentReadingBook(book: Book, onOpen: () -> Unit) {
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
+                artifact = bookArtifactState(book),
                 modifier = Modifier.width(48.dp).height(70.dp)
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -1329,6 +1333,7 @@ private fun BookLibraryTile(
             title = book.title,
             subtitle = book.author,
             imagePath = book.coverCachePath,
+                artifact = bookArtifactState(book),
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(0.69f)
@@ -1432,6 +1437,7 @@ private fun BookLibraryRow(
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
+                artifact = bookArtifactState(book),
                 modifier = Modifier.width(58.dp).height(84.dp)
             )
 
