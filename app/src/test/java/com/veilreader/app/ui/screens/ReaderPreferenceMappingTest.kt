@@ -68,7 +68,12 @@ class ReaderPreferenceMappingTest {
         assertFalse(slide.scroll)
         assertEquals(PageTurnStyle.SLIDE, slide.pageTurnStyle)
 
-        val scroll = slide.withNavigationMode(ReaderNavigationMode.SCROLL)
+        val paged = slide.withNavigationMode(ReaderNavigationMode.PAGED)
+        assertEquals(ReaderNavigationMode.PAGED, paged.navigationMode)
+        assertFalse(paged.scroll)
+        assertEquals(PageTurnStyle.NONE, paged.pageTurnStyle)
+
+        val scroll = paged.withNavigationMode(ReaderNavigationMode.SCROLL)
         assertEquals(ReaderNavigationMode.SCROLL, scroll.navigationMode)
         assertEquals(true, scroll.scroll)
         assertEquals(PageTurnStyle.SLIDE, scroll.pageTurnStyle)
