@@ -37,6 +37,7 @@ import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
@@ -84,6 +85,8 @@ fun VeilApp(
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
+    var activeContinuity by remember { mutableStateOf<ReadingContinuitySummary?>(null) }
+    var activeReturnLocatorJson by remember { mutableStateOf<String?>(null) }
 
     // While Readium owns the screen, remove these collectors from composition entirely so
     // progress/game writes cannot invalidate the app shell. StateFlow immediately supplies its
@@ -287,6 +290,9 @@ fun VeilApp(
             return@LaunchedEffect
         }
 
+        activeContinuity = null
+        activeReturnLocatorJson = null
+
         val book = library.getBook(targetId) ?: targetBook ?: return@LaunchedEffect
         if (!book.isImported) {
             routeViewModel.bookOpenFailed(targetId)
@@ -296,6 +302,15 @@ fun VeilApp(
 
         val locatorOverride = route.locatorOverrideJson
         val readerCheckpoint = route.readerLocatorCheckpointJson
+
+        activeReturnLocatorJson = locatorOverride?.let { requested ->
+            book.locatorJson
+                ?.takeIf { it.isNotBlank() && it != requested }
+        }
+        activeContinuity = runCatching {
+            library.readingContinuity(book)
+        }.getOrNull()
+
         val initialLocatorJson = com.veilreader.app.ui.navigation.chooseReaderRestoreLocator(
             explicitOverrideJson = locatorOverride,
             readerCheckpointJson = readerCheckpoint,
@@ -463,9 +478,13 @@ fun VeilApp(
             game = game,
             readerAppearance = appSettings.readerAppearance,
             onReaderAppearanceChange = onSaveReaderAppearance,
+            entryContinuity = activeContinuity,
+            initialReturnLocatorJson = activeReturnLocatorJson,
             onSensoryEvent = { event -> sensory.perform(view, event) },
             onClose = {
                 openedPublication = null
+                activeContinuity = null
+                activeReturnLocatorJson = null
                 routeViewModel.closeReader()
             },
             onLocatorCheckpoint = { locatorJson ->
@@ -610,6 +629,7 @@ fun VeilApp(
                 book = book,
                 stage = BookEntryStage.PREPARING,
                 visible = true,
+                continuity = activeContinuity,
                 modifier = Modifier.fillMaxSize()
             )
         }
