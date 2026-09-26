@@ -16,9 +16,24 @@ import kotlinx.coroutines.flow.map
 
 private val Context.veilSettingsDataStore by preferencesDataStore(name = "veil_settings")
 
+enum class AmbientSound {
+    OFF,
+    LIBRARY,
+    RAIN,
+    FIRE
+}
+
+data class SensorySettings(
+    val hapticsEnabled: Boolean = true,
+    val interactionSoundsEnabled: Boolean = false,
+    val ambientSound: AmbientSound = AmbientSound.OFF,
+    val audioVolume: Double = 0.18
+)
+
 data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
+    val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
     val legacyLibraryImported: Boolean = false,
@@ -37,6 +52,10 @@ class SettingsStore(private val context: Context) {
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
+        val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
+        val sensoryInteractionSounds = booleanPreferencesKey("sensory_interaction_sounds")
+        val sensoryAmbient = stringPreferencesKey("sensory_ambient")
+        val sensoryAudioVolume = doublePreferencesKey("sensory_audio_volume")
         val gameVisible = booleanPreferencesKey("game_visible")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
         val legacyGameImported = booleanPreferencesKey("legacy_game_imported")
@@ -63,6 +82,19 @@ class SettingsStore(private val context: Context) {
                     ?.takeIf { it.isFinite() }
                     ?.coerceIn(0.05, 1.0)
             ),
+            sensory = SensorySettings(
+                hapticsEnabled = prefs[Keys.sensoryHaptics] ?: true,
+                interactionSoundsEnabled = prefs[Keys.sensoryInteractionSounds] ?: false,
+                ambientSound = runCatching {
+                    AmbientSound.valueOf(
+                        prefs[Keys.sensoryAmbient] ?: AmbientSound.OFF.name
+                    )
+                }.getOrDefault(AmbientSound.OFF),
+                audioVolume = (prefs[Keys.sensoryAudioVolume] ?: 0.18)
+                    .takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 0.55)
+                    ?: 0.18
+            ),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
             legacyLibraryImported = prefs[Keys.legacyLibraryImported] ?: false,
@@ -86,6 +118,18 @@ class SettingsStore(private val context: Context) {
             value.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
+        }
+    }
+
+    suspend fun saveSensorySettings(value: SensorySettings) {
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.sensoryHaptics] = value.hapticsEnabled
+            prefs[Keys.sensoryInteractionSounds] = value.interactionSoundsEnabled
+            prefs[Keys.sensoryAmbient] = value.ambientSound.name
+            prefs[Keys.sensoryAudioVolume] = value.audioVolume
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 0.55)
+                ?: 0.18
         }
     }
 
