@@ -68,6 +68,7 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -108,6 +109,7 @@ fun ReaderScreen(
     game: GameRepository,
     readerAppearance: ReaderAppearance,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
+    onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
     onClose: () -> Unit,
     onLocatorCheckpoint: (String) -> Unit = {}
 ) {
@@ -269,6 +271,7 @@ fun ReaderScreen(
                     if (isNew) {
                         library.flushWrites()
                         readerViewModel.onHighlightAdded()
+                        onSensoryEvent(VeilSensoryEvent.MARK)
                     } else {
                         readerViewModel.onUserInteraction()
                     }
@@ -467,6 +470,7 @@ fun ReaderScreen(
                         controlsVisible = false
                     },
                     onCommittedTurn = {
+                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         val locator = nav.currentLocator.value
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
@@ -490,6 +494,9 @@ fun ReaderScreen(
                         scroll = nav.overflow.value.scroll,
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
                     )
+                },
+                onNavigationCommitted = {
+                    onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                 }
             )
 
@@ -746,6 +753,9 @@ fun ReaderScreen(
                                     "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
                                     locator.toVeilPersistedJson(opened.format)
                                 )
+                                if (added) {
+                                    onSensoryEvent(VeilSensoryEvent.MARK)
+                                }
                                 readerMessage = if (added) {
                                     "Bookmark saved"
                                 } else {
@@ -894,6 +904,7 @@ fun ReaderScreen(
                                 library.updateHighlightNote(highlightId, pendingNoteText)
                                 library.flushWrites()
                                 readerViewModel.onNoteSaved(highlightId, pendingNoteText)
+                                onSensoryEvent(VeilSensoryEvent.NOTE)
                                 pendingNoteHighlightId = null
                                 pendingNoteText = ""
                                 readerMessage = "Note saved"
@@ -963,6 +974,7 @@ fun ReaderScreen(
                 library.updateHighlightNote(id, note)
                 library.flushWrites()
                 readerViewModel.onNoteSaved(id, note)
+                onSensoryEvent(VeilSensoryEvent.NOTE)
                 readerMessage = "Note saved"
             },
             onDeleteHighlight = library::deleteHighlight,
