@@ -3,11 +3,6 @@ package com.veilreader.app.ui.screens
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -15,8 +10,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items as lazyItems
+import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -69,6 +63,7 @@ fun LibraryScreen(
     var sort by rememberSaveable { mutableStateOf("Recent") }
     var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GRID.name) }
     val viewMode = runCatching { LibraryViewMode.valueOf(viewModeName) }.getOrDefault(LibraryViewMode.GRID)
+    var overviewExpanded by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Book?>(null) }
@@ -149,13 +144,20 @@ fun LibraryScreen(
         .toList()
     val detailBook = detailBookId?.let { id -> books.firstOrNull { it.id == id } }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(horizontal = VeilSpacing.lg)
-            .padding(top = VeilSpacing.lg)
+    // Headers and books share one lazy viewport, including landscape and large-text layouts.
+    LazyVerticalGrid(
+        columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(148.dp) else GridCells.Fixed(1),
+        modifier = Modifier.fillMaxSize(),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+        contentPadding = PaddingValues(
+            start = VeilSpacing.lg,
+            end = VeilSpacing.lg,
+            top = VeilSpacing.lg,
+            bottom = 30.dp
+        )
     ) {
-        VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
+        item(key = "library:heading", span = { GridItemSpan(maxLineSpan) }) {
             LibraryHeader(
                 bookCount = books.size,
                 isImporting = isImporting,
@@ -164,194 +166,185 @@ fun LibraryScreen(
             )
         }
 
-        if (books.isNotEmpty()) {
-            VeilReveal(delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
-                ArchiveOverview(
-                    total = books.size,
-                    reading = books.count { !it.finished && it.progress > 0f },
-                    finished = books.count { it.finished },
-                    collections = collections.size,
-                    modifier = Modifier.padding(top = VeilSpacing.lg)
-                )
-            }
-        }
-
-        if (recentReading.isNotEmpty()) {
-            VeilReveal(delayMillis = 150, modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.padding(top = VeilSpacing.lg),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    LibrarySectionHeading(
-                        eyebrow = "Recently opened",
-                        title = "Volumes in progress",
-                        trailing = "${recentReading.size} active"
-                    )
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-                    ) {
-                        recentReading.forEach { book ->
-                            RecentReadingBook(book = book, onOpen = { onOpenBook(book) })
+        item(key = "library:search", span = { GridItemSpan(maxLineSpan) }) {
+            OutlinedTextField(
+                value = query,
+                onValueChange = { query = it },
+                singleLine = true,
+                label = { Text("Search the archive") },
+                placeholder = { Text("Title, author, series, collection, or language") },
+                leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
+                trailingIcon = {
+                    if (query.isNotEmpty()) {
+                        TextButton(onClick = { query = "" }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                            Text("Clear", style = MaterialTheme.typography.labelMedium)
                         }
                     }
-                }
-            }
+                },
+                shape = MaterialTheme.shapes.small,
+                modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
+            )
         }
 
-        VeilReveal(delayMillis = 210, modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = query,
-            onValueChange = { query = it },
-            singleLine = true,
-            label = { Text("Search the archive") },
-            placeholder = { Text("Title, author, series, collection, or language") },
-            leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
-            trailingIcon = {
-                if (query.isNotEmpty()) {
-                    TextButton(onClick = { query = "" }, contentPadding = PaddingValues(horizontal = 8.dp)) {
-                        Text("Clear", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            },
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
-        )
-        }
-
-        VeilReveal(delayMillis = 260, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(top = VeilSpacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-        ) {
-            listOf("All", "Reading", "Unread", "Finished", "Favorites").forEach { label ->
-                FilterChip(
-                    selected = shelf == label,
-                    onClick = { shelf = label },
-                    label = { Text(label) },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    ),
-                    border = FilterChipDefaults.filterChipBorder(
-                        enabled = true,
+        item(key = "library:shelves", span = { GridItemSpan(maxLineSpan) }) {
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(top = VeilSpacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            ) {
+                listOf("All", "Reading", "Unread", "Finished", "Favorites").forEach { label ->
+                    FilterChip(
                         selected = shelf == label,
-                        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f),
-                        selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
-                    ),
-                    modifier = Modifier.heightIn(min = 48.dp)
-                )
+                        onClick = { shelf = label },
+                        label = { Text(label) },
+                        shape = MaterialTheme.shapes.extraSmall,
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        border = FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = shelf == label,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f),
+                            selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
+                        ),
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    )
+                }
             }
         }
+
+        item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
+            Column(Modifier.fillMaxWidth()) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = VeilSpacing.xs, bottom = VeilSpacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        "${filtered.size} shown",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    ViewModeToggle(
+                        mode = viewMode,
+                        onChange = { viewModeName = it.name }
+                    )
+                }
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+                    if (collections.isNotEmpty()) {
+                        Box(Modifier.weight(1f)) {
+                            TextButton(onClick = { collectionMenu = true }, modifier = Modifier.fillMaxWidth()) {
+                                Text(if (collection.isBlank()) "Collections" else collection, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            }
+                            DropdownMenu(expanded = collectionMenu, onDismissRequest = { collectionMenu = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("All collections") },
+                                    onClick = { collection = ""; collectionMenu = false }
+                                )
+                                collections.forEach { label ->
+                                    DropdownMenuItem(
+                                        text = { Text(label) },
+                                        onClick = { collection = label; collectionMenu = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Box(Modifier.weight(1f)) {
+                        TextButton(
+                            onClick = { sortMenu = true },
+                            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sort books: $sort" }
+                        ) { Text(sort, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                            listOf("Recent", "Title", "Author", "Series", "Progress").forEach { label ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = { sort = label; sortMenu = false }
+                                )
+                            }
+                        }
+                    }
+
+                }
+            }
         }
 
-        VeilReveal(delayMillis = 300, modifier = Modifier.fillMaxWidth()) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(top = VeilSpacing.xs, bottom = VeilSpacing.sm),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(
-                "${filtered.size} shown",
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.weight(1f)
-            )
-
-            if (collections.isNotEmpty()) {
-                Box {
-                    TextButton(onClick = { collectionMenu = true }) {
-                        Text(if (collection.isBlank()) "Collections" else collection, maxLines = 1)
+        item(key = "library:overview", span = { GridItemSpan(maxLineSpan) }) {
+            if (books.isNotEmpty()) {
+                Column(Modifier.fillMaxWidth()) {
+                    TextButton(onClick = { overviewExpanded = !overviewExpanded }) {
+                        Text(if (overviewExpanded) "Hide archive overview" else "Archive overview")
                     }
-                    DropdownMenu(expanded = collectionMenu, onDismissRequest = { collectionMenu = false }) {
-                        DropdownMenuItem(
-                            text = { Text("All collections") },
-                            onClick = { collection = ""; collectionMenu = false }
+                    if (overviewExpanded) {
+                        ArchiveOverview(
+                            total = books.size,
+                            reading = books.count { !it.finished && it.progress > 0f },
+                            finished = books.count { it.finished },
+                            collections = collections.size,
+                            modifier = Modifier.padding(top = VeilSpacing.xs)
                         )
-                        collections.forEach { label ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = { collection = label; collectionMenu = false }
-                            )
+                    }
+                }
+            }
+        }
+
+        item(key = "library:recent", span = { GridItemSpan(maxLineSpan) }) {
+            if (recentReading.isNotEmpty() && trimmedQuery.isBlank() && shelf == "All" && collection.isEmpty()) {
+                Box(Modifier.fillMaxWidth()) {
+                    Column(
+                        Modifier.padding(vertical = VeilSpacing.sm),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        LibrarySectionHeading(
+                            eyebrow = "Recently opened",
+                            title = "Volumes in progress",
+                            trailing = "${recentReading.size} active"
+                        )
+                        Row(
+                            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                        ) {
+                            recentReading.forEach { book ->
+                                RecentReadingBook(book = book, onOpen = { onOpenBook(book) })
+                            }
                         }
                     }
                 }
             }
-
-            Box {
-                TextButton(onClick = { sortMenu = true }) { Text(sort) }
-                DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
-                    listOf("Recent", "Title", "Author", "Series", "Progress").forEach { label ->
-                        DropdownMenuItem(
-                            text = { Text(label) },
-                            onClick = { sort = label; sortMenu = false }
-                        )
-                    }
-                }
-            }
-
-            ViewModeToggle(
-                mode = viewMode,
-                onChange = { viewModeName = it.name }
-            )
-        }
         }
 
         if (filtered.isEmpty()) {
-            LibraryEmptyState(
-                hasBooks = books.isNotEmpty(),
-                isImporting = isImporting,
-                onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                onReset = { query = ""; shelf = "All"; collection = "" }
-            )
+            item(key = "library:empty", span = { GridItemSpan(maxLineSpan) }) {
+                LibraryEmptyState(
+                    hasBooks = books.isNotEmpty(),
+                    isImporting = isImporting,
+                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    onReset = { query = ""; shelf = "All"; collection = "" }
+                )
+            }
         } else {
-            AnimatedContent(
-                targetState = viewMode,
-                transitionSpec = { fadeIn(tween(180)) togetherWith fadeOut(tween(120)) },
-                label = "library-layout",
-                modifier = Modifier.weight(1f)
-            ) { mode ->
-                when (mode) {
-                    LibraryViewMode.GRID -> {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(148.dp),
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
-                            contentPadding = PaddingValues(bottom = 30.dp)
-                        ) {
-                            items(filtered, key = { it.id }) { book ->
-                                BookLibraryTile(
-                                    book = book,
-                                    onOpen = { onOpenBook(book) },
-                                    onFavorite = { onFavorite(book.id) },
-                                    onDetails = { detailBookId = book.id }
-                                )
-                            }
-                        }
-                    }
-                    LibraryViewMode.LIST -> {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
-                            contentPadding = PaddingValues(bottom = 30.dp)
-                        ) {
-                            lazyItems(filtered, key = { it.id }) { book ->
-                                BookLibraryRow(
-                                    book = book,
-                                    onOpen = { onOpenBook(book) },
-                                    onFavorite = { onFavorite(book.id) },
-                                    onDetails = { detailBookId = book.id }
-                                )
-                            }
-                        }
-                    }
+            items(filtered, key = { "book:${it.id}" }, contentType = { viewMode }) { book ->
+                when (viewMode) {
+                    LibraryViewMode.GRID -> BookLibraryTile(
+                        book = book,
+                        onOpen = { onOpenBook(book) },
+                        onFavorite = { onFavorite(book.id) },
+                        onDetails = { detailBookId = book.id }
+                    )
+                    LibraryViewMode.LIST -> BookLibraryRow(
+                        book = book,
+                        onOpen = { onOpenBook(book) },
+                        onFavorite = { onFavorite(book.id) },
+                        onDetails = { detailBookId = book.id }
+                    )
                 }
             }
         }
@@ -1070,6 +1063,7 @@ private fun BookProgress(book: Book) {
             else "${bookCollections.first()} +${bookCollections.size - 1}"
             Text(
                 label,
+                modifier = Modifier.weight(1f).padding(start = VeilSpacing.xs),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.secondary,
                 maxLines = 1,
@@ -1263,3 +1257,4 @@ private fun parseCollectionNames(value: String): List<String> = value
 
 private fun formatSeriesIndex(value: Double): String =
     if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+
