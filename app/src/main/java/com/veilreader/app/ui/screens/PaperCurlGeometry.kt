@@ -5,6 +5,7 @@ import androidx.compose.animation.core.TwoWayConverter
 import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Path
+import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -64,6 +65,21 @@ internal data class PaperCurlPolygon(
 
     private fun index(i: Int): Int = ((i % size) + size) % size
 }
+
+internal fun paperFoldLift(progress: Float): Float =
+    sin(progress.coerceIn(0f, 1f).toDouble() * PI)
+        .toFloat()
+        .coerceIn(0f, 1f)
+
+internal fun paperWeightedDragCurrent(
+    start: Offset,
+    current: Offset,
+    response: Float = 0.92f
+): Offset {
+    val safeResponse = response.coerceIn(0f, 1f)
+    return start + (current - start) * safeResponse
+}
+
 internal fun Offset.paperRotate(angle: Float): Offset {
     val sine = sin(angle)
     val cosine = cos(angle)
