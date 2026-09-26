@@ -419,6 +419,8 @@ fun VeilApp(
 
             VeilTab.LIBRARY -> LibraryScreen(
                 books = books,
+                highlights = highlights,
+                readingSessions = readingSessions,
                 isImporting = isImporting,
                 onImportUri = ::importBook,
                 onOpenBook = { requestOpenBook(it) },
