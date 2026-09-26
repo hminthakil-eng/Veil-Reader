@@ -247,12 +247,14 @@ fun ReaderScreen(
         touchExplorationEnabled
     ) {
         if (
-            controlsVisible &&
-            !showNotebook &&
-            !showAppearance &&
-            !showPdfZoom &&
-            !selectionModeActive &&
-            !touchExplorationEnabled
+            shouldAutoHideReaderChrome(
+                controlsVisible = controlsVisible,
+                showNotebook = showNotebook,
+                showAppearance = showAppearance,
+                showPdfZoom = showPdfZoom,
+                selectionModeActive = selectionModeActive,
+                touchExplorationEnabled = touchExplorationEnabled
+            )
         ) {
             delay(3600)
             controlsVisible = false
@@ -1152,6 +1154,21 @@ fun ReaderScreen(
         }
     }
 }
+
+internal fun shouldAutoHideReaderChrome(
+    controlsVisible: Boolean,
+    showNotebook: Boolean,
+    showAppearance: Boolean,
+    showPdfZoom: Boolean,
+    selectionModeActive: Boolean,
+    touchExplorationEnabled: Boolean
+): Boolean =
+    controlsVisible &&
+        !showNotebook &&
+        !showAppearance &&
+        !showPdfZoom &&
+        !selectionModeActive &&
+        !touchExplorationEnabled
 
 private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
     ReaderTheme.PAPER -> Color(0xFFE9DEC5)
