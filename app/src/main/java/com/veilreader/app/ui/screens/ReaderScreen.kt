@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -63,6 +64,7 @@ import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
@@ -109,6 +111,8 @@ fun ReaderScreen(
     game: GameRepository,
     readerAppearance: ReaderAppearance,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
+    entryContinuity: ReadingContinuitySummary? = null,
+    initialReturnLocatorJson: String? = null,
     onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
     onClose: () -> Unit,
     onLocatorCheckpoint: (String) -> Unit = {}
@@ -120,6 +124,15 @@ fun ReaderScreen(
     val scope = rememberCoroutineScope()
     var entryVisible by remember(opened.book.id) { mutableStateOf(true) }
     var navigatorAttached by remember(opened.book.id) { mutableStateOf(false) }
+    var previousLocationJson by rememberSaveable(opened.book.id) {
+        mutableStateOf(initialReturnLocatorJson)
+    }
+
+    LaunchedEffect(initialReturnLocatorJson, opened.book.id) {
+        if (previousLocationJson == null && !initialReturnLocatorJson.isNullOrBlank()) {
+            previousLocationJson = initialReturnLocatorJson
+        }
+    }
 
     LaunchedEffect(opened.book.id) {
         // Safety ceiling: a Reader failure must never leave an opaque transition permanently stuck.
@@ -336,6 +349,27 @@ fun ReaderScreen(
             event = event
         )?.let { commit ->
             onLocatorCheckpoint(commit.locatorJson)
+        }
+    }
+
+    fun currentLocatorJson(): String? =
+        navigator?.currentLocator?.value?.toVeilPersistedJson(opened.format)
+
+    fun returnToPreviousLocation() {
+        val targetJson = previousLocationJson ?: return
+        val locator = runCatching {
+            Locator.fromJSON(JSONObject(targetJson))
+        }.getOrNull()
+        val currentJson = currentLocatorJson()
+
+        readerViewModel.onUserInteraction()
+        game.rebasePagePacing()
+
+        if (locator != null && navigator?.go(locator, animated = true) == true) {
+            previousLocationJson = currentJson?.takeIf { it != targetJson }
+            controlsVisible = false
+        } else {
+            readerMessage = "The previous reading location could not be restored."
         }
     }
 
@@ -803,6 +837,33 @@ fun ReaderScreen(
             }
         }
 
+        AnimatedVisibility(
+            visible = controlsVisible && previousLocationJson != null,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 56.dp),
+            enter = fadeIn(tween(120)),
+            exit = fadeOut(tween(90))
+        ) {
+            OutlinedButton(
+                onClick = ::returnToPreviousLocation,
+                shape = MaterialTheme.shapes.extraSmall,
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = VeilPalette.Ink.copy(alpha = 0.94f),
+                    contentColor = VeilPalette.Moon
+                ),
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
+                modifier = Modifier.heightIn(min = 38.dp)
+            ) {
+                Text(
+                    "↶ Previous location",
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier
@@ -815,6 +876,7 @@ fun ReaderScreen(
             book = opened.book,
             stage = BookEntryStage.HANDOFF,
             visible = entryVisible,
+            continuity = entryContinuity,
             modifier = Modifier.fillMaxSize()
         )
     }
@@ -976,8 +1038,10 @@ fun ReaderScreen(
             onGo = { json ->
                 readerViewModel.onUserInteraction()
                 game.rebasePagePacing()
+                val origin = currentLocatorJson()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
                 if (locator != null && navigator?.go(locator, animated = true) == true) {
+                    previousLocationJson = origin?.takeIf { it != json }
                     showNotebook = false
                 } else {
                     showNotebook = false
@@ -987,7 +1051,9 @@ fun ReaderScreen(
             onChapter = { link ->
                 readerViewModel.onUserInteraction()
                 game.rebasePagePacing()
+                val origin = currentLocatorJson()
                 if (navigator?.go(link, animated = true) == true) {
+                    previousLocationJson = origin
                     showNotebook = false
                 } else {
                     showNotebook = false
