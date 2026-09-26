@@ -25,10 +25,12 @@ internal enum class ReaderSelectionAction {
 internal class ReaderSelectionActionModeCallback(
     private val coroutineScope: CoroutineScope,
     private val navigatorProvider: () -> SelectableNavigator?,
+    private val onModeChanged: (Boolean) -> Unit = {},
     private val onAction: suspend (ReaderSelectionAction, Locator, String) -> Unit
 ) : BaseActionModeCallback() {
 
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+        onModeChanged(true)
         if (menu.findItem(ACTION_HIGHLIGHT) == null) {
             menu.add(Menu.NONE, ACTION_HIGHLIGHT, 0, "Highlight")
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
@@ -58,6 +60,11 @@ internal class ReaderSelectionActionModeCallback(
 
         mode.finish()
         return true
+    }
+
+    override fun onDestroyActionMode(mode: ActionMode) {
+        onModeChanged(false)
+        super.onDestroyActionMode(mode)
     }
 
     private companion object {
