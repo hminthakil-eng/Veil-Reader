@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,6 +26,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -152,15 +155,15 @@ fun LibraryScreen(
 
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
-        columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(148.dp) else GridCells.Fixed(1),
+        columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(108.dp) else GridCells.Fixed(1),
         modifier = Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
         contentPadding = PaddingValues(
-            start = VeilSpacing.lg,
-            end = VeilSpacing.lg,
-            top = VeilSpacing.lg,
-            bottom = 30.dp
+            start = VeilSpacing.md,
+            end = VeilSpacing.md,
+            top = VeilSpacing.sm,
+            bottom = 28.dp
         )
     ) {
         item(key = "library:heading", span = { GridItemSpan(maxLineSpan) }) {
@@ -179,18 +182,38 @@ fun LibraryScreen(
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                label = { Text("Search the archive") },
-                placeholder = { Text("Title, author, series, collection, or language") },
-                leadingIcon = { SearchIcon(Modifier.size(20.dp), MaterialTheme.colorScheme.onSurfaceVariant) },
+                placeholder = {
+                    Text(
+                        "Search the archive…",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
+                    )
+                },
+                leadingIcon = {
+                    SearchIcon(
+                        Modifier.size(18.dp),
+                        if (query.isBlank()) MaterialTheme.colorScheme.onSurfaceVariant else VeilPalette.Brass
+                    )
+                },
                 trailingIcon = {
                     if (query.isNotEmpty()) {
-                        TextButton(onClick = { query = "" }, contentPadding = PaddingValues(horizontal = 8.dp)) {
+                        TextButton(
+                            onClick = { query = "" },
+                            contentPadding = PaddingValues(horizontal = 8.dp)
+                        ) {
                             Text("Clear", style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 },
-                shape = MaterialTheme.shapes.small,
-                modifier = Modifier.fillMaxWidth().padding(top = VeilSpacing.lg)
+                shape = MaterialTheme.shapes.extraSmall,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.82f),
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
+                    focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f)
+                ),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = VeilSpacing.sm)
             )
         }
 
@@ -199,44 +222,56 @@ fun LibraryScreen(
                 Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
-                    .padding(top = VeilSpacing.sm),
+                    .padding(top = 2.dp),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 listOf("All", "Reading", "Unread", "Finished", "Favorites").forEach { label ->
+                    val selectedShelf = shelf == label
                     FilterChip(
-                        selected = shelf == label,
+                        selected = selectedShelf,
                         onClick = { shelf = label },
-                        label = { Text(label) },
+                        label = {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1
+                            )
+                        },
                         shape = MaterialTheme.shapes.extraSmall,
                         colors = FilterChipDefaults.filterChipColors(
-                            selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
-                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.92f),
+                            selectedLabelColor = VeilPalette.Moon
                         ),
                         border = FilterChipDefaults.filterChipBorder(
                             enabled = true,
-                            selected = shelf == label,
-                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f),
-                            selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.68f)
+                            selected = selectedShelf,
+                            borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+                            selectedBorderColor = VeilPalette.Brass.copy(alpha = 0.86f)
                         ),
-                        modifier = Modifier.heightIn(min = 48.dp)
+                        modifier = Modifier.heightIn(min = 44.dp)
                     )
                 }
             }
         }
 
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
-            Column(Modifier.fillMaxWidth()) {
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            ) {
+                BrassRule(Modifier.fillMaxWidth())
+
                 Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(top = VeilSpacing.xs, bottom = VeilSpacing.sm),
+                    Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     Text(
-                        "${filtered.size} shown",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        "${filtered.size} VOLUMES",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                        color = VeilPalette.Brass,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -245,21 +280,33 @@ fun LibraryScreen(
                         onChange = { viewModeName = it.name }
                     )
                 }
-                if (trimmedQuery.isNotBlank() || shelf != "All" || collection.isNotEmpty()) {
-                    TextButton(
-                        onClick = { query = ""; shelf = "All"; collection = "" },
-                        modifier = Modifier.align(Alignment.End)
-                    ) {
-                        Text("Clear filters")
-                    }
-                }
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     if (collections.isNotEmpty()) {
                         Box(Modifier.weight(1f)) {
-                            TextButton(onClick = { collectionMenu = true }, modifier = Modifier.fillMaxWidth()) {
-                                Text(if (collection.isBlank()) "Collections" else collection, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            OutlinedButton(
+                                onClick = { collectionMenu = true },
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 44.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                border = BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)
+                                )
+                            ) {
+                                Text(
+                                    if (collection.isBlank()) "Collections" else collection,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
                             }
-                            DropdownMenu(expanded = collectionMenu, onDismissRequest = { collectionMenu = false }) {
+                            DropdownMenu(
+                                expanded = collectionMenu,
+                                onDismissRequest = { collectionMenu = false }
+                            ) {
                                 DropdownMenuItem(
                                     text = { Text("All collections") },
                                     onClick = { collection = ""; collectionMenu = false }
@@ -275,11 +322,28 @@ fun LibraryScreen(
                     }
 
                     Box(Modifier.weight(1f)) {
-                        TextButton(
+                        OutlinedButton(
                             onClick = { sortMenu = true },
-                            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Sort books: $sort" }
-                        ) { Text(sort, maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                        DropdownMenu(expanded = sortMenu, onDismissRequest = { sortMenu = false }) {
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 44.dp)
+                                .semantics { contentDescription = "Sort books: $sort" },
+                            shape = MaterialTheme.shapes.extraSmall,
+                            border = BorderStroke(
+                                1.dp,
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)
+                            )
+                        ) {
+                            Text(
+                                "Sort · $sort",
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = sortMenu,
+                            onDismissRequest = { sortMenu = false }
+                        ) {
                             listOf("Recent", "Title", "Author", "Series", "Progress").forEach { label ->
                                 DropdownMenuItem(
                                     text = { Text(label) },
@@ -288,7 +352,16 @@ fun LibraryScreen(
                             }
                         }
                     }
+                }
 
+                if (trimmedQuery.isNotBlank() || shelf != "All" || collection.isNotEmpty()) {
+                    TextButton(
+                        onClick = { query = ""; shelf = "All"; collection = "" },
+                        modifier = Modifier.align(Alignment.End),
+                        colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
+                    ) {
+                        Text("Clear active filters")
+                    }
                 }
             }
         }
@@ -679,70 +752,107 @@ private fun LibraryHeader(
     onImport: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val compact = maxWidth < 520.dp
-        val subtitle = if (bookCount == 0) {
-            "Import an EPUB or PDF to begin. Everything stays local on this device."
-        } else {
-            "$bookCount ${if (bookCount == 1) "book" else "books"} · search, filter, organize, and continue reading."
-        }
+    BoxWithConstraints(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.medium)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
+                MaterialTheme.shapes.medium
+            )
+    ) {
+        val compact = maxWidth < 560.dp
+        val headerHeight = if (compact) 178.dp else 214.dp
 
-        if (compact) {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
-                ScreenHeader(
-                    eyebrow = "GRAYFOG ARCHIVE",
-                    title = "The Grand Library",
-                    subtitle = subtitle
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    OutlinedButton(
-                        onClick = onOpenSettings,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text("Settings")
-                    }
-                    Button(
-                        onClick = onImport,
-                        enabled = !isImporting,
-                        shape = MaterialTheme.shapes.small,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(if (isImporting) "Importing…" else "Import")
-                    }
-                }
-            }
-        } else {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                Box(Modifier.weight(1f)) {
-                    ScreenHeader(
-                        eyebrow = "GRAYFOG ARCHIVE",
-                        title = "The Grand Library",
-                        subtitle = subtitle
+        Box(Modifier.fillMaxWidth().height(headerHeight)) {
+            Image(
+                painter = painterResource(R.drawable.grayfog_threshold_v1),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize()
+            )
+
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            0f to VeilPalette.Ink.copy(alpha = 0.16f),
+                            0.48f to VeilPalette.Ink.copy(alpha = 0.34f),
+                            1f to VeilPalette.Ink.copy(alpha = 0.98f)
+                        )
                     )
-                }
+            )
+
+            Row(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(VeilSpacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
                 OutlinedButton(
                     onClick = onOpenSettings,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.heightIn(min = 48.dp)
+                    shape = MaterialTheme.shapes.extraSmall,
+                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = VeilPalette.Moon,
+                        containerColor = VeilPalette.Ink.copy(alpha = 0.48f)
+                    ),
+                    modifier = Modifier.heightIn(min = 40.dp)
                 ) {
-                    Text("Settings")
+                    Text("Settings", style = MaterialTheme.typography.labelMedium)
                 }
+
                 Button(
                     onClick = onImport,
                     enabled = !isImporting,
-                    shape = MaterialTheme.shapes.small,
-                    modifier = Modifier.heightIn(min = 48.dp)
+                    shape = MaterialTheme.shapes.extraSmall,
+                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.Brass,
+                        contentColor = Color(0xFF17120A)
+                    ),
+                    modifier = Modifier.heightIn(min = 40.dp)
                 ) {
-                    Text(if (isImporting) "Importing…" else "Import")
+                    Text(
+                        if (isImporting) "Importing…" else "Import",
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
+            }
+
+            Column(
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .fillMaxWidth()
+                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    "VEIL READER",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "Grayfog Archive",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    "Fragments · Records · Truths",
+                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
+                    color = VeilPalette.Moon.copy(alpha = 0.78f)
+                )
+                Text(
+                    if (bookCount == 0) {
+                        "The shelves are waiting for their first volume."
+                    } else {
+                        "$bookCount ${if (bookCount == 1) "volume" else "volumes"} catalogued on this device."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Moon.copy(alpha = 0.72f)
+                )
             }
         }
     }
@@ -914,108 +1024,92 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
-    Column(Modifier.fillMaxWidth()) {
-        Box {
-            BookCover(
-                title = book.title,
-                subtitle = book.author,
-                imagePath = book.coverCachePath,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(0.70f)
-                    .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen)
-            )
-            Surface(
-                modifier = Modifier.align(Alignment.TopStart).padding(8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.91f),
-                shape = MaterialTheme.shapes.extraSmall
-            ) {
-                Text(
-                    book.format.name,
-                    Modifier.padding(horizontal = 7.dp, vertical = 4.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp)
-                )
-            }
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(4.dp)
-                    .size(48.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f),
-                shape = MaterialTheme.shapes.small
-            ) {
-                IconButton(
-                    onClick = onFavorite,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .semantics {
-                            contentDescription = if (book.favorite) {
-                                "Remove ${book.title} from favorites"
-                            } else {
-                                "Add ${book.title} to favorites"
-                            }
-                        }
-                ) {
-                    FavoriteIcon(
-                        favorite = book.favorite,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-            }
-            Surface(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp).size(48.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.94f),
-                shape = MaterialTheme.shapes.small,
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f))
-            ) {
-                IconButton(
-                    onClick = onDetails,
-                    modifier = Modifier.fillMaxSize().semantics {
-                        contentDescription = "Book details for ${book.title}"
-                    }
-                ) {
-                    EllipsisIcon(Modifier.size(18.dp), MaterialTheme.colorScheme.onSurface)
-                }
-            }
-        }
-
-        Spacer(Modifier.height(VeilSpacing.xs))
-        Column(
-            Modifier.fillMaxWidth().clickable(
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clickable(
                 role = Role.Button,
                 onClickLabel = "Read ${book.title}",
                 onClick = onOpen
-            )
+            ),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        BookCover(
+            title = book.title,
+            subtitle = book.author,
+            imagePath = book.coverCachePath,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(0.69f)
+        )
+
+        Text(
+            book.title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onBackground,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        Text(
+            book.author.ifBlank { stringResource(R.string.common_unknown_author) },
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+
+        LinearProgressIndicator(
+            progress = { book.progress.coerceIn(0f, 1f) },
+            modifier = Modifier.fillMaxWidth().height(2.dp),
+            color = if (book.finished) VeilPalette.Brass else MaterialTheme.colorScheme.secondary,
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
+        )
+
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                book.title,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+                when {
+                    book.finished -> "Finished"
+                    book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}%"
+                    else -> book.format.name
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Brass.copy(alpha = 0.88f),
+                modifier = Modifier.weight(1f)
             )
-            Text(
-                book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.labelLarge,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
-                Text(
-                    buildString {
-                        append(series)
-                        book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
-                    },
-                    color = MaterialTheme.colorScheme.secondary,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+
+            IconButton(
+                onClick = onFavorite,
+                modifier = Modifier
+                    .size(36.dp)
+                    .semantics {
+                        contentDescription = if (book.favorite) {
+                            "Remove ${book.title} from favorites"
+                        } else {
+                            "Add ${book.title} to favorites"
+                        }
+                    }
+            ) {
+                FavoriteIcon(book.favorite, Modifier.size(16.dp))
+            }
+
+            IconButton(
+                onClick = onDetails,
+                modifier = Modifier
+                    .size(36.dp)
+                    .semantics {
+                        contentDescription = "Book details for ${book.title}"
+                    }
+            ) {
+                EllipsisIcon(
+                    Modifier.size(16.dp),
+                    MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-
-        Spacer(Modifier.height(6.dp))
-        BookProgress(book)
     }
 }
 
@@ -1030,59 +1124,81 @@ private fun BookLibraryRow(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.24f))
+        shape = MaterialTheme.shapes.extraSmall,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Row(
-            Modifier.padding(VeilSpacing.sm),
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             BookCover(
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
-                modifier = Modifier.width(68.dp).height(98.dp)
+                modifier = Modifier.width(58.dp).height(84.dp)
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(book.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+
+            Column(
+                Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    book.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Text(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                     Text(
-                        series,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.secondary,
+                        buildString {
+                            append(series)
+                            book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass.copy(alpha = 0.84f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
                 BookProgress(book)
             }
+
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 IconButton(
                     onClick = onFavorite,
-                    modifier = Modifier.semantics {
-                        contentDescription = if (book.favorite) {
-                            "Remove ${book.title} from favorites"
-                        } else {
-                            "Add ${book.title} to favorites"
+                    modifier = Modifier
+                        .size(40.dp)
+                        .semantics {
+                            contentDescription = if (book.favorite) {
+                                "Remove ${book.title} from favorites"
+                            } else {
+                                "Add ${book.title} to favorites"
+                            }
                         }
-                    }
                 ) {
-                    FavoriteIcon(book.favorite, Modifier.size(20.dp))
+                    FavoriteIcon(book.favorite, Modifier.size(18.dp))
                 }
                 IconButton(
                     onClick = onDetails,
-                    modifier = Modifier.semantics { contentDescription = "Book details for ${book.title}" }
+                    modifier = Modifier
+                        .size(40.dp)
+                        .semantics { contentDescription = "Book details for ${book.title}" }
                 ) {
-                    EllipsisIcon(Modifier.size(19.dp), MaterialTheme.colorScheme.onSurfaceVariant)
+                    EllipsisIcon(
+                        Modifier.size(18.dp),
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -1174,51 +1290,47 @@ private fun LibraryEmptyState(
 
 @Composable
 private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
-    Surface(
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.64f)
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(Modifier.padding(2.dp)) {
-            IconButton(
-                onClick = { onChange(LibraryViewMode.GRID) },
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(
-                        if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.primaryContainer
-                        else Color.Transparent
-                    )
-                    .semantics {
-                        contentDescription = "Grid view"
-                        selected = mode == LibraryViewMode.GRID
-                    }
-            ) {
-                GridIcon(
-                    Modifier.size(18.dp),
-                    if (mode == LibraryViewMode.GRID) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            IconButton(
-                onClick = { onChange(LibraryViewMode.LIST) },
-                modifier = Modifier
-                    .size(48.dp)
-                    .clip(MaterialTheme.shapes.small)
-                    .background(
-                        if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.primaryContainer
-                        else Color.Transparent
-                    )
-                    .semantics {
-                        contentDescription = "List view"
-                        selected = mode == LibraryViewMode.LIST
-                    }
-            ) {
-                ListIcon(
-                    Modifier.size(18.dp),
-                    if (mode == LibraryViewMode.LIST) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+        IconButton(
+            onClick = { onChange(LibraryViewMode.GRID) },
+            modifier = Modifier
+                .size(40.dp)
+                .semantics {
+                    contentDescription = "Grid view"
+                    selected = mode == LibraryViewMode.GRID
+                }
+        ) {
+            GridIcon(
+                Modifier.size(18.dp),
+                if (mode == LibraryViewMode.GRID) VeilPalette.Brass
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Box(
+            Modifier
+                .width(1.dp)
+                .height(22.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f))
+        )
+
+        IconButton(
+            onClick = { onChange(LibraryViewMode.LIST) },
+            modifier = Modifier
+                .size(40.dp)
+                .semantics {
+                    contentDescription = "List view"
+                    selected = mode == LibraryViewMode.LIST
+                }
+        ) {
+            ListIcon(
+                Modifier.size(18.dp),
+                if (mode == LibraryViewMode.LIST) VeilPalette.Brass
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
