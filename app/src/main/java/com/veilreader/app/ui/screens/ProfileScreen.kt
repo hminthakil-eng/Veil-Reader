@@ -1,17 +1,24 @@
 package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -98,57 +105,34 @@ fun ProfileScreen(
         Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
+            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
-        ScreenHeader("Reader profile", castleTitle, "${p.path.name} · ${p.rankName}")
+        ScreenHeader(
+            eyebrow = "ARCHIVIST DOSSIER",
+            title = castleTitle,
+            subtitle = "${p.path.name} · ${p.rankName}"
+        )
 
-        FilledTonalButton(
-            onClick = onOpenSettings,
-            shape = MaterialTheme.shapes.small,
-            colors = ButtonDefaults.filledTonalButtonColors(
-                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.64f),
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 50.dp)
-        ) {
-            Text("Reader & app settings")
-        }
-
-        MysteryCard(Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Experience", style = MaterialTheme.typography.titleMedium)
-                Text("${p.xp}/${p.xpForNextLevel} XP", color = MaterialTheme.colorScheme.secondary)
-            }
-            LinearProgressIndicator(
-                progress = { (p.xp.toFloat() / p.xpForNextLevel.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = VeilSpacing.xs)
+        VeilReveal(delayMillis = 40, distance = 10.dp) {
+            ArchivistDossierPanel(
+                profile = p,
+                highlightCount = highlightCount,
+                equippedSigilName = equippedSigilName,
+                revealedDiscoveries = revealedDiscoveries,
+                totalDiscoveries = veiledDiscoveries.size,
+                onOpenSettings = onOpenSettings
             )
-            equippedSigilName?.let {
-                Text(
-                    "Equipped sigil · $it",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = VeilSpacing.xs)
-                )
-            }
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-            StatCard("◇", "${p.streakDays}", "day streak", Modifier.weight(1f))
-            StatCard("▥", "${p.booksFinished}", "books", Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-            StatCard("▤", "${p.pagesRead}", "page turns", Modifier.weight(1f))
-            StatCard("◷", formatMinutes(p.minutesRead), "reading", Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-            StatCard("✦", "$highlightCount", "highlights", Modifier.weight(1f))
-            StatCard("♜", "${p.rankIndex + 1}", "castle tier", Modifier.weight(1f))
-        }
+        ProfileSectionHeading(
+            eyebrow = "Recorded history",
+            title = "Reading record"
+        )
+        DossierRecordGrid(
+            profile = p,
+            highlightCount = highlightCount
+        )
 
         ProfileSectionHeading(
             eyebrow = "Rhythm",
@@ -156,104 +140,495 @@ fun ProfileScreen(
         )
         Text(
             "Your first daily quest follows this target. Choose a pace that supports reading instead of turning it into a chore.",
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = VeilPalette.Mist,
             style = MaterialTheme.typography.bodyMedium
         )
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             listOf(10, 20, 30, 60).forEach { minutes ->
-                if (minutes == dailyGoalMinutes) {
-                    Button(onClick = { onSetDailyGoal(minutes) }) { Text("${minutes}m ✓") }
+                val selected = minutes == dailyGoalMinutes
+                if (selected) {
+                    Button(
+                        onClick = { onSetDailyGoal(minutes) },
+                        shape = MaterialTheme.shapes.extraSmall,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VeilPalette.Brass,
+                            contentColor = Color(0xFF17120A)
+                        ),
+                        modifier = Modifier.heightIn(min = 40.dp)
+                    ) {
+                        Text("${minutes}m · current", style = MaterialTheme.typography.labelMedium)
+                    }
                 } else {
-                    OutlinedButton(onClick = { onSetDailyGoal(minutes) }) { Text("${minutes}m") }
+                    OutlinedButton(
+                        onClick = { onSetDailyGoal(minutes) },
+                        shape = MaterialTheme.shapes.extraSmall,
+                        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
+                        modifier = Modifier.heightIn(min = 40.dp)
+                    ) {
+                        Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
+                    }
                 }
             }
         }
 
         ProfileSectionHeading(
             eyebrow = "Known marks",
-            title = "Earned sigils"
+            title = "Sigil registry",
+            trailing = "${p.earnedSigils.size} awakened"
         )
-        listOf(
-            Triple("first_hour", "First Hour", p.minutesRead to 60),
-            Triple("passage_keeper", "Passage Keeper", highlightCount to 10),
-            Triple("seven_days", "Seven-Day Journey", p.streakDays to 7),
-            Triple("ten_tomes", "Ten Tomes", p.booksFinished to 10),
-            Triple("first_threshold", "First Threshold", p.rankIndex to 1)
-        ).forEach { (id, name, progress) ->
-            val (value, target) = progress
-            val earned = id in p.earnedSigils
-            SigilProgressRow(
-                name = name,
-                value = value,
-                target = target,
-                earned = earned
-            )
+
+        Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+            listOf(
+                Triple("first_hour", "First Hour", p.minutesRead to 60),
+                Triple("passage_keeper", "Passage Keeper", highlightCount to 10),
+                Triple("seven_days", "Seven-Day Journey", p.streakDays to 7),
+                Triple("ten_tomes", "Ten Tomes", p.booksFinished to 10),
+                Triple("first_threshold", "First Threshold", p.rankIndex to 1)
+            ).forEachIndexed { index, (id, name, progress) ->
+                val (value, target) = progress
+                val earned = id in p.earnedSigils
+                VeilReveal(
+                    delayMillis = 70 + index * 45,
+                    distance = 7.dp
+                ) {
+                    SigilProgressRow(
+                        name = name,
+                        value = value,
+                        target = target,
+                        earned = earned
+                    )
+                }
+            }
         }
 
         ProfileSectionHeading(
-            eyebrow = "Behind the known marks",
+            eyebrow = "Restricted folio",
             title = "Veiled discoveries",
             trailing = "$revealedDiscoveries/${veiledDiscoveries.size} revealed"
         )
         Text(
-            "Discoveries are not quests. Their conditions stay hidden; they surface naturally when different parts of your reading life begin to form a pattern.",
+            "Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.",
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = VeilPalette.Mist
         )
+
         veiledDiscoveries.forEachIndexed { index, discovery ->
-            DiscoveryCard(
-                index = index,
-                discovery = discovery,
-                revealed = discovery.revealed(p, highlightCount)
-            )
+            VeilReveal(
+                delayMillis = 60 + index * 40,
+                distance = 8.dp
+            ) {
+                DiscoveryCard(
+                    index = index,
+                    discovery = discovery,
+                    revealed = discovery.revealed(p, highlightCount)
+                )
+            }
         }
 
         OutlinedButton(
             onClick = onOpenArchive,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .heightIn(min = 44.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
         ) {
-            Text("Explore all highlights & notes")
+            Text("Open Hidden Archive", style = MaterialTheme.typography.labelMedium)
+        }
+    }
+}
+
+@Composable
+private fun ArchivistDossierPanel(
+    profile: ReaderProfile,
+    highlightCount: Int,
+    equippedSigilName: String?,
+    revealedDiscoveries: Int,
+    totalDiscoveries: Int,
+    onOpenSettings: () -> Unit
+) {
+    val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
+    val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 286.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF17130F),
+                        VeilPalette.Archive.copy(alpha = 0.98f),
+                        VeilPalette.Ink
+                    )
+                )
+            )
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
+                MaterialTheme.shapes.small
+            )
+    ) {
+        DossierBackdrop(
+            modifier = Modifier.matchParentSize(),
+            rankIndex = profile.rankIndex,
+            discoveries = revealedDiscoveries
+        )
+
+        Column(
+            modifier = Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        "PRIVATE READING RECORD",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        profile.rankName,
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        profile.path.epithet,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist
+                    )
+                }
+
+                TextButton(
+                    onClick = onOpenSettings,
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
+                ) {
+                    Text(
+                        "SETTINGS",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                        color = VeilPalette.Brass
+                    )
+                }
+            }
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                ArchivistSeal(
+                    rank = profile.rankIndex + 1,
+                    modifier = Modifier.size(92.dp)
+                )
+
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    DossierFact("PATH", profile.path.name)
+                    DossierFact("LEVEL", profile.level.toString())
+                    DossierFact("CASTLE TIER", (profile.rankIndex + 1).toString())
+                    equippedSigilName?.let { DossierFact("EQUIPPED SIGIL", it) }
+                }
+            }
+
+            BrassRule(Modifier.fillMaxWidth())
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "EXPERIENCE",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
+                    color = VeilPalette.Mist
+                )
+                Text(
+                    "${profile.xp}/$xpTarget XP",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+            }
+            LinearProgressIndicator(
+                progress = { xpProgress },
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = VeilPalette.Brass,
+                trackColor = VeilPalette.Moon.copy(alpha = 0.08f),
+                drawStopIndicator = {}
+            )
+
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "${profile.earnedSigils.size} SIGILS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.78f)
+                )
+                Text(
+                    "$revealedDiscoveries/$totalDiscoveries DISCOVERIES",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.78f)
+                )
+                Text(
+                    "$highlightCount MARKS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.78f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun DossierBackdrop(
+    rankIndex: Int,
+    discoveries: Int,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val center = Offset(w * 0.78f, h * 0.36f)
+
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.040f),
+            radius = size.minDimension * 0.28f,
+            center = center,
+            style = Stroke(1.dp.toPx())
+        )
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.025f),
+            radius = size.minDimension * 0.20f,
+            center = center,
+            style = Stroke(1.dp.toPx())
+        )
+
+        repeat(6) { index ->
+            val y = h * (0.15f + index * 0.12f)
+            drawLine(
+                color = VeilPalette.StrongBorderDark.copy(alpha = 0.07f),
+                start = Offset(w * 0.05f, y),
+                end = Offset(w * 0.95f, y),
+                strokeWidth = 1.dp.toPx()
+            )
         }
 
+        val activeMarks = (rankIndex + discoveries).coerceAtLeast(1).coerceAtMost(8)
+        repeat(8) { index ->
+            val angle = Math.toRadians(-90.0 + index * 45.0)
+            val radius = size.minDimension * 0.31f
+            val point = Offset(
+                center.x + kotlin.math.cos(angle).toFloat() * radius,
+                center.y + kotlin.math.sin(angle).toFloat() * radius
+            )
+            drawCircle(
+                color = if (index < activeMarks) {
+                    VeilPalette.Brass.copy(alpha = 0.16f)
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.10f)
+                },
+                radius = if (index < activeMarks) 1.4.dp.toPx() else 1.dp.toPx(),
+                center = point
+            )
+        }
+    }
+}
+
+@Composable
+private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.matchParentSize()) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            val stroke = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round)
+            val brass = VeilPalette.Brass
+
+            drawCircle(brass.copy(alpha = 0.62f), size.minDimension * 0.44f, center, style = stroke)
+            drawCircle(brass.copy(alpha = 0.30f), size.minDimension * 0.33f, center, style = stroke)
+
+            repeat(4) { index ->
+                val angle = Math.toRadians(45.0 + index * 90.0)
+                val r1 = size.minDimension * 0.33f
+                val r2 = size.minDimension * 0.47f
+                drawLine(
+                    brass.copy(alpha = 0.44f),
+                    Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * r1,
+                        center.y + kotlin.math.sin(angle).toFloat() * r1
+                    ),
+                    Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * r2,
+                        center.y + kotlin.math.sin(angle).toFloat() * r2
+                    ),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+            }
+        }
+
+        Text(
+            rank.toString().padStart(2, '0'),
+            style = MaterialTheme.typography.titleLarge,
+            color = VeilPalette.Brass
+        )
+    }
+}
+
+@Composable
+private fun DossierFact(label: String, value: String) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+            color = VeilPalette.Mist.copy(alpha = 0.66f),
+            modifier = Modifier.width(82.dp)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Moon,
+            modifier = Modifier.weight(1f),
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun DossierRecordGrid(
+    profile: ReaderProfile,
+    highlightCount: Int
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            DossierStat("RETURN", "${profile.streakDays}d", "current streak", Modifier.weight(1f))
+            DossierStat("VOLUMES", "${profile.booksFinished}", "finished", Modifier.weight(1f))
+            DossierStat("MARKS", "$highlightCount", "highlights", Modifier.weight(1f))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            DossierStat("PAGES", "${profile.pagesRead}", "turned", Modifier.weight(1f))
+            DossierStat("TIME", formatMinutes(profile.minutesRead), "inside books", Modifier.weight(1f))
+            DossierStat("TIER", "${profile.rankIndex + 1}", "castle", Modifier.weight(1f))
+        }
+    }
+}
+
+@Composable
+private fun DossierStat(
+    eyebrow: String,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(VeilPalette.Archive.copy(alpha = 0.68f))
+            .border(
+                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(horizontal = 10.dp, vertical = 9.dp),
+        verticalArrangement = Arrangement.spacedBy(1.dp)
+    ) {
+        Text(
+            eyebrow,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+            color = VeilPalette.Brass.copy(alpha = 0.78f)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.titleMedium,
+            color = VeilPalette.Moon
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.72f),
+            maxLines = 1
+        )
     }
 }
 
 @Composable
 private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Boolean) {
-    Box(
-        Modifier
+    val progress = if (earned) 1f else (value.toFloat() / target.coerceAtLeast(1)).coerceIn(0f, 1f)
+
+    Row(
+        modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.70f))
-            .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f)),
-                MaterialTheme.shapes.medium
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(
+                if (earned) VeilPalette.DeepBrass.copy(alpha = 0.24f)
+                else VeilPalette.Archive.copy(alpha = 0.62f)
             )
-            .padding(VeilSpacing.md)
+            .border(
+                BorderStroke(
+                    1.dp,
+                    if (earned) VeilPalette.Brass.copy(alpha = 0.42f)
+                    else VeilPalette.BorderDark.copy(alpha = 0.76f)
+                ),
+                MaterialTheme.shapes.extraSmall
+            )
+            .padding(horizontal = 11.dp, vertical = 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        Box(
+            Modifier
+                .size(30.dp)
+                .clip(CircleShape)
+                .border(
+                    BorderStroke(
+                        1.dp,
+                        if (earned) VeilPalette.Brass.copy(alpha = 0.68f)
+                        else VeilPalette.Mist.copy(alpha = 0.26f)
+                    ),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                if (earned) "✦" else "·",
+                color = if (earned) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.40f),
+                fontSize = 14.sp
+            )
+        }
+
+        Column(
+            Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    name,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = VeilPalette.Moon
+                )
                 Text(
                     if (earned) "AWAKENED" else "${value.coerceAtMost(target)}/$target",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (earned) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (earned) VeilPalette.Brass else VeilPalette.Mist
                 )
             }
             LinearProgressIndicator(
-                progress = { if (earned) 1f else (value.toFloat() / target.coerceAtLeast(1)).coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth(),
-                color = if (earned) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                progress = { progress },
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = if (earned) VeilPalette.Brass else VeilPalette.Spirit,
+                trackColor = VeilPalette.Moon.copy(alpha = 0.07f),
+                drawStopIndicator = {}
             )
         }
     }
@@ -261,19 +636,19 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
 
 @Composable
 private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Boolean) {
-    val shape = MaterialTheme.shapes.large
-    val accent = if (revealed) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
+    val shape = MaterialTheme.shapes.extraSmall
+    val accent = if (revealed) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.48f)
 
     Box(
         Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(
-                if (revealed) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.20f)
-                else MaterialTheme.colorScheme.surface.copy(alpha = 0.58f)
+                if (revealed) VeilPalette.DeepBrass.copy(alpha = 0.18f)
+                else VeilPalette.Archive.copy(alpha = 0.56f)
             )
             .border(BorderStroke(1.dp, accent.copy(alpha = if (revealed) 0.55f else 0.35f)), shape)
-            .padding(VeilSpacing.lg)
+            .padding(VeilSpacing.md)
     ) {
         Row(
             Modifier.fillMaxWidth(),
@@ -282,8 +657,8 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
         ) {
             Box(
                 Modifier
-                    .size(48.dp)
-                    .clip(MaterialTheme.shapes.medium)
+                    .size(42.dp)
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(accent.copy(alpha = if (revealed) 0.13f else 0.07f)),
                 contentAlignment = Alignment.Center
             ) {
@@ -300,7 +675,7 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                 Text(
                     if (revealed) discovery.title else "Veiled Fragment ${index + 1}",
                     style = MaterialTheme.typography.titleLarge,
-                    color = if (revealed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (revealed) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.62f)
                 )
                 Text(
                     if (revealed) "REVEALED" else "CLUE",
@@ -310,13 +685,13 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                 Text(
                     if (revealed) discovery.lore else discovery.clue,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = VeilPalette.Mist
                 )
                 if (revealed) {
                     Text(
                         "This discovery emerged from your existing reading history; no action was consumed and nothing expires.",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.tertiary
+                        color = VeilPalette.Spirit
                     )
                 }
             }
@@ -331,7 +706,7 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
             Text(
                 eyebrow.uppercase(),
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
-                color = MaterialTheme.colorScheme.secondary
+                color = VeilPalette.Brass
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
         }
@@ -339,7 +714,7 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
             Text(
                 it,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = VeilPalette.Mist,
                 textAlign = TextAlign.End
             )
         }
