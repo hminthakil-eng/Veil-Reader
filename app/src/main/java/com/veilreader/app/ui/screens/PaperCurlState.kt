@@ -6,7 +6,9 @@ import android.graphics.PointF
 import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.keyframes
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -77,7 +79,10 @@ internal class PaperCurlState {
             start.y + offset.y
         )
         val canonicalStart = canonical(actualStart)
-        val canonicalCurrent = canonical(actualCurrent).let {
+        val canonicalCurrent = paperWeightedDragCurrent(
+            start = canonicalStart,
+            current = canonical(actualCurrent)
+        ).let {
             Offset(
                 it.x.coerceIn(-width * 0.25f, width * 1.25f),
                 it.y.coerceIn(-height * 0.25f, height * 1.25f)
@@ -124,7 +129,8 @@ internal class PaperCurlState {
         if (!active) return
         animateTo(
             target = leftEdge(),
-            durationMs = 190
+            dampingRatio = 0.72f,
+            stiffness = Spring.StiffnessMediumLow
         )
     }
 
@@ -132,7 +138,8 @@ internal class PaperCurlState {
         if (!active) return
         animateTo(
             target = rightEdge(),
-            durationMs = 170
+            dampingRatio = 0.88f,
+            stiffness = Spring.StiffnessMedium
         )
     }
 
@@ -181,7 +188,8 @@ internal class PaperCurlState {
     }
     private suspend fun animateTo(
         target: PaperCurlEdge,
-        durationMs: Int
+        dampingRatio: Float,
+        stiffness: Float
     ) {
         val anim = Animatable(
             edge,
@@ -190,9 +198,10 @@ internal class PaperCurlState {
         )
         anim.animateTo(
             targetValue = target,
-            animationSpec = tween(
-                durationMillis = durationMs,
-                easing = FastOutSlowInEasing
+            animationSpec = spring(
+                dampingRatio = dampingRatio,
+                stiffness = stiffness,
+                visibilityThreshold = PaperCurlEdge.VisibilityThreshold
             )
         ) {
             edge = value
