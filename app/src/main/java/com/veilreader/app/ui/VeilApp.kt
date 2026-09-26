@@ -444,7 +444,11 @@ fun VeilApp(
                     } else {
                         sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
                     }
-                }
+                },
+                books = books,
+                highlights = highlights,
+                bookmarks = bookmarks,
+                readingSessions = readingSessions
             )
 
             VeilTab.PATH -> PathScreen(
