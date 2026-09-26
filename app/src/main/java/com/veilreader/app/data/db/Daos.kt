@@ -1,6 +1,8 @@
 package com.veilreader.app.data.db
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Upsert
@@ -176,4 +178,25 @@ interface PassageVisitDao {
     @Upsert suspend fun upsert(visit: PassageVisitEntity)
     @Upsert suspend fun upsertAll(visits: List<PassageVisitEntity>)
     @Query("DELETE FROM passage_visits") suspend fun deleteAll()
+}
+
+
+@Dao
+interface ReadingMilestoneDao {
+    @Query("SELECT * FROM reading_milestones ORDER BY reachedAtEpochMs ASC")
+    fun observeAll(): Flow<List<ReadingMilestoneEntity>>
+
+    @Query("SELECT * FROM reading_milestones ORDER BY reachedAtEpochMs ASC")
+    suspend fun listAll(): List<ReadingMilestoneEntity>
+
+    @Query("SELECT * FROM reading_milestones WHERE bookId = :bookId ORDER BY reachedAtEpochMs ASC")
+    suspend fun listForBook(bookId: String): List<ReadingMilestoneEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertIfAbsent(milestone: ReadingMilestoneEntity): Long
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAllIfAbsent(milestones: List<ReadingMilestoneEntity>): List<Long>
+
+    @Query("DELETE FROM reading_milestones") suspend fun deleteAll()
 }
