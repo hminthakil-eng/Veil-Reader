@@ -9,6 +9,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import org.readium.r2.navigator.preferences.ReadingProgression
 
 internal data class PaperCurlEdge(
     val top: Offset,
@@ -33,6 +34,19 @@ internal data class PaperCurlEdge(
         )
     }
 }
+internal enum class PaperReleaseRegime { MANIPULATION, FLING }
+
+internal data class PaperReleaseProfile(
+    val regime: PaperReleaseRegime,
+    val durationMillis: Int,
+    val completionBias: Float
+)
+
+internal data class PaperPageStackDepth(
+    val leftDp: Float,
+    val rightDp: Float
+)
+
 internal data class PaperCurlPolygon(
     val vertices: List<Offset>
 ) {
@@ -65,6 +79,38 @@ internal data class PaperCurlPolygon(
     }
 
     private fun index(i: Int): Int = ((i % size) + size) % size
+}
+
+internal fun paperReleaseProfile(releaseVelocityDpPerSec: Float): PaperReleaseProfile {
+    val speed = kotlin.math.abs(releaseVelocityDpPerSec)
+    return if (speed >= 900f) {
+        val normalized = ((speed - 900f) / 2200f).coerceIn(0f, 1f)
+        PaperReleaseProfile(
+            regime = PaperReleaseRegime.FLING,
+            durationMillis = (210f - 75f * normalized).toInt(),
+            completionBias = 0.70f + 0.20f * normalized
+        )
+    } else {
+        PaperReleaseProfile(
+            regime = PaperReleaseRegime.MANIPULATION,
+            durationMillis = 360,
+            completionBias = 0.56f
+        )
+    }
+}
+
+internal fun paperPageStackDepth(
+    progress: Float,
+    progression: ReadingProgression
+): PaperPageStackDepth {
+    val p = progress.coerceIn(0f, 1f)
+    val consumed = 2f + 6f * p
+    val remaining = 2f + 6f * (1f - p)
+    return if (progression == ReadingProgression.RTL) {
+        PaperPageStackDepth(leftDp = remaining, rightDp = consumed)
+    } else {
+        PaperPageStackDepth(leftDp = consumed, rightDp = remaining)
+    }
 }
 
 internal fun paperFoldLift(progress: Float): Float =
