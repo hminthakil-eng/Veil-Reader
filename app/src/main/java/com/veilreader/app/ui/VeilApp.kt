@@ -368,6 +368,28 @@ fun VeilApp(
                 onOpenSettings = routeViewModel::openSettings
             )
 
+            VeilTab.ARCHIVE -> ArchiveScreen(
+                books = books,
+                highlights = highlights,
+                bookmarks = bookmarks,
+                onClose = { routeViewModel.selectTab(VeilTab.READING) },
+                onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
+                onSaveNote = { id, note ->
+                    library.updateHighlightNote(id, note)
+                    scope.launch {
+                        try {
+                            library.flushWrites()
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            errorMessage = "Your note changed locally, but storage confirmation failed. " + error.message.orEmpty()
+                        }
+                    }
+                },
+                onDeleteHighlight = library::deleteHighlight,
+                onDeleteBookmark = library::deleteBookmark
+            )
+
             VeilTab.CASTLE -> CastleScreen(
                 profile = requireNotNull(profile),
                 onOpenRoom = { room ->
@@ -375,7 +397,7 @@ fun VeilApp(
                         "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
                         "ritual" -> routeViewModel.selectTab(VeilTab.PATH)
                         "observatory" -> routeViewModel.selectTab(VeilTab.PROFILE)
-                        "archive" -> routeViewModel.openArchive()
+                        "archive" -> routeViewModel.selectTab(VeilTab.ARCHIVE)
                         "treasury", "sanctum" -> routeViewModel.openChamber(room)
                     }
                 },
@@ -407,7 +429,7 @@ fun VeilApp(
                 castleTitle = requireNotNull(castleTitle),
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
-                onOpenArchive = routeViewModel::openArchive,
+                onOpenArchive = { routeViewModel.selectTab(VeilTab.ARCHIVE) },
                 onOpenSettings = routeViewModel::openSettings
             )
         }
