@@ -65,8 +65,13 @@ fun ArchiveScreen(
         .getOrDefault(NotebookSection.HIGHLIGHTS)
     val booksById = remember(books) { books.associateBy { it.id } }
     val archiveNow = remember { System.currentTimeMillis() }
-    val echoes = remember(highlights, booksById, archiveNow) {
-        deriveArchiveEchoes(highlights, booksById, archiveNow)
+    val echoes = remember(highlights, booksById, archiveNow, passageVisits) {
+        deriveArchiveEchoes(
+            highlights = highlights,
+            booksById = booksById,
+            nowEpochMs = archiveNow,
+            passageVisits = passageVisits
+        )
     }
     val capsules = remember(books, readingSessions, highlights, bookmarks, readingCycles) {
         deriveReadingTimeCapsules(
@@ -104,8 +109,13 @@ fun ArchiveScreen(
         }
     }
 
-    val matchingEchoes = remember(matchingHighlights, booksById, archiveNow) {
-        deriveArchiveEchoes(matchingHighlights, booksById, archiveNow)
+    val matchingEchoes = remember(matchingHighlights, booksById, archiveNow, passageVisits) {
+        deriveArchiveEchoes(
+            highlights = matchingHighlights,
+            booksById = booksById,
+            nowEpochMs = archiveNow,
+            passageVisits = passageVisits
+        )
     }
 
     val matchingCapsules = remember(capsules, cleanQuery) {
