@@ -558,15 +558,15 @@ fun ReaderScreen(
                     .fillMaxWidth()
                     .widthIn(max = 760.dp)
                     .statusBarsPadding()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
                     .border(
-                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                        RoundedCornerShape(12.dp)
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.26f)),
+                        RoundedCornerShape(6.dp)
                     ),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
-                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.972f),
+                shape = RoundedCornerShape(6.dp),
                 tonalElevation = 0.dp,
-                shadowElevation = 6.dp
+                shadowElevation = 2.dp
             ) {
                 Column(
                     Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -631,15 +631,15 @@ fun ReaderScreen(
                     .fillMaxWidth()
                     .widthIn(max = 560.dp)
                     .navigationBarsPadding()
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .padding(horizontal = 10.dp, vertical = 6.dp)
                     .border(
-                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                        RoundedCornerShape(14.dp)
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.26f)),
+                        RoundedCornerShape(6.dp)
                     ),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.985f),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.972f),
                 tonalElevation = 0.dp,
-                shadowElevation = 7.dp,
-                shape = RoundedCornerShape(14.dp)
+                shadowElevation = 2.dp,
+                shape = RoundedCornerShape(6.dp)
             ) {
                 Column(
                     Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
@@ -653,7 +653,7 @@ fun ReaderScreen(
                     ) {
                     ReaderControl(
                         action = ReaderAction.NOTEBOOK,
-                        label = "Notebook",
+                        label = "Archive",
                         modifier = Modifier.weight(1f)
                     ) {
                         readerViewModel.onUserInteraction()
