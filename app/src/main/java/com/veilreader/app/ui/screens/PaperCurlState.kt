@@ -137,13 +137,40 @@ internal class PaperCurlState {
         }
     }
 
-    suspend fun animateComplete() {
+    suspend fun animateComplete(releaseVelocityDpPerSec: Float = 0f) {
         if (!active) return
-        animateTo(
-            target = leftEdge(),
-            dampingRatio = 0.88f,
-            stiffness = Spring.StiffnessMediumLow
-        )
+        val profile = paperReleaseProfile(releaseVelocityDpPerSec)
+        if (profile.regime == PaperReleaseRegime.FLING) {
+            // A flick is a release regime, not the slow manipulation animation sped up.
+            // The detached sheet snaps into a tighter fold before settling off the book.
+            val anim = Animatable(
+                edge,
+                PaperCurlEdge.VectorConverter,
+                PaperCurlEdge.VisibilityThreshold
+            )
+            val bendX = width * (1f - profile.completionBias)
+            val bend = PaperCurlEdge(
+                top = Offset(bendX * 1.10f, height * 0.035f),
+                bottom = Offset(bendX * 0.48f, height)
+            )
+            anim.animateTo(
+                targetValue = leftEdge(),
+                animationSpec = keyframes {
+                    durationMillis = profile.durationMillis
+                    edge at 0
+                    bend at (profile.durationMillis * 0.46f).toInt()
+                    leftEdge() at profile.durationMillis
+                }
+            ) {
+                edge = value
+            }
+        } else {
+            animateTo(
+                target = leftEdge(),
+                dampingRatio = 0.88f,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        }
     }
 
     suspend fun animateCancel() {
