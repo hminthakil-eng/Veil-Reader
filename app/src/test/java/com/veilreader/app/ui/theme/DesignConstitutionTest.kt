@@ -31,6 +31,21 @@ class DesignConstitutionTest {
     }
 
     @Test
+    fun `archive composition becomes roomier and richer with window class`() {
+        val compact = archiveLayoutPolicyFor(VeilAdaptiveClass.COMPACT)
+        val wide = archiveLayoutPolicyFor(VeilAdaptiveClass.WIDE)
+        val large = archiveLayoutPolicyFor(VeilAdaptiveClass.LARGE)
+
+        assertTrue(compact.galleryMinCellDp < wide.galleryMinCellDp)
+        assertTrue(wide.galleryMinCellDp < large.galleryMinCellDp)
+        assertTrue(compact.horizontalPaddingDp < large.horizontalPaddingDp)
+        assertTrue(compact.shelfCoverWidthDp < large.shelfCoverWidthDp)
+        assertFalse(compact.showIndexMemorySummary)
+        assertTrue(wide.showIndexMemorySummary)
+        assertTrue(large.showIndexMemorySummary)
+    }
+
+    @Test
     fun `reduced motion removes translation and ambient loops`() {
         VeilMotionClass.entries.forEach { motionClass ->
             val policy = motionPolicyFor(motionClass, reducedMotion = true)
