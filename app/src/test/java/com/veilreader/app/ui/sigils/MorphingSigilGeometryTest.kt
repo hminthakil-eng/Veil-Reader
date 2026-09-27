@@ -1,7 +1,6 @@
 package com.veilreader.app.ui.sigils
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -51,15 +50,24 @@ class MorphingSigilGeometryTest {
     }
 
     @Test
-    fun advancement_changesGeometryWithoutChangingPathIdentity() {
+    fun everyCanonicalAdvancement_changesPersistentGeometry() {
         canonicalPaths.forEach { pathId ->
-            val rankZero = sigilGeometryFor(pathId, rankIndex = 0)
-            val rankOne = sigilGeometryFor(pathId, rankIndex = 1)
-            val rankTwo = sigilGeometryFor(pathId, rankIndex = 2)
+            val ranks = (0..5).map { rank -> sigilGeometryFor(pathId, rank) }
 
-            assertNotEquals(rankZero, rankOne)
-            assertNotEquals(rankOne, rankTwo)
+            ranks.zipWithNext().forEachIndexed { rank, (from, to) ->
+                assertTrue(
+                    "$pathId rank $rank -> ${rank + 1} must change the final sigil",
+                    from != to
+                )
+            }
         }
+    }
+
+    @Test
+    fun rotationInterpolation_usesTheShortestArcAcrossQuarterTurnWrap() {
+        assertEquals(90f, shortestSigilRotationDeltaDegrees(3, 0), 0.001f)
+        assertEquals(-90f, shortestSigilRotationDeltaDegrees(0, 3), 0.001f)
+        assertEquals(90f, shortestSigilRotationDeltaDegrees(1, 2), 0.001f)
     }
 
     @Test

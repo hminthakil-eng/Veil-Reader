@@ -53,13 +53,22 @@ internal fun sigilGeometryFor(
     }
 
     // Rank changes the geometry without creating arbitrary random marks.
-    val pointGrowth = (safeRank / 2).coerceAtMost(2)
+    val pointGrowth = safeRank.coerceAtMost(3)
     val pulse = (safeRank % 3) * 0.035f
     return base.copy(
         points = (base.points + pointGrowth).coerceIn(3, 9),
         innerRadius = (base.innerRadius - pulse).coerceIn(0.38f, 0.72f),
         rotationQuarterTurns = (base.rotationQuarterTurns + safeRank) % 4
     )
+}
+
+internal fun shortestSigilRotationDeltaDegrees(
+    fromQuarterTurns: Int,
+    toQuarterTurns: Int
+): Float {
+    val start = Math.floorMod(fromQuarterTurns, 4) * 90f
+    val end = Math.floorMod(toQuarterTurns, 4) * 90f
+    return ((end - start + 540f) % 360f) - 180f
 }
 
 private fun polygonFor(spec: SigilGeometrySpec): RoundedPolygon {
@@ -153,11 +162,12 @@ fun MorphingPathSigil(
             .asComposePath()
 
         val radius = size.minDimension * 0.39f
-        val rotation =
-            (
-                startSpec.rotationQuarterTurns * (1f - progress) +
-                    endSpec.rotationQuarterTurns * progress
-                ) * 90f
+        val startRotation = startSpec.rotationQuarterTurns * 90f
+        val rotation = startRotation +
+            shortestSigilRotationDeltaDegrees(
+                startSpec.rotationQuarterTurns,
+                endSpec.rotationQuarterTurns
+            ) * progress
 
         translate(left = size.width / 2f, top = size.height / 2f) {
             rotate(rotation) {
