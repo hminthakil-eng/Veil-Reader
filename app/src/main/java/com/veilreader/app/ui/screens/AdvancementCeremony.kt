@@ -251,8 +251,10 @@ internal fun AdvancementCeremony(
                     AdvancementCeremonyStage.INVOCATION -> {
                         Button(
                             onClick = {
-                                stage = AdvancementCeremonyStage.SEALING
-                                onConfirm()
+                                if (stage == AdvancementCeremonyStage.INVOCATION) {
+                                    stage = AdvancementCeremonyStage.SEALING
+                                    onConfirm()
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
