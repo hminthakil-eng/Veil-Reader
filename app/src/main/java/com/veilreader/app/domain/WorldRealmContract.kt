@@ -32,7 +32,7 @@ data class WorldRealmId private constructor(val value: String) {
     }
 }
 
-enum class WorldHistoryAccess {
+enum class WorldEventAccess {
     NONE,
     READ_ONLY_PROJECTION
 }
@@ -40,15 +40,16 @@ enum class WorldHistoryAccess {
 /**
  * Realm contract for W1.
  *
- * A realm may project durable history into presentation, but it never becomes the owner of that
- * history, progression, or Reader state. Inactivity is never allowed to punish or erase history.
+ * A realm may project World Kernel history into presentation, but the World Kernel never becomes
+ * the owner of Reader persistence or progression. This contract does not prevent Sanctuary from
+ * saving normal progress/session data through the existing Reader repositories.
  */
 data class WorldRealmContract(
     val realm: WorldRealmId,
-    val historyAccess: WorldHistoryAccess,
+    val eventAccess: WorldEventAccess,
     val acceptsDecorativeWorldState: Boolean,
-    val mayMutateReadingHistory: Boolean = false,
-    val mayMutateProgression: Boolean = false,
+    val worldKernelMayMutateReadingHistory: Boolean = false,
+    val worldKernelMayMutateProgression: Boolean = false,
     val mayAppendWorldEventsDirectly: Boolean = false,
     val mayPenalizeInactivity: Boolean = false
 )
@@ -56,47 +57,47 @@ data class WorldRealmContract(
 val canonicalWorldRealmContracts: List<WorldRealmContract> = listOf(
     WorldRealmContract(
         realm = WorldRealmId.THRESHOLD,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.GREAT_HALL,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.LIVING_MIRROR,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.ARCHIVE,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.OBSERVATORY,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.RITUAL,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.TREASURY,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.SANCTUM,
-        historyAccess = WorldHistoryAccess.READ_ONLY_PROJECTION,
+        eventAccess = WorldEventAccess.READ_ONLY_PROJECTION,
         acceptsDecorativeWorldState = true
     ),
     WorldRealmContract(
         realm = WorldRealmId.SANCTUARY,
-        historyAccess = WorldHistoryAccess.NONE,
+        eventAccess = WorldEventAccess.NONE,
         acceptsDecorativeWorldState = false
     )
 )
