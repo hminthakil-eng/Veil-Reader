@@ -441,49 +441,62 @@ fun LibraryScreen(
                     trailing = "Tap to filter"
                 )
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-                ) {
-                    LibraryShelfCard(
-                        title = "Favorites",
-                        subtitle = "Volumes kept close",
-                        count = books.count { it.favorite },
-                        selected = shelf == "Favorites",
-                        onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
-                    )
-                    LibraryShelfCard(
-                        title = "Currently Reading",
-                        subtitle = "Open journeys",
-                        count = books.count { !it.finished && it.progress > 0f },
-                        selected = shelf == "Reading",
-                        onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
-                    )
-                    LibraryShelfCard(
-                        title = "Completed",
-                        subtitle = "Closed volumes",
-                        count = books.count { it.finished },
-                        selected = shelf == "Finished",
-                        onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
-                    )
-                    LibraryShelfCard(
-                        title = "Deep Shelf",
-                        subtitle = "Long-unopened volumes",
-                        count = memoryState.deepShelfBookIds.size,
-                        selected = shelf == "Deep Shelf",
-                        onClick = {
-                            shelf = if (shelf == "Deep Shelf") "All" else "Deep Shelf"
-                        }
-                    )
-                    LibraryShelfCard(
-                        title = "Plan to Read",
-                        subtitle = "Still unopened",
-                        count = books.count { !it.finished && it.progress <= 0f },
-                        selected = shelf == "Unread",
-                        onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
-                    )
+                BoxWithConstraints(Modifier.fillMaxWidth()) {
+                    val shelfWidth = if (maxWidth < 600.dp) {
+                        (maxWidth - VeilSpacing.xs) / 2f
+                    } else {
+                        (maxWidth - VeilSpacing.xs * 2f) / 3f
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    ) {
+                        LibraryShelfCard(
+                            title = "Favorites",
+                            subtitle = "Volumes kept close",
+                            count = books.count { it.favorite },
+                            selected = shelf == "Favorites",
+                            width = shelfWidth,
+                            onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
+                        )
+                        LibraryShelfCard(
+                            title = "Currently Reading",
+                            subtitle = "Open journeys",
+                            count = books.count { !it.finished && it.progress > 0f },
+                            selected = shelf == "Reading",
+                            width = shelfWidth,
+                            onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
+                        )
+                        LibraryShelfCard(
+                            title = "Completed",
+                            subtitle = "Closed volumes",
+                            count = books.count { it.finished },
+                            selected = shelf == "Finished",
+                            width = shelfWidth,
+                            onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
+                        )
+                        LibraryShelfCard(
+                            title = "Deep Shelf",
+                            subtitle = "Long-unopened volumes",
+                            count = memoryState.deepShelfBookIds.size,
+                            selected = shelf == "Deep Shelf",
+                            width = shelfWidth,
+                            onClick = {
+                                shelf = if (shelf == "Deep Shelf") "All" else "Deep Shelf"
+                            }
+                        )
+                        LibraryShelfCard(
+                            title = "Plan to Read",
+                            subtitle = "Still unopened",
+                            count = books.count { !it.finished && it.progress <= 0f },
+                            selected = shelf == "Unread",
+                            width = shelfWidth,
+                            onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
+                        )
+                    }
                 }
             }
         }
@@ -1794,13 +1807,14 @@ private fun LibraryShelfCard(
     subtitle: String,
     count: Int,
     selected: Boolean,
+    width: Dp = 142.dp,
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
         modifier = Modifier
-            .width(142.dp)
-            .heightIn(min = 78.dp),
+            .width(width)
+            .heightIn(min = 82.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.62f)
