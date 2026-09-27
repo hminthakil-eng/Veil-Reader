@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.draw.clip
@@ -276,6 +277,7 @@ fun VeilBottomDock(
     onSelect: (VeilTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -285,7 +287,7 @@ fun VeilBottomDock(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 78.dp),
+                .heightIn(min = if (fontScale > 1.35f) 92.dp else 78.dp),
             shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
             color = Color(0xFF090B0F).copy(alpha = 0.995f),
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -437,7 +439,7 @@ private fun VeilDockItem(
                 fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
             ),
             color = foreground,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center
         )
