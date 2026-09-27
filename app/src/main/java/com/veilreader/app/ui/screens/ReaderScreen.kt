@@ -764,10 +764,7 @@ fun ReaderScreen(
                         ) {
                             Text(
                                 opened.book.title,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontSize = 13.5.sp,
-                                    lineHeight = 16.sp
-                                ),
+                                style = MaterialTheme.typography.titleSmall,
                                 color = VeilPalette.Moon,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -1716,6 +1713,11 @@ private fun EpubAppearancePanel(
                 selected = draft.navigationMode,
                 onSelect = { updateDraft(draft.withNavigationMode(it)) }
             )
+            Text(
+                readerNavigationModeDescription(draft.navigationMode),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         } else {
             Text(
                 "TYPOGRAPHY & LAYOUT",
@@ -1870,7 +1872,7 @@ private fun ReaderAppearancePreview(
                     when (appearance.navigationMode) {
                         ReaderNavigationMode.PAPER_CURL -> "CURL"
                         ReaderNavigationMode.SLIDE -> "SLIDE"
-                        ReaderNavigationMode.PAGED -> "PAGE"
+                        ReaderNavigationMode.PAGED -> "PAGED"
                         ReaderNavigationMode.SCROLL -> "SCROLL"
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -1927,6 +1929,18 @@ private fun ReaderAppearancePreview(
         }
     }
 }
+
+internal fun readerNavigationModeDescription(mode: ReaderNavigationMode): String =
+    when (mode) {
+        ReaderNavigationMode.PAPER_CURL ->
+            "Physical page curl with weighted drag, release velocity, and page-stack depth."
+        ReaderNavigationMode.SLIDE ->
+            "Paginated reading with a lightweight horizontal transition and no paper deformation."
+        ReaderNavigationMode.PAGED ->
+            "Static pagination with no decorative page transition."
+        ReaderNavigationMode.SCROLL ->
+            "Continuous vertical reading when the publication format supports it."
+    }
 
 @Composable
 internal fun ReaderMotionSelector(
