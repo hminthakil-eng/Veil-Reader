@@ -98,6 +98,7 @@ workflows:
     artifacts:
       - unit-test.log
       - build-evidence/**
+      - app/build/outputs/apk/debug/*.apk
       - app/build/reports/**
       - app/build/test-results/**
 
@@ -269,6 +270,7 @@ workflows:
     artifacts:
       - full-verify.log
       - build-evidence/**
+      - app/build/outputs/apk/debug/*.apk
       - app/build/outputs/apk/androidTest/**/*.apk
       - benchmark/build/outputs/**/*.apk
       - app/build/reports/**
