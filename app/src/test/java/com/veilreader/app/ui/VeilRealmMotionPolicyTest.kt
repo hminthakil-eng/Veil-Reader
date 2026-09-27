@@ -38,7 +38,8 @@ class VeilRealmMotionPolicyTest {
             policy.sharedBoundsDurationMs
         )
         assertTrue(policy.predictiveScaleAtCommit < 1f)
-        assertTrue(policy.predictiveAlphaAtCommit < 1f)
+        assertTrue(policy.predictiveAlphaAtCommit < 0.5f)
+        assertTrue(policy.predictiveTranslationFractionAtCommit in 0.01f..0.15f)
     }
 
     @Test
@@ -48,6 +49,7 @@ class VeilRealmMotionPolicyTest {
         assertEquals(0, policy.sharedBoundsDurationMs)
         assertEquals(1f, policy.predictiveScaleAtCommit)
         assertEquals(1f, policy.predictiveAlphaAtCommit)
+        assertEquals(0f, policy.predictiveTranslationFractionAtCommit)
         assertEquals(
             effectiveMotionDurationMs(VeilMotionClass.REALM, true),
             policy.enterDurationMs
