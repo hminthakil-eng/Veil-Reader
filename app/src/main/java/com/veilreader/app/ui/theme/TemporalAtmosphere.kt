@@ -119,7 +119,7 @@ fun rememberVeilTemporalAtmosphere(): VeilTemporalAtmosphere {
     return state
 }
 
-private fun temporalRealmWeight(realm: VeilRealm): Float =
+internal fun temporalRealmWeightFor(realm: VeilRealm): Float =
     when (realm) {
         VeilRealm.SANCTUARY -> 0f
         VeilRealm.THRESHOLD -> 1f
@@ -142,7 +142,7 @@ fun Modifier.temporalGrayfogAtmosphere(
     seed: Int = 0,
     intensity: Float = 1f
 ): Modifier = drawBehind {
-    val realmWeight = temporalRealmWeight(realm)
+    val realmWeight = temporalRealmWeightFor(realm)
     val strength = (realmWeight * intensity).coerceIn(0f, 1f)
     if (strength <= 0.001f) return@drawBehind
 
