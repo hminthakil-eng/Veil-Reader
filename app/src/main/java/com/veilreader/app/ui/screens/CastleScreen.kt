@@ -60,6 +60,7 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -95,7 +96,8 @@ fun CastleScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
-                seed = profile.rankIndex * 31 + memoryState.volumeCount
+                seed = profile.rankIndex * 31 + memoryState.volumeCount,
+                temporalPhase = currentVeilTemporalPhase()
             ),
         contentAlignment = Alignment.TopCenter
     ) {
