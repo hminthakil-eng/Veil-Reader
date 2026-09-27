@@ -125,24 +125,23 @@ fun PathScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = 0.08f,
+            alpha = 0.30f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(520.dp)
+                .height(760.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(590.dp)
+                .height(820.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Ink.copy(alpha = 0.54f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.06f),
+                        0.38f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.66f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -155,10 +154,9 @@ fun PathScreen(
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
-        ScreenHeader(
-            eyebrow = "THE ${presentation.aspect.uppercase()} PATH",
-            title = profile.path.name,
-            subtitle = "${profile.path.epithet} · ${profile.rankName}"
+        PathGrandMasthead(
+            profile = profile,
+            presentation = presentation
         )
 
         AnimatedVisibility(
@@ -223,6 +221,87 @@ fun PathScreen(
             onDismiss = { showCeremony = false },
             onConfirm = { onAdvanceRank(ceremonyPathId, ceremonyRankIndex) }
         )
+    }
+}
+
+@Composable
+private fun PathGrandMasthead(
+    profile: ReaderProfile,
+    presentation: PathPresentation
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.10f),
+                        0.42f to Color.Transparent,
+                        1f to VeilPalette.Ink.copy(alpha = 0.97f)
+                    )
+                )
+        )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.90f
+        )
+        Text(
+            "THE ${presentation.aspect.uppercase()} PATH",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+            color = VeilPalette.Brass
+        )
+        Text(
+            "RANK ${profile.rankIndex + 1}",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+            color = VeilPalette.Moon.copy(alpha = 0.74f)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                profile.path.name,
+                style = MaterialTheme.typography.displaySmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                "${profile.path.epithet} · ${profile.rankName}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.84f)
+            )
+            Text(
+                presentation.invocation,
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = 0.82f),
+                modifier = Modifier.widthIn(max = 560.dp)
+            )
+            BrassRule(Modifier.width(144.dp), strong = true)
+        }
     }
 }
 
