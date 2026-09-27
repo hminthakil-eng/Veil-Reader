@@ -19,11 +19,38 @@ data class VeilScriptOrnamentPolicy(
     val metadataLabelWidthDp: Float
 )
 
+data class VeilPunctuationPolicy(
+    val decimalSeparator: Char,
+    val groupingSeparator: Char,
+    val percentSign: Char,
+    val questionMark: Char,
+    val listSeparator: String
+)
+
 fun digitSetForLanguage(language: String): VeilDigitSet =
     when (language.lowercase()) {
         "fa", "ur", "ps", "ckb" -> VeilDigitSet.EASTERN_ARABIC
         "ar" -> VeilDigitSet.ARABIC_INDIC
         else -> VeilDigitSet.LATIN
+    }
+
+fun punctuationPolicyFor(language: String): VeilPunctuationPolicy =
+    when (digitSetForLanguage(language)) {
+        VeilDigitSet.LATIN -> VeilPunctuationPolicy(
+            decimalSeparator = '.',
+            groupingSeparator = ',',
+            percentSign = '%',
+            questionMark = '?',
+            listSeparator = ", "
+        )
+        VeilDigitSet.ARABIC_INDIC,
+        VeilDigitSet.EASTERN_ARABIC -> VeilPunctuationPolicy(
+            decimalSeparator = '٫',
+            groupingSeparator = '٬',
+            percentSign = '٪',
+            questionMark = '؟',
+            listSeparator = "، "
+        )
     }
 
 fun scriptOrnamentPolicyFor(script: VeilScriptGroup): VeilScriptOrnamentPolicy =
@@ -60,6 +87,7 @@ fun localizeAppNumerals(
         VeilDigitSet.EASTERN_ARABIC -> '۰'
         VeilDigitSet.LATIN -> '0'
     }
+    val punctuation = punctuationPolicyFor(language)
 
     fun isAsciiDigitAt(index: Int): Boolean =
         index in text.indices && text[index] in '0'..'9'
@@ -70,15 +98,15 @@ fun localizeAppNumerals(
                 char in '0'..'9' ->
                     append((zero.code + (char.code - '0'.code)).toChar())
                 char == '%' ->
-                    append('٪')
+                    append(punctuation.percentSign)
                 char == '.' &&
                     isAsciiDigitAt(index - 1) &&
                     isAsciiDigitAt(index + 1) ->
-                    append('٫')
+                    append(punctuation.decimalSeparator)
                 char == ',' &&
                     isAsciiDigitAt(index - 1) &&
                     isAsciiDigitAt(index + 1) ->
-                    append('٬')
+                    append(punctuation.groupingSeparator)
                 else -> append(char)
             }
         }
