@@ -26,6 +26,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
@@ -37,6 +38,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.books.BookArtifactLayer
@@ -105,6 +107,14 @@ fun VeilReveal(
         content = content
     )
 }
+
+@Composable
+internal fun VeilBackLabel(destination: String): String =
+    if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
+        "$destination ›"
+    } else {
+        "‹ $destination"
+    }
 
 @Composable
 fun BrassRule(
