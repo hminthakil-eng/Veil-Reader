@@ -38,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalDensity
 import kotlinx.coroutines.delay
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -229,10 +230,11 @@ private fun PathGrandMasthead(
     profile: ReaderProfile,
     presentation: PathPresentation
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp)
+            .heightIn(min = if (fontScale > 1.35f) 330.dp else 260.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
