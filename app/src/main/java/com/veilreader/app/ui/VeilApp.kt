@@ -500,11 +500,11 @@ fun VeilApp(
                         "treasury", "sanctum" -> routeViewModel.openChamber(room)
                     }
                 },
-                onAdvanceRank = { routeViewModel.selectTab(VeilTab.PATH) },
                 books = books,
                 highlights = highlights,
                 bookmarks = bookmarks,
-                readingSessions = readingSessions
+                readingSessions = readingSessions,
+                readingCycles = readingCycles
             )
 
             VeilTab.PATH -> PathScreen(

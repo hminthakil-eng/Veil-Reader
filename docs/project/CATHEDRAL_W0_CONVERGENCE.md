@@ -36,7 +36,7 @@ have passed device QA. Compare each slice to the pinned baseline before porting.
 | PR | Area | Required reconciliation |
 |---|---|---|
 | #291 | Ritual | W0c reconciles phases, frozen target, repository result and reduced motion into the canonical chamber. Castle routes to Ritual. Full Android/device verification remains pending. |
-| #292 | Castle mutation | Preserve canonical spatial Keep and integrate factual mutation inputs without overwriting newer composition. |
+| #292 | Castle mutation | W0d preserves the canonical spatial Keep/Ritual ownership and integrates factual history mutation, reread patina, return awakening and silence cooling. Android/device verification remains pending. |
 | #293 | Archive material | Preserve the canonical BookArtifact model and newer notebook chambers while reconciling material strata and sealed dossiers. |
 | #294 | Discoveries | Canonical already contains VeiledDiscoveryPolicy, profile data and GameRepository persistence. Compare schema, eligibility and restore semantics before choosing one owner; do not install a second ledger. |
 | #295 | Reading signature | Review the new factual model and reconcile ProfileScreen with the current profile and discovery implementation. |
@@ -176,5 +176,46 @@ compilation. Full Android build, TalkBack, small-screen rendering, rapid taps,
 rotation during sealing and process-recreation behavior remain device gates.
 
 PR #291 remains open for provenance, not wholesale merge. Remaining source
-reconciliations are #292–#295 and #297–#298; #292's direct-advancement ownership
-concern is already addressed here, while its Castle mutations are still pending.
+reconciliations are #293–#295 and #297–#298. #292's direct-advancement ownership
+was addressed here and its Castle mutation layer is reconciled in W0d below.
+
+
+## W0d — Castle mutation reconciliation
+
+Inputs: Alpha `a007703756c30f5f77291e7becdce85b228d0ce3` and PR #292
+`19e44b26f0f58b7f5d2a21efd2769e299c45b7a1`.
+
+### Decision
+
+Preserve the canonical spatial Keep, current phone/adaptive composition, shared
+foreground atmosphere and W0c Ritual ownership. Selectively port #292's factual
+environmental mutation layer instead of replacing CastleScreen wholesale.
+
+### Implementation and hardening
+
+- Feed the Castle the existing durable ReadingCycleRecord list; rank still remains
+  the only chamber-unlock authority and Castle never mutates progression.
+- Finished volumes form sealed alcoves, annotations light scriptorium lamps,
+  durable reading time builds foundation courses, rereads add memory rings/patina,
+  and archive age contributes restrained material weathering.
+- Long inactivity cools light/fog without deleting history or reducing unlocks.
+- A genuine return after a 21-day gap creates a temporary foundation-up awakening.
+- Fix a source defect where a second post-return session erased the awakening:
+  the policy now remembers the latest qualifying return event for the recent window.
+- Ignore future/corrupt timestamps when deriving latest activity so clock skew cannot
+  hide valid historical evidence.
+- Reuse the shared temporal sample to refresh Castle aging at world-phase changes;
+  no second timer, worker, persistence layer or Reader dependency is introduced.
+- The advancement CTA now routes through the existing Ritual surface via room
+  navigation; there is no parallel advancement callback.
+
+### Verification and remaining gates
+
+The four deterministic Castle mutation tests from #292 are carried forward, plus
+two Alpha regressions for multi-session return persistence and future-timestamp
+filtering. Source-level integration anchors were checked against the exact W0c head.
+No Android build, Compose resolution, device rendering, TalkBack, rotation or
+performance run is claimed by this step. Those remain W0 acceptance gates.
+
+PR #292 remains open as source provenance and should not be merged wholesale.
+Remaining source reconciliations: #293–#295 and #297–#298.
