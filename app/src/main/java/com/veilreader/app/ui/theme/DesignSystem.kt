@@ -132,6 +132,20 @@ val VeilLatinTypography = Typography(
         lineHeight = 57.sp,
         letterSpacing = (-1.05).sp
     ),
+    displayMedium = TextStyle(
+        fontFamily = LatinFamilies.Editorial,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 45.sp,
+        lineHeight = 49.sp,
+        letterSpacing = (-0.82).sp
+    ),
+    displaySmall = TextStyle(
+        fontFamily = LatinFamilies.Editorial,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = 38.sp,
+        lineHeight = 43.sp,
+        letterSpacing = (-0.66).sp
+    ),
     headlineLarge = TextStyle(
         fontFamily = LatinFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
@@ -221,6 +235,22 @@ val VeilPersianTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 44.sp,
         lineHeight = 61.sp,
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
+    ),
+    displayMedium = TextStyle(
+        fontFamily = RtlFamilies.Editorial,
+        fontWeight = FontWeight.Bold,
+        fontSize = 40.sp,
+        lineHeight = 55.sp,
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
+    ),
+    displaySmall = TextStyle(
+        fontFamily = RtlFamilies.Editorial,
+        fontWeight = FontWeight.Bold,
+        fontSize = 35.sp,
+        lineHeight = 49.sp,
         letterSpacing = 0.sp,
         textDirection = TextDirection.ContentOrRtl
     ),
