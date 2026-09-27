@@ -115,7 +115,9 @@ class LibraryWingsTest {
         )
 
         assertEquals("Read first", state.collectionWings.first().name)
+        assertTrue(state.collectionWings.first().hasRecordedReadingActivity)
         assertEquals(20_000L, state.collectionWings.first().lastRecordedActivityAtEpochMs)
+        assertFalse(state.collectionWings.last().hasRecordedReadingActivity)
     }
 
     @Test
