@@ -79,7 +79,95 @@ import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 
-private enum class LibraryViewMode { GRID, LIST }
+private enum class LibraryViewMode { GALLERY, SHELVES, INDEX }
+
+private fun libraryViewModeFromStored(value: String): LibraryViewMode =
+    when (value) {
+        "GRID" -> LibraryViewMode.GALLERY
+        "LIST" -> LibraryViewMode.INDEX
+        else -> runCatching { LibraryViewMode.valueOf(value) }
+            .getOrDefault(LibraryViewMode.GALLERY)
+    }
+
+private data class LibraryShelfGroup(
+    val eyebrow: String,
+    val title: String,
+    val books: List<Book>
+)
+
+private fun deriveLibraryShelfGroups(
+    books: List<Book>,
+    filtered: List<Book>,
+    filterActive: Boolean
+): List<LibraryShelfGroup> {
+    if (filterActive) {
+        return listOf(
+            LibraryShelfGroup(
+                eyebrow = "Filtered archive",
+                title = "Matching volumes",
+                books = filtered
+            )
+        ).filter { it.books.isNotEmpty() }
+    }
+
+    val groups = mutableListOf<LibraryShelfGroup>()
+
+    books
+        .filter { !it.finished && it.progress > 0f }
+        .sortedByDescending { it.lastOpenedAtEpochMs }
+        .takeIf { it.isNotEmpty() }
+        ?.let { groups += LibraryShelfGroup("Journey", "Currently reading", it) }
+
+    books
+        .flatMap { book -> book.allCollections.map { it to book } }
+        .groupBy({ it.first }, { it.second })
+        .toList()
+        .sortedByDescending { it.second.size }
+        .take(6)
+        .forEach { (name, volumes) ->
+            groups += LibraryShelfGroup("Collection", name, volumes)
+        }
+
+    books
+        .filter { !it.seriesName.isNullOrBlank() }
+        .groupBy { requireNotNull(it.seriesName) }
+        .toList()
+        .sortedByDescending { it.second.size }
+        .take(6)
+        .forEach { (name, volumes) ->
+            groups += LibraryShelfGroup(
+                eyebrow = "Series",
+                title = name,
+                books = volumes.sortedWith(
+                    compareBy<Book> { it.seriesIndex ?: Double.MAX_VALUE }
+                        .thenBy { it.title.lowercase(Locale.ROOT) }
+                )
+            )
+        }
+
+    books
+        .filter { it.author.isNotBlank() }
+        .groupBy { it.author }
+        .filterValues { it.size >= 2 }
+        .toList()
+        .sortedByDescending { it.second.size }
+        .take(4)
+        .forEach { (name, volumes) ->
+            groups += LibraryShelfGroup("Author", name, volumes)
+        }
+
+    books
+        .filter { it.finished }
+        .takeIf { it.isNotEmpty() }
+        ?.let { groups += LibraryShelfGroup("Record", "Completed volumes", it) }
+
+    books
+        .filter { !it.finished && it.progress <= 0f }
+        .takeIf { it.isNotEmpty() }
+        ?.let { groups += LibraryShelfGroup("Unopened", "Waiting on the shelf", it) }
+
+    return groups
+}
 
 @Composable
 fun LibraryScreen(
@@ -102,8 +190,8 @@ fun LibraryScreen(
     var collection by rememberSaveable { mutableStateOf("") }
     var seriesFilter by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf("Recent") }
-    var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GRID.name) }
-    val viewMode = runCatching { LibraryViewMode.valueOf(viewModeName) }.getOrDefault(LibraryViewMode.GRID)
+    var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GALLERY.name) }
+    val viewMode = libraryViewModeFromStored(viewModeName)
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
@@ -247,7 +335,11 @@ fun LibraryScreen(
 
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
-        columns = if (viewMode == LibraryViewMode.GRID) GridCells.Adaptive(112.dp) else GridCells.Fixed(1),
+        columns = if (viewMode == LibraryViewMode.GALLERY) {
+            GridCells.Adaptive(112.dp)
+        } else {
+            GridCells.Fixed(1)
+        },
         modifier = Modifier
             .fillMaxSize()
             .grayfogAtmosphere(
