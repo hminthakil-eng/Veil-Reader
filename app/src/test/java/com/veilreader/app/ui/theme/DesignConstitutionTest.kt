@@ -66,6 +66,19 @@ class DesignConstitutionTest {
     }
 
     @Test
+    fun `castle composition grows spatially with window class`() {
+        val compact = castleLayoutPolicyFor(VeilAdaptiveClass.COMPACT)
+        val wide = castleLayoutPolicyFor(VeilAdaptiveClass.WIDE)
+        val large = castleLayoutPolicyFor(VeilAdaptiveClass.LARGE)
+
+        assertTrue(compact.keepMinHeightDp < wide.keepMinHeightDp)
+        assertTrue(wide.keepMinHeightDp < large.keepMinHeightDp)
+        assertTrue(compact.chamberMinHeightDp < large.chamberMinHeightDp)
+        assertTrue(compact.mapHorizontalPaddingDp < large.mapHorizontalPaddingDp)
+        assertTrue(compact.contentMaxWidthDp <= large.contentMaxWidthDp)
+    }
+
+    @Test
     fun `reduced motion removes translation and ambient loops`() {
         VeilMotionClass.entries.forEach { motionClass ->
             val policy = motionPolicyFor(motionClass, reducedMotion = true)
