@@ -57,11 +57,14 @@ import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
+import com.veilreader.app.ui.theme.VeilMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.VeilScriptGroup
 import com.veilreader.app.ui.theme.safeAppTrackingSp
+import com.veilreader.app.ui.theme.effectiveMotionDurationMs
+import com.veilreader.app.ui.theme.motionBudgetFor
 
 @Composable
 fun rememberVeilTouchExplorationEnabled(): Boolean {
@@ -277,6 +280,14 @@ fun VeilAnimatedTabHost(
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
     val layoutDirection = LocalLayoutDirection.current
+    val spatialDuration = effectiveMotionDurationMs(
+        VeilMotionClass.SPATIAL,
+        reducedMotion
+    )
+    val microDuration = effectiveMotionDurationMs(
+        VeilMotionClass.MICRO,
+        reducedMotion
+    )
 
     AnimatedContent(
         targetState = selectedTab,
@@ -284,9 +295,9 @@ fun VeilAnimatedTabHost(
         transitionSpec = {
             if (reducedMotion) {
                 (
-                    fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                    fadeIn(tween(spatialDuration))
                     ) togetherWith (
-                    fadeOut(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                    fadeOut(tween(spatialDuration))
                     ) using SizeTransform(clip = false)
             } else {
                 val direction = tabSlideDirection(
@@ -295,13 +306,13 @@ fun VeilAnimatedTabHost(
                     rtl = layoutDirection == LayoutDirection.Rtl
                 )
                 (
-                    fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 12)) +
-                        slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
+                    fadeIn(tween(spatialDuration, delayMillis = 12)) +
+                        slideInHorizontally(tween(spatialDuration)) { fullWidth ->
                             direction * (fullWidth / 34)
                         }
                     ) togetherWith (
-                    fadeOut(tween(VeilMotion.QUICK_MS)) +
-                        slideOutHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
+                    fadeOut(tween(microDuration)) +
+                        slideOutHorizontally(tween(spatialDuration)) { fullWidth ->
                             -direction * (fullWidth / 42)
                         }
                     ) using SizeTransform(clip = false)
