@@ -113,6 +113,33 @@ fun ReadingNowScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = 0.075f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(560.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(620.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.52f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
         Column(
             modifier = Modifier
                 .widthIn(max = thresholdLayout.contentMaxWidthDp.dp)
