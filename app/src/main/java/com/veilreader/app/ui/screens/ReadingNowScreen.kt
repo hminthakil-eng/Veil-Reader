@@ -33,6 +33,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -312,6 +313,15 @@ private fun ThresholdHeader(
             GrayfogOrnamentFrame(
                 modifier = Modifier.matchParentSize(),
                 strength = 0.74f
+            )
+
+            VeilRealmEmblem(
+                realm = VeilRealm.THRESHOLD,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = VeilSpacing.lg, top = 24.dp)
+                    .size(138.dp),
+                tint = VeilPalette.Brass.copy(alpha = 0.24f)
             )
 
             Text(
