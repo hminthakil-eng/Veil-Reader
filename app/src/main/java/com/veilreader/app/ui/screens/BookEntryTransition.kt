@@ -31,6 +31,8 @@ import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.returnRitualFragmentAgeLabel
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
@@ -127,11 +129,29 @@ fun BookThresholdTransitionOverlay(
     returnRitual: BookReturnRitual? = null,
     modifier: Modifier = Modifier
 ) {
+    val reducedMotion = LocalVeilReducedMotion.current
+
     AnimatedVisibility(
         visible = visible,
         modifier = modifier,
-        enter = fadeIn(tween(140)),
-        exit = fadeOut(tween(260))
+        enter = fadeIn(
+            tween(
+                if (reducedMotion) {
+                    VeilMotion.REDUCED_MOTION_FADE_MS
+                } else {
+                    VeilMotion.FUNCTIONAL_ENTER_MS
+                }
+            )
+        ),
+        exit = fadeOut(
+            tween(
+                if (reducedMotion) {
+                    VeilMotion.REDUCED_MOTION_FADE_MS
+                } else {
+                    VeilMotion.FUNCTIONAL_MS
+                }
+            )
+        )
     ) {
         val artifact = remember(book) { bookArtifactState(book) }
         val memory = remember(book, continuity) { bookEntryMemory(book, continuity) }
@@ -139,31 +159,61 @@ fun BookThresholdTransitionOverlay(
             returnRitual?.takeIf { it.bookId == book.id }
         }
         val aura = remember(artifact) { fallbackBookAura(artifact) }
-        val scale = remember(book.id, stage) {
-            Animatable(if (stage == BookEntryStage.PREPARING) 0.94f else 1f)
+        val scale = remember(book.id, stage, reducedMotion) {
+            Animatable(
+                if (reducedMotion) {
+                    1f
+                } else if (stage == BookEntryStage.PREPARING) {
+                    0.94f
+                } else {
+                    1f
+                }
+            )
         }
-        val seal = remember(book.id, stage, ritual?.kind) {
-            Animatable(if (ritual == null) 1f else 0f)
-        }
-
-        LaunchedEffect(book.id, stage) {
-            scale.animateTo(
-                targetValue = if (stage == BookEntryStage.PREPARING) 1f else 1.055f,
-                animationSpec = tween(
-                    durationMillis = if (stage == BookEntryStage.PREPARING) 320 else 560
-                )
+        val seal = remember(book.id, stage, ritual?.kind, reducedMotion) {
+            Animatable(
+                if (reducedMotion || ritual == null) {
+                    1f
+                } else {
+                    0f
+                }
             )
         }
 
-        LaunchedEffect(book.id, stage, ritual?.kind) {
-            if (ritual != null) {
-                seal.snapTo(0f)
-                seal.animateTo(
-                    targetValue = 1f,
+        LaunchedEffect(book.id, stage, reducedMotion) {
+            if (reducedMotion) {
+                scale.snapTo(1f)
+            } else {
+                scale.animateTo(
+                    targetValue = if (stage == BookEntryStage.PREPARING) 1f else 1.055f,
                     animationSpec = tween(
-                        durationMillis = if (stage == BookEntryStage.PREPARING) 680 else 420
+                        durationMillis = if (stage == BookEntryStage.PREPARING) {
+                            VeilMotion.SPATIAL_MS
+                        } else {
+                            VeilMotion.RITUAL_MS
+                        }
                     )
                 )
+            }
+        }
+
+        LaunchedEffect(book.id, stage, ritual?.kind, reducedMotion) {
+            if (ritual != null) {
+                if (reducedMotion) {
+                    seal.snapTo(1f)
+                } else {
+                    seal.snapTo(0f)
+                    seal.animateTo(
+                        targetValue = 1f,
+                        animationSpec = tween(
+                            durationMillis = if (stage == BookEntryStage.PREPARING) {
+                                VeilMotion.RITUAL_MS
+                            } else {
+                                VeilMotion.SPATIAL_MS
+                            }
+                        )
+                    )
+                }
             }
         }
 
