@@ -69,13 +69,16 @@ import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.deriveLibraryWings
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.localizeAppNumerals
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -525,7 +528,10 @@ fun LibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "${filtered.size.toString().padStart(2, '0')} VOLUMES",
+                        localizeAppNumerals(
+                            "${filtered.size.toString().padStart(2, '0')} VOLUMES",
+                            LocalVeilLanguage.current
+                        ),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass,
                         modifier = Modifier.padding(end = 4.dp)
@@ -1795,6 +1801,7 @@ private fun LibraryShelfCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val language = LocalVeilLanguage.current
     Surface(
         onClick = onClick,
         modifier = Modifier
@@ -1832,7 +1839,10 @@ private fun LibraryShelfCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    count.toString().padStart(2, '0'),
+                    localizeAppNumerals(
+                        count.toString().padStart(2, '0'),
+                        language
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
@@ -1856,17 +1866,24 @@ private fun LibraryShelfCard(
 
 @Composable
 private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: String? = null) {
+    val arabicScriptEyebrow = usesArabicScript(eyebrow)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
-                eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
+                if (arabicScriptEyebrow) eyebrow else eyebrow.uppercase(),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    letterSpacing = if (arabicScriptEyebrow) 0.sp else 1.35.sp
+                ),
                 color = VeilPalette.Brass
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
         }
         trailing?.let {
-            Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }
