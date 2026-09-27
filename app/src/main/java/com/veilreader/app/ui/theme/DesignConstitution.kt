@@ -182,11 +182,11 @@ fun castleLayoutPolicyFor(
     when (adaptiveClass) {
         VeilAdaptiveClass.COMPACT -> VeilCastleLayoutPolicy(
             contentMaxWidthDp = 860f,
-            horizontalPaddingDp = 16f,
-            keepMinHeightDp = 220f,
-            mapHorizontalPaddingDp = 10f,
-            chamberMinHeightDp = 116f,
-            observatoryHeightDp = 330f
+            horizontalPaddingDp = 14f,
+            keepMinHeightDp = 194f,
+            mapHorizontalPaddingDp = 8f,
+            chamberMinHeightDp = 104f,
+            observatoryHeightDp = 318f
         )
         VeilAdaptiveClass.WIDE -> VeilCastleLayoutPolicy(
             contentMaxWidthDp = 980f,
