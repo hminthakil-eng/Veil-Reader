@@ -282,6 +282,86 @@ fun motionPolicyFor(
     }
 }
 
+enum class VeilMotionClass {
+    MICRO,
+    MATERIAL,
+    SPATIAL,
+    REALM,
+    CEREMONIAL,
+    AMBIENT
+}
+
+data class VeilMotionBudget(
+    val minDurationMs: Int,
+    val targetDurationMs: Int,
+    val maxDurationMs: Int,
+    val interruptible: Boolean,
+    val reducedMotionDurationMs: Int
+)
+
+fun motionBudgetFor(motionClass: VeilMotionClass): VeilMotionBudget =
+    when (motionClass) {
+        VeilMotionClass.MICRO -> VeilMotionBudget(
+            minDurationMs = 80,
+            targetDurationMs = 110,
+            maxDurationMs = 140,
+            interruptible = true,
+            reducedMotionDurationMs = 70
+        )
+        VeilMotionClass.MATERIAL -> VeilMotionBudget(
+            minDurationMs = 160,
+            targetDurationMs = 210,
+            maxDurationMs = 260,
+            interruptible = true,
+            reducedMotionDurationMs = 100
+        )
+        VeilMotionClass.SPATIAL -> VeilMotionBudget(
+            minDurationMs = 280,
+            targetDurationMs = 360,
+            maxDurationMs = 450,
+            interruptible = true,
+            reducedMotionDurationMs = 120
+        )
+        VeilMotionClass.REALM -> VeilMotionBudget(
+            minDurationMs = 400,
+            targetDurationMs = 520,
+            maxDurationMs = 650,
+            interruptible = true,
+            reducedMotionDurationMs = 140
+        )
+        VeilMotionClass.CEREMONIAL -> VeilMotionBudget(
+            minDurationMs = 850,
+            targetDurationMs = 1080,
+            maxDurationMs = 1400,
+            interruptible = false,
+            reducedMotionDurationMs = 180
+        )
+        VeilMotionClass.AMBIENT -> VeilMotionBudget(
+            minDurationMs = 8_000,
+            targetDurationMs = 16_000,
+            maxDurationMs = 30_000,
+            interruptible = true,
+            reducedMotionDurationMs = 0
+        )
+    }
+
+fun effectiveMotionDurationMs(
+    motionClass: VeilMotionClass,
+    reducedMotion: Boolean
+): Int {
+    val budget = motionBudgetFor(motionClass)
+    return if (reducedMotion) budget.reducedMotionDurationMs else budget.targetDurationMs
+}
+
+/**
+ * Motion law:
+ * - gestures and spatial movement must remain interruptible,
+ * - fixed choreography may use timed easing,
+ * - ambient motion disappears entirely under Reduced Motion,
+ * - information/state never depends on animation completion.
+ */
+fun motionMayCarryState(motionClass: VeilMotionClass): Boolean = false
+
 enum class VeilHapticLevel {
     NONE,
     CONFIRM,
