@@ -2276,7 +2276,7 @@ private fun DeepShelfPortal(
                     )
                 }
                 Text(
-                    "DESCEND →",
+                    "DESCEND",
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass.copy(alpha = 0.82f)
                 )
