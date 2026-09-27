@@ -21,8 +21,10 @@ enum class VeilRealm {
     SANCTUARY,
     THRESHOLD,
     ARCHIVE,
+    CASTLE,
     WORLD,
-    RITUAL
+    RITUAL,
+    SANCTUM
 }
 
 data class VeilVisualBudget(
@@ -52,6 +54,7 @@ fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
             ornament = 0.48f,
             motion = 0.28f
         )
+        VeilRealm.CASTLE,
         VeilRealm.WORLD -> VeilVisualBudget(
             richness = 0.76f,
             atmosphere = 0.72f,
@@ -63,6 +66,12 @@ fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
             atmosphere = 0.78f,
             ornament = 0.82f,
             motion = 0.74f
+        )
+        VeilRealm.SANCTUM -> VeilVisualBudget(
+            richness = 0.82f,
+            atmosphere = 0.80f,
+            ornament = 0.74f,
+            motion = 0.36f
         )
     }
 
