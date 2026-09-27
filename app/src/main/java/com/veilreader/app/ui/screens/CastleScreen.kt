@@ -58,6 +58,7 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -282,6 +283,14 @@ private fun CastleGrandMasthead(
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
             strength = 0.88f
+        )
+        VeilRealmEmblem(
+            realm = VeilRealm.CASTLE,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = VeilSpacing.lg)
+                .size(144.dp),
+            tint = VeilPalette.Brass.copy(alpha = 0.22f)
         )
 
         Text(
