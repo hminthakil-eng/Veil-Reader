@@ -47,10 +47,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.VeilScriptGroup
 
 /**
  * Calm world chrome for everything around the actual publication.
@@ -652,6 +654,88 @@ private fun VeilBrandMark() {
             tint = VeilPalette.Brass
         )
     }
+}
+
+@Composable
+fun VeilMastheadMetaRow(
+    primary: String,
+    secondary: String? = null,
+    modifier: Modifier = Modifier
+) {
+    val script = LocalVeilScriptGroup.current
+    val tracking = if (script == VeilScriptGroup.PERSIAN_ARABIC) 0.sp else 1.25.sp
+    val style = MaterialTheme.typography.labelSmall.copy(letterSpacing = tracking)
+
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        if (maxWidth < 340.dp && secondary != null) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    primary,
+                    style = style,
+                    color = VeilPalette.Brass,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    secondary,
+                    style = style,
+                    color = VeilPalette.Moon.copy(alpha = 0.72f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    primary,
+                    modifier = Modifier.weight(1f),
+                    style = style,
+                    color = VeilPalette.Brass,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start
+                )
+                secondary?.let { value ->
+                    Text(
+                        value,
+                        modifier = Modifier.weight(1f),
+                        style = style,
+                        color = VeilPalette.Moon.copy(alpha = 0.72f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.End
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun VeilEyebrowText(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = VeilPalette.Brass,
+    trackingSp: Float = 1.25f
+) {
+    val script = LocalVeilScriptGroup.current
+    Text(
+        text = text,
+        modifier = modifier,
+        style = MaterialTheme.typography.labelSmall.copy(
+            letterSpacing = if (script == VeilScriptGroup.PERSIAN_ARABIC) 0.sp else trackingSp.sp
+        ),
+        color = color,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis
+    )
 }
 
 @Composable
