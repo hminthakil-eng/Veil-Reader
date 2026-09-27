@@ -53,6 +53,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.VeilScriptGroup
+import com.veilreader.app.ui.theme.safeAppTrackingSp
 
 /**
  * Calm world chrome for everything around the actual publication.
@@ -663,7 +664,7 @@ fun VeilMastheadMetaRow(
     modifier: Modifier = Modifier
 ) {
     val script = LocalVeilScriptGroup.current
-    val tracking = if (script == VeilScriptGroup.PERSIAN_ARABIC) 0.sp else 1.25.sp
+    val tracking = safeAppTrackingSp(script, 1.25f).sp
     val style = MaterialTheme.typography.labelSmall.copy(letterSpacing = tracking)
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
@@ -730,7 +731,7 @@ fun VeilEyebrowText(
         text = text,
         modifier = modifier,
         style = MaterialTheme.typography.labelSmall.copy(
-            letterSpacing = if (script == VeilScriptGroup.PERSIAN_ARABIC) 0.sp else trackingSp.sp
+            letterSpacing = safeAppTrackingSp(script, trackingSp).sp
         ),
         color = color,
         maxLines = 2,
