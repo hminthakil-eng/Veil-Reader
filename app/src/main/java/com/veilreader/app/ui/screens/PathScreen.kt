@@ -19,7 +19,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -90,7 +89,7 @@ fun PathScreen(
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
-    var showCeremony by rememberSaveable { mutableStateOf(false) }
+    var ceremonySnapshot by remember { mutableStateOf<AdvancementCeremonySnapshot?>(null) }
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { reveal = true }
 
@@ -128,7 +127,23 @@ fun PathScreen(
             profile = profile,
             canAdvance = canAdvance,
             nextRank = nextRank,
-            onPrepareCeremony = { showCeremony = true }
+            onPrepareCeremony = {
+                ceremonySnapshot = nextRank?.let { targetRank ->
+                    AdvancementCeremonySnapshot(
+                        pathId = profile.path.id,
+                        pathName = profile.path.name,
+                        pathEpithet = profile.path.epithet,
+                        fromRank = profile.rankName,
+                        toRank = targetRank,
+                        rankIndex = profile.rankIndex,
+                        ritualDescription = ReadingPolicy.ritualDescription(
+                            profile.path.id,
+                            profile.rankIndex
+                        ),
+                        invocation = presentation.invocation
+                    )
+                }
+            }
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
@@ -164,15 +179,11 @@ fun PathScreen(
     }
     }
 
-    if (showCeremony && nextRank != null) {
-        AdvancementCeremonyDialog(
-            profile = profile,
-            nextRank = nextRank,
-            onDismiss = { showCeremony = false },
-            onConfirm = {
-                showCeremony = false
-                onAdvanceRank()
-            }
+    ceremonySnapshot?.let { ceremony ->
+        AdvancementCeremony(
+            snapshot = ceremony,
+            onDismiss = { ceremonySnapshot = null },
+            onConfirm = onAdvanceRank
         )
     }
 }
@@ -282,7 +293,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
 }
 
 @Composable
-private fun PathRitualBackdrop(
+internal fun PathRitualBackdrop(
     pathId: String,
     rankIndex: Int,
     modifier: Modifier = Modifier
@@ -492,7 +503,7 @@ private fun PathRitualBackdrop(
 }
 
 @Composable
-private fun PathSigil(
+internal fun PathSigil(
     pathId: String,
     modifier: Modifier = Modifier,
     active: Boolean
@@ -852,74 +863,6 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
             }
         }
     }
-}
-
-@Composable
-private fun AdvancementCeremonyDialog(
-    profile: ReaderProfile,
-    nextRank: String,
-    onDismiss: () -> Unit,
-    onConfirm: () -> Unit
-) {
-    val presentation = pathPresentations[profile.path.id]
-        ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.small,
-        containerColor = VeilPalette.Archive,
-        tonalElevation = 0.dp,
-        icon = {
-            PathIcon(
-                pathId = profile.path.id,
-                tint = VeilPalette.Brass,
-                modifier = Modifier.size(44.dp)
-            )
-        },
-        title = {
-            Text(
-                "Advance to $nextRank",
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                Text(
-                    "Your ritual is complete. This marks a permanent rank on ${profile.path.name}.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Mist,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    presentation.invocation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Brass,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.Brass,
-                    contentColor = Color(0xFF17120A)
-                )
-            ) { Text("Advance") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Not yet", color = VeilPalette.Moon.copy(alpha = 0.72f))
-            }
-        }
-    )
 }
 
 @Composable
