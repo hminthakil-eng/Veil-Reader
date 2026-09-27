@@ -352,7 +352,10 @@ class CastleMemoryStateTest {
             nowEpochMs = day * 21
         )
 
-        assertEquals(1, state.daysSinceLastActivity)
+        // The valid session ended one minute after day 20 began, so at day 21 fewer than
+        // 24 full hours have elapsed. Future clock-skew data must be ignored without rounding
+        // a partial day up into false silence.
+        assertEquals(0, state.daysSinceLastActivity)
         assertTrue(state.archiveAgeDays >= 20)
     }
 
