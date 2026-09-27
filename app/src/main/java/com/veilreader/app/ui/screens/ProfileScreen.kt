@@ -172,7 +172,7 @@ fun ProfileScreen(
             style = MaterialTheme.typography.bodyMedium
         )
         Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             listOf(10, 20, 30, 60).forEach { minutes ->
@@ -185,16 +185,22 @@ fun ProfileScreen(
                             containerColor = VeilPalette.Brass,
                             contentColor = Color(0xFF17120A)
                         ),
-                        modifier = Modifier.heightIn(min = 48.dp)
+                        contentPadding = PaddingValues(horizontal = 2.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m · current", style = MaterialTheme.typography.labelMedium)
+                        Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
                     }
                 } else {
                     OutlinedButton(
                         onClick = { onSetDailyGoal(minutes) },
                         shape = MaterialTheme.shapes.extraSmall,
                         border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
-                        modifier = Modifier.heightIn(min = 48.dp)
+                        contentPadding = PaddingValues(horizontal = 2.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
                     ) {
                         Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
                     }
