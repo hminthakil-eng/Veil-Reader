@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,9 +16,9 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -38,12 +39,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
@@ -345,48 +350,92 @@ fun SettingsScreen(
     }
 
     if (confirmRestore) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = { confirmRestore = false },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        "RESTORE ARCHIVE",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        "Replace local Veil Reader data?",
-                        style = MaterialTheme.typography.titleLarge
-                    )
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.30f
+                        )
+                        Column(
+                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                "RESTORE ARCHIVE · LOCAL",
+                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                "Replace local Veil Reader data?",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+                            Text(
+                                "Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { confirmRestore = false },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text("Cancel")
+                                }
+                                Button(
+                                    onClick = {
+                                        confirmRestore = false
+                                        restorePicker.launch(
+                                            arrayOf("application/zip", "application/octet-stream")
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
+                                    )
+                                ) {
+                                    Text("Choose backup")
+                                }
+                            }
+                        }
+                    }
                 }
-            },
-            text = {
-                Text(
-                    "Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state."
-                )
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        confirmRestore = false
-                        restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
-                    },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
-                    )
-                ) { Text("Choose backup") }
             }
-        )
+        }
     }
 }
 
@@ -396,44 +445,37 @@ private fun SettingsSection(
     description: String,
     content: @Composable () -> Unit
 ) {
-    Column(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        shape = MaterialTheme.shapes.extraSmall,
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.34f),
+        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.58f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Text(
+                    title.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                    color = VeilPalette.Brass,
+                    modifier = Modifier.weight(1f)
+                )
+            }
             Text(
-                title.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass,
-                modifier = Modifier.weight(1f)
+                description,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
             )
-        }
-
-        BrassRule(Modifier.fillMaxWidth())
-
-        Text(
-            description,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraSmall,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
-            ),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
-        ) {
+            BrassRule(Modifier.fillMaxWidth())
             Column(
-                modifier = Modifier.padding(VeilSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 content()
             }
