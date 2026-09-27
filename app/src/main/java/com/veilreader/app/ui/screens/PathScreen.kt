@@ -52,6 +52,7 @@ import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -262,6 +263,14 @@ private fun PathGrandMasthead(
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
             strength = 0.90f
+        )
+        VeilRealmEmblem(
+            realm = VeilRealm.RITUAL,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = VeilSpacing.lg)
+                .size(142.dp),
+            tint = VeilPalette.Brass.copy(alpha = 0.24f)
         )
         Text(
             "THE ${presentation.aspect.uppercase()} PATH",
