@@ -141,24 +141,23 @@ fun CastleScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopEnd,
-            alpha = 0.14f,
+            alpha = 0.34f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(560.dp)
+                .height(760.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(640.dp)
+                .height(820.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.Ink.copy(alpha = 0.12f),
-                            VeilPalette.Ink.copy(alpha = 0.52f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.06f),
+                        0.38f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.62f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -174,10 +173,10 @@ fun CastleScreen(
             ),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
     ) {
-        ScreenHeader(
-            eyebrow = "CASTLE · LIVING ARCHIVE",
-            title = "The Keep Remembers",
-            subtitle = memoryState.inscription
+        CastleGrandMasthead(
+            memoryState = memoryState,
+            awakenedRooms = awakenedRooms,
+            totalRooms = SampleData.rooms.size
         )
 
         CastleKeep(
@@ -228,6 +227,113 @@ fun CastleScreen(
             color = VeilPalette.Mist.copy(alpha = 0.82f)
         )
     }
+    }
+}
+
+@Composable
+private fun CastleGrandMasthead(
+    memoryState: CastleMemoryState,
+    awakenedRooms: Int,
+    totalRooms: Int
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(252.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.66f)),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.10f),
+                        0.42f to Color.Transparent,
+                        1f to VeilPalette.Ink.copy(alpha = 0.96f)
+                    )
+                )
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.50f),
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.18f)
+                        )
+                    )
+                )
+        )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.88f
+        )
+
+        Text(
+            "VEIL ABOVE · LIVING ARCHITECTURE",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+            color = VeilPalette.Brass
+        )
+
+        Text(
+            "$awakenedRooms / $totalRooms CHAMBERS",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.9.sp),
+            color = VeilPalette.Moon.copy(alpha = 0.76f)
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                "The Great Hall",
+                style = MaterialTheme.typography.displaySmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                memoryState.inscription,
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.84f),
+                modifier = Modifier.widthIn(max = 560.dp)
+            )
+            Box(
+                Modifier
+                    .padding(top = 4.dp)
+                    .width(156.dp)
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                VeilPalette.Brass,
+                                VeilPalette.Brass.copy(alpha = 0.34f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+        }
     }
 }
 
