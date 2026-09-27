@@ -474,57 +474,153 @@ fun VeilNavigationRail(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(88.dp)
+            .width(96.dp)
             .padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
-        shape = RoundedCornerShape(4.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.975f),
-        shadowElevation = 0.dp,
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF090B0F).copy(alpha = 0.995f),
+        shadowElevation = 12.dp,
         border = BorderStroke(
             1.dp,
-            VeilPalette.Brass.copy(alpha = 0.22f)
+            VeilPalette.Brass.copy(alpha = 0.46f)
         )
     ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = VeilSpacing.md),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            VeilBrandMark()
-            Spacer(Modifier.height(VeilSpacing.xl))
-            Column(
-                modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).selectableGroup(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-            ) {
-                VeilTab.entries.forEach { tab ->
-                    val isSelected = selected == tab
-                    val foreground = if (isSelected) {
-                        VeilPalette.Brass
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth().heightIn(min = 56.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(Color.Transparent)
-                            .selectable(selected = isSelected, role = Role.Tab) { onSelect(tab) }
-                            .padding(vertical = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        VeilTabIcon(tab, foreground, Modifier.size(22.dp))
-                        Spacer(Modifier.height(5.dp))
-                        Text(
-                            tab.label,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontSize = 9.5.sp,
-                                letterSpacing = 0.36.sp
-                            ),
-                            color = foreground,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
+        Box {
+            Canvas(Modifier.matchParentSize()) {
+                drawRect(
+                    brush = Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.045f),
+                            Color.Transparent,
+                            Color(0xFF1B0D0D).copy(alpha = 0.14f)
                         )
+                    ),
+                    size = size
+                )
+                drawLine(
+                    color = VeilPalette.Brass.copy(alpha = 0.24f),
+                    start = Offset(size.width - 1.dp.toPx(), size.height * 0.08f),
+                    end = Offset(size.width - 1.dp.toPx(), size.height * 0.92f),
+                    strokeWidth = 0.8.dp.toPx()
+                )
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = VeilSpacing.md),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(58.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Brush.radialGradient(
+                                listOf(
+                                    Color(0xFF2B1A11),
+                                    Color(0xFF0B0D11)
+                                )
+                            )
+                        )
+                        .border(
+                            BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.68f)),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    VeilSigilMark(
+                        modifier = Modifier.size(38.dp),
+                        tint = VeilPalette.Brass
+                    )
+                }
+
+                Spacer(Modifier.height(VeilSpacing.xl))
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .selectableGroup(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    VeilTab.entries.forEach { tab ->
+                        val isSelected = selected == tab
+                        val foreground = if (isSelected) {
+                            VeilPalette.Brass
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+                        }
+                        val shape = RoundedCornerShape(12.dp)
+
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 64.dp)
+                                .clip(shape)
+                                .background(
+                                    if (isSelected) {
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                Color(0xFF4A1E1A).copy(alpha = 0.72f),
+                                                Color(0xFF241311).copy(alpha = 0.62f)
+                                            )
+                                        )
+                                    } else {
+                                        Brush.verticalGradient(
+                                            listOf(Color.Transparent, Color.Transparent)
+                                        )
+                                    }
+                                )
+                                .then(
+                                    if (isSelected) {
+                                        Modifier.border(
+                                            BorderStroke(
+                                                1.dp,
+                                                VeilPalette.Brass.copy(alpha = 0.40f)
+                                            ),
+                                            shape
+                                        )
+                                    } else {
+                                        Modifier
+                                    }
+                                )
+                                .selectable(
+                                    selected = isSelected,
+                                    role = Role.Tab
+                                ) { onSelect(tab) }
+                                .padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            VeilTabIcon(tab, foreground, Modifier.size(24.dp))
+                            Spacer(Modifier.height(5.dp))
+                            Text(
+                                tab.label,
+                                style = MaterialTheme.typography.labelMedium.copy(
+                                    fontSize = 9.5.sp,
+                                    letterSpacing = 0.30.sp,
+                                    fontWeight = if (isSelected) {
+                                        FontWeight.SemiBold
+                                    } else {
+                                        FontWeight.Medium
+                                    }
+                                ),
+                                color = foreground,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.Center
+                            )
+                        }
                     }
                 }
+
+                GrayfogRule(Modifier.fillMaxWidth())
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "VEIL",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+                    color = VeilPalette.Brass.copy(alpha = 0.76f)
+                )
             }
         }
     }
@@ -613,37 +709,114 @@ fun VeilLoadingState(
     label: String = "Opening the archive",
     modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF06080D),
+                        Color(0xFF0A1018),
+                        Color(0xFF06080D)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
     ) {
-        VeilSigilMark(
-            modifier = Modifier.size(58.dp),
-            tint = VeilPalette.Brass
-        )
-        Spacer(Modifier.height(18.dp))
-        Text(
-            "VEIL READER",
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
-            color = VeilPalette.Brass
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Spacer(Modifier.height(18.dp))
-        LinearProgressIndicator(
+        Canvas(
+            Modifier
+                .align(Alignment.Center)
+                .size(260.dp)
+        ) {
+            val center = Offset(size.width / 2f, size.height / 2f)
+            repeat(3) { index ->
+                drawCircle(
+                    color = VeilPalette.Brass.copy(alpha = 0.08f - index * 0.018f),
+                    radius = size.minDimension * (0.22f + index * 0.11f),
+                    center = center,
+                    style = Stroke((1.0f - index * 0.14f).dp.toPx())
+                )
+            }
+            repeat(8) { index ->
+                val angle = Math.toRadians(-90.0 + index * 45.0)
+                val inner = size.minDimension * 0.27f
+                val outer = size.minDimension * 0.42f
+                drawLine(
+                    color = VeilPalette.Brass.copy(alpha = 0.065f),
+                    start = Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * inner,
+                        center.y + kotlin.math.sin(angle).toFloat() * inner
+                    ),
+                    end = Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * outer,
+                        center.y + kotlin.math.sin(angle).toFloat() * outer
+                    ),
+                    strokeWidth = 0.8.dp.toPx()
+                )
+            }
+        }
+
+        Column(
             modifier = Modifier
-                .width(132.dp)
-                .height(2.dp),
-            color = VeilPalette.Brass,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.24f)
-        )
+                .widthIn(max = 420.dp)
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(108.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.radialGradient(
+                            listOf(
+                                Color(0xFF2E1C11),
+                                Color(0xFF0A0D12)
+                            )
+                        )
+                    )
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.72f)),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                VeilSigilMark(
+                    modifier = Modifier.size(68.dp),
+                    tint = VeilPalette.Brass
+                )
+            }
+
+            Spacer(Modifier.height(22.dp))
+            Text(
+                "VEIL READER",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 2.1.sp),
+                color = VeilPalette.Brass
+            )
+            Spacer(Modifier.height(7.dp))
+            Text(
+                "Beyond the Threshold",
+                style = MaterialTheme.typography.headlineMedium,
+                color = VeilPalette.Moon,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Mist,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(22.dp))
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .width(156.dp)
+                    .height(2.dp),
+                color = VeilPalette.Brass,
+                trackColor = VeilPalette.BorderDark.copy(alpha = 0.38f)
+            )
+        }
     }
 }
 
