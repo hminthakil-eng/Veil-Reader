@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.navigation.VeilTab
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -220,22 +221,32 @@ fun VeilAnimatedTabHost(
     modifier: Modifier = Modifier,
     content: @Composable (VeilTab) -> Unit
 ) {
+    val reducedMotion = LocalVeilReducedMotion.current
+
     AnimatedContent(
         targetState = selectedTab,
         modifier = modifier,
         transitionSpec = {
-            val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
-            (
-                fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 12)) +
-                    slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
-                        direction * (fullWidth / 34)
-                    }
-                ) togetherWith (
-                fadeOut(tween(VeilMotion.QUICK_MS)) +
-                    slideOutHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
-                        -direction * (fullWidth / 42)
-                    }
-                ) using SizeTransform(clip = false)
+            if (reducedMotion) {
+                (
+                    fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                    ) togetherWith (
+                    fadeOut(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                    ) using SizeTransform(clip = false)
+            } else {
+                val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
+                (
+                    fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 12)) +
+                        slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
+                            direction * (fullWidth / 34)
+                        }
+                    ) togetherWith (
+                    fadeOut(tween(VeilMotion.QUICK_MS)) +
+                        slideOutHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
+                            -direction * (fullWidth / 42)
+                        }
+                    ) using SizeTransform(clip = false)
+            }
         },
         label = "veil-tab"
     ) { tab ->
