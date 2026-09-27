@@ -57,4 +57,21 @@ class TemporalAtmosphereTest {
         assertTrue(temporalRealmWeightFor(VeilRealm.CASTLE) > 0f)
     }
 
+
+    @Test
+    fun `all temporal visual channels stay normalized for every hour`() {
+        (0..23).forEach { hour ->
+            val state = temporalAtmosphereFor(hour)
+            listOf(
+                state.warmth,
+                state.lampGlow,
+                state.moonlight,
+                state.fogDensity,
+                state.horizonGlow
+            ).forEach { channel ->
+                assertTrue("hour=$hour channel=$channel", channel in 0f..1f)
+            }
+        }
+    }
+
 }
