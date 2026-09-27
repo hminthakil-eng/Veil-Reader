@@ -24,9 +24,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.grayfogAtmosphere
+import java.text.DateFormat
+import java.util.Date
 
 private data class VeiledDiscovery(
     val id: String,
@@ -95,13 +102,32 @@ fun ProfileScreen(
     dailyGoalMinutes: Int,
     castleTitle: String,
     equippedSigilName: String?,
+    books: List<Book> = emptyList(),
+    readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    readingCycles: List<ReadingCycleRecord> = emptyList(),
     onSetDailyGoal: (Int) -> Unit,
     onOpenArchive: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val p = profile
     val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
+    val dossierHistory = remember(books, readingSessions, readingCycles) {
+        deriveReaderDossierHistory(
+            books = books,
+            sessions = readingSessions,
+            cycles = readingCycles
+        )
+    }
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.ARCHIVE,
+                seed = p.level * 17 + dossierHistory.recordedSessionCount
+            ),
+        contentAlignment = Alignment.TopCenter
+    ) {
     Column(
         Modifier
             .fillMaxSize()
@@ -135,6 +161,8 @@ fun ProfileScreen(
             highlightCount = highlightCount
         )
 
+        DossierHistoryLedger(dossierHistory)
+
         ProfileSectionHeading(
             eyebrow = "Rhythm",
             title = "Daily reading goal"
@@ -158,7 +186,7 @@ fun ProfileScreen(
                             containerColor = VeilPalette.Brass,
                             contentColor = Color(0xFF17120A)
                         ),
-                        modifier = Modifier.heightIn(min = 40.dp)
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text("${minutes}m · current", style = MaterialTheme.typography.labelMedium)
                     }
@@ -167,7 +195,7 @@ fun ProfileScreen(
                         onClick = { onSetDailyGoal(minutes) },
                         shape = MaterialTheme.shapes.extraSmall,
                         border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
-                        modifier = Modifier.heightIn(min = 40.dp)
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
                     }
@@ -233,12 +261,171 @@ fun ProfileScreen(
             onClick = onOpenArchive,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 44.dp),
+                .heightIn(min = 48.dp),
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
         ) {
             Text("Open Hidden Archive", style = MaterialTheme.typography.labelMedium)
         }
+    }
+    }
+}
+
+internal data class ReaderDossierHistory(
+    val archivedVolumeCount: Int,
+    val recordedSessionCount: Int,
+    val recordedActiveMillis: Long,
+    val completionCycleCount: Int,
+    val rereadCycleCount: Int,
+    val firstRecordedAtEpochMs: Long?,
+    val latestRecordedAtEpochMs: Long?
+)
+
+internal fun deriveReaderDossierHistory(
+    books: List<Book>,
+    sessions: List<ReadingSessionSnapshot>,
+    cycles: List<ReadingCycleRecord>
+): ReaderDossierHistory {
+    val validSessions = sessions.filter { it.startedAtEpochMs > 0L }
+    val validCycles = cycles.filter { it.completedAtEpochMs > 0L }
+
+    val firstCandidates = buildList<Long> {
+        books.mapNotNullTo(this) { it.addedAtEpochMs.takeIf { value -> value > 0L } }
+        validSessions.mapTo(this) { it.startedAtEpochMs }
+        validCycles.mapTo(this) { it.completedAtEpochMs }
+    }
+    val latestCandidates = buildList<Long> {
+        books.mapNotNullTo(this) { it.lastOpenedAtEpochMs.takeIf { value -> value > 0L } }
+        validSessions.mapNotNullTo(this) {
+            maxOf(it.startedAtEpochMs, it.endedAtEpochMs)
+                .takeIf { value -> value > 0L }
+        }
+        validCycles.mapTo(this) { it.completedAtEpochMs }
+    }
+
+    return ReaderDossierHistory(
+        archivedVolumeCount = books.size,
+        recordedSessionCount = validSessions.size,
+        recordedActiveMillis = validSessions.sumOf { it.activeMillis.coerceAtLeast(0L) },
+        completionCycleCount = validCycles.size,
+        rereadCycleCount = validCycles.count { it.cycleIndex > 1 },
+        firstRecordedAtEpochMs = firstCandidates.minOrNull(),
+        latestRecordedAtEpochMs = latestCandidates.maxOrNull()
+    )
+}
+
+@Composable
+private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "DURABLE LEDGER",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "Recorded history",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Moon
+                )
+            }
+            Text(
+                "${history.recordedSessionCount} sessions",
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Mist.copy(alpha = 0.72f)
+            )
+        }
+
+        BrassRule(Modifier.fillMaxWidth())
+
+        DossierLedgerLine(
+            label = "Archive span",
+            value = buildString {
+                append(formatDossierDate(history.firstRecordedAtEpochMs))
+                append(" → ")
+                append(formatDossierDate(history.latestRecordedAtEpochMs))
+            }
+        )
+        DossierLedgerLine(
+            label = "Recorded active time",
+            value = formatDossierDuration(history.recordedActiveMillis)
+        )
+        DossierLedgerLine(
+            label = "Completion records",
+            value = "${history.completionCycleCount}"
+        )
+        DossierLedgerLine(
+            label = "Reread cycles",
+            value = "${history.rereadCycleCount}"
+        )
+        DossierLedgerLine(
+            label = "Archived volumes",
+            value = "${history.archivedVolumeCount}"
+        )
+
+        Text(
+            "This ledger uses durable local book, session, and completion records; it does not infer missing reading history.",
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.58f)
+        )
+    }
+}
+
+@Composable
+private fun DossierLedgerLine(
+    label: String,
+    value: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Mist.copy(alpha = 0.62f),
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.labelMedium,
+            color = VeilPalette.Moon,
+            textAlign = TextAlign.End
+        )
+    }
+}
+
+private fun formatDossierDate(epochMs: Long?): String =
+    epochMs
+        ?.takeIf { it > 0L }
+        ?.let {
+            DateFormat.getDateInstance(DateFormat.MEDIUM)
+                .format(Date(it))
+                .uppercase()
+        }
+        ?: "NO RECORD"
+
+private fun formatDossierDuration(activeMillis: Long): String {
+    val minutes = activeMillis.coerceAtLeast(0L) / 60_000L
+    return when {
+        minutes >= 60L -> {
+            val hours = minutes / 60L
+            val rest = minutes % 60L
+            if (rest == 0L) "${hours}h" else "${hours}h ${rest}m"
+        }
+        minutes > 0L -> "${minutes}m"
+        else -> "<1m"
     }
 }
 
