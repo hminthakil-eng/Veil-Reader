@@ -883,7 +883,7 @@ private fun DiscoveryCard(
                     Text(
                         buildString {
                             append("PERMANENT LEDGER")
-                            record?.recordedAtEpochMs?.let { timestamp ->
+                            record.recordedAtEpochMs.let { timestamp ->
                                 append(" · RECORDED ").append(
                                     formatDossierDate(timestamp, language)
                                 )
