@@ -1,6 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import android.animation.ValueAnimator
 import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.accessibility.AccessibilityManager
@@ -75,6 +74,7 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
@@ -177,7 +177,7 @@ fun ReaderScreen(
         activity.getSystemService(AccessibilityManager::class.java)
     }
     val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
-    val reducedMotion = !ValueAnimator.areAnimatorsEnabled()
+    val reducedMotion = LocalVeilReducedMotion.current
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
@@ -1811,7 +1811,7 @@ private fun EpubAppearancePanel(
                 onClick = { updateDraft(ReaderAppearance()) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 46.dp),
+                    .heightIn(min = 48.dp),
                 shape = MaterialTheme.shapes.extraSmall,
                 border = BorderStroke(
                     1.dp,
