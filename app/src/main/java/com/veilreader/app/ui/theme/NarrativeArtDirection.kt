@@ -30,8 +30,8 @@ data class VeilNarrativeGrammar(
 fun narrativeGrammarFor(realm: VeilRealm): VeilNarrativeGrammar =
     when (realm) {
         VeilRealm.SANCTUARY -> VeilNarrativeGrammar(0f, 0, 0, 0, 0, 0, 0)
-        VeilRealm.THRESHOLD -> VeilNarrativeGrammar(0.92f, 2, 2, 0, 5, 1, 1)
-        VeilRealm.ARCHIVE -> VeilNarrativeGrammar(0.42f, 3, 4, 5, 7, 2, 1)
+        VeilRealm.THRESHOLD -> VeilNarrativeGrammar(0.28f, 2, 2, 0, 5, 1, 1)
+        VeilRealm.ARCHIVE -> VeilNarrativeGrammar(0.40f, 3, 4, 5, 7, 2, 1)
         VeilRealm.CASTLE,
         VeilRealm.WORLD -> VeilNarrativeGrammar(0.74f, 4, 6, 2, 9, 2, 3)
         VeilRealm.RITUAL -> VeilNarrativeGrammar(0.88f, 4, 5, 1, 12, 3, 4)
