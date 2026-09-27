@@ -43,7 +43,7 @@ import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
-import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilPalette
@@ -192,33 +192,26 @@ fun SettingsScreen(
                 }
             )
 
-            Text("Page turn", style = MaterialTheme.typography.labelLarge)
-            ChoiceRow(
-                entries = PageTurnStyle.entries,
-                selected = appearance.pageTurnStyle,
-                label = { style ->
-                    when (style) {
-                        PageTurnStyle.PAPER -> "Paper curl"
-                        PageTurnStyle.SLIDE -> "Simple slide"
-                    }
-                },
-                onSelected = { style ->
-                    commitReaderAppearance { current -> current.copy(pageTurnStyle = style) }
+            Text("Reading motion", style = MaterialTheme.typography.labelLarge)
+            ReaderMotionSelector(
+                selected = appearance.navigationMode,
+                onSelect = { mode ->
+                    commitReaderAppearance { current -> current.withNavigationMode(mode) }
                 }
             )
             Text(
-                "Paper curl is the premium paginated mode; Simple slide remains the rollback-safe fallback. Continuous scroll ignores this setting.",
+                when (appearance.navigationMode) {
+                    ReaderNavigationMode.PAPER_CURL ->
+                        "Physical page curl with weighted drag, release velocity, and page-stack depth."
+                    ReaderNavigationMode.SLIDE ->
+                        "Paginated reading with a lightweight horizontal transition and no paper deformation."
+                    ReaderNavigationMode.PAGED ->
+                        "Static pagination with no decorative page transition."
+                    ReaderNavigationMode.SCROLL ->
+                        "Continuous vertical reading when the publication format supports it."
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
-            )
-
-            SettingsSwitchRow(
-                title = "Scroll mode",
-                subtitle = "Use continuous vertical reading instead of pagination when the format supports it.",
-                checked = appearance.scroll,
-                onCheckedChange = { enabled ->
-                    commitReaderAppearance { current -> current.copy(scroll = enabled) }
-                }
             )
             SettingsSwitchRow(
                 title = "Publisher styles",
