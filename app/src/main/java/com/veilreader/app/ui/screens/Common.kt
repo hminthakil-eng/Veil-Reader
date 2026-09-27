@@ -45,10 +45,12 @@ import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.scriptOrnamentPolicyFor
 import com.veilreader.app.ui.theme.usesArabicScript
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -254,6 +256,9 @@ fun ArchivePanel(
 
 @Composable
 fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
+    val scriptGroup = LocalVeilScriptGroup.current
+    val ornament = scriptOrnamentPolicyFor(scriptGroup)
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
@@ -262,13 +267,18 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         Text(
             if (arabicScriptEyebrow) eyebrow else eyebrow.uppercase(),
             color = VeilPalette.Brass,
-            style = if (arabicScriptEyebrow) {
-                MaterialTheme.typography.labelMedium
-            } else {
-                MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.75.sp)
-            }
+            style = MaterialTheme.typography.labelMedium.copy(
+                letterSpacing = if (arabicScriptEyebrow) {
+                    0.sp
+                } else {
+                    ornament.eyebrowTrackingSp.sp
+                }
+            )
         )
-        BrassRule(Modifier.width(72.dp))
+        VeilHeaderRule(
+            width = ornament.headerRuleWidthDp.dp,
+            terminalMarks = ornament.headerTerminalMarks
+        )
         Text(
             title,
             style = MaterialTheme.typography.headlineLarge,
@@ -282,6 +292,30 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
                 modifier = Modifier.widthIn(max = VeilMeasure.EditorialText)
             )
         }
+    }
+}
+
+@Composable
+private fun VeilHeaderRule(
+    width: Dp,
+    terminalMarks: Int
+) {
+    Row(
+        modifier = Modifier.width(width),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        if (terminalMarks > 0) {
+            repeat(terminalMarks.coerceAtMost(3)) {
+                Box(
+                    Modifier
+                        .size(4.dp)
+                        .rotate(45f)
+                        .background(VeilPalette.Brass.copy(alpha = 0.68f))
+                )
+            }
+        }
+        BrassRule(Modifier.weight(1f), strong = terminalMarks > 0)
     }
 }
 

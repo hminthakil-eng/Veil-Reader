@@ -58,15 +58,20 @@ import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
+import com.veilreader.app.ui.theme.appMetadataDivider
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
+import com.veilreader.app.ui.theme.localizeAppNumerals
+import com.veilreader.app.ui.theme.localizedMetadataValue
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -230,6 +235,8 @@ private fun CastleKeep(
     minHeightDp: Float,
     onOpenRitual: () -> Unit
 ) {
+    val language = LocalVeilLanguage.current
+    val scriptGroup = LocalVeilScriptGroup.current
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
     val reducedMotion = LocalVeilReducedMotion.current
@@ -303,7 +310,10 @@ private fun CastleKeep(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "KEEP TIER ${profile.rankIndex + 1}",
+                        localizeAppNumerals(
+                            "KEEP TIER ${profile.rankIndex + 1}",
+                            language
+                        ),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.30.sp),
                         color = VeilPalette.Brass
                     )
@@ -313,14 +323,26 @@ private fun CastleKeep(
                         color = VeilPalette.Moon
                     )
                     Text(
-                        "${profile.path.name} · ${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
+                        listOf(
+                            localizedMetadataValue(profile.path.name, language),
+                            localizedMetadataValue(
+                                localizeAppNumerals(
+                                    "${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
+                                    language
+                                ),
+                                language
+                            )
+                        ).joinToString(appMetadataDivider(scriptGroup)),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
                 }
 
                 Text(
-                    "${profile.rankIndex + 1}/${profile.path.ranks.size}",
+                    localizeAppNumerals(
+                        "${profile.rankIndex + 1}/${profile.path.ranks.size}",
+                        language
+                    ),
                     style = MaterialTheme.typography.labelLarge,
                     color = VeilPalette.Brass
                 )
@@ -337,7 +359,10 @@ private fun CastleKeep(
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
                 Text(
-                    "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                    localizeAppNumerals(
+                        "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                        language
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass
                 )
@@ -1131,13 +1156,17 @@ private fun FloorInscription(
     unlocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val language = LocalVeilLanguage.current
     Column(
         modifier = modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "FLOOR ${floor.toString().padStart(2, '0')}",
+            localizeAppNumerals(
+                "FLOOR ${floor.toString().padStart(2, '0')}",
+                language
+            ),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
@@ -1169,6 +1198,7 @@ private fun CastleChamberNode(
     onOpenRoom: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val language = LocalVeilLanguage.current
     val safeResonance = resonance.coerceIn(0f, 1f)
     val edge = if (unlocked) {
         VeilPalette.Brass.copy(alpha = 0.42f + safeResonance * 0.36f)
@@ -1201,7 +1231,10 @@ private fun CastleChamberNode(
                 contentDescription = if (unlocked) {
                     "$name chamber. $purpose. Enter."
                 } else {
-                    "$name chamber. Sealed until rank ${unlockRank + 1}."
+                    localizeAppNumerals(
+                        "$name chamber. Sealed until rank ${unlockRank + 1}.",
+                        language
+                    )
                 }
             }
             .clickable(
@@ -1270,7 +1303,10 @@ private fun CastleChamberNode(
         )
 
         Text(
-            if (unlocked) purpose else "Awakens at rank ${unlockRank + 1}",
+            if (unlocked) purpose else localizeAppNumerals(
+                "Awakens at rank ${unlockRank + 1}",
+                language
+            ),
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             maxLines = 2,
