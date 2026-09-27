@@ -1,8 +1,6 @@
 package com.veilreader.app.ui.screens
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PathGeometryTest {
@@ -32,6 +30,6 @@ class PathGeometryTest {
         assertEquals(PathGeometryKind.AXIAL_SPEAR, pathGeometryFor("vanguard"))
         assertEquals(PathGeometryKind.ECLIPSE, pathGeometryFor("nocturne"))
         assertEquals(PathGeometryKind.MECHANICAL, pathGeometryFor("artificer"))
-        assertTrue(pathGeometryFor("unknown") == PathGeometryKind.RADIAL_EYE)
+        assertEquals(PathGeometryKind.RADIAL_EYE, pathGeometryFor("unknown"))
     }
 }
