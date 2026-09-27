@@ -40,6 +40,9 @@ internal val LocalVeilSharedTransitionScope =
 internal val LocalVeilAnimatedVisibilityScope =
     compositionLocalOf<AnimatedVisibilityScope?> { null }
 
+internal val LocalVeilTabAnimatedVisibilityScope =
+    compositionLocalOf<AnimatedVisibilityScope?> { null }
+
 internal fun hallSharedBoundsKey(route: String): String {
     val clean = route.trim()
     require(clean.isNotEmpty()) { "Shared realm route must not be blank." }
@@ -100,6 +103,33 @@ fun Modifier.veilSharedBounds(
 
     return with(sharedScope) {
         this@veilSharedBounds.sharedBounds(
+            sharedContentState = rememberSharedContentState(key = key),
+            animatedVisibilityScope = visibilityScope,
+            enter = fadeIn(tween(policy.sharedBoundsDurationMs)),
+            exit = fadeOut(tween(policy.sharedBoundsDurationMs)),
+            boundsTransform = BoundsTransform { _, _ ->
+                tween(policy.sharedBoundsDurationMs)
+            }
+        )
+    }
+}
+
+@Composable
+fun Modifier.veilTabSharedBounds(
+    key: String
+): Modifier {
+    val reducedMotion = LocalVeilReducedMotion.current
+    val sharedScope = LocalVeilSharedTransitionScope.current
+    val visibilityScope = LocalVeilTabAnimatedVisibilityScope.current
+
+    if (reducedMotion || sharedScope == null || visibilityScope == null) {
+        return this
+    }
+
+    val policy = remember { veilRealmMotionPolicy(reducedMotion = false) }
+
+    return with(sharedScope) {
+        this@veilTabSharedBounds.sharedBounds(
             sharedContentState = rememberSharedContentState(key = key),
             animatedVisibilityScope = visibilityScope,
             enter = fadeIn(tween(policy.sharedBoundsDurationMs)),
