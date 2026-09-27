@@ -515,7 +515,9 @@ private fun ObservatoryBookRow(
 ) {
     Surface(
         onClick = onClick,
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.30f)
