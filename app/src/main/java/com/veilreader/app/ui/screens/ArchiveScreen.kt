@@ -605,35 +605,69 @@ private fun ArchiveSectionTab(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.52f)
+            VeilPalette.DeepBrass.copy(alpha = 0.46f)
         } else {
-            VeilPalette.Ink.copy(alpha = 0.24f)
+            VeilPalette.Ink.copy(alpha = 0.20f)
         },
         border = BorderStroke(
             1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.84f)
-            else VeilPalette.BorderDark.copy(alpha = 0.62f)
+            if (selected) VeilPalette.Brass.copy(alpha = 0.78f)
+            else VeilPalette.BorderDark.copy(alpha = 0.58f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            Text(
-                label.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (selected) VeilPalette.Moon
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                count.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (selected) VeilPalette.Brass
-                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
-            )
+        Box {
+            if (selected) {
+                Box(
+                    Modifier
+                        .fillMaxHeight()
+                        .width(2.dp)
+                        .align(Alignment.CenterStart)
+                        .background(VeilPalette.Brass.copy(alpha = 0.92f))
+                )
+                Box(
+                    Modifier
+                        .size(5.dp)
+                        .align(Alignment.TopEnd)
+                        .offset(x = (-6).dp, y = 6.dp)
+                        .rotate(45f)
+                        .background(VeilPalette.Brass.copy(alpha = 0.72f))
+                )
+            }
+
+            Column(
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.spacedBy(1.dp)
+            ) {
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.65.sp),
+                    color = if (selected) VeilPalette.Moon
+                    else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(5.dp)
+                ) {
+                    Box(
+                        Modifier
+                            .width(if (selected) 18.dp else 10.dp)
+                            .height(1.dp)
+                            .background(
+                                if (selected) VeilPalette.Brass.copy(alpha = 0.72f)
+                                else VeilPalette.BorderDark.copy(alpha = 0.60f)
+                            )
+                    )
+                    Text(
+                        count.toString().padStart(2, '0'),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (selected) VeilPalette.Brass
+                        else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+                    )
+                }
+            }
         }
     }
 }
