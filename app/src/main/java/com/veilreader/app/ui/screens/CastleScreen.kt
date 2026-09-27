@@ -94,6 +94,7 @@ fun CastleScreen(
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
+    val livingMirrorNoteCount = highlights.count { it.note.isNotBlank() }
     val temporalPhase = currentVeilTemporalPhase()
     val castleNowEpochMs = remember(
         temporalPhase,
@@ -196,6 +197,11 @@ fun CastleScreen(
         CastleMemoryInscription(memoryState)
         CastleMutationInscription(memoryState)
 
+        LivingMirrorArtifact(
+            noteCount = livingMirrorNoteCount,
+            onOpen = { onOpenRoom("mirror") }
+        )
+
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             VeilEyebrowText(
                 text = "THE INNER KEEP",
@@ -230,6 +236,83 @@ fun CastleScreen(
             color = VeilPalette.Mist.copy(alpha = 0.82f)
         )
     }
+    }
+}
+
+@Composable
+private fun LivingMirrorArtifact(
+    noteCount: Int,
+    onOpen: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 148.dp)
+            .clickable(role = Role.Button, onClick = onOpen)
+            .semantics {
+                contentDescription =
+                    "Living Mirror. $noteCount preserved notes. Open spatial notes."
+            },
+        shape = MaterialTheme.shapes.extraSmall,
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, VeilPalette.Spirit.copy(alpha = 0.44f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFF0B1118),
+                            Color(0xFF15212A).copy(alpha = 0.92f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+                .padding(VeilSpacing.md)
+        ) {
+            VeilRealmEmblem(
+                realm = VeilRealm.ARCHIVE,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(112.dp),
+                tint = VeilPalette.Spirit.copy(alpha = 0.22f)
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 620.dp),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                VeilEyebrowText(
+                    text = "ARTIFACT · LIVING MIRROR",
+                    color = VeilPalette.Spirit,
+                    trackingSp = 1.25f
+                )
+                Text(
+                    "Notes that remember being revisited",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    if (noteCount == 0) {
+                        "The surface is still. Write a note on a preserved passage and the Mirror will wake."
+                    } else {
+                        "$noteCount notes arranged by book, age, revisit history, and reading cycle."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist.copy(alpha = 0.84f)
+                )
+                BrassRule(Modifier.width(132.dp))
+                Text(
+                    "ENTER MIRROR",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+            }
+        }
     }
 }
 
