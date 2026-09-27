@@ -56,3 +56,7 @@ Tracking remains issue #299. See [W0 convergence evidence](CATHEDRAL_W0_CONVERGE
 The current integration target is `CANONICAL-UIUX-PERFECTION`; the Alpha W0
 branch is a review branch targeting it, not another product implementation line.
 W0 is not complete until the remaining feature ownership conflicts are reconciled.
+
+W0b reconciles temporal atmosphere under one lifecycle-bound clock and the existing
+canonical palette. Its eight JVM policy tests pass; Android lifecycle verification
+and the remaining feature reconciliations are still pending.

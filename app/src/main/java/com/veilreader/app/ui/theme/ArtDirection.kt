@@ -11,23 +11,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
-import java.time.LocalTime
 
 /**
  * Art-direction realms deliberately have different visual budgets.
  *
  * The shell can be rich; the Reader sanctuary must stay quiet.
  */
-enum class VeilRealm {
-    SANCTUARY,
-    THRESHOLD,
-    ARCHIVE,
-    CASTLE,
-    WORLD,
-    RITUAL,
-    SANCTUM
-}
-
 data class VeilVisualBudget(
     val richness: Float,
     val atmosphere: Float,
@@ -35,32 +24,12 @@ data class VeilVisualBudget(
     val motion: Float
 )
 
-enum class VeilTemporalPhase {
-    DAWN,
-    DAY,
-    DUSK,
-    NIGHT
-}
-
 data class VeilTemporalAtmosphere(
     val upperTint: Color,
     val lightTint: Color,
     val lightMultiplier: Float,
     val edgeMultiplier: Float
 )
-
-fun temporalPhaseForHour(hour: Int): VeilTemporalPhase {
-    val safeHour = ((hour % 24) + 24) % 24
-    return when (safeHour) {
-        in 5..8 -> VeilTemporalPhase.DAWN
-        in 9..16 -> VeilTemporalPhase.DAY
-        in 17..20 -> VeilTemporalPhase.DUSK
-        else -> VeilTemporalPhase.NIGHT
-    }
-}
-
-fun currentVeilTemporalPhase(): VeilTemporalPhase =
-    temporalPhaseForHour(LocalTime.now().hour)
 
 fun temporalAtmosphereFor(phase: VeilTemporalPhase): VeilTemporalAtmosphere =
     when (phase) {
@@ -154,7 +123,7 @@ fun Modifier.grayfogAtmosphere(
 
     val w = size.width
     val h = size.height
-    val temporal = temporalAtmosphereFor(temporalPhase)
+    val temporal = temporalAtmosphereFor(temporalPhaseForRealm(realm, temporalPhase))
     val brass = VeilPalette.Brass
     val archive = temporal.upperTint
     val ambientLight = temporal.lightTint

@@ -209,9 +209,10 @@ fun VeilTheme(
             // Keep unstyled app-shell text on the bundled family so OEM font overrides cannot leak
             // back into controls, transient states, or future components.
             ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
-                content()
+                ProvideVeilTemporalPhase {
+                    content()
+                }
             }
         }
     }
 }
-
