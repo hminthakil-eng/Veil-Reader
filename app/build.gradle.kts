@@ -65,6 +65,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
     implementation("androidx.compose.animation:animation:1.10.5")
     implementation("androidx.compose.foundation:foundation:1.10.5")
+    implementation("androidx.graphics:graphics-shapes:1.1.0")
     implementation("androidx.compose.material3:material3:1.4.0")
     // Stable adaptive window/posture APIs for phone, tablet, desktop-window and foldable layouts.
     implementation("androidx.compose.material3.adaptive:adaptive:1.3.0")
