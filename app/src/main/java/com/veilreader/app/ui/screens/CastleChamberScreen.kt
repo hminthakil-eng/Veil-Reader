@@ -219,24 +219,23 @@ fun TreasuryScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopEnd,
-            alpha = 0.09f,
+            alpha = 0.32f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(500.dp)
+                .height(720.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(570.dp)
+                .height(780.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Ink.copy(alpha = 0.54f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.04f),
+                        0.38f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.64f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -262,10 +261,11 @@ fun TreasuryScreen(
             Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
         }
 
-        ScreenHeader(
+        CastleChamberGrandMasthead(
             eyebrow = "TREASURY · RELIC VAULT",
-            title = "Relics of your reading life",
-            subtitle = "Nothing here is bought. Every mark, relic, and bookplate is awakened by reading already stored on this device."
+            title = "The Treasury",
+            subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
+            trailing = "$awakenedRelics RELICS · $awakenedBookplates BOOKPLATES"
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -347,6 +347,84 @@ fun TreasuryScreen(
             }
         }
     }
+    }
+}
+
+@Composable
+private fun CastleChamberGrandMasthead(
+    eyebrow: String,
+    title: String,
+    subtitle: String,
+    trailing: String
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 270.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.64f)),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.08f),
+                        0.42f to Color.Transparent,
+                        1f to VeilPalette.Ink.copy(alpha = 0.97f)
+                    )
+                )
+        )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.90f
+        )
+        Text(
+            eyebrow,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+            color = VeilPalette.Brass
+        )
+        Text(
+            trailing,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.76.sp),
+            color = VeilPalette.Moon.copy(alpha = 0.74f)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                title,
+                style = MaterialTheme.typography.displaySmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.82f),
+                modifier = Modifier.widthIn(max = 600.dp)
+            )
+            BrassRule(Modifier.width(158.dp), strong = true)
+        }
     }
 }
 
@@ -705,24 +783,23 @@ fun SanctumScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = if (sovereignReady) 0.12f else 0.06f,
+            alpha = if (sovereignReady) 0.36f else 0.28f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(520.dp)
+                .height(740.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(600.dp)
+                .height(800.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Ink.copy(alpha = if (sovereignReady) 0.46f else 0.62f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.04f),
+                        0.40f to Color.Transparent,
+                        0.74f to VeilPalette.Ink.copy(alpha = if (sovereignReady) 0.54f else 0.68f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -748,10 +825,11 @@ fun SanctumScreen(
             Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
         }
 
-        ScreenHeader(
+        CastleChamberGrandMasthead(
             eyebrow = "INNER SANCTUM · DEEPEST RECORD",
             title = castleTitle,
-            subtitle = "The Sanctum records thresholds crossed, constellations completed, and titles the Castle considers permanent."
+            subtitle = "Thresholds crossed, constellations completed, and identities the Castle considers permanent.",
+            trailing = if (sovereignReady) "SOVEREIGN SEAL" else "$knownDiscoveryCount DISCOVERIES"
         )
 
         SanctumSealPanel(
