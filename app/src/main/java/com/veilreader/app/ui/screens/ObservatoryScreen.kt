@@ -44,6 +44,7 @@ import com.veilreader.app.domain.MemoryAtlasEdge
 import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
@@ -252,6 +253,14 @@ private fun ObservatoryGrandMasthead(
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
             strength = 0.90f
+        )
+        VeilRealmEmblem(
+            realm = VeilRealm.WORLD,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = VeilSpacing.lg)
+                .size(144.dp),
+            tint = VeilPalette.Spirit.copy(alpha = 0.24f)
         )
         Text(
             "OBSERVATORY · MEMORY ATLAS",
