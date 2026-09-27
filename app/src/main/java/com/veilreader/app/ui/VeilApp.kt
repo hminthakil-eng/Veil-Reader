@@ -2,10 +2,11 @@ package com.veilreader.app.ui
 
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
@@ -21,6 +22,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -222,6 +226,7 @@ fun VeilApp(
     var exporting by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
+    var noticeMessage by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
     fun exportData(uri: Uri, backup: Boolean) {
@@ -231,7 +236,7 @@ fun VeilApp(
             try {
                 val exporter = LibraryExport(context, library)
                 if (backup) exporter.writeBackup(uri) else exporter.writeNotebook(uri)
-                errorMessage = if (backup) "Library backup exported." else "Notebook exported."
+                noticeMessage = if (backup) "Library backup exported." else "Notebook exported."
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
@@ -251,7 +256,7 @@ fun VeilApp(
                 if (activity != null) {
                     activity.recreate()
                 } else {
-                    errorMessage = "Restored ${result.booksRestored} books and ${result.highlightsRestored} highlights. Reopen Veil Reader to load them."
+                    noticeMessage = "Restored ${result.booksRestored} books and ${result.highlightsRestored} highlights. Reopen Veil Reader to load them."
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -289,7 +294,7 @@ fun VeilApp(
                 routeViewModel.selectTab(VeilTab.LIBRARY)
                 routeViewModel.requestBook(commit.book.id)
                 if (commit.duplicate) {
-                    errorMessage = "${commit.book.title} is already in your Grand Library. I opened the existing copy."
+                    noticeMessage = "${commit.book.title} is already in your Grand Library. I opened the existing copy."
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -718,41 +723,99 @@ fun VeilApp(
         }
     }
 
+    noticeMessage?.let { message ->
+        VeilMessageDialog(
+            eyebrow = "ARCHIVE NOTICE · LOCAL",
+            title = "The archive has been updated",
+            message = message,
+            actionLabel = "Continue",
+            onDismiss = { noticeMessage = null }
+        )
+    }
+
     errorMessage?.let { message ->
-        AlertDialog(
-            onDismissRequest = { errorMessage = null },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        "INTERRUPTION · LOCAL",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        "The action could not be completed",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-            },
-            text = { Text(message) },
-            confirmButton = {
-                Button(
-                    onClick = { errorMessage = null },
-                    shape = MaterialTheme.shapes.extraSmall
-                ) {
-                    Text("Return")
-                }
-            }
+        VeilMessageDialog(
+            eyebrow = "INTERRUPTION · LOCAL",
+            title = "The action could not be completed",
+            message = message,
+            actionLabel = "Return",
+            onDismiss = { errorMessage = null }
         )
     }
 }
+}
+
+
+@Composable
+private fun VeilMessageDialog(
+    eyebrow: String,
+    title: String,
+    message: String,
+    actionLabel: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = VeilPalette.Archive,
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        eyebrow,
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = VeilPalette.Moon
+                    )
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp),
+                        color = VeilPalette.Brass.copy(alpha = 0.24f)
+                    ) {}
+                    Text(
+                        message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 50.dp),
+                        shape = MaterialTheme.shapes.extraSmall
+                    ) {
+                        Text(actionLabel)
+                    }
+                }
+            }
+        }
+    }
 }
 
 internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
