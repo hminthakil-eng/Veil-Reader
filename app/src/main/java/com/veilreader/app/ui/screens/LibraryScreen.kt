@@ -74,6 +74,7 @@ import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
@@ -353,6 +354,11 @@ fun LibraryScreen(
                 realm = VeilRealm.ARCHIVE,
                 seed = books.size + filtered.size,
                 intensity = 0.88f + atmosphereState.archiveDensity * 0.12f
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.ARCHIVE,
+                seed = books.size * 29 + collections.size * 11,
+                intensity = 0.58f
             )
             .libraryArchiveAtmosphere(
                 state = atmosphereState,
