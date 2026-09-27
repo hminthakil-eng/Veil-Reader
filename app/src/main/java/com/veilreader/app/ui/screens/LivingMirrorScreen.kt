@@ -34,7 +34,6 @@ import com.veilreader.app.domain.LivingMirrorNote
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.deriveLivingMirrorNotes
-import com.veilreader.app.ui.BrassRule
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.hallSharedBoundsKey
@@ -301,6 +300,27 @@ private fun LivingMirrorMasthead(
             BrassRule(Modifier.width(156.dp), strong = true)
         }
     }
+}
+
+
+@Composable
+private fun BrassRule(
+    modifier: Modifier = Modifier,
+    strong: Boolean = false
+) {
+    Box(
+        modifier = modifier
+            .height(1.dp)
+            .background(
+                Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        VeilPalette.Brass.copy(alpha = if (strong) 0.92f else 0.58f),
+                        Color.Transparent
+                    )
+                )
+            )
+    )
 }
 
 @Composable
