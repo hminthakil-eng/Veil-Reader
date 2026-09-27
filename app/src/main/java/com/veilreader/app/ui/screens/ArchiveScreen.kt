@@ -163,7 +163,7 @@ fun ArchiveScreen(
                         modifier = Modifier.heightIn(min = 48.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text("← Archive")
+                        Text(VeilBackLabel("Archive"))
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
