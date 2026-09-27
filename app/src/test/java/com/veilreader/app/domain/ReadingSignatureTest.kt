@@ -177,6 +177,32 @@ class ReadingSignatureTest {
     }
 
     @Test
+    fun `deleted book sessions do not crash or count as touched books`() {
+        val deletedBookSession = ReadingSessionSnapshot(
+            id = "deleted-book",
+            bookId = null,
+            startedAtEpochMs = epoch(day = 1, hour = 8),
+            endedAtEpochMs = epoch(day = 1, hour = 8) + 30L * 60_000L,
+            activeMillis = 30L * 60_000L,
+            pacedPageTurns = 10,
+            highlightCount = 0,
+            noteCount = 0
+        )
+
+        val signature = deriveReadingSignature(
+            sessions = listOf(
+                deletedBookSession,
+                session("live-book", day = 2, hour = 9, activeMinutes = 30, bookId = "book-2")
+            ),
+            cycles = emptyList(),
+            zoneId = utc
+        )
+
+        assertEquals(2, signature.recordedSessionCount)
+        assertEquals(1, signature.booksTouchedCount)
+    }
+
+    @Test
     fun `daypart mapping is explicit and wraps invalid hour inputs safely`() {
         assertEquals(ReadingDaypart.NIGHT, readingDaypartForHour(4))
         assertEquals(ReadingDaypart.MORNING, readingDaypartForHour(5))
