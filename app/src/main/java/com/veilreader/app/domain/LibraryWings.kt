@@ -17,6 +17,7 @@ data class ArchiveWing(
     val completedCount: Int,
     val favoriteCount: Int,
     val lastRecordedActivityAtEpochMs: Long,
+    val hasRecordedReadingActivity: Boolean = false,
     val archivePresence: Float,
     val sealSeed: Int
 )
@@ -80,11 +81,15 @@ fun deriveLibraryWings(
         val favorites = uniqueMembers.count { it.favorite }
         val count = uniqueMembers.size.coerceAtLeast(1)
 
-        val activity = uniqueMembers.maxOfOrNull { book ->
-            book.lastOpenedAtEpochMs
-                .takeIf { it > 0L }
-                ?: book.addedAtEpochMs
-        } ?: 0L
+        val recordedReadingActivity = uniqueMembers
+            .map { it.lastOpenedAtEpochMs }
+            .filter { it > 0L }
+        val hasRecordedReadingActivity = recordedReadingActivity.isNotEmpty()
+        val activity = if (hasRecordedReadingActivity) {
+            recordedReadingActivity.maxOrNull() ?: 0L
+        } else {
+            uniqueMembers.maxOfOrNull { it.addedAtEpochMs } ?: 0L
+        }
 
         val volumeFactor = (count / 12f).coerceIn(0f, 1f)
         val completedRatio = completed.toFloat() / count
@@ -101,6 +106,7 @@ fun deriveLibraryWings(
             completedCount = completed,
             favoriteCount = favorites,
             lastRecordedActivityAtEpochMs = activity,
+            hasRecordedReadingActivity = hasRecordedReadingActivity,
             archivePresence = (
                 volumeFactor * 0.50f +
                     completedRatio * 0.24f +
@@ -114,6 +120,7 @@ fun deriveLibraryWings(
     fun sortWings(wings: List<ArchiveWing>, limit: Int): List<ArchiveWing> =
         wings.sortedWith(
             compareByDescending<ArchiveWing> { it.volumeCount }
+                .thenByDescending { it.hasRecordedReadingActivity }
                 .thenByDescending { it.lastRecordedActivityAtEpochMs }
                 .thenBy { it.name.lowercase(Locale.ROOT) }
         ).take(limit.coerceAtLeast(0))
