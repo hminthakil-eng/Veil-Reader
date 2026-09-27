@@ -39,6 +39,8 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.rememberVeilTemporalAtmosphere
+import com.veilreader.app.ui.theme.temporalGrayfogAtmosphere
 
 private data class SigilPresentation(
     val name: String,
@@ -193,6 +195,7 @@ fun TreasuryScreen(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
     val treasuryLayout = castleLayoutPolicyFor(treasuryAdaptiveClass)
+    val temporalAtmosphere = rememberVeilTemporalAtmosphere()
 
     Box(
         modifier = Modifier
@@ -201,6 +204,12 @@ fun TreasuryScreen(
                 realm = VeilRealm.CASTLE,
                 seed = profile.earnedSigils.size * 31 + awakenedRelics * 11,
                 intensity = 0.90f
+            )
+            .temporalGrayfogAtmosphere(
+                state = temporalAtmosphere,
+                realm = VeilRealm.CASTLE,
+                seed = profile.earnedSigils.size * 31 + awakenedRelics * 11,
+                intensity = 0.88f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -639,6 +648,7 @@ fun SanctumScreen(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
     val sanctumLayout = castleLayoutPolicyFor(sanctumAdaptiveClass)
+    val temporalAtmosphere = rememberVeilTemporalAtmosphere()
 
     Box(
         modifier = Modifier
@@ -647,6 +657,12 @@ fun SanctumScreen(
                 realm = VeilRealm.SANCTUM,
                 seed = profile.rankIndex * 43 + profile.earnedSigils.size * 13,
                 intensity = if (sovereignReady) 1f else 0.72f
+            )
+            .temporalGrayfogAtmosphere(
+                state = temporalAtmosphere,
+                realm = VeilRealm.SANCTUM,
+                seed = profile.rankIndex * 43 + profile.earnedSigils.size * 13,
+                intensity = if (sovereignReady) 0.92f else 0.70f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
