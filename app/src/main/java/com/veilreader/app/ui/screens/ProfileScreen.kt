@@ -31,6 +31,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import java.text.DateFormat
 import java.util.Date
 
@@ -123,7 +124,8 @@ fun ProfileScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.ARCHIVE,
-                seed = p.level * 17 + dossierHistory.recordedSessionCount
+                seed = p.level * 17 + dossierHistory.recordedSessionCount,
+                temporalPhase = currentVeilTemporalPhase()
             ),
         contentAlignment = Alignment.TopCenter
     ) {
