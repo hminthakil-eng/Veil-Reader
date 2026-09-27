@@ -41,6 +41,7 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -266,6 +267,7 @@ fun TreasuryScreen(
 
         CastleChamberGrandMasthead(
             realm = VeilRealm.CASTLE,
+            sharedKey = "hall:treasury",
             eyebrow = "TREASURY · RELIC VAULT",
             title = "The Treasury",
             subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
@@ -357,6 +359,7 @@ fun TreasuryScreen(
 @Composable
 private fun CastleChamberGrandMasthead(
     realm: VeilRealm,
+    sharedKey: String,
     eyebrow: String,
     title: String,
     subtitle: String,
@@ -365,6 +368,7 @@ private fun CastleChamberGrandMasthead(
     val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
+            .veilSharedBounds(sharedKey)
             .fillMaxWidth()
             .heightIn(min = if (fontScale > 1.35f) 342.dp else 270.dp)
             .clip(MaterialTheme.shapes.extraSmall)
@@ -834,6 +838,7 @@ fun SanctumScreen(
 
         CastleChamberGrandMasthead(
             realm = VeilRealm.SANCTUM,
+            sharedKey = "hall:sanctum",
             eyebrow = "INNER SANCTUM · DEEPEST RECORD",
             title = castleTitle,
             subtitle = "Thresholds crossed, constellations completed, and identities the Castle considers permanent.",
