@@ -17,6 +17,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -54,6 +55,22 @@ import java.time.format.FormatStyle
 
 private enum class LivingMirrorMode { MIRROR, INDEX }
 
+private const val MIRROR_SURFACE_NODE_LIMIT = 28
+
+internal fun selectLivingMirrorSurfaceNotes(
+    notes: List<LivingMirrorNote>,
+    matches: Set<String>,
+    queryActive: Boolean,
+    maxNodes: Int = MIRROR_SURFACE_NODE_LIMIT
+): List<LivingMirrorNote> {
+    if (maxNodes <= 0 || notes.isEmpty()) return emptyList()
+    if (!queryActive) return notes.take(maxNodes)
+
+    val matched = notes.filter { it.highlightId in matches }
+    val unrelated = notes.filterNot { it.highlightId in matches }
+    return (matched + unrelated).take(maxNodes)
+}
+
 @Composable
 fun LivingMirrorScreen(
     books: List<Book>,
@@ -75,9 +92,14 @@ fun LivingMirrorScreen(
     }
     val booksById = remember(books) { books.associateBy { it.id } }
 
+    val touchExplorationEnabled =
+        LocalAccessibilityManager.current?.isTouchExplorationEnabled == true
+
     var mode by rememberSaveable { mutableStateOf(LivingMirrorMode.MIRROR) }
     var query by rememberSaveable { mutableStateOf("") }
     var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
+    val effectiveMode =
+        if (touchExplorationEnabled) LivingMirrorMode.INDEX else mode
 
     val normalizedQuery = query.trim().lowercase()
     val filtered = remember(allNotes, normalizedQuery) {
@@ -139,15 +161,24 @@ fun LivingMirrorScreen(
             ) {
                 MirrorModeButton(
                     label = "Mirror",
-                    selected = mode == LivingMirrorMode.MIRROR,
+                    selected = effectiveMode == LivingMirrorMode.MIRROR,
+                    enabled = !touchExplorationEnabled,
                     onClick = { mode = LivingMirrorMode.MIRROR },
                     modifier = Modifier.weight(1f)
                 )
                 MirrorModeButton(
                     label = "Index",
-                    selected = mode == LivingMirrorMode.INDEX,
+                    selected = effectiveMode == LivingMirrorMode.INDEX,
                     onClick = { mode = LivingMirrorMode.INDEX },
                     modifier = Modifier.weight(1f)
+                )
+            }
+
+            if (touchExplorationEnabled && allNotes.isNotEmpty()) {
+                Text(
+                    "TalkBack uses Index presentation so every note is available in reading order.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
             }
 
@@ -155,7 +186,7 @@ fun LivingMirrorScreen(
                 allNotes.isEmpty() -> LivingMirrorEmptyState(
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
-                mode == LivingMirrorMode.MIRROR -> LivingMirrorSurface(
+                effectiveMode == LivingMirrorMode.MIRROR -> LivingMirrorSurface(
                     notes = allNotes,
                     query = normalizedQuery,
                     matches = filtered.mapTo(hashSetOf()) { it.highlightId },
@@ -261,11 +292,13 @@ private fun MirrorModeButton(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
 ) {
     if (selected) {
         Button(
             onClick = onClick,
+            enabled = enabled,
             modifier = modifier.heightIn(min = 48.dp),
             shape = MaterialTheme.shapes.extraSmall,
             colors = ButtonDefaults.buttonColors(
@@ -277,6 +310,7 @@ private fun MirrorModeButton(
     } else {
         OutlinedButton(
             onClick = onClick,
+            enabled = enabled,
             modifier = modifier.heightIn(min = 48.dp),
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.BorderDark)
@@ -316,8 +350,17 @@ private fun LivingMirrorSurface(
                     "Living Mirror. ${notes.size} notes arranged spatially by factual reading history."
             }
     ) {
-        val surfaceHeight = 500f
+        val surfaceHeight = maxHeight.value.coerceIn(470f, 900f)
         val width = maxWidth.value.coerceAtLeast(280f)
+        val visibleNotes = remember(notes, matches, query) {
+            selectLivingMirrorSurfaceNotes(
+                notes = notes,
+                matches = matches,
+                queryActive = query.isNotBlank()
+            )
+        }
+        val visibleMatchCount =
+            if (query.isBlank()) 0 else visibleNotes.count { it.highlightId in matches }
 
         Canvas(Modifier.matchParentSize()) {
             val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
@@ -341,7 +384,7 @@ private fun LivingMirrorSurface(
             }
         }
 
-        notes.take(28).forEach { note ->
+        visibleNotes.forEach { note ->
             val matched = query.isBlank() || note.highlightId in matches
             val targetAlpha = if (matched) 0.96f else 0.12f
             val targetScale = if (matched && query.isNotBlank()) 1.07f else 1f
@@ -352,7 +395,11 @@ private fun LivingMirrorSurface(
             )
             val scale by animateFloatAsState(
                 targetValue = targetScale,
-                animationSpec = if (reducedMotion) snap() else tween(220),
+                animationSpec = if (reducedMotion) {
+                    snap()
+                } else {
+                    tween(motionBudgetFor(VeilMotionClass.MATERIAL).targetDurationMs)
+                },
                 label = "mirror-node-scale"
             )
             val x = ((width - 116f) * note.clusterX).coerceIn(0f, width - 116f)
@@ -377,7 +424,11 @@ private fun LivingMirrorSurface(
                 border = BorderStroke(1.dp, VeilPalette.Spirit.copy(alpha = 0.38f))
             ) {
                 Text(
-                    "${matches.size} summoned · unrelated notes recede",
+                    if (matches.size > visibleMatchCount) {
+                        "${visibleMatchCount} of ${matches.size} summoned on surface · open Index for all"
+                    } else {
+                        "${matches.size} summoned · unrelated notes recede"
+                    },
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Moon
