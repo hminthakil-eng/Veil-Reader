@@ -25,20 +25,20 @@ import com.veilreader.app.domain.AppThemeMode
  */
 object VeilPalette {
     // Gray Fog semantic foundation.
-    val Ink = Color(0xFF0B0D12)
-    val Archive = Color(0xFF111821)
-    val Iron = Color(0xFF1B2230)
-    val RaisedIron = Color(0xFF263247)
+    val Ink = Color(0xFF06080D)
+    val Archive = Color(0xFF0B1119)
+    val Iron = Color(0xFF121B27)
+    val RaisedIron = Color(0xFF1D2A3A)
 
-    val Moon = Color(0xFFEEE9DE)
-    val Mist = Color(0xFFA7A9AA)
-    val BorderDark = Color(0xFF2F3947)
-    val StrongBorderDark = Color(0xFF5C6672)
+    val Moon = Color(0xFFF2EBDD)
+    val Mist = Color(0xFFB5B0A5)
+    val BorderDark = Color(0xFF2B3542)
+    val StrongBorderDark = Color(0xFF687483)
 
-    val Brass = Color(0xFFC9A96B)
-    val DeepBrass = Color(0xFF5A4526)
-    val Spirit = Color(0xFF7BA8B1)
-    val MoonCrimson = Color(0xFF7A2E2E)
+    val Brass = Color(0xFFD7B777)
+    val DeepBrass = Color(0xFF6A4D28)
+    val Spirit = Color(0xFF86AFB7)
+    val MoonCrimson = Color(0xFF8B3235)
 
     val LightCanvas = Color(0xFFF2EFE7)
     val LightSurface = Color(0xFFFBF8F1)
@@ -173,7 +173,7 @@ private val VeilShapes = Shapes(
     small = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Architectural),
     medium = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Chamber),
     large = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Hero),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
+    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(10.dp)
 )
 
 val LocalVeilReducedMotion = staticCompositionLocalOf { false }
