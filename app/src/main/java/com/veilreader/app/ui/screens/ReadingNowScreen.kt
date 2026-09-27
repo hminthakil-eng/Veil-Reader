@@ -124,24 +124,23 @@ fun ReadingNowScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = 0.075f,
+            alpha = 0.30f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(560.dp)
+                .height(760.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(620.dp)
+                .height(800.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Ink.copy(alpha = 0.52f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.08f),
+                        0.34f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.68f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -155,7 +154,7 @@ fun ReadingNowScreen(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
-                Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
+                Box(Modifier.padding(horizontal = 0.dp, vertical = 0.dp)) {
                     ThresholdHeader(
                         bookCount = books.size,
                         hasCurrentBook = current != null,
@@ -168,9 +167,11 @@ fun ReadingNowScreen(
 
             VeilReveal(delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
                 Box(
-                    Modifier.padding(
-                        horizontal = thresholdLayout.horizontalPaddingDp.dp
-                    )
+                    Modifier
+                        .offset(y = (-28).dp)
+                        .padding(
+                            horizontal = thresholdLayout.horizontalPaddingDp.dp
+                        )
                 ) {
                     if (current == null) {
                         EmptyReadingState(onOpenLibrary)
@@ -248,20 +249,20 @@ private fun ThresholdHeader(
     headerHeightDp: Float
 ) {
     val compactHeader = headerHeightDp <= 270f
+    val visualHeightDp = if (compactHeader) 330f else maxOf(headerHeightDp, 390f)
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
-                MaterialTheme.shapes.medium
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
+                MaterialTheme.shapes.extraSmall
             )
     ) {
         Box(
             Modifier
                 .fillMaxWidth()
-                .height(headerHeightDp.dp)
+                .height(visualHeightDp.dp)
         ) {
             Image(
                 painter = painterResource(R.drawable.grayfog_threshold_v1),
@@ -275,8 +276,9 @@ private fun ThresholdHeader(
                     .matchParentSize()
                     .background(
                         Brush.verticalGradient(
-                            0f to Color.Black.copy(alpha = 0.18f),
-                            0.44f to Color.Transparent,
+                            0f to Color.Black.copy(alpha = 0.10f),
+                            0.36f to Color.Transparent,
+                            0.72f to VeilPalette.Ink.copy(alpha = 0.42f),
                             1f to VeilPalette.Ink.copy(alpha = 0.98f)
                         )
                     )
@@ -316,7 +318,7 @@ private fun ThresholdHeader(
             )
 
             Text(
-                "GRAYFOG ARCHIVE",
+                "THE LIBRARY BEYOND TIME",
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = VeilSpacing.md, top = VeilSpacing.md),
@@ -342,9 +344,9 @@ private fun ThresholdHeader(
                         else -> "Return to the Archive"
                     },
                     style = if (compactHeader) {
-                        MaterialTheme.typography.headlineMedium
-                    } else {
                         MaterialTheme.typography.headlineLarge
+                    } else {
+                        MaterialTheme.typography.displaySmall
                     },
                     color = VeilPalette.Moon
                 )
@@ -465,7 +467,7 @@ private fun ContinueReadingHero(
     val paperDark = Color(0xFFD9C8A6)
     val ink = Color(0xFF29231C)
     val secondaryInk = Color(0xFF6A5A43)
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.extraSmall
     val fontScale = LocalDensity.current.fontScale
 
     BoxWithConstraints(
@@ -477,8 +479,8 @@ private fun ContinueReadingHero(
                     listOf(paperLight, paper, paperDark)
                 )
             )
-            .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.82f)), shape)
-            .padding(VeilSpacing.md)
+            .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.94f)), shape)
+            .padding(VeilSpacing.lg)
     ) {
         val stacked = maxWidth < 300.dp || fontScale > 1.45f
 
