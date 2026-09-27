@@ -502,6 +502,8 @@ fun VeilApp(
                         "ritual" -> routeViewModel.selectTab(VeilTab.PATH)
                         "observatory", "mirror" -> routeViewModel.openChamber(room)
                         "archive" -> routeViewModel.openArchive()
+                        "profile" -> routeViewModel.selectTab(VeilTab.PROFILE)
+                        "reading" -> routeViewModel.selectTab(VeilTab.READING)
                         "treasury", "sanctum" -> routeViewModel.openChamber(room)
                     }
                 },
