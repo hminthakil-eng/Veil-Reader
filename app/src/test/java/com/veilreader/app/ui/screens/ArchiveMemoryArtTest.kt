@@ -75,4 +75,24 @@ class ArchiveMemoryArtTest {
         assertTrue(annotated.patina > plain.patina)
         assertTrue(annotated.spiritTrace == plain.spiritTrace)
     }
+
+    @Test
+    fun `continued volume activity adds a trace independently of revisit count`() {
+        val quiet = archiveMemoryMaterialFor(
+            memory(EchoDepth.ECHO, ageDays = 90),
+            echoMode = true
+        )
+        val continued = archiveMemoryMaterialFor(
+            memory(
+                EchoDepth.ECHO,
+                ageDays = 90,
+                continuedActivity = true
+            ),
+            echoMode = true
+        )
+
+        assertTrue(continued.spiritTrace > quiet.spiritTrace)
+        assertTrue(continued.edgeGlow == quiet.edgeGlow)
+    }
+
 }
