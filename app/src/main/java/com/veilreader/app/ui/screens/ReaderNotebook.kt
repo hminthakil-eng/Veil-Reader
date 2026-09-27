@@ -1,13 +1,18 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.OpenedPublication
@@ -108,34 +113,86 @@ fun ReaderNotebook(
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = VeilPalette.Ink,
+        contentColor = VeilPalette.Moon,
+        tonalElevation = 0.dp
+    ) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(.85f)
                 .padding(horizontal = 20.dp)
         ) {
-            Text("Reading tools", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                opened.book.title,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(5.dp),
+                modifier = Modifier.padding(bottom = 8.dp)
+            ) {
+                Text(
+                    "HIDDEN ARCHIVE · READING TOOLS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+                BrassRule(Modifier.width(84.dp))
+                Text(
+                    "Reading tools",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    opened.book.title,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.74f)
+                )
+            }
 
             Row(
                 Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState())
+                    .selectableGroup()
                     .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 tabs.forEach { item ->
-                    FilterChip(
-                        selected = tab == item,
-                        onClick = { tab = item },
-                        label = { Text(item.label) },
-                        modifier = Modifier.heightIn(min = 48.dp)
-                    )
+                    val selected = tab == item
+                    Surface(
+                        modifier = Modifier
+                            .heightIn(min = 44.dp)
+                            .selectable(
+                                selected = selected,
+                                role = Role.Tab
+                            ) { tab = item },
+                        shape = MaterialTheme.shapes.extraSmall,
+                        color = if (selected) {
+                            VeilPalette.DeepBrass.copy(alpha = 0.78f)
+                        } else {
+                            VeilPalette.Archive.copy(alpha = 0.58f)
+                        },
+                        border = BorderStroke(
+                            1.dp,
+                            if (selected) {
+                                VeilPalette.Brass.copy(alpha = 0.76f)
+                            } else {
+                                VeilPalette.BorderDark.copy(alpha = 0.66f)
+                            }
+                        ),
+                        tonalElevation = 0.dp,
+                        shadowElevation = 0.dp
+                    ) {
+                        Box(
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                item.label.uppercase(),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (selected) VeilPalette.Moon
+                                else VeilPalette.Mist.copy(alpha = 0.74f)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -195,9 +252,31 @@ fun ReaderNotebook(
                             Text("Save a place using Bookmark in the reader. Your bookmarks will appear here.")
                         }
                         items(bookmarks, key = { it.id }) { bookmark ->
-                            Card(Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(14.dp)) {
-                                    Text(bookmark.label, fontWeight = FontWeight.SemiBold)
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = VeilPalette.Archive.copy(alpha = 0.68f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    VeilPalette.BorderDark.copy(alpha = 0.72f)
+                                ),
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Column(
+                                    Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        "SAVED PLACE",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = VeilPalette.Brass
+                                    )
+                                    Text(
+                                        bookmark.label,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        color = VeilPalette.Moon
+                                    )
                                     Row(
                                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                                         horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -205,7 +284,7 @@ fun ReaderNotebook(
                                         TextButton(
                                             onClick = { onGo(bookmark.locatorJson) },
                                             modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text("Go to place") }
+                                        ) { Text("Return") }
                                         TextButton(
                                             onClick = { onDeleteBookmark(bookmark.id) },
                                             modifier = Modifier.heightIn(min = 48.dp)
@@ -322,20 +401,42 @@ fun ReaderNotebook(
                             }
                         }
                         items(bookSearchResults) { locator ->
-                            Card(Modifier.fillMaxWidth()) {
-                                Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = VeilPalette.Archive.copy(alpha = 0.64f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    VeilPalette.BorderDark.copy(alpha = 0.68f)
+                                ),
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Column(
+                                    Modifier.padding(14.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        "MATCH",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = VeilPalette.Brass
+                                    )
                                     locator.title?.takeIf { it.isNotBlank() }?.let {
                                         Text(
                                             it,
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary
+                                            style = MaterialTheme.typography.titleSmall,
+                                            color = VeilPalette.Moon
                                         )
                                     }
-                                    Text(searchSnippet(locator), style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        searchSnippet(locator),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = VeilPalette.Mist.copy(alpha = 0.88f)
+                                    )
                                     TextButton(
                                         onClick = { onGo(locator.toJSON().toString()) },
                                         modifier = Modifier.heightIn(min = 48.dp)
-                                    ) { Text("Go to match") }
+                                    ) { Text("Return to match") }
                                 }
                             }
                         }
@@ -348,6 +449,11 @@ fun ReaderNotebook(
     editing?.let { highlight ->
         AlertDialog(
             onDismissRequest = { if (!savingNote) editing = null },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = VeilPalette.Mist,
+            tonalElevation = 0.dp,
             title = { Text("Passage note") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -394,6 +500,11 @@ fun ReaderNotebook(
     deleting?.let { highlight ->
         AlertDialog(
             onDismissRequest = { deleting = null },
+            shape = MaterialTheme.shapes.small,
+            containerColor = VeilPalette.Archive,
+            titleContentColor = VeilPalette.Moon,
+            textContentColor = VeilPalette.Mist,
+            tonalElevation = 0.dp,
             title = { Text("Delete this highlight?") },
             text = { Text("Its attached note will also be removed.") },
             confirmButton = {
