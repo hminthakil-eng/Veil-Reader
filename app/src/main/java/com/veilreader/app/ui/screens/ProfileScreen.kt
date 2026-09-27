@@ -34,6 +34,7 @@ import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.deriveReadingSignature
+import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
@@ -338,21 +339,12 @@ private fun ProfileGrandMasthead(
                 .size(140.dp),
             tint = VeilPalette.Brass.copy(alpha = 0.20f)
         )
-        Text(
-            "ARCHIVIST DOSSIER",
+        VeilMastheadMetaRow(
+            primary = "ARCHIVIST DOSSIER",
+            secondary = "LVL $level · $recordedSessions SESSIONS",
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
-            color = VeilPalette.Brass
-        )
-        Text(
-            "LVL $level · $recordedSessions SESSIONS",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.80.sp),
-            color = VeilPalette.Moon.copy(alpha = 0.74f)
+                .align(Alignment.TopCenter)
+                .padding(VeilSpacing.md)
         )
         Column(
             modifier = Modifier
