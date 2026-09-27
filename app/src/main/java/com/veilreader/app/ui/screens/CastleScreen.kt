@@ -61,9 +61,11 @@ import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.hallRouteUsesTabTransition
 import com.veilreader.app.ui.hallSharedBoundsKey
 import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
 import com.veilreader.app.ui.veilSharedBounds
+import com.veilreader.app.ui.veilTabSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -656,9 +658,15 @@ private fun GreatHallArtifactPedestal(
         0.24f
     }
 
+    val sharedModifier =
+        if (hallRouteUsesTabTransition(artifact.route)) {
+            modifier.veilTabSharedBounds(hallSharedBoundsKey(artifact.route))
+        } else {
+            modifier.veilSharedBounds(hallSharedBoundsKey(artifact.route))
+        }
+
     Column(
-        modifier = modifier
-            .veilSharedBounds(hallSharedBoundsKey(artifact.route))
+        modifier = sharedModifier
             .semantics {
                 contentDescription = if (active) {
                     "${artifact.title}. ${artifact.subtitle}. Open."
