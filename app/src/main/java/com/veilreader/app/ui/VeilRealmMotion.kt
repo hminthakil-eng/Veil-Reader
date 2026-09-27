@@ -28,7 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
-import com.veilreader.app.ui.theme.VeilMotionClass
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.effectiveMotionDurationMs
 import com.veilreader.app.ui.theme.motionBudgetFor
 import kotlinx.coroutines.CancellationException
@@ -67,11 +67,11 @@ internal fun veilRealmMotionPolicy(
     if (reducedMotion) {
         VeilRealmMotionPolicy(
             enterDurationMs = effectiveMotionDurationMs(
-                VeilMotionClass.REALM,
+                CathedralMotionClass.REALM,
                 reducedMotion = true
             ),
             exitDurationMs = effectiveMotionDurationMs(
-                VeilMotionClass.SPATIAL,
+                CathedralMotionClass.SPATIAL,
                 reducedMotion = true
             ),
             sharedBoundsDurationMs = 0,
@@ -81,9 +81,9 @@ internal fun veilRealmMotionPolicy(
         )
     } else {
         VeilRealmMotionPolicy(
-            enterDurationMs = motionBudgetFor(VeilMotionClass.REALM).targetDurationMs,
-            exitDurationMs = motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs,
-            sharedBoundsDurationMs = motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs,
+            enterDurationMs = motionBudgetFor(CathedralMotionClass.REALM).targetDurationMs,
+            exitDurationMs = motionBudgetFor(CathedralMotionClass.SPATIAL).targetDurationMs,
+            sharedBoundsDurationMs = motionBudgetFor(CathedralMotionClass.SPATIAL).targetDurationMs,
             predictiveScaleAtCommit = 0.955f,
             predictiveAlphaAtCommit = 0.34f,
             predictiveTranslationFractionAtCommit = 0.075f

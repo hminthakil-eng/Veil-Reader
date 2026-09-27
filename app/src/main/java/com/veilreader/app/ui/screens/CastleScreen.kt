@@ -71,7 +71,7 @@ import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
-import com.veilreader.app.ui.theme.VeilMotionClass
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -476,7 +476,7 @@ private fun GreatHallArtifactField(
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
     val revealDuration =
-        if (reducedMotion) 0 else motionBudgetFor(VeilMotionClass.REALM).targetDurationMs
+        if (reducedMotion) 0 else motionBudgetFor(CathedralMotionClass.REALM).targetDurationMs
 
     BoxWithConstraints(
         modifier = Modifier

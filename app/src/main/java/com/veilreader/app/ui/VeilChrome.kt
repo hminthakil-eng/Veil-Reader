@@ -58,7 +58,7 @@ import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
-import com.veilreader.app.ui.theme.VeilMotionClass
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -282,11 +282,11 @@ fun VeilAnimatedTabHost(
     val reducedMotion = LocalVeilReducedMotion.current
     val layoutDirection = LocalLayoutDirection.current
     val spatialDuration = effectiveMotionDurationMs(
-        VeilMotionClass.SPATIAL,
+        CathedralMotionClass.SPATIAL,
         reducedMotion
     )
     val microDuration = effectiveMotionDurationMs(
-        VeilMotionClass.MICRO,
+        CathedralMotionClass.MICRO,
         reducedMotion
     )
 

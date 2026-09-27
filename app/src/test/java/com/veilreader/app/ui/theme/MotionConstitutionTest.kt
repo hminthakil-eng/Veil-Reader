@@ -8,14 +8,14 @@ import org.junit.Test
 class MotionConstitutionTest {
     @Test
     fun `motion classes stay inside Cathedral target ranges`() {
-        assertEquals(110, motionBudgetFor(VeilMotionClass.MICRO).targetDurationMs)
-        assertEquals(210, motionBudgetFor(VeilMotionClass.MATERIAL).targetDurationMs)
-        assertEquals(360, motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs)
-        assertEquals(520, motionBudgetFor(VeilMotionClass.REALM).targetDurationMs)
-        assertEquals(1080, motionBudgetFor(VeilMotionClass.CEREMONIAL).targetDurationMs)
-        assertEquals(16_000, motionBudgetFor(VeilMotionClass.AMBIENT).targetDurationMs)
+        assertEquals(110, motionBudgetFor(CathedralMotionClass.MICRO).targetDurationMs)
+        assertEquals(210, motionBudgetFor(CathedralMotionClass.MATERIAL).targetDurationMs)
+        assertEquals(360, motionBudgetFor(CathedralMotionClass.SPATIAL).targetDurationMs)
+        assertEquals(520, motionBudgetFor(CathedralMotionClass.REALM).targetDurationMs)
+        assertEquals(1080, motionBudgetFor(CathedralMotionClass.CEREMONIAL).targetDurationMs)
+        assertEquals(16_000, motionBudgetFor(CathedralMotionClass.AMBIENT).targetDurationMs)
 
-        VeilMotionClass.entries.forEach { motionClass ->
+        CathedralMotionClass.entries.forEach { motionClass ->
             val budget = motionBudgetFor(motionClass)
             assertTrue(budget.targetDurationMs in budget.minDurationMs..budget.maxDurationMs)
         }
@@ -24,22 +24,22 @@ class MotionConstitutionTest {
     @Test
     fun `gesture-like classes remain interruptible`() {
         listOf(
-            VeilMotionClass.MICRO,
-            VeilMotionClass.MATERIAL,
-            VeilMotionClass.SPATIAL,
-            VeilMotionClass.REALM,
-            VeilMotionClass.AMBIENT
+            CathedralMotionClass.MICRO,
+            CathedralMotionClass.MATERIAL,
+            CathedralMotionClass.SPATIAL,
+            CathedralMotionClass.REALM,
+            CathedralMotionClass.AMBIENT
         ).forEach { motionClass ->
             assertTrue(motionBudgetFor(motionClass).interruptible)
         }
-        assertFalse(motionBudgetFor(VeilMotionClass.CEREMONIAL).interruptible)
+        assertFalse(motionBudgetFor(CathedralMotionClass.CEREMONIAL).interruptible)
     }
 
     @Test
     fun `reduced motion removes ambient loops and shortens all active choreography`() {
-        assertEquals(0, effectiveMotionDurationMs(VeilMotionClass.AMBIENT, reducedMotion = true))
-        VeilMotionClass.entries
-            .filter { it != VeilMotionClass.AMBIENT }
+        assertEquals(0, effectiveMotionDurationMs(CathedralMotionClass.AMBIENT, reducedMotion = true))
+        CathedralMotionClass.entries
+            .filter { it != CathedralMotionClass.AMBIENT }
             .forEach { motionClass ->
                 assertTrue(
                     effectiveMotionDurationMs(motionClass, reducedMotion = true) <
@@ -50,7 +50,7 @@ class MotionConstitutionTest {
 
     @Test
     fun `animation can never become state ownership`() {
-        VeilMotionClass.entries.forEach { motionClass ->
+        CathedralMotionClass.entries.forEach { motionClass ->
             assertFalse(motionMayCarryState(motionClass))
         }
     }

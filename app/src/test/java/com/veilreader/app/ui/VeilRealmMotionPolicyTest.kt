@@ -1,6 +1,6 @@
 package com.veilreader.app.ui
 
-import com.veilreader.app.ui.theme.VeilMotionClass
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.effectiveMotionDurationMs
 import com.veilreader.app.ui.theme.motionBudgetFor
 import org.junit.Assert.assertEquals
@@ -36,15 +36,15 @@ class VeilRealmMotionPolicyTest {
         val policy = veilRealmMotionPolicy(reducedMotion = false)
 
         assertEquals(
-            motionBudgetFor(VeilMotionClass.REALM).targetDurationMs,
+            motionBudgetFor(CathedralMotionClass.REALM).targetDurationMs,
             policy.enterDurationMs
         )
         assertEquals(
-            motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs,
+            motionBudgetFor(CathedralMotionClass.SPATIAL).targetDurationMs,
             policy.exitDurationMs
         )
         assertEquals(
-            motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs,
+            motionBudgetFor(CathedralMotionClass.SPATIAL).targetDurationMs,
             policy.sharedBoundsDurationMs
         )
         assertTrue(policy.predictiveScaleAtCommit < 1f)
@@ -61,7 +61,7 @@ class VeilRealmMotionPolicyTest {
         assertEquals(1f, policy.predictiveAlphaAtCommit)
         assertEquals(0f, policy.predictiveTranslationFractionAtCommit)
         assertEquals(
-            effectiveMotionDurationMs(VeilMotionClass.REALM, true),
+            effectiveMotionDurationMs(CathedralMotionClass.REALM, true),
             policy.enterDurationMs
         )
     }

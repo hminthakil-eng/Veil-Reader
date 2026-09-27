@@ -42,7 +42,7 @@ import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
 import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
-import com.veilreader.app.ui.theme.VeilMotionClass
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -408,7 +408,7 @@ private fun LivingMirrorSurface(
             val targetScale = if (matched && query.isNotBlank()) 1.07f else 1f
             val alpha by animateFloatAsState(
                 targetValue = targetAlpha,
-                animationSpec = if (reducedMotion) snap() else tween(motionBudgetFor(VeilMotionClass.MATERIAL).targetDurationMs),
+                animationSpec = if (reducedMotion) snap() else tween(motionBudgetFor(CathedralMotionClass.MATERIAL).targetDurationMs),
                 label = "mirror-node-alpha"
             )
             val scale by animateFloatAsState(
@@ -416,7 +416,7 @@ private fun LivingMirrorSurface(
                 animationSpec = if (reducedMotion) {
                     snap()
                 } else {
-                    tween(motionBudgetFor(VeilMotionClass.MATERIAL).targetDurationMs)
+                    tween(motionBudgetFor(CathedralMotionClass.MATERIAL).targetDurationMs)
                 },
                 label = "mirror-node-scale"
             )

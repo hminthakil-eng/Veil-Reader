@@ -282,7 +282,7 @@ fun motionPolicyFor(
     }
 }
 
-enum class VeilMotionClass {
+enum class CathedralMotionClass {
     MICRO,
     MATERIAL,
     SPATIAL,
@@ -299,44 +299,44 @@ data class VeilMotionBudget(
     val reducedMotionDurationMs: Int
 )
 
-fun motionBudgetFor(motionClass: VeilMotionClass): VeilMotionBudget =
+fun motionBudgetFor(motionClass: CathedralMotionClass): VeilMotionBudget =
     when (motionClass) {
-        VeilMotionClass.MICRO -> VeilMotionBudget(
+        CathedralMotionClass.MICRO -> VeilMotionBudget(
             minDurationMs = 80,
             targetDurationMs = 110,
             maxDurationMs = 140,
             interruptible = true,
             reducedMotionDurationMs = 70
         )
-        VeilMotionClass.MATERIAL -> VeilMotionBudget(
+        CathedralMotionClass.MATERIAL -> VeilMotionBudget(
             minDurationMs = 160,
             targetDurationMs = 210,
             maxDurationMs = 260,
             interruptible = true,
             reducedMotionDurationMs = 100
         )
-        VeilMotionClass.SPATIAL -> VeilMotionBudget(
+        CathedralMotionClass.SPATIAL -> VeilMotionBudget(
             minDurationMs = 280,
             targetDurationMs = 360,
             maxDurationMs = 450,
             interruptible = true,
             reducedMotionDurationMs = 120
         )
-        VeilMotionClass.REALM -> VeilMotionBudget(
+        CathedralMotionClass.REALM -> VeilMotionBudget(
             minDurationMs = 400,
             targetDurationMs = 520,
             maxDurationMs = 650,
             interruptible = true,
             reducedMotionDurationMs = 140
         )
-        VeilMotionClass.CEREMONIAL -> VeilMotionBudget(
+        CathedralMotionClass.CEREMONIAL -> VeilMotionBudget(
             minDurationMs = 850,
             targetDurationMs = 1080,
             maxDurationMs = 1400,
             interruptible = false,
             reducedMotionDurationMs = 180
         )
-        VeilMotionClass.AMBIENT -> VeilMotionBudget(
+        CathedralMotionClass.AMBIENT -> VeilMotionBudget(
             minDurationMs = 8_000,
             targetDurationMs = 16_000,
             maxDurationMs = 30_000,
@@ -346,7 +346,7 @@ fun motionBudgetFor(motionClass: VeilMotionClass): VeilMotionBudget =
     }
 
 fun effectiveMotionDurationMs(
-    motionClass: VeilMotionClass,
+    motionClass: CathedralMotionClass,
     reducedMotion: Boolean
 ): Int {
     val budget = motionBudgetFor(motionClass)
@@ -360,7 +360,7 @@ fun effectiveMotionDurationMs(
  * - ambient motion disappears entirely under Reduced Motion,
  * - information/state never depends on animation completion.
  */
-fun motionMayCarryState(motionClass: VeilMotionClass): Boolean = false
+fun motionMayCarryState(motionClass: CathedralMotionClass): Boolean = false
 
 enum class VeilHapticLevel {
     NONE,

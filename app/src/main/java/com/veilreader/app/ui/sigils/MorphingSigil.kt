@@ -25,7 +25,7 @@ import androidx.graphics.shapes.RoundedPolygon
 import androidx.graphics.shapes.star
 import androidx.graphics.shapes.toPath
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
-import com.veilreader.app.ui.theme.VeilMotionClass
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.effectiveMotionDurationMs
 import com.veilreader.app.ui.theme.motionBudgetFor
@@ -114,7 +114,7 @@ fun MorphingPathSigil(
             modifier = modifier,
             animationSpec = tween(
                 effectiveMotionDurationMs(
-                    VeilMotionClass.CEREMONIAL,
+                    CathedralMotionClass.CEREMONIAL,
                     reducedMotion = true
                 )
             ),
@@ -133,7 +133,7 @@ fun MorphingPathSigil(
         targetValue = if (transformed) 1f else 0f,
         animationSpec = tween(
             durationMillis = motionBudgetFor(
-                VeilMotionClass.CEREMONIAL
+                CathedralMotionClass.CEREMONIAL
             ).targetDurationMs
         ),
         label = "path-sigil-morph"

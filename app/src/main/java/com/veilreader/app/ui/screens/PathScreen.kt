@@ -57,8 +57,11 @@ import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.hallSharedBoundsKey
 import com.veilreader.app.ui.veilTabSharedBounds
+import com.veilreader.app.ui.sigils.MorphingPathSigil
+import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.effectiveMotionDurationMs
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -1015,7 +1018,12 @@ private fun AdvancementCeremonyDialog(
     val visibleStage = if (stage == AdvancementCeremonyStage.REVEALED) observedResult else stage
     LaunchedEffect(stage, currentPathId, currentRankIndex, reducedMotion) {
         if (stage == AdvancementCeremonyStage.SEALING) {
-            delay(if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS.toLong() else 620L)
+            delay(
+                effectiveMotionDurationMs(
+                    CathedralMotionClass.CEREMONIAL,
+                    reducedMotion = reducedMotion
+                ).toLong()
+            )
             stage = observedResult
         }
     }
@@ -1100,10 +1108,13 @@ private fun AdvancementCeremonyDialog(
                         color = VeilPalette.Brass
                     )
 
-                    PathSigil(
+                    MorphingPathSigil(
                         pathId = profile.path.id,
-                        modifier = Modifier.size(148.dp),
-                        active = true
+                        fromRankIndex = profile.rankIndex,
+                        toRankIndex = profile.rankIndex + 1,
+                        transformed = visibleStage == AdvancementCeremonyStage.SEALING ||
+                            visibleStage == AdvancementCeremonyStage.REVEALED,
+                        modifier = Modifier.size(148.dp)
                     )
 
                     Text(
