@@ -63,6 +63,7 @@ import com.veilreader.app.ui.screens.TreasuryScreen
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.sensory.VeilSensoryFeedback
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
@@ -768,46 +769,58 @@ private fun VeilMessageDialog(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .widthIn(max = 520.dp),
-                shape = MaterialTheme.shapes.medium,
+                    .widthIn(max = 540.dp),
+                shape = MaterialTheme.shapes.extraSmall,
                 color = VeilPalette.Archive,
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
                 tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+                shadowElevation = 12.dp
             ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        eyebrow,
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = VeilPalette.Moon
-                    )
-                    Surface(
+                Box {
+                    VeilRealmEmblem(
+                        realm = VeilRealm.ARCHIVE,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .height(1.dp),
-                        color = VeilPalette.Brass.copy(alpha = 0.24f)
-                    ) {}
-                    Text(
-                        message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            .align(Alignment.TopEnd)
+                            .padding(top = 12.dp, end = 16.dp)
+                            .size(112.dp),
+                        tint = VeilPalette.Brass.copy(alpha = 0.12f)
                     )
-                    Button(
-                        onClick = onDismiss,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 50.dp),
-                        shape = MaterialTheme.shapes.extraSmall
+                    Column(
+                        modifier = Modifier.padding(horizontal = 22.dp, vertical = 20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Text(actionLabel)
+                        Text(
+                            eyebrow,
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                            color = VeilPalette.Brass
+                        )
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = VeilPalette.Moon,
+                            modifier = Modifier.widthIn(max = 390.dp)
+                        )
+                        Surface(
+                            modifier = Modifier
+                                .width(124.dp)
+                                .height(1.dp),
+                            color = VeilPalette.Brass.copy(alpha = 0.42f)
+                        ) {}
+                        Text(
+                            message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.widthIn(max = 430.dp)
+                        )
+                        Button(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 52.dp),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(actionLabel)
+                        }
                     }
                 }
             }
