@@ -92,6 +92,84 @@ class LivingMirrorTest {
     }
 
     @Test
+    fun `future notes are rejected instead of becoming artificially fresh`() {
+        val book = Book(id = "b1", title = "Book", author = "Author")
+        val notes = deriveLivingMirrorNotes(
+            books = listOf(book),
+            highlights = listOf(
+                Highlight(
+                    id = "future",
+                    bookId = "b1",
+                    quote = "q",
+                    locatorJson = "l",
+                    note = "future note",
+                    createdAtEpochMs = now + 60_000L
+                ),
+                Highlight(
+                    id = "valid",
+                    bookId = "b1",
+                    quote = "q",
+                    locatorJson = "l",
+                    note = "valid note",
+                    createdAtEpochMs = now - 60_000L
+                )
+            ),
+            passageVisits = emptyList(),
+            readingCycles = emptyList(),
+            nowEpochMs = now
+        )
+
+        assertEquals(listOf("valid"), notes.map { it.highlightId })
+    }
+
+    @Test
+    fun `future reading cycles cannot add reread rings`() {
+        val book = Book(id = "b1", title = "Book", author = "Author")
+        val highlight = Highlight(
+            id = "h1",
+            bookId = "b1",
+            quote = "q",
+            locatorJson = "l",
+            note = "note",
+            createdAtEpochMs = now - 60_000L
+        )
+        val valid = ReadingCycleRecord(
+            id = "valid-cycle",
+            bookId = "b1",
+            cycleIndex = 1,
+            titleSnapshot = "Book",
+            authorSnapshot = "Author",
+            startedAtEpochMs = now - 10_000L,
+            completedAtEpochMs = now - 5_000L,
+            finalLocatorJson = "l",
+            sessionCount = 1,
+            totalActiveMillis = 1_000L,
+            pacedPageTurns = 1,
+            highlightCount = 1,
+            noteCount = 1,
+            bookmarkCount = 0,
+            sealCode = "seal",
+            timeline = emptyList()
+        )
+        val future = valid.copy(
+            id = "future-cycle",
+            cycleIndex = 4,
+            completedAtEpochMs = now + 60_000L
+        )
+
+        val note = deriveLivingMirrorNotes(
+            books = listOf(book),
+            highlights = listOf(highlight),
+            passageVisits = emptyList(),
+            readingCycles = listOf(valid, future),
+            nowEpochMs = now
+        ).single()
+
+        assertEquals(1, note.cycleIndex)
+        assertEquals(1, note.ringCount)
+    }
+
+    @Test
     fun `mirror positions remain inside the usable surface`() {
         val books = (1..30).map { Book(id = "b$it", title = "B$it", author = "A") }
         val highlights = books.mapIndexed { index, book ->
