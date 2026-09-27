@@ -854,7 +854,7 @@ private fun FloorInscription(
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
             } else {
-                VeilPalette.Mist.copy(alpha = 0.50f)
+                VeilPalette.Mist.copy(alpha = 0.68f)
             }
         )
         Text(
@@ -863,7 +863,7 @@ private fun FloorInscription(
             color = if (unlocked) {
                 VeilPalette.Moon.copy(alpha = 0.62f)
             } else {
-                VeilPalette.Mist.copy(alpha = 0.42f)
+                VeilPalette.Mist.copy(alpha = 0.50f)
             }
         )
     }
@@ -987,7 +987,7 @@ private fun CastleChamberNode(
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            color = if (unlocked) VeilPalette.Mist else VeilPalette.Mist.copy(alpha = 0.46f)
+            color = if (unlocked) VeilPalette.Mist else VeilPalette.Mist.copy(alpha = 0.56f)
         )
 
         Spacer(Modifier.height(5.dp))
@@ -995,7 +995,7 @@ private fun CastleChamberNode(
         Text(
             if (unlocked) "ENTER" else "SEALED",
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-            color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.44f)
+            color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.54f)
         )
     }
 }
