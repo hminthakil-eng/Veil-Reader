@@ -2418,7 +2418,7 @@ private fun BookLibraryTile(
             IconButton(
                 onClick = onFavorite,
                 modifier = Modifier
-                    .size(30.dp)
+                    .size(48.dp)
                     .semantics {
                         contentDescription = if (book.favorite) {
                             "Remove ${book.title} from favorites"
@@ -2433,7 +2433,7 @@ private fun BookLibraryTile(
             IconButton(
                 onClick = onDetails,
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(48.dp)
                     .semantics {
                         contentDescription = "Book details for ${book.title}"
                     }
@@ -2583,7 +2583,7 @@ private fun BookLibraryRow(
             IconButton(
                 onClick = onFavorite,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .semantics {
                         contentDescription = if (book.favorite) {
                             "Remove ${book.title} from favorites"
@@ -2598,7 +2598,7 @@ private fun BookLibraryRow(
             IconButton(
                 onClick = onDetails,
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .semantics {
                         contentDescription = "Archive record for ${book.title}"
                     }
@@ -2818,7 +2818,7 @@ private fun LibraryShelvesView(
                             )
                             TextButton(
                                 onClick = { onDetails(book) },
-                                modifier = Modifier.heightIn(min = 44.dp),
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 contentPadding = PaddingValues(horizontal = 0.dp)
                             ) {
                                 Text("Archive record")
@@ -2846,7 +2846,7 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
             TextButton(
                 onClick = { onChange(candidate) },
                 modifier = Modifier
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
                     .semantics {
                         contentDescription = "$label view"
                         selected = active
