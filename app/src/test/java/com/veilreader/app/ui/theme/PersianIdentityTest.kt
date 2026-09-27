@@ -36,9 +36,9 @@ class PersianIdentityTest {
     @Test
     fun `bidi isolate wraps mixed metadata without changing the value`() {
         val isolated = bidiIsolate("The Castle 12")
-        assertTrue(isolated.startsWith("⁨"))
-        assertTrue(isolated.endsWith("⁩"))
-        assertTrue(isolated.contains("The Castle 12"))
+        assertEquals(0x2068, isolated.first().code)
+        assertEquals(0x2069, isolated.last().code)
+        assertEquals("The Castle 12", isolated.substring(1, isolated.lastIndex))
         assertEquals("", bidiIsolate(""))
     }
 
