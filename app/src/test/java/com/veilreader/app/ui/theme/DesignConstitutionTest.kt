@@ -46,6 +46,26 @@ class DesignConstitutionTest {
     }
 
     @Test
+    fun `threshold grows with window class without becoming a dashboard`() {
+        val compact = thresholdLayoutPolicyFor(VeilAdaptiveClass.COMPACT)
+        val wide = thresholdLayoutPolicyFor(VeilAdaptiveClass.WIDE)
+        val large = thresholdLayoutPolicyFor(VeilAdaptiveClass.LARGE)
+
+        assertTrue(compact.heroCoverWidthDp < wide.heroCoverWidthDp)
+        assertTrue(wide.heroCoverWidthDp < large.heroCoverWidthDp)
+        assertTrue(compact.horizontalPaddingDp < large.horizontalPaddingDp)
+        assertTrue(compact.contentMaxWidthDp <= large.contentMaxWidthDp)
+    }
+
+    @Test
+    fun `threshold atmosphere wakes with first volume and saturates`() {
+        assertTrue(thresholdAtmosphereIntensityFor(0) < thresholdAtmosphereIntensityFor(1))
+        assertTrue(thresholdAtmosphereIntensityFor(1) < thresholdAtmosphereIntensityFor(12))
+        assertEquals(1f, thresholdAtmosphereIntensityFor(100))
+        assertEquals(thresholdAtmosphereIntensityFor(0), thresholdAtmosphereIntensityFor(-4))
+    }
+
+    @Test
     fun `reduced motion removes translation and ambient loops`() {
         VeilMotionClass.entries.forEach { motionClass ->
             val policy = motionPolicyFor(motionClass, reducedMotion = true)
