@@ -1,6 +1,22 @@
-name: Self-hosted Android Verification
+name: ALPHA W0 — Self-hosted Android Verification
 
 on:
+  push:
+    branches:
+      - "alpha/cathedral-convergence-w0"
+    paths:
+      - "app/**"
+      - "benchmark/**"
+      - "performance/**"
+      - "tools/**"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - "gradle.properties"
+      - "gradle/**"
+      - "gradlew"
+      - "gradlew.bat"
+      - "buildSrc/**"
+      - ".github/workflows/self-hosted-android.yml"
   workflow_dispatch:
     inputs:
       ref:
@@ -11,15 +27,20 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: alpha-w0-self-hosted-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   windows-verify:
+    name: ALPHA W0 — Windows build + test + lint
     runs-on: [self-hosted, Windows, X64, veil-reader]
     timeout-minutes: 45
     steps:
-      - name: Checkout requested ref
+      - name: Checkout exact verification ref
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.ref }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.ref || github.sha }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -41,12 +62,13 @@ jobs:
         shell: powershell
         run: '& "$env:ProgramFiles\Git\bin\bash.exe" tools/test-policy.sh'
 
-      - name: Performance budget parser checks
+      - name: Performance and build-identity parser checks
         shell: powershell
         run: |
           python tools/test_performance_budget.py
           python tools/test_performance_delta.py
           python tools/test_performance_dashboard.py
+          python tools/test_build_identity.py
 
       - name: Set up Gradle 9.6
         uses: gradle/actions/setup-gradle@v6.3.0
@@ -65,10 +87,40 @@ jobs:
         shell: powershell
         run: gradle :app:lintDebug --stacktrace
 
+      - name: Prepare APK source identity
+        shell: powershell
+        run: python tools/build_identity.py prepare
+
       - name: Build debug APK
         shell: powershell
         run: gradle :app:assembleDebug --stacktrace
 
+      - name: Verify and label APK
+        shell: powershell
+        run: python tools/build_identity.py verify
+
       - name: Compile performance harness
         shell: powershell
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
+
+      - name: Upload commit-traceable APK and evidence
+        uses: actions/upload-artifact@v7
+        with:
+          name: alpha-w0-debug-apk-${{ github.run_id }}
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            build-evidence/**
+          if-no-files-found: error
+          retention-days: 3
+
+      - name: Upload verification reports on failure
+        if: failure()
+        continue-on-error: true
+        uses: actions/upload-artifact@v7
+        with:
+          name: alpha-w0-verification-${{ github.run_id }}
+          path: |
+            app/build/reports/**
+            app/build/test-results/**
+          if-no-files-found: ignore
+          retention-days: 3
