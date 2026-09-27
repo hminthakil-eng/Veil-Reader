@@ -334,7 +334,7 @@ private fun extractBookAura(bitmap: android.graphics.Bitmap): Color {
     )
 }
 
-private fun fallbackBookAura(title: String): Color {
+internal fun fallbackBookAura(title: String): Color {
     val palette = listOf(
         Color(0xFF6F8FA3),
         Color(0xFF9B6D67),
@@ -445,8 +445,7 @@ fun BookCover(
     )
 
     val aura = cachedCover?.aura
-        ?: artifact?.let(::fallbackBookAura)
-        ?: VeilPalette.Brass
+        ?: fallbackBookAura(title)
     val auraStrength = when {
         artifact?.recentlyOpened == true -> 0.40f
         artifact?.favorite == true -> 0.30f
@@ -498,7 +497,7 @@ fun BookCover(
         )
 
         artifact?.let {
-            BookArtifactOverlay(
+            BookArtifactLayer(
                 state = it,
                 aura = aura,
                 modifier = Modifier.matchParentSize()
