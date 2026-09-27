@@ -644,18 +644,34 @@ private fun NotebookHighlightCard(
     recordNumber: Int,
     echoMode: Boolean = false
 ) {
+    val material = archiveMemoryMaterialFor(memory, echoMode)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.58f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.78f)),
+        color = VeilPalette.Archive.copy(
+            alpha = (0.54f + material.patina * 0.10f).coerceIn(0.54f, 0.66f)
+        ),
+        border = BorderStroke(
+            1.dp,
+            if (echoMode) {
+                VeilPalette.Brass.copy(alpha = 0.42f + material.edgeGlow * 0.42f)
+            } else {
+                VeilPalette.BorderDark.copy(alpha = 0.74f + material.patina * 0.12f)
+            }
+        ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-        ) {
+        Box {
+            ArchiveMemoryField(
+                memory = memory,
+                echoMode = echoMode,
+                modifier = Modifier.matchParentSize()
+            )
+            Column(
+                modifier = Modifier.padding(VeilSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
@@ -665,7 +681,11 @@ private fun NotebookHighlightCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "FOLIO ${recordNumber.toString().padStart(3, '0')}",
+                        if (echoMode) {
+                            "RESURFACED RELIC · ${recordNumber.toString().padStart(3, '0')}"
+                        } else {
+                            "FOLIO ${recordNumber.toString().padStart(3, '0')}"
+                        },
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -687,9 +707,13 @@ private fun NotebookHighlightCard(
                     }
                 }
                 Text(
-                    if (echoMode) "ECHO"
-                    else if (highlight.note.isNotBlank()) "ANNOTATED"
-                    else "PASSAGE",
+                    if (echoMode) {
+                        memory.echoDepth.name.replace('_', ' ')
+                    } else if (highlight.note.isNotBlank()) {
+                        "ANNOTATED"
+                    } else {
+                        "PASSAGE"
+                    },
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
                     color = if (echoMode) VeilPalette.Brass
                     else VeilPalette.Mist.copy(alpha = 0.64f)
@@ -776,6 +800,7 @@ private fun NotebookHighlightCard(
                         color = MaterialTheme.colorScheme.error
                     )
                 }
+            }
             }
         }
     }
