@@ -176,6 +176,7 @@ private val VeilShapes = Shapes(
 )
 
 val LocalVeilReducedMotion = staticCompositionLocalOf { false }
+val LocalVeilLanguage = staticCompositionLocalOf { "en" }
 
 @Composable
 fun VeilTheme(
@@ -202,6 +203,7 @@ fun VeilTheme(
         CompositionLocalProvider(
             LocalContentColor provides colors.onBackground,
             LocalVeilScriptGroup provides scriptGroup,
+            LocalVeilLanguage provides language,
             LocalVeilReducedMotion provides reducedMotion
         ) {
             content()
