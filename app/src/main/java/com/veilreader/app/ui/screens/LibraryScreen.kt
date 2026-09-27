@@ -89,13 +89,13 @@ internal fun libraryViewModeFromStored(value: String): LibraryViewMode =
             .getOrDefault(LibraryViewMode.GALLERY)
     }
 
-private data class LibraryShelfGroup(
+internal data class LibraryShelfGroup(
     val eyebrow: String,
     val title: String,
     val books: List<Book>
 )
 
-private fun deriveLibraryShelfGroups(
+internal fun deriveLibraryShelfGroups(
     books: List<Book>,
     filtered: List<Book>,
     filterActive: Boolean
