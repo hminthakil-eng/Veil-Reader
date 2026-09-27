@@ -1,11 +1,11 @@
 workflows:
-  WORKMODE-BUILD:
-    name: WORK MODE — BUILD APK
+  UIUX-CANONICAL-DEBUG-APK:
+    name: 01 — UIUX CANONICAL — DEBUG APK + TEST + LINT
     instance_type: mac_mini_m2
     max_build_duration: 45
 
-    # Manual-first on purpose: preserves the 500 free M2 minutes for useful runs.
-    # Start this workflow from Codemagic and choose the branch you want to verify.
+    # PRIMARY UI/UX CANONICAL BUILD.
+    # In Codemagic choose branch: CANONICAL-UIUX-PERFECTION.
     environment:
       java: 17
 
@@ -88,12 +88,12 @@ workflows:
       - app/build/reports/**
       - app/build/test-results/**
 
-  WORKMODE-FULL-VERIFY:
-    name: WORK MODE — FULL VERIFY
+  UIUX-CANONICAL-FULL-VERIFY:
+    name: 02 — UIUX CANONICAL — FULL VERIFY + TEST APK + BENCHMARK
     instance_type: mac_mini_m2
     max_build_duration: 60
 
-    # Manual-only heavy lane: use after Fast Verify is green.
+    # HEAVY UI/UX CANONICAL VERIFY. Run only after workflow 01 is green.
     environment:
       java: 17
 
