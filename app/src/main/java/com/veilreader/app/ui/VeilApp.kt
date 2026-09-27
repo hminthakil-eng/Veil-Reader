@@ -185,11 +185,17 @@ fun VeilApp(
     } else {
         null
     }
+    val discoveriesState = if (openedPublication == null) {
+        game.discoveries.collectAsStateWithLifecycle()
+    } else {
+        null
+    }
     val profile = profileState?.value
     val quests = questsState?.value.orEmpty()
     val dailyGoalMinutes = dailyGoalState?.value
     val equippedSigil = equippedSigilState?.value
     val castleTitle = castleTitleState?.value
+    val discoveries = discoveriesState?.value.orEmpty()
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -533,6 +539,7 @@ fun VeilApp(
                 books = books,
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
+                discoveries = discoveries,
                 onSetDailyGoal = game::setDailyGoal,
                 onOpenArchive = routeViewModel::openArchive,
                 onOpenSettings = routeViewModel::openSettings
@@ -640,6 +647,7 @@ fun VeilApp(
             profile = requireNotNull(profile),
             castleTitle = requireNotNull(castleTitle),
             availableTitles = game.availableCastleTitles(),
+            discoveries = discoveries,
             onSelectTitle = { title ->
                 if (!game.selectCastleTitle(title)) {
                     errorMessage = "That Castle title is still sealed."
