@@ -80,8 +80,10 @@ fun deriveLibraryWings(
         val favorites = uniqueMembers.count { it.favorite }
         val count = uniqueMembers.size.coerceAtLeast(1)
 
-        val activity = uniqueMembers.maxOfOrNull {
-            maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
+        val activity = uniqueMembers.maxOfOrNull { book ->
+            book.lastOpenedAtEpochMs
+                .takeIf { it > 0L }
+                ?: book.addedAtEpochMs
         } ?: 0L
 
         val volumeFactor = (count / 12f).coerceIn(0f, 1f)
