@@ -1957,16 +1957,12 @@ private fun ReaderMotionSelector(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Text(
-                        when (mode) {
-                            ReaderNavigationMode.PAPER_CURL -> "⌁"
-                            ReaderNavigationMode.SLIDE -> "↔"
-                            ReaderNavigationMode.PAGED -> "□"
-                            ReaderNavigationMode.SCROLL -> "↕"
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (active) VeilPalette.Brass
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    ReaderMotionPreview(
+                        mode = mode,
+                        active = active,
+                        modifier = Modifier
+                            .width(44.dp)
+                            .height(28.dp)
                     )
                     Text(
                         label,
@@ -1975,6 +1971,147 @@ private fun ReaderMotionSelector(
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReaderMotionPreview(
+    mode: ReaderNavigationMode,
+    active: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val lineColor = if (active) {
+        VeilPalette.Brass
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+    }
+    val faint = lineColor.copy(alpha = 0.38f)
+
+    Canvas(modifier) {
+        val stroke = 1.15.dp.toPx()
+        val radius = 1.5.dp.toPx()
+        val inset = 1.5.dp.toPx()
+        val pageTop = size.height * 0.08f
+        val pageHeight = size.height * 0.84f
+
+        when (mode) {
+            ReaderNavigationMode.PAPER_CURL -> {
+                drawRoundRect(
+                    color = faint,
+                    topLeft = Offset(inset, pageTop),
+                    size = Size(size.width - inset * 2f, pageHeight),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(stroke)
+                )
+                val fold = Path().apply {
+                    moveTo(size.width * 0.67f, pageTop)
+                    quadraticTo(
+                        size.width * 0.58f,
+                        size.height * 0.50f,
+                        size.width * 0.78f,
+                        size.height * 0.92f
+                    )
+                }
+                drawPath(
+                    path = fold,
+                    color = lineColor,
+                    style = Stroke(stroke, cap = StrokeCap.Round)
+                )
+                drawLine(
+                    color = lineColor.copy(alpha = 0.54f),
+                    start = Offset(size.width * 0.67f, pageTop),
+                    end = Offset(size.width * 0.92f, size.height * 0.25f),
+                    strokeWidth = stroke
+                )
+            }
+
+            ReaderNavigationMode.SLIDE -> {
+                val pageWidth = size.width * 0.46f
+                drawRoundRect(
+                    color = faint,
+                    topLeft = Offset(-pageWidth * 0.28f, pageTop),
+                    size = Size(pageWidth, pageHeight),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(stroke)
+                )
+                drawRoundRect(
+                    color = lineColor,
+                    topLeft = Offset(size.width * 0.42f, pageTop),
+                    size = Size(pageWidth, pageHeight),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(stroke)
+                )
+                drawLine(
+                    color = lineColor.copy(alpha = 0.55f),
+                    start = Offset(size.width * 0.35f, size.height * 0.50f),
+                    end = Offset(size.width * 0.55f, size.height * 0.50f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round
+                )
+            }
+
+            ReaderNavigationMode.PAGED -> {
+                drawRoundRect(
+                    color = lineColor,
+                    topLeft = Offset(size.width * 0.18f, pageTop),
+                    size = Size(size.width * 0.64f, pageHeight),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(stroke)
+                )
+                repeat(3) { index ->
+                    val y = size.height * (0.34f + index * 0.15f)
+                    drawLine(
+                        color = faint,
+                        start = Offset(size.width * 0.31f, y),
+                        end = Offset(size.width * 0.69f, y),
+                        strokeWidth = stroke * 0.75f,
+                        cap = StrokeCap.Round
+                    )
+                }
+            }
+
+            ReaderNavigationMode.SCROLL -> {
+                drawRoundRect(
+                    color = faint,
+                    topLeft = Offset(size.width * 0.20f, pageTop),
+                    size = Size(size.width * 0.60f, pageHeight),
+                    cornerRadius = CornerRadius(radius, radius),
+                    style = Stroke(stroke)
+                )
+                repeat(4) { index ->
+                    val y = size.height * (0.24f + index * 0.16f)
+                    val shift = if (index % 2 == 0) 0f else size.width * 0.06f
+                    drawLine(
+                        color = if (index == 2) lineColor else faint,
+                        start = Offset(size.width * 0.30f + shift, y),
+                        end = Offset(size.width * 0.70f, y),
+                        strokeWidth = stroke * 0.8f,
+                        cap = StrokeCap.Round
+                    )
+                }
+                drawLine(
+                    color = lineColor,
+                    start = Offset(size.width * 0.82f, size.height * 0.30f),
+                    end = Offset(size.width * 0.82f, size.height * 0.70f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = lineColor,
+                    start = Offset(size.width * 0.76f, size.height * 0.64f),
+                    end = Offset(size.width * 0.82f, size.height * 0.70f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round
+                )
+                drawLine(
+                    color = lineColor,
+                    start = Offset(size.width * 0.88f, size.height * 0.64f),
+                    end = Offset(size.width * 0.82f, size.height * 0.70f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round
+                )
             }
         }
     }
