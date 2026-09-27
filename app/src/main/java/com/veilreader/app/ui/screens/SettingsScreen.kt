@@ -122,22 +122,21 @@ fun SettingsScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = 0.18f,
+            alpha = 0.34f,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(300.dp)
+                .height(460.dp)
         )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(330.dp)
+                .height(500.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.Ink.copy(alpha = 0.16f),
-                            VeilPalette.Ink.copy(alpha = 0.62f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.08f),
+                        0.42f to Color.Transparent,
+                        0.78f to VeilPalette.Ink.copy(alpha = 0.72f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -151,32 +150,7 @@ fun SettingsScreen(
                 .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
         ) {
-        TextButton(
-            onClick = onClose,
-            modifier = Modifier.heightIn(min = 48.dp)
-        ) {
-            Text(VeilBackLabel("Back"))
-        }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-        ) {
-            Text(
-                "GRAYFOG SETTINGS",
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass
-            )
-            Text(
-                "The Reading Room",
-                style = MaterialTheme.typography.headlineLarge
-            )
-            BrassRule(Modifier.width(92.dp), strong = true)
-            Text(
-                "Reading, appearance, storage, privacy, and backup controls. Everything remains local unless you export it.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
+        SettingsMasthead(onClose = onClose)
 
         SettingsSection(
             title = "Appearance",
@@ -478,6 +452,88 @@ fun SettingsScreen(
 }
 
 @Composable
+private fun SettingsMasthead(
+    onClose: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(250.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.12f),
+                        0.42f to Color.Transparent,
+                        1f to VeilPalette.Ink.copy(alpha = 0.96f)
+                    )
+                )
+        )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.82f
+        )
+
+        TextButton(
+            onClick = onClose,
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(6.dp)
+                .heightIn(min = 48.dp),
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = VeilPalette.Moon
+            )
+        ) {
+            Text(VeilBackLabel("Back"))
+        }
+
+        Text(
+            "SANCTUARY CONTROLS",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+            color = VeilPalette.Brass
+        )
+
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                "The Reading Room",
+                style = MaterialTheme.typography.displaySmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                "Reading, appearance, storage, privacy, and backup controls — local by default.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.82f),
+                modifier = Modifier.widthIn(max = 580.dp)
+            )
+            BrassRule(Modifier.width(138.dp), strong = true)
+        }
+    }
+}
+
+@Composable
 private fun SettingsSection(
     title: String,
     description: String,
@@ -486,13 +542,20 @@ private fun SettingsSection(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.34f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.58f)),
+        color = Color(0xFF0D1015).copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.22f)),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .border(
+                    width = 2.dp,
+                    color = VeilPalette.DeepBrass.copy(alpha = 0.28f),
+                    shape = MaterialTheme.shapes.extraSmall
+                )
+                .padding(horizontal = 16.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(
