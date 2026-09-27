@@ -49,6 +49,7 @@ import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 
 /**
@@ -650,6 +651,162 @@ private fun VeilBrandMark() {
             modifier = Modifier.size(34.dp),
             tint = VeilPalette.Brass
         )
+    }
+}
+
+@Composable
+fun VeilRealmEmblem(
+    realm: VeilRealm,
+    modifier: Modifier = Modifier,
+    tint: Color = VeilPalette.Brass
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val center = Offset(w / 2f, h / 2f)
+        val hairline = 0.9.dp.toPx()
+        val strong = 1.25.dp.toPx()
+        val stroke = Stroke(width = hairline, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val strongStroke = Stroke(width = strong, cap = StrokeCap.Round, join = StrokeJoin.Round)
+        val faint = tint.copy(alpha = tint.alpha * 0.34f)
+        val mid = tint.copy(alpha = tint.alpha * 0.60f)
+
+        when (realm) {
+            VeilRealm.THRESHOLD -> {
+                drawCircle(faint, size.minDimension * 0.34f, center, style = stroke)
+                drawCircle(mid, size.minDimension * 0.19f, center, style = stroke)
+                repeat(8) { index ->
+                    val angle = Math.toRadians(-90.0 + index * 45.0)
+                    val r1 = size.minDimension * 0.23f
+                    val r2 = size.minDimension * 0.39f
+                    drawLine(
+                        mid,
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * r1,
+                            center.y + kotlin.math.sin(angle).toFloat() * r1
+                        ),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * r2,
+                            center.y + kotlin.math.sin(angle).toFloat() * r2
+                        ),
+                        hairline,
+                        StrokeCap.Round
+                    )
+                }
+                drawLine(mid, Offset(center.x, h * 0.18f), Offset(center.x, h * 0.82f), hairline)
+                drawCircle(tint, 2.dp.toPx(), center)
+            }
+
+            VeilRealm.ARCHIVE -> {
+                val left = w * 0.19f
+                val right = w * 0.81f
+                drawLine(mid, Offset(left, h * 0.17f), Offset(left, h * 0.83f), strong)
+                drawLine(mid, Offset(right, h * 0.17f), Offset(right, h * 0.83f), strong)
+                repeat(5) { index ->
+                    val y = h * (0.22f + index * 0.14f)
+                    drawLine(faint, Offset(left, y), Offset(right, y), hairline)
+                }
+                repeat(3) { index ->
+                    val x = w * (0.34f + index * 0.16f)
+                    drawLine(
+                        if (index == 1) mid else faint,
+                        Offset(x, h * 0.25f),
+                        Offset(x, h * 0.78f),
+                        if (index == 1) strong else hairline
+                    )
+                }
+                drawCircle(tint, 2.dp.toPx(), Offset(center.x, h * 0.50f))
+            }
+
+            VeilRealm.CASTLE,
+            VeilRealm.WORLD -> {
+                val base = h * 0.80f
+                drawLine(mid, Offset(w * 0.16f, base), Offset(w * 0.84f, base), strong)
+                val roof = Path().apply {
+                    moveTo(w * 0.26f, h * 0.43f)
+                    lineTo(w * 0.50f, h * 0.19f)
+                    lineTo(w * 0.74f, h * 0.43f)
+                }
+                drawPath(roof, mid, style = strongStroke)
+                listOf(0.24f, 0.38f, 0.50f, 0.62f, 0.76f).forEachIndexed { index, x ->
+                    val top = if (index == 2) h * 0.35f else h * 0.46f
+                    drawLine(
+                        if (index == 2) mid else faint,
+                        Offset(w * x, top),
+                        Offset(w * x, base),
+                        if (index == 2) strong else hairline
+                    )
+                }
+                repeat(3) { index ->
+                    val y = h * (0.54f + index * 0.09f)
+                    drawLine(faint, Offset(w * 0.28f, y), Offset(w * 0.72f, y), hairline)
+                }
+            }
+
+            VeilRealm.RITUAL -> {
+                val diamond = Path().apply {
+                    moveTo(center.x, h * 0.12f)
+                    lineTo(w * 0.86f, center.y)
+                    lineTo(center.x, h * 0.88f)
+                    lineTo(w * 0.14f, center.y)
+                    close()
+                }
+                drawPath(diamond, mid, style = strongStroke)
+                drawCircle(faint, size.minDimension * 0.25f, center, style = stroke)
+                drawCircle(faint, size.minDimension * 0.11f, center, style = stroke)
+                drawLine(faint, Offset(center.x, h * 0.18f), Offset(center.x, h * 0.82f), hairline)
+                drawLine(faint, Offset(w * 0.18f, center.y), Offset(w * 0.82f, center.y), hairline)
+                drawCircle(tint, 2.4.dp.toPx(), center)
+            }
+
+            VeilRealm.SANCTUM -> {
+                repeat(3) { index ->
+                    drawCircle(
+                        if (index == 0) mid else faint,
+                        size.minDimension * (0.14f + index * 0.11f),
+                        center,
+                        style = if (index == 0) strongStroke else stroke
+                    )
+                }
+                repeat(6) { index ->
+                    val angle = Math.toRadians(-90.0 + index * 60.0)
+                    val r1 = size.minDimension * 0.18f
+                    val r2 = size.minDimension * 0.39f
+                    drawLine(
+                        faint,
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * r1,
+                            center.y + kotlin.math.sin(angle).toFloat() * r1
+                        ),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * r2,
+                            center.y + kotlin.math.sin(angle).toFloat() * r2
+                        ),
+                        hairline
+                    )
+                }
+                drawCircle(tint, 2.4.dp.toPx(), center)
+            }
+
+            VeilRealm.SANCTUARY -> {
+                val left = Path().apply {
+                    moveTo(w * 0.14f, h * 0.34f)
+                    quadraticTo(w * 0.32f, h * 0.28f, center.x, h * 0.42f)
+                    lineTo(center.x, h * 0.78f)
+                    quadraticTo(w * 0.31f, h * 0.65f, w * 0.14f, h * 0.70f)
+                    close()
+                }
+                val right = Path().apply {
+                    moveTo(w * 0.86f, h * 0.34f)
+                    quadraticTo(w * 0.68f, h * 0.28f, center.x, h * 0.42f)
+                    lineTo(center.x, h * 0.78f)
+                    quadraticTo(w * 0.69f, h * 0.65f, w * 0.86f, h * 0.70f)
+                    close()
+                }
+                drawPath(left, mid, style = strongStroke)
+                drawPath(right, mid, style = strongStroke)
+            }
+        }
     }
 }
 
