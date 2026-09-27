@@ -757,19 +757,19 @@ private fun NotebookHighlightCard(
                 if (onRead != null) {
                     TextButton(
                         onClick = onRead,
-                        modifier = Modifier.heightIn(min = 44.dp)
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) { Text("Return to passage") }
                 }
                 TextButton(
                     onClick = onEditNote,
-                    modifier = Modifier.heightIn(min = 44.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(if (highlight.note.isBlank()) "Annotate" else "Edit annotation")
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(
                     onClick = onDelete,
-                    modifier = Modifier.heightIn(min = 44.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
                         stringResource(R.string.common_delete),
@@ -881,13 +881,13 @@ private fun NotebookBookmarkCard(
                 if (onRead != null) {
                     TextButton(
                         onClick = onRead,
-                        modifier = Modifier.heightIn(min = 44.dp)
+                        modifier = Modifier.heightIn(min = 48.dp)
                     ) { Text("Return here") }
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(
                     onClick = onDelete,
-                    modifier = Modifier.heightIn(min = 44.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
                         stringResource(R.string.common_delete),
