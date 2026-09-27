@@ -112,7 +112,7 @@ fun ObservatoryScreen(
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text("‹ Castle", style = MaterialTheme.typography.labelMedium)
+            Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
         }
 
         ScreenHeader(
