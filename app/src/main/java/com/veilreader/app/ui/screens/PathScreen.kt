@@ -1,10 +1,7 @@
 package com.veilreader.app.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -15,7 +12,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,8 +86,6 @@ fun PathScreen(
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
     var ceremonySnapshot by remember { mutableStateOf<AdvancementCeremonySnapshot?>(null) }
-    var reveal by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { reveal = true }
 
     Box(
         modifier = Modifier
@@ -116,9 +110,10 @@ fun PathScreen(
             subtitle = "${profile.path.epithet} · ${profile.rankName}"
         )
 
-        AnimatedVisibility(
-            visible = reveal,
-            enter = fadeIn(tween(VeilMotion.SPATIAL_MS)) + slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
+        VeilReveal(
+            delayMillis = 0,
+            distance = 10.dp,
+            modifier = Modifier.fillMaxWidth()
         ) {
             PathIdentityPanel(profile)
         }
