@@ -854,7 +854,7 @@ private fun FloorInscription(
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
             } else {
-                VeilPalette.Mist.copy(alpha = 0.68f)
+                VeilPalette.Mist.copy(alpha = 0.58f)
             }
         )
         Text(
@@ -978,7 +978,7 @@ private fun CastleChamberNode(
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            color = if (unlocked) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.58f)
+            color = if (unlocked) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.68f)
         )
 
         Text(
