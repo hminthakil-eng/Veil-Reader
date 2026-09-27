@@ -569,46 +569,6 @@ fun VeilApp(
                 routeViewModel.checkpointReaderLocator(opened.book.id, locatorJson)
             }
         )
-    } else if (route.showSettings) {
-        VeilWorldBackdrop {
-            SettingsScreen(
-                settings = appSettings,
-                exporting = exporting,
-                restoring = restoring,
-                onSetAppThemeMode = onSetAppThemeMode,
-                onSaveReaderAppearance = onSaveReaderAppearance,
-                onSaveSensorySettings = onSaveSensorySettings,
-                onExportBackup = { exportData(it, true) },
-                onRestoreBackup = ::restoreData,
-                onExportNotes = { exportData(it, false) },
-                onClose = routeViewModel::closeSettings
-            )
-        }
-    } else if (route.showArchive) {
-        ArchiveScreen(
-            books = books,
-            highlights = highlights,
-            bookmarks = bookmarks,
-            readingSessions = readingSessions,
-            readingCycles = readingCycles,
-            passageVisits = passageVisits,
-            onClose = routeViewModel::closeArchive,
-            onOpenPassage = { book, locator -> requestOpenBook(book, locator) },
-            onSaveNote = { id, note ->
-                library.updateHighlightNote(id, note)
-                scope.launch {
-                    try {
-                        library.flushWrites()
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (error: Exception) {
-                        errorMessage = "Your note changed locally, but storage confirmation failed. " + error.message.orEmpty()
-                    }
-                }
-            },
-            onDeleteHighlight = library::deleteHighlight,
-            onDeleteBookmark = library::deleteBookmark
-        )
     } else if (
         profile == null ||
         dailyGoalMinutes == null ||
@@ -620,9 +580,21 @@ fun VeilApp(
             )
         }
     } else {
+        val activeWorldDestination = when {
+            route.showSettings -> "settings"
+            route.showArchive -> "archive"
+            else -> route.activeChamber
+        }
+
         VeilRealmMotionHost(
-            activeChamber = route.activeChamber,
-            onCloseChamber = routeViewModel::closeChamber,
+            activeDestination = activeWorldDestination,
+            onCloseDestination = {
+                when (activeWorldDestination) {
+                    "settings" -> routeViewModel.closeSettings()
+                    "archive" -> routeViewModel.closeArchive()
+                    else -> routeViewModel.closeChamber()
+                }
+            },
             modifier = Modifier.fillMaxSize(),
             mainContent = {
                 val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
@@ -692,8 +664,52 @@ fun VeilApp(
                     )
                 }
             },
-            chamberContent = { chamber ->
-                when (chamber) {
+            destinationContent = { destination ->
+                when (destination) {
+                    "settings" -> VeilWorldBackdrop {
+                        SettingsScreen(
+                            settings = appSettings,
+                            exporting = exporting,
+                            restoring = restoring,
+                            onSetAppThemeMode = onSetAppThemeMode,
+                            onSaveReaderAppearance = onSaveReaderAppearance,
+                            onSaveSensorySettings = onSaveSensorySettings,
+                            onExportBackup = { exportData(it, true) },
+                            onRestoreBackup = ::restoreData,
+                            onExportNotes = { exportData(it, false) },
+                            onClose = routeViewModel::closeSettings
+                        )
+                    }
+
+                    "archive" -> ArchiveScreen(
+                        books = books,
+                        highlights = highlights,
+                        bookmarks = bookmarks,
+                        readingSessions = readingSessions,
+                        readingCycles = readingCycles,
+                        passageVisits = passageVisits,
+                        onClose = routeViewModel::closeArchive,
+                        onOpenPassage = { book, locator ->
+                            requestOpenBook(book, locator)
+                        },
+                        onSaveNote = { id, note ->
+                            library.updateHighlightNote(id, note)
+                            scope.launch {
+                                try {
+                                    library.flushWrites()
+                                } catch (cancelled: CancellationException) {
+                                    throw cancelled
+                                } catch (error: Exception) {
+                                    errorMessage =
+                                        "Your note changed locally, but storage confirmation failed. " +
+                                            error.message.orEmpty()
+                                }
+                            }
+                        },
+                        onDeleteHighlight = library::deleteHighlight,
+                        onDeleteBookmark = library::deleteBookmark
+                    )
+
                     "mirror" -> LivingMirrorScreen(
                         books = books,
                         highlights = highlights,
