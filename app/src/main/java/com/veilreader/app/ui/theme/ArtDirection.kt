@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import java.time.LocalTime
 
 /**
  * Art-direction realms deliberately have different visual budgets.
@@ -33,6 +34,61 @@ data class VeilVisualBudget(
     val ornament: Float,
     val motion: Float
 )
+
+enum class VeilTemporalPhase {
+    DAWN,
+    DAY,
+    DUSK,
+    NIGHT
+}
+
+data class VeilTemporalAtmosphere(
+    val upperTint: Color,
+    val lightTint: Color,
+    val lightMultiplier: Float,
+    val edgeMultiplier: Float
+)
+
+fun temporalPhaseForHour(hour: Int): VeilTemporalPhase {
+    val safeHour = ((hour % 24) + 24) % 24
+    return when (safeHour) {
+        in 5..8 -> VeilTemporalPhase.DAWN
+        in 9..16 -> VeilTemporalPhase.DAY
+        in 17..20 -> VeilTemporalPhase.DUSK
+        else -> VeilTemporalPhase.NIGHT
+    }
+}
+
+fun currentVeilTemporalPhase(): VeilTemporalPhase =
+    temporalPhaseForHour(LocalTime.now().hour)
+
+fun temporalAtmosphereFor(phase: VeilTemporalPhase): VeilTemporalAtmosphere =
+    when (phase) {
+        VeilTemporalPhase.DAWN -> VeilTemporalAtmosphere(
+            upperTint = Color(0xFF171821),
+            lightTint = Color(0xFFD5B47A),
+            lightMultiplier = 1.12f,
+            edgeMultiplier = 0.94f
+        )
+        VeilTemporalPhase.DAY -> VeilTemporalAtmosphere(
+            upperTint = VeilPalette.Archive,
+            lightTint = VeilPalette.Brass,
+            lightMultiplier = 1.0f,
+            edgeMultiplier = 0.96f
+        )
+        VeilTemporalPhase.DUSK -> VeilTemporalAtmosphere(
+            upperTint = Color(0xFF17131C),
+            lightTint = Color(0xFFCA9568),
+            lightMultiplier = 1.08f,
+            edgeMultiplier = 1.04f
+        )
+        VeilTemporalPhase.NIGHT -> VeilTemporalAtmosphere(
+            upperTint = Color(0xFF0A111B),
+            lightTint = VeilPalette.Spirit,
+            lightMultiplier = 0.72f,
+            edgeMultiplier = 1.12f
+        )
+    }
 
 fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
     when (realm) {
@@ -84,7 +140,8 @@ fun Modifier.grayfogAtmosphere(
     realm: VeilRealm,
     seed: Int = 0,
     intensity: Float = 1f,
-    qualityTier: VeilQualityTier = VeilQualityTier.FULL
+    qualityTier: VeilQualityTier = VeilQualityTier.FULL,
+    temporalPhase: VeilTemporalPhase = VeilTemporalPhase.DAY
 ): Modifier = drawBehind {
     val budget = visualBudgetFor(realm)
     val quality = qualityPolicyFor(qualityTier)
@@ -97,8 +154,10 @@ fun Modifier.grayfogAtmosphere(
 
     val w = size.width
     val h = size.height
+    val temporal = temporalAtmosphereFor(temporalPhase)
     val brass = VeilPalette.Brass
-    val archive = VeilPalette.Archive
+    val archive = temporal.upperTint
+    val ambientLight = temporal.lightTint
     val ink = VeilPalette.Ink
 
     drawRect(
@@ -114,8 +173,8 @@ fun Modifier.grayfogAtmosphere(
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                brass.copy(alpha = 0.075f * atmosphere),
-                brass.copy(alpha = 0.018f * atmosphere),
+                ambientLight.copy(alpha = 0.075f * atmosphere * temporal.lightMultiplier),
+                ambientLight.copy(alpha = 0.018f * atmosphere * temporal.lightMultiplier),
                 Color.Transparent
             ),
             center = Offset(lightCenterX, h * 0.08f),
@@ -176,10 +235,10 @@ fun Modifier.grayfogAtmosphere(
     drawRect(
         brush = Brush.horizontalGradient(
             listOf(
-                ink.copy(alpha = 0.36f * atmosphere),
+                ink.copy(alpha = 0.36f * atmosphere * temporal.edgeMultiplier),
                 Color.Transparent,
                 Color.Transparent,
-                ink.copy(alpha = 0.30f * atmosphere)
+                ink.copy(alpha = 0.30f * atmosphere * temporal.edgeMultiplier)
             )
         ),
         size = size
