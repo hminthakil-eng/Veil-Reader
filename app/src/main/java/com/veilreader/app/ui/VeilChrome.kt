@@ -26,6 +26,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -222,6 +224,7 @@ fun VeilAnimatedTabHost(
     content: @Composable (VeilTab) -> Unit
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
+    val layoutDirection = LocalLayoutDirection.current
 
     AnimatedContent(
         targetState = selectedTab,
@@ -234,7 +237,13 @@ fun VeilAnimatedTabHost(
                     fadeOut(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
                     ) using SizeTransform(clip = false)
             } else {
-                val direction = if (targetState.ordinal >= initialState.ordinal) 1 else -1
+                val logicalDirection =
+                    if (targetState.ordinal >= initialState.ordinal) 1 else -1
+                val direction = if (layoutDirection == LayoutDirection.Rtl) {
+                    -logicalDirection
+                } else {
+                    logicalDirection
+                }
                 (
                     fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 12)) +
                         slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
