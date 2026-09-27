@@ -167,6 +167,41 @@ fun thresholdAtmosphereIntensityFor(bookCount: Int): Float {
         .coerceIn(0.84f, 1f)
 }
 
+data class VeilCastleLayoutPolicy(
+    val contentMaxWidthDp: Float,
+    val horizontalPaddingDp: Float,
+    val keepMinHeightDp: Float,
+    val mapHorizontalPaddingDp: Float,
+    val chamberMinHeightDp: Float
+)
+
+fun castleLayoutPolicyFor(
+    adaptiveClass: VeilAdaptiveClass
+): VeilCastleLayoutPolicy =
+    when (adaptiveClass) {
+        VeilAdaptiveClass.COMPACT -> VeilCastleLayoutPolicy(
+            contentMaxWidthDp = 860f,
+            horizontalPaddingDp = 16f,
+            keepMinHeightDp = 220f,
+            mapHorizontalPaddingDp = 10f,
+            chamberMinHeightDp = 116f
+        )
+        VeilAdaptiveClass.WIDE -> VeilCastleLayoutPolicy(
+            contentMaxWidthDp = 980f,
+            horizontalPaddingDp = 22f,
+            keepMinHeightDp = 260f,
+            mapHorizontalPaddingDp = 18f,
+            chamberMinHeightDp = 128f
+        )
+        VeilAdaptiveClass.LARGE -> VeilCastleLayoutPolicy(
+            contentMaxWidthDp = 1120f,
+            horizontalPaddingDp = 30f,
+            keepMinHeightDp = 300f,
+            mapHorizontalPaddingDp = 28f,
+            chamberMinHeightDp = 142f
+        )
+    }
+
 enum class VeilMotionClass {
     MICRO,
     FUNCTIONAL,
