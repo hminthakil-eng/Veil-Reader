@@ -39,6 +39,7 @@ import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
@@ -110,6 +111,11 @@ fun ReadingNowScreen(
                 seed = books.size + profile.level,
                 intensity = thresholdAtmosphereIntensityFor(books.size),
                 temporalPhase = currentVeilTemporalPhase()
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.THRESHOLD,
+                seed = books.size * 17 + profile.level,
+                intensity = 0.72f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -499,7 +505,7 @@ private fun ContinueReadingHero(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
+                    HeroPassagePortal(current, artifactMemory, coverWidthDp, coverHeightDp)
                 }
                 HeroDetails(current, ink, secondaryInk)
             } else {
@@ -508,7 +514,7 @@ private fun ContinueReadingHero(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
+                    HeroPassagePortal(current, artifactMemory, coverWidthDp, coverHeightDp)
                     HeroDetails(
                         current = current,
                         ink = ink,
@@ -552,6 +558,87 @@ private fun ContinueReadingHero(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun HeroPassagePortal(
+    current: Book,
+    artifactMemory: BookArtifactMemory?,
+    coverWidthDp: Float,
+    coverHeightDp: Float
+) {
+    Box(
+        modifier = Modifier
+            .width((coverWidthDp + 18f).dp)
+            .height((coverHeightDp + 22f).dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val brass = VeilPalette.Brass
+            val thresholdY = h * 0.93f
+            val left = w * 0.10f
+            val right = w * 0.90f
+            val jambTop = h * 0.18f
+
+            drawLine(
+                color = brass.copy(alpha = 0.38f),
+                start = Offset(left, thresholdY),
+                end = Offset(left, jambTop),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = brass.copy(alpha = 0.38f),
+                start = Offset(right, thresholdY),
+                end = Offset(right, jambTop),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawArc(
+                color = brass.copy(alpha = 0.42f),
+                startAngle = 190f,
+                sweepAngle = 160f,
+                useCenter = false,
+                topLeft = Offset(left, h * 0.02f),
+                size = androidx.compose.ui.geometry.Size(right - left, h * 0.34f),
+                style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx())
+            )
+            drawLine(
+                color = brass.copy(alpha = 0.52f),
+                start = Offset(w * 0.18f, thresholdY),
+                end = Offset(w * 0.82f, thresholdY),
+                strokeWidth = 1.1.dp.toPx()
+            )
+
+            val lampY = h * 0.28f
+            listOf(w * 0.03f, w * 0.97f).forEach { x ->
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            brass.copy(alpha = 0.13f),
+                            Color.Transparent
+                        ),
+                        center = Offset(x, lampY),
+                        radius = 18.dp.toPx()
+                    ),
+                    center = Offset(x, lampY),
+                    radius = 18.dp.toPx()
+                )
+                drawCircle(
+                    color = brass.copy(alpha = 0.58f),
+                    center = Offset(x, lampY),
+                    radius = 1.2.dp.toPx()
+                )
+            }
+        }
+
+        HeroCover(
+            current = current,
+            artifactMemory = artifactMemory,
+            coverWidthDp = coverWidthDp,
+            coverHeightDp = coverHeightDp
+        )
     }
 }
 
@@ -809,33 +896,41 @@ private fun ThresholdWhisperCard(
     books: List<Book>,
     onOpenPassage: (Book, String) -> Unit
 ) {
+    val preserved = whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE
+    val artifactPaper = Color(0xFFE2D6BC)
+    val artifactInk = Color(0xFF2C261F)
+    val artifactMuted = Color(0xFF6B5B45)
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.42f),
+        color = if (preserved) artifactPaper else VeilPalette.Archive.copy(alpha = 0.42f),
         border = BorderStroke(
             1.dp,
-            VeilPalette.BorderDark.copy(alpha = 0.68f)
+            if (preserved) VeilPalette.Brass.copy(alpha = 0.58f)
+            else VeilPalette.BorderDark.copy(alpha = 0.68f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+        Box {
+            if (preserved) WhisperArtifactField(Modifier.matchParentSize())
+            Column(
+                modifier = Modifier.padding(VeilSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
             Text(
                 when (whisper.kind) {
                     ThresholdWhisperKind.PRESERVED_PASSAGE -> "WHISPER · PRESERVED PASSAGE"
                     ThresholdWhisperKind.READING_PROMPT -> "WHISPER · OPTIONAL"
                 },
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                color = VeilPalette.Brass
+                color = if (preserved) artifactMuted else VeilPalette.Brass
             )
             Text(
                 whisper.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = VeilPalette.Moon,
+                color = if (preserved) artifactInk else VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -846,7 +941,8 @@ private fun ThresholdWhisperCard(
                     whisper.body
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Mist.copy(alpha = 0.86f),
+                color = if (preserved) artifactInk.copy(alpha = 0.86f)
+                else VeilPalette.Mist.copy(alpha = 0.86f),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -854,7 +950,8 @@ private fun ThresholdWhisperCard(
                 Text(
                     detail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Spirit.copy(alpha = 0.70f),
+                    color = if (preserved) artifactMuted.copy(alpha = 0.82f)
+                    else VeilPalette.Spirit.copy(alpha = 0.70f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -867,13 +964,53 @@ private fun ThresholdWhisperCard(
                     modifier = Modifier.heightIn(min = 48.dp),
                     contentPadding = PaddingValues(horizontal = 0.dp),
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = VeilPalette.Brass
+                        contentColor = if (preserved) artifactInk else VeilPalette.Brass
                     )
                 ) {
                     Text("Return to passage")
                 }
             }
+            }
         }
+    }
+}
+
+@Composable
+private fun WhisperArtifactField(
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val ink = Color(0xFF75664E)
+        val w = size.width
+        val h = size.height
+
+        repeat(4) { index ->
+            val y = h * (0.28f + index * 0.15f)
+            drawLine(
+                color = ink.copy(alpha = 0.08f),
+                start = Offset(w * 0.05f, y),
+                end = Offset(w * 0.95f, y),
+                strokeWidth = 0.7.dp.toPx()
+            )
+        }
+
+        drawLine(
+            color = VeilPalette.Brass.copy(alpha = 0.30f),
+            start = Offset(w * 0.035f, h * 0.08f),
+            end = Offset(w * 0.035f, h * 0.92f),
+            strokeWidth = 1.dp.toPx()
+        )
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.30f),
+            center = Offset(w * 0.94f, h * 0.14f),
+            radius = 5.dp.toPx(),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(0.8.dp.toPx())
+        )
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.16f),
+            center = Offset(w * 0.94f, h * 0.14f),
+            radius = 2.dp.toPx()
+        )
     }
 }
 
