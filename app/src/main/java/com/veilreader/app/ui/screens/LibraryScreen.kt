@@ -346,7 +346,35 @@ fun LibraryScreen(
     val detailBook = detailBookId?.let { id -> books.firstOrNull { it.id == id } }
 
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
-    LazyVerticalGrid(
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = 0.10f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(620.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(680.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.48f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
+        LazyVerticalGrid(
         columns = if (viewMode == LibraryViewMode.GALLERY) {
             GridCells.Adaptive(archiveLayout.galleryMinCellDp.dp)
         } else {
@@ -859,6 +887,7 @@ fun LibraryScreen(
             }
         }
 
+        }
         }
     }
 
