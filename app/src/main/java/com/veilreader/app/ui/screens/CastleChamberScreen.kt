@@ -33,12 +33,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import java.text.DateFormat
+import java.util.Date
 
 private data class SigilPresentation(
     val name: String,
@@ -626,6 +629,7 @@ fun SanctumScreen(
     profile: ReaderProfile,
     castleTitle: String,
     availableTitles: List<String>,
+    discoveries: List<VeiledDiscoveryRecord> = emptyList(),
     onSelectTitle: (String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -684,6 +688,8 @@ fun SanctumScreen(
             sovereignReady = sovereignReady
         )
 
+        SanctumDiscoveryLedger(discoveries)
+
         ArchiveChamberHeading(
             eyebrow = "Permanent identity",
             title = "Castle title",
@@ -737,6 +743,135 @@ fun SanctumScreen(
     }
     }
 }
+
+@Composable
+private fun SanctumDiscoveryLedger(
+    discoveries: List<VeiledDiscoveryRecord>
+) {
+    val recordsById = discoveries.associateBy { it.id }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        ArchiveChamberHeading(
+            eyebrow = "Permanent ledger",
+            title = "Veiled discoveries",
+            trailing = "${recordsById.size}/${veiledDiscoveryPresentations.size}"
+        )
+
+        Text(
+            "The Sanctum reads only the durable discovery ledger. A revealed fragment remains recorded even when a temporary signal, such as a streak, later changes.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = VeilPalette.Mist
+        )
+
+        veiledDiscoveryPresentations.forEachIndexed { index, presentation ->
+            val record = recordsById[presentation.id]
+            VeilReveal(
+                delayMillis = 55 + index * 35,
+                distance = 6.dp
+            ) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = if (record != null) {
+                        VeilPalette.DeepBrass.copy(alpha = 0.18f)
+                    } else {
+                        VeilPalette.Ink.copy(alpha = 0.30f)
+                    },
+                    border = BorderStroke(
+                        1.dp,
+                        if (record != null) {
+                            VeilPalette.Brass.copy(alpha = 0.40f)
+                        } else {
+                            VeilPalette.BorderDark.copy(alpha = 0.64f)
+                        }
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(CircleShape)
+                                .border(
+                                    BorderStroke(
+                                        1.dp,
+                                        if (record != null) {
+                                            VeilPalette.Brass.copy(alpha = 0.58f)
+                                        } else {
+                                            VeilPalette.Mist.copy(alpha = 0.18f)
+                                        }
+                                    ),
+                                    CircleShape
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                if (record != null) presentation.symbol else "◇",
+                                fontSize = 20.sp,
+                                color = if (record != null) {
+                                    VeilPalette.Brass
+                                } else {
+                                    VeilPalette.Mist.copy(alpha = 0.32f)
+                                }
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                if (record != null) {
+                                    presentation.title
+                                } else {
+                                    "Sealed discovery ${index + 1}"
+                                },
+                                style = MaterialTheme.typography.titleSmall,
+                                color = if (record != null) {
+                                    VeilPalette.Moon
+                                } else {
+                                    VeilPalette.Mist.copy(alpha = 0.46f)
+                                }
+                            )
+                            Text(
+                                if (record != null) {
+                                    record.recordedAtEpochMs?.let { timestamp ->
+                                        "PERMANENT · RECORDED ${formatSanctumDate(timestamp)}"
+                                    } ?: "PERMANENT · RECORD DATE UNKNOWN"
+                                } else {
+                                    "CONDITION VEILED"
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (record != null) {
+                                    VeilPalette.Spirit.copy(alpha = 0.82f)
+                                } else {
+                                    VeilPalette.Mist.copy(alpha = 0.38f)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatSanctumDate(epochMs: Long): String =
+    if (epochMs <= 0L) {
+        "DATE UNKNOWN"
+    } else {
+        DateFormat.getDateInstance(DateFormat.MEDIUM)
+            .format(Date(epochMs))
+            .uppercase()
+    }
 
 @Composable
 private fun SanctumSealPanel(
