@@ -35,7 +35,9 @@ import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
@@ -131,6 +133,11 @@ fun ArchiveScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.ARCHIVE,
+                seed = highlights.size * 17 + bookmarks.size * 7 + capsules.size,
+                intensity = 0.74f
+            )
             .statusBarsPadding()
             .navigationBarsPadding(),
         contentAlignment = Alignment.TopCenter
@@ -150,7 +157,7 @@ fun ArchiveScreen(
                 ) {
                     TextButton(
                         onClick = onClose,
-                        modifier = Modifier.heightIn(min = 40.dp),
+                        modifier = Modifier.heightIn(min = 48.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
                         Text("← Archive")
@@ -580,7 +587,7 @@ private fun ArchiveSectionTab(
 ) {
     Surface(
         onClick = onClick,
-        modifier = modifier.heightIn(min = 42.dp),
+        modifier = modifier.heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.52f)
