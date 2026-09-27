@@ -202,6 +202,172 @@ fun Modifier.narrativeArchitectureField(
         )
     }
 
+    // Realm silhouettes: each world surface gets a distinct architectural read even when
+    // it shares the same underlying bitmap. These remain low-alpha and static so text stays primary.
+    when (realm) {
+        VeilRealm.THRESHOLD -> {
+            val centerX = w * 0.50f
+            val archTop = h * 0.11f
+            val archBottom = h * 0.72f
+            drawArc(
+                color = brass.copy(alpha = 0.11f * strength),
+                startAngle = 200f,
+                sweepAngle = 140f,
+                useCenter = false,
+                topLeft = Offset(w * 0.24f, archTop),
+                size = Size(w * 0.52f, h * 0.34f),
+                style = Stroke(1.05.dp.toPx())
+            )
+            drawLine(
+                color = brass.copy(alpha = 0.075f * strength),
+                start = Offset(w * 0.24f, h * 0.28f),
+                end = Offset(w * 0.24f, archBottom),
+                strokeWidth = 0.9.dp.toPx()
+            )
+            drawLine(
+                color = brass.copy(alpha = 0.075f * strength),
+                start = Offset(w * 0.76f, h * 0.28f),
+                end = Offset(w * 0.76f, archBottom),
+                strokeWidth = 0.9.dp.toPx()
+            )
+            drawCircle(
+                color = brass.copy(alpha = 0.09f * strength),
+                center = Offset(centerX, h * 0.22f),
+                radius = size.minDimension * 0.045f,
+                style = Stroke(0.85.dp.toPx())
+            )
+        }
+
+        VeilRealm.ARCHIVE -> {
+            val left = w * 0.10f
+            val right = w * 0.90f
+            repeat(4) { bay ->
+                val x = left + (right - left) * (bay / 3f)
+                drawLine(
+                    color = brass.copy(alpha = 0.065f * strength),
+                    start = Offset(x, h * 0.18f),
+                    end = Offset(x, h * 0.82f),
+                    strokeWidth = if (bay == 0 || bay == 3) 1.05.dp.toPx() else 0.7.dp.toPx()
+                )
+            }
+            repeat(6) { shelf ->
+                val y = h * (0.24f + shelf * 0.095f)
+                drawLine(
+                    color = mist.copy(alpha = 0.050f * strength),
+                    start = Offset(left, y),
+                    end = Offset(right, y),
+                    strokeWidth = 0.7.dp.toPx()
+                )
+            }
+            repeat(3) { index ->
+                val x = w * (0.27f + index * 0.23f)
+                drawRect(
+                    color = brass.copy(alpha = 0.018f * strength),
+                    topLeft = Offset(x, h * 0.31f),
+                    size = Size(w * 0.095f, h * 0.33f)
+                )
+            }
+        }
+
+        VeilRealm.CASTLE,
+        VeilRealm.WORLD -> {
+            val base = h * 0.82f
+            val towerXs = listOf(0.20f, 0.36f, 0.50f, 0.64f, 0.80f)
+            towerXs.forEachIndexed { index, fraction ->
+                val towerTop = if (index == 2) h * 0.21f else h * (0.34f + (index % 2) * 0.05f)
+                drawLine(
+                    color = brass.copy(alpha = (if (index == 2) 0.095f else 0.055f) * strength),
+                    start = Offset(w * fraction, towerTop),
+                    end = Offset(w * fraction, base),
+                    strokeWidth = if (index == 2) 1.2.dp.toPx() else 0.8.dp.toPx()
+                )
+            }
+            drawArc(
+                color = brass.copy(alpha = 0.085f * strength),
+                startAngle = 198f,
+                sweepAngle = 144f,
+                useCenter = false,
+                topLeft = Offset(w * 0.27f, h * 0.23f),
+                size = Size(w * 0.46f, h * 0.32f),
+                style = Stroke(1.05.dp.toPx())
+            )
+            drawLine(
+                color = mist.copy(alpha = 0.040f * strength),
+                start = Offset(w * 0.12f, base),
+                end = Offset(w * 0.88f, base),
+                strokeWidth = 0.9.dp.toPx()
+            )
+        }
+
+        VeilRealm.RITUAL -> {
+            val center = Offset(w * 0.50f, h * 0.36f)
+            listOf(0.12f, 0.19f, 0.27f).forEachIndexed { index, fraction ->
+                drawCircle(
+                    color = brass.copy(alpha = (0.095f - index * 0.018f) * strength),
+                    center = center,
+                    radius = size.minDimension * fraction,
+                    style = Stroke((1.05f - index * 0.12f).dp.toPx())
+                )
+            }
+            repeat(8) { index ->
+                val angle = Math.toRadians(-90.0 + index * 45.0)
+                val inner = size.minDimension * 0.16f
+                val outer = size.minDimension * 0.31f
+                drawLine(
+                    color = brass.copy(alpha = 0.070f * strength),
+                    start = Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * inner,
+                        center.y + kotlin.math.sin(angle).toFloat() * inner
+                    ),
+                    end = Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * outer,
+                        center.y + kotlin.math.sin(angle).toFloat() * outer
+                    ),
+                    strokeWidth = 0.75.dp.toPx()
+                )
+            }
+            drawLine(
+                color = spirit.copy(alpha = 0.050f * strength),
+                start = Offset(center.x, h * 0.08f),
+                end = Offset(center.x, h * 0.70f),
+                strokeWidth = 0.7.dp.toPx()
+            )
+        }
+
+        VeilRealm.SANCTUM -> {
+            val center = Offset(w * 0.50f, h * 0.34f)
+            repeat(4) { index ->
+                drawCircle(
+                    color = (if (index % 2 == 0) spirit else brass).copy(
+                        alpha = (0.072f - index * 0.010f) * strength
+                    ),
+                    center = center,
+                    radius = size.minDimension * (0.11f + index * 0.075f),
+                    style = Stroke(0.85.dp.toPx())
+                )
+            }
+            repeat(6) { index ->
+                val angle = Math.toRadians(-90.0 + index * 60.0)
+                val inner = size.minDimension * 0.13f
+                val outer = size.minDimension * 0.34f
+                drawLine(
+                    color = spirit.copy(alpha = 0.050f * strength),
+                    start = Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * inner,
+                        center.y + kotlin.math.sin(angle).toFloat() * inner
+                    ),
+                    end = Offset(
+                        center.x + kotlin.math.cos(angle).toFloat() * outer,
+                        center.y + kotlin.math.sin(angle).toFloat() * outer
+                    ),
+                    strokeWidth = 0.7.dp.toPx()
+                )
+            }
+        }
+
+        VeilRealm.SANCTUARY -> Unit
+    }
+
     // Lower atmospheric weight preserves the sense of depth.
     drawRect(
         brush = Brush.verticalGradient(
