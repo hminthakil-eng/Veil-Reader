@@ -9,7 +9,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material3.Button
@@ -39,7 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilSpacing
 import kotlinx.coroutines.delay
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
@@ -116,7 +121,7 @@ internal fun PdfZoomControls(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp)
+                        .heightIn(min = 72.dp)
                         .selectable(
                             selected = selected,
                             role = Role.RadioButton
@@ -141,7 +146,22 @@ internal fun PdfZoomControls(
                     tonalElevation = 0.dp,
                     shadowElevation = 0.dp
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        ReaderMotionPreview(
+                            mode = if (scrollMode) {
+                                ReaderNavigationMode.SCROLL
+                            } else {
+                                ReaderNavigationMode.PAGED
+                            },
+                            active = selected,
+                            modifier = Modifier
+                                .width(48.dp)
+                                .height(28.dp)
+                        )
                         Text(
                             label.uppercase(),
                             style = MaterialTheme.typography.labelMedium,
@@ -175,12 +195,21 @@ internal fun PdfZoomControls(
                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
                 )
             ) {
-                Text(
-                    "Connecting to the PDF renderer…",
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Column(
+                    modifier = Modifier.padding(VeilSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                ) {
+                    Text(
+                        "PREPARING DOCUMENT",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        "Connecting to the PDF renderer…",
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
             }
         } else {
             val minZoom = view.minZoom.coerceAtLeast(0.5f)
