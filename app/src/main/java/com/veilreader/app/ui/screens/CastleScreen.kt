@@ -24,6 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -48,7 +52,11 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.adaptiveClassFor
+import com.veilreader.app.ui.theme.castleLayoutPolicyFor
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -74,12 +82,29 @@ fun CastleScreen(
             sessions = readingSessions
         )
     }
+    val castleAdaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val castleLayout = castleLayoutPolicyFor(castleAdaptiveClass)
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.CASTLE,
+                seed = profile.rankIndex * 31 + memoryState.volumeCount
+            ),
+        contentAlignment = Alignment.TopCenter
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .widthIn(max = castleLayout.contentMaxWidthDp.dp)
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
+            .padding(
+                horizontal = castleLayout.horizontalPaddingDp.dp,
+                vertical = VeilSpacing.lg
+            ),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
     ) {
         ScreenHeader(
@@ -94,6 +119,7 @@ fun CastleScreen(
             canAdvance = canAdvance,
             awakenedRooms = awakenedRooms,
             totalRooms = SampleData.rooms.size,
+            minHeightDp = castleLayout.keepMinHeightDp,
             onAdvanceRank = onAdvanceRank
         )
 
@@ -120,6 +146,8 @@ fun CastleScreen(
         CastleWorldMap(
             rankIndex = profile.rankIndex,
             memoryState = memoryState,
+            mapHorizontalPaddingDp = castleLayout.mapHorizontalPaddingDp,
+            chamberMinHeightDp = castleLayout.chamberMinHeightDp,
             onOpenRoom = onOpenRoom
         )
 
@@ -132,6 +160,7 @@ fun CastleScreen(
             color = VeilPalette.Mist.copy(alpha = 0.82f)
         )
     }
+    }
 }
 
 @Composable
@@ -141,6 +170,7 @@ private fun CastleKeep(
     canAdvance: Boolean,
     awakenedRooms: Int,
     totalRooms: Int,
+    minHeightDp: Float,
     onAdvanceRank: () -> Unit
 ) {
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
@@ -154,7 +184,7 @@ private fun CastleKeep(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 220.dp)
+            .heightIn(min = minHeightDp.dp)
             .clip(MaterialTheme.shapes.small)
             .background(
                 Brush.verticalGradient(
@@ -262,7 +292,7 @@ private fun CastleKeep(
                     onClick = onAdvanceRank,
                     modifier = Modifier
                         .align(Alignment.End)
-                        .heightIn(min = 42.dp),
+                        .heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = VeilPalette.Brass,
@@ -472,6 +502,8 @@ private fun CastleKeepBackdrop(
 private fun CastleWorldMap(
     rankIndex: Int,
     memoryState: CastleMemoryState,
+    mapHorizontalPaddingDp: Float,
+    chamberMinHeightDp: Float,
     onOpenRoom: (String) -> Unit
 ) {
     val rooms = SampleData.rooms
@@ -511,7 +543,10 @@ private fun CastleWorldMap(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 26.dp),
+                    .padding(
+                        horizontal = mapHorizontalPaddingDp.dp,
+                        vertical = 26.dp
+                    ),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 CastleGateLabel(
@@ -535,6 +570,7 @@ private fun CastleWorldMap(
                             resonance = memoryState.resonanceFor(room.id),
                             roomOnLeft = index % 2 == 0,
                             isLast = index == rooms.lastIndex,
+                            chamberMinHeightDp = chamberMinHeightDp,
                             onOpenRoom = onOpenRoom
                         )
                     }
@@ -666,6 +702,7 @@ private fun CastleFloor(
     resonance: Float,
     roomOnLeft: Boolean,
     isLast: Boolean,
+    chamberMinHeightDp: Float,
     onOpenRoom: (String) -> Unit
 ) {
     Column(
@@ -716,6 +753,7 @@ private fun CastleFloor(
                         unlockRank = unlockRank,
                         unlocked = unlocked,
                         resonance = resonance,
+                        chamberMinHeightDp = chamberMinHeightDp,
                         onOpenRoom = onOpenRoom,
                         modifier = Modifier.weight(1f)
                     )
@@ -739,6 +777,7 @@ private fun CastleFloor(
                         unlockRank = unlockRank,
                         unlocked = unlocked,
                         resonance = resonance,
+                        chamberMinHeightDp = chamberMinHeightDp,
                         onOpenRoom = onOpenRoom,
                         modifier = Modifier.weight(1f)
                     )
@@ -824,6 +863,7 @@ private fun CastleChamberNode(
     unlockRank: Int,
     unlocked: Boolean,
     resonance: Float,
+    chamberMinHeightDp: Float,
     onOpenRoom: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -836,7 +876,7 @@ private fun CastleChamberNode(
 
     Column(
         modifier = modifier
-            .heightIn(min = 116.dp)
+            .heightIn(min = chamberMinHeightDp.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
                 Brush.verticalGradient(
@@ -855,7 +895,17 @@ private fun CastleChamberNode(
                 )
             )
             .border(BorderStroke(1.dp, edge), MaterialTheme.shapes.extraSmall)
-            .clickable(enabled = unlocked) { onOpenRoom(id) }
+            .semantics {
+                contentDescription = if (unlocked) {
+                    "$name chamber. $purpose. Enter."
+                } else {
+                    "$name chamber. Sealed until rank ${unlockRank + 1}."
+                }
+            }
+            .clickable(
+                enabled = unlocked,
+                role = Role.Button
+            ) { onOpenRoom(id) }
             .padding(horizontal = 10.dp, vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
