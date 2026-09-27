@@ -90,6 +90,35 @@ class LibraryWingsTest {
     }
 
     @Test
+    fun `recorded reading activity outranks later import metadata`() {
+        val state = deriveLibraryWings(
+            listOf(
+                Book(
+                    id = "older-import",
+                    title = "Older import",
+                    author = "Veil",
+                    collections = listOf("Read first"),
+                    addedAtEpochMs = 10_000L,
+                    lastOpenedAtEpochMs = 20_000L
+                ),
+                Book(
+                    id = "newer-import",
+                    title = "Newer import",
+                    author = "Veil",
+                    collections = listOf("Imported later"),
+                    addedAtEpochMs = 30_000L,
+                    lastOpenedAtEpochMs = 0L
+                )
+            ),
+            maxCollectionWings = 2,
+            maxSeriesWings = 0
+        )
+
+        assertEquals("Read first", state.collectionWings.first().name)
+        assertEquals(20_000L, state.collectionWings.first().lastRecordedActivityAtEpochMs)
+    }
+
+    @Test
     fun `wing limits are deterministic and bounded`() {
         val books = (1..12).map { index ->
             Book(
@@ -97,6 +126,7 @@ class LibraryWingsTest {
                 title = "B$index",
                 author = "Veil",
                 collections = listOf("Shelf $index"),
+                addedAtEpochMs = 0L,
                 lastOpenedAtEpochMs = index.toLong()
             )
         }
