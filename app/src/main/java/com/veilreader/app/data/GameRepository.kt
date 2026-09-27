@@ -7,6 +7,7 @@ import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.VeiledDiscoveryPolicy
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -240,13 +241,28 @@ class GameRepository(context: Context) {
 
     private fun publish() {
         val earned = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toMutableSet()
-        val p = buildProfile()
-        if (p.minutesRead >= 60) earned.add("first_hour")
+        var snapshot = buildProfile()
+
+        if (snapshot.minutesRead >= 60) earned.add("first_hour")
         if (prefs.getInt("totalHighlights", 0) >= 10) earned.add("passage_keeper")
         if (prefs.getInt("streakDays", 0) >= 7) earned.add("seven_days")
-        if (p.booksFinished >= 10) earned.add("ten_tomes")
-        if (p.rankIndex >= 1) earned.add("first_threshold")
+        if (snapshot.booksFinished >= 10) earned.add("ten_tomes")
+        if (snapshot.rankIndex >= 1) earned.add("first_threshold")
         prefs.edit().putStringSet("earnedSigils", earned).apply()
+
+        // Discoveries are one-way memory. A temporary state regression (for example a broken
+        // streak) must never reseal something the reader has already uncovered.
+        snapshot = buildProfile()
+        val earnedDiscoveries = prefs
+            .getStringSet("earnedDiscoveries", emptySet())
+            .orEmpty()
+            .toMutableSet()
+        earnedDiscoveries += VeiledDiscoveryPolicy.eligibleIds(
+            profile = snapshot,
+            highlightCount = prefs.getInt("totalHighlights", 0)
+        )
+        prefs.edit().putStringSet("earnedDiscoveries", earnedDiscoveries).apply()
+
         _profile.value = buildProfile()
         _quests.value = buildQuests()
         _dailyGoalMinutes.value = readDailyGoal()
@@ -282,7 +298,11 @@ class GameRepository(context: Context) {
             rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex),
             ritualProgress = prefs.getInt("ritualProgress", 0),
             ritualTarget = ReadingPolicy.ritualTarget(path.id, prefs.getInt("rankIndex", 0)),
-            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet()
+            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
+            earnedDiscoveries = prefs
+                .getStringSet("earnedDiscoveries", emptySet())
+                .orEmpty()
+                .toSet()
         )
     }
 
