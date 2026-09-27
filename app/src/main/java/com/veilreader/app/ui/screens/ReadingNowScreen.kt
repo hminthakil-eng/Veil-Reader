@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.veilreader.app.R
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -37,7 +38,10 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
+import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
+import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -60,6 +64,10 @@ fun ReadingNowScreen(
 ) {
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
+    val thresholdAdaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val thresholdLayout = thresholdLayoutPolicyFor(thresholdAdaptiveClass)
     val artifactMemoryByBookId = remember(
         books,
         highlights,
@@ -99,13 +107,14 @@ fun ReadingNowScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.THRESHOLD,
-                seed = books.size + profile.level
+                seed = books.size + profile.level,
+                intensity = thresholdAtmosphereIntensityFor(books.size)
             ),
         contentAlignment = Alignment.TopCenter
     ) {
         Column(
             modifier = Modifier
-                .widthIn(max = 860.dp)
+                .widthIn(max = thresholdLayout.contentMaxWidthDp.dp)
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(bottom = VeilSpacing.xxl),
@@ -115,7 +124,8 @@ fun ReadingNowScreen(
                 Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
                     ThresholdHeader(
                         bookCount = books.size,
-                        hasCurrentBook = current != null
+                        hasCurrentBook = current != null,
+                        headerHeightDp = thresholdLayout.headerHeightDp
                     )
                 }
             }
@@ -123,13 +133,19 @@ fun ReadingNowScreen(
             Spacer(Modifier.height(VeilSpacing.sm))
 
             VeilReveal(delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
-                Box(Modifier.padding(horizontal = VeilSpacing.md)) {
+                Box(
+                    Modifier.padding(
+                        horizontal = thresholdLayout.horizontalPaddingDp.dp
+                    )
+                ) {
                     if (current == null) {
                         EmptyReadingState(onOpenLibrary)
                     } else {
                         ContinueReadingHero(
                             current = current,
                             artifactMemory = artifactMemoryByBookId[current.id],
+                            coverWidthDp = thresholdLayout.heroCoverWidthDp,
+                            coverHeightDp = thresholdLayout.heroCoverHeightDp,
                             onOpenBook = onOpenBook
                         )
                     }
@@ -139,10 +155,17 @@ fun ReadingNowScreen(
             if (snapshot.recent.isNotEmpty()) {
                 Spacer(Modifier.height(VeilSpacing.xl))
                 VeilReveal(delayMillis = 130, modifier = Modifier.fillMaxWidth()) {
-                    Box(Modifier.padding(horizontal = VeilSpacing.md)) {
+                    Box(
+                        Modifier.padding(
+                            horizontal = thresholdLayout.horizontalPaddingDp.dp
+                        )
+                    ) {
                         RecentBooksShelf(
                             books = snapshot.recent,
                             artifactMemoryByBookId = artifactMemoryByBookId,
+                            itemWidthDp = thresholdLayout.recentItemWidthDp,
+                            coverWidthDp = thresholdLayout.recentCoverWidthDp,
+                            coverHeightDp = thresholdLayout.recentCoverHeightDp,
                             onOpenBook = onOpenBook,
                             onOpenLibrary = onOpenLibrary
                         )
@@ -153,7 +176,11 @@ fun ReadingNowScreen(
             thresholdWhisper?.let { whisper ->
                 Spacer(Modifier.height(VeilSpacing.xl))
                 VeilReveal(delayMillis = 170, modifier = Modifier.fillMaxWidth()) {
-                    Box(Modifier.padding(horizontal = VeilSpacing.md)) {
+                    Box(
+                        Modifier.padding(
+                            horizontal = thresholdLayout.horizontalPaddingDp.dp
+                        )
+                    ) {
                         ThresholdWhisperCard(
                             whisper = whisper,
                             books = books,
@@ -165,7 +192,11 @@ fun ReadingNowScreen(
 
             Spacer(Modifier.height(VeilSpacing.xl))
             VeilReveal(delayMillis = 210, modifier = Modifier.fillMaxWidth()) {
-                Box(Modifier.padding(horizontal = VeilSpacing.md)) {
+                Box(
+                    Modifier.padding(
+                        horizontal = thresholdLayout.horizontalPaddingDp.dp
+                    )
+                ) {
                     ReadingPulse(
                         profile = profile,
                         onOpenCastle = onOpenCastle
@@ -179,7 +210,8 @@ fun ReadingNowScreen(
 @Composable
 private fun ThresholdHeader(
     bookCount: Int,
-    hasCurrentBook: Boolean
+    hasCurrentBook: Boolean,
+    headerHeightDp: Float
 ) {
     BoxWithConstraints(
         modifier = Modifier
@@ -190,9 +222,11 @@ private fun ThresholdHeader(
                 MaterialTheme.shapes.medium
             )
     ) {
-        val heroHeight = if (maxWidth < 600.dp) 252.dp else 316.dp
-
-        Box(Modifier.fillMaxWidth().height(heroHeight)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(headerHeightDp.dp)
+        ) {
             Image(
                 painter = painterResource(R.drawable.grayfog_threshold_v1),
                 contentDescription = null,
@@ -305,6 +339,8 @@ private fun ThresholdHeader(
 private fun ContinueReadingHero(
     current: Book,
     artifactMemory: BookArtifactMemory?,
+    coverWidthDp: Float,
+    coverHeightDp: Float,
     onOpenBook: (Book) -> Unit
 ) {
     val progress = current.progress.coerceIn(0f, 1f)
@@ -353,7 +389,7 @@ private fun ContinueReadingHero(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    HeroCover(current, artifactMemory)
+                    HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
                 }
                 HeroDetails(current, ink, secondaryInk)
             } else {
@@ -362,7 +398,7 @@ private fun ContinueReadingHero(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeroCover(current, artifactMemory)
+                    HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
                     HeroDetails(
                         current = current,
                         ink = ink,
@@ -412,7 +448,9 @@ private fun ContinueReadingHero(
 @Composable
 private fun HeroCover(
     current: Book,
-    artifactMemory: BookArtifactMemory?
+    artifactMemory: BookArtifactMemory?,
+    coverWidthDp: Float,
+    coverHeightDp: Float
 ) {
     BookCover(
         title = current.title,
@@ -422,7 +460,9 @@ private fun HeroCover(
             current,
             memory = artifactMemory
         ),
-        modifier = Modifier.width(96.dp).height(142.dp)
+        modifier = Modifier
+            .width(coverWidthDp.dp)
+            .height(coverHeightDp.dp)
     )
 }
 
@@ -466,6 +506,9 @@ private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Flo
 private fun RecentBooksShelf(
     books: List<Book>,
     artifactMemoryByBookId: Map<String, BookArtifactMemory>,
+    itemWidthDp: Float,
+    coverWidthDp: Float,
+    coverHeightDp: Float,
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit
 ) {
@@ -511,6 +554,9 @@ private fun RecentBooksShelf(
                 RecentBookCard(
                     book = book,
                     artifactMemory = artifactMemoryByBookId[book.id],
+                    itemWidthDp = itemWidthDp,
+                    coverWidthDp = coverWidthDp,
+                    coverHeightDp = coverHeightDp,
                     onOpenBook = onOpenBook
                 )
             }
@@ -522,11 +568,14 @@ private fun RecentBooksShelf(
 private fun RecentBookCard(
     book: Book,
     artifactMemory: BookArtifactMemory?,
+    itemWidthDp: Float,
+    coverWidthDp: Float,
+    coverHeightDp: Float,
     onOpenBook: (Book) -> Unit
 ) {
     Surface(
         onClick = { onOpenBook(book) },
-        modifier = Modifier.width(118.dp),
+        modifier = Modifier.width(itemWidthDp.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = Color.Transparent,
         tonalElevation = 0.dp,
@@ -541,7 +590,9 @@ private fun RecentBookCard(
                     book,
                     memory = artifactMemory
                 ),
-                modifier = Modifier.width(108.dp).height(158.dp)
+                modifier = Modifier
+                    .width(coverWidthDp.dp)
+                    .height(coverHeightDp.dp)
             )
             Text(
                 book.title,
