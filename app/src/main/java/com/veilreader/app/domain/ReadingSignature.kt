@@ -130,8 +130,11 @@ fun deriveReadingSignature(
         medianActiveSessionMillis = medianMillis(activeDurations),
         activeDayCount = activeDays.size,
         booksTouchedCount = recordedSessions
-            .map { it.bookId.trim() }
-            .filter(String::isNotEmpty)
+            .mapNotNull { session ->
+                session.bookId
+                    ?.trim()
+                    ?.takeIf(String::isNotEmpty)
+            }
             .toSet()
             .size,
         firstSessionAtEpochMs = timedSessions.firstOrNull()?.startedAtEpochMs,
