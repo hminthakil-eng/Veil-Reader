@@ -45,6 +45,7 @@ import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.VeilPalette
@@ -226,6 +227,14 @@ fun ArchiveScreen(
                 GrayfogOrnamentFrame(
                     modifier = Modifier.matchParentSize(),
                     strength = 0.84f
+                )
+                VeilRealmEmblem(
+                    realm = VeilRealm.ARCHIVE,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = VeilSpacing.lg)
+                        .size(132.dp),
+                    tint = VeilPalette.Brass.copy(alpha = 0.18f)
                 )
                 Column(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
