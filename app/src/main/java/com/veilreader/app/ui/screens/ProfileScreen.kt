@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -20,9 +21,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
@@ -101,6 +105,31 @@ fun ProfileScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            alpha = 0.28f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(720.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(780.dp)
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.06f),
+                        0.40f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.64f),
+                        1f to VeilPalette.Ink
+                    )
+                )
+        )
     Column(
         Modifier
             .fillMaxSize()
@@ -108,13 +137,14 @@ fun ProfileScreen(
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
-        ScreenHeader(
-            eyebrow = "ARCHIVIST DOSSIER",
-            title = castleTitle,
-            subtitle = listOf(
+        ProfileGrandMasthead(
+            castleTitle = castleTitle,
+            pathLabel = listOf(
                 localizedMetadataValue(p.path.name, language),
                 localizedMetadataValue(p.rankName, language)
-            ).joinToString(appMetadataDivider(scriptGroup))
+            ).joinToString(appMetadataDivider(scriptGroup)),
+            level = p.level,
+            recordedSessions = dossierHistory.recordedSessionCount
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -254,6 +284,89 @@ fun ProfileScreen(
             Text("Open Hidden Archive", style = MaterialTheme.typography.labelMedium)
         }
     }
+    }
+}
+
+@Composable
+private fun ProfileGrandMasthead(
+    castleTitle: String,
+    pathLabel: String,
+    level: Int,
+    recordedSessions: Int
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(260.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.08f),
+                        0.44f to Color.Transparent,
+                        1f to VeilPalette.Ink.copy(alpha = 0.97f)
+                    )
+                )
+        )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.88f
+        )
+        Text(
+            "ARCHIVIST DOSSIER",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+            color = VeilPalette.Brass
+        )
+        Text(
+            "LVL $level · $recordedSessions SESSIONS",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.80.sp),
+            color = VeilPalette.Moon.copy(alpha = 0.74f)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                castleTitle,
+                style = MaterialTheme.typography.displaySmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                pathLabel,
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.84f)
+            )
+            Text(
+                "A factual ledger of reading, preserved passages, completed journeys, and discovered marks.",
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = 0.82f),
+                modifier = Modifier.widthIn(max = 580.dp)
+            )
+            BrassRule(Modifier.width(156.dp), strong = true)
+        }
     }
 }
 
