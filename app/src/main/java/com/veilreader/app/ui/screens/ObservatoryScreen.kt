@@ -45,6 +45,7 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -91,6 +92,11 @@ fun ObservatoryScreen(
                 realm = VeilRealm.CASTLE,
                 seed = atlas.nodes.size * 17 + atlas.edges.size * 7,
                 intensity = 0.92f
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.CASTLE,
+                seed = atlas.nodes.size * 17 + atlas.edges.size * 7,
+                intensity = 0.68f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
