@@ -733,12 +733,12 @@ fun VeilApp(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "ARCHIVE NOTICE",
+                        "INTERRUPTION · LOCAL",
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Veil Reader",
+                        "The action could not be completed",
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
@@ -749,7 +749,7 @@ fun VeilApp(
                     onClick = { errorMessage = null },
                     shape = MaterialTheme.shapes.extraSmall
                 ) {
-                    Text("Close")
+                    Text("Return")
                 }
             }
         )
