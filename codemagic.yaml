@@ -171,7 +171,7 @@ workflows:
           cd "$CM_BUILD_DIR"
 
           APP_APK="app/build/outputs/apk/debug/app-debug.apk"
-          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' | head -n 1)"
+          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' -print -quit)"
 
           test -f "$APP_APK"
           test -n "$TEST_APK"
@@ -183,11 +183,57 @@ workflows:
           TMP_DIR="$(mktemp -d)"
           trap 'rm -rf "$TMP_DIR"' EXIT
 
-          # Avoid unzip|strings|grep -q under pipefail. grep -q may terminate early after a
-          # successful match, causing upstream SIGPIPE and a false-negative pipeline status.
-          RUNNER_FOUND=0
+          # Materialize archive entries before filtering so pipefail cannot turn a successful
+          # early consumer exit into a false-negative verification result.
+          ZIP_LIST="$TMP_DIR/zip-list.txt"
           DEX_LIST="$TMP_DIR/dex-list.txt"
-          unzip -Z1 "$TEST_APK" | grep '^classes.*\.dex
+          unzip -Z1 "$TEST_APK" > "$ZIP_LIST"
+          grep -E '^classes.*[.]dex' "$ZIP_LIST" > "$DEX_LIST"
+
+          test -s "$DEX_LIST"
+
+          RUNNER_FOUND=0
+          while IFS= read -r DEX; do
+            [ -n "$DEX" ] || continue
+            DEX_FILE="$TMP_DIR/$(basename "$DEX")"
+            STRINGS_FILE="$DEX_FILE.strings"
+
+            unzip -p "$TEST_APK" "$DEX" > "$DEX_FILE"
+            strings "$DEX_FILE" > "$STRINGS_FILE"
+
+            if grep -Fq 'Landroidx/test/runner/AndroidJUnitRunner;' "$STRINGS_FILE" ||
+               grep -Fq 'androidx/test/runner/AndroidJUnitRunner' "$STRINGS_FILE" ||
+               grep -Fq 'androidx.test.runner.AndroidJUnitRunner' "$STRINGS_FILE"; then
+              echo "AndroidJUnitRunner dex evidence: $DEX"
+              RUNNER_FOUND=1
+              break
+            fi
+          done < "$DEX_LIST"
+
+          if [ "$RUNNER_FOUND" -ne 1 ]; then
+            echo "AndroidJUnitRunner class was not found in test APK dex files."
+            echo "DEX entries:"
+            cat "$DEX_LIST"
+            if command -v apkanalyzer >/dev/null 2>&1; then
+              echo "Instrumentation manifest evidence:"
+              apkanalyzer manifest print "$TEST_APK" > "$TMP_DIR/manifest.xml"
+              grep -n -E 'instrumentation|AndroidJUnitRunner' "$TMP_DIR/manifest.xml" || true
+            fi
+            exit 1
+          fi
+
+          if command -v apkanalyzer >/dev/null 2>&1; then
+            MANIFEST_DUMP="$TMP_DIR/manifest.xml"
+            apkanalyzer manifest print "$TEST_APK" > "$MANIFEST_DUMP"
+            if ! grep -Fq 'androidx.test.runner.AndroidJUnitRunner' "$MANIFEST_DUMP"; then
+              echo "Runner class exists, but instrumentation manifest does not name AndroidJUnitRunner."
+              grep -n -E 'instrumentation|runner' "$MANIFEST_DUMP" || true
+              exit 1
+            fi
+            echo "AndroidJUnitRunner manifest evidence: yes"
+          fi
+
+          echo "AndroidJUnitRunner packaged: yes"
 
       - name: Compile performance harness
         script: |
