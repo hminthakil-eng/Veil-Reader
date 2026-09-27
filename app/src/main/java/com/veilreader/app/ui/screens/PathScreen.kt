@@ -21,6 +21,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -1016,7 +1017,8 @@ private fun AdvancementCeremonyDialog(
     )
     // A restored reveal cannot override the authoritative profile after process recreation.
     val visibleStage = if (stage == AdvancementCeremonyStage.REVEALED) observedResult else stage
-    LaunchedEffect(stage, currentPathId, currentRankIndex, reducedMotion) {
+    val latestObservedResult by rememberUpdatedState(observedResult)
+    LaunchedEffect(stage, reducedMotion) {
         if (stage == AdvancementCeremonyStage.SEALING) {
             delay(
                 effectiveMotionDurationMs(
@@ -1024,7 +1026,7 @@ private fun AdvancementCeremonyDialog(
                     reducedMotion = reducedMotion
                 ).toLong()
             )
-            stage = observedResult
+            stage = latestObservedResult
         }
     }
 
