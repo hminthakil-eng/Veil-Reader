@@ -32,7 +32,9 @@ object VeiledDiscoveryCatalog {
         profile: ReaderProfile,
         highlightCount: Int
     ): Set<String> = buildSet {
-        if (profile.streakDays >= 7 && profile.minutesRead >= 600) {
+        val sevenDayReturnRecorded =
+            profile.streakDays >= 7 || "seven_days" in profile.earnedSigils
+        if (sevenDayReturnRecorded && profile.minutesRead >= 600) {
             add(PATIENT_FLAME)
         }
         if (highlightCount >= 10 && profile.pagesRead >= 1_000) {
