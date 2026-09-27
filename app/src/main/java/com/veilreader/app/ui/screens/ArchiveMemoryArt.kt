@@ -34,6 +34,8 @@ internal fun archiveMemoryMaterialFor(
     val revisit = (memory.revisitCount / 4f).coerceIn(0f, 1f)
     val annotation = if (memory.annotated) 0.16f else 0f
     val resurfaced = echoMode && memory.eligibleForEcho
+    val resurfacedGlowBonus = if (resurfaced) 0.24f else 0f
+    val continuedActivityTrace = if (memory.bookActivityAfterMark) 0.14f else 0f
 
     return ArchiveMemoryMaterialPolicy(
         strataCount = when (memory.echoDepth) {
@@ -45,12 +47,12 @@ internal fun archiveMemoryMaterialFor(
         patina = (agePatina + annotation).coerceIn(0f, 1f),
         edgeGlow = (
             0.10f +
-                if (resurfaced) 0.24f else 0f +
+                resurfacedGlowBonus +
                 revisit * 0.16f
             ).coerceIn(0.08f, 0.56f),
         spiritTrace = (
             revisit * 0.56f +
-                if (memory.bookActivityAfterMark) 0.14f else 0f
+                continuedActivityTrace
             ).coerceIn(0f, 0.72f),
         resurfaced = resurfaced
     )
