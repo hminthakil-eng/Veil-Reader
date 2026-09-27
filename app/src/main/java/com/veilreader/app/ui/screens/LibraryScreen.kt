@@ -29,6 +29,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -1672,7 +1673,13 @@ private fun LibraryHeader(
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 218.dp else 256.dp
+        val fontScale = LocalDensity.current.fontScale
+        val headerHeight = when {
+            fontScale > 1.55f -> 322.dp
+            fontScale > 1.30f -> 278.dp
+            compact -> 218.dp
+            else -> 256.dp
+        }
 
         Box(Modifier.fillMaxWidth().height(headerHeight)) {
             Image(
