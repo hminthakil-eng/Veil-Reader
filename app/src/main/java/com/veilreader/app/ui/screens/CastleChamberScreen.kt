@@ -1008,7 +1008,7 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
 }
 
 @Composable
-private fun ArchiveChamberHeading(
+internal fun ArchiveChamberHeading(
     eyebrow: String,
     title: String,
     trailing: String? = null
