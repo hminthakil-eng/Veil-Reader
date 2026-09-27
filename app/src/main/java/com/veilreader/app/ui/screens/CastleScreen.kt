@@ -61,6 +61,7 @@ import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.hallSharedBoundsKey
 import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
 import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -657,7 +658,7 @@ private fun GreatHallArtifactPedestal(
 
     Column(
         modifier = modifier
-            .veilSharedBounds("hall:${artifact.route}")
+            .veilSharedBounds(hallSharedBoundsKey(artifact.route))
             .semantics {
                 contentDescription = if (active) {
                     "${artifact.title}. ${artifact.subtitle}. Open."
