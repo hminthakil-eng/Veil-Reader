@@ -18,11 +18,21 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import java.time.Instant
 import java.time.ZoneId
 
-// A stable fallback for isolated previews. VeilTheme supplies the one live source for the app.
-private val LocalVeilTemporalPhase = compositionLocalOf { VeilTemporalPhase.DAY }
+internal data class VeilTemporalContext(
+    val phase: VeilTemporalPhase,
+    val zoneId: ZoneId
+)
+
+// Stable fallback for isolated previews. VeilTheme supplies the one live source for the app.
+private val LocalVeilTemporalContext = compositionLocalOf {
+    VeilTemporalContext(VeilTemporalPhase.DAY, ZoneId.systemDefault())
+}
 
 @Composable
-fun currentVeilTemporalPhase(): VeilTemporalPhase = LocalVeilTemporalPhase.current
+fun currentVeilTemporalPhase(): VeilTemporalPhase = LocalVeilTemporalContext.current.phase
+
+@Composable
+fun currentVeilZoneId(): ZoneId = LocalVeilTemporalContext.current.zoneId
 
 /**
  * One foreground-only clock for all shell realms. System clock broadcasts replace polling,
@@ -32,12 +42,12 @@ fun currentVeilTemporalPhase(): VeilTemporalPhase = LocalVeilTemporalPhase.curre
 internal fun ProvideVeilTemporalPhase(content: @Composable () -> Unit) {
     val context = LocalContext.current.applicationContext
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val phase = remember { mutableStateOf(readLocalTemporalPhase()) }
+    val temporalContext = remember { mutableStateOf(readLocalTemporalContext()) }
 
     DisposableEffect(context, lifecycle) {
         var registered = false
         fun refresh() {
-            phase.value = readLocalTemporalPhase()
+            temporalContext.value = readLocalTemporalContext()
         }
 
         val receiver = object : BroadcastReceiver() {
@@ -86,8 +96,16 @@ internal fun ProvideVeilTemporalPhase(content: @Composable () -> Unit) {
         }
     }
 
-    CompositionLocalProvider(LocalVeilTemporalPhase provides phase.value, content = content)
+    CompositionLocalProvider(
+        LocalVeilTemporalContext provides temporalContext.value,
+        content = content
+    )
 }
 
-private fun readLocalTemporalPhase(): VeilTemporalPhase =
-    temporalPhaseAt(Instant.now(), ZoneId.systemDefault())
+private fun readLocalTemporalContext(): VeilTemporalContext {
+    val zone = ZoneId.systemDefault()
+    return VeilTemporalContext(
+        phase = temporalPhaseAt(Instant.now(), zone),
+        zoneId = zone
+    )
+}
