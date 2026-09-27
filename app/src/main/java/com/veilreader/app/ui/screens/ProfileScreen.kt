@@ -495,6 +495,7 @@ private fun ArchivistDossierPanel(
 
                 TextButton(
                     onClick = onOpenSettings,
+                    modifier = Modifier.heightIn(min = 48.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
