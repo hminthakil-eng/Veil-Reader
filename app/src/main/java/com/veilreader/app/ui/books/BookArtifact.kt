@@ -101,6 +101,21 @@ fun bookArtifactState(
     )
 }
 
+fun bookArtifactRecordLabel(state: BookArtifactState): String {
+    val presence = when (state.readingState) {
+        BookReadingState.UNOPENED -> "CATALOGUED"
+        BookReadingState.ACTIVE -> "IN PROGRESS"
+        BookReadingState.FINISHED -> "COMPLETED"
+    }
+    val age = when (state.patina) {
+        BookPatina.FRESH -> "NEW VOLUME"
+        BookPatina.SETTLED -> "SETTLED"
+        BookPatina.AGED -> "AGED"
+        BookPatina.ARCHIVAL -> "DEEP ARCHIVE"
+    }
+    return "$presence · $age"
+}
+
 fun bookPageStackBalance(progress: Float): Pair<Float, Float> {
     val p = progress.coerceIn(0f, 1f)
     val minimum = 0.14f
