@@ -50,6 +50,7 @@ import com.veilreader.app.domain.CastleMemoryState
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -73,16 +74,27 @@ fun CastleScreen(
     books: List<Book> = emptyList(),
     highlights: List<Highlight> = emptyList(),
     bookmarks: List<Bookmark> = emptyList(),
-    readingSessions: List<ReadingSessionSnapshot> = emptyList()
+    readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    readingCycles: List<ReadingCycleRecord> = emptyList()
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
-    val memoryState = remember(books, highlights, bookmarks, readingSessions) {
+    val castleNowEpochMs = remember { System.currentTimeMillis() }
+    val memoryState = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions,
+        readingCycles,
+        castleNowEpochMs
+    ) {
         deriveCastleMemoryState(
             books = books,
             highlights = highlights,
             bookmarks = bookmarks,
-            sessions = readingSessions
+            sessions = readingSessions,
+            readingCycles = readingCycles,
+            nowEpochMs = castleNowEpochMs
         )
     }
     val castleAdaptiveClass = adaptiveClassFor(
@@ -127,6 +139,7 @@ fun CastleScreen(
         )
 
         CastleMemoryInscription(memoryState)
+        CastleMutationInscription(memoryState)
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
@@ -360,6 +373,73 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
                         )
                     )
                 )
+        )
+    }
+}
+
+@Composable
+private fun CastleMutationInscription(memory: CastleMemoryState) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "LIVING STONE",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                    color = VeilPalette.Brass.copy(alpha = 0.82f)
+                )
+                Text(
+                    memory.mutationInscription,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Moon.copy(alpha = 0.82f)
+                )
+            }
+
+            if (memory.rereadCycleCount > 0) {
+                Text(
+                    "${memory.rereadCycleCount} REREAD",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.86f)
+                )
+            }
+        }
+
+        Text(
+            buildString {
+                if (memory.archiveAgeDays > 0) {
+                    append(memory.archiveAgeDays).append(" days of recorded archive age")
+                } else {
+                    append("Newly awakened archive")
+                }
+                memory.daysSinceLastActivity?.let { days ->
+                    append(" · ")
+                    append(
+                        when {
+                            days == 0 -> "active today"
+                            days == 1 -> "last active yesterday"
+                            else -> "last active ${days}d ago"
+                        }
+                    )
+                }
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.62f)
+        )
+
+        BrassRule(
+            modifier = Modifier.fillMaxWidth(),
+            strong = memory.returnAwakening > 0.20f
         )
     }
 }
