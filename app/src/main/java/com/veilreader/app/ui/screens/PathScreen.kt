@@ -40,8 +40,11 @@ import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 
 private data class PathPresentation(
     val aspect: String,
@@ -57,6 +60,26 @@ private val pathPresentations = mapOf(
     "artificer" to PathPresentation("Making", "Understand the mechanism and the miracle changes shape.")
 )
 
+internal enum class PathGeometryKind {
+    RADIAL_EYE,
+    ASYMMETRIC_CONSTELLATION,
+    CONCENTRIC_ARCHIVE,
+    AXIAL_SPEAR,
+    ECLIPSE,
+    MECHANICAL
+}
+
+internal fun pathGeometryFor(pathId: String): PathGeometryKind =
+    when (pathId) {
+        "oracle" -> PathGeometryKind.RADIAL_EYE
+        "dreamwalker" -> PathGeometryKind.ASYMMETRIC_CONSTELLATION
+        "archivist" -> PathGeometryKind.CONCENTRIC_ARCHIVE
+        "vanguard" -> PathGeometryKind.AXIAL_SPEAR
+        "nocturne" -> PathGeometryKind.ECLIPSE
+        "artificer" -> PathGeometryKind.MECHANICAL
+        else -> PathGeometryKind.RADIAL_EYE
+    }
+
 @Composable
 fun PathScreen(
     profile: ReaderProfile,
@@ -71,9 +94,19 @@ fun PathScreen(
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { reveal = true }
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.RITUAL,
+                seed = profile.path.id.hashCode() xor profile.rankIndex
+            ),
+        contentAlignment = Alignment.TopCenter
+    ) {
     Column(
         Modifier
             .fillMaxSize()
+            .widthIn(max = 920.dp)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
@@ -86,7 +119,7 @@ fun PathScreen(
 
         AnimatedVisibility(
             visible = reveal,
-            enter = fadeIn(tween(360)) + slideInVertically(tween(420)) { it / 6 }
+            enter = fadeIn(tween(VeilMotion.SPATIAL_MS)) + slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
         ) {
             PathIdentityPanel(profile)
         }
@@ -129,6 +162,7 @@ fun PathScreen(
             }
         }
     }
+    }
 
     if (showCeremony && nextRank != null) {
         AdvancementCeremonyDialog(
@@ -151,7 +185,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
         targetValue = xpTargetProgress,
-        animationSpec = tween(650),
+        animationSpec = tween(VeilMotion.SPATIAL_MS),
         label = "path-xp-progress"
     )
 
@@ -259,53 +293,200 @@ private fun PathRitualBackdrop(
         val center = Offset(w * 0.5f, h * 0.39f)
         val brass = VeilPalette.Brass
         val stone = VeilPalette.StrongBorderDark
+        val geometry = pathGeometryFor(pathId)
+        val rankAlpha = (0.045f + rankIndex.coerceAtLeast(0) * 0.009f)
+            .coerceAtMost(0.14f)
+        val stroke = 1.dp.toPx()
 
-        drawCircle(
-            color = brass.copy(alpha = 0.045f),
-            radius = size.minDimension * 0.31f,
-            center = center,
-            style = Stroke(1.dp.toPx())
-        )
-        drawCircle(
-            color = brass.copy(alpha = 0.025f),
-            radius = size.minDimension * 0.23f,
-            center = center,
-            style = Stroke(1.dp.toPx())
-        )
+        when (geometry) {
+            PathGeometryKind.RADIAL_EYE -> {
+                val eye = Path().apply {
+                    moveTo(w * 0.20f, center.y)
+                    quadraticTo(w * 0.50f, h * 0.18f, w * 0.80f, center.y)
+                    quadraticTo(w * 0.50f, h * 0.60f, w * 0.20f, center.y)
+                    close()
+                }
+                drawPath(
+                    eye,
+                    brass.copy(alpha = 0.075f + rankAlpha),
+                    style = Stroke(stroke)
+                )
+                drawCircle(
+                    brass.copy(alpha = 0.055f + rankAlpha),
+                    size.minDimension * 0.13f,
+                    center,
+                    style = Stroke(stroke)
+                )
+                repeat(8) { index ->
+                    val angle = Math.toRadians(-90.0 + index * 45.0)
+                    val inner = size.minDimension * 0.19f
+                    val outer = size.minDimension * 0.33f
+                    drawLine(
+                        brass.copy(alpha = 0.028f + rankAlpha * 0.28f),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * inner,
+                            center.y + kotlin.math.sin(angle).toFloat() * inner
+                        ),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * outer,
+                            center.y + kotlin.math.sin(angle).toFloat() * outer
+                        ),
+                        stroke,
+                        StrokeCap.Round
+                    )
+                }
+            }
 
-        repeat(8) { index ->
-            val angle = Math.toRadians(-90.0 + index * 45.0)
-            val inner = size.minDimension * 0.19f
-            val outer = size.minDimension * 0.33f
-            val x1 = center.x + kotlin.math.cos(angle).toFloat() * inner
-            val y1 = center.y + kotlin.math.sin(angle).toFloat() * inner
-            val x2 = center.x + kotlin.math.cos(angle).toFloat() * outer
-            val y2 = center.y + kotlin.math.sin(angle).toFloat() * outer
-            drawLine(
-                brass.copy(alpha = 0.032f),
-                Offset(x1, y1),
-                Offset(x2, y2),
-                1.dp.toPx(),
-                StrokeCap.Round
-            )
-        }
+            PathGeometryKind.ASYMMETRIC_CONSTELLATION -> {
+                val points = listOf(
+                    Offset(w * 0.24f, h * 0.30f),
+                    Offset(w * 0.43f, h * 0.20f),
+                    Offset(w * 0.63f, h * 0.36f),
+                    Offset(w * 0.76f, h * 0.23f),
+                    Offset(w * 0.56f, h * 0.56f),
+                    Offset(w * 0.32f, h * 0.52f)
+                )
+                points.zipWithNext().forEach { (a, b) ->
+                    drawLine(
+                        brass.copy(alpha = 0.040f + rankAlpha * 0.34f),
+                        a,
+                        b,
+                        stroke
+                    )
+                }
+                points.forEachIndexed { index, point ->
+                    drawCircle(
+                        brass.copy(alpha = 0.10f + rankAlpha * 0.72f),
+                        radius = if (index % 2 == 0) 1.6.dp.toPx() else 1.dp.toPx(),
+                        center = point
+                    )
+                }
+                drawCircle(
+                    brass.copy(alpha = 0.050f + rankAlpha * 0.30f),
+                    radius = size.minDimension * 0.18f,
+                    center = Offset(w * 0.48f, h * 0.39f),
+                    style = Stroke(stroke)
+                )
+            }
 
-        val constellationAlpha = 0.06f + rankIndex.coerceAtLeast(0) * 0.01f
-        repeat(9) { index ->
-            val x = w * (0.10f + ((index * 31) % 80) / 100f)
-            val y = h * (0.12f + ((index * 47) % 72) / 100f)
-            drawCircle(
-                color = brass.copy(alpha = constellationAlpha.coerceAtMost(0.16f)),
-                radius = if (index % 3 == 0) 1.2.dp.toPx() else 0.8.dp.toPx(),
-                center = Offset(x, y)
-            )
+            PathGeometryKind.CONCENTRIC_ARCHIVE -> {
+                repeat(4) { index ->
+                    val insetX = w * (0.20f + index * 0.055f)
+                    val insetY = h * (0.18f + index * 0.045f)
+                    drawRect(
+                        color = brass.copy(
+                            alpha = 0.030f + rankAlpha * (0.22f + index * 0.05f)
+                        ),
+                        topLeft = Offset(insetX, insetY),
+                        size = androidx.compose.ui.geometry.Size(
+                            w - insetX * 2f,
+                            h * 0.48f - index * h * 0.055f
+                        ),
+                        style = Stroke(stroke)
+                    )
+                }
+                repeat(5) { index ->
+                    val y = h * (0.27f + index * 0.075f)
+                    drawLine(
+                        brass.copy(alpha = 0.032f + rankAlpha * 0.26f),
+                        Offset(w * 0.31f, y),
+                        Offset(w * 0.69f, y),
+                        stroke
+                    )
+                }
+            }
+
+            PathGeometryKind.AXIAL_SPEAR -> {
+                drawLine(
+                    brass.copy(alpha = 0.085f + rankAlpha * 0.60f),
+                    Offset(w * 0.50f, h * 0.12f),
+                    Offset(w * 0.50f, h * 0.72f),
+                    1.4.dp.toPx(),
+                    StrokeCap.Round
+                )
+                repeat(4) { index ->
+                    val y = h * (0.25f + index * 0.10f)
+                    val spread = w * (0.08f + index * 0.025f)
+                    drawLine(
+                        brass.copy(alpha = 0.045f + rankAlpha * 0.34f),
+                        Offset(w * 0.50f - spread, y),
+                        Offset(w * 0.50f, y + h * 0.055f),
+                        stroke
+                    )
+                    drawLine(
+                        brass.copy(alpha = 0.045f + rankAlpha * 0.34f),
+                        Offset(w * 0.50f + spread, y),
+                        Offset(w * 0.50f, y + h * 0.055f),
+                        stroke
+                    )
+                }
+            }
+
+            PathGeometryKind.ECLIPSE -> {
+                val eclipseCenter = Offset(w * 0.50f, h * 0.37f)
+                drawCircle(
+                    brass.copy(alpha = 0.070f + rankAlpha * 0.55f),
+                    size.minDimension * 0.24f,
+                    eclipseCenter,
+                    style = Stroke(1.2.dp.toPx())
+                )
+                drawCircle(
+                    VeilPalette.Ink.copy(alpha = 0.94f),
+                    size.minDimension * 0.215f,
+                    Offset(
+                        eclipseCenter.x + size.minDimension * 0.055f,
+                        eclipseCenter.y - size.minDimension * 0.025f
+                    )
+                )
+                repeat(6) { index ->
+                    val y = h * (0.22f + index * 0.075f)
+                    drawLine(
+                        stone.copy(alpha = 0.055f + rankAlpha * 0.20f),
+                        Offset(w * 0.18f, y),
+                        Offset(w * 0.82f, y),
+                        stroke
+                    )
+                }
+            }
+
+            PathGeometryKind.MECHANICAL -> {
+                drawCircle(
+                    brass.copy(alpha = 0.055f + rankAlpha * 0.42f),
+                    size.minDimension * 0.24f,
+                    center,
+                    style = Stroke(stroke)
+                )
+                drawCircle(
+                    brass.copy(alpha = 0.040f + rankAlpha * 0.32f),
+                    size.minDimension * 0.13f,
+                    center,
+                    style = Stroke(stroke)
+                )
+                repeat(6) { index ->
+                    val angle = Math.toRadians(-90.0 + index * 60.0)
+                    val inner = size.minDimension * 0.14f
+                    val outer = size.minDimension * 0.31f
+                    drawLine(
+                        brass.copy(alpha = 0.055f + rankAlpha * 0.40f),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * inner,
+                            center.y + kotlin.math.sin(angle).toFloat() * inner
+                        ),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * outer,
+                            center.y + kotlin.math.sin(angle).toFloat() * outer
+                        ),
+                        stroke
+                    )
+                }
+            }
         }
 
         drawLine(
             stone.copy(alpha = 0.12f),
             Offset(w * 0.08f, h * 0.86f),
             Offset(w * 0.92f, h * 0.86f),
-            1.dp.toPx()
+            stroke
         )
     }
 }
@@ -376,7 +557,7 @@ private fun RitualPanel(
     val targetProgress = (profile.ritualProgress.toFloat() / target).coerceIn(0f, 1f)
     val progress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(700),
+        animationSpec = tween(VeilMotion.SPATIAL_MS),
         label = "ritual-progress"
     )
 
@@ -468,7 +649,7 @@ private fun RitualPanel(
                     enabled = canAdvance,
                     modifier = Modifier
                         .align(Alignment.End)
-                        .heightIn(min = 42.dp),
+                        .heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = VeilPalette.Brass,
@@ -664,7 +845,7 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
             OutlinedButton(
                 onClick = onChoose,
                 enabled = enabled,
-                modifier = Modifier.fillMaxWidth().heightIn(min = 42.dp),
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 shape = MaterialTheme.shapes.extraSmall
             ) {
                 Text(if (enabled) "Choose this Path" else "Locked after first advancement")
