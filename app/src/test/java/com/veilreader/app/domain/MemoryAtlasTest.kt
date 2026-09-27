@@ -31,7 +31,8 @@ class MemoryAtlasTest {
         assertTrue(MemoryRelationKind.AUTHOR in edge.reasons)
         assertTrue(MemoryRelationKind.SERIES in edge.reasons)
         assertTrue(MemoryRelationKind.COLLECTION in edge.reasons)
-        assertEquals(10, edge.strength)
+        // AUTHOR(3) + SERIES(4) + one shared COLLECTION(2) = 9.
+        assertEquals(9, edge.strength)
     }
 
     @Test
