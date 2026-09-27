@@ -1115,35 +1115,62 @@ private fun NotebookBookmarkCard(
 @Composable
 private fun NotebookEmptyState(title: String, body: String) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 170.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Ink.copy(alpha = 0.30f),
+        color = Color.Transparent,
         border = BorderStroke(
             1.dp,
-            VeilPalette.BorderDark.copy(alpha = 0.60f)
+            VeilPalette.Brass.copy(alpha = 0.34f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Archive.copy(alpha = 0.72f),
+                            VeilPalette.Ink.copy(alpha = 0.94f)
+                        )
+                    )
+                )
+                .padding(VeilSpacing.lg)
         ) {
-            Text(
-                "THE ARCHIVE IS QUIET",
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass
+            VeilRealmEmblem(
+                realm = VeilRealm.ARCHIVE,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(118.dp),
+                tint = VeilPalette.Brass.copy(alpha = 0.12f)
             )
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                body,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                VeilEyebrowText(
+                    text = "THE ARCHIVE IS QUIET",
+                    trackingSp = 1.15f
+                )
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist.copy(alpha = 0.84f),
+                    modifier = Modifier.widthIn(max = 470.dp)
+                )
+                BrassRule(Modifier.width(104.dp))
+            }
         }
     }
 }
