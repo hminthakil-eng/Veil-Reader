@@ -1455,7 +1455,7 @@ private fun ReaderChromeButton(
     IconButton(
         onClick = onClick,
         modifier = Modifier
-            .size(46.dp)
+            .size(48.dp)
             .semantics { contentDescription = accessibilityLabel }
     ) {
         ReaderActionIcon(
@@ -1633,7 +1633,7 @@ private fun EpubAppearancePanel(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 44.dp)
+                        .heightIn(min = 48.dp)
                         .selectable(
                             selected = selected,
                             role = Role.Tab
