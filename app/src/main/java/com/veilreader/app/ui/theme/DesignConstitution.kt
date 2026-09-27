@@ -69,6 +69,45 @@ fun adaptiveClassFor(widthDp: Float): VeilAdaptiveClass =
         else -> VeilAdaptiveClass.LARGE
     }
 
+data class VeilArchiveLayoutPolicy(
+    val galleryMinCellDp: Float,
+    val horizontalPaddingDp: Float,
+    val shelfItemWidthDp: Float,
+    val shelfCoverWidthDp: Float,
+    val shelfCoverHeightDp: Float,
+    val showIndexMemorySummary: Boolean
+)
+
+fun archiveLayoutPolicyFor(
+    adaptiveClass: VeilAdaptiveClass
+): VeilArchiveLayoutPolicy =
+    when (adaptiveClass) {
+        VeilAdaptiveClass.COMPACT -> VeilArchiveLayoutPolicy(
+            galleryMinCellDp = 112f,
+            horizontalPaddingDp = 12f,
+            shelfItemWidthDp = 118f,
+            shelfCoverWidthDp = 108f,
+            shelfCoverHeightDp = 158f,
+            showIndexMemorySummary = false
+        )
+        VeilAdaptiveClass.WIDE -> VeilArchiveLayoutPolicy(
+            galleryMinCellDp = 132f,
+            horizontalPaddingDp = 20f,
+            shelfItemWidthDp = 136f,
+            shelfCoverWidthDp = 124f,
+            shelfCoverHeightDp = 182f,
+            showIndexMemorySummary = true
+        )
+        VeilAdaptiveClass.LARGE -> VeilArchiveLayoutPolicy(
+            galleryMinCellDp = 152f,
+            horizontalPaddingDp = 28f,
+            shelfItemWidthDp = 150f,
+            shelfCoverWidthDp = 138f,
+            shelfCoverHeightDp = 202f,
+            showIndexMemorySummary = true
+        )
+    }
+
 enum class VeilMotionClass {
     MICRO,
     FUNCTIONAL,
