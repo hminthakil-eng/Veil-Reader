@@ -9,6 +9,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -74,7 +75,9 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
+import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilSanctuary
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -256,7 +259,7 @@ fun ReaderScreen(
                 touchExplorationEnabled = touchExplorationEnabled
             )
         ) {
-            delay(3600)
+            delay(VeilSanctuary.chromeAutoHideMillis)
             controlsVisible = false
         }
     }
@@ -307,7 +310,11 @@ fun ReaderScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarBottom by animateDpAsState(
         targetValue = if (controlsVisible) 104.dp else 16.dp,
-        animationSpec = tween(220),
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(VeilMotion.READER_SNACKBAR_SHIFT_MS)
+        },
         label = "reader-snackbar-offset"
     )
 
@@ -714,8 +721,18 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
-            enter = fadeIn(tween(100)) + slideInVertically(tween(140)) { -it / 4 },
-            exit = fadeOut(tween(80)) + slideOutVertically(tween(110)) { -it / 4 }
+            enter = if (reducedMotion) {
+                fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+            } else {
+                fadeIn(tween(VeilMotion.MICRO_FAST_MS)) +
+                    slideInVertically(tween(VeilMotion.FUNCTIONAL_ENTER_MS)) { -it / 4 }
+            },
+            exit = if (reducedMotion) {
+                fadeOut(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+            } else {
+                fadeOut(tween(VeilMotion.MICRO_FAST_MS)) +
+                    slideOutVertically(tween(VeilMotion.FUNCTIONAL_EXIT_MS)) { -it / 4 }
+            }
         ) {
             Surface(
                 modifier = Modifier
@@ -789,8 +806,18 @@ fun ReaderScreen(
         AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
-            enter = fadeIn(tween(100)) + slideInVertically(tween(140)) { it / 4 },
-            exit = fadeOut(tween(80)) + slideOutVertically(tween(110)) { it / 4 }
+            enter = if (reducedMotion) {
+                fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+            } else {
+                fadeIn(tween(VeilMotion.MICRO_FAST_MS)) +
+                    slideInVertically(tween(VeilMotion.FUNCTIONAL_ENTER_MS)) { it / 4 }
+            },
+            exit = if (reducedMotion) {
+                fadeOut(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+            } else {
+                fadeOut(tween(VeilMotion.MICRO_FAST_MS)) +
+                    slideOutVertically(tween(VeilMotion.FUNCTIONAL_EXIT_MS)) { it / 4 }
+            }
         ) {
             Surface(
                 modifier = Modifier
@@ -885,8 +912,18 @@ fun ReaderScreen(
                 .align(Alignment.TopCenter)
                 .statusBarsPadding()
                 .padding(top = 56.dp),
-            enter = fadeIn(tween(120)),
-            exit = fadeOut(tween(90))
+            enter = fadeIn(
+                tween(
+                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
+                    else VeilMotion.TAP_MS
+                )
+            ),
+            exit = fadeOut(
+                tween(
+                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
+                    else VeilMotion.MICRO_FAST_MS
+                )
+            )
         ) {
             OutlinedButton(
                 onClick = ::returnToPreviousLocation,
