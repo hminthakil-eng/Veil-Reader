@@ -43,7 +43,6 @@ import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
-import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilPalette
@@ -200,16 +199,7 @@ fun SettingsScreen(
                 }
             )
             Text(
-                when (appearance.navigationMode) {
-                    ReaderNavigationMode.PAPER_CURL ->
-                        "Physical page curl with weighted drag, release velocity, and page-stack depth."
-                    ReaderNavigationMode.SLIDE ->
-                        "Paginated reading with a lightweight horizontal transition and no paper deformation."
-                    ReaderNavigationMode.PAGED ->
-                        "Static pagination with no decorative page transition."
-                    ReaderNavigationMode.SCROLL ->
-                        "Continuous vertical reading when the publication format supports it."
-                },
+                readerNavigationModeDescription(appearance.navigationMode),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
