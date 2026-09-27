@@ -1,6 +1,5 @@
 package com.veilreader.app.domain
 
-import kotlin.math.abs
 import kotlin.math.ln
 
 /**
@@ -38,11 +37,19 @@ fun deriveLivingMirrorNotes(
     val safeNow = nowEpochMs.coerceAtLeast(1L)
     val booksById = books.associateBy { it.id }
     val cyclesByBook = readingCycles
+        .asSequence()
+        .filter { cycle ->
+            cycle.cycleIndex >= 1 &&
+                cycle.completedAtEpochMs in 1L..safeNow
+        }
         .groupBy { it.bookId }
-        .mapValues { (_, cycles) -> cycles.maxOfOrNull { it.cycleIndex.coerceAtLeast(1) } ?: 1 }
+        .mapValues { (_, cycles) -> cycles.maxOfOrNull { it.cycleIndex } ?: 1 }
 
     return highlights.asSequence()
-        .filter { it.note.isNotBlank() }
+        .filter { highlight ->
+            highlight.note.isNotBlank() &&
+                highlight.createdAtEpochMs in 1L..safeNow
+        }
         .mapNotNull { highlight ->
             val book = booksById[highlight.bookId] ?: return@mapNotNull null
             val visits = exactPassageVisits(highlight, passageVisits)
@@ -102,5 +109,5 @@ private fun stableMirrorHash(value: String): Int {
         hash = hash xor char.code
         hash *= 0x01000193
     }
-    return abs(hash)
+    return hash and Int.MAX_VALUE
 }
