@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
@@ -404,21 +405,12 @@ private fun CastleChamberGrandMasthead(
                 if (realm == VeilRealm.SANCTUM) VeilPalette.Spirit else VeilPalette.Brass
                 ).copy(alpha = 0.22f)
         )
-        Text(
-            eyebrow,
+        VeilMastheadMetaRow(
+            primary = eyebrow,
+            secondary = trailing,
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-            color = VeilPalette.Brass
-        )
-        Text(
-            trailing,
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.76.sp),
-            color = VeilPalette.Moon.copy(alpha = 0.74f)
+                .align(Alignment.TopCenter)
+                .padding(VeilSpacing.md)
         )
         Column(
             modifier = Modifier
