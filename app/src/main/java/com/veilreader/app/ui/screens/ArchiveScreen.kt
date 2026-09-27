@@ -41,6 +41,8 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.rememberVeilTemporalAtmosphere
+import com.veilreader.app.ui.theme.temporalGrayfogAtmosphere
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
@@ -87,6 +89,7 @@ fun ArchiveScreen(
             sealedCycles = readingCycles
         )
     }
+    val temporalAtmosphere = rememberVeilTemporalAtmosphere()
     val cleanQuery = query.trim()
 
     val matchingHighlights = remember(highlights, booksById, cleanQuery) {
@@ -140,6 +143,12 @@ fun ArchiveScreen(
                 realm = VeilRealm.ARCHIVE,
                 seed = highlights.size * 17 + bookmarks.size * 7 + capsules.size,
                 intensity = 0.74f
+            )
+            .temporalGrayfogAtmosphere(
+                state = temporalAtmosphere,
+                realm = VeilRealm.ARCHIVE,
+                seed = highlights.size * 17 + bookmarks.size * 7 + capsules.size,
+                intensity = 0.72f
             )
             .statusBarsPadding()
             .navigationBarsPadding(),
