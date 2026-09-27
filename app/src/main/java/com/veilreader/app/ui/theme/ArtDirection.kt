@@ -252,15 +252,39 @@ fun GrayfogOrnamentFrame(
 ) {
     Canvas(modifier) {
         val s = strength.coerceIn(0f, 1f)
-        if (s <= 0.001f) return@Canvas
+        if (s <= 0.001f || size.width <= 1f || size.height <= 1f) return@Canvas
 
-        val line = VeilPalette.Brass.copy(alpha = 0.28f * s)
-        val glow = VeilPalette.Brass.copy(alpha = 0.12f * s)
-        val inset = 10.dp.toPx()
-        val corner = 22.dp.toPx()
+        val brass = VeilPalette.Brass
+        val line = brass.copy(alpha = 0.30f * s)
+        val secondary = brass.copy(alpha = 0.12f * s)
+        val glow = brass.copy(alpha = 0.10f * s)
         val stroke = 1.dp.toPx()
 
-        fun cornerMark(x: Float, y: Float, xDir: Float, yDir: Float) {
+        // Two architectural rails make the frame read as a constructed archive plate rather
+        // than a generic card border. Keep the inner rail faint so content remains dominant.
+        val outerInset = 8.dp.toPx()
+        val innerInset = 13.dp.toPx()
+        if (size.width > outerInset * 2f && size.height > outerInset * 2f) {
+            drawRect(
+                color = line,
+                topLeft = Offset(outerInset, outerInset),
+                size = Size(size.width - outerInset * 2f, size.height - outerInset * 2f),
+                style = Stroke(stroke)
+            )
+        }
+        if (size.width > innerInset * 2f && size.height > innerInset * 2f) {
+            drawRect(
+                color = secondary,
+                topLeft = Offset(innerInset, innerInset),
+                size = Size(size.width - innerInset * 2f, size.height - innerInset * 2f),
+                style = Stroke(0.65.dp.toPx())
+            )
+        }
+
+        val corner = 25.dp.toPx()
+        val notch = 8.dp.toPx()
+
+        fun cornerBracket(x: Float, y: Float, xDir: Float, yDir: Float) {
             drawLine(
                 color = line,
                 start = Offset(x, y),
@@ -275,22 +299,84 @@ fun GrayfogOrnamentFrame(
                 strokeWidth = stroke,
                 cap = StrokeCap.Round
             )
+            drawLine(
+                color = secondary,
+                start = Offset(x + notch * xDir, y + 4.dp.toPx() * yDir),
+                end = Offset(x + notch * xDir, y + 13.dp.toPx() * yDir),
+                strokeWidth = 0.75.dp.toPx()
+            )
+            drawLine(
+                color = secondary,
+                start = Offset(x + 4.dp.toPx() * xDir, y + notch * yDir),
+                end = Offset(x + 13.dp.toPx() * xDir, y + notch * yDir),
+                strokeWidth = 0.75.dp.toPx()
+            )
             drawCircle(
                 color = glow,
-                radius = 2.2.dp.toPx(),
+                radius = 2.1.dp.toPx(),
                 center = Offset(x + 4.dp.toPx() * xDir, y + 4.dp.toPx() * yDir)
             )
         }
 
-        cornerMark(inset, inset, 1f, 1f)
-        cornerMark(size.width - inset, inset, -1f, 1f)
-        cornerMark(inset, size.height - inset, 1f, -1f)
-        cornerMark(size.width - inset, size.height - inset, -1f, -1f)
+        cornerBracket(outerInset, outerInset, 1f, 1f)
+        cornerBracket(size.width - outerInset, outerInset, -1f, 1f)
+        cornerBracket(outerInset, size.height - outerInset, 1f, -1f)
+        cornerBracket(size.width - outerInset, size.height - outerInset, -1f, -1f)
 
+        // Quiet central seal and side registration marks. These repeat across realms as the
+        // product's visual signature without becoming ornamental wallpaper.
+        val centerX = size.width * 0.5f
+        val topY = outerInset
+        val seal = 5.dp.toPx()
         drawLine(
-            color = line.copy(alpha = line.alpha * 0.58f),
-            start = Offset(size.width * 0.38f, inset),
-            end = Offset(size.width * 0.62f, inset),
+            color = secondary,
+            start = Offset(size.width * 0.34f, topY),
+            end = Offset(centerX - seal * 1.8f, topY),
+            strokeWidth = stroke
+        )
+        drawLine(
+            color = secondary,
+            start = Offset(centerX + seal * 1.8f, topY),
+            end = Offset(size.width * 0.66f, topY),
+            strokeWidth = stroke
+        )
+        drawLine(
+            color = line,
+            start = Offset(centerX, topY - seal),
+            end = Offset(centerX + seal, topY),
+            strokeWidth = stroke
+        )
+        drawLine(
+            color = line,
+            start = Offset(centerX + seal, topY),
+            end = Offset(centerX, topY + seal),
+            strokeWidth = stroke
+        )
+        drawLine(
+            color = line,
+            start = Offset(centerX, topY + seal),
+            end = Offset(centerX - seal, topY),
+            strokeWidth = stroke
+        )
+        drawLine(
+            color = line,
+            start = Offset(centerX - seal, topY),
+            end = Offset(centerX, topY - seal),
+            strokeWidth = stroke
+        )
+
+        val midY = size.height * 0.5f
+        val sideTick = 9.dp.toPx()
+        drawLine(
+            color = secondary,
+            start = Offset(outerInset, midY),
+            end = Offset(outerInset + sideTick, midY),
+            strokeWidth = stroke
+        )
+        drawLine(
+            color = secondary,
+            start = Offset(size.width - outerInset, midY),
+            end = Offset(size.width - outerInset - sideTick, midY),
             strokeWidth = stroke
         )
     }
