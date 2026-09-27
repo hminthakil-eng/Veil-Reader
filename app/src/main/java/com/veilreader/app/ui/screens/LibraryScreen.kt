@@ -2573,48 +2573,122 @@ private fun LibraryEmptyState(
 }
 
 @Composable
+private fun LibraryShelvesView(
+    groups: List<LibraryShelfGroup>,
+    artifactMemoryByBookId: Map<String, BookArtifactMemory>,
+    onOpen: (Book) -> Unit,
+    onDetails: (Book) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
+    ) {
+        groups.forEach { group ->
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                LibrarySectionHeading(
+                    eyebrow = group.eyebrow,
+                    title = group.title,
+                    trailing = "${group.books.size} volumes"
+                )
+                BrassRule(Modifier.fillMaxWidth())
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                ) {
+                    group.books.forEach { book ->
+                        Column(
+                            modifier = Modifier
+                                .width(118.dp)
+                                .clickable(
+                                    role = Role.Button,
+                                    onClickLabel = "Read ${book.title}"
+                                ) { onOpen(book) },
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            BookCover(
+                                title = book.title,
+                                subtitle = book.author,
+                                imagePath = book.coverCachePath,
+                                artifact = bookArtifactState(
+                                    book,
+                                    memory = artifactMemoryByBookId[book.id]
+                                ),
+                                modifier = Modifier
+                                    .width(108.dp)
+                                    .height(158.dp)
+                            )
+                            Text(
+                                book.title,
+                                style = MaterialTheme.typography.titleSmall,
+                                color = VeilPalette.Moon,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Text(
+                                when {
+                                    book.finished -> "Completed"
+                                    book.progress > 0f ->
+                                        "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
+                                    else -> book.format.name
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = VeilPalette.Brass.copy(alpha = 0.82f),
+                                maxLines = 1
+                            )
+                            TextButton(
+                                onClick = { onDetails(book) },
+                                modifier = Modifier.heightIn(min = 44.dp),
+                                contentPadding = PaddingValues(horizontal = 0.dp)
+                            ) {
+                                Text("Archive record")
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        IconButton(
-            onClick = { onChange(LibraryViewMode.GRID) },
-            modifier = Modifier
-                .size(40.dp)
-                .semantics {
-                    contentDescription = "Grid view"
-                    selected = mode == LibraryViewMode.GRID
-                }
-        ) {
-            GridIcon(
-                Modifier.size(18.dp),
-                if (mode == LibraryViewMode.GRID) VeilPalette.Brass
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-
-        Box(
-            Modifier
-                .width(1.dp)
-                .height(22.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f))
-        )
-
-        IconButton(
-            onClick = { onChange(LibraryViewMode.LIST) },
-            modifier = Modifier
-                .size(40.dp)
-                .semantics {
-                    contentDescription = "List view"
-                    selected = mode == LibraryViewMode.LIST
-                }
-        ) {
-            ListIcon(
-                Modifier.size(18.dp),
-                if (mode == LibraryViewMode.LIST) VeilPalette.Brass
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
+        listOf(
+            LibraryViewMode.GALLERY to "Gallery",
+            LibraryViewMode.SHELVES to "Shelves",
+            LibraryViewMode.INDEX to "Index"
+        ).forEach { (candidate, label) ->
+            val active = mode == candidate
+            TextButton(
+                onClick = { onChange(candidate) },
+                modifier = Modifier
+                    .heightIn(min = 44.dp)
+                    .semantics {
+                        contentDescription = "$label view"
+                        selected = active
+                    },
+                contentPadding = PaddingValues(horizontal = 9.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = if (active) {
+                        VeilPalette.Brass
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            ) {
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.7.sp)
+                )
+            }
         }
     }
 }
