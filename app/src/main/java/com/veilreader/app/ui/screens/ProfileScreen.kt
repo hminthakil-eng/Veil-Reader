@@ -20,7 +20,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -913,13 +912,4 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
 private fun formatMinutes(minutes: Int): String = when {
     minutes < 60 -> "${minutes}m"
     else -> "${minutes / 60}h ${minutes % 60}m"
-}
-
-@Composable
-private fun StatCard(symbol: String, value: String, label: String, modifier: Modifier = Modifier) {
-    MysteryCard(modifier) {
-        Text(symbol, fontSize = 24.sp)
-        Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-    }
 }
