@@ -292,10 +292,9 @@ fun VeilBottomDock(
         )
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+            modifier = Modifier.padding(horizontal = 4.dp),
+            verticalArrangement = Arrangement.Center
         ) {
-            GrayfogRule(Modifier.fillMaxWidth())
             Row(
                 modifier = Modifier.selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -330,20 +329,20 @@ private fun VeilDockItem(
 
     Column(
         modifier = modifier
-            .heightIn(min = 52.dp)
+            .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(2.dp))
             .background(background)
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 7.dp),
+            .padding(horizontal = 2.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(21.dp))
-        Spacer(Modifier.height(3.dp))
+        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(20.dp))
+        Spacer(Modifier.height(2.dp))
         Text(
             tab.label,
             style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 9.5.sp,
+                fontSize = 9.sp,
                 letterSpacing = 0.48.sp,
                 fontWeight = FontWeight.Medium
             ),
@@ -353,7 +352,7 @@ private fun VeilDockItem(
             textAlign = TextAlign.Center
         )
         // Reserve the marker space in both states so selection does not move the icon.
-        Spacer(Modifier.height(3.dp))
+        Spacer(Modifier.height(2.dp))
         Box(
             Modifier
                 .width(18.dp)
