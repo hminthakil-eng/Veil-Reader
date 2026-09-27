@@ -37,7 +37,7 @@ have passed device QA. Compare each slice to the pinned baseline before porting.
 |---|---|---|
 | #291 | Ritual | W0c reconciles phases, frozen target, repository result and reduced motion into the canonical chamber. Castle routes to Ritual. Full Android/device verification remains pending. |
 | #292 | Castle mutation | W0d preserves the canonical spatial Keep/Ritual ownership and integrates factual history mutation, reread patina, return awakening and silence cooling. Android/device verification remains pending. |
-| #293 | Archive material | Preserve the canonical BookArtifact model and newer notebook chambers while reconciling material strata and sealed dossiers. |
+| #293 | Archive material | W0e preserves canonical BookArtifact ownership and newer notebook chambers while integrating memory strata, resurfaced relic material and full-screen sealed dossiers. Android/device verification remains pending. |
 | #294 | Discoveries | Canonical already contains VeiledDiscoveryPolicy, profile data and GameRepository persistence. Compare schema, eligibility and restore semantics before choosing one owner; do not install a second ledger. |
 | #295 | Reading signature | Review the new factual model and reconcile ProfileScreen with the current profile and discovery implementation. |
 | #296 | Temporal atmosphere | Source reconciliation completed in W0b below: retain canonical palette/schedule, share a foreground clock, and reject the competing overlay/model. Android lifecycle verification remains pending. |
@@ -218,4 +218,46 @@ No Android build, Compose resolution, device rendering, TalkBack, rotation or
 performance run is claimed by this step. Those remain W0 acceptance gates.
 
 PR #292 remains open as source provenance and should not be merged wholesale.
-Remaining source reconciliations: #293–#295 and #297–#298.
+Remaining source reconciliations: #294–#295 and #297–#298.
+
+
+## W0e — Archive material reconciliation
+
+Inputs: Alpha `6e382ea4c823fdad956572147d4895c63c00fba3` and PR #293
+`e6dca48757ff818f30b0e316005d7b0845a25879`.
+
+### Decision
+
+Keep the canonical Archive notebook structure, current BookArtifact owner, W0b
+foreground clock and existing durable echo/capsule models. Port #293's material
+language as presentation over those facts rather than creating a second archive.
+
+### Implementation and hardening
+
+- Highlight cards now express echo depth as physical strata/patina, exact passage
+  revisits as a restrained spirit trace, and eligible resurfaced echoes as relics.
+- Add the existing Memory Atlas link count to the Archive register as THREADS;
+  this is derived from current books/highlights/sessions and introduces no storage.
+- Preserve the canonical `com.veilreader.app.ui.books.bookArtifactState` owner.
+  The source branch predates that package move and cannot be copied wholesale.
+- Upgrade sealed reading records into a full-screen Archive dossier with a compact
+  cycle seal, durable-vs-legacy provenance, timeline, metrics and explicit local
+  preservation copy.
+- Fix a W0b regression in the source dossier: its atmosphere now consumes
+  `currentVeilTemporalPhase()` instead of silently falling back to constant DAY.
+- Clamp negative/unknown age/revisit inputs before decorative fleck placement so
+  corrupt legacy values cannot generate unstable off-field material coordinates.
+- No Reader data model, note persistence, passage navigation, cycle semantics,
+  deletion behavior or BookArtifact derivation is changed.
+
+### Verification and remaining gates
+
+The four deterministic material-policy tests from #293 are preserved and one Alpha
+regression covers negative legacy age/revisit inputs. Integration was applied on
+the exact W0d head. GitHub-hosted Actions are currently not assigning a runner
+(`runner_id=0`, zero steps), so Android compilation/device rendering is still
+unverified rather than failed by this source. Full small-screen, large-text,
+TalkBack, back-navigation and dossier scroll checks remain W0 gates.
+
+PR #293 remains source provenance and should not be merged wholesale.
+Remaining source reconciliations: #294–#295 and #297–#298.
