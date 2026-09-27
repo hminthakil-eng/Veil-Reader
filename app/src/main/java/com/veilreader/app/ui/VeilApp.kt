@@ -194,6 +194,9 @@ fun VeilApp(
     val dailyGoalMinutes = dailyGoalState?.value
     val equippedSigil = equippedSigilState?.value
     val castleTitle = castleTitleState?.value
+    val discoveryRecords = remember(profile?.earnedDiscoveries) {
+        profile?.let { game.discoveryRecords(it.earnedDiscoveries) }.orEmpty()
+    }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -530,6 +533,7 @@ fun VeilApp(
                 books = books,
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
+                discoveries = discoveryRecords,
                 onSetDailyGoal = game::setDailyGoal,
                 onOpenArchive = routeViewModel::openArchive,
                 onOpenSettings = routeViewModel::openSettings

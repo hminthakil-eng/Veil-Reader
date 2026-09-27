@@ -27,7 +27,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
-import com.veilreader.app.domain.VeiledDiscoveryPolicy
+import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -35,59 +35,6 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import java.text.DateFormat
 import java.util.Date
-
-private data class VeiledDiscovery(
-    val id: String,
-    val symbol: String,
-    val title: String,
-    val clue: String,
-    val lore: String
-)
-
-private val veiledDiscoveries = listOf(
-    VeiledDiscovery(
-        id = "patient_flame",
-        symbol = "◈",
-        title = "The Patient Flame",
-        clue = "A flame kept for many returns begins to remember the hand that lit it.",
-        lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return."
-    ),
-    VeiledDiscovery(
-        id = "marginalia_gate",
-        symbol = "✧",
-        title = "The Marginalia Gate",
-        clue = "Some doors are written in the margins rather than printed on the page.",
-        lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves."
-    ),
-    VeiledDiscovery(
-        id = "deep_shelf",
-        symbol = "▥",
-        title = "The Deep Shelf",
-        clue = "Finished volumes gather weight. Eventually the shelf becomes a foundation.",
-        lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list."
-    ),
-    VeiledDiscovery(
-        id = "long_watch",
-        symbol = "◐",
-        title = "The Long Watch",
-        clue = "There is a point when time spent reading stops feeling counted.",
-        lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes."
-    ),
-    VeiledDiscovery(
-        id = "veil_thins",
-        symbol = "⌁",
-        title = "When the Veil Thins",
-        clue = "Several marks must awaken before they begin to answer one another.",
-        lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil."
-    ),
-    VeiledDiscovery(
-        id = "unnamed_chamber",
-        symbol = "⬡",
-        title = "The Unnamed Chamber",
-        clue = "The deepest chamber does not open to a single achievement.",
-        lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name."
-    )
-)
 
 @Composable
 fun ProfileScreen(
@@ -99,18 +46,14 @@ fun ProfileScreen(
     books: List<Book> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
+    discoveries: List<VeiledDiscoveryRecord> = emptyList(),
     onSetDailyGoal: (Int) -> Unit,
     onOpenArchive: () -> Unit,
     onOpenSettings: () -> Unit
 ) {
     val p = profile
-    val eligibleDiscoveryIds = remember(p, highlightCount) {
-        VeiledDiscoveryPolicy.eligibleIds(p, highlightCount)
-    }
-    val revealedDiscoveryIds = remember(p.earnedDiscoveries, eligibleDiscoveryIds) {
-        p.earnedDiscoveries + eligibleDiscoveryIds
-    }
-    val revealedDiscoveries = veiledDiscoveries.count { it.id in revealedDiscoveryIds }
+    val discoveriesById = remember(discoveries) { discoveries.associateBy { it.id } }
+    val revealedDiscoveries = veiledDiscoveryPresentations.count { it.id in discoveriesById }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
             books = books,
@@ -148,7 +91,7 @@ fun ProfileScreen(
                 highlightCount = highlightCount,
                 equippedSigilName = equippedSigilName,
                 revealedDiscoveries = revealedDiscoveries,
-                totalDiscoveries = veiledDiscoveries.size,
+                totalDiscoveries = veiledDiscoveryPresentations.size,
                 onOpenSettings = onOpenSettings
             )
         }
@@ -243,7 +186,7 @@ fun ProfileScreen(
         ProfileSectionHeading(
             eyebrow = "Restricted folio",
             title = "Veiled discoveries",
-            trailing = "$revealedDiscoveries/${veiledDiscoveries.size} revealed"
+            trailing = "$revealedDiscoveries/${veiledDiscoveryPresentations.size} revealed"
         )
         Text(
             "Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.",
@@ -251,7 +194,7 @@ fun ProfileScreen(
             color = VeilPalette.Mist
         )
 
-        veiledDiscoveries.forEachIndexed { index, discovery ->
+        veiledDiscoveryPresentations.forEachIndexed { index, discovery ->
             VeilReveal(
                 delayMillis = 60 + index * 40,
                 distance = 8.dp
@@ -259,7 +202,7 @@ fun ProfileScreen(
                 DiscoveryCard(
                     index = index,
                     discovery = discovery,
-                    revealed = discovery.id in revealedDiscoveryIds
+                    record = discoveriesById[discovery.id]
                 )
             }
         }
@@ -831,7 +774,12 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
 }
 
 @Composable
-private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Boolean) {
+private fun DiscoveryCard(
+    index: Int,
+    discovery: VeiledDiscoveryPresentation,
+    record: VeiledDiscoveryRecord?
+) {
+    val revealed = record != null
     val shape = MaterialTheme.shapes.extraSmall
     val accent = if (revealed) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.48f)
 
@@ -885,7 +833,17 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                 )
                 if (revealed) {
                     Text(
-                        "This discovery emerged from your existing reading history; no action was consumed and nothing expires.",
+                        buildString {
+                            append("PERMANENT LEDGER")
+                            record?.recordedAtEpochMs?.let { timestamp ->
+                                append(" · RECORDED ").append(formatDossierDate(timestamp))
+                            }
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                        color = VeilPalette.Brass.copy(alpha = 0.82f)
+                    )
+                    Text(
+                        "Once recorded, this discovery remains part of your local reading history even if a temporary signal such as a streak later changes.",
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Spirit
                     )
