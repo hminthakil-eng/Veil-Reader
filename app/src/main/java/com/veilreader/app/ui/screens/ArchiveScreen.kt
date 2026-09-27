@@ -41,6 +41,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
@@ -140,6 +141,11 @@ fun ArchiveScreen(
                 realm = VeilRealm.ARCHIVE,
                 seed = highlights.size * 17 + bookmarks.size * 7 + capsules.size,
                 intensity = 0.74f
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.ARCHIVE,
+                seed = highlights.size * 19 + bookmarks.size * 7 + capsules.size,
+                intensity = 0.72f
             )
             .statusBarsPadding()
             .navigationBarsPadding(),
