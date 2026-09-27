@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.theme
 
+import com.veilreader.app.domain.ReaderNavigationMode
+
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -44,6 +46,19 @@ class DesignConstitutionTest {
         assertNull(policy.fixedDurationMillis)
         assertTrue(policy.translationAllowed)
         assertFalse(policy.ambientLoopAllowed)
+    }
+
+    @Test
+    fun `scroll keeps paper material without physical page stack`() {
+        ReaderNavigationMode.entries.forEach { mode ->
+            val material = sanctuaryPageMaterialFor(mode)
+            assertEquals(
+                mode != ReaderNavigationMode.SCROLL,
+                material.showPhysicalPageStack
+            )
+            assertTrue(material.showEdgeFalloff)
+            assertTrue(material.showMicroFibres)
+        }
     }
 
     @Test
