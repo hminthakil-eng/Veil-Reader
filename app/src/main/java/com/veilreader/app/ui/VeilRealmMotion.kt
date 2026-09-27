@@ -49,6 +49,9 @@ internal fun hallSharedBoundsKey(route: String): String {
     return "hall:$clean"
 }
 
+internal fun hallRouteUsesTabTransition(route: String): Boolean =
+    route in setOf("library", "ritual", "profile", "reading")
+
 internal data class VeilRealmMotionPolicy(
     val enterDurationMs: Int,
     val exitDurationMs: Int,
