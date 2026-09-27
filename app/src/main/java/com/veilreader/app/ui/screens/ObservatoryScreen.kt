@@ -44,6 +44,7 @@ import com.veilreader.app.domain.MemoryAtlasEdge
 import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
+import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -262,21 +263,12 @@ private fun ObservatoryGrandMasthead(
                 .size(144.dp),
             tint = VeilPalette.Spirit.copy(alpha = 0.24f)
         )
-        Text(
-            "OBSERVATORY · MEMORY ATLAS",
+        VeilMastheadMetaRow(
+            primary = "OBSERVATORY · MEMORY ATLAS",
+            secondary = "$volumeCount VOLUMES · $linkCount LINKS",
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-            color = VeilPalette.Brass
-        )
-        Text(
-            "$volumeCount VOLUMES · $linkCount LINKS",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
-            color = VeilPalette.Moon.copy(alpha = 0.74f)
+                .align(Alignment.TopCenter)
+                .padding(VeilSpacing.md)
         )
         Column(
             modifier = Modifier
