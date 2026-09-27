@@ -96,4 +96,22 @@ class PersianIdentityTest {
         assertTrue(usesArabicScript("العربية"))
         assertTrue(usesArabicScript("کوردی"))
     }
+
+    @Test
+    fun `Arabic script punctuation policy uses native signs while Latin remains unchanged`() {
+        val fa = punctuationPolicyFor("fa")
+        assertEquals('٫', fa.decimalSeparator)
+        assertEquals('٬', fa.groupingSeparator)
+        assertEquals('٪', fa.percentSign)
+        assertEquals('؟', fa.questionMark)
+        assertEquals("، ", fa.listSeparator)
+
+        val en = punctuationPolicyFor("en")
+        assertEquals('.', en.decimalSeparator)
+        assertEquals(',', en.groupingSeparator)
+        assertEquals('%', en.percentSign)
+        assertEquals('?', en.questionMark)
+        assertEquals(", ", en.listSeparator)
+    }
+
 }
