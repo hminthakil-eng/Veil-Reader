@@ -530,6 +530,9 @@ fun VeilApp(
                 dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
                 castleTitle = requireNotNull(castleTitle),
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
+                books = books,
+                readingSessions = readingSessions,
+                readingCycles = readingCycles,
                 onSetDailyGoal = game::setDailyGoal,
                 onOpenArchive = routeViewModel::openArchive,
                 onOpenSettings = routeViewModel::openSettings
