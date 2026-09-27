@@ -229,7 +229,7 @@ fun CastleScreen(
 
 private enum class GreatHallMode { HALL, REGISTRY }
 
-private enum class GreatHallArtifactKind {
+internal enum class GreatHallArtifactKind {
     MIRROR,
     ASTROLABE,
     ARCHIVE_GATE,
@@ -240,7 +240,7 @@ private enum class GreatHallArtifactKind {
     READING_SEAT
 }
 
-private data class GreatHallArtifact(
+internal data class GreatHallArtifact(
     val kind: GreatHallArtifactKind,
     val title: String,
     val subtitle: String,
@@ -252,7 +252,7 @@ private data class GreatHallArtifact(
     val id: String get() = kind.name.lowercase()
 }
 
-private fun greatHallArtifacts(
+internal fun greatHallArtifacts(
     profile: ReaderProfile,
     memoryState: CastleMemoryState,
     livingMirrorNoteCount: Int,
@@ -571,7 +571,11 @@ private fun GreatHallArtifactField(
             }
         }
 
-        val nodeWidth = if (maxWidth < 430.dp) 104.dp else 124.dp
+        val nodeWidth = when {
+            maxWidth < 380.dp -> 96.dp
+            maxWidth < 430.dp -> 104.dp
+            else -> 124.dp
+        }
         val nodeHeight = if (maxWidth < 430.dp) 96.dp else 104.dp
 
         artifacts.forEachIndexed { index, artifact ->
@@ -608,14 +612,14 @@ private fun greatHallArtifactPosition(
     kind: GreatHallArtifactKind
 ): Pair<Float, Float> =
     when (kind) {
-        GreatHallArtifactKind.MIRROR -> 0.06f to 0.17f
-        GreatHallArtifactKind.ASTROLABE -> 0.94f to 0.17f
-        GreatHallArtifactKind.ARCHIVE_GATE -> 0.02f to 0.43f
+        GreatHallArtifactKind.MIRROR -> 0.02f to 0.17f
+        GreatHallArtifactKind.ASTROLABE -> 0.98f to 0.17f
+        GreatHallArtifactKind.ARCHIVE_GATE -> 0.00f to 0.43f
         GreatHallArtifactKind.LEDGER -> 0.50f to 0.35f
-        GreatHallArtifactKind.RITUAL_SEAL -> 0.98f to 0.43f
-        GreatHallArtifactKind.RELIQUARY -> 0.10f to 0.73f
+        GreatHallArtifactKind.RITUAL_SEAL -> 1.00f to 0.43f
+        GreatHallArtifactKind.RELIQUARY -> 0.04f to 0.73f
         GreatHallArtifactKind.READING_SEAT -> 0.50f to 0.68f
-        GreatHallArtifactKind.VEILED_DOOR -> 0.90f to 0.73f
+        GreatHallArtifactKind.VEILED_DOOR -> 0.96f to 0.73f
     }
 
 @Composable
