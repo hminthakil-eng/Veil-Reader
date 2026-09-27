@@ -172,7 +172,8 @@ data class VeilCastleLayoutPolicy(
     val horizontalPaddingDp: Float,
     val keepMinHeightDp: Float,
     val mapHorizontalPaddingDp: Float,
-    val chamberMinHeightDp: Float
+    val chamberMinHeightDp: Float,
+    val observatoryHeightDp: Float
 )
 
 fun castleLayoutPolicyFor(
@@ -184,21 +185,24 @@ fun castleLayoutPolicyFor(
             horizontalPaddingDp = 16f,
             keepMinHeightDp = 220f,
             mapHorizontalPaddingDp = 10f,
-            chamberMinHeightDp = 116f
+            chamberMinHeightDp = 116f,
+            observatoryHeightDp = 330f
         )
         VeilAdaptiveClass.WIDE -> VeilCastleLayoutPolicy(
             contentMaxWidthDp = 980f,
             horizontalPaddingDp = 22f,
             keepMinHeightDp = 260f,
             mapHorizontalPaddingDp = 18f,
-            chamberMinHeightDp = 128f
+            chamberMinHeightDp = 128f,
+            observatoryHeightDp = 390f
         )
         VeilAdaptiveClass.LARGE -> VeilCastleLayoutPolicy(
             contentMaxWidthDp = 1120f,
             horizontalPaddingDp = 30f,
             keepMinHeightDp = 300f,
             mapHorizontalPaddingDp = 28f,
-            chamberMinHeightDp = 142f
+            chamberMinHeightDp = 142f,
+            observatoryHeightDp = 450f
         )
     }
 
