@@ -78,6 +78,7 @@ import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
+import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -708,6 +709,7 @@ fun ReaderScreen(
         if (opened.format == BookFormat.EPUB) {
             ReaderPageAtmosphere(
                 theme = readerAppearance.theme,
+                navigationMode = readerAppearance.navigationMode,
                 progress = progress,
                 progression = (navigator as? OverflowableNavigator)
                     ?.overflow
@@ -1230,11 +1232,13 @@ private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
 @Composable
 private fun ReaderPageAtmosphere(
     theme: ReaderTheme,
+    navigationMode: ReaderNavigationMode,
     progress: Float,
     progression: ReadingProgression,
     modifier: Modifier = Modifier
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
+    val material = sanctuaryPageMaterialFor(navigationMode)
     val stack = paperPageStackDepth(progress, progression)
 
     Canvas(modifier) {
@@ -1251,45 +1255,47 @@ private fun ReaderPageAtmosphere(
         val leftStackWidth = stack.leftDp.dp.toPx()
         val rightStackWidth = stack.rightDp.dp.toPx()
 
-        // Physical page stack: 2–8dp, transferred from unread to read side as
-        // total progression changes. RTL mirrors the physical book semantics.
-        drawRect(
-            brush = Brush.horizontalGradient(
-                listOf(edge, Color.Transparent),
-                startX = 0f,
-                endX = leftStackWidth
-            ),
-            size = Size(leftStackWidth, size.height)
-        )
-        drawRect(
-            brush = Brush.horizontalGradient(
-                listOf(Color.Transparent, edge),
-                startX = size.width - rightStackWidth,
-                endX = size.width
-            ),
-            topLeft = Offset(size.width - rightStackWidth, 0f),
-            size = Size(rightStackWidth, size.height)
-        )
+        // Physical page stack belongs only to paginated modes. Scroll remains a continuous
+        // paper field and must not visually imply a detachable sheet at either edge.
+        if (material.showPhysicalPageStack) {
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(edge, Color.Transparent),
+                    startX = 0f,
+                    endX = leftStackWidth
+                ),
+                size = Size(leftStackWidth, size.height)
+            )
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(Color.Transparent, edge),
+                    startX = size.width - rightStackWidth,
+                    endX = size.width
+                ),
+                topLeft = Offset(size.width - rightStackWidth, 0f),
+                size = Size(rightStackWidth, size.height)
+            )
 
-        val sheetLine = if (dark) {
-            Color.White.copy(alpha = 0.018f)
-        } else {
-            Color(0xFF4A3923).copy(alpha = 0.035f)
-        }
-        repeat(3) { index ->
-            val fraction = (index + 1) / 4f
-            drawLine(
-                color = sheetLine,
-                start = Offset(leftStackWidth * fraction, 0f),
-                end = Offset(leftStackWidth * fraction, size.height),
-                strokeWidth = 0.45.dp.toPx()
-            )
-            drawLine(
-                color = sheetLine,
-                start = Offset(size.width - rightStackWidth * fraction, 0f),
-                end = Offset(size.width - rightStackWidth * fraction, size.height),
-                strokeWidth = 0.45.dp.toPx()
-            )
+            val sheetLine = if (dark) {
+                Color.White.copy(alpha = 0.018f)
+            } else {
+                Color(0xFF4A3923).copy(alpha = 0.035f)
+            }
+            repeat(3) { index ->
+                val fraction = (index + 1) / 4f
+                drawLine(
+                    color = sheetLine,
+                    start = Offset(leftStackWidth * fraction, 0f),
+                    end = Offset(leftStackWidth * fraction, size.height),
+                    strokeWidth = 0.45.dp.toPx()
+                )
+                drawLine(
+                    color = sheetLine,
+                    start = Offset(size.width - rightStackWidth * fraction, 0f),
+                    end = Offset(size.width - rightStackWidth * fraction, size.height),
+                    strokeWidth = 0.45.dp.toPx()
+                )
+            }
         }
 
         // Very soft top/bottom page falloff. Keep it below the threshold where it
@@ -1300,7 +1306,7 @@ private fun ReaderPageAtmosphere(
             Color(0xFF7C6544).copy(alpha = 0.040f)
         }
         val band = 28.dp.toPx()
-        drawRect(
+        if (material.showEdgeFalloff) drawRect(
             brush = Brush.verticalGradient(
                 listOf(falloff, Color.Transparent),
                 startY = 0f,
@@ -1308,7 +1314,7 @@ private fun ReaderPageAtmosphere(
             ),
             size = Size(size.width, band)
         )
-        drawRect(
+        if (material.showEdgeFalloff) drawRect(
             brush = Brush.verticalGradient(
                 listOf(Color.Transparent, falloff),
                 startY = size.height - band,
@@ -1320,7 +1326,7 @@ private fun ReaderPageAtmosphere(
 
         // Deterministic micro-fibres: deliberately sparse and nearly invisible.
         // They add material character without turning the page into a texture image.
-        if (!dark) {
+        if (!dark && material.showMicroFibres) {
             val fibre = Color(0xFF6F5A3D).copy(alpha = 0.012f)
             repeat(18) { index ->
                 val y = ((index * 71f + 29f) % size.height)
@@ -1887,6 +1893,13 @@ private fun ReaderAppearancePreview(
                         MaterialTheme.shapes.extraSmall
                     )
             ) {
+                ReaderPageAtmosphere(
+                    theme = appearance.theme,
+                    navigationMode = appearance.navigationMode,
+                    progress = 0.42f,
+                    progression = ReadingProgression.LTR,
+                    modifier = Modifier.matchParentSize()
+                )
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1977,7 +1990,7 @@ internal fun ReaderMotionSelector(
 }
 
 @Composable
-private fun ReaderMotionPreview(
+internal fun ReaderMotionPreview(
     mode: ReaderNavigationMode,
     active: Boolean,
     modifier: Modifier = Modifier
