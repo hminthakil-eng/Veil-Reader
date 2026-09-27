@@ -27,11 +27,13 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.deriveReadingSignature
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.DateFormat
+import java.time.ZoneId
 import java.util.Date
 
 private data class VeiledDiscovery(
@@ -117,6 +119,18 @@ fun ProfileScreen(
             cycles = readingCycles
         )
     }
+    val readingSignatureZone = remember { ZoneId.systemDefault() }
+    val readingSignature = remember(
+        readingSessions,
+        readingCycles,
+        readingSignatureZone
+    ) {
+        deriveReadingSignature(
+            sessions = readingSessions,
+            cycles = readingCycles,
+            zoneId = readingSignatureZone
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -161,6 +175,10 @@ fun ProfileScreen(
         )
 
         DossierHistoryLedger(dossierHistory)
+
+        ReadingSignaturePanel(
+            signature = readingSignature
+        )
 
         ProfileSectionHeading(
             eyebrow = "Rhythm",
