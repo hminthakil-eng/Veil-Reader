@@ -18,6 +18,10 @@ Alpha is the single project lead for product vision, architecture, integration, 
 - QA: regression testing, lifecycle, process death, large libraries, accessibility and performance checks.
 - Integration and Release: branch convergence, pull request sequencing, package provenance and release promotion.
 
+- **Innovation & Creativity Team (dedicated, Alpha-owned):** hunts for original product ideas, interaction inventions, new reader utilities, unconventional information architecture, playful/meaningful world behaviors, visual metaphors, novel accessibility patterns and technical-art opportunities. It is allowed to propose high-risk prototypes, but must attach a user value hypothesis, fallback, complexity cost and kill criteria before anything graduates.
+- **Critical Team (dedicated, adversarial, Alpha-owned):** acts as Veil's internal opposition. It challenges assumptions, finds contradictions, hunts UX debt, architectural coupling, false-premium styling, accessibility regressions, performance traps, fake differentiation, overengineering, weak evidence and features that are beautiful but not useful. It does not own implementation; it owns pressure-testing and escalation.
+- **Reviewing Team (independent acceptance board under Alpha):** reviews completed slices against source, tests, runtime evidence, accessibility, performance, product intent and visual truth. It does not accept "implemented" based on code presence alone. It can mark work PASS, PASS WITH DEBT, REWORK, BLOCKED or REJECTED and can withhold milestone closure until evidence is reproducible.
+
 ## Project Rules
 
 GitHub is canonical. Reuse existing systems before creating new ones. Keep one Reader architecture, one persistence owner per data type, one design system, and one active integration path. Every major visual feature needs a lower-cost fallback. Persistent features must define backup and migration behavior. Motion must have a reduced-motion equivalent. Spatial UI must have accessible semantics.
@@ -55,3 +59,53 @@ Still rejected:
 - assets without fallback or provenance/licensing review.
 
 Every substantial asset must earn its bytes through visible quality, utility, accessibility, or sensory value.
+
+
+## Three-Stage Creative Governance
+
+Every substantial Cathedral feature passes through three different minds:
+
+1. **Invent** — Innovation & Creativity Team proposes or improves the concept.
+2. **Attack** — Critical Team tries to break the concept, expose weak assumptions and identify hidden cost.
+3. **Prove** — Reviewing Team accepts only what is supported by code, tests, accessibility, performance and runtime evidence.
+
+These roles must not collapse into one another. The team that invents a feature cannot be the sole authority declaring it complete.
+
+### Innovation Graduation Gate
+
+A proposed innovation must define:
+- user value,
+- why existing Veil systems are insufficient,
+- minimum viable experiment,
+- fallback,
+- accessibility model,
+- performance risk,
+- persistence/ownership implications if any,
+- kill criteria.
+
+### Critical Challenge Gate
+
+The Critical Team asks:
+- Is this genuinely useful or merely impressive?
+- Does it create duplicated ownership?
+- Can it fail silently?
+- What happens on compact devices, RTL, large text, reduced motion and low-end hardware?
+- Does it compromise Sanctuary?
+- Is there a simpler mechanism with the same user value?
+- Is the evidence real or inferred?
+- What would make us delete this feature?
+
+### Review Acceptance Gate
+
+The Reviewing Team verifies:
+- exact branch/SHA,
+- build/test/lint state,
+- runtime behavior,
+- visual comparison against product intent,
+- accessibility semantics and touch targets,
+- performance/memory impact,
+- persistence/restore/process-recreation behavior when relevant,
+- fallback behavior,
+- absence of hidden functionality loss across fidelity tiers.
+
+A green CI badge alone is never sufficient for product acceptance.
