@@ -108,13 +108,22 @@ fun VeilReveal(
     )
 }
 
-@Composable
-internal fun VeilBackLabel(destination: String): String =
-    if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
+internal fun backLabelFor(
+    destination: String,
+    rtl: Boolean
+): String =
+    if (rtl) {
         "$destination ›"
     } else {
         "‹ $destination"
     }
+
+@Composable
+internal fun VeilBackLabel(destination: String): String =
+    backLabelFor(
+        destination = destination,
+        rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    )
 
 @Composable
 fun BrassRule(
