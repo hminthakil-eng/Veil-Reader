@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -35,11 +36,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -863,63 +867,159 @@ private fun AdvancementCeremonyDialog(
 ) {
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
+    val reducedMotion = LocalVeilReducedMotion.current
+    var revealed by remember { mutableStateOf(false) }
 
-    AlertDialog(
+    LaunchedEffect(profile.path.id, profile.rankIndex, nextRank) {
+        revealed = true
+    }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.small,
-        containerColor = VeilPalette.Archive,
-        tonalElevation = 0.dp,
-        icon = {
-            PathIcon(
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VeilPalette.Ink)
+                .grayfogAtmosphere(
+                    realm = VeilRealm.RITUAL,
+                    seed = profile.path.id.hashCode() xor nextRank.hashCode(),
+                    intensity = 1.0f
+                )
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
+            contentAlignment = Alignment.Center
+        ) {
+            PathRitualBackdrop(
                 pathId = profile.path.id,
-                tint = VeilPalette.Brass,
-                modifier = Modifier.size(44.dp)
+                rankIndex = profile.rankIndex + 1,
+                modifier = Modifier.matchParentSize()
             )
-        },
-        title = {
-            Text(
-                "Advance to $nextRank",
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                Text(
-                    "Your ritual is complete. This marks a permanent rank on ${profile.path.name}.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Mist,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    presentation.invocation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Brass,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.Brass,
-                    contentColor = Color(0xFF17120A)
-                )
-            ) { Text("Advance") }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Not yet", color = VeilPalette.Moon.copy(alpha = 0.72f))
+
+            AnimatedVisibility(
+                visible = revealed,
+                enter = if (reducedMotion) {
+                    fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                } else {
+                    fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                        scaleIn(
+                            animationSpec = tween(VeilMotion.SPATIAL_MS),
+                            initialScale = 0.94f
+                        )
+                }
+            ) {
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    VeilPalette.Archive.copy(alpha = 0.96f),
+                                    Color(0xFF100E14).copy(alpha = 0.98f),
+                                    VeilPalette.Ink
+                                )
+                            )
+                        )
+                        .border(
+                            BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
+                            MaterialTheme.shapes.medium
+                        )
+                        .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                ) {
+                    Text(
+                        "RITUAL OF ADVANCEMENT",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+                        color = VeilPalette.Brass
+                    )
+
+                    PathSigil(
+                        pathId = profile.path.id,
+                        modifier = Modifier.size(148.dp),
+                        active = true
+                    )
+
+                    Text(
+                        profile.path.name,
+                        style = MaterialTheme.typography.labelLarge,
+                        color = VeilPalette.Mist
+                    )
+
+                    Text(
+                        nextRank,
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = VeilPalette.Moon,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        "${profile.rankName}  →  $nextRank",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass.copy(alpha = 0.88f)
+                    )
+
+                    BrassRule(Modifier.fillMaxWidth())
+
+                    Text(
+                        ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon.copy(alpha = 0.82f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 440.dp)
+                    )
+
+                    Text(
+                        presentation.invocation,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Brass,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 420.dp)
+                    )
+
+                    Text(
+                        "This mark is permanent. It changes the language of your Path, never access to your books.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.widthIn(max = 430.dp)
+                    )
+
+                    Button(
+                        onClick = onConfirm,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 54.dp),
+                        shape = MaterialTheme.shapes.extraSmall,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VeilPalette.Brass,
+                            contentColor = Color(0xFF17120A)
+                        )
+                    ) {
+                        Text("Advance to $nextRank")
+                    }
+
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = VeilPalette.Moon.copy(alpha = 0.72f)
+                        )
+                    ) {
+                        Text("Not yet")
+                    }
+                }
             }
         }
-    )
+    }
 }
 
 @Composable
