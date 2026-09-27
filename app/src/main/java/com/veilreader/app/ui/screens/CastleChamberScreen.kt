@@ -649,8 +649,14 @@ fun SanctumScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.SANCTUM,
-                seed = profile.rankIndex * 43 + profile.earnedSigils.size * 13,
-                intensity = if (sovereignReady) 1f else 0.72f
+                seed = profile.rankIndex * 43 +
+                    profile.earnedSigils.size * 13 +
+                    discoveries.size * 17,
+                intensity = if (sovereignReady) {
+                    1f
+                } else {
+                    (0.72f + discoveries.size * 0.025f).coerceAtMost(0.90f)
+                }
             ),
         contentAlignment = Alignment.TopCenter
     ) {
