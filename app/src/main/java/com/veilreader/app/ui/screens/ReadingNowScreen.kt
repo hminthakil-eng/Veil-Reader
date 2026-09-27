@@ -33,6 +33,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
+import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
@@ -324,22 +325,12 @@ private fun ThresholdHeader(
                 tint = VeilPalette.Brass.copy(alpha = 0.24f)
             )
 
-            Text(
-                "VEIL READER",
+            VeilMastheadMetaRow(
+                primary = "VEIL READER",
+                secondary = "THE LIBRARY BEYOND TIME",
                 modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = VeilSpacing.md, top = VeilSpacing.md),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.9.sp),
-                color = VeilPalette.Brass
-            )
-
-            Text(
-                "THE LIBRARY BEYOND TIME",
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = VeilSpacing.md, top = VeilSpacing.md),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-                color = VeilPalette.Moon.copy(alpha = 0.72f)
+                    .align(Alignment.TopCenter)
+                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md)
             )
 
             Column(
