@@ -4,6 +4,7 @@ import android.animation.ValueAnimator
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
@@ -204,7 +205,12 @@ fun VeilTheme(
             LocalVeilScriptGroup provides scriptGroup,
             LocalVeilReducedMotion provides reducedMotion
         ) {
-            content()
+            // MaterialTheme alone does not force a typography token onto every bare Text call.
+            // Keep unstyled app-shell text on the bundled family so OEM font overrides cannot leak
+            // back into controls, transient states, or future components.
+            ProvideTextStyle(MaterialTheme.typography.bodyLarge) {
+                content()
+            }
         }
     }
 }
