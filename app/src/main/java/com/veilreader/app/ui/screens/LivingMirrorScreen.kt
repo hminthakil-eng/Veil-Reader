@@ -297,14 +297,14 @@ private fun LivingMirrorMasthead(
                     modifier = Modifier.widthIn(max = 620.dp)
                 )
             }
-            BrassRule(Modifier.width(156.dp), strong = true)
+            LivingMirrorBrassRule(Modifier.width(156.dp), strong = true)
         }
     }
 }
 
 
 @Composable
-private fun BrassRule(
+private fun LivingMirrorBrassRule(
     modifier: Modifier = Modifier,
     strong: Boolean = false
 ) {
@@ -680,7 +680,7 @@ private fun LivingMirrorNoteDialog(
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Moon.copy(alpha = 0.82f)
                 )
-                BrassRule(Modifier.fillMaxWidth())
+                LivingMirrorBrassRule(Modifier.fillMaxWidth())
                 Text(
                     note.note,
                     style = MaterialTheme.typography.bodyLarge,
