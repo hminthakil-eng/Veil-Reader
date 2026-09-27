@@ -520,6 +520,107 @@ private fun CastleKeepBackdrop(
             )
         }
 
+        if (memoryState.returnAwakening > 0.001f) {
+            val awakening = memoryState.returnAwakening.coerceIn(0f, 1f)
+            val gateCenter = Offset(w * 0.50f, baseY - h * 0.02f)
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        brass.copy(alpha = 0.12f * awakening),
+                        VeilPalette.Spirit.copy(alpha = 0.035f * awakening),
+                        Color.Transparent
+                    ),
+                    center = gateCenter,
+                    radius = size.minDimension * 0.42f
+                ),
+                center = gateCenter,
+                radius = size.minDimension * 0.42f
+            )
+        }
+
+        repeat(memoryState.rereadRings) { index ->
+            val expansion = index * 0.018f
+            drawArc(
+                color = VeilPalette.Spirit.copy(
+                    alpha = 0.045f + memoryState.patina * 0.055f
+                ),
+                startAngle = 198f,
+                sweepAngle = 144f,
+                useCenter = false,
+                topLeft = Offset(
+                    w * (0.31f - expansion),
+                    h * (0.145f - expansion * 0.40f)
+                ),
+                size = Size(
+                    w * (0.38f + expansion * 2f),
+                    h * (0.28f + expansion)
+                ),
+                style = Stroke(0.7.dp.toPx())
+            )
+        }
+
+        repeat(memoryState.completionAlcoves) { index ->
+            val leftSide = index % 2 == 0
+            val row = index / 2
+            val alcoveW = w * 0.048f
+            val alcoveH = h * 0.064f
+            val x = if (leftSide) {
+                w * 0.125f
+            } else {
+                w * 0.827f
+            }
+            val y = h * (0.50f + row * 0.043f)
+
+            drawRoundRect(
+                color = VeilPalette.Ink.copy(alpha = 0.42f),
+                topLeft = Offset(x, y),
+                size = Size(alcoveW, alcoveH),
+                cornerRadius = CornerRadius(alcoveW * 0.48f)
+            )
+            drawRoundRect(
+                color = brass.copy(
+                    alpha = 0.075f + memoryState.treasuryResonance * 0.12f
+                ),
+                topLeft = Offset(x, y),
+                size = Size(alcoveW, alcoveH),
+                cornerRadius = CornerRadius(alcoveW * 0.48f),
+                style = Stroke(0.65.dp.toPx())
+            )
+        }
+
+        repeat(memoryState.scriptoriumLamps) { index ->
+            val leftSide = index % 2 == 0
+            val row = index / 2
+            val x = if (leftSide) w * 0.205f else w * 0.795f
+            val y = h * (0.49f + row * 0.068f)
+            drawCircle(
+                color = brass.copy(
+                    alpha = 0.22f + memoryState.archiveResonance * 0.28f
+                ),
+                radius = 1.5.dp.toPx(),
+                center = Offset(x, y)
+            )
+            drawCircle(
+                color = brass.copy(alpha = 0.035f),
+                radius = 8.dp.toPx(),
+                center = Offset(x, y)
+            )
+        }
+
+        repeat(memoryState.foundationCourses) { index ->
+            val fraction = (index + 1f) / (memoryState.foundationCourses + 1f)
+            val y = h * (0.73f + fraction * 0.12f)
+            val inset = w * (0.20f + fraction * 0.025f)
+            drawLine(
+                color = stone.copy(
+                    alpha = 0.07f + memoryState.patina * 0.07f
+                ),
+                start = Offset(inset, y),
+                end = Offset(w - inset, y),
+                strokeWidth = 0.65.dp.toPx()
+            )
+        }
+
         repeat(9) { index ->
             val row = index / 3
             val col = index % 3
@@ -528,7 +629,13 @@ private fun CastleKeepBackdrop(
             val lit = index < memoryState.litWindows
             drawRoundRect(
                 color = if (lit) {
-                    brass.copy(alpha = 0.14f + memoryGlow * 0.18f)
+                    brass.copy(
+                        alpha = (
+                            0.12f +
+                                memoryGlow * 0.16f +
+                                memoryState.returnAwakening * 0.18f
+                            ).coerceIn(0.12f, 0.46f)
+                    )
                 } else {
                     stone.copy(alpha = 0.075f)
                 },
@@ -571,6 +678,20 @@ private fun CastleKeepBackdrop(
             Offset(w * 0.92f, baseY),
             1.dp.toPx()
         )
+        if (memoryState.longSilence > 0.001f) {
+            val silence = memoryState.longSilence.coerceIn(0f, 1f)
+            drawRect(
+                brush = Brush.verticalGradient(
+                    listOf(
+                        VeilPalette.Spirit.copy(alpha = 0.018f * silence),
+                        Color.Transparent,
+                        VeilPalette.Ink.copy(alpha = 0.16f * silence)
+                    )
+                ),
+                size = size
+            )
+        }
+
         drawRect(
             brush = Brush.verticalGradient(
                 listOf(
@@ -750,7 +871,12 @@ private fun CastleArchitectureBackdrop(
         val glowHeight = h * unlockedFraction * 0.42f
         drawLine(
             VeilPalette.Brass.copy(
-                alpha = 0.24f + memoryState.overallPresence * 0.18f
+                alpha = (
+                    0.22f +
+                        memoryState.overallPresence * 0.18f +
+                        memoryState.returnAwakening * 0.16f -
+                        memoryState.longSilence * 0.10f
+                    ).coerceIn(0.12f, 0.52f)
             ),
             Offset(centerX, h - 34.dp.toPx()),
             Offset(centerX, h - 34.dp.toPx() - glowHeight),
