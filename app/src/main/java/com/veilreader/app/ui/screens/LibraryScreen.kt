@@ -1066,7 +1066,7 @@ private fun BookDetailSheet(
             BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 320.dp)
+                    .heightIn(min = 430.dp)
             ) {
                 val compact = maxWidth < 520.dp
 
@@ -1082,8 +1082,9 @@ private fun BookDetailSheet(
                         .matchParentSize()
                         .background(
                             Brush.verticalGradient(
-                                0f to VeilPalette.Ink.copy(alpha = 0.18f),
-                                0.48f to VeilPalette.Ink.copy(alpha = 0.72f),
+                                0f to VeilPalette.Ink.copy(alpha = 0.08f),
+                                0.38f to Color.Transparent,
+                                0.72f to VeilPalette.Ink.copy(alpha = 0.58f),
                                 1f to VeilPalette.Ink
                             )
                         )
@@ -1105,7 +1106,7 @@ private fun BookDetailSheet(
 
                 GrayfogOrnamentFrame(
                     modifier = Modifier.matchParentSize(),
-                    strength = 0.58f
+                    strength = 0.86f
                 )
 
                 Column(
@@ -1150,7 +1151,7 @@ private fun BookDetailSheet(
                                 subtitle = book.author,
                                 imagePath = book.coverCachePath,
                 artifact = bookArtifactState(book, memory = artifactMemory),
-                                modifier = Modifier.width(142.dp).height(208.dp)
+                                modifier = Modifier.width(172.dp).height(252.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
@@ -1168,7 +1169,7 @@ private fun BookDetailSheet(
                                 subtitle = book.author,
                                 imagePath = book.coverCachePath,
                 artifact = bookArtifactState(book, memory = artifactMemory),
-                                modifier = Modifier.width(154.dp).height(226.dp)
+                                modifier = Modifier.width(182.dp).height(268.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
@@ -1188,58 +1189,70 @@ private fun BookDetailSheet(
                     .padding(horizontal = VeilSpacing.lg),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
             ) {
-                Column(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = VeilPalette.ReaderPaper,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.82f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
+                    Column(
+                        modifier = Modifier.padding(VeilSpacing.md),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
-                        Text(
-                            "READING PROGRESS",
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                            color = VeilPalette.Brass,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            "${(progress * 100).toInt()}%",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                "READING PROGRESS",
+                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                                color = Color(0xFF665035),
+                                modifier = Modifier.weight(1f)
+                            )
+                            Text(
+                                "${(progress * 100).toInt()}%",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color(0xFF2A241D)
+                            )
+                        }
 
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(3.dp),
-                        color = VeilPalette.Brass,
-                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f),
-                        drawStopIndicator = {}
-                    )
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            status,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        LinearProgressIndicator(
+                            progress = { progress },
+                            modifier = Modifier.fillMaxWidth().height(4.dp),
+                            color = Color(0xFF2A241D),
+                            trackColor = Color(0xFF8D795A).copy(alpha = 0.20f),
+                            drawStopIndicator = {}
                         )
 
-                        book.currentChapter
-                            .takeIf { it.isNotBlank() && it != "Not started" }
-                            ?.let { chapter ->
-                                Text(
-                                    chapter,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 240.dp)
-                                )
-                            }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Text(
+                                status,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = Color(0xFF665A49)
+                            )
+
+                            book.currentChapter
+                                .takeIf { it.isNotBlank() && it != "Not started" }
+                                ?.let { chapter ->
+                                    Text(
+                                        chapter,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color(0xFF5B4630),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.widthIn(max = 250.dp)
+                                    )
+                                }
+                        }
                     }
                 }
 
