@@ -33,7 +33,9 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.appMetadataDivider
 import com.veilreader.app.ui.theme.localizeAppNumerals
+import com.veilreader.app.ui.theme.localizedMetadataValue
 import com.veilreader.app.ui.theme.scriptOrnamentPolicyFor
 import java.text.DateFormat
 import java.util.Date
@@ -113,6 +115,8 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit
 ) {
     val p = profile
+    val language = LocalVeilLanguage.current
+    val scriptGroup = LocalVeilScriptGroup.current
     val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
@@ -141,7 +145,10 @@ fun ProfileScreen(
         ScreenHeader(
             eyebrow = "ARCHIVIST DOSSIER",
             title = castleTitle,
-            subtitle = "${p.path.name} · ${p.rankName}"
+            subtitle = listOf(
+                localizedMetadataValue(p.path.name, language),
+                localizedMetadataValue(p.rankName, language)
+            ).joinToString(appMetadataDivider(scriptGroup))
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -362,7 +369,10 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         )
         DossierLedgerLine(
             label = "Recorded active time",
-            value = formatDossierDuration(history.recordedActiveMillis)
+            value = localizeAppNumerals(
+                formatDossierDuration(history.recordedActiveMillis),
+                language
+            )
         )
         DossierLedgerLine(
             label = "Completion records",
@@ -395,9 +405,12 @@ private fun DossierLedgerLine(
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val arabicScriptLabel = usesArabicScript(label)
         Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
+            if (arabicScriptLabel) label else label.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                letterSpacing = if (arabicScriptLabel) 0.sp else 0.72.sp
+            ),
             color = VeilPalette.Mist.copy(alpha = 0.62f),
             modifier = Modifier.weight(1f)
         )
