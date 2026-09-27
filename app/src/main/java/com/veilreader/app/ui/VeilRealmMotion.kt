@@ -18,12 +18,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotionClass
@@ -37,6 +37,12 @@ internal val LocalVeilSharedTransitionScope =
 
 internal val LocalVeilAnimatedVisibilityScope =
     compositionLocalOf<AnimatedVisibilityScope?> { null }
+
+internal fun hallSharedBoundsKey(route: String): String {
+    val clean = route.trim()
+    require(clean.isNotEmpty()) { "Shared realm route must not be blank." }
+    return "hall:$clean"
+}
 
 internal data class VeilRealmMotionPolicy(
     val enterDurationMs: Int,
@@ -120,17 +126,22 @@ fun VeilRealmMotionHost(
     }
     var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
 
+    LaunchedEffect(activeChamber) {
+        if (activeChamber == null) {
+            predictiveBackProgress = 0f
+        }
+    }
+
     PredictiveBackHandler(enabled = activeChamber != null) { progress ->
         try {
             progress.collect { event ->
                 predictiveBackProgress = event.progress.coerceIn(0f, 1f)
             }
+            predictiveBackProgress = 1f
             onCloseChamber()
         } catch (cancelled: CancellationException) {
             predictiveBackProgress = 0f
             throw cancelled
-        } finally {
-            predictiveBackProgress = 0f
         }
     }
 
