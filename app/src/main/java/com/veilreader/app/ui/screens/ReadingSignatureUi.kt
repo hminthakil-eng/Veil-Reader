@@ -135,7 +135,7 @@ internal fun ReadingSignaturePanel(
                     modifier = Modifier.weight(1f)
                 )
                 SignatureMetric(
-                    label = "NOTES / MARK",
+                    label = "NOTE EVENTS / MARK EVENT",
                     value = signature.notesPerHighlightEvent
                         ?.let(::formatSignaturePercent)
                         ?: "—",
@@ -381,6 +381,13 @@ private fun formatSignatureRate(value: Float): String =
     if (!value.isFinite()) "—" else {
         val rounded = (value * 10f).roundToInt() / 10f
         if (rounded % 1f == 0f) rounded.toInt().toString() else rounded.toString()
+    }
+
+private fun formatSignatureRatio(value: Float): String =
+    if (!value.isFinite()) "—"
+    else {
+        val rounded = (value.coerceAtLeast(0f) * 100f).roundToInt() / 100f
+        if (rounded % 1f == 0f) "${rounded.toInt()}×" else "${rounded}×"
     }
 
 private fun formatSignaturePercent(value: Float): String =
