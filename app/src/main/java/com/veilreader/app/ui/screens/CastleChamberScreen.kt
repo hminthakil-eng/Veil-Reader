@@ -53,6 +53,17 @@ internal enum class RelicRarity(val label: String) {
     SOVEREIGN("SOVEREIGN")
 }
 
+internal fun relicRarityFor(relicId: String): RelicRarity =
+    when (relicId) {
+        "ember_bookmark" -> RelicRarity.FOUNDATION
+        "moonlit_lens",
+        "brass_quill",
+        "ivory_bookplate" -> RelicRarity.RESONANT
+        "astral_key" -> RelicRarity.ASCENDANT
+        "veil_crown" -> RelicRarity.SOVEREIGN
+        else -> RelicRarity.FOUNDATION
+    }
+
 private data class RelicPresentation(
     val id: String,
     val name: String,
@@ -102,7 +113,7 @@ private val readingRelics = listOf(
         name = "Ember Bookmark",
         symbol = "⌇",
         clue = "Return often enough that the page begins to remember you.",
-        rarity = RelicRarity.FOUNDATION,
+        rarity = relicRarityFor("ember_bookmark"),
         awakened = { it.streakDays >= 3 }
     ),
     RelicPresentation(
@@ -110,7 +121,7 @@ private val readingRelics = listOf(
         name = "Moonlit Lens",
         symbol = "◐",
         clue = "Spend three quiet hours beyond the first threshold of attention.",
-        rarity = RelicRarity.RESONANT,
+        rarity = relicRarityFor("moonlit_lens"),
         awakened = { it.minutesRead >= 180 }
     ),
     RelicPresentation(
@@ -118,7 +129,7 @@ private val readingRelics = listOf(
         name = "Brass Quill",
         symbol = "✒",
         clue = "Turn five hundred pages and leave the mechanism warm.",
-        rarity = RelicRarity.RESONANT,
+        rarity = relicRarityFor("brass_quill"),
         awakened = { it.pagesRead >= 500 }
     ),
     RelicPresentation(
@@ -126,7 +137,7 @@ private val readingRelics = listOf(
         name = "Ivory Bookplate",
         symbol = "▤",
         clue = "Complete three volumes and the archive will grant a mark of ownership.",
-        rarity = RelicRarity.RESONANT,
+        rarity = relicRarityFor("ivory_bookplate"),
         awakened = { it.booksFinished >= 3 }
     ),
     RelicPresentation(
@@ -134,7 +145,7 @@ private val readingRelics = listOf(
         name = "Astral Key",
         symbol = "⌘",
         clue = "Cross two Path thresholds and listen for the lock that was not there before.",
-        rarity = RelicRarity.ASCENDANT,
+        rarity = relicRarityFor("astral_key"),
         awakened = { it.rankIndex >= 2 }
     ),
     RelicPresentation(
@@ -142,7 +153,7 @@ private val readingRelics = listOf(
         name = "Veil Crown",
         symbol = "♜",
         clue = "Awaken the five core sigils and reach the final rank of your Path.",
-        rarity = RelicRarity.SOVEREIGN,
+        rarity = relicRarityFor("veil_crown"),
         awakened = {
             it.rankIndex >= it.path.ranks.lastIndex && it.earnedSigils.size >= 5
         }
@@ -209,7 +220,7 @@ fun TreasuryScreen(
             onClick = onClose,
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
-            modifier = Modifier.heightIn(min = 40.dp)
+            modifier = Modifier.heightIn(min = 48.dp)
         ) {
             Text("‹ Castle", style = MaterialTheme.typography.labelMedium)
         }
@@ -624,20 +635,38 @@ fun SanctumScreen(
     val rankProgress = if (finalRank == 0) 1f else profile.rankIndex.toFloat() / finalRank.toFloat()
     val sigilProgress = profile.earnedSigils.size.coerceAtMost(5) / 5f
     val sovereignReady = profile.rankIndex >= finalRank && profile.earnedSigils.size >= 5
+    val sanctumAdaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val sanctumLayout = castleLayoutPolicyFor(sanctumAdaptiveClass)
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.SANCTUM,
+                seed = profile.rankIndex * 43 + profile.earnedSigils.size * 13,
+                intensity = if (sovereignReady) 1f else 0.72f
+            ),
+        contentAlignment = Alignment.TopCenter
+    ) {
     Column(
         Modifier
             .fillMaxSize()
+            .widthIn(max = sanctumLayout.contentMaxWidthDp.dp)
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
+            .padding(
+                horizontal = sanctumLayout.horizontalPaddingDp.dp,
+                vertical = VeilSpacing.lg
+            ),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         OutlinedButton(
             onClick = onClose,
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
-            modifier = Modifier.heightIn(min = 40.dp)
+            modifier = Modifier.heightIn(min = 48.dp)
         ) {
             Text("‹ Castle", style = MaterialTheme.typography.labelMedium)
         }
@@ -656,8 +685,9 @@ fun SanctumScreen(
         )
 
         ArchiveChamberHeading(
-            eyebrow = "Identity",
-            title = "Castle title"
+            eyebrow = "Permanent identity",
+            title = "Castle title",
+            trailing = "${availableTitles.size} recognized"
         )
 
         availableTitles.forEachIndexed { index, title ->
@@ -679,17 +709,32 @@ fun SanctumScreen(
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 42.dp)
+                        .heightIn(min = 48.dp)
                 ) {
-                    Text(
-                        if (title == castleTitle) "✦ $title" else title,
-                        style = MaterialTheme.typography.labelMedium
-                    )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(1.dp)
+                    ) {
+                        Text(
+                            if (title == castleTitle) "ACTIVE TITLE" else "RECOGNIZED TITLE",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (title == castleTitle) {
+                                VeilPalette.Brass
+                            } else {
+                                VeilPalette.Mist.copy(alpha = 0.62f)
+                            }
+                        )
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                 }
             }
         }
 
         HiddenSanctumRecord(sovereignReady = sovereignReady)
+    }
     }
 }
 
@@ -849,13 +894,23 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
+            .heightIn(min = if (sovereignReady) 164.dp else 112.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
-                if (sovereignReady) {
-                    VeilPalette.DeepBrass.copy(alpha = 0.22f)
-                } else {
-                    VeilPalette.Ink.copy(alpha = 0.28f)
-                }
+                Brush.verticalGradient(
+                    if (sovereignReady) {
+                        listOf(
+                            VeilPalette.DeepBrass.copy(alpha = 0.18f),
+                            VeilPalette.Archive.copy(alpha = 0.72f),
+                            VeilPalette.Ink.copy(alpha = 0.90f)
+                        )
+                    } else {
+                        listOf(
+                            VeilPalette.Archive.copy(alpha = 0.34f),
+                            VeilPalette.Ink.copy(alpha = 0.78f)
+                        )
+                    }
+                )
             )
             .border(
                 BorderStroke(
@@ -865,22 +920,88 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
                 ),
                 MaterialTheme.shapes.extraSmall
             )
-            .padding(VeilSpacing.md)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Canvas(Modifier.matchParentSize()) {
+            val center = Offset(size.width * 0.84f, size.height * 0.50f)
+            repeat(3) { index ->
+                drawCircle(
+                    color = VeilPalette.Brass.copy(
+                        alpha = if (sovereignReady) {
+                            0.045f + index * 0.018f
+                        } else {
+                            0.014f + index * 0.006f
+                        }
+                    ),
+                    radius = size.minDimension * (0.18f + index * 0.09f),
+                    center = center,
+                    style = Stroke(1.dp.toPx())
+                )
+            }
+            if (sovereignReady) {
+                repeat(6) { index ->
+                    val angle = Math.toRadians(-90.0 + index * 60.0)
+                    val inner = size.minDimension * 0.15f
+                    val outer = size.minDimension * 0.34f
+                    drawLine(
+                        VeilPalette.Brass.copy(alpha = 0.085f),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * inner,
+                            center.y + kotlin.math.sin(angle).toFloat() * inner
+                        ),
+                        Offset(
+                            center.x + kotlin.math.cos(angle).toFloat() * outer,
+                            center.y + kotlin.math.sin(angle).toFloat() * outer
+                        ),
+                        0.8.dp.toPx()
+                    )
+                }
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.78f)
+                .padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
             Text(
-                if (sovereignReady) "RARE RECORD · THE STAR BETWEEN SHELVES" else "RARE RECORD · SEALED",
+                if (sovereignReady) {
+                    "SOVEREIGN RECORD · THE STAR BETWEEN SHELVES"
+                } else {
+                    "SOVEREIGN RECORD · SEALED"
+                },
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
-                color = if (sovereignReady) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.42f)
+                color = if (sovereignReady) {
+                    VeilPalette.Brass
+                } else {
+                    VeilPalette.Mist.copy(alpha = 0.42f)
+                }
             )
             Text(
                 if (sovereignReady) {
                     "There was never a final shelf. Only another threshold hidden behind the act of returning."
                 } else {
-                    "A line of text is present here, but the ink refuses to remain visible."
+                    "A permanent inscription is present here, but its condition has not yet been satisfied."
                 },
-                style = MaterialTheme.typography.bodyMedium,
-                color = if (sovereignReady) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (sovereignReady) {
+                    VeilPalette.Moon
+                } else {
+                    VeilPalette.Mist.copy(alpha = 0.48f)
+                }
+            )
+            Text(
+                if (sovereignReady) {
+                    "PERMANENT · NON-CONSUMABLE · LOCAL RECORD"
+                } else {
+                    "NOT YET RECOGNIZED"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = if (sovereignReady) {
+                    VeilPalette.Spirit.copy(alpha = 0.76f)
+                } else {
+                    VeilPalette.Mist.copy(alpha = 0.36f)
+                }
             )
         }
     }
