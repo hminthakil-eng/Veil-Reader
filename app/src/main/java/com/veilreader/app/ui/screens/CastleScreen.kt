@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -236,10 +237,11 @@ private fun CastleGrandMasthead(
     awakenedRooms: Int,
     totalRooms: Int
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(252.dp)
+            .heightIn(min = if (fontScale > 1.35f) 318.dp else 252.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.66f)),
