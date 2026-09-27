@@ -134,6 +134,27 @@ class VeilAppViewModelTest {
         assertFalse(model.route.value.showArchive)
     }
     @Test
+    fun livingMirrorChamber_opensPersistsAndRestores() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+
+        model.selectTab(VeilTab.CASTLE)
+        model.openChamber("mirror")
+
+        assertEquals("mirror", model.route.value.activeChamber)
+        assertFalse(model.route.value.showArchive)
+        assertFalse(model.route.value.showSettings)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
+        assertEquals("mirror", recreated.route.value.activeChamber)
+
+        recreated.closeChamber()
+        assertNull(recreated.route.value.activeChamber)
+        assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
+    }
+
+    @Test
     fun explicitFlushAck_preservesNewerReaderCheckpoint() {
         val handle = SavedStateHandle()
         val model = VeilAppViewModel(handle)
