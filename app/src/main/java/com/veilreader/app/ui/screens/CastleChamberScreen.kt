@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -29,10 +30,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -206,6 +211,33 @@ fun TreasuryScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            alpha = 0.09f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(500.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(570.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = 0.54f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
     Column(
         Modifier
             .fillMaxSize()
@@ -340,6 +372,10 @@ private fun TreasuryPedestal(
             )
     ) {
         TreasuryBackdrop(Modifier.matchParentSize())
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.36f
+        )
 
         Column(
             modifier = Modifier
@@ -653,6 +689,33 @@ fun SanctumScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = if (sovereignReady) 0.12f else 0.06f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(520.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(600.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Ink.copy(alpha = if (sovereignReady) 0.46f else 0.62f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
     Column(
         Modifier
             .fillMaxSize()
@@ -771,6 +834,10 @@ private fun SanctumSealPanel(
                 MaterialTheme.shapes.small
             )
     ) {
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = if (sovereignReady) 0.46f else 0.24f
+        )
         Canvas(Modifier.matchParentSize()) {
             val center = Offset(size.width * 0.5f, size.height * 0.40f)
             val brass = VeilPalette.Brass
