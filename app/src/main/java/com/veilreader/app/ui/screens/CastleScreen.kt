@@ -69,7 +69,6 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 @Composable
 fun CastleScreen(
     profile: ReaderProfile,
-    onAdvanceRank: () -> Unit,
     onOpenRoom: (String) -> Unit,
     books: List<Book> = emptyList(),
     highlights: List<Highlight> = emptyList(),
@@ -135,7 +134,7 @@ fun CastleScreen(
             awakenedRooms = awakenedRooms,
             totalRooms = SampleData.rooms.size,
             minHeightDp = castleLayout.keepMinHeightDp,
-            onAdvanceRank = onAdvanceRank
+            onOpenRitual = { onOpenRoom("ritual") }
         )
 
         CastleMemoryInscription(memoryState)
@@ -187,7 +186,7 @@ private fun CastleKeep(
     awakenedRooms: Int,
     totalRooms: Int,
     minHeightDp: Float,
-    onAdvanceRank: () -> Unit
+    onOpenRitual: () -> Unit
 ) {
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
@@ -310,7 +309,7 @@ private fun CastleKeep(
 
             if (canAdvance) {
                 Button(
-                    onClick = onAdvanceRank,
+                    onClick = onOpenRitual,
                     modifier = Modifier
                         .align(Alignment.End)
                         .heightIn(min = 48.dp),
@@ -322,7 +321,7 @@ private fun CastleKeep(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        "Perform advancement",
+                        "Enter advancement ritual",
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
