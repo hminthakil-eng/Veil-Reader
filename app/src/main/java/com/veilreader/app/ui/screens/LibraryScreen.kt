@@ -564,7 +564,7 @@ fun LibraryScreen(
                             ) {
                                 Text(
                                     if (collection.isBlank()) "Collection" else collection,
-                                    style = MaterialTheme.typography.labelMedium,
+                                    style = MaterialTheme.typography.labelSmall,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -1616,7 +1616,7 @@ private fun LibraryHeader(
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 158.dp else 190.dp
+        val headerHeight = if (compact) 146.dp else 178.dp
 
         Box(Modifier.fillMaxWidth().height(headerHeight)) {
             Image(
@@ -1638,6 +1638,11 @@ private fun LibraryHeader(
                     )
             )
 
+            GrayfogOrnamentFrame(
+                modifier = Modifier.matchParentSize(),
+                strength = 0.62f
+            )
+
             Row(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -1647,7 +1652,7 @@ private fun LibraryHeader(
                 OutlinedButton(
                     onClick = onOpenSettings,
                     shape = MaterialTheme.shapes.extraSmall,
-                    contentPadding = PaddingValues(horizontal = 12.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp),
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = VeilPalette.Moon,
@@ -1655,14 +1660,14 @@ private fun LibraryHeader(
                     ),
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Settings", style = MaterialTheme.typography.labelMedium)
+                    Text("Settings", style = MaterialTheme.typography.labelSmall)
                 }
 
                 Button(
                     onClick = onImport,
                     enabled = !isImporting,
                     shape = MaterialTheme.shapes.extraSmall,
-                    contentPadding = PaddingValues(horizontal = 14.dp),
+                    contentPadding = PaddingValues(horizontal = 11.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = VeilPalette.Brass,
                         contentColor = Color(0xFF17120A)
@@ -1690,22 +1695,38 @@ private fun LibraryHeader(
                 )
                 Text(
                     "Grayfog Archive",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = VeilPalette.Moon
-                )
-                Text(
-                    "Fragments · Records · Truths",
-                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
-                    color = VeilPalette.Moon.copy(alpha = 0.78f)
-                )
-                Text(
-                    if (bookCount == 0) {
-                        "The shelves are waiting for their first volume."
+                    style = if (compact) {
+                        MaterialTheme.typography.headlineMedium
                     } else {
-                        "$bookCount ${if (bookCount == 1) "volume" else "volumes"} catalogued on this device."
+                        MaterialTheme.typography.headlineLarge
                     },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Moon.copy(alpha = 0.72f)
+                    color = VeilPalette.Moon,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "Fragments · Records · Truths",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.78.sp),
+                        color = VeilPalette.Moon.copy(alpha = 0.76f),
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        if (bookCount == 0) {
+                            "EMPTY"
+                        } else {
+                            "$bookCount ${if (bookCount == 1) "VOLUME" else "VOLUMES"}"
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
+                        color = VeilPalette.Brass.copy(alpha = 0.88f),
+                        maxLines = 1
+                    )
                 )
             }
         }
