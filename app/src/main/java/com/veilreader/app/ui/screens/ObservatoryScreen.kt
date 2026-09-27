@@ -46,6 +46,7 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -91,7 +92,8 @@ fun ObservatoryScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
                 seed = atlas.nodes.size * 17 + atlas.edges.size * 7,
-                intensity = 0.92f
+                intensity = 0.92f,
+                temporalPhase = currentVeilTemporalPhase()
             ),
         contentAlignment = Alignment.TopCenter
     ) {
