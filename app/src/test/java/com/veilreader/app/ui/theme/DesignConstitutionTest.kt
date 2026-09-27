@@ -75,6 +75,8 @@ class DesignConstitutionTest {
         assertTrue(wide.keepMinHeightDp < large.keepMinHeightDp)
         assertTrue(compact.chamberMinHeightDp < large.chamberMinHeightDp)
         assertTrue(compact.mapHorizontalPaddingDp < large.mapHorizontalPaddingDp)
+        assertTrue(compact.observatoryHeightDp < wide.observatoryHeightDp)
+        assertTrue(wide.observatoryHeightDp < large.observatoryHeightDp)
         assertTrue(compact.contentMaxWidthDp <= large.contentMaxWidthDp)
     }
 
