@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -37,6 +38,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -155,45 +157,71 @@ fun ArchiveScreen(
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
         VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                VeilPalette.Archive.copy(alpha = 0.82f),
+                                VeilPalette.Ink.copy(alpha = 0.92f)
+                            )
+                        )
+                    )
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                        MaterialTheme.shapes.medium
+                    )
+            ) {
+                GrayfogOrnamentFrame(
+                    modifier = Modifier.matchParentSize(),
+                    strength = 0.44f
+                )
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(7.dp)
                 ) {
-                    TextButton(
-                        onClick = onClose,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        contentPadding = PaddingValues(horizontal = 4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(VeilBackLabel("Archive"))
+                        TextButton(
+                            onClick = onClose,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            contentPadding = PaddingValues(horizontal = 4.dp)
+                        ) {
+                            Text(VeilBackLabel("Archive"))
+                        }
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            "PRIVATE · LOCAL · OFFLINE",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                            color = VeilPalette.Mist.copy(alpha = 0.68f),
+                            maxLines = 1
+                        )
                     }
-                    Spacer(Modifier.weight(1f))
+
                     Text(
-                        "PRIVATE · LOCAL · OFFLINE",
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
-                        color = VeilPalette.Mist.copy(alpha = 0.70f)
+                        "HIDDEN ARCHIVE",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        "Fragments worth keeping",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = VeilPalette.Moon
+                    )
+                    BrassRule(Modifier.width(76.dp), strong = true)
+
+                    ArchiveRegister(
+                        notes = highlights.count { it.note.isNotBlank() },
+                        highlights = highlights.size,
+                        bookmarks = bookmarks.size,
+                        echoes = echoes.size,
+                        capsules = capsules.size
                     )
                 }
-
-                Text(
-                    "HIDDEN ARCHIVE",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
-                    color = VeilPalette.Brass
-                )
-                Text(
-                    "Fragments worth keeping",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = VeilPalette.Moon
-                )
-                BrassRule(Modifier.width(92.dp), strong = true)
-
-                ArchiveRegister(
-                    notes = highlights.count { it.note.isNotBlank() },
-                    highlights = highlights.size,
-                    bookmarks = bookmarks.size,
-                    echoes = echoes.size,
-                    capsules = capsules.size
-                )
             }
         }
 
@@ -543,30 +571,31 @@ private fun ArchiveRegister(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilPalette.Archive.copy(alpha = 0.56f))
+            .background(VeilPalette.Archive.copy(alpha = 0.46f))
             .border(
-                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.74f)),
+                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.62f)),
                 MaterialTheme.shapes.extraSmall
             )
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .padding(horizontal = 6.dp, vertical = 7.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        ArchiveRegisterStat("NOTES", notes)
-        ArchiveRegisterStat("PASSAGES", highlights)
-        ArchiveRegisterStat("MARKS", bookmarks)
-        ArchiveRegisterStat("ECHOES", echoes)
-        ArchiveRegisterStat("SEALED", capsules)
+        ArchiveRegisterStat("NOTES", notes, Modifier.weight(1f))
+        ArchiveRegisterStat("PASSAGES", highlights, Modifier.weight(1f))
+        ArchiveRegisterStat("MARKS", bookmarks, Modifier.weight(1f))
+        ArchiveRegisterStat("ECHOES", echoes, Modifier.weight(1f))
+        ArchiveRegisterStat("SEALED", capsules, Modifier.weight(1f))
     }
 }
 
 @Composable
 private fun ArchiveRegisterStat(
     label: String,
-    value: Int
+    value: Int,
+    modifier: Modifier = Modifier
 ) {
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
@@ -577,8 +606,13 @@ private fun ArchiveRegisterStat(
         )
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
-            color = VeilPalette.Brass.copy(alpha = 0.78f)
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontSize = 7.5.sp,
+                letterSpacing = 0.35.sp
+            ),
+            color = VeilPalette.Brass.copy(alpha = 0.78f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }
