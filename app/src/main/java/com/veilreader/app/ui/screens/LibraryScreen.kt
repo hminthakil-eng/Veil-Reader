@@ -415,7 +415,7 @@ fun LibraryScreen(
         }
 
         item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
-            Column(
+            if (viewMode != LibraryViewMode.SHELVES) Column(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = VeilSpacing.sm),
@@ -475,7 +475,12 @@ fun LibraryScreen(
         }
 
         item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
-            if (trimmedQuery.isBlank() && shelf == "All" && wingState.allWings.isNotEmpty()) {
+            if (
+                viewMode != LibraryViewMode.SHELVES &&
+                trimmedQuery.isBlank() &&
+                shelf == "All" &&
+                wingState.allWings.isNotEmpty()
+            ) {
                 LibraryArchiveWings(
                     state = wingState,
                     selectedCollection = collection,
@@ -640,6 +645,7 @@ fun LibraryScreen(
 
         item(key = "library:memory-returns", span = { GridItemSpan(maxLineSpan) }) {
             if (
+                viewMode != LibraryViewMode.INDEX &&
                 memoryState.events.isNotEmpty() &&
                 trimmedQuery.isBlank() &&
                 shelf == "All" &&
@@ -678,6 +684,7 @@ fun LibraryScreen(
 
         item(key = "library:deep-shelf-gate", span = { GridItemSpan(maxLineSpan) }) {
             if (
+                viewMode != LibraryViewMode.INDEX &&
                 memoryState.deepShelfBookIds.isNotEmpty() &&
                 trimmedQuery.isBlank() &&
                 shelf == "All" &&
@@ -703,7 +710,13 @@ fun LibraryScreen(
         }
 
         item(key = "library:recent", span = { GridItemSpan(maxLineSpan) }) {
-            if (recentReading.isNotEmpty() && trimmedQuery.isBlank() && shelf == "All" && collection.isEmpty()) {
+            if (
+                viewMode == LibraryViewMode.GALLERY &&
+                recentReading.isNotEmpty() &&
+                trimmedQuery.isBlank() &&
+                shelf == "All" &&
+                collection.isEmpty()
+            ) {
                 Box(Modifier.fillMaxWidth()) {
                     Column(
                         Modifier.padding(vertical = VeilSpacing.sm),
