@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -263,6 +264,7 @@ fun TreasuryScreen(
         }
 
         CastleChamberGrandMasthead(
+            realm = VeilRealm.CASTLE,
             eyebrow = "TREASURY · RELIC VAULT",
             title = "The Treasury",
             subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
@@ -353,6 +355,7 @@ fun TreasuryScreen(
 
 @Composable
 private fun CastleChamberGrandMasthead(
+    realm: VeilRealm,
     eyebrow: String,
     title: String,
     subtitle: String,
@@ -390,6 +393,16 @@ private fun CastleChamberGrandMasthead(
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
             strength = 0.90f
+        )
+        VeilRealmEmblem(
+            realm = realm,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = VeilSpacing.lg)
+                .size(142.dp),
+            tint = (
+                if (realm == VeilRealm.SANCTUM) VeilPalette.Spirit else VeilPalette.Brass
+                ).copy(alpha = 0.22f)
         )
         Text(
             eyebrow,
@@ -828,6 +841,7 @@ fun SanctumScreen(
         }
 
         CastleChamberGrandMasthead(
+            realm = VeilRealm.SANCTUM,
             eyebrow = "INNER SANCTUM · DEEPEST RECORD",
             title = castleTitle,
             subtitle = "Thresholds crossed, constellations completed, and identities the Castle considers permanent.",
