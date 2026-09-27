@@ -130,8 +130,7 @@ fun ReadingNowScreen(
                         ContinueReadingHero(
                             current = current,
                             artifactMemory = artifactMemoryByBookId[current.id],
-                            onOpenBook = onOpenBook,
-                            onOpenLibrary = onOpenLibrary
+                            onOpenBook = onOpenBook
                         )
                     }
                 }
@@ -306,8 +305,7 @@ private fun ThresholdHeader(
 private fun ContinueReadingHero(
     current: Book,
     artifactMemory: BookArtifactMemory?,
-    onOpenBook: (Book) -> Unit,
-    onOpenLibrary: () -> Unit
+    onOpenBook: (Book) -> Unit
 ) {
     val progress = current.progress.coerceIn(0f, 1f)
     val paper = VeilPalette.ReaderPaper
@@ -526,11 +524,13 @@ private fun RecentBookCard(
     artifactMemory: BookArtifactMemory?,
     onOpenBook: (Book) -> Unit
 ) {
-    Card(
+    Surface(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(118.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
+        color = Color.Transparent,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
             BookCover(
@@ -567,6 +567,152 @@ private fun recentBookStatus(book: Book): String {
         book.finished -> "Finished"
         progress <= 0f -> "Not started"
         else -> "${(progress * 100).toInt()}% read"
+    }
+}
+
+internal enum class ThresholdWhisperKind {
+    PRESERVED_PASSAGE,
+    READING_PROMPT
+}
+
+internal data class ThresholdWhisper(
+    val kind: ThresholdWhisperKind,
+    val bookId: String?,
+    val locatorJson: String?,
+    val title: String,
+    val body: String,
+    val detail: String?
+)
+
+internal fun deriveThresholdWhisper(
+    visibleBooks: List<Book>,
+    highlights: List<Highlight>,
+    quests: List<Quest>
+): ThresholdWhisper? {
+    val booksById = visibleBooks
+        .distinctBy { it.id }
+        .associateBy { it.id }
+
+    highlights
+        .asSequence()
+        .filter { highlight ->
+            highlight.bookId in booksById &&
+                highlight.quote.isNotBlank()
+        }
+        .sortedWith(
+            compareByDescending<Highlight> { it.createdAtEpochMs }
+                .thenBy { it.id }
+        )
+        .firstOrNull()
+        ?.let { highlight ->
+            val book = booksById.getValue(highlight.bookId)
+            return ThresholdWhisper(
+                kind = ThresholdWhisperKind.PRESERVED_PASSAGE,
+                bookId = book.id,
+                locatorJson = highlight.locatorJson,
+                title = book.title,
+                body = highlight.quote
+                    .replace(Regex("\\s+"), " ")
+                    .trim()
+                    .take(220),
+                detail = highlight.note
+                    .replace(Regex("\\s+"), " ")
+                    .trim()
+                    .take(120)
+                    .takeIf { it.isNotBlank() }
+            )
+        }
+
+    quests
+        .asSequence()
+        .filter { quest -> quest.progress < quest.target.coerceAtLeast(1) }
+        .firstOrNull()
+        ?.let { quest ->
+            val target = quest.target.coerceAtLeast(1)
+            return ThresholdWhisper(
+                kind = ThresholdWhisperKind.READING_PROMPT,
+                bookId = null,
+                locatorJson = null,
+                title = "A quiet invitation",
+                body = quest.title,
+                detail = "${quest.progress.coerceAtLeast(0)}/$target complete"
+            )
+        }
+
+    return null
+}
+
+@Composable
+private fun ThresholdWhisperCard(
+    whisper: ThresholdWhisper,
+    books: List<Book>,
+    onOpenPassage: (Book, String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.42f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.BorderDark.copy(alpha = 0.68f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                when (whisper.kind) {
+                    ThresholdWhisperKind.PRESERVED_PASSAGE -> "WHISPER · PRESERVED PASSAGE"
+                    ThresholdWhisperKind.READING_PROMPT -> "WHISPER · OPTIONAL"
+                },
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+                color = VeilPalette.Brass
+            )
+            Text(
+                whisper.title,
+                style = MaterialTheme.typography.titleMedium,
+                color = VeilPalette.Moon,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                if (whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE) {
+                    "“${whisper.body}”"
+                } else {
+                    whisper.body
+                },
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Mist.copy(alpha = 0.86f),
+                maxLines = 4,
+                overflow = TextOverflow.Ellipsis
+            )
+            whisper.detail?.let { detail ->
+                Text(
+                    detail,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.70f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            val book = whisper.bookId?.let { id -> books.firstOrNull { it.id == id } }
+            if (book != null && !whisper.locatorJson.isNullOrBlank()) {
+                TextButton(
+                    onClick = { onOpenPassage(book, requireNotNull(whisper.locatorJson)) },
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    contentPadding = PaddingValues(horizontal = 0.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = VeilPalette.Brass
+                    )
+                ) {
+                    Text("Return to passage")
+                }
+            }
+        }
     }
 }
 
