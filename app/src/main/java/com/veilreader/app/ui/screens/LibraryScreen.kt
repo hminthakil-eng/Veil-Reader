@@ -79,9 +79,9 @@ import java.util.Locale
 import kotlin.math.cos
 import kotlin.math.sin
 
-private enum class LibraryViewMode { GALLERY, SHELVES, INDEX }
+internal enum class LibraryViewMode { GALLERY, SHELVES, INDEX }
 
-private fun libraryViewModeFromStored(value: String): LibraryViewMode =
+internal fun libraryViewModeFromStored(value: String): LibraryViewMode =
     when (value) {
         "GRID" -> LibraryViewMode.GALLERY
         "LIST" -> LibraryViewMode.INDEX
@@ -2456,88 +2456,157 @@ private fun BookLibraryRow(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val artifact = bookArtifactState(book, memory = artifactMemory)
+    val registrationColor = when {
+        book.finished -> VeilPalette.Brass
+        artifact.recentlyOpened -> VeilPalette.Spirit
+        book.favorite -> VeilPalette.Brass.copy(alpha = 0.76f)
+        book.progress > 0f -> VeilPalette.Mist.copy(alpha = 0.72f)
+        else -> VeilPalette.BorderDark
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClickLabel = "Read ${book.title}", onClick = onOpen),
+            .clickable(
+                role = Role.Button,
+                onClickLabel = "Read ${book.title}",
+                onClick = onOpen
+            ),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+        color = VeilPalette.Archive.copy(alpha = 0.52f),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+        ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Row(
-            Modifier.padding(10.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 68.dp)
+                .padding(start = 8.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            BookCover(
-                title = book.title,
-                subtitle = book.author,
-                imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book, memory = artifactMemory),
-                modifier = Modifier.width(58.dp).height(84.dp)
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(46.dp)
+                    .background(registrationColor)
             )
 
             Column(
-                Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = VeilPalette.Moon,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
-                    Text(
-                        buildString {
-                            append(series)
-                            book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass.copy(alpha = 0.84f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-                ArchiveDepthMark(archiveMemory)
-                BookProgress(book)
-            }
 
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                IconButton(
-                    onClick = onFavorite,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .semantics {
-                            contentDescription = if (book.favorite) {
-                                "Remove ${book.title} from favorites"
-                            } else {
-                                "Add ${book.title} to favorites"
+                Text(
+                    buildString {
+                        append(
+                            book.author.ifBlank {
+                                "Unknown author"
+                            }
+                        )
+                        book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                            append(" · ").append(series)
+                            book.seriesIndex?.let {
+                                append(" #").append(formatSeriesIndex(it))
                             }
                         }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = VeilPalette.Mist.copy(alpha = 0.78f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    FavoriteIcon(book.favorite, Modifier.size(18.dp))
-                }
-                IconButton(
-                    onClick = onDetails,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .semantics { contentDescription = "Book details for ${book.title}" }
-                ) {
-                    EllipsisIcon(
-                        Modifier.size(18.dp),
-                        MaterialTheme.colorScheme.onSurfaceVariant
+                    Text(
+                        when {
+                            book.finished -> "COMPLETED"
+                            book.progress > 0f ->
+                                "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}%"
+                            else -> "UNOPENED"
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass.copy(alpha = 0.84f)
                     )
+                    Text(
+                        book.format.name,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.62f)
+                    )
+                    archiveMemory?.let { memory ->
+                        Text(
+                            archiveDepthRecord(memory),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = VeilPalette.Mist.copy(alpha = 0.54f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
+            }
+
+            if (artifactMemory != null &&
+                (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
+            ) {
+                Text(
+                    buildString {
+                        if (artifactMemory.highlightCount > 0) {
+                            append(artifactMemory.highlightCount).append(" marks")
+                        }
+                        if (artifactMemory.bookmarkCount > 0) {
+                            if (isNotEmpty()) append(" · ")
+                            append(artifactMemory.bookmarkCount).append(" saved")
+                        }
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.68f),
+                    maxLines = 1
+                )
+            }
+
+            IconButton(
+                onClick = onFavorite,
+                modifier = Modifier
+                    .size(44.dp)
+                    .semantics {
+                        contentDescription = if (book.favorite) {
+                            "Remove ${book.title} from favorites"
+                        } else {
+                            "Add ${book.title} to favorites"
+                        }
+                    }
+            ) {
+                FavoriteIcon(book.favorite, Modifier.size(17.dp))
+            }
+
+            IconButton(
+                onClick = onDetails,
+                modifier = Modifier
+                    .size(44.dp)
+                    .semantics {
+                        contentDescription = "Archive record for ${book.title}"
+                    }
+            ) {
+                EllipsisIcon(
+                    Modifier.size(17.dp),
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }
