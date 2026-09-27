@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -19,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -151,6 +154,33 @@ fun ArchiveScreen(
             .navigationBarsPadding(),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = 0.16f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(330.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(350.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.18f),
+                            VeilPalette.Ink.copy(alpha = 0.58f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
         Column(
             modifier = Modifier
                 .widthIn(max = 840.dp)
