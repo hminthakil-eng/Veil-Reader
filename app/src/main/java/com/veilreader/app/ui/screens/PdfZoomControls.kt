@@ -258,7 +258,7 @@ internal fun PdfZoomControls(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 46.dp)
+                        .heightIn(min = 48.dp)
                         .semantics { contentDescription = "Zoom out" },
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(
@@ -273,7 +273,7 @@ internal fun PdfZoomControls(
                     onClick = { view.resetZoomWithAnimation() },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 46.dp),
+                        .heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(
                         1.dp,
@@ -295,7 +295,7 @@ internal fun PdfZoomControls(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 46.dp)
+                        .heightIn(min = 48.dp)
                         .semantics { contentDescription = "Zoom in" },
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(
