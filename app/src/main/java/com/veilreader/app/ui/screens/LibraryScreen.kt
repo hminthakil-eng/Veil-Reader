@@ -421,6 +421,12 @@ fun LibraryScreen(
             )
         }
 
+        if (isImporting) {
+            item(key = "library:import-status", span = { GridItemSpan(maxLineSpan) }) {
+                LibraryImportStatus()
+            }
+        }
+
         item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
             if (viewMode != LibraryViewMode.SHELVES) Column(
                 Modifier
@@ -1591,7 +1597,7 @@ private fun LibraryHeader(
                         contentColor = VeilPalette.Moon,
                         containerColor = VeilPalette.Ink.copy(alpha = 0.48f)
                     ),
-                    modifier = Modifier.heightIn(min = 40.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text("Settings", style = MaterialTheme.typography.labelMedium)
                 }
@@ -1605,7 +1611,7 @@ private fun LibraryHeader(
                         containerColor = VeilPalette.Brass,
                         contentColor = Color(0xFF17120A)
                     ),
-                    modifier = Modifier.heightIn(min = 40.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
                         if (isImporting) "Importing…" else "Import",
@@ -2677,6 +2683,52 @@ private fun BookProgress(book: Book) {
 }
 
 @Composable
+private fun LibraryImportStatus() {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.56f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.34f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = VeilSpacing.md,
+                vertical = VeilSpacing.sm
+            ),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                Modifier
+                    .width(3.dp)
+                    .height(38.dp)
+                    .background(VeilPalette.Brass.copy(alpha = 0.82f))
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "PREPARING PUBLICATION",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "Inspecting the file and preparing its local archive record.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist.copy(alpha = 0.82f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun LibraryEmptyState(
     hasBooks: Boolean,
     isImporting: Boolean,
@@ -2725,13 +2777,13 @@ private fun LibraryEmptyState(
             }
 
             Text(
-                if (hasBooks) "NO MATCHING VOLUMES" else "THE SHELVES ARE QUIET",
+                if (hasBooks) "NO MATCHING VOLUMES" else "YOUR ARCHIVE IS EMPTY",
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
                 color = VeilPalette.Brass
             )
 
             Text(
-                if (hasBooks) "Nothing in this part of the archive" else "Begin the Grayfog Archive",
+                if (hasBooks) "Nothing in this part of the archive" else "The first volume begins the world",
                 style = MaterialTheme.typography.titleLarge
             )
 
@@ -2739,7 +2791,7 @@ private fun LibraryEmptyState(
                 if (hasBooks) {
                     "No book matches the current search, shelf, or collection. Clear the filters and the archive will return."
                 } else {
-                    "Import an EPUB or PDF. Books, progress, highlights, and notes remain local on this device."
+                    "Import an EPUB or PDF. The first volume establishes your Archive; progress, highlights, and notes remain local on this device."
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2768,7 +2820,7 @@ private fun LibraryEmptyState(
                         contentColor = Color(0xFF17120A)
                     )
                 ) {
-                    Text(if (isImporting) "Opening Android Files…" else "Import your first volume")
+                    Text(if (isImporting) "Preparing publication…" else "Import your first volume")
                 }
             }
         }
