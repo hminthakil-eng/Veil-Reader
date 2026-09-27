@@ -1,5 +1,7 @@
 package com.veilreader.app.ui
 
+import android.content.Context
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.core.tween
@@ -24,8 +26,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
@@ -54,6 +62,36 @@ import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.VeilScriptGroup
 import com.veilreader.app.ui.theme.safeAppTrackingSp
+
+@Composable
+fun rememberVeilTouchExplorationEnabled(): Boolean {
+    val context = LocalContext.current
+    val manager = remember(context) {
+        context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+    }
+    var enabled by remember(manager) {
+        mutableStateOf(manager?.isTouchExplorationEnabled == true)
+    }
+
+    DisposableEffect(manager) {
+        val accessibilityManager = manager
+        if (accessibilityManager == null) {
+            onDispose { }
+        } else {
+            val listener =
+                AccessibilityManager.TouchExplorationStateChangeListener { value ->
+                    enabled = value
+                }
+            accessibilityManager.addTouchExplorationStateChangeListener(listener)
+            enabled = accessibilityManager.isTouchExplorationEnabled
+            onDispose {
+                accessibilityManager.removeTouchExplorationStateChangeListener(listener)
+            }
+        }
+    }
+
+    return enabled
+}
 
 /**
  * Calm world chrome for everything around the actual publication.
