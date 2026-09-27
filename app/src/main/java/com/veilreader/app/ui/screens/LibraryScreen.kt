@@ -82,6 +82,7 @@ import com.veilreader.app.ui.theme.localizeAppNumerals
 import com.veilreader.app.ui.theme.localizedMetadataValue
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
@@ -395,6 +396,12 @@ fun LibraryScreen(
             .libraryArchiveAtmosphere(
                 state = atmosphereState,
                 seed = books.size * 31 + collections.size * 7
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.ARCHIVE,
+                seed = books.size * 37 + collections.size * 11 + filtered.size,
+                intensity = (0.58f + atmosphereState.archiveDensity * 0.16f)
+                    .coerceAtMost(0.74f)
             ),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),

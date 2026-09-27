@@ -69,6 +69,7 @@ import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.appMetadataDivider
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.localizeAppNumerals
 import com.veilreader.app.ui.theme.localizedMetadataValue
@@ -127,6 +128,11 @@ fun CastleScreen(
                 realm = VeilRealm.CASTLE,
                 seed = profile.rankIndex * 31 + memoryState.volumeCount,
                 temporalPhase = temporalPhase
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.CASTLE,
+                seed = profile.rankIndex * 31 + memoryState.volumeCount,
+                intensity = 0.78f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
