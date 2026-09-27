@@ -217,6 +217,15 @@ fun VeilWorldBackdrop(
     }
 }
 
+internal fun tabSlideDirection(
+    initialOrdinal: Int,
+    targetOrdinal: Int,
+    rtl: Boolean
+): Int {
+    val logicalDirection = if (targetOrdinal >= initialOrdinal) 1 else -1
+    return if (rtl) -logicalDirection else logicalDirection
+}
+
 @Composable
 fun VeilAnimatedTabHost(
     selectedTab: VeilTab,
@@ -237,13 +246,11 @@ fun VeilAnimatedTabHost(
                     fadeOut(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
                     ) using SizeTransform(clip = false)
             } else {
-                val logicalDirection =
-                    if (targetState.ordinal >= initialState.ordinal) 1 else -1
-                val direction = if (layoutDirection == LayoutDirection.Rtl) {
-                    -logicalDirection
-                } else {
-                    logicalDirection
-                }
+                val direction = tabSlideDirection(
+                    initialOrdinal = initialState.ordinal,
+                    targetOrdinal = targetState.ordinal,
+                    rtl = layoutDirection == LayoutDirection.Rtl
+                )
                 (
                     fadeIn(tween(VeilMotion.STANDARD_MS, delayMillis = 12)) +
                         slideInHorizontally(tween(VeilMotion.STANDARD_MS)) { fullWidth ->
