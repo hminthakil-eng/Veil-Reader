@@ -74,6 +74,8 @@ import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
+import com.veilreader.app.ui.theme.rememberVeilTemporalAtmosphere
+import com.veilreader.app.ui.theme.temporalGrayfogAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
@@ -252,6 +254,7 @@ fun LibraryScreen(
     val wingState = remember(books) {
         deriveLibraryWings(books)
     }
+    val temporalAtmosphere = rememberVeilTemporalAtmosphere()
     val atmosphereState = remember(
         books,
         highlights,
@@ -353,6 +356,12 @@ fun LibraryScreen(
                 realm = VeilRealm.ARCHIVE,
                 seed = books.size + filtered.size,
                 intensity = 0.88f + atmosphereState.archiveDensity * 0.12f
+            )
+            .temporalGrayfogAtmosphere(
+                state = temporalAtmosphere,
+                realm = VeilRealm.ARCHIVE,
+                seed = books.size + filtered.size,
+                intensity = 0.86f
             )
             .libraryArchiveAtmosphere(
                 state = atmosphereState,
