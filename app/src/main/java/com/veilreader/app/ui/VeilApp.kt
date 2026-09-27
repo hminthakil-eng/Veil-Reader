@@ -458,7 +458,13 @@ fun VeilApp(
                 books = books,
                 profile = requireNotNull(profile),
                 quests = quests,
+                highlights = highlights,
+                bookmarks = bookmarks,
+                readingSessions = readingSessions,
                 onOpenBook = { requestOpenBook(it) },
+                onOpenPassage = { book, locator ->
+                    requestOpenBook(book, locator)
+                },
                 onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
                 onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
             )
