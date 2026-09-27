@@ -60,6 +60,8 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.rememberVeilTemporalAtmosphere
+import com.veilreader.app.ui.theme.temporalGrayfogAtmosphere
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -89,11 +91,17 @@ fun CastleScreen(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
     val castleLayout = castleLayoutPolicyFor(castleAdaptiveClass)
+    val temporalAtmosphere = rememberVeilTemporalAtmosphere()
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .grayfogAtmosphere(
+                realm = VeilRealm.CASTLE,
+                seed = profile.rankIndex * 31 + memoryState.volumeCount
+            )
+            .temporalGrayfogAtmosphere(
+                state = temporalAtmosphere,
                 realm = VeilRealm.CASTLE,
                 seed = profile.rankIndex * 31 + memoryState.volumeCount
             ),
