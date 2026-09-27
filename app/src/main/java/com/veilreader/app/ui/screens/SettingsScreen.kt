@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -458,10 +459,11 @@ fun SettingsScreen(
 private fun SettingsMasthead(
     onClose: () -> Unit
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(250.dp)
+            .heightIn(min = if (fontScale > 1.35f) 320.dp else 250.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
