@@ -564,7 +564,7 @@ fun LibraryScreen(
                             ) {
                                 Text(
                                     if (collection.isBlank()) "Collection" else collection,
-                                    style = MaterialTheme.typography.labelSmall,
+                                    style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
                                 )
@@ -1676,7 +1676,7 @@ private fun LibraryHeader(
                 ) {
                     Text(
                         if (isImporting) "Importing…" else "Import",
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelSmall
                     )
                 }
             }
@@ -1727,7 +1727,7 @@ private fun LibraryHeader(
                         color = VeilPalette.Brass.copy(alpha = 0.88f),
                         maxLines = 1
                     )
-                )
+                }
             }
         }
     }
