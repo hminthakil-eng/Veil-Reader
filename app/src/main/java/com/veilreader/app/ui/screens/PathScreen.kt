@@ -49,6 +49,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 
 private data class PathPresentation(
     val aspect: String,
@@ -103,7 +104,8 @@ fun PathScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.RITUAL,
-                seed = profile.path.id.hashCode() xor profile.rankIndex
+                seed = profile.path.id.hashCode() xor profile.rankIndex,
+                temporalPhase = currentVeilTemporalPhase()
             ),
         contentAlignment = Alignment.TopCenter
     ) {
