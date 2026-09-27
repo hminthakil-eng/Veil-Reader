@@ -54,14 +54,17 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
+import com.veilreader.app.ui.theme.appMetadataDivider
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.localizeAppNumerals
+import com.veilreader.app.ui.theme.localizedMetadataValue
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -179,6 +182,7 @@ private fun CastleKeep(
     onAdvanceRank: () -> Unit
 ) {
     val language = LocalVeilLanguage.current
+    val scriptGroup = LocalVeilScriptGroup.current
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
     val reducedMotion = LocalVeilReducedMotion.current
@@ -261,10 +265,16 @@ private fun CastleKeep(
                         color = VeilPalette.Moon
                     )
                     Text(
-                        localizeAppNumerals(
-                            "${profile.path.name} · ${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
-                            language
-                        ),
+                        listOf(
+                            localizedMetadataValue(profile.path.name, language),
+                            localizedMetadataValue(
+                                localizeAppNumerals(
+                                    "${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
+                                    language
+                                ),
+                                language
+                            )
+                        ).joinToString(appMetadataDivider(scriptGroup)),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
