@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
@@ -68,6 +69,8 @@ import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.deriveLibraryWings
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.adaptiveClassFor
+import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
@@ -185,6 +188,10 @@ fun LibraryScreen(
     onOpenSettings: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
+    val archiveAdaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val archiveLayout = archiveLayoutPolicyFor(archiveAdaptiveClass)
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
@@ -336,7 +343,7 @@ fun LibraryScreen(
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
         columns = if (viewMode == LibraryViewMode.GALLERY) {
-            GridCells.Adaptive(112.dp)
+            GridCells.Adaptive(archiveLayout.galleryMinCellDp.dp)
         } else {
             GridCells.Fixed(1)
         },
@@ -354,8 +361,8 @@ fun LibraryScreen(
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         contentPadding = PaddingValues(
-            start = VeilSpacing.sm,
-            end = VeilSpacing.sm,
+            start = archiveLayout.horizontalPaddingDp.dp,
+            end = archiveLayout.horizontalPaddingDp.dp,
             top = VeilSpacing.xs,
             bottom = 24.dp
         )
@@ -779,6 +786,7 @@ fun LibraryScreen(
                             book = book,
                             archiveMemory = memoryState.memoryFor(book.id),
                             artifactMemory = artifactMemoryByBookId[book.id],
+                            showMemorySummary = archiveLayout.showIndexMemorySummary,
                             onOpen = { onOpenBook(book) },
                             onFavorite = { onFavorite(book.id) },
                             onDetails = { detailBookId = book.id }
@@ -798,6 +806,9 @@ fun LibraryScreen(
                                     seriesFilter.isNotEmpty()
                             ),
                             artifactMemoryByBookId = artifactMemoryByBookId,
+                            itemWidthDp = archiveLayout.shelfItemWidthDp,
+                            coverWidthDp = archiveLayout.shelfCoverWidthDp,
+                            coverHeightDp = archiveLayout.shelfCoverHeightDp,
                             onOpen = onOpenBook,
                             onDetails = { detailBookId = it.id }
                         )
@@ -2465,6 +2476,7 @@ private fun BookLibraryRow(
     book: Book,
     archiveMemory: BookArchiveMemory?,
     artifactMemory: BookArtifactMemory?,
+    showMemorySummary: Boolean,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
     onDetails: () -> Unit
@@ -2574,7 +2586,9 @@ private fun BookLibraryRow(
                 }
             }
 
-            if (artifactMemory != null &&
+            if (
+                showMemorySummary &&
+                artifactMemory != null &&
                 (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
             ) {
                 Text(
@@ -2765,6 +2779,9 @@ private fun LibraryEmptyState(
 private fun LibraryShelvesView(
     groups: List<LibraryShelfGroup>,
     artifactMemoryByBookId: Map<String, BookArtifactMemory>,
+    itemWidthDp: Float,
+    coverWidthDp: Float,
+    coverHeightDp: Float,
     onOpen: (Book) -> Unit,
     onDetails: (Book) -> Unit
 ) {
@@ -2792,7 +2809,7 @@ private fun LibraryShelvesView(
                     group.books.forEach { book ->
                         Column(
                             modifier = Modifier
-                                .width(118.dp)
+                                .width(itemWidthDp.dp)
                                 .clickable(
                                     role = Role.Button,
                                     onClickLabel = "Read ${book.title}"
@@ -2808,8 +2825,8 @@ private fun LibraryShelvesView(
                                     memory = artifactMemoryByBookId[book.id]
                                 ),
                                 modifier = Modifier
-                                    .width(108.dp)
-                                    .height(158.dp)
+                                    .width(coverWidthDp.dp)
+                                    .height(coverHeightDp.dp)
                             )
                             Text(
                                 book.title,
