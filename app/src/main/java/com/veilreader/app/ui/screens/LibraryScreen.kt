@@ -357,24 +357,23 @@ fun LibraryScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = 0.10f,
+            alpha = 0.28f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(620.dp)
+                .height(780.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(680.dp)
+                .height(820.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Ink.copy(alpha = 0.48f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.06f),
+                        0.34f to Color.Transparent,
+                        0.70f to VeilPalette.Ink.copy(alpha = 0.64f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -462,7 +461,8 @@ fun LibraryScreen(
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = VeilSpacing.sm)
+                    .offset(y = (-14).dp)
+                    .padding(horizontal = 6.dp)
             )
         }
 
@@ -1652,14 +1652,14 @@ private fun LibraryHeader(
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.extraSmall)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
-                MaterialTheme.shapes.medium
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.64f)),
+                MaterialTheme.shapes.extraSmall
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 146.dp else 178.dp
+        val headerHeight = if (compact) 218.dp else 256.dp
 
         Box(Modifier.fillMaxWidth().height(headerHeight)) {
             Image(
@@ -1674,8 +1674,9 @@ private fun LibraryHeader(
                     .matchParentSize()
                     .background(
                         Brush.verticalGradient(
-                            0f to VeilPalette.Ink.copy(alpha = 0.16f),
-                            0.48f to VeilPalette.Ink.copy(alpha = 0.34f),
+                            0f to VeilPalette.Ink.copy(alpha = 0.06f),
+                            0.34f to Color.Transparent,
+                            0.72f to VeilPalette.Ink.copy(alpha = 0.52f),
                             1f to VeilPalette.Ink.copy(alpha = 0.98f)
                         )
                     )
@@ -1683,7 +1684,7 @@ private fun LibraryHeader(
 
             GrayfogOrnamentFrame(
                 modifier = Modifier.matchParentSize(),
-                strength = 0.62f
+                strength = 0.86f
             )
 
             Row(
@@ -1739,9 +1740,9 @@ private fun LibraryHeader(
                 Text(
                     "Grayfog Archive",
                     style = if (compact) {
-                        MaterialTheme.typography.headlineMedium
-                    } else {
                         MaterialTheme.typography.headlineLarge
+                    } else {
+                        MaterialTheme.typography.displaySmall
                     },
                     color = VeilPalette.Moon,
                     maxLines = 1,
@@ -1753,7 +1754,7 @@ private fun LibraryHeader(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "Fragments · Records · Truths",
+                        "Fragments · Records · Truths · Echoes",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.78.sp),
                         color = VeilPalette.Moon.copy(alpha = 0.76f),
                         modifier = Modifier.weight(1f),
