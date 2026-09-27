@@ -63,6 +63,5 @@ object VeiledDiscoveryCatalog {
         profile: ReaderProfile,
         highlightCount: Int
     ): Set<String> =
-        (existingIds + qualifyingIds(profile, highlightCount))
-            .filterTo(linkedSetOf()) { it in orderedIds }
+        existingIds + qualifyingIds(profile, highlightCount)
 }
