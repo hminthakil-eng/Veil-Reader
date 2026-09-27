@@ -162,8 +162,9 @@ fun thresholdAtmosphereIntensityFor(bookCount: Int): Float {
     val count = bookCount.coerceAtLeast(0)
     if (count == 0) return 0.72f
     if (count == 1) return 0.84f
-    return (0.84f + (count.coerceAtMost(12) - 1) * 0.0145f)
-        .coerceAtMost(1f)
+    val normalized = (count.coerceAtMost(12) - 1) / 11f
+    return (0.84f + normalized * 0.16f)
+        .coerceIn(0.84f, 1f)
 }
 
 enum class VeilMotionClass {
