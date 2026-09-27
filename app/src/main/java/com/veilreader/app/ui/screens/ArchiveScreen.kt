@@ -34,6 +34,7 @@ import com.veilreader.app.domain.HighlightMemory
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
@@ -85,6 +86,13 @@ fun ArchiveScreen(
             highlights = highlights,
             bookmarks = bookmarks,
             sealedCycles = readingCycles
+        )
+    }
+    val memoryAtlas = remember(books, highlights, readingSessions) {
+        buildMemoryAtlas(
+            books = books,
+            highlights = highlights,
+            sessions = readingSessions
         )
     }
     val cleanQuery = query.trim()
@@ -190,7 +198,8 @@ fun ArchiveScreen(
                     highlights = highlights.size,
                     bookmarks = bookmarks.size,
                     echoes = echoes.size,
-                    capsules = capsules.size
+                    capsules = capsules.size,
+                    atlasLinks = memoryAtlas.edges.size
                 )
             }
         }
@@ -536,7 +545,8 @@ private fun ArchiveRegister(
     highlights: Int,
     bookmarks: Int,
     echoes: Int,
-    capsules: Int
+    capsules: Int,
+    atlasLinks: Int
 ) {
     Row(
         modifier = Modifier
@@ -556,6 +566,7 @@ private fun ArchiveRegister(
         ArchiveRegisterStat("MARKS", bookmarks)
         ArchiveRegisterStat("ECHOES", echoes)
         ArchiveRegisterStat("SEALED", capsules)
+        ArchiveRegisterStat("THREADS", atlasLinks)
     }
 }
 
