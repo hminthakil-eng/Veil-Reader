@@ -249,7 +249,13 @@ private fun ThresholdHeader(
     headerHeightDp: Float
 ) {
     val compactHeader = headerHeightDp <= 270f
-    val visualHeightDp = if (compactHeader) 330f else maxOf(headerHeightDp, 390f)
+    val fontScale = LocalDensity.current.fontScale
+    val visualHeightDp = when {
+        fontScale > 1.55f -> 430f
+        fontScale > 1.30f -> 380f
+        compactHeader -> 330f
+        else -> maxOf(headerHeightDp, 390f)
+    }
 
     Box(
         modifier = Modifier
