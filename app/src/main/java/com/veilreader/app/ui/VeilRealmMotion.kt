@@ -145,18 +145,18 @@ fun Modifier.veilTabSharedBounds(
 }
 
 /**
- * Owns motion between the normal world shell and a full-screen world chamber.
+ * Owns motion between the normal world shell and a full-screen world destination.
  *
  * Reader/Readium is intentionally not hosted here. Reader remains a controlled handoff because
  * shared-element interop does not cross the Compose/View boundary safely.
  */
 @Composable
 fun VeilRealmMotionHost(
-    activeChamber: String?,
-    onCloseChamber: () -> Unit,
+    activeDestination: String?,
+    onCloseDestination: () -> Unit,
     modifier: Modifier = Modifier,
     mainContent: @Composable () -> Unit,
-    chamberContent: @Composable (String) -> Unit
+    destinationContent: @Composable (String) -> Unit
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
     val policy = remember(reducedMotion) {
@@ -165,14 +165,14 @@ fun VeilRealmMotionHost(
     var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var predictiveBackDirection by remember { mutableFloatStateOf(1f) }
 
-    LaunchedEffect(activeChamber) {
-        if (activeChamber == null) {
+    LaunchedEffect(activeDestination) {
+        if (activeDestination == null) {
             predictiveBackProgress = 0f
             predictiveBackDirection = 1f
         }
     }
 
-    PredictiveBackHandler(enabled = activeChamber != null) { progress ->
+    PredictiveBackHandler(enabled = activeDestination != null) { progress ->
         try {
             progress.collect { event ->
                 predictiveBackProgress = event.progress.coerceIn(0f, 1f)
@@ -180,7 +180,7 @@ fun VeilRealmMotionHost(
                     if (event.swipeEdge == BackEventCompat.EDGE_RIGHT) -1f else 1f
             }
             predictiveBackProgress = 1f
-            onCloseChamber()
+            onCloseDestination()
         } catch (cancelled: CancellationException) {
             predictiveBackProgress = 0f
             predictiveBackDirection = 1f
@@ -193,7 +193,7 @@ fun VeilRealmMotionHost(
             LocalVeilSharedTransitionScope provides this
         ) {
             AnimatedContent(
-                targetState = activeChamber,
+                targetState = activeDestination,
                 modifier = Modifier.fillMaxSize(),
                 transitionSpec = {
                     if (reducedMotion) {
@@ -279,7 +279,7 @@ fun VeilRealmMotionHost(
                             if (chamber == null) {
                                 mainContent()
                             } else {
-                                chamberContent(chamber)
+                                destinationContent(chamber)
                             }
                         }
                     }
