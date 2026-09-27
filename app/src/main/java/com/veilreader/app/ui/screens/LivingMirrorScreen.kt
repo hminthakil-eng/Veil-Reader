@@ -38,6 +38,7 @@ import com.veilreader.app.ui.BrassRule
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
+import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotionClass
@@ -231,6 +232,7 @@ private fun LivingMirrorMasthead(
 ) {
     Box(
         modifier = Modifier
+            .veilSharedBounds("hall:mirror")
             .fillMaxWidth()
             .heightIn(min = if (compact) 184.dp else 238.dp)
             .clip(MaterialTheme.shapes.extraSmall)
