@@ -46,6 +46,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.hallSharedBoundsKey
 import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -226,7 +227,7 @@ private fun ObservatoryGrandMasthead(
     val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
-            .veilSharedBounds("hall:observatory")
+            .veilSharedBounds(hallSharedBoundsKey("observatory"))
             .fillMaxWidth()
             .heightIn(min = if (fontScale > 1.35f) 342.dp else 270.dp)
             .clip(MaterialTheme.shapes.extraSmall)
