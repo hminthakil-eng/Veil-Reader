@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -25,8 +26,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.Book
-import com.veilreader.app.ui.books.bookArtifactState
+import com.veilreader.app.domain.BookArtifactMemory
+import com.veilreader.app.domain.Bookmark
+import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.Quest
+import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.deriveBookArtifactMemory
+import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -44,12 +50,49 @@ fun ReadingNowScreen(
     books: List<Book>,
     profile: ReaderProfile,
     quests: List<Quest>,
+    highlights: List<Highlight> = emptyList(),
+    bookmarks: List<Bookmark> = emptyList(),
+    readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     onOpenBook: (Book) -> Unit,
+    onOpenPassage: (Book, String) -> Unit,
     onOpenLibrary: () -> Unit,
     onOpenCastle: () -> Unit
 ) {
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
+    val artifactMemoryByBookId = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions
+    ) {
+        val sessionsByBook = readingSessions
+            .filter { !it.bookId.isNullOrBlank() }
+            .groupBy { requireNotNull(it.bookId) }
+        val highlightsByBook = highlights.groupBy { it.bookId }
+        val bookmarksByBook = bookmarks.groupBy { it.bookId }
+
+        books.associate { book ->
+            book.id to deriveBookArtifactMemory(
+                book = book,
+                sessions = sessionsByBook[book.id].orEmpty(),
+                highlights = highlightsByBook[book.id].orEmpty(),
+                bookmarks = bookmarksByBook[book.id].orEmpty()
+            )
+        }
+    }
+    val thresholdWhisper = remember(
+        snapshot.hero,
+        snapshot.recent,
+        highlights,
+        quests
+    ) {
+        deriveThresholdWhisper(
+            visibleBooks = listOfNotNull(snapshot.hero) + snapshot.recent,
+            highlights = highlights,
+            quests = quests
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -70,7 +113,10 @@ fun ReadingNowScreen(
         ) {
             VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
                 Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
-                    ThresholdHeader(hasCurrentBook = current != null)
+                    ThresholdHeader(
+                        bookCount = books.size,
+                        hasCurrentBook = current != null
+                    )
                 }
             }
 
@@ -83,6 +129,7 @@ fun ReadingNowScreen(
                     } else {
                         ContinueReadingHero(
                             current = current,
+                            artifactMemory = artifactMemoryByBookId[current.id],
                             onOpenBook = onOpenBook,
                             onOpenLibrary = onOpenLibrary
                         )
@@ -96,6 +143,7 @@ fun ReadingNowScreen(
                     Box(Modifier.padding(horizontal = VeilSpacing.md)) {
                         RecentBooksShelf(
                             books = snapshot.recent,
+                            artifactMemoryByBookId = artifactMemoryByBookId,
                             onOpenBook = onOpenBook,
                             onOpenLibrary = onOpenLibrary
                         )
@@ -103,10 +151,26 @@ fun ReadingNowScreen(
                 }
             }
 
+            thresholdWhisper?.let { whisper ->
+                Spacer(Modifier.height(VeilSpacing.xl))
+                VeilReveal(delayMillis = 170, modifier = Modifier.fillMaxWidth()) {
+                    Box(Modifier.padding(horizontal = VeilSpacing.md)) {
+                        ThresholdWhisperCard(
+                            whisper = whisper,
+                            books = books,
+                            onOpenPassage = onOpenPassage
+                        )
+                    }
+                }
+            }
+
             Spacer(Modifier.height(VeilSpacing.xl))
-            VeilReveal(delayMillis = 190, modifier = Modifier.fillMaxWidth()) {
+            VeilReveal(delayMillis = 210, modifier = Modifier.fillMaxWidth()) {
                 Box(Modifier.padding(horizontal = VeilSpacing.md)) {
-                    ReadingPulse(profile)
+                    ReadingPulse(
+                        profile = profile,
+                        onOpenCastle = onOpenCastle
+                    )
                 }
             }
         }
