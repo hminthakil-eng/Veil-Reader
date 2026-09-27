@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -295,10 +296,11 @@ private fun ProfileGrandMasthead(
     level: Int,
     recordedSessions: Int
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(260.dp)
+            .heightIn(min = if (fontScale > 1.35f) 330.dp else 260.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
