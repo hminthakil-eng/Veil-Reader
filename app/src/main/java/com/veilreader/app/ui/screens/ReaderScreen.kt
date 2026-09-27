@@ -287,20 +287,16 @@ fun ReaderScreen(
             .map { items -> items.filter { it.bookId == opened.book.id } }
             .distinctUntilChanged()
     }
-    val bookPassageVisitsFlow = remember(library, opened.book.id) {
-        library.passageVisits
-            .map { items -> items.filter { it.bookId == opened.book.id } }
-            .distinctUntilChanged()
-    }
+    val passageVisits by library.passageVisits.collectAsStateWithLifecycle()
     val bookHighlights by bookHighlightsFlow.collectAsStateWithLifecycle(
         initialValue = library.highlightsFor(opened.book.id)
     )
     val bookBookmarks by bookBookmarksFlow.collectAsStateWithLifecycle(
         initialValue = emptyList()
     )
-    val bookPassageVisits by bookPassageVisitsFlow.collectAsStateWithLifecycle(
-        initialValue = library.passageVisits.value.filter { it.bookId == opened.book.id }
-    )
+    val bookPassageVisits = remember(passageVisits, opened.book.id) {
+        passageVisits.filter { it.bookId == opened.book.id }
+    }
     var readerMessage by remember { mutableStateOf<String?>(null) }
     var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
     var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
