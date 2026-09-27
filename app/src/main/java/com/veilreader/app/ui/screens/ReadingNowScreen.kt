@@ -178,7 +178,10 @@ fun ReadingNowScreen(
 }
 
 @Composable
-private fun ThresholdHeader(hasCurrentBook: Boolean) {
+private fun ThresholdHeader(
+    bookCount: Int,
+    hasCurrentBook: Boolean
+) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
@@ -255,15 +258,25 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    if (hasCurrentBook) "The Library Awaits" else "Enter the Library",
+                    when {
+                        bookCount == 0 -> "The Archive Is Unwritten"
+                        bookCount == 1 -> "The First Volume Has Arrived"
+                        hasCurrentBook -> "The Library Awaits"
+                        else -> "Return to the Archive"
+                    },
                     style = MaterialTheme.typography.headlineLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    if (hasCurrentBook) {
-                        "Every book is a door. Some should not be opened twice."
-                    } else {
-                        "A private archive for books, notes, and worlds that stay with you."
+                    when {
+                        bookCount == 0 ->
+                            "A private archive for books, notes, and worlds that stay with you."
+                        bookCount == 1 ->
+                            "The first chamber has awakened. Your reading history begins from this volume."
+                        hasCurrentBook ->
+                            "Every book is a door. The nearest one is already open."
+                        else ->
+                            "Your volumes remain here, quiet and local, until you choose another door."
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Moon.copy(alpha = 0.82f),
@@ -292,6 +305,7 @@ private fun ThresholdHeader(hasCurrentBook: Boolean) {
 @Composable
 private fun ContinueReadingHero(
     current: Book,
+    artifactMemory: BookArtifactMemory?,
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit
 ) {
@@ -341,7 +355,7 @@ private fun ContinueReadingHero(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    HeroCover(current)
+                    HeroCover(current, artifactMemory)
                 }
                 HeroDetails(current, ink, secondaryInk)
             } else {
@@ -350,7 +364,7 @@ private fun ContinueReadingHero(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeroCover(current)
+                    HeroCover(current, artifactMemory)
                     HeroDetails(
                         current = current,
                         ink = ink,
@@ -398,12 +412,18 @@ private fun ContinueReadingHero(
 }
 
 @Composable
-private fun HeroCover(current: Book) {
+private fun HeroCover(
+    current: Book,
+    artifactMemory: BookArtifactMemory?
+) {
     BookCover(
         title = current.title,
         subtitle = current.author,
         imagePath = current.coverCachePath,
-        artifact = bookArtifactState(current),
+        artifact = bookArtifactState(
+            current,
+            memory = artifactMemory
+        ),
         modifier = Modifier.width(96.dp).height(142.dp)
     )
 }
@@ -447,6 +467,7 @@ private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Flo
 @Composable
 private fun RecentBooksShelf(
     books: List<Book>,
+    artifactMemoryByBookId: Map<String, BookArtifactMemory>,
     onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit
 ) {
@@ -471,7 +492,7 @@ private fun RecentBooksShelf(
 
             TextButton(
                 onClick = onOpenLibrary,
-                modifier = Modifier.heightIn(min = 44.dp),
+                modifier = Modifier.heightIn(min = 48.dp),
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = VeilPalette.Brass
                 )
@@ -489,14 +510,22 @@ private fun RecentBooksShelf(
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
         ) {
             books.forEach { book ->
-                RecentBookCard(book = book, onOpenBook = onOpenBook)
+                RecentBookCard(
+                    book = book,
+                    artifactMemory = artifactMemoryByBookId[book.id],
+                    onOpenBook = onOpenBook
+                )
             }
         }
     }
 }
 
 @Composable
-private fun RecentBookCard(book: Book, onOpenBook: (Book) -> Unit) {
+private fun RecentBookCard(
+    book: Book,
+    artifactMemory: BookArtifactMemory?,
+    onOpenBook: (Book) -> Unit
+) {
     Card(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(118.dp),
@@ -508,7 +537,10 @@ private fun RecentBookCard(book: Book, onOpenBook: (Book) -> Unit) {
                 title = book.title,
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book),
+                artifact = bookArtifactState(
+                    book,
+                    memory = artifactMemory
+                ),
                 modifier = Modifier.width(108.dp).height(158.dp)
             )
             Text(
@@ -539,7 +571,10 @@ private fun recentBookStatus(book: Book): String {
 }
 
 @Composable
-private fun ReadingPulse(profile: ReaderProfile) {
+private fun ReadingPulse(
+    profile: ReaderProfile,
+    onOpenCastle: () -> Unit
+) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
@@ -554,11 +589,19 @@ private fun ReadingPulse(profile: ReaderProfile) {
                 color = VeilPalette.Brass,
                 modifier = Modifier.weight(1f)
             )
-            Text(
-                "Private · on device",
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            TextButton(
+                onClick = onOpenCastle,
+                modifier = Modifier.heightIn(min = 48.dp),
+                contentPadding = PaddingValues(horizontal = 8.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = VeilPalette.Brass
+                )
+            ) {
+                Text(
+                    "Castle",
+                    style = MaterialTheme.typography.labelSmall
+                )
+            }
         }
 
         BrassRule(Modifier.fillMaxWidth())
