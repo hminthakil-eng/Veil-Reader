@@ -33,6 +33,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
+import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactState
@@ -1100,6 +1101,121 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
+    }
+}
+
+@Composable
+private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
+    val paper = VeilPalette.ReaderPaper
+    val ink = Color(0xFF29231C)
+    val mutedInk = Color(0xFF6A5A43)
+    val shape = MaterialTheme.shapes.extraSmall
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 218.dp),
+        shape = shape,
+        color = Color.Transparent,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.82f))
+    ) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFFF6EDD9),
+                            paper,
+                            Color(0xFFD4C09A)
+                        )
+                    )
+                )
+                .padding(horizontal = 20.dp, vertical = 18.dp)
+        ) {
+            GrayfogOrnamentFrame(
+                modifier = Modifier.matchParentSize(),
+                strength = 0.28f
+            )
+            VeilRealmEmblem(
+                realm = VeilRealm.THRESHOLD,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(150.dp),
+                tint = mutedInk.copy(alpha = 0.16f)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 560.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ThresholdSeal(
+                        modifier = Modifier.size(48.dp),
+                        ink = mutedInk
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        VeilEyebrowText(
+                            text = "THE FIRST THRESHOLD",
+                            color = mutedInk,
+                            trackingSp = 1.35f
+                        )
+                        Text(
+                            "Your first volume is waiting",
+                            style = MaterialTheme.typography.headlineSmall,
+                            color = ink,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Text(
+                    "Import an EPUB or PDF. The first page you open becomes the shortest path back into that world.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = mutedInk,
+                    modifier = Modifier.widthIn(max = 470.dp)
+                )
+
+                Box(
+                    Modifier
+                        .width(148.dp)
+                        .height(1.dp)
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(
+                                    ink.copy(alpha = 0.66f),
+                                    ink.copy(alpha = 0.18f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                )
+
+                Button(
+                    onClick = onOpenLibrary,
+                    modifier = Modifier.heightIn(min = 50.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = ink,
+                        contentColor = Color(0xFFF3E9D5)
+                    )
+                ) {
+                    Text("Enter the Archive")
+                }
+            }
+        }
     }
 }
 
