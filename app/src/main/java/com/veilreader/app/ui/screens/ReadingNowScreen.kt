@@ -867,33 +867,50 @@ private fun ThresholdWhisperCard(
     books: List<Book>,
     onOpenPassage: (Book, String) -> Unit
 ) {
+    val preserved = whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE
+    val artifactPaper = Color(0xFFE2D6BC)
+    val artifactInk = Color(0xFF2C261F)
+    val artifactMuted = Color(0xFF6B5B45)
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.42f),
+        color = if (preserved) {
+            artifactPaper
+        } else {
+            VeilPalette.Archive.copy(alpha = 0.42f)
+        },
         border = BorderStroke(
             1.dp,
-            VeilPalette.BorderDark.copy(alpha = 0.68f)
+            if (preserved) {
+                VeilPalette.Brass.copy(alpha = 0.58f)
+            } else {
+                VeilPalette.BorderDark.copy(alpha = 0.68f)
+            }
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+        Box {
+            if (preserved) {
+                WhisperArtifactField(Modifier.matchParentSize())
+            }
+            Column(
+                modifier = Modifier.padding(VeilSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
             Text(
                 when (whisper.kind) {
                     ThresholdWhisperKind.PRESERVED_PASSAGE -> "WHISPER · PRESERVED PASSAGE"
                     ThresholdWhisperKind.READING_PROMPT -> "WHISPER · OPTIONAL"
                 },
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                color = VeilPalette.Brass
+                color = if (preserved) artifactMuted else VeilPalette.Brass
             )
             Text(
                 whisper.title,
                 style = MaterialTheme.typography.titleMedium,
-                color = VeilPalette.Moon,
+                color = if (preserved) artifactInk else VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -904,7 +921,8 @@ private fun ThresholdWhisperCard(
                     whisper.body
                 },
                 style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Mist.copy(alpha = 0.86f),
+                color = if (preserved) artifactInk.copy(alpha = 0.86f)
+                else VeilPalette.Mist.copy(alpha = 0.86f),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -912,7 +930,8 @@ private fun ThresholdWhisperCard(
                 Text(
                     detail,
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Spirit.copy(alpha = 0.70f),
+                    color = if (preserved) artifactMuted.copy(alpha = 0.82f)
+                    else VeilPalette.Spirit.copy(alpha = 0.70f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -925,13 +944,54 @@ private fun ThresholdWhisperCard(
                     modifier = Modifier.heightIn(min = 48.dp),
                     contentPadding = PaddingValues(horizontal = 0.dp),
                     colors = ButtonDefaults.textButtonColors(
-                        contentColor = VeilPalette.Brass
+                        contentColor = if (preserved) artifactInk else VeilPalette.Brass
                     )
                 ) {
                     Text("Return to passage")
                 }
             }
+            }
         }
+    }
+}
+
+@Composable
+private fun WhisperArtifactField(
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val ink = Color(0xFF75664E)
+        val w = size.width
+        val h = size.height
+
+        repeat(4) { index ->
+            val y = h * (0.28f + index * 0.15f)
+            drawLine(
+                color = ink.copy(alpha = 0.08f),
+                start = Offset(w * 0.05f, y),
+                end = Offset(w * 0.95f, y),
+                strokeWidth = 0.7.dp.toPx()
+            )
+        }
+
+        drawLine(
+            color = VeilPalette.Brass.copy(alpha = 0.30f),
+            start = Offset(w * 0.035f, h * 0.08f),
+            end = Offset(w * 0.035f, h * 0.92f),
+            strokeWidth = 1.dp.toPx()
+        )
+
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.30f),
+            center = Offset(w * 0.94f, h * 0.14f),
+            radius = 5.dp.toPx(),
+            style = androidx.compose.ui.graphics.drawscope.Stroke(0.8.dp.toPx())
+        )
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.16f),
+            center = Offset(w * 0.94f, h * 0.14f),
+            radius = 2.dp.toPx()
+        )
     }
 }
 
