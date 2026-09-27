@@ -37,6 +37,7 @@ import com.veilreader.app.ui.theme.appMetadataDivider
 import com.veilreader.app.ui.theme.localizeAppNumerals
 import com.veilreader.app.ui.theme.localizedMetadataValue
 import com.veilreader.app.ui.theme.scriptOrnamentPolicyFor
+import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.DateFormat
 import java.util.Date
 
