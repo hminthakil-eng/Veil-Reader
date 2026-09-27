@@ -19,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -39,7 +40,11 @@ import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.adaptiveClassFor
+import com.veilreader.app.ui.theme.castleLayoutPolicyFor
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.hypot
@@ -74,20 +79,38 @@ fun ObservatoryScreen(
     val selectedNode = atlas.nodes.firstOrNull { it.book.id == selectedBookId }
     val connections = selectedNode?.let { atlas.connectionsFor(it.book.id) }.orEmpty()
     val booksById = remember(atlas.nodes) { atlas.nodes.associateBy { it.book.id } }
+    val observatoryAdaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val observatoryLayout = castleLayoutPolicyFor(observatoryAdaptiveClass)
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.CASTLE,
+                seed = atlas.nodes.size * 17 + atlas.edges.size * 7,
+                intensity = 0.92f
+            ),
+        contentAlignment = Alignment.TopCenter
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .widthIn(max = observatoryLayout.contentMaxWidthDp.dp)
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
+            .padding(
+                horizontal = observatoryLayout.horizontalPaddingDp.dp,
+                vertical = VeilSpacing.lg
+            ),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         OutlinedButton(
             onClick = onClose,
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
-            modifier = Modifier.heightIn(min = 40.dp)
+            modifier = Modifier.heightIn(min = 48.dp)
         ) {
             Text("‹ Castle", style = MaterialTheme.typography.labelMedium)
         }
@@ -101,29 +124,21 @@ fun ObservatoryScreen(
         ObservatoryAtlasPanel(
             atlas = atlas,
             selectedBookId = selectedBookId,
+            panelHeightDp = observatoryLayout.observatoryHeightDp,
             onSelectBook = { selectedBookId = it }
         )
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            ObservatoryMetric(
-                label = "VOLUMES",
-                value = atlas.nodes.size.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            ObservatoryMetric(
-                label = "LINKS",
-                value = atlas.edges.size.toString(),
-                modifier = Modifier.weight(1f)
-            )
-            ObservatoryMetric(
-                label = "SOLITARY",
-                value = atlas.isolatedCount.toString(),
-                modifier = Modifier.weight(1f)
-            )
-        }
+        Text(
+            buildString {
+                append(atlas.nodes.size).append(" volumes")
+                append(" · ").append(atlas.edges.size).append(" recorded links")
+                if (atlas.isolatedCount > 0) {
+                    append(" · ").append(atlas.isolatedCount).append(" solitary")
+                }
+            },
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+            color = VeilPalette.Mist.copy(alpha = 0.66f)
+        )
 
         selectedNode?.let { node ->
             ObservatorySelection(
@@ -158,18 +173,35 @@ fun ObservatoryScreen(
             color = VeilPalette.Mist.copy(alpha = 0.64f)
         )
     }
+    }
 }
 
 @Composable
 private fun ObservatoryAtlasPanel(
     atlas: MemoryAtlas,
     selectedBookId: String?,
+    panelHeightDp: Float,
     onSelectBook: (String) -> Unit
 ) {
+    val relatedBookIds = remember(atlas.edges, selectedBookId) {
+        if (selectedBookId == null) {
+            emptySet()
+        } else {
+            buildSet {
+                atlas.edges.forEach { edge ->
+                    when (selectedBookId) {
+                        edge.fromBookId -> add(edge.toBookId)
+                        edge.toBookId -> add(edge.fromBookId)
+                    }
+                }
+            }
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(330.dp)
+            .height(panelHeightDp.dp)
             .clip(MaterialTheme.shapes.small)
             .background(
                 Brush.radialGradient(
@@ -254,7 +286,7 @@ private fun ObservatoryAtlasPanel(
                         alpha = if (selectedEdge) {
                             0.20f + edge.strength * 0.025f
                         } else {
-                            0.045f + edge.strength * 0.012f
+                            0.022f + edge.strength * 0.008f
                         }
                     ),
                     start = points[fromIndex],
@@ -292,8 +324,15 @@ private fun ObservatoryAtlasPanel(
                     )
                 }
 
+                val nodeAlpha = when {
+                    selected -> 1f
+                    selectedBookId == null -> 0.82f
+                    node.book.id in relatedBookIds -> 0.86f
+                    else -> 0.28f
+                }
+
                 drawCircle(
-                    color = tint.copy(alpha = if (selected) 1f else 0.82f),
+                    color = tint.copy(alpha = nodeAlpha),
                     radius = radius,
                     center = point
                 )
@@ -336,7 +375,9 @@ private fun ObservatorySelection(
     onOpenBook: (Book) -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = VeilPalette.Archive.copy(alpha = 0.62f),
         border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
@@ -409,7 +450,7 @@ private fun ObservatorySelection(
                 ),
                 modifier = Modifier
                     .align(Alignment.End)
-                    .heightIn(min = 42.dp)
+                    .heightIn(min = 48.dp)
             ) {
                 Text(if (node.book.isImported) "Enter volume" else "Source unavailable")
             }
@@ -505,30 +546,6 @@ private fun ObservatoryBookRow(
                 "${node.connectionCount} ${if (node.connectionCount == 1) "LINK" else "LINKS"}",
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.58f)
-            )
-        }
-    }
-}
-
-@Composable
-private fun ObservatoryMetric(label: String, value: String, modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Ink.copy(alpha = 0.34f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.62f)),
-        tonalElevation = 0.dp
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
-        ) {
-            Text(value, style = MaterialTheme.typography.titleSmall, color = VeilPalette.Moon)
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
-                color = VeilPalette.Brass.copy(alpha = 0.70f)
             )
         }
     }
