@@ -59,6 +59,7 @@ import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -491,6 +492,14 @@ private fun SettingsMasthead(
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
             strength = 0.82f
+        )
+        VeilRealmEmblem(
+            realm = com.veilreader.app.ui.theme.VeilRealm.SANCTUARY,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = VeilSpacing.lg)
+                .size(132.dp),
+            tint = VeilPalette.Brass.copy(alpha = 0.18f)
         )
 
         TextButton(
