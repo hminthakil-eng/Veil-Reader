@@ -70,10 +70,13 @@ The decision must be made before W1 persistence lands.
 
 ## Realm contract
 
-World-facing realms may read ledger projections only. They never mutate reading history, progression,
-or the ledger directly, and inactivity never removes or downgrades history.
+World-facing realms may read World Kernel projections only. The World Kernel never becomes the
+mutation owner for Reader history or progression, and realm presentation never appends ledger
+events directly. Inactivity never removes or downgrades history.
 
-Sanctuary is stronger: it has no decorative world-state access at all.
+This does not block Sanctuary from saving normal Reader progress/session state through the existing
+Reader repositories. Sanctuary is isolated specifically from decorative World Kernel state and
+World Event projections.
 
 This keeps Reader calm while allowing Threshold, Great Hall, Living Mirror, Archive, Observatory,
 Ritual, Treasury, and Sanctum to manifest historical facts outside the book.
