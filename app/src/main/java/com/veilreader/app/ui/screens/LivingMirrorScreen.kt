@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import android.content.Context
+import android.view.accessibility.AccessibilityManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -17,8 +19,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -92,8 +94,7 @@ fun LivingMirrorScreen(
     }
     val booksById = remember(books) { books.associateBy { it.id } }
 
-    val touchExplorationEnabled =
-        LocalAccessibilityManager.current?.isTouchExplorationEnabled == true
+    val touchExplorationEnabled = rememberTouchExplorationEnabled()
 
     var mode by rememberSaveable { mutableStateOf(LivingMirrorMode.MIRROR) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -114,7 +115,7 @@ fun LivingMirrorScreen(
     }
     val selected = allNotes.firstOrNull { it.highlightId == selectedId }
 
-    Box(
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .grayfogAtmosphere(
@@ -129,6 +130,9 @@ fun LivingMirrorScreen(
                 intensity = 0.88f
             )
     ) {
+        val compactHeight = maxHeight < 760.dp
+        val compactWidth = maxWidth < 380.dp
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -137,7 +141,11 @@ fun LivingMirrorScreen(
                 .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            LivingMirrorMasthead(noteCount = allNotes.size, onClose = onClose)
+            LivingMirrorMasthead(
+                noteCount = allNotes.size,
+                compact = compactHeight || compactWidth,
+                onClose = onClose
+            )
 
             OutlinedTextField(
                 value = query,
@@ -191,6 +199,7 @@ fun LivingMirrorScreen(
                     query = normalizedQuery,
                     matches = filtered.mapTo(hashSetOf()) { it.highlightId },
                     onSelect = { selectedId = it.highlightId },
+                    compact = compactHeight,
                     modifier = Modifier.fillMaxWidth().weight(1f)
                 )
                 else -> LivingMirrorIndex(
@@ -217,11 +226,15 @@ fun LivingMirrorScreen(
 }
 
 @Composable
-private fun LivingMirrorMasthead(noteCount: Int, onClose: () -> Unit) {
+private fun LivingMirrorMasthead(
+    noteCount: Int,
+    compact: Boolean,
+    onClose: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 238.dp)
+            .heightIn(min = if (compact) 184.dp else 238.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
                 Brush.verticalGradient(
@@ -276,12 +289,14 @@ private fun LivingMirrorMasthead(noteCount: Int, onClose: () -> Unit) {
                 style = MaterialTheme.typography.displaySmall,
                 color = VeilPalette.Moon
             )
-            Text(
-                "Notes arrange by book, age, revisit history, and reading cycle. Nothing here is inferred.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Mist.copy(alpha = 0.84f),
-                modifier = Modifier.widthIn(max = 620.dp)
-            )
+            if (!compact) {
+                Text(
+                    "Notes arrange by book, age, revisit history, and reading cycle. Nothing here is inferred.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist.copy(alpha = 0.84f),
+                    modifier = Modifier.widthIn(max = 620.dp)
+                )
+            }
             BrassRule(Modifier.width(156.dp), strong = true)
         }
     }
@@ -324,13 +339,14 @@ private fun LivingMirrorSurface(
     query: String,
     matches: Set<String>,
     onSelect: (LivingMirrorNote) -> Unit,
+    compact: Boolean,
     modifier: Modifier = Modifier
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
 
     BoxWithConstraints(
         modifier = modifier
-            .heightIn(min = 470.dp)
+            .heightIn(min = if (compact) 320.dp else 470.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
                 Brush.radialGradient(
@@ -350,7 +366,8 @@ private fun LivingMirrorSurface(
                     "Living Mirror. ${notes.size} notes arranged spatially by factual reading history."
             }
     ) {
-        val surfaceHeight = maxHeight.value.coerceIn(470f, 900f)
+        val minimumSurfaceHeight = if (compact) 320f else 470f
+        val surfaceHeight = maxHeight.value.coerceIn(minimumSurfaceHeight, 900f)
         val width = maxWidth.value.coerceAtLeast(280f)
         val visibleNotes = remember(notes, matches, query) {
             selectLivingMirrorSurfaceNotes(
@@ -670,6 +687,36 @@ private fun LivingMirrorNoteDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
+}
+
+@Composable
+private fun rememberTouchExplorationEnabled(): Boolean {
+    val context = LocalContext.current
+    val manager = remember(context) {
+        context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
+    }
+    var enabled by remember(manager) {
+        mutableStateOf(manager?.isTouchExplorationEnabled == true)
+    }
+
+    DisposableEffect(manager) {
+        val accessibilityManager = manager
+        if (accessibilityManager == null) {
+            onDispose { }
+        } else {
+            val listener =
+                AccessibilityManager.TouchExplorationStateChangeListener { value ->
+                    enabled = value
+                }
+            accessibilityManager.addTouchExplorationStateChangeListener(listener)
+            enabled = accessibilityManager.isTouchExplorationEnabled
+            onDispose {
+                accessibilityManager.removeTouchExplorationStateChangeListener(listener)
+            }
+        }
+    }
+
+    return enabled
 }
 
 private fun formatMirrorDate(epochMs: Long): String =
