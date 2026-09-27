@@ -39,6 +39,7 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 
 private data class SigilPresentation(
     val name: String,
@@ -200,7 +201,8 @@ fun TreasuryScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
                 seed = profile.earnedSigils.size * 31 + awakenedRelics * 11,
-                intensity = 0.90f
+                intensity = 0.90f,
+                temporalPhase = currentVeilTemporalPhase()
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -646,7 +648,8 @@ fun SanctumScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.SANCTUM,
                 seed = profile.rankIndex * 43 + profile.earnedSigils.size * 13,
-                intensity = if (sovereignReady) 1f else 0.72f
+                intensity = if (sovereignReady) 1f else 0.72f,
+                temporalPhase = currentVeilTemporalPhase()
             ),
         contentAlignment = Alignment.TopCenter
     ) {
