@@ -706,9 +706,7 @@ fun VeilApp(
             }
         }
 
-        val pendingEntryBook =
-            if (opened == null) targetBook else null
-        pendingEntryBook?.let { book ->
+        targetBook?.let { book ->
             BookThresholdTransitionOverlay(
                 book = book,
                 stage = BookEntryStage.PREPARING,
