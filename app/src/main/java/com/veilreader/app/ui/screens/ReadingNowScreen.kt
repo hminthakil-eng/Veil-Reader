@@ -39,6 +39,7 @@ import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.narrativeArchitectureField
 import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilPalette
@@ -108,6 +109,11 @@ fun ReadingNowScreen(
                 realm = VeilRealm.THRESHOLD,
                 seed = books.size + profile.level,
                 intensity = thresholdAtmosphereIntensityFor(books.size)
+            )
+            .narrativeArchitectureField(
+                realm = VeilRealm.THRESHOLD,
+                seed = books.size * 17 + profile.level,
+                intensity = 0.82f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
