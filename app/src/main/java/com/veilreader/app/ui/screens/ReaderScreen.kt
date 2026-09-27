@@ -1916,7 +1916,7 @@ private fun ReaderAppearancePreview(
 }
 
 @Composable
-private fun ReaderMotionSelector(
+internal fun ReaderMotionSelector(
     selected: ReaderNavigationMode,
     onSelect: (ReaderNavigationMode) -> Unit
 ) {
@@ -1929,7 +1929,7 @@ private fun ReaderMotionSelector(
             val label = when (mode) {
                 ReaderNavigationMode.PAPER_CURL -> "Curl"
                 ReaderNavigationMode.SLIDE -> "Slide"
-                ReaderNavigationMode.PAGED -> "Page"
+                ReaderNavigationMode.PAGED -> "Paged"
                 ReaderNavigationMode.SCROLL -> "Scroll"
             }
             Surface(
