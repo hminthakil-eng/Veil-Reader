@@ -7,6 +7,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -17,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -215,7 +218,8 @@ fun ArchiveScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
+                    .horizontalScroll(rememberScrollState())
+                    .selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 ArchiveSectionTab(
@@ -586,8 +590,13 @@ private fun ArchiveSectionTab(
     onClick: () -> Unit
 ) {
     Surface(
-        onClick = onClick,
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .selectable(
+                selected = selected,
+                role = Role.Tab,
+                onClick = onClick
+            ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.52f)
