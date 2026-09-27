@@ -8,6 +8,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.veilreader.app.ui.theme.VeilMotion
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
@@ -75,7 +76,7 @@ internal class PaperCurlInputListener(
                 if (isReducedMotion()) {
                     state.clear()
                 } else {
-                    delay(PAGE_REVEAL_DELAY_MS)
+                    delay(VeilMotion.PAGE_REVEAL_MS)
                     state.animateTapTurn()
                     state.clear()
                 }
@@ -171,7 +172,7 @@ internal class PaperCurlInputListener(
                 previewNavigationSucceeded -> {
                     restoreDragStart(spec)
                     if (!isReducedMotion()) {
-                        delay(PAGE_REVEAL_DELAY_MS)
+                        delay(VeilMotion.PAGE_REVEAL_MS)
                         state.animateCancel()
                     }
                 }
@@ -216,7 +217,7 @@ internal class PaperCurlInputListener(
         // Let the captured source page become visible first, then reveal the live
         // destination underneath it. This stays inside Readium's input pipeline.
         navigationJob = scope.launch {
-            delay(FRAME_DELAY_MS)
+            delay(VeilMotion.FRAME_SETTLE_MS)
             previewNavigationSucceeded = navigate(spec.direction)
         }
         return true
