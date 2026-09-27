@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,10 +40,13 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
@@ -52,6 +56,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -101,6 +106,33 @@ fun CastleScreen(
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopEnd,
+            alpha = 0.14f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(560.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(640.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.12f),
+                            VeilPalette.Ink.copy(alpha = 0.52f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -143,7 +175,7 @@ fun CastleScreen(
             )
             Text(
                 "Follow the central stair. Open rooms are usable now; sealed rooms reveal the rank that awakens them.",
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist
             )
         }
@@ -546,6 +578,10 @@ private fun CastleWorldMap(
             roomCount = rooms.size,
             memoryState = memoryState
         )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.52f
+        )
 
         AnimatedVisibility(
             visible = revealed,
@@ -561,7 +597,7 @@ private fun CastleWorldMap(
                     .fillMaxWidth()
                     .padding(
                         horizontal = mapHorizontalPaddingDp.dp,
-                        vertical = 26.dp
+                        vertical = 18.dp
                     ),
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
@@ -805,7 +841,7 @@ private fun CastleFloor(
             Box(
                 Modifier
                     .width(1.dp)
-                    .height(28.dp)
+                    .height(20.dp)
                     .background(
                         if (unlocked) {
                             VeilPalette.Brass.copy(alpha = 0.24f)
@@ -922,7 +958,7 @@ private fun CastleChamberNode(
                 enabled = unlocked,
                 role = Role.Button
             ) { onOpenRoom(id) }
-            .padding(horizontal = 10.dp, vertical = 12.dp),
+            .padding(horizontal = 9.dp, vertical = 9.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -952,7 +988,7 @@ private fun CastleChamberNode(
             )
         }
 
-        Spacer(Modifier.height(7.dp))
+        Spacer(Modifier.height(4.dp))
 
         if (unlocked && safeResonance > 0.01f) {
             Box(
