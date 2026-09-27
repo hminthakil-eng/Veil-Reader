@@ -34,6 +34,7 @@ import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.deriveReadingSignature
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilScriptGroup
@@ -328,6 +329,14 @@ private fun ProfileGrandMasthead(
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
             strength = 0.88f
+        )
+        VeilRealmEmblem(
+            realm = VeilRealm.ARCHIVE,
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = VeilSpacing.lg)
+                .size(140.dp),
+            tint = VeilPalette.Brass.copy(alpha = 0.20f)
         )
         Text(
             "ARCHIVIST DOSSIER",
