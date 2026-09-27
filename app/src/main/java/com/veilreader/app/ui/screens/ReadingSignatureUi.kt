@@ -21,8 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReadingDaypart
 import com.veilreader.app.domain.ReadingSignature
+import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.localizeAppNumerals
 import kotlin.math.roundToInt
 
 @Composable
@@ -30,12 +32,16 @@ internal fun ReadingSignaturePanel(
     signature: ReadingSignature,
     modifier: Modifier = Modifier
 ) {
+    val language = LocalVeilLanguage.current
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .semantics {
                 contentDescription =
-                    "Reading Signature from ${signature.recordedSessionCount} recorded sessions"
+                    localizeAppNumerals(
+                        "Reading Signature from ${signature.recordedSessionCount} recorded sessions",
+                        language
+                    )
             },
         shape = MaterialTheme.shapes.small,
         color = VeilPalette.Archive.copy(alpha = 0.72f),
@@ -68,7 +74,7 @@ internal fun ReadingSignaturePanel(
                     )
                 }
                 Text(
-                    "${signature.recordedSessionCount} sessions",
+                    localizeAppNumerals("${signature.recordedSessionCount} sessions", language),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
@@ -104,15 +110,16 @@ internal fun ReadingSignaturePanel(
                                 label = "MEDIAN ACTIVE SESSION",
                                 value = signature.medianActiveSessionMillis
                                     ?.let(::formatSignatureDuration)
+                                    ?.let { localizeAppNumerals(it, language) }
                                     ?: "NO MEASURED DURATION"
                             )
                             SignatureFact(
                                 label = "RECORDED ACTIVE DAYS",
-                                value = signature.activeDayCount.toString()
+                                value = localizeAppNumerals(signature.activeDayCount.toString(), language)
                             )
                             SignatureFact(
                                 label = "VOLUMES TOUCHED",
-                                value = signature.booksTouchedCount.toString()
+                                value = localizeAppNumerals(signature.booksTouchedCount.toString(), language)
                             )
                         }
                     }
@@ -134,15 +141,16 @@ internal fun ReadingSignaturePanel(
                                 label = "MEDIAN ACTIVE SESSION",
                                 value = signature.medianActiveSessionMillis
                                     ?.let(::formatSignatureDuration)
+                                    ?.let { localizeAppNumerals(it, language) }
                                     ?: "NO MEASURED DURATION"
                             )
                             SignatureFact(
                                 label = "RECORDED ACTIVE DAYS",
-                                value = signature.activeDayCount.toString()
+                                value = localizeAppNumerals(signature.activeDayCount.toString(), language)
                             )
                             SignatureFact(
                                 label = "VOLUMES TOUCHED",
-                                value = signature.booksTouchedCount.toString()
+                                value = localizeAppNumerals(signature.booksTouchedCount.toString(), language)
                             )
                         }
                     }
@@ -154,16 +162,19 @@ internal fun ReadingSignaturePanel(
                     "PACED TURNS / H" to (
                         signature.pacedPageTurnsPerActiveHour
                             ?.let(::formatSignatureRate)
+                            ?.let { localizeAppNumerals(it, language) }
                             ?: "—"
                     ),
                     "MARKS / H" to (
                         signature.highlightEventsPerActiveHour
                             ?.let(::formatSignatureRate)
+                            ?.let { localizeAppNumerals(it, language) }
                             ?: "—"
                     ),
                     "NOTE EVENTS / MARK EVENT" to (
                         signature.notesPerHighlightEvent
                             ?.let(::formatSignatureRatio)
+                            ?.let { localizeAppNumerals(it, language) }
                             ?: "—"
                     )
                 )
@@ -171,11 +182,18 @@ internal fun ReadingSignaturePanel(
 
             SignatureMetricBand(
                 metrics = listOf(
-                    "COMPLETION CYCLES" to signature.completionCycleCount.toString(),
-                    "REREAD CYCLES" to signature.rereadCycleCount.toString(),
+                    "COMPLETION CYCLES" to localizeAppNumerals(
+                        signature.completionCycleCount.toString(),
+                        language
+                    ),
+                    "REREAD CYCLES" to localizeAppNumerals(
+                        signature.rereadCycleCount.toString(),
+                        language
+                    ),
                     "REREAD SHARE" to (
                         signature.rereadCycleShare
                             ?.let(::formatSignaturePercent)
+                            ?.let { localizeAppNumerals(it, language) }
                             ?: "—"
                     )
                 )
@@ -188,7 +206,10 @@ internal fun ReadingSignaturePanel(
             )
 
             Text(
-                "Daypart uses ${signature.timedSessionCount}/${signature.recordedSessionCount} sessions with recorded start times, mapped through the current device timezone (${signature.timezoneId}). Historical original timezones were not stored.",
+                localizeAppNumerals(
+                    "Daypart uses ${signature.timedSessionCount}/${signature.recordedSessionCount} sessions with recorded start times, mapped through the current device timezone (${signature.timezoneId}). Historical original timezones were not stored.",
+                    language
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.52f)
             )
@@ -201,6 +222,7 @@ private fun SignatureClock(
     signature: ReadingSignature,
     modifier: Modifier = Modifier
 ) {
+    val language = LocalVeilLanguage.current
     val maxCount = signature.daypartSessionCounts.values.maxOrNull()?.coerceAtLeast(1) ?: 1
 
     Box(
@@ -211,7 +233,12 @@ private fun SignatureClock(
                     if (index > 0) append(", ")
                     append(daypartLabel(daypart))
                     append(" ")
-                    append(signature.daypartSessionCounts[daypart] ?: 0)
+                    append(
+                        localizeAppNumerals(
+                            (signature.daypartSessionCounts[daypart] ?: 0).toString(),
+                            language
+                        )
+                    )
                 }
                 signature.leadingDaypart?.let {
                     append(". Most starts: ").append(daypartLabel(it))

@@ -29,14 +29,21 @@ import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.deriveReadingSignature
+import com.veilreader.app.ui.theme.LocalVeilLanguage
+import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.appMetadataDivider
+import com.veilreader.app.ui.theme.localizeAppNumerals
+import com.veilreader.app.ui.theme.localizedMetadataValue
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.currentVeilZoneId
+import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 @Composable
 fun ProfileScreen(
@@ -54,6 +61,8 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit
 ) {
     val p = profile
+    val language = LocalVeilLanguage.current
+    val scriptGroup = LocalVeilScriptGroup.current
     val discoveriesById = remember(discoveries) { discoveries.associateBy { it.id } }
     val revealedDiscoveries = veiledDiscoveryPresentations.count { it.id in discoveriesById }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
@@ -102,7 +111,10 @@ fun ProfileScreen(
         ScreenHeader(
             eyebrow = "ARCHIVIST DOSSIER",
             title = castleTitle,
-            subtitle = "${p.path.name} · ${p.rankName}"
+            subtitle = listOf(
+                localizedMetadataValue(p.path.name, language),
+                localizedMetadataValue(p.rankName, language)
+            ).joinToString(appMetadataDivider(scriptGroup))
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -290,6 +302,7 @@ internal fun deriveReaderDossierHistory(
 
 @Composable
 private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    val language = LocalVeilLanguage.current
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
@@ -314,7 +327,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 )
             }
             Text(
-                "${history.recordedSessionCount} sessions",
+                localizeAppNumerals("${history.recordedSessionCount} sessions", language),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -325,26 +338,26 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         DossierLedgerLine(
             label = "Archive span",
             value = buildString {
-                append(formatDossierDate(history.firstRecordedAtEpochMs))
+                append(formatDossierDate(history.firstRecordedAtEpochMs, language))
                 append(" — ")
-                append(formatDossierDate(history.latestRecordedAtEpochMs))
+                append(formatDossierDate(history.latestRecordedAtEpochMs, language))
             }
         )
         DossierLedgerLine(
             label = "Recorded active time",
-            value = formatDossierDuration(history.recordedActiveMillis)
+            value = localizeAppNumerals(formatDossierDuration(history.recordedActiveMillis), language)
         )
         DossierLedgerLine(
             label = "Completion records",
-            value = "${history.completionCycleCount}"
+            value = localizeAppNumerals("${history.completionCycleCount}", language)
         )
         DossierLedgerLine(
             label = "Reread cycles",
-            value = "${history.rereadCycleCount}"
+            value = localizeAppNumerals("${history.rereadCycleCount}", language)
         )
         DossierLedgerLine(
             label = "Archived volumes",
-            value = "${history.archivedVolumeCount}"
+            value = localizeAppNumerals("${history.archivedVolumeCount}", language)
         )
 
         Text(
@@ -360,14 +373,17 @@ private fun DossierLedgerLine(
     label: String,
     value: String
 ) {
+    val arabicScriptLabel = usesArabicScript(label)
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
+            if (arabicScriptLabel) label else label.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(
+                letterSpacing = if (arabicScriptLabel) 0.sp else 0.72.sp
+            ),
             color = VeilPalette.Mist.copy(alpha = 0.62f),
             modifier = Modifier.weight(1f)
         )
@@ -380,13 +396,20 @@ private fun DossierLedgerLine(
     }
 }
 
-private fun formatDossierDate(epochMs: Long?): String =
+private fun formatDossierDate(
+    epochMs: Long?,
+    language: String
+): String =
     epochMs
         ?.takeIf { it > 0L }
         ?.let {
-            DateFormat.getDateInstance(DateFormat.MEDIUM)
+            val formatted = DateFormat
+                .getDateInstance(
+                    DateFormat.MEDIUM,
+                    Locale.forLanguageTag(language)
+                )
                 .format(Date(it))
-                .uppercase()
+            if (usesArabicScript(formatted)) formatted else formatted.uppercase()
         }
         ?: "NO RECORD"
 
@@ -803,6 +826,7 @@ private fun DiscoveryCard(
     discovery: VeiledDiscoveryPresentation,
     record: VeiledDiscoveryRecord?
 ) {
+    val language = LocalVeilLanguage.current
     val revealed = record != null
     val shape = MaterialTheme.shapes.extraSmall
     val accent = if (revealed) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.48f)
@@ -860,7 +884,9 @@ private fun DiscoveryCard(
                         buildString {
                             append("PERMANENT LEDGER")
                             record?.recordedAtEpochMs?.let { timestamp ->
-                                append(" · RECORDED ").append(formatDossierDate(timestamp))
+                                append(" · RECORDED ").append(
+                                    formatDossierDate(timestamp, language)
+                                )
                             }
                         },
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
@@ -879,11 +905,14 @@ private fun DiscoveryCard(
 
 @Composable
 private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: String? = null) {
+    val arabicScriptEyebrow = usesArabicScript(eyebrow)
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
-                eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
+                if (arabicScriptEyebrow) eyebrow else eyebrow.uppercase(),
+                style = MaterialTheme.typography.labelMedium.copy(
+                    letterSpacing = if (arabicScriptEyebrow) 0.sp else 1.5.sp
+                ),
                 color = VeilPalette.Brass
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
