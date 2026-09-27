@@ -114,7 +114,7 @@ fun SettingsScreen(
             onClick = onClose,
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text("← Back")
+            Text(VeilBackLabel("Back"))
         }
 
         Column(
