@@ -107,8 +107,15 @@ fun localizeAppNumerals(text: String, language: String): String {
 }
 
 /** Unicode FSI/PDI keeps mixed-script metadata values from leaking direction into neighbors. */
+private const val FSI = '\u2068'
+private const val PDI = '\u2069'
+
 fun bidiIsolate(value: String): String =
-    if (value.isEmpty()) value else "⁨$value⁩"
+    if (value.isEmpty()) value else buildString(value.length + 2) {
+        append(FSI)
+        append(value)
+        append(PDI)
+    }
 
 fun appMetadataDivider(script: VeilScriptGroup): String =
     when (script) {
