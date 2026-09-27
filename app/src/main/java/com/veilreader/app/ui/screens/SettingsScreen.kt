@@ -59,6 +59,7 @@ import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
@@ -400,11 +401,7 @@ fun SettingsScreen(
                             modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            Text(
-                                "RESTORE ARCHIVE · LOCAL",
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-                                color = VeilPalette.Brass
-                            )
+                            VeilEyebrowText("RESTORE ARCHIVE · LOCAL")
                             Text(
                                 "Replace local Veil Reader data?",
                                 style = MaterialTheme.typography.titleLarge,
