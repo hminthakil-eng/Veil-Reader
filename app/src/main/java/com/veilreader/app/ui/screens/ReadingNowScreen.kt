@@ -41,6 +41,8 @@ import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
+import com.veilreader.app.ui.theme.rememberVeilTemporalAtmosphere
+import com.veilreader.app.ui.theme.temporalGrayfogAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -88,6 +90,7 @@ fun ReadingNowScreen(
             )
         }
     }
+    val temporalAtmosphere = rememberVeilTemporalAtmosphere()
     val thresholdWhisper = remember(
         snapshot.hero,
         snapshot.recent,
@@ -108,6 +111,11 @@ fun ReadingNowScreen(
                 realm = VeilRealm.THRESHOLD,
                 seed = books.size + profile.level,
                 intensity = thresholdAtmosphereIntensityFor(books.size)
+            )
+            .temporalGrayfogAtmosphere(
+                state = temporalAtmosphere,
+                realm = VeilRealm.THRESHOLD,
+                seed = books.size + profile.level
             ),
         contentAlignment = Alignment.TopCenter
     ) {
