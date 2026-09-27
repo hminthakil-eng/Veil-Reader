@@ -76,7 +76,7 @@ class ReaderPreferenceMappingTest {
         val scroll = paged.withNavigationMode(ReaderNavigationMode.SCROLL)
         assertEquals(ReaderNavigationMode.SCROLL, scroll.navigationMode)
         assertEquals(true, scroll.scroll)
-        assertEquals(PageTurnStyle.SLIDE, scroll.pageTurnStyle)
+        assertEquals(PageTurnStyle.NONE, scroll.pageTurnStyle)
 
         val backToCurl = scroll.withNavigationMode(ReaderNavigationMode.PAPER_CURL)
         assertEquals(ReaderNavigationMode.PAPER_CURL, backToCurl.navigationMode)
