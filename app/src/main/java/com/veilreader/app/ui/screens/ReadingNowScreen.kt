@@ -214,6 +214,8 @@ private fun ThresholdHeader(
     hasCurrentBook: Boolean,
     headerHeightDp: Float
 ) {
+    val compactHeader = headerHeightDp <= 270f
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -293,8 +295,11 @@ private fun ThresholdHeader(
                 modifier = Modifier
                     .align(Alignment.BottomStart)
                     .fillMaxWidth()
-                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .padding(
+                        horizontal = VeilSpacing.md,
+                        vertical = if (compactHeader) VeilSpacing.md else VeilSpacing.lg
+                    ),
+                verticalArrangement = Arrangement.spacedBy(if (compactHeader) 4.dp else 6.dp)
             ) {
                 Text(
                     when {
@@ -303,7 +308,11 @@ private fun ThresholdHeader(
                         hasCurrentBook -> "The Library Awaits"
                         else -> "Return to the Archive"
                     },
-                    style = MaterialTheme.typography.headlineLarge,
+                    style = if (compactHeader) {
+                        MaterialTheme.typography.headlineMedium
+                    } else {
+                        MaterialTheme.typography.headlineLarge
+                    },
                     color = VeilPalette.Moon
                 )
                 Text(
@@ -317,7 +326,11 @@ private fun ThresholdHeader(
                         else ->
                             "Your volumes remain here, quiet and local, until you choose another door."
                     },
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = if (compactHeader) {
+                        MaterialTheme.typography.bodySmall
+                    } else {
+                        MaterialTheme.typography.bodyMedium
+                    },
                     color = VeilPalette.Moon.copy(alpha = 0.82f),
                     modifier = Modifier.widthIn(max = 540.dp)
                 )
@@ -922,10 +935,11 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
     val paper = VeilPalette.ReaderPaper
     val ink = Color(0xFF29231C)
     val mutedInk = Color(0xFF6A5A43)
+    val shape = MaterialTheme.shapes.small
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
+        shape = shape,
         color = Color.Transparent,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
@@ -943,57 +957,134 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                         )
                     )
                 )
-                .padding(VeilSpacing.lg)
+                .padding(horizontal = 18.dp, vertical = 15.dp)
         ) {
+            GrayfogOrnamentFrame(
+                modifier = Modifier.matchParentSize(),
+                strength = 0.22f
+            )
+
             Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                verticalArrangement = Arrangement.spacedBy(9.dp)
             ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    ThresholdSeal(
+                        modifier = Modifier.size(44.dp),
+                        ink = mutedInk
+                    )
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            "THE FIRST THRESHOLD",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                            color = mutedInk
+                        )
+                        Text(
+                            "Your first volume is waiting",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = ink,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
                 Text(
-                    "THE FIRST THRESHOLD",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    "Import an EPUB or PDF. The first page you open becomes the shortest path back into that world.",
+                    style = MaterialTheme.typography.bodySmall,
                     color = mutedInk
                 )
-                Text(
-                    "Your first volume is waiting",
-                    style = MaterialTheme.typography.titleLarge,
-                    color = ink
-                )
-                Text(
-                    "Import an EPUB or PDF. Once you begin, this page becomes the shortest path back into the book.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = mutedInk
-                )
+
                 Box(
                     Modifier
-                        .width(86.dp)
+                        .fillMaxWidth()
                         .height(1.dp)
                         .background(
                             Brush.horizontalGradient(
                                 listOf(
-                                    ink.copy(alpha = 0.74f),
-                                    ink.copy(alpha = 0.24f),
+                                    ink.copy(alpha = 0.62f),
+                                    ink.copy(alpha = 0.18f),
                                     Color.Transparent
                                 )
                             )
                         )
                 )
+
                 Button(
                     onClick = onOpenLibrary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 50.dp)
-                        .padding(top = 2.dp),
+                        .heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = ink,
                         contentColor = Color(0xFFF3E9D5)
                     )
                 ) {
-                    Text("Enter the Library")
+                    Text(
+                        "Enter the Library",
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ThresholdSeal(
+    modifier: Modifier,
+    ink: Color
+) {
+    Canvas(modifier) {
+        val stroke = 1.2.dp.toPx()
+        val center = Offset(size.width * 0.5f, size.height * 0.5f)
+        val radius = size.minDimension * 0.42f
+
+        drawCircle(
+            color = ink.copy(alpha = 0.62f),
+            radius = radius,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(stroke)
+        )
+        drawCircle(
+            color = ink.copy(alpha = 0.18f),
+            radius = radius * 0.68f,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(0.8.dp.toPx())
+        )
+        repeat(4) { index ->
+            val angle = Math.toRadians(-90.0 + index * 90.0)
+            val inner = radius * 0.38f
+            val outer = radius * 0.88f
+            drawLine(
+                color = ink.copy(alpha = 0.62f),
+                start = Offset(
+                    center.x + kotlin.math.cos(angle).toFloat() * inner,
+                    center.y + kotlin.math.sin(angle).toFloat() * inner
+                ),
+                end = Offset(
+                    center.x + kotlin.math.cos(angle).toFloat() * outer,
+                    center.y + kotlin.math.sin(angle).toFloat() * outer
+                ),
+                strokeWidth = stroke,
+                cap = androidx.compose.ui.graphics.StrokeCap.Round
+            )
+        }
+        drawCircle(
+            color = ink.copy(alpha = 0.72f),
+            radius = 2.dp.toPx(),
+            center = center
+        )
     }
 }
 private fun formatReadingTime(minutes: Int): String = when {
