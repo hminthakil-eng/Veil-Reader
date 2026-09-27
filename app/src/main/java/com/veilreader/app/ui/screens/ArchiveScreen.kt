@@ -45,6 +45,7 @@ import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
+import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
@@ -252,18 +253,16 @@ fun ArchiveScreen(
                             Text(VeilBackLabel("Archive"))
                         }
                         Spacer(Modifier.weight(1f))
-                        Text(
-                            "PRIVATE · LOCAL · OFFLINE",
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                        VeilEyebrowText(
+                            text = "PRIVATE · LOCAL · OFFLINE",
                             color = VeilPalette.Mist.copy(alpha = 0.68f),
-                            maxLines = 1
+                            trackingSp = 0.72f
                         )
                     }
 
-                    Text(
-                        "MEMORY CHAMBER · HIDDEN ARCHIVE",
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-                        color = VeilPalette.Brass
+                    VeilEyebrowText(
+                        text = "MEMORY CHAMBER · HIDDEN ARCHIVE",
+                        trackingSp = 1.35f
                     )
                     Text(
                         "Fragments Worth Keeping",
