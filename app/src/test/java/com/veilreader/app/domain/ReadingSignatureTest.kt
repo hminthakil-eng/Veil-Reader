@@ -1,6 +1,5 @@
 package com.veilreader.app.domain
 
-import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import org.junit.Assert.assertEquals
@@ -185,6 +184,44 @@ class ReadingSignatureTest {
         assertEquals(ReadingDaypart.EVENING, readingDaypartForHour(17))
         assertEquals(ReadingDaypart.NIGHT, readingDaypartForHour(22))
         assertEquals(ReadingDaypart.NIGHT, readingDaypartForHour(24))
+    }
+
+
+    @Test
+    fun `untimed legacy sessions still contribute to duration and density but not daypart`() {
+        val untimed = ReadingSessionSnapshot(
+            id = "legacy",
+            bookId = "legacy-book",
+            startedAtEpochMs = 0L,
+            endedAtEpochMs = 0L,
+            activeMillis = 30L * 60_000L,
+            pacedPageTurns = 15,
+            highlightCount = 2,
+            noteCount = 1
+        )
+
+        val signature = deriveReadingSignature(
+            sessions = listOf(
+                untimed,
+                session(
+                    "timed",
+                    day = 1,
+                    hour = 8,
+                    activeMinutes = 30,
+                    turns = 15,
+                    highlights = 2,
+                    notes = 1
+                )
+            ),
+            cycles = emptyList(),
+            zoneId = utc
+        )
+
+        assertEquals(2, signature.recordedSessionCount)
+        assertEquals(1, signature.timedSessionCount)
+        assertEquals(30f, signature.pacedPageTurnsPerActiveHour ?: -1f, 0.001f)
+        assertEquals(4f, signature.highlightEventsPerActiveHour ?: -1f, 0.001f)
+        assertNull(signature.leadingDaypart)
     }
 
     private fun cycle(index: Int, completedAt: Long) = ReadingCycleRecord(
