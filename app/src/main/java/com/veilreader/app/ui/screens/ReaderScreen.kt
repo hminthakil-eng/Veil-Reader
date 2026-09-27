@@ -1303,23 +1303,25 @@ private fun ReaderPageAtmosphere(
             Color(0xFF7C6544).copy(alpha = 0.040f)
         }
         val band = 28.dp.toPx()
-        if (material.showEdgeFalloff) drawRect(
-            brush = Brush.verticalGradient(
-                listOf(falloff, Color.Transparent),
-                startY = 0f,
-                endY = band
-            ),
-            size = Size(size.width, band)
-        )
-        if (material.showEdgeFalloff) drawRect(
-            brush = Brush.verticalGradient(
-                listOf(Color.Transparent, falloff),
-                startY = size.height - band,
-                endY = size.height
-            ),
-            topLeft = Offset(0f, size.height - band),
-            size = Size(size.width, band)
-        )
+        if (material.showEdgeFalloff) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    listOf(falloff, Color.Transparent),
+                    startY = 0f,
+                    endY = band
+                ),
+                size = Size(size.width, band)
+            )
+            drawRect(
+                brush = Brush.verticalGradient(
+                    listOf(Color.Transparent, falloff),
+                    startY = size.height - band,
+                    endY = size.height
+                ),
+                topLeft = Offset(0f, size.height - band),
+                size = Size(size.width, band)
+            )
+        }
 
         // Deterministic micro-fibres: deliberately sparse and nearly invisible.
         // They add material character without turning the page into a texture image.
