@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -33,7 +34,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.adaptiveClassFor
+import com.veilreader.app.ui.theme.castleLayoutPolicyFor
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 
 private data class SigilPresentation(
     val name: String,
@@ -41,11 +46,19 @@ private data class SigilPresentation(
     val description: String
 )
 
+internal enum class RelicRarity(val label: String) {
+    FOUNDATION("FOUNDATION"),
+    RESONANT("RESONANT"),
+    ASCENDANT("ASCENDANT"),
+    SOVEREIGN("SOVEREIGN")
+}
+
 private data class RelicPresentation(
     val id: String,
     val name: String,
     val symbol: String,
     val clue: String,
+    val rarity: RelicRarity,
     val awakened: (ReaderProfile) -> Boolean
 )
 
@@ -89,6 +102,7 @@ private val readingRelics = listOf(
         name = "Ember Bookmark",
         symbol = "⌇",
         clue = "Return often enough that the page begins to remember you.",
+        rarity = RelicRarity.FOUNDATION,
         awakened = { it.streakDays >= 3 }
     ),
     RelicPresentation(
@@ -96,6 +110,7 @@ private val readingRelics = listOf(
         name = "Moonlit Lens",
         symbol = "◐",
         clue = "Spend three quiet hours beyond the first threshold of attention.",
+        rarity = RelicRarity.RESONANT,
         awakened = { it.minutesRead >= 180 }
     ),
     RelicPresentation(
@@ -103,6 +118,7 @@ private val readingRelics = listOf(
         name = "Brass Quill",
         symbol = "✒",
         clue = "Turn five hundred pages and leave the mechanism warm.",
+        rarity = RelicRarity.RESONANT,
         awakened = { it.pagesRead >= 500 }
     ),
     RelicPresentation(
@@ -110,6 +126,7 @@ private val readingRelics = listOf(
         name = "Ivory Bookplate",
         symbol = "▤",
         clue = "Complete three volumes and the archive will grant a mark of ownership.",
+        rarity = RelicRarity.RESONANT,
         awakened = { it.booksFinished >= 3 }
     ),
     RelicPresentation(
@@ -117,6 +134,7 @@ private val readingRelics = listOf(
         name = "Astral Key",
         symbol = "⌘",
         clue = "Cross two Path thresholds and listen for the lock that was not there before.",
+        rarity = RelicRarity.ASCENDANT,
         awakened = { it.rankIndex >= 2 }
     ),
     RelicPresentation(
@@ -124,6 +142,7 @@ private val readingRelics = listOf(
         name = "Veil Crown",
         symbol = "♜",
         clue = "Awaken the five core sigils and reach the final rank of your Path.",
+        rarity = RelicRarity.SOVEREIGN,
         awakened = {
             it.rankIndex >= it.path.ranks.lastIndex && it.earnedSigils.size >= 5
         }
@@ -159,13 +178,31 @@ fun TreasuryScreen(
     val equipped = equippedSigil?.let(sigils::get)
     val awakenedRelics = readingRelics.count { it.awakened(profile) }
     val awakenedBookplates = bookplates.count { it.awakened(profile) }
+    val treasuryAdaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val treasuryLayout = castleLayoutPolicyFor(treasuryAdaptiveClass)
 
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.CASTLE,
+                seed = profile.earnedSigils.size * 31 + awakenedRelics * 11,
+                intensity = 0.90f
+            ),
+        contentAlignment = Alignment.TopCenter
+    ) {
     Column(
         Modifier
             .fillMaxSize()
+            .widthIn(max = treasuryLayout.contentMaxWidthDp.dp)
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
+            .padding(
+                horizontal = treasuryLayout.horizontalPaddingDp.dp,
+                vertical = VeilSpacing.lg
+            ),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         OutlinedButton(
@@ -262,6 +299,7 @@ fun TreasuryScreen(
             }
         }
     }
+    }
 }
 
 @Composable
@@ -336,7 +374,7 @@ private fun TreasuryPedestal(
                     onClick = onClear,
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.36f)),
-                    modifier = Modifier.heightIn(min = 38.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text("Clear pedestal", style = MaterialTheme.typography.labelMedium)
                 }
@@ -424,7 +462,7 @@ private fun SigilRelicRow(
                         disabledContentColor = VeilPalette.Moon.copy(alpha = 0.68f)
                     ),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
-                    modifier = Modifier.heightIn(min = 36.dp)
+                    modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
                         if (equipped) "ON DISPLAY" else "DISPLAY",
@@ -488,11 +526,23 @@ private fun RelicCabinetCell(
                 color = if (awakened) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
             )
             Text(
-                if (awakened) "AWAKENED" else relic.clue,
+                if (awakened) {
+                    "${relic.rarity.label} · AWAKENED"
+                } else {
+                    "RARITY VEILED"
+                },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.58f),
-                maxLines = if (awakened) 1 else 4
+                color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f),
+                maxLines = 1
             )
+            if (!awakened) {
+                Text(
+                    relic.clue,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.58f),
+                    maxLines = 4
+                )
+            }
         }
     }
 }
