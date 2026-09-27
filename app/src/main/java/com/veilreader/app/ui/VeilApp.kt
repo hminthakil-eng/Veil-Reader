@@ -505,7 +505,8 @@ fun VeilApp(
                 books = books,
                 highlights = highlights,
                 bookmarks = bookmarks,
-                readingSessions = readingSessions
+                readingSessions = readingSessions,
+                readingCycles = readingCycles
             )
 
             VeilTab.PATH -> PathScreen(
