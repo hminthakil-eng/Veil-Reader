@@ -50,6 +50,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
@@ -75,6 +77,7 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -1164,23 +1167,53 @@ fun ReaderScreen(
     }
 
     if (showAppearance) {
-        ModalBottomSheet(
+        Dialog(
             onDismissRequest = { showAppearance = false },
-            containerColor = VeilPalette.Ink,
-            dragHandle = {
-                BottomSheetDefaults.DragHandle(
-                    color = VeilPalette.Brass.copy(alpha = 0.48f)
-                )
-            }
-        ) {
-            EpubAppearancePanel(
-                appearance = readerAppearance,
-                onChange = {
-                    readerViewModel.onUserInteraction()
-                    onReaderAppearanceChange(it)
-                },
-                onDone = { showAppearance = false }
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
             )
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = VeilPalette.Ink,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color(0xFF141821),
+                                    VeilPalette.Ink,
+                                    Color(0xFF080A0E)
+                                )
+                            )
+                        )
+                        .windowInsetsPadding(WindowInsets.safeDrawing),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    GrayfogOrnamentFrame(
+                        modifier = Modifier.matchParentSize(),
+                        strength = 0.38f
+                    )
+                    EpubAppearancePanel(
+                        appearance = readerAppearance,
+                        onChange = {
+                            readerViewModel.onUserInteraction()
+                            onReaderAppearanceChange(it)
+                        },
+                        onDone = { showAppearance = false },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .widthIn(max = 720.dp)
+                    )
+                }
+            }
         }
     }
 
@@ -1592,7 +1625,8 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
     onChange: (ReaderAppearance) -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
@@ -1612,37 +1646,60 @@ private fun EpubAppearancePanel(
     }
 
     Column(
-        Modifier
-            .fillMaxWidth()
+        modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp)
-            .padding(bottom = 28.dp),
+            .padding(top = 14.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                "READING INSTRUMENTS",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
-                color = VeilPalette.Brass
-            )
-            BrassRule(Modifier.width(76.dp))
-            Text(
-                "Appearance",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Text(
-                "Changes apply live to the open publication.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Text(
+                    "READING INSTRUMENTS",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
+                    color = VeilPalette.Brass
+                )
+                BrassRule(Modifier.width(76.dp))
+                Text(
+                    "Appearance",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Text(
+                    "Changes apply live to the open publication.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            TextButton(
+                onClick = onDone,
+                modifier = Modifier.heightIn(min = 48.dp),
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = VeilPalette.Moon
+                )
+            ) {
+                Text(
+                    "DONE",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp)
+                )
+            }
         }
 
+        // The preview is the focal instrument; controls stay secondary and compact.
         ReaderAppearancePreview(
             appearance = draft,
             modifier = Modifier.fillMaxWidth()
         )
 
+        /* header consumed above */
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
