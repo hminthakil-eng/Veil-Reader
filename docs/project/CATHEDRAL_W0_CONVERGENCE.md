@@ -38,7 +38,7 @@ have passed device QA. Compare each slice to the pinned baseline before porting.
 | #291 | Ritual | W0c reconciles phases, frozen target, repository result and reduced motion into the canonical chamber. Castle routes to Ritual. Full Android/device verification remains pending. |
 | #292 | Castle mutation | W0d preserves the canonical spatial Keep/Ritual ownership and integrates factual history mutation, reread patina, return awakening and silence cooling. Android/device verification remains pending. |
 | #293 | Archive material | W0e preserves canonical BookArtifact ownership and newer notebook chambers while integrating memory strata, resurfaced relic material and full-screen sealed dossiers. Android/device verification remains pending. |
-| #294 | Discoveries | Canonical already contains VeiledDiscoveryPolicy, profile data and GameRepository persistence. Compare schema, eligibility and restore semantics before choosing one owner; do not install a second ledger. |
+| #294 | Discoveries | W0f keeps ReaderProfile/GameRepository as the sole discovery owner, adds non-fabricated recorded-at metadata, central presentation and Sanctum projection without a parallel ledger. Android/device verification remains pending. |
 | #295 | Reading signature | Review the new factual model and reconcile ProfileScreen with the current profile and discovery implementation. |
 | #296 | Temporal atmosphere | Source reconciliation completed in W0b below: retain canonical palette/schedule, share a foreground clock, and reject the competing overlay/model. Android lifecycle verification remains pending. |
 | #297 | Persian identity | Canonical already bundles shell fonts. Compare font roles, Arabic/Persian composition and provenance before replacing or adding font families. |
@@ -218,7 +218,7 @@ No Android build, Compose resolution, device rendering, TalkBack, rotation or
 performance run is claimed by this step. Those remain W0 acceptance gates.
 
 PR #292 remains open as source provenance and should not be merged wholesale.
-Remaining source reconciliations: #294–#295 and #297–#298.
+Remaining source reconciliations: #295 and #297–#298.
 
 
 ## W0e — Archive material reconciliation
@@ -260,4 +260,47 @@ unverified rather than failed by this source. Full small-screen, large-text,
 TalkBack, back-navigation and dossier scroll checks remain W0 gates.
 
 PR #293 remains source provenance and should not be merged wholesale.
-Remaining source reconciliations: #294–#295 and #297–#298.
+Remaining source reconciliations: #295 and #297–#298.
+
+
+## W0f — persistent discovery reconciliation
+
+Inputs: W0e `529fdc72566b95f238d4d4051d15ad64ecabca30` and PR #294
+`a0514e2ef31b67d73981dc13f47657d1afc38589`.
+
+### Decision
+
+Do not install #294's second discovery StateFlow/catalog beside the canonical
+`ReaderProfile.earnedDiscoveries` + `GameRepository.publish()` owner. Evolve the
+existing one-way ledger in place and treat timestamps/presentation as metadata.
+
+### Implementation and hardening
+
+- `VeiledDiscoveryPolicy` remains the sole qualification policy and owns stable
+  catalog order plus merge-only semantics.
+- Preserve the existing `earnedDiscoveries` SharedPreferences set and ReaderProfile
+  field as the authoritative ID ledger.
+- Record `discoveryRecordedAt:<id>` only for IDs newly observed after this version;
+  historical discoveries keep a null date rather than receiving fabricated history.
+- Patient Flame can be grandfathered by the already-durable `seven_days` sigil,
+  so a streak reset cannot prevent recognition of prior seven-day proof.
+- `GameRepository.discoveryRecords()` projects metadata from the canonical set;
+  it is not a second StateFlow. Unknown future IDs remain preserved.
+- Profile renders reveal state only from durable records. Symbols/titles/lore are
+  centralized in one presentation catalog shared with Sanctum.
+- Sanctum projects the same ledger; only known current IDs influence atmosphere,
+  and W0b's shared temporal phase remains the time owner.
+- No Room migration, Reader/XP/rank change, second preference namespace or second
+  discovery state machine is introduced.
+
+### Verification and remaining gates
+
+W0f was split into compile-safe atomic slices:
+`b2f27ccd2ad21c349eeabc9c969c11efbc7099f4` (policy/persistence),
+`79f4838a98cf551bcb20c85985b10eafa861043c` (presentation catalog),
+and `8852181667be1a2bc9e4191e9d7e15bf2e742978` (Profile projection).
+Five domain regressions cover permanence/rules/gating/unknown IDs/legacy proof,
+and presentation order has a dedicated test. Android CI is still blocked before
+runner assignment; restart/restore, device rendering and accessibility remain gates.
+
+PR #294 remains provenance only. Remaining source reconciliations: #295 and #297–#298.

@@ -641,6 +641,7 @@ fun VeilApp(
             profile = requireNotNull(profile),
             castleTitle = requireNotNull(castleTitle),
             availableTitles = game.availableCastleTitles(),
+            discoveries = discoveryRecords,
             onSelectTitle = { title ->
                 if (!game.selectCastleTitle(title)) {
                     errorMessage = "That Castle title is still sealed."
