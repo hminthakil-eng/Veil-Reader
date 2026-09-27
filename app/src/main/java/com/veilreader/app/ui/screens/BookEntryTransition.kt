@@ -30,6 +30,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.returnRitualFragmentAgeLabel
+import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -251,10 +252,18 @@ fun BookThresholdTransitionOverlay(
                     .fillMaxSize()
                     .padding(12.dp),
                 strength = when {
-                    ritual != null && stage == BookEntryStage.PREPARING -> 0.72f
-                    stage == BookEntryStage.PREPARING -> 0.52f
-                    else -> 0.34f
+                    ritual != null && stage == BookEntryStage.PREPARING -> 0.82f
+                    stage == BookEntryStage.PREPARING -> 0.68f
+                    else -> 0.46f
                 }
+            )
+
+            VeilRealmEmblem(
+                realm = VeilRealm.THRESHOLD,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(320.dp),
+                tint = VeilPalette.Brass.copy(alpha = 0.10f)
             )
 
             Column(
@@ -279,8 +288,8 @@ fun BookThresholdTransitionOverlay(
 
                 Box(
                     modifier = Modifier
-                        .width(136.dp)
-                        .height(200.dp)
+                        .width(156.dp)
+                        .height(230.dp)
                         .graphicsLayer {
                             scaleX = scale.value
                             scaleY = scale.value
@@ -332,7 +341,7 @@ fun BookThresholdTransitionOverlay(
 
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                     color = VeilPalette.Moon,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -409,8 +418,8 @@ fun BookThresholdTransitionOverlay(
                 if (stage == BookEntryStage.PREPARING) {
                     LinearProgressIndicator(
                         modifier = Modifier
-                            .width(118.dp)
-                            .height(1.dp),
+                            .width(154.dp)
+                            .height(2.dp),
                         color = VeilPalette.Brass.copy(alpha = 0.82f),
                         trackColor = VeilPalette.Moon.copy(alpha = 0.08f)
                     )
