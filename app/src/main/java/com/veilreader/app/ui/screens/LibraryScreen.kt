@@ -73,6 +73,8 @@ import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.deriveLibraryWings
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.hallSharedBoundsKey
+import com.veilreader.app.ui.veilTabSharedBounds
 import com.veilreader.app.ui.books.bookArtifactRecordLabel
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -1666,6 +1668,7 @@ private fun LibraryHeader(
 ) {
     BoxWithConstraints(
         Modifier
+            .veilTabSharedBounds(hallSharedBoundsKey("library"))
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
             .border(
