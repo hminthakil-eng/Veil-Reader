@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -51,6 +52,8 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -175,9 +178,14 @@ private fun CastleKeep(
 ) {
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
+    val reducedMotion = LocalVeilReducedMotion.current
     val castleProgress by animateFloatAsState(
         targetValue = targetProgress,
-        animationSpec = tween(650),
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(VeilMotion.SPATIAL_MS)
+        },
         label = "castle-tier-progress"
     )
 
@@ -507,8 +515,9 @@ private fun CastleWorldMap(
     onOpenRoom: (String) -> Unit
 ) {
     val rooms = SampleData.rooms
+    val reducedMotion = LocalVeilReducedMotion.current
     var revealed by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) { revealed = true }
+    LaunchedEffect(reducedMotion) { revealed = true }
 
     Box(
         modifier = Modifier
@@ -538,7 +547,12 @@ private fun CastleWorldMap(
 
         AnimatedVisibility(
             visible = revealed,
-            enter = fadeIn(tween(420)) + slideInVertically(tween(460)) { it / 18 }
+            enter = if (reducedMotion) {
+                fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+            } else {
+                fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                    slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 18 }
+            }
         ) {
             Column(
                 modifier = Modifier
