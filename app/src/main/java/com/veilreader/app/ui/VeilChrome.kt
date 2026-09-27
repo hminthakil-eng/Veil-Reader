@@ -276,39 +276,104 @@ fun VeilBottomDock(
     onSelect: (VeilTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(top = 4.dp),
-        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.995f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp,
-        border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = 0.22f)
-        )
+            .padding(top = 16.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 4.dp),
-            verticalArrangement = Arrangement.Center
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 78.dp),
+            shape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp),
+            color = Color(0xFF090B0F).copy(alpha = 0.995f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shadowElevation = 12.dp,
+            tonalElevation = 0.dp,
+            border = BorderStroke(
+                1.dp,
+                VeilPalette.Brass.copy(alpha = 0.48f)
+            )
         ) {
-            Row(
-                modifier = Modifier.selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                VeilTab.entries.forEach { tab ->
-                    VeilDockItem(
-                        tab = tab,
-                        selected = selected == tab,
-                        onClick = { onSelect(tab) },
-                        modifier = Modifier.weight(1f)
+            Box {
+                Canvas(Modifier.matchParentSize()) {
+                    val w = size.width
+                    val h = size.height
+                    drawRect(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                VeilPalette.Brass.copy(alpha = 0.055f),
+                                Color.Transparent,
+                                Color(0xFF1B0D0D).copy(alpha = 0.12f)
+                            )
+                        ),
+                        size = size
+                    )
+                    drawLine(
+                        color = VeilPalette.Brass.copy(alpha = 0.38f),
+                        start = Offset(w * 0.08f, 1.dp.toPx()),
+                        end = Offset(w * 0.40f, 1.dp.toPx()),
+                        strokeWidth = 0.8.dp.toPx()
+                    )
+                    drawLine(
+                        color = VeilPalette.Brass.copy(alpha = 0.38f),
+                        start = Offset(w * 0.60f, 1.dp.toPx()),
+                        end = Offset(w * 0.92f, 1.dp.toPx()),
+                        strokeWidth = 0.8.dp.toPx()
+                    )
+                    drawCircle(
+                        color = VeilPalette.Brass.copy(alpha = 0.16f),
+                        radius = 18.dp.toPx(),
+                        center = Offset(w * 0.50f, 2.dp.toPx()),
+                        style = Stroke(0.8.dp.toPx())
                     )
                 }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup()
+                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    VeilTab.entries.forEach { tab ->
+                        VeilDockItem(
+                            tab = tab,
+                            selected = selected == tab,
+                            onClick = { onSelect(tab) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
             }
+        }
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-14).dp)
+                .size(34.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            Color(0xFF2B1A11),
+                            Color(0xFF0B0D11)
+                        )
+                    )
+                )
+                .border(
+                    BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.70f)),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            VeilSigilMark(
+                modifier = Modifier.size(22.dp),
+                tint = VeilPalette.Brass
+            )
         }
     }
 }
@@ -320,44 +385,80 @@ private fun VeilDockItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val background = Color.Transparent
     val foreground = if (selected) {
         VeilPalette.Brass
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
     }
+    val shape = RoundedCornerShape(12.dp)
 
     Column(
         modifier = modifier
-            .heightIn(min = 48.dp)
-            .clip(RoundedCornerShape(2.dp))
-            .background(background)
+            .heightIn(min = 54.dp)
+            .clip(shape)
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(
+                        listOf(
+                            Color(0xFF4A1E1A).copy(alpha = 0.72f),
+                            Color(0xFF241311).copy(alpha = 0.62f)
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                }
+            )
+            .then(
+                if (selected) {
+                    Modifier.border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                        shape
+                    )
+                } else {
+                    Modifier
+                }
+            )
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 4.dp),
+            .padding(horizontal = 2.dp, vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(20.dp))
-        Spacer(Modifier.height(2.dp))
+        VeilTabIcon(
+            tab,
+            tint = foreground,
+            modifier = Modifier.size(if (selected) 22.dp else 20.dp)
+        )
+        Spacer(Modifier.height(3.dp))
         Text(
             tab.label,
             style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 9.sp,
-                letterSpacing = 0.48.sp,
-                fontWeight = FontWeight.Medium
+                fontSize = if (selected) 9.5.sp else 9.sp,
+                letterSpacing = 0.38.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
             ),
             color = foreground,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center
         )
-        // Reserve the marker space in both states so selection does not move the icon.
-        Spacer(Modifier.height(2.dp))
+        Spacer(Modifier.height(3.dp))
         Box(
             Modifier
-                .width(18.dp)
+                .width(if (selected) 28.dp else 10.dp)
                 .height(1.dp)
-                .background(if (selected) VeilPalette.Brass.copy(alpha = 0.86f) else Color.Transparent)
+                .background(
+                    if (selected) {
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                VeilPalette.Brass,
+                                Color.Transparent
+                            )
+                        )
+                    } else {
+                        Brush.horizontalGradient(listOf(Color.Transparent, Color.Transparent))
+                    }
+                )
         )
     }
 }
