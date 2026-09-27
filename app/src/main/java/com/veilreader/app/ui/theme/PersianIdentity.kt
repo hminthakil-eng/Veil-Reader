@@ -53,6 +53,15 @@ fun punctuationPolicyFor(language: String): VeilPunctuationPolicy =
         )
     }
 
+fun safeAppTrackingSp(
+    script: VeilScriptGroup,
+    latinTrackingSp: Float
+): Float =
+    when (script) {
+        VeilScriptGroup.LATIN -> latinTrackingSp.coerceAtLeast(0f)
+        VeilScriptGroup.PERSIAN_ARABIC -> 0f
+    }
+
 fun scriptOrnamentPolicyFor(script: VeilScriptGroup): VeilScriptOrnamentPolicy =
     when (script) {
         VeilScriptGroup.LATIN -> VeilScriptOrnamentPolicy(
