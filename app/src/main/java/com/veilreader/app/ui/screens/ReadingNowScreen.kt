@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -19,6 +20,7 @@ import com.veilreader.app.R
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -210,7 +212,7 @@ private fun ThresholdHeader(
     hasCurrentBook: Boolean,
     headerHeightDp: Float
 ) {
-    BoxWithConstraints(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.medium)
@@ -255,6 +257,11 @@ private fun ThresholdHeader(
                             )
                         )
                     )
+            )
+
+            ThresholdDepthField(
+                bookCount = bookCount,
+                modifier = Modifier.matchParentSize()
             )
 
             GrayfogOrnamentFrame(
@@ -329,6 +336,70 @@ private fun ThresholdHeader(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ThresholdDepthField(
+    bookCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val waking = (bookCount.coerceIn(0, 12) / 12f)
+        val vanishing = Offset(
+            x = size.width * 0.53f,
+            y = size.height * 0.46f
+        )
+        val line = VeilPalette.Brass.copy(
+            alpha = 0.028f + waking * 0.032f
+        )
+        val mist = VeilPalette.Mist.copy(
+            alpha = 0.018f + waking * 0.018f
+        )
+
+        repeat(4) { index ->
+            val lane = (index + 1f) / 5f
+            drawLine(
+                color = line,
+                start = Offset(size.width * lane, size.height),
+                end = vanishing,
+                strokeWidth = 0.65.dp.toPx()
+            )
+        }
+
+        repeat(3) { index ->
+            val y = size.height * (0.63f + index * 0.105f)
+            val halfWidth = size.width * (0.20f + index * 0.13f)
+            drawLine(
+                color = line.copy(alpha = line.alpha * (0.92f - index * 0.16f)),
+                start = Offset(
+                    (vanishing.x - halfWidth).coerceAtLeast(0f),
+                    y
+                ),
+                end = Offset(
+                    (vanishing.x + halfWidth).coerceAtMost(size.width),
+                    y
+                ),
+                strokeWidth = 0.55.dp.toPx()
+            )
+        }
+
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    Color.Transparent,
+                    mist,
+                    Color.Transparent
+                ),
+                startY = size.height * 0.42f,
+                endY = size.height * 0.84f
+            ),
+            topLeft = Offset(0f, size.height * 0.40f),
+            size = androidx.compose.ui.geometry.Size(
+                size.width,
+                size.height * 0.46f
+            )
+        )
     }
 }
 
