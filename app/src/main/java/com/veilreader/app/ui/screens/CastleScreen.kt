@@ -248,6 +248,10 @@ private fun CastleKeep(
             rankCount = profile.path.ranks.size,
             memoryState = memoryState
         )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.34f
+        )
 
         Column(
             modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
@@ -662,12 +666,31 @@ private fun CastleArchitectureBackdrop(
             1.dp.toPx()
         )
 
+        val stairTop = 26.dp.toPx()
+        val stairBottom = h - 26.dp.toPx()
         drawLine(
-            VeilPalette.Brass.copy(alpha = 0.14f),
-            Offset(centerX, 26.dp.toPx()),
-            Offset(centerX, h - 26.dp.toPx()),
+            VeilPalette.Brass.copy(alpha = 0.19f),
+            Offset(centerX, stairTop),
+            Offset(centerX, stairBottom),
             1.dp.toPx()
         )
+
+        // Central stair: short landings make the map read as architecture rather than a list.
+        val stairSteps = (roomCount * 3).coerceAtLeast(9)
+        repeat(stairSteps) { index ->
+            val fraction = (index + 1f) / (stairSteps + 1f)
+            val y = stairTop + (stairBottom - stairTop) * fraction
+            val major = index % 3 == 2
+            val half = (if (major) 19.dp else 10.dp).toPx()
+            drawLine(
+                color = VeilPalette.Brass.copy(
+                    alpha = if (major) 0.16f else 0.07f
+                ),
+                start = Offset(centerX - half, y),
+                end = Offset(centerX + half, y),
+                strokeWidth = if (major) 1.dp.toPx() else 0.65.dp.toPx()
+            )
+        }
 
         repeat(3) { index ->
             val inset = 0.12f + index * 0.055f
@@ -690,6 +713,20 @@ private fun CastleArchitectureBackdrop(
                 Offset(w * 0.12f, y),
                 Offset(w * 0.88f, y),
                 1.dp.toPx()
+            )
+            drawCircle(
+                color = if (index <= rankIndex) {
+                    VeilPalette.Brass.copy(alpha = 0.20f)
+                } else {
+                    VeilPalette.StrongBorderDark.copy(alpha = 0.20f)
+                },
+                radius = if (index <= rankIndex) 3.2.dp.toPx() else 2.4.dp.toPx(),
+                center = Offset(centerX, y)
+            )
+            drawCircle(
+                color = VeilPalette.Ink.copy(alpha = 0.82f),
+                radius = if (index <= rankIndex) 1.6.dp.toPx() else 1.2.dp.toPx(),
+                center = Offset(centerX, y)
             )
         }
 
