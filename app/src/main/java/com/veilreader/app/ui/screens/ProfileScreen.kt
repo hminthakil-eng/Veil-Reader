@@ -40,6 +40,7 @@ import com.veilreader.app.ui.theme.scriptOrnamentPolicyFor
 import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.DateFormat
 import java.util.Date
+import java.util.Locale
 
 private data class VeiledDiscovery(
     val id: String,
@@ -363,9 +364,9 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         DossierLedgerLine(
             label = "Archive span",
             value = buildString {
-                append(formatDossierDate(history.firstRecordedAtEpochMs))
+                append(formatDossierDate(history.firstRecordedAtEpochMs, language))
                 append(" — ")
-                append(formatDossierDate(history.latestRecordedAtEpochMs))
+                append(formatDossierDate(history.latestRecordedAtEpochMs, language))
             }
         )
         DossierLedgerLine(
@@ -424,13 +425,20 @@ private fun DossierLedgerLine(
     }
 }
 
-private fun formatDossierDate(epochMs: Long?): String =
+private fun formatDossierDate(
+    epochMs: Long?,
+    language: String
+): String =
     epochMs
         ?.takeIf { it > 0L }
         ?.let {
-            DateFormat.getDateInstance(DateFormat.MEDIUM)
+            val formatted = DateFormat
+                .getDateInstance(
+                    DateFormat.MEDIUM,
+                    Locale.forLanguageTag(language)
+                )
                 .format(Date(it))
-                .uppercase()
+            if (usesArabicScript(formatted)) formatted else formatted.uppercase()
         }
         ?: "NO RECORD"
 
