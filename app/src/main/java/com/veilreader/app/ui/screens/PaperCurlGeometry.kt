@@ -9,6 +9,7 @@ import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import com.veilreader.app.ui.theme.VeilSanctuary
 import org.readium.r2.navigator.preferences.ReadingProgression
 
 internal data class PaperCurlEdge(
@@ -104,8 +105,10 @@ internal fun paperPageStackDepth(
     progression: ReadingProgression
 ): PaperPageStackDepth {
     val p = progress.coerceIn(0f, 1f)
-    val consumed = 2f + 6f * p
-    val remaining = 2f + 6f * (1f - p)
+    val minDepth = VeilSanctuary.minimumPageStackDp
+    val range = VeilSanctuary.maximumPageStackDp - minDepth
+    val consumed = minDepth + range * p
+    val remaining = minDepth + range * (1f - p)
     return if (progression == ReadingProgression.RTL) {
         PaperPageStackDepth(leftDp = remaining, rightDp = consumed)
     } else {
