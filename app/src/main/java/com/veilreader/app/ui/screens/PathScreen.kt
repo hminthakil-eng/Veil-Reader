@@ -52,6 +52,7 @@ import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -356,10 +357,9 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                presentation.aspect.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.75.sp),
-                color = VeilPalette.Brass
+            VeilEyebrowText(
+                text = presentation.aspect.uppercase(),
+                trackingSp = 1.75f
             )
 
             PathSigil(
