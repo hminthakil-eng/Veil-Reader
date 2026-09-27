@@ -39,6 +39,7 @@ import com.veilreader.app.domain.MemoryAtlasEdge
 import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
+import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
