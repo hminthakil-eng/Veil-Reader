@@ -58,6 +58,7 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -196,10 +197,9 @@ fun CastleScreen(
         CastleMutationInscription(memoryState)
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                "THE INNER KEEP",
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp),
-                color = VeilPalette.Brass
+            VeilEyebrowText(
+                text = "THE INNER KEEP",
+                trackingSp = 1.55f
             )
             Text(
                 "Awakened Chambers",
@@ -523,10 +523,10 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
             .padding(horizontal = 2.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            "FOUNDATION MEMORY",
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-            color = VeilPalette.Brass.copy(alpha = 0.78f)
+        VeilEyebrowText(
+            text = "FOUNDATION MEMORY",
+            color = VeilPalette.Brass.copy(alpha = 0.78f),
+            trackingSp = 1.35f
         )
         Text(
             buildString {
