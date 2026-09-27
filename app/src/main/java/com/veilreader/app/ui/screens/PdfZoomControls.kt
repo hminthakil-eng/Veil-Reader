@@ -78,25 +78,37 @@ internal fun PdfZoomControls(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+        verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                "PDF READING INSTRUMENTS",
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass
-            )
-            BrassRule(Modifier.fillMaxWidth())
-            Text(
-                "PDF view",
-                style = MaterialTheme.typography.headlineMedium
-            )
-            Text(
-                "Fit, zoom, layout, and brightness stay close to the page. Pinch and double-tap remain available directly on the document.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium
-            )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "PDF READING INSTRUMENTS",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "Page controls",
+                    style = MaterialTheme.typography.titleLarge
+                )
+            }
+            OutlinedButton(
+                onClick = onDone,
+                modifier = Modifier.heightIn(min = 48.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
+            ) {
+                Text("Done", style = MaterialTheme.typography.labelMedium)
+            }
         }
+        BrassRule(Modifier.fillMaxWidth())
 
         Text(
             "LAYOUT",
@@ -116,7 +128,7 @@ internal fun PdfZoomControls(
                 Surface(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 72.dp)
+                        .heightIn(min = 54.dp)
                         .selectable(
                             selected = selected,
                             role = Role.RadioButton
@@ -167,16 +179,6 @@ internal fun PdfZoomControls(
                 }
             }
         }
-
-        Text(
-            if (appearance.scroll) {
-                "Continuous vertical flow · pages fit the reading width."
-            } else {
-                "Single-page focus · pages remain contained in the viewport."
-            },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
-        )
 
         BrassRule(Modifier.fillMaxWidth())
 
@@ -243,7 +245,7 @@ internal fun PdfZoomControls(
 
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                horizontalArrangement = Arrangement.spacedBy(5.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
@@ -280,7 +282,7 @@ internal fun PdfZoomControls(
                         VeilPalette.Brass.copy(alpha = 0.44f)
                     )
                 ) {
-                    Text("100%")
+                    Text("100%", style = MaterialTheme.typography.labelSmall)
                 }
 
                 OutlinedButton(
@@ -305,23 +307,23 @@ internal fun PdfZoomControls(
                 ) {
                     Text("+", style = MaterialTheme.typography.titleLarge)
                 }
-            }
 
-            Button(
-                onClick = {
-                    view.fitToWidth(view.currentPage)
-                    zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.DeepBrass.copy(alpha = 0.78f),
-                    contentColor = VeilPalette.Moon
-                )
-            ) {
-                Text("Fit page width")
+                Button(
+                    onClick = {
+                        view.fitToWidth(view.currentPage)
+                        zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                    },
+                    modifier = Modifier
+                        .weight(1.25f)
+                        .heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.DeepBrass.copy(alpha = 0.78f),
+                        contentColor = VeilPalette.Moon
+                    )
+                ) {
+                    Text("Width", style = MaterialTheme.typography.labelSmall)
+                }
             }
         }
 
@@ -332,19 +334,6 @@ internal fun PdfZoomControls(
             onChange = onAppearanceChange
         )
 
-        Button(
-            onClick = onDone,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 52.dp),
-            shape = MaterialTheme.shapes.extraSmall,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VeilPalette.Brass,
-                contentColor = Color(0xFF17120A)
-            )
-        ) {
-            Text("Back to reading")
-        }
     }
 }
 
