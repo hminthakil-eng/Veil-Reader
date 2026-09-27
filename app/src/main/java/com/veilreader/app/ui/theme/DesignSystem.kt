@@ -14,9 +14,9 @@ import androidx.compose.ui.unit.sp
 /**
  * Grayfog Design System v3.
  *
- * Typography is script-aware even before bundled font binaries land. The shell uses an
- * editorial/reading/utility hierarchy for Latin-script locales, while Persian/Arabic-script
- * locales deliberately avoid Latin-oriented negative tracking and monospace utility faces.
+ * Typography is script-aware. Latin-script locales keep the editorial/reading/utility hierarchy,
+ * while Persian/Arabic-script locales use a bundled offline Vazirmatn UI family, zero tracking,
+ * generous vertical metrics, and RTL-content fallback.
  */
 enum class VeilScriptGroup {
     LATIN,
@@ -81,8 +81,9 @@ private object LatinFamilies {
 }
 
 /**
- * Persian/Arabic shell typography. Sans-serif is safer than forcing the Latin editorial serif
- * onto Arabic shaping. Tracking is kept at zero and vertical metrics are more generous.
+ * Persian/Arabic shell typography. Vazirmatn UI is bundled under OFL 1.1 so shaping and metrics
+ * do not depend on device fallback fonts. Tracking stays at zero and vertical metrics are more
+ * generous than the Latin shell.
  */
 private val VazirmatnUiFamily = FontFamily(
     Font(R.font.vazirmatn_ui_regular, weight = FontWeight.Normal),
