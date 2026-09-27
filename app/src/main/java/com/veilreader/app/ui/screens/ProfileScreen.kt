@@ -27,6 +27,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.VeiledDiscoveryPolicy
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -40,8 +41,7 @@ private data class VeiledDiscovery(
     val symbol: String,
     val title: String,
     val clue: String,
-    val lore: String,
-    val revealed: (ReaderProfile, Int) -> Boolean
+    val lore: String
 )
 
 private val veiledDiscoveries = listOf(
@@ -50,48 +50,42 @@ private val veiledDiscoveries = listOf(
         symbol = "◈",
         title = "The Patient Flame",
         clue = "A flame kept for many returns begins to remember the hand that lit it.",
-        lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return.",
-        revealed = { profile, _ -> profile.streakDays >= 7 && profile.minutesRead >= 600 }
+        lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return."
     ),
     VeiledDiscovery(
         id = "marginalia_gate",
         symbol = "✧",
         title = "The Marginalia Gate",
         clue = "Some doors are written in the margins rather than printed on the page.",
-        lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves.",
-        revealed = { profile, highlights -> highlights >= 10 && profile.pagesRead >= 1_000 }
+        lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves."
     ),
     VeiledDiscovery(
         id = "deep_shelf",
         symbol = "▥",
         title = "The Deep Shelf",
         clue = "Finished volumes gather weight. Eventually the shelf becomes a foundation.",
-        lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list.",
-        revealed = { profile, _ -> profile.booksFinished >= 10 && profile.rankIndex >= 1 }
+        lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list."
     ),
     VeiledDiscovery(
         id = "long_watch",
         symbol = "◐",
         title = "The Long Watch",
         clue = "There is a point when time spent reading stops feeling counted.",
-        lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes.",
-        revealed = { profile, _ -> profile.minutesRead >= 3_000 }
+        lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes."
     ),
     VeiledDiscovery(
         id = "veil_thins",
         symbol = "⌁",
         title = "When the Veil Thins",
         clue = "Several marks must awaken before they begin to answer one another.",
-        lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil.",
-        revealed = { profile, _ -> profile.earnedSigils.size >= 4 }
+        lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil."
     ),
     VeiledDiscovery(
         id = "unnamed_chamber",
         symbol = "⬡",
         title = "The Unnamed Chamber",
         clue = "The deepest chamber does not open to a single achievement.",
-        lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name.",
-        revealed = { profile, _ -> profile.rankIndex >= 3 && profile.earnedSigils.size >= 5 }
+        lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name."
     )
 )
 
@@ -110,7 +104,13 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit
 ) {
     val p = profile
-    val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
+    val eligibleDiscoveryIds = remember(p, highlightCount) {
+        VeiledDiscoveryPolicy.eligibleIds(p, highlightCount)
+    }
+    val revealedDiscoveryIds = remember(p.earnedDiscoveries, eligibleDiscoveryIds) {
+        p.earnedDiscoveries + eligibleDiscoveryIds
+    }
+    val revealedDiscoveries = veiledDiscoveries.count { it.id in revealedDiscoveryIds }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
             books = books,
@@ -259,7 +259,7 @@ fun ProfileScreen(
                 DiscoveryCard(
                     index = index,
                     discovery = discovery,
-                    revealed = discovery.revealed(p, highlightCount)
+                    revealed = discovery.id in revealedDiscoveryIds
                 )
             }
         }
