@@ -2007,12 +2007,8 @@ private fun ReaderMotionPreview(
                 )
                 val fold = Path().apply {
                     moveTo(size.width * 0.67f, pageTop)
-                    quadraticTo(
-                        size.width * 0.58f,
-                        size.height * 0.50f,
-                        size.width * 0.78f,
-                        size.height * 0.92f
-                    )
+                    lineTo(size.width * 0.60f, size.height * 0.48f)
+                    lineTo(size.width * 0.78f, size.height * 0.92f)
                 }
                 drawPath(
                     path = fold,
