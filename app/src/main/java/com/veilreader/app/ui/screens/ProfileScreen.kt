@@ -27,10 +27,14 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.ui.theme.LocalVeilLanguage
+import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.localizeAppNumerals
+import com.veilreader.app.ui.theme.scriptOrnamentPolicyFor
 import java.text.DateFormat
 import java.util.Date
 
@@ -315,6 +319,7 @@ internal fun deriveReaderDossierHistory(
 
 @Composable
 private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    val language = LocalVeilLanguage.current
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
@@ -339,7 +344,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 )
             }
             Text(
-                "${history.recordedSessionCount} sessions",
+                localizeAppNumerals("${history.recordedSessionCount} sessions", language),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -361,15 +366,15 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         )
         DossierLedgerLine(
             label = "Completion records",
-            value = "${history.completionCycleCount}"
+            value = localizeAppNumerals("${history.completionCycleCount}", language)
         )
         DossierLedgerLine(
             label = "Reread cycles",
-            value = "${history.rereadCycleCount}"
+            value = localizeAppNumerals("${history.rereadCycleCount}", language)
         )
         DossierLedgerLine(
             label = "Archived volumes",
-            value = "${history.archivedVolumeCount}"
+            value = localizeAppNumerals("${history.archivedVolumeCount}", language)
         )
 
         Text(
@@ -437,6 +442,7 @@ private fun ArchivistDossierPanel(
     totalDiscoveries: Int,
     onOpenSettings: () -> Unit
 ) {
+    val language = LocalVeilLanguage.current
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
 
@@ -520,8 +526,14 @@ private fun ArchivistDossierPanel(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     DossierFact("PATH", profile.path.name)
-                    DossierFact("LEVEL", profile.level.toString())
-                    DossierFact("CASTLE TIER", (profile.rankIndex + 1).toString())
+                    DossierFact(
+                        "LEVEL",
+                        localizeAppNumerals(profile.level.toString(), language)
+                    )
+                    DossierFact(
+                        "CASTLE TIER",
+                        localizeAppNumerals((profile.rankIndex + 1).toString(), language)
+                    )
                     equippedSigilName?.let { DossierFact("EQUIPPED SIGIL", it) }
                 }
             }
@@ -538,7 +550,7 @@ private fun ArchivistDossierPanel(
                     color = VeilPalette.Mist
                 )
                 Text(
-                    "${profile.xp}/$xpTarget XP",
+                    localizeAppNumerals("${profile.xp}/$xpTarget XP", language),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
@@ -556,17 +568,17 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "${profile.earnedSigils.size} SIGILS",
+                    localizeAppNumerals("${profile.earnedSigils.size} SIGILS", language),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$revealedDiscoveries/$totalDiscoveries DISCOVERIES",
+                    localizeAppNumerals("$revealedDiscoveries/$totalDiscoveries DISCOVERIES", language),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$highlightCount MARKS",
+                    localizeAppNumerals("$highlightCount MARKS", language),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
@@ -632,6 +644,7 @@ private fun DossierBackdrop(
 
 @Composable
 private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
+    val language = LocalVeilLanguage.current
     Box(modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -662,7 +675,7 @@ private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
         }
 
         Text(
-            rank.toString().padStart(2, '0'),
+            localizeAppNumerals(rank.toString().padStart(2, '0'), language),
             style = MaterialTheme.typography.titleLarge,
             color = VeilPalette.Brass
         )
@@ -671,6 +684,8 @@ private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
 
 @Composable
 private fun DossierFact(label: String, value: String) {
+    val scriptGroup = LocalVeilScriptGroup.current
+    val labelWidth = scriptOrnamentPolicyFor(scriptGroup).metadataLabelWidthDp.dp
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -679,7 +694,7 @@ private fun DossierFact(label: String, value: String) {
             label,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
             color = VeilPalette.Mist.copy(alpha = 0.66f),
-            modifier = Modifier.width(82.dp)
+            modifier = Modifier.width(labelWidth)
         )
         Text(
             value,
@@ -696,16 +711,47 @@ private fun DossierRecordGrid(
     profile: ReaderProfile,
     highlightCount: Int
 ) {
+    val language = LocalVeilLanguage.current
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("RETURN", "${profile.streakDays}d", "current streak", Modifier.weight(1f))
-            DossierStat("VOLUMES", "${profile.booksFinished}", "finished", Modifier.weight(1f))
-            DossierStat("MARKS", "$highlightCount", "highlights", Modifier.weight(1f))
+            DossierStat(
+                "RETURN",
+                localizeAppNumerals("${profile.streakDays}d", language),
+                "current streak",
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                "VOLUMES",
+                localizeAppNumerals("${profile.booksFinished}", language),
+                "finished",
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                "MARKS",
+                localizeAppNumerals("$highlightCount", language),
+                "highlights",
+                Modifier.weight(1f)
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("PAGES", "${profile.pagesRead}", "turned", Modifier.weight(1f))
-            DossierStat("TIME", formatMinutes(profile.minutesRead), "inside books", Modifier.weight(1f))
-            DossierStat("TIER", "${profile.rankIndex + 1}", "castle", Modifier.weight(1f))
+            DossierStat(
+                "PAGES",
+                localizeAppNumerals("${profile.pagesRead}", language),
+                "turned",
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                "TIME",
+                localizeAppNumerals(formatMinutes(profile.minutesRead), language),
+                "inside books",
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                "TIER",
+                localizeAppNumerals("${profile.rankIndex + 1}", language),
+                "castle",
+                Modifier.weight(1f)
+            )
         }
     }
 }
