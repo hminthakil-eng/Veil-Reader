@@ -41,6 +41,7 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.hallSharedBoundsKey
 import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
@@ -267,7 +268,7 @@ fun TreasuryScreen(
 
         CastleChamberGrandMasthead(
             realm = VeilRealm.CASTLE,
-            sharedKey = "hall:treasury",
+            sharedKey = hallSharedBoundsKey("treasury"),
             eyebrow = "TREASURY · RELIC VAULT",
             title = "The Treasury",
             subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
@@ -838,7 +839,7 @@ fun SanctumScreen(
 
         CastleChamberGrandMasthead(
             realm = VeilRealm.SANCTUM,
-            sharedKey = "hall:sanctum",
+            sharedKey = hallSharedBoundsKey("sanctum"),
             eyebrow = "INNER SANCTUM · DEEPEST RECORD",
             title = castleTitle,
             subtitle = "Thresholds crossed, constellations completed, and identities the Castle considers permanent.",
