@@ -39,12 +39,14 @@ import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.VeilMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.narrativeArchitectureField
+import com.veilreader.app.ui.theme.motionBudgetFor
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -345,7 +347,7 @@ private fun LivingMirrorSurface(
             val targetScale = if (matched && query.isNotBlank()) 1.07f else 1f
             val alpha by animateFloatAsState(
                 targetValue = targetAlpha,
-                animationSpec = if (reducedMotion) snap() else tween(220),
+                animationSpec = if (reducedMotion) snap() else tween(motionBudgetFor(VeilMotionClass.MATERIAL).targetDurationMs),
                 label = "mirror-node-alpha"
             )
             val scale by animateFloatAsState(
