@@ -2421,15 +2421,6 @@ private fun BookLibraryTile(
 
         ArchiveDepthMark(archiveMemory)
 
-        if (book.progress > 0f || book.finished) {
-            LinearProgressIndicator(
-                progress = { book.progress.coerceIn(0f, 1f) },
-                modifier = Modifier.fillMaxWidth().height(2.dp),
-                color = if (book.finished) VeilPalette.Brass else MaterialTheme.colorScheme.secondary,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
-            )
-        }
-
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
