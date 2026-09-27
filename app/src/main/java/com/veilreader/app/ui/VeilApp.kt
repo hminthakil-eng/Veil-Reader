@@ -707,7 +707,7 @@ fun VeilApp(
         }
 
         val pendingEntryBook =
-            if (opened == null && route.activeBookId != null) targetBook else null
+            if (opened == null) targetBook else null
         pendingEntryBook?.let { book ->
             BookThresholdTransitionOverlay(
                 book = book,
