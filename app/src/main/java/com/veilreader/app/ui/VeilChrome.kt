@@ -620,10 +620,10 @@ fun VeilNavigationRail(
 
                 GrayfogRule(Modifier.fillMaxWidth())
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    "VEIL",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
-                    color = VeilPalette.Brass.copy(alpha = 0.76f)
+                VeilEyebrowText(
+                    text = "VEIL",
+                    color = VeilPalette.Brass.copy(alpha = 0.76f),
+                    trackingSp = 1.8f
                 )
             }
         }
@@ -1031,10 +1031,9 @@ fun VeilLoadingState(
             }
 
             Spacer(Modifier.height(22.dp))
-            Text(
-                "VEIL READER",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 2.1.sp),
-                color = VeilPalette.Brass
+            VeilEyebrowText(
+                text = "VEIL READER",
+                trackingSp = 2.1f
             )
             Spacer(Modifier.height(7.dp))
             Text(
