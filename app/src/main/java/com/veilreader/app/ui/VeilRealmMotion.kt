@@ -1,5 +1,6 @@
 package com.veilreader.app.ui
 
+import androidx.activity.BackEventCompat
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibilityScope
@@ -25,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotionClass
 import com.veilreader.app.ui.theme.effectiveMotionDurationMs
@@ -49,7 +51,8 @@ internal data class VeilRealmMotionPolicy(
     val exitDurationMs: Int,
     val sharedBoundsDurationMs: Int,
     val predictiveScaleAtCommit: Float,
-    val predictiveAlphaAtCommit: Float
+    val predictiveAlphaAtCommit: Float,
+    val predictiveTranslationFractionAtCommit: Float
 )
 
 internal fun veilRealmMotionPolicy(
@@ -67,15 +70,17 @@ internal fun veilRealmMotionPolicy(
             ),
             sharedBoundsDurationMs = 0,
             predictiveScaleAtCommit = 1f,
-            predictiveAlphaAtCommit = 1f
+            predictiveAlphaAtCommit = 1f,
+            predictiveTranslationFractionAtCommit = 0f
         )
     } else {
         VeilRealmMotionPolicy(
             enterDurationMs = motionBudgetFor(VeilMotionClass.REALM).targetDurationMs,
             exitDurationMs = motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs,
             sharedBoundsDurationMs = motionBudgetFor(VeilMotionClass.SPATIAL).targetDurationMs,
-            predictiveScaleAtCommit = 0.965f,
-            predictiveAlphaAtCommit = 0.90f
+            predictiveScaleAtCommit = 0.955f,
+            predictiveAlphaAtCommit = 0.34f,
+            predictiveTranslationFractionAtCommit = 0.075f
         )
     }
 
@@ -125,10 +130,12 @@ fun VeilRealmMotionHost(
         veilRealmMotionPolicy(reducedMotion)
     }
     var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
+    var predictiveBackDirection by remember { mutableFloatStateOf(1f) }
 
     LaunchedEffect(activeChamber) {
         if (activeChamber == null) {
             predictiveBackProgress = 0f
+            predictiveBackDirection = 1f
         }
     }
 
@@ -136,11 +143,14 @@ fun VeilRealmMotionHost(
         try {
             progress.collect { event ->
                 predictiveBackProgress = event.progress.coerceIn(0f, 1f)
+                predictiveBackDirection =
+                    if (event.swipeEdge == BackEventCompat.EDGE_RIGHT) -1f else 1f
             }
             predictiveBackProgress = 1f
             onCloseChamber()
         } catch (cancelled: CancellationException) {
             predictiveBackProgress = 0f
+            predictiveBackDirection = 1f
             throw cancelled
         }
     }
@@ -189,18 +199,55 @@ fun VeilRealmMotionHost(
                         1f - progress * (1f - policy.predictiveAlphaAtCommit)
 
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                                this.alpha = alpha
-                            }
+                        modifier = Modifier.fillMaxSize()
                     ) {
-                        if (chamber == null) {
-                            mainContent()
-                        } else {
-                            chamberContent(chamber)
+                        if (
+                            chamber != null &&
+                            !reducedMotion &&
+                            predictiveBackProgress > 0f
+                        ) {
+                            val previewProgress = predictiveBackProgress
+                            CompositionLocalProvider(
+                                LocalVeilSharedTransitionScope provides null,
+                                LocalVeilAnimatedVisibilityScope provides null
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clearAndSetSemantics { }
+                                        .graphicsLayer {
+                                            val previewScale =
+                                                0.985f + previewProgress * 0.015f
+                                            scaleX = previewScale
+                                            scaleY = previewScale
+                                            this.alpha =
+                                                0.30f + previewProgress * 0.70f
+                                        }
+                                ) {
+                                    mainContent()
+                                }
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    scaleX = scale
+                                    scaleY = scale
+                                    translationX =
+                                        predictiveBackDirection *
+                                            progress *
+                                            size.width *
+                                            policy.predictiveTranslationFractionAtCommit
+                                    this.alpha = alpha
+                                }
+                        ) {
+                            if (chamber == null) {
+                                mainContent()
+                            } else {
+                                chamberContent(chamber)
+                            }
                         }
                     }
                 }
