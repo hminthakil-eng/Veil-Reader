@@ -746,24 +746,49 @@ fun LibraryScreen(
                 )
             }
         } else {
-            items(filtered, key = { "book:${it.id}" }, contentType = { viewMode }) { book ->
-                when (viewMode) {
-                    LibraryViewMode.GRID -> BookLibraryTile(
-                        book = book,
-                        archiveMemory = memoryState.memoryFor(book.id),
-                        artifactMemory = artifactMemoryByBookId[book.id],
-                        onOpen = { onOpenBook(book) },
-                        onFavorite = { onFavorite(book.id) },
-                        onDetails = { detailBookId = book.id }
-                    )
-                    LibraryViewMode.LIST -> BookLibraryRow(
-                        book = book,
-                        archiveMemory = memoryState.memoryFor(book.id),
-                        artifactMemory = artifactMemoryByBookId[book.id],
-                        onOpen = { onOpenBook(book) },
-                        onFavorite = { onFavorite(book.id) },
-                        onDetails = { detailBookId = book.id }
-                    )
+            when (viewMode) {
+                LibraryViewMode.GALLERY -> {
+                    items(filtered, key = { "gallery:${it.id}" }, contentType = { "gallery" }) { book ->
+                        BookLibraryTile(
+                            book = book,
+                            archiveMemory = memoryState.memoryFor(book.id),
+                            artifactMemory = artifactMemoryByBookId[book.id],
+                            onOpen = { onOpenBook(book) },
+                            onFavorite = { onFavorite(book.id) },
+                            onDetails = { detailBookId = book.id }
+                        )
+                    }
+                }
+
+                LibraryViewMode.INDEX -> {
+                    items(filtered, key = { "index:${it.id}" }, contentType = { "index" }) { book ->
+                        BookLibraryRow(
+                            book = book,
+                            archiveMemory = memoryState.memoryFor(book.id),
+                            artifactMemory = artifactMemoryByBookId[book.id],
+                            onOpen = { onOpenBook(book) },
+                            onFavorite = { onFavorite(book.id) },
+                            onDetails = { detailBookId = book.id }
+                        )
+                    }
+                }
+
+                LibraryViewMode.SHELVES -> {
+                    item(key = "library:shelves-mode", span = { GridItemSpan(maxLineSpan) }) {
+                        LibraryShelvesView(
+                            groups = deriveLibraryShelfGroups(
+                                books = books,
+                                filtered = filtered,
+                                filterActive = trimmedQuery.isNotBlank() ||
+                                    shelf != "All" ||
+                                    collection.isNotEmpty() ||
+                                    seriesFilter.isNotEmpty()
+                            ),
+                            artifactMemoryByBookId = artifactMemoryByBookId,
+                            onOpen = onOpenBook,
+                            onDetails = { detailBookId = it.id }
+                        )
+                    }
                 }
             }
         item(key = "library:overview", span = { GridItemSpan(maxLineSpan) }) {
