@@ -1,0 +1,58 @@
+package com.veilreader.app.ui.theme
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+
+class DesignConstitutionTest {
+    @Test
+    fun `quality tiers degrade atmosphere before capability`() {
+        val full = qualityPolicyFor(VeilQualityTier.FULL)
+        val balanced = qualityPolicyFor(VeilQualityTier.BALANCED)
+        val essential = qualityPolicyFor(VeilQualityTier.ESSENTIAL)
+
+        assertTrue(full.atmosphereMultiplier > balanced.atmosphereMultiplier)
+        assertTrue(balanced.atmosphereMultiplier > essential.atmosphereMultiplier)
+        assertTrue(full.expensiveBlurAllowed)
+        assertFalse(balanced.expensiveBlurAllowed)
+        assertFalse(essential.ambientMotionEnabled)
+    }
+
+    @Test
+    fun `adaptive classes are compositional breakpoints`() {
+        assertEquals(VeilAdaptiveClass.COMPACT, adaptiveClassFor(412f))
+        assertEquals(VeilAdaptiveClass.WIDE, adaptiveClassFor(700f))
+        assertEquals(VeilAdaptiveClass.LARGE, adaptiveClassFor(840f))
+        assertEquals(VeilAdaptiveClass.COMPACT, adaptiveClassFor(Float.NaN))
+    }
+
+    @Test
+    fun `reduced motion removes translation and ambient loops`() {
+        VeilMotionClass.entries.forEach { motionClass ->
+            val policy = motionPolicyFor(motionClass, reducedMotion = true)
+            assertFalse(policy.translationAllowed)
+            assertFalse(policy.ambientLoopAllowed)
+            assertEquals(VeilMotion.REDUCED_MOTION_FADE_MS, policy.fixedDurationMillis)
+        }
+    }
+
+    @Test
+    fun `physical motion remains physics owned at full motion`() {
+        val policy = motionPolicyFor(VeilMotionClass.PHYSICAL, reducedMotion = false)
+        assertNull(policy.fixedDurationMillis)
+        assertTrue(policy.translationAllowed)
+        assertFalse(policy.ambientLoopAllowed)
+    }
+
+    @Test
+    fun `sanctuary remains visually quiet and bounded`() {
+        assertFalse(VeilSanctuary.chromeOrnamentAllowed)
+        assertFalse(VeilSanctuary.persistentDecorativeControlsAllowed)
+        assertTrue(VeilSanctuary.atmosphereIntensity <= 0.05f)
+        assertEquals(2f, VeilSanctuary.minimumPageStackDp)
+        assertEquals(8f, VeilSanctuary.maximumPageStackDp)
+        assertEquals(VeilMotion.READER_AUTO_HIDE_MS, VeilSanctuary.chromeAutoHideMillis)
+    }
+}
