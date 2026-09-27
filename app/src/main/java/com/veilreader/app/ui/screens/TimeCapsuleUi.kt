@@ -112,7 +112,7 @@ fun ReadingTimeCapsuleCard(
                     }
 
                 Text(
-                    "Open preserved history →",
+                    "Open preserved history",
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass.copy(alpha = 0.88f)
                 )
@@ -263,7 +263,7 @@ fun ReadingTimeCapsuleSheet(
                 onClick = onDismiss,
                 modifier = Modifier
                     .align(Alignment.End)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = 48.dp)
             ) {
                 Text("Close record")
             }
