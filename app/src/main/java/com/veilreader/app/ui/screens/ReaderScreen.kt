@@ -927,18 +927,28 @@ fun ReaderScreen(
             OutlinedButton(
                 onClick = ::returnToPreviousLocation,
                 shape = MaterialTheme.shapes.extraSmall,
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = VeilPalette.Ink.copy(alpha = 0.94f),
+                    containerColor = VeilPalette.Ink.copy(alpha = 0.96f),
                     contentColor = VeilPalette.Moon
                 ),
-                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                modifier = Modifier.heightIn(min = 38.dp)
+                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
+                modifier = Modifier.heightIn(min = 48.dp)
             ) {
-                Text(
-                    "↶ Previous location",
-                    style = MaterialTheme.typography.labelMedium
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        "RETURN",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass.copy(alpha = 0.84f)
+                    )
+                    Text(
+                        "Previous location",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
             }
         }
 
