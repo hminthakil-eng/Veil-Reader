@@ -7,6 +7,8 @@ import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.VeiledDiscoveryCatalog
+import com.veilreader.app.domain.VeiledDiscoveryRecord
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +42,9 @@ class GameRepository(context: Context) {
 
     private val _castleTitle = MutableStateFlow(prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil")
     val castleTitle: StateFlow<String> = _castleTitle
+
+    private val _discoveries = MutableStateFlow(readDiscoveryLedger())
+    val discoveries: StateFlow<List<VeiledDiscoveryRecord>> = _discoveries
 
     init {
         // Old builds counted every highlight for every Path. Preserve Oracle progress only.
@@ -248,6 +253,8 @@ class GameRepository(context: Context) {
         if (p.rankIndex >= 1) earned.add("first_threshold")
         prefs.edit().putStringSet("earnedSigils", earned).apply()
         _profile.value = buildProfile()
+        updateDiscoveryLedger(_profile.value)
+        _discoveries.value = readDiscoveryLedger()
         _quests.value = buildQuests()
         _dailyGoalMinutes.value = readDailyGoal()
 
@@ -261,6 +268,46 @@ class GameRepository(context: Context) {
             _castleTitle.value = selectedTitle
         }
         _equippedSigil.value = prefs.getString("equippedSigil", null)
+    }
+
+    private fun updateDiscoveryLedger(profile: ReaderProfile) {
+        val existing = prefs
+            .getStringSet("earnedDiscoveries", emptySet())
+            .orEmpty()
+            .toSet()
+        val highlightCount = prefs.getInt("totalHighlights", 0).coerceAtLeast(0)
+        val merged = VeiledDiscoveryCatalog.mergeEarned(
+            existingIds = existing,
+            profile = profile,
+            highlightCount = highlightCount
+        )
+        if (merged == existing) return
+
+        val newlyRecorded = merged - existing
+        val now = System.currentTimeMillis()
+        val editor = prefs.edit().putStringSet("earnedDiscoveries", merged)
+        newlyRecorded.forEach { id ->
+            editor.putLong("discoveryRecordedAt:$id", now)
+        }
+        editor.apply()
+    }
+
+    private fun readDiscoveryLedger(): List<VeiledDiscoveryRecord> {
+        val earned = prefs
+            .getStringSet("earnedDiscoveries", emptySet())
+            .orEmpty()
+            .toSet()
+
+        return VeiledDiscoveryCatalog.orderedIds.mapNotNull { id ->
+            if (id !in earned) return@mapNotNull null
+            val recordedAt = prefs
+                .getLong("discoveryRecordedAt:$id", 0L)
+                .takeIf { it > 0L }
+            VeiledDiscoveryRecord(
+                id = id,
+                recordedAtEpochMs = recordedAt
+            )
+        }
     }
 
     private fun buildProfile(): ReaderProfile {
