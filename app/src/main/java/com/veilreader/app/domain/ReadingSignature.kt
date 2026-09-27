@@ -20,6 +20,7 @@ enum class ReadingDaypart {
  */
 data class ReadingSignature(
     val recordedSessionCount: Int,
+    val timedSessionCount: Int,
     val measuredActiveSessionCount: Int,
     val recordedActiveMillis: Long,
     val medianActiveSessionMillis: Long?,
@@ -43,6 +44,7 @@ data class ReadingSignature(
     companion object {
         fun empty(zoneId: ZoneId): ReadingSignature = ReadingSignature(
             recordedSessionCount = 0,
+            timedSessionCount = 0,
             measuredActiveSessionCount = 0,
             recordedActiveMillis = 0L,
             medianActiveSessionMillis = null,
@@ -50,7 +52,7 @@ data class ReadingSignature(
             booksTouchedCount = 0,
             firstSessionAtEpochMs = null,
             latestSessionAtEpochMs = null,
-            daypartSessionCounts = ReadingDaypart.entries.associateWith { 0 },
+            daypartSessionCounts = ReadingDaypart.values().toList().associateWith { 0 },
             leadingDaypart = null,
             timezoneId = zoneId.id,
             pacedPageTurnCount = 0,
@@ -71,25 +73,26 @@ fun deriveReadingSignature(
     cycles: List<ReadingCycleRecord>,
     zoneId: ZoneId = ZoneId.systemDefault()
 ): ReadingSignature {
-    val timedSessions = sessions
+    val recordedSessions = sessions
+    val timedSessions = recordedSessions
         .filter { it.startedAtEpochMs > 0L }
         .sortedBy { it.startedAtEpochMs }
 
-    if (timedSessions.isEmpty() && cycles.isEmpty()) {
+    if (recordedSessions.isEmpty() && cycles.isEmpty()) {
         return ReadingSignature.empty(zoneId)
     }
 
-    val activeDurations = timedSessions
+    val activeDurations = recordedSessions
         .map { it.activeMillis.coerceAtLeast(0L) }
         .filter { it > 0L }
         .sorted()
 
-    val totalActiveMillis = timedSessions.sumOf { it.activeMillis.coerceAtLeast(0L) }
-    val totalPageTurns = timedSessions.sumOf { it.pacedPageTurns.coerceAtLeast(0) }
-    val totalHighlightEvents = timedSessions.sumOf { it.highlightCount.coerceAtLeast(0) }
-    val totalNoteEvents = timedSessions.sumOf { it.noteCount.coerceAtLeast(0) }
+    val totalActiveMillis = recordedSessions.sumOf { it.activeMillis.coerceAtLeast(0L) }
+    val totalPageTurns = recordedSessions.sumOf { it.pacedPageTurns.coerceAtLeast(0) }
+    val totalHighlightEvents = recordedSessions.sumOf { it.highlightCount.coerceAtLeast(0) }
+    val totalNoteEvents = recordedSessions.sumOf { it.noteCount.coerceAtLeast(0) }
 
-    val daypartCounts = ReadingDaypart.entries.associateWith { 0 }.toMutableMap()
+    val daypartCounts = ReadingDaypart.values().toList().associateWith { 0 }.toMutableMap()
     val activeDays = linkedSetOf<java.time.LocalDate>()
 
     timedSessions.forEach { session ->
@@ -116,12 +119,13 @@ fun deriveReadingSignature(
     val rereadCycles = validCycles.count { it.cycleIndex > 1 }
 
     return ReadingSignature(
-        recordedSessionCount = timedSessions.size,
+        recordedSessionCount = recordedSessions.size,
+        timedSessionCount = timedSessions.size,
         measuredActiveSessionCount = activeDurations.size,
         recordedActiveMillis = totalActiveMillis,
         medianActiveSessionMillis = medianMillis(activeDurations),
         activeDayCount = activeDays.size,
-        booksTouchedCount = timedSessions.mapNotNull { it.bookId }.toSet().size,
+        booksTouchedCount = recordedSessions.mapNotNull { it.bookId }.toSet().size,
         firstSessionAtEpochMs = timedSessions.firstOrNull()?.startedAtEpochMs,
         latestSessionAtEpochMs = timedSessions.lastOrNull()?.startedAtEpochMs,
         daypartSessionCounts = daypartCounts.toMap(),
