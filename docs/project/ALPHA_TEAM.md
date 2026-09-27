@@ -22,6 +22,12 @@ Alpha is the single project lead for product vision, architecture, integration, 
 - **Critical Team (dedicated, adversarial, Alpha-owned):** acts as Veil's internal opposition. It challenges assumptions, finds contradictions, hunts UX debt, architectural coupling, false-premium styling, accessibility regressions, performance traps, fake differentiation, overengineering, weak evidence and features that are beautiful but not useful. It does not own implementation; it owns pressure-testing and escalation.
 - **Reviewing Team (independent acceptance board under Alpha):** reviews completed slices against source, tests, runtime evidence, accessibility, performance, product intent and visual truth. It does not accept "implemented" based on code presence alone. It can mark work PASS, PASS WITH DEBT, REWORK, BLOCKED or REJECTED and can withhold milestone closure until evidence is reproducible.
 
+- **Development Team (dedicated implementation engine, Alpha-owned):** converts accepted product/design intent into production code. It owns implementation slices, architecture fit, tests, integration discipline, migration-safe changes, build health and exact branch/SHA traceability. It must prefer reuse over parallel systems and must not silently redefine product behavior while coding.
+- **Ramifications Team (dedicated consequence-analysis team, independent from implementation):** examines second- and third-order effects before and after a change. It maps lifecycle, persistence, navigation, Reader, accessibility, RTL, localization, performance, thermal, memory, backup/migration, low-end-device and cross-realm consequences. Every substantial change receives a ramifications note identifying affected systems, regression vectors, reversible fallback and what evidence would invalidate the change.
+- **Enhancement Team (dedicated depth/quality team):** takes a working feature and raises its experiential ceiling without changing ownership or core semantics. It improves visual authorship, interaction depth, motion, sensory feedback, adaptive behavior, discoverability and premium feel. Enhancements must preserve the fallback path, accessibility semantics and measurable performance budget.
+- **Improvements Team (dedicated measurable-refinement team):** continuously improves existing behavior through smaller, lower-risk changes. It targets latency, clarity, touch ergonomics, empty/loading/error states, code simplicity, state hygiene, test coverage, copy quality, layout resilience and maintainability. Every improvement should identify a before/after metric or explicit qualitative defect it resolves.
+- **Bug Hunters Team (dedicated adversarial defect-hunting unit):** actively searches for crashes, silent failures, stale state, races, lifecycle leaks, process-death faults, orientation issues, corrupted/future timestamps, large-library failures, gesture conflicts, RTL/bidi faults, TalkBack traps, low-memory problems, rendering defects and regression chains. It does not wait for user reports; it creates reproducible cases, smallest failing examples and verification tests before handing fixes to Development.
+
 ## Project Rules
 
 GitHub is canonical. Reuse existing systems before creating new ones. Keep one Reader architecture, one persistence owner per data type, one design system, and one active integration path. Every major visual feature needs a lower-cost fallback. Persistent features must define backup and migration behavior. Motion must have a reduced-motion equivalent. Spatial UI must have accessible semantics.
@@ -61,13 +67,20 @@ Still rejected:
 Every substantial asset must earn its bytes through visible quality, utility, accessibility, or sensory value.
 
 
-## Three-Stage Creative Governance
+## Multi-Stage Cathedral Governance
 
-Every substantial Cathedral feature passes through three different minds:
+Every substantial Cathedral feature now passes through distinct specialist ownership:
 
 1. **Invent** — Innovation & Creativity Team proposes or improves the concept.
-2. **Attack** — Critical Team tries to break the concept, expose weak assumptions and identify hidden cost.
-3. **Prove** — Reviewing Team accepts only what is supported by code, tests, accessibility, performance and runtime evidence.
+2. **Map Ramifications** — Ramifications Team traces cross-system consequences, regression vectors, fallbacks and evidence requirements.
+3. **Develop** — Development Team implements the smallest coherent production slice on the canonical architecture.
+4. **Hunt Bugs** — Bug Hunters Team actively attacks runtime/state/lifecycle/input/accessibility/performance edge cases and creates reproducible failures.
+5. **Enhance** — Enhancement Team raises experiential depth, authored quality and sensory coherence without changing core ownership.
+6. **Improve** — Improvements Team performs lower-risk measurable refinement and debt reduction.
+7. **Attack** — Critical Team independently challenges usefulness, complexity, architecture, evidence and hidden failure.
+8. **Prove** — Reviewing Team accepts only what is supported by code, tests, accessibility, performance and runtime evidence.
+
+The stages can iterate, but ownership must remain distinct. The team that implements a feature cannot be the sole authority declaring it complete.
 
 These roles must not collapse into one another. The team that invents a feature cannot be the sole authority declaring it complete.
 
@@ -82,6 +95,68 @@ A proposed innovation must define:
 - performance risk,
 - persistence/ownership implications if any,
 - kill criteria.
+
+### Ramifications Gate
+
+The Ramifications Team documents:
+- directly affected modules and owners,
+- indirect state/lifecycle/persistence effects,
+- Reader and navigation consequences,
+- backup/migration implications,
+- RTL/localization/accessibility effects,
+- low-end/performance/thermal/memory risks,
+- failure propagation and recovery behavior,
+- rollback/fallback path,
+- evidence needed to prove no unacceptable regression.
+
+### Development Gate
+
+The Development Team must provide:
+- exact branch/SHA,
+- smallest coherent implementation slice,
+- ownership/persistence compatibility,
+- relevant unit/instrumentation coverage,
+- no duplicate architecture,
+- reversible changes where feasible,
+- build/lint/test status when infrastructure permits.
+
+### Bug Hunters Gate
+
+The Bug Hunters Team actively probes:
+- process death and restoration,
+- background/foreground races,
+- rotation/window resizing,
+- rapid repeated gestures and navigation,
+- malformed/corrupt/future data,
+- large libraries and long sessions,
+- low-memory/recreation behavior,
+- TalkBack/keyboard/large text,
+- RTL/bidi and mixed-script content,
+- rendering/performance regressions,
+- silent no-op routes and stale state.
+
+Each confirmed defect must have a reproduction path and, where practical, a regression test.
+
+### Enhancement Gate
+
+The Enhancement Team may deepen a feature only when:
+- the baseline behavior is functionally coherent,
+- the enhancement does not create a second state owner,
+- reduced-motion/accessibility fallbacks remain intact,
+- cost is justified by visible or functional gain,
+- the enhancement can be disabled or degraded safely if needed.
+
+### Improvements Gate
+
+The Improvements Team records a clear before/after target such as:
+- fewer steps,
+- lower latency/jank,
+- stronger layout resilience,
+- clearer copy/state communication,
+- smaller code/state surface,
+- better test coverage,
+- better recovery behavior,
+- lower memory/thermal cost.
 
 ### Critical Challenge Gate
 
