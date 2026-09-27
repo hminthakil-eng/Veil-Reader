@@ -820,6 +820,9 @@ fun LibraryScreen(
             artifactMemory = artifactMemoryByBookId[book.id],
             readingCycles = readingCycles.filter { it.bookId == book.id },
             readingMilestones = readingMilestones.filter { it.bookId == book.id },
+            preservedHighlights = highlights
+                .filter { it.bookId == book.id }
+                .sortedByDescending { it.createdAtEpochMs },
             onDismiss = { detailBookId = null },
             onOpen = {
                 detailBookId = null
@@ -917,6 +920,7 @@ private fun BookDetailSheet(
     artifactMemory: BookArtifactMemory?,
     readingCycles: List<ReadingCycleRecord>,
     readingMilestones: List<ReadingMilestoneRecord>,
+    preservedHighlights: List<Highlight>,
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
@@ -1003,7 +1007,7 @@ private fun BookDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     Text(
-                        "GRAYFOG ARCHIVE · ${book.format.name}",
+                        "ARTIFACT CHAMBER · ${book.format.name}",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
@@ -1021,7 +1025,10 @@ private fun BookDetailSheet(
                 artifact = bookArtifactState(book, memory = artifactMemory),
                                 modifier = Modifier.width(142.dp).height(208.dp)
                             )
-                            BookDetailIdentity(book)
+                            BookDetailIdentity(
+                                book = book,
+                                artifactMemory = artifactMemory
+                            )
                         }
                     } else {
                         Row(
@@ -1038,6 +1045,7 @@ private fun BookDetailSheet(
                             )
                             BookDetailIdentity(
                                 book = book,
+                                artifactMemory = artifactMemory,
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -1163,12 +1171,19 @@ private fun BookDetailSheet(
 
                 BrassRule(Modifier.fillMaxWidth())
 
+                if (preservedHighlights.isNotEmpty()) {
+                    BookDetailFragments(
+                        highlights = preservedHighlights
+                    )
+                    BrassRule(Modifier.fillMaxWidth())
+                }
+
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
                     Text(
-                        "ARCHIVE RECORD",
+                        "ARCHIVE HISTORY",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = VeilPalette.Brass
                     )
@@ -1305,8 +1320,98 @@ private fun BookDetailSheet(
 }
 
 @Composable
+private fun BookDetailFragments(
+    highlights: List<Highlight>
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "PRESERVED MEMORY",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    "Preserved fragments",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Moon
+                )
+            }
+            Text(
+                "${highlights.size} passages",
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Mist.copy(alpha = 0.72f)
+            )
+        }
+
+        highlights.take(3).forEachIndexed { index, highlight ->
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = VeilPalette.Archive.copy(alpha = 0.62f),
+                border = BorderStroke(
+                    1.dp,
+                    if (index == 0) {
+                        VeilPalette.Brass.copy(alpha = 0.34f)
+                    } else {
+                        VeilPalette.BorderDark.copy(alpha = 0.68f)
+                    }
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(VeilSpacing.sm),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        formatArchiveRecordDate(highlight.createdAtEpochMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass.copy(alpha = 0.78f)
+                    )
+                    Text(
+                        "“${highlight.quote}”",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon,
+                        maxLines = 5,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    highlight.note.takeIf { it.isNotBlank() }?.let { note ->
+                        Text(
+                            note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = VeilPalette.Mist.copy(alpha = 0.82f),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+        }
+
+        if (highlights.size > 3) {
+            Text(
+                "+${highlights.size - 3} more preserved in Hidden Archive",
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Spirit.copy(alpha = 0.72f)
+            )
+        }
+    }
+}
+
+@Composable
 private fun BookDetailIdentity(
     book: Book,
+    artifactMemory: BookArtifactMemory?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1347,7 +1452,9 @@ private fun BookDetailIdentity(
         }
 
         Text(
-            bookArtifactRecordLabel(bookArtifactState(book)),
+            bookArtifactRecordLabel(
+                bookArtifactState(book, memory = artifactMemory)
+            ),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp),
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
