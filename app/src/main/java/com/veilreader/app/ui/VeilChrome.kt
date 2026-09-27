@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -320,7 +321,11 @@ fun VeilAnimatedTabHost(
         },
         label = "veil-tab"
     ) { tab ->
-        content(tab)
+        CompositionLocalProvider(
+            LocalVeilTabAnimatedVisibilityScope provides this
+        ) {
+            content(tab)
+        }
     }
 }
 
