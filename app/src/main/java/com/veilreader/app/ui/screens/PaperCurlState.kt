@@ -23,6 +23,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import com.veilreader.app.ui.theme.VeilMotion
 import kotlinx.coroutines.delay
 import kotlin.math.max
 
@@ -120,7 +121,7 @@ internal class PaperCurlState {
         anim.animateTo(
             targetValue = leftEdge(),
             animationSpec = keyframes {
-                durationMillis = 440
+                durationMillis = VeilMotion.PAPER_TAP_TURN_MS
                 rightEdge() at 0
                 PaperCurlEdge(
                     top = Offset(width * 0.96f, height * 0.16f),
@@ -130,7 +131,7 @@ internal class PaperCurlState {
                     top = Offset(width * 0.76f, height * 0.08f),
                     bottom = Offset(width * 0.32f, height)
                 ) at 260
-                leftEdge() at 440
+                leftEdge() at VeilMotion.PAPER_TAP_TURN_MS
             }
         ) {
             edge = value
@@ -195,13 +196,13 @@ internal class PaperCurlState {
         )
         anim.animateTo(
             peek,
-            tween(82, easing = FastOutSlowInEasing)
+            tween(VeilMotion.PAPER_BOUNDARY_IN_MS, easing = FastOutSlowInEasing)
         ) {
             edge = value
         }
         anim.animateTo(
             rightEdge(),
-            tween(108, easing = FastOutSlowInEasing)
+            tween(VeilMotion.PAPER_BOUNDARY_OUT_MS, easing = FastOutSlowInEasing)
         ) {
             edge = value
         }
@@ -215,7 +216,7 @@ internal class PaperCurlState {
 
         // Keep one frame of input lock so Compose fully drops the overlay
         // before the reusable bitmap can be drawn into again.
-        delay(18)
+        delay(VeilMotion.FRAME_SETTLE_MS)
         active = false
     }
 
