@@ -535,7 +535,7 @@ fun LibraryScreen(
                         Box {
                             OutlinedButton(
                                 onClick = { collectionMenu = true },
-                                modifier = Modifier.heightIn(min = 38.dp),
+                                modifier = Modifier.heightIn(min = 48.dp),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 contentPadding = PaddingValues(horizontal = 10.dp),
                                 border = BorderStroke(
@@ -572,7 +572,7 @@ fun LibraryScreen(
                         OutlinedButton(
                             onClick = { sortMenu = true },
                             modifier = Modifier
-                                .heightIn(min = 38.dp)
+                                .heightIn(min = 48.dp)
                                 .semantics { contentDescription = "Sort books: $sort" },
                             shape = MaterialTheme.shapes.extraSmall,
                             contentPadding = PaddingValues(horizontal = 10.dp),
@@ -611,7 +611,7 @@ fun LibraryScreen(
                     if (seriesFilter.isNotEmpty()) {
                         OutlinedButton(
                             onClick = { seriesFilter = "" },
-                            modifier = Modifier.heightIn(min = 38.dp),
+                            modifier = Modifier.heightIn(min = 48.dp),
                             shape = MaterialTheme.shapes.extraSmall,
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             border = BorderStroke(
@@ -1171,7 +1171,7 @@ private fun BookDetailSheet(
                     OutlinedButton(
                         onClick = onFavorite,
                         shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier.weight(1f).heightIn(min = 46.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.onSurface
@@ -1189,7 +1189,7 @@ private fun BookDetailSheet(
                     OutlinedButton(
                         onClick = onEditMetadata,
                         shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier.weight(1f).heightIn(min = 46.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                         border = BorderStroke(
                             1.dp,
                             MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
