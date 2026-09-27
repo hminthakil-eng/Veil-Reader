@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -58,27 +60,40 @@ fun VeilReveal(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val reducedMotion = LocalVeilReducedMotion.current
     var revealed by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        if (delayMillis > 0) delay(delayMillis.toLong())
+    LaunchedEffect(reducedMotion) {
+        if (!reducedMotion && delayMillis > 0) {
+            delay(delayMillis.toLong())
+        }
         revealed = true
     }
 
     val alpha by animateFloatAsState(
         targetValue = if (revealed) 1f else 0f,
-        animationSpec = tween(
-            durationMillis = 360,
-            easing = FastOutSlowInEasing
-        ),
+        animationSpec = if (reducedMotion) {
+            tween(VeilMotion.REDUCED_MOTION_FADE_MS)
+        } else {
+            tween(
+                durationMillis = VeilMotion.SPATIAL_MS,
+                easing = FastOutSlowInEasing
+            )
+        },
         label = "veil-reveal-alpha"
     )
-    val distancePx = with(LocalDensity.current) { distance.toPx() }
+    val distancePx = with(LocalDensity.current) {
+        if (reducedMotion) 0f else distance.toPx()
+    }
     val translationY by animateFloatAsState(
         targetValue = if (revealed) 0f else distancePx,
-        animationSpec = tween(
-            durationMillis = 420,
-            easing = FastOutSlowInEasing
-        ),
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(
+                durationMillis = VeilMotion.SPATIAL_MS,
+                easing = FastOutSlowInEasing
+            )
+        },
         label = "veil-reveal-y"
     )
 
@@ -122,7 +137,7 @@ fun ArchivePanel(
 
     Box(
         modifier = modifier
-            .animateContentSize(tween(VeilMotion.STANDARD_MS))
+            .animateContentSize(if (LocalVeilReducedMotion.current) snap() else tween(VeilMotion.STANDARD_MS))
             .clip(shape)
             .background(
                 Brush.linearGradient(
@@ -397,9 +412,16 @@ fun BookCover(
                 }
         }
     }
+    val reducedMotion = LocalVeilReducedMotion.current
     val imageAlpha by animateFloatAsState(
         targetValue = if (cachedCover == null) 0f else 1f,
-        animationSpec = tween(280),
+        animationSpec = tween(
+            if (reducedMotion) {
+                VeilMotion.REDUCED_MOTION_FADE_MS
+            } else {
+                VeilMotion.SPATIAL_MS
+            }
+        ),
         label = "cover-fade"
     )
 
