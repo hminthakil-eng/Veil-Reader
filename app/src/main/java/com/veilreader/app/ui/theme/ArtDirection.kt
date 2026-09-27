@@ -36,7 +36,7 @@ fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
     when (realm) {
         VeilRealm.SANCTUARY -> VeilVisualBudget(
             richness = 0.05f,
-            atmosphere = 0.02f,
+            atmosphere = VeilSanctuary.atmosphereIntensity,
             ornament = 0.00f,
             motion = 0.10f
         )
@@ -74,10 +74,16 @@ fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
 fun Modifier.grayfogAtmosphere(
     realm: VeilRealm,
     seed: Int = 0,
-    intensity: Float = 1f
+    intensity: Float = 1f,
+    qualityTier: VeilQualityTier = VeilQualityTier.FULL
 ): Modifier = drawBehind {
     val budget = visualBudgetFor(realm)
-    val atmosphere = (budget.atmosphere * intensity).coerceIn(0f, 1f)
+    val quality = qualityPolicyFor(qualityTier)
+    val atmosphere = (
+        budget.atmosphere *
+            intensity *
+            quality.atmosphereMultiplier
+        ).coerceIn(0f, 1f)
     if (atmosphere <= 0.001f) return@drawBehind
 
     val w = size.width
