@@ -8,6 +8,7 @@ import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryPolicy
+import com.veilreader.app.domain.VeiledDiscoveryRecord
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -81,6 +82,24 @@ class GameRepository(context: Context) {
         else prefs.edit().putString("equippedSigil", sigilId).apply()
         _equippedSigil.value = sigilId
         return true
+    }
+
+    /**
+     * Presentation metadata projected from the canonical earnedDiscoveries set.
+     * Known IDs keep catalog order; unknown future IDs are preserved after them for downgrade safety.
+     */
+    fun discoveryRecords(earnedIds: Set<String>): List<VeiledDiscoveryRecord> {
+        if (earnedIds.isEmpty()) return emptyList()
+        val known = VeiledDiscoveryPolicy.orderedIds.filter { it in earnedIds }
+        val unknown = (earnedIds - VeiledDiscoveryPolicy.orderedIds.toSet()).sorted()
+        return (known + unknown).map { id ->
+            VeiledDiscoveryRecord(
+                id = id,
+                recordedAtEpochMs = prefs
+                    .getLong("discoveryRecordedAt:$id", 0L)
+                    .takeIf { it > 0L }
+            )
+        }
     }
 
     /** Titles are earned from durable milestones and selected in the Inner Sanctum. */
@@ -254,18 +273,28 @@ class GameRepository(context: Context) {
         if (snapshot.rankIndex >= 1) earned.add("first_threshold")
         prefs.edit().putStringSet("earnedSigils", earned).apply()
 
-        // Discoveries are one-way memory. A temporary state regression (for example a broken
-        // streak) must never reseal something the reader has already uncovered.
+        // Discoveries have one canonical ID owner: ReaderProfile. Timestamp metadata lives
+        // beside that same merge-only set; there is no second discovery state machine.
         snapshot = buildProfile()
-        val earnedDiscoveries = prefs
+        val existingDiscoveries = prefs
             .getStringSet("earnedDiscoveries", emptySet())
             .orEmpty()
-            .toMutableSet()
-        earnedDiscoveries += VeiledDiscoveryPolicy.eligibleIds(
+            .toSet()
+        val earnedDiscoveries = VeiledDiscoveryPolicy.mergeEarned(
+            existingIds = existingDiscoveries,
             profile = snapshot,
             highlightCount = prefs.getInt("totalHighlights", 0)
         )
-        prefs.edit().putStringSet("earnedDiscoveries", earnedDiscoveries).apply()
+        if (earnedDiscoveries != existingDiscoveries) {
+            val newlyRecorded = earnedDiscoveries - existingDiscoveries
+            val now = System.currentTimeMillis().coerceAtLeast(1L)
+            val editor = prefs.edit().putStringSet("earnedDiscoveries", earnedDiscoveries)
+            newlyRecorded.forEach { id ->
+                val key = "discoveryRecordedAt:$id"
+                if (!prefs.contains(key)) editor.putLong(key, now)
+            }
+            editor.apply()
+        }
 
         _profile.value = buildProfile()
         _quests.value = buildQuests()
