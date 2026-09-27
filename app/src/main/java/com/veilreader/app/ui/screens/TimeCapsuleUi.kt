@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReadingHistoryEvent
 import com.veilreader.app.domain.ReadingHistoryEventKind
 import com.veilreader.app.domain.ReadingTimeCapsule
+import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
