@@ -53,6 +53,25 @@ class PersianIdentityTest {
     }
 
     @Test
+    fun `app tracking collapses to zero for Persian Arabic scripts`() {
+        assertEquals(
+            1.35f,
+            safeAppTrackingSp(VeilScriptGroup.LATIN, 1.35f),
+            0.0001f
+        )
+        assertEquals(
+            0f,
+            safeAppTrackingSp(VeilScriptGroup.PERSIAN_ARABIC, 1.35f),
+            0.0001f
+        )
+        assertEquals(
+            0f,
+            safeAppTrackingSp(VeilScriptGroup.PERSIAN_ARABIC, 0f),
+            0.0001f
+        )
+    }
+
+    @Test
     fun `Persian typography keeps zero tracking and RTL content fallback`() {
         assertEquals(0.sp, VeilPersianTypography.bodyLarge.letterSpacing)
         assertEquals(TextDirection.ContentOrRtl, VeilPersianTypography.bodyLarge.textDirection)
