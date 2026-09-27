@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -357,10 +358,11 @@ private fun CastleChamberGrandMasthead(
     subtitle: String,
     trailing: String
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 270.dp)
+            .heightIn(min = if (fontScale > 1.35f) 342.dp else 270.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.64f)),
