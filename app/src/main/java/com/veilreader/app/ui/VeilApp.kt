@@ -619,121 +619,139 @@ fun VeilApp(
                 label = if (restoring) "Restoring the archive" else "Opening the archive"
             )
         }
-    } else if (route.activeChamber == "mirror") {
-        LivingMirrorScreen(
-            books = books,
-            highlights = highlights,
-            passageVisits = passageVisits,
-            readingCycles = readingCycles,
-            onOpenPassage = { book, locator ->
-                routeViewModel.closeChamber()
-                requestOpenBook(book, locator)
-            },
-            onClose = routeViewModel::closeChamber
-        )
-    } else if (route.activeChamber == "observatory") {
-        ObservatoryScreen(
-            books = books,
-            highlights = highlights,
-            readingSessions = readingSessions,
-            onOpenBook = { book -> requestOpenBook(book) },
-            onClose = routeViewModel::closeChamber
-        )
-    } else if (route.activeChamber == "treasury") {
-        TreasuryScreen(
-            profile = requireNotNull(profile),
-            equippedSigil = equippedSigil,
-            onEquip = { id ->
-                if (!game.equipSigil(id)) {
-                    errorMessage = "That sigil has not awakened yet."
-                } else {
-                    sensory.perform(view, VeilSensoryEvent.RELIC)
-                }
-            },
-            onClose = routeViewModel::closeChamber
-        )
-    } else if (route.activeChamber == "sanctum") {
-        SanctumScreen(
-            profile = requireNotNull(profile),
-            castleTitle = requireNotNull(castleTitle),
-            availableTitles = game.availableCastleTitles(),
-            discoveries = discoveryRecords,
-            onSelectTitle = { title ->
-                if (!game.selectCastleTitle(title)) {
-                    errorMessage = "That Castle title is still sealed."
-                } else {
-                    sensory.perform(view, VeilSensoryEvent.RELIC)
-                }
-            },
-            onClose = routeViewModel::closeChamber
-        )
     } else {
-        val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
+        VeilRealmMotionHost(
+            activeChamber = route.activeChamber,
+            onCloseChamber = routeViewModel::closeChamber,
+            modifier = Modifier.fillMaxSize(),
+            mainContent = {
+                val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
 
-        // Prefer the branded rail once there is enough persistent horizontal space, but keep the
-        // compact dock on short landscape windows where a rail would compete with reading content.
-        val useRail = shouldUseNavigationRail(windowSizeClass)
-        val contentMaxWidth = contentMaxWidthDp(windowSizeClass).dp
+                // Prefer the branded rail once there is enough persistent horizontal space, but
+                // keep the compact dock on short landscape windows.
+                val useRail = shouldUseNavigationRail(windowSizeClass)
+                val contentMaxWidth = contentMaxWidthDp(windowSizeClass).dp
 
-        VeilWorldBackdrop {
-            if (useRail) {
-                Row(
-                    Modifier
-                        .fillMaxSize()
-                        .systemBarsPadding()
-                ) {
-                    VeilNavigationRail(
-                        selected = route.selectedTab,
-                        onSelect = routeViewModel::selectTab
-                    )
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .padding(horizontal = 12.dp),
-                        contentAlignment = Alignment.TopCenter
-                    ) {
-                        VeilAnimatedTabHost(
-                            selectedTab = route.selectedTab,
-                            modifier = Modifier
-                                .fillMaxHeight()
-                                .fillMaxWidth()
-                                .widthIn(max = contentMaxWidth)
-                        ) { tab ->
-                            mainContent(tab)
+                VeilWorldBackdrop {
+                    if (useRail) {
+                        Row(
+                            Modifier
+                                .fillMaxSize()
+                                .systemBarsPadding()
+                        ) {
+                            VeilNavigationRail(
+                                selected = route.selectedTab,
+                                onSelect = routeViewModel::selectTab
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxHeight()
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.TopCenter
+                            ) {
+                                VeilAnimatedTabHost(
+                                    selectedTab = route.selectedTab,
+                                    modifier = Modifier
+                                        .fillMaxHeight()
+                                        .fillMaxWidth()
+                                        .widthIn(max = contentMaxWidth)
+                                ) { tab ->
+                                    mainContent(tab)
+                                }
+                            }
+                        }
+                    } else {
+                        Column(Modifier.fillMaxSize()) {
+                            VeilAnimatedTabHost(
+                                selectedTab = route.selectedTab,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .fillMaxWidth()
+                                    .statusBarsPadding()
+                            ) { tab ->
+                                mainContent(tab)
+                            }
+                            VeilBottomDock(
+                                selected = route.selectedTab,
+                                onSelect = routeViewModel::selectTab,
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
-            } else {
-                Column(Modifier.fillMaxSize()) {
-                    VeilAnimatedTabHost(
-                        selectedTab = route.selectedTab,
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .statusBarsPadding()
-                    ) { tab ->
-                        mainContent(tab)
-                    }
-                    VeilBottomDock(
-                        selected = route.selectedTab,
-                        onSelect = routeViewModel::selectTab,
-                        modifier = Modifier.fillMaxWidth()
+
+                targetBook?.let { book ->
+                    BookThresholdTransitionOverlay(
+                        book = book,
+                        stage = BookEntryStage.PREPARING,
+                        visible = true,
+                        continuity = activeContinuity,
+                        returnRitual = activeReturnRitual,
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
-            }
-        }
+            },
+            chamberContent = { chamber ->
+                when (chamber) {
+                    "mirror" -> LivingMirrorScreen(
+                        books = books,
+                        highlights = highlights,
+                        passageVisits = passageVisits,
+                        readingCycles = readingCycles,
+                        onOpenPassage = { book, locator ->
+                            routeViewModel.closeChamber()
+                            requestOpenBook(book, locator)
+                        },
+                        onClose = routeViewModel::closeChamber
+                    )
 
-        targetBook?.let { book ->
-            BookThresholdTransitionOverlay(
-                book = book,
-                stage = BookEntryStage.PREPARING,
-                visible = true,
-                continuity = activeContinuity,
-                returnRitual = activeReturnRitual,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+                    "observatory" -> ObservatoryScreen(
+                        books = books,
+                        highlights = highlights,
+                        readingSessions = readingSessions,
+                        onOpenBook = { book -> requestOpenBook(book) },
+                        onClose = routeViewModel::closeChamber
+                    )
+
+                    "treasury" -> TreasuryScreen(
+                        profile = requireNotNull(profile),
+                        equippedSigil = equippedSigil,
+                        onEquip = { id ->
+                            if (!game.equipSigil(id)) {
+                                errorMessage = "That sigil has not awakened yet."
+                            } else {
+                                sensory.perform(view, VeilSensoryEvent.RELIC)
+                            }
+                        },
+                        onClose = routeViewModel::closeChamber
+                    )
+
+                    "sanctum" -> SanctumScreen(
+                        profile = requireNotNull(profile),
+                        castleTitle = requireNotNull(castleTitle),
+                        availableTitles = game.availableCastleTitles(),
+                        discoveries = discoveryRecords,
+                        onSelectTitle = { title ->
+                            if (!game.selectCastleTitle(title)) {
+                                errorMessage = "That Castle title is still sealed."
+                            } else {
+                                sensory.perform(view, VeilSensoryEvent.RELIC)
+                            }
+                        },
+                        onClose = routeViewModel::closeChamber
+                    )
+
+                    else -> {
+                        // Route normalization should prevent this branch; keep the world shell
+                        // recoverable rather than rendering a blank destination.
+                        VeilWorldBackdrop {
+                            VeilLoadingState(label = "Returning to the Great Hall")
+                        }
+                    }
+                }
+            }
+        )
     }
 
     noticeMessage?.let { message ->
