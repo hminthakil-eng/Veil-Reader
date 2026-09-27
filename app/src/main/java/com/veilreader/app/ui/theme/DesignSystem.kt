@@ -55,19 +55,19 @@ object VeilMeasure {
 /** Semantic shape families: archive plates stay sharp; architectural surfaces can breathe. */
 object VeilShapeLanguage {
     // Plate: metadata, archive rows, precise utility surfaces.
-    val Plate = 2.dp
+    val Plate = 0.dp
 
     // Folio: paper/document surfaces. Still intentionally sharper than generic Material cards.
-    val Folio = 3.dp
+    val Folio = 1.dp
 
     // Architectural: structural shell surfaces and navigation.
-    val Architectural = 4.dp
+    val Architectural = 2.dp
 
     // Chamber: dialogs, book-detail/history regions and contained world surfaces.
-    val Chamber = 8.dp
+    val Chamber = 4.dp
 
     // Hero: rare large focal surfaces only.
-    val Hero = 12.dp
+    val Hero = 7.dp
 
     // Seal: radial/ritual controls. A very high radius keeps size, not radius, authoritative.
     val Seal = 999.dp
@@ -128,23 +128,23 @@ val VeilLatinTypography = Typography(
     displayLarge = TextStyle(
         fontFamily = LatinFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 48.sp,
-        lineHeight = 51.sp,
-        letterSpacing = (-0.82).sp
+        fontSize = 54.sp,
+        lineHeight = 57.sp,
+        letterSpacing = (-1.05).sp
     ),
     headlineLarge = TextStyle(
         fontFamily = LatinFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 32.sp,
-        lineHeight = 36.sp,
-        letterSpacing = (-0.48).sp
+        fontSize = 36.sp,
+        lineHeight = 40.sp,
+        letterSpacing = (-0.62).sp
     ),
     headlineMedium = TextStyle(
         fontFamily = LatinFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 25.sp,
-        lineHeight = 30.sp,
-        letterSpacing = (-0.22).sp
+        fontSize = 27.sp,
+        lineHeight = 32.sp,
+        letterSpacing = (-0.28).sp
     ),
     headlineSmall = TextStyle(
         fontFamily = LatinFamilies.Editorial,
