@@ -75,6 +75,7 @@ import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.localizeAppNumerals
+import com.veilreader.app.ui.theme.localizedMetadataValue
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -626,7 +627,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                "Series · $seriesFilter ×",
+                                "Series · ${localizedMetadataValue(seriesFilter, LocalVeilLanguage.current)} ×",
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
