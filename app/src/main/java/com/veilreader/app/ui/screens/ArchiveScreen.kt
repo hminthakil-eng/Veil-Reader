@@ -177,24 +177,23 @@ fun ArchiveScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = 0.16f,
+            alpha = 0.34f,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(330.dp)
+                .height(520.dp)
         )
         Box(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
-                .height(350.dp)
+                .height(560.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.Ink.copy(alpha = 0.18f),
-                            VeilPalette.Ink.copy(alpha = 0.58f),
-                            VeilPalette.Ink
-                        )
+                        0f to VeilPalette.Ink.copy(alpha = 0.06f),
+                        0.36f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.66f),
+                        1f to VeilPalette.Ink
                     )
                 )
         )
@@ -210,23 +209,23 @@ fun ArchiveScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.medium)
+                    .heightIn(min = 238.dp)
+                    .clip(MaterialTheme.shapes.extraSmall)
                     .background(
                         Brush.verticalGradient(
-                            listOf(
-                                VeilPalette.Archive.copy(alpha = 0.82f),
-                                VeilPalette.Ink.copy(alpha = 0.92f)
-                            )
+                            0f to VeilPalette.Ink.copy(alpha = 0.22f),
+                            0.46f to VeilPalette.Archive.copy(alpha = 0.54f),
+                            1f to VeilPalette.Ink.copy(alpha = 0.94f)
                         )
                     )
                     .border(
-                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
-                        MaterialTheme.shapes.medium
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
+                        MaterialTheme.shapes.extraSmall
                     )
             ) {
                 GrayfogOrnamentFrame(
                     modifier = Modifier.matchParentSize(),
-                    strength = 0.44f
+                    strength = 0.84f
                 )
                 Column(
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
@@ -253,13 +252,13 @@ fun ArchiveScreen(
                     }
 
                     Text(
-                        "HIDDEN ARCHIVE",
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+                        "MEMORY CHAMBER · HIDDEN ARCHIVE",
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Fragments worth keeping",
-                        style = MaterialTheme.typography.headlineMedium,
+                        "Fragments Worth Keeping",
+                        style = MaterialTheme.typography.displaySmall,
                         color = VeilPalette.Moon
                     )
                     BrassRule(Modifier.width(76.dp), strong = true)
@@ -291,7 +290,8 @@ fun ArchiveScreen(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .offset(y = (-10).dp)
+                .heightIn(min = 52.dp)
         )
         }
 
