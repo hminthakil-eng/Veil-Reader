@@ -1,6 +1,10 @@
 package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.books.BookPatina
+import com.veilreader.app.ui.books.BookReadingState
+import com.veilreader.app.ui.books.bookArtifactRecordLabel
+import com.veilreader.app.ui.books.bookArtifactState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -11,7 +15,7 @@ class BookArtifactTest {
     private val now = 200L * day
 
     @Test
-    fun `unopened books remain pristine and do not invent history`() {
+    fun `unopened books remain canonical and do not invent history`() {
         val state = bookArtifactState(
             Book(
                 id = "a",
@@ -22,16 +26,16 @@ class BookArtifactTest {
             nowEpochMs = now
         )
 
-        assertEquals(BookPresence.PRISTINE, state.presence)
-        assertEquals(BookArchiveAge.NEW, state.archiveAge)
-        assertFalse(state.completed)
+        assertEquals(BookReadingState.UNOPENED, state.readingState)
+        assertEquals(BookPatina.FRESH, state.patina)
+        assertFalse(state.finished)
         assertFalse(state.recentlyOpened)
-        assertEquals(0f, state.leftStack, 0.0001f)
-        assertEquals(1f, state.rightStack, 0.0001f)
+        assertEquals(0.14f, state.leftPageStack, 0.0001f)
+        assertEquals(1f, state.rightPageStack, 0.0001f)
     }
 
     @Test
-    fun `reading progress physically transfers the page stack`() {
+    fun `reading progress transfers the canonical page stack`() {
         val state = bookArtifactState(
             Book(
                 id = "b",
@@ -44,12 +48,12 @@ class BookArtifactTest {
             nowEpochMs = now
         )
 
-        assertEquals(BookPresence.READING, state.presence)
-        assertEquals(BookArchiveAge.AGED, state.archiveAge)
-        assertEquals(0.64f, state.leftStack, 0.0001f)
-        assertEquals(0.36f, state.rightStack, 0.0001f)
+        assertEquals(BookReadingState.ACTIVE, state.readingState)
+        assertEquals(BookPatina.AGED, state.patina)
+        assertEquals(0.64f, state.progress, 0.0001f)
+        assertTrue(state.leftPageStack > state.rightPageStack)
         assertTrue(state.recentlyOpened)
-        assertTrue(state.patina > 0.20f)
+        assertTrue(bookArtifactRecordLabel(state).contains("AGED"))
     }
 
     @Test
@@ -68,12 +72,12 @@ class BookArtifactTest {
             nowEpochMs = now
         )
 
-        assertEquals(BookPresence.COMPLETED, state.presence)
-        assertEquals(BookArchiveAge.ARCHIVAL, state.archiveAge)
-        assertTrue(state.completed)
+        assertEquals(BookReadingState.FINISHED, state.readingState)
+        assertEquals(BookPatina.ARCHIVAL, state.patina)
+        assertTrue(state.finished)
         assertTrue(state.favorite)
-        assertEquals(1f, state.leftStack, 0.0001f)
-        assertEquals(0f, state.rightStack, 0.0001f)
+        assertEquals(1f, state.leftPageStack, 0.0001f)
+        assertEquals(0.14f, state.rightPageStack, 0.0001f)
         assertTrue(bookArtifactRecordLabel(state).contains("DEEP ARCHIVE"))
     }
 
@@ -90,7 +94,7 @@ class BookArtifactTest {
             nowEpochMs = now
         )
 
-        assertEquals(BookArchiveAge.NEW, state.archiveAge)
+        assertEquals(BookPatina.FRESH, state.patina)
         assertFalse(state.recentlyOpened)
     }
 }
