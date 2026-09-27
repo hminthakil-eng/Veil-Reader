@@ -28,11 +28,13 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.domain.deriveReadingSignature
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
+import com.veilreader.app.ui.theme.currentVeilZoneId
 import java.text.DateFormat
 import java.util.Date
 
@@ -61,6 +63,24 @@ fun ProfileScreen(
             cycles = readingCycles
         )
     }
+    val temporalPhase = currentVeilTemporalPhase()
+    val readingSignatureZone = currentVeilZoneId()
+    val readingSignatureNow = remember(temporalPhase, readingSignatureZone) {
+        System.currentTimeMillis()
+    }
+    val readingSignature = remember(
+        readingSessions,
+        readingCycles,
+        readingSignatureZone,
+        readingSignatureNow
+    ) {
+        deriveReadingSignature(
+            sessions = readingSessions,
+            cycles = readingCycles,
+            zoneId = readingSignatureZone,
+            nowEpochMs = readingSignatureNow
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -68,7 +88,7 @@ fun ProfileScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.ARCHIVE,
                 seed = p.level * 17 + dossierHistory.recordedSessionCount,
-                temporalPhase = currentVeilTemporalPhase()
+                temporalPhase = temporalPhase
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -106,6 +126,10 @@ fun ProfileScreen(
         )
 
         DossierHistoryLedger(dossierHistory)
+
+        ReadingSignaturePanel(
+            signature = readingSignature
+        )
 
         ProfileSectionHeading(
             eyebrow = "Rhythm",

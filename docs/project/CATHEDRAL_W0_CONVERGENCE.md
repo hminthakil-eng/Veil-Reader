@@ -39,7 +39,7 @@ have passed device QA. Compare each slice to the pinned baseline before porting.
 | #292 | Castle mutation | W0d preserves the canonical spatial Keep/Ritual ownership and integrates factual history mutation, reread patina, return awakening and silence cooling. Android/device verification remains pending. |
 | #293 | Archive material | W0e preserves canonical BookArtifact ownership and newer notebook chambers while integrating memory strata, resurfaced relic material and full-screen sealed dossiers. Android/device verification remains pending. |
 | #294 | Discoveries | W0f keeps ReaderProfile/GameRepository as the sole discovery owner, adds non-fabricated recorded-at metadata, central presentation and Sanctum projection without a parallel ledger. Android/device verification remains pending. |
-| #295 | Reading signature | Review the new factual model and reconcile ProfileScreen with the current profile and discovery implementation. |
+| #295 | Reading signature | W0g adds a derived-only factual reading signature, shares the W0b timezone context, filters corrupt future timestamps, and adapts its dossier panel for compact/large-text layouts. Android/device verification remains pending. |
 | #296 | Temporal atmosphere | Source reconciliation completed in W0b below: retain canonical palette/schedule, share a foreground clock, and reject the competing overlay/model. Android lifecycle verification remains pending. |
 | #297 | Persian identity | Canonical already bundles shell fonts. Compare font roles, Arabic/Persian composition and provenance before replacing or adding font families. |
 | #298 | Literary art | Port bounded realm motifs into current screens; preserve phone composition, Reader zero-ornament and canonical artifacts. |
@@ -218,7 +218,7 @@ No Android build, Compose resolution, device rendering, TalkBack, rotation or
 performance run is claimed by this step. Those remain W0 acceptance gates.
 
 PR #292 remains open as source provenance and should not be merged wholesale.
-Remaining source reconciliations: #295 and #297–#298.
+Remaining source reconciliations: #297–#298.
 
 
 ## W0e — Archive material reconciliation
@@ -260,7 +260,7 @@ unverified rather than failed by this source. Full small-screen, large-text,
 TalkBack, back-navigation and dossier scroll checks remain W0 gates.
 
 PR #293 remains source provenance and should not be merged wholesale.
-Remaining source reconciliations: #295 and #297–#298.
+Remaining source reconciliations: #297–#298.
 
 
 ## W0f — persistent discovery reconciliation
@@ -303,4 +303,44 @@ Five domain regressions cover permanence/rules/gating/unknown IDs/legacy proof,
 and presentation order has a dedicated test. Android CI is still blocked before
 runner assignment; restart/restore, device rendering and accessibility remain gates.
 
-PR #294 remains provenance only. Remaining source reconciliations: #295 and #297–#298.
+PR #294 remains provenance only. Remaining source reconciliations: #297–#298.
+
+
+## W0g — factual Reading Signature reconciliation
+
+Inputs: W0f head `065e8bf6611c1b3651594688ef3d8946bb1ce21a` and PR #295
+`bdd2a2ee3cdf33c06a623fbfbc58ae43d8f41604`.
+
+### Decision
+
+Adopt the signature only as a derived dossier view over durable sessions/cycles.
+It does not persist a profile, classify personality, infer motivation/taste, or
+affect Reader, XP, rank, quests, discoveries, unlocks or recommendations.
+
+### Implementation and hardening
+
+- Derive median positive active-session duration, timed active days, distinct
+  session-touched volumes, daypart counts, factual event rates and reread share.
+- Require at least three timed sessions and a unique maximum before showing a
+  leading daypart; rate metrics remain hidden below 15 recorded active minutes.
+- Legacy untimed sessions still contribute to duration/rates but not dayparts.
+- Reject future/corrupt session starts from daypart/date evidence and future
+  completion timestamps from cycle evidence.
+- Extend the W0b foreground temporal context to expose both phase and ZoneId.
+  Profile consumes that shared ZoneId, so ACTION_TIMEZONE_CHANGED can refresh the
+  signature even when the visual phase itself stays unchanged.
+- The UI states the evidence window and timezone limitation explicitly and never
+  presents event ratios as traits.
+- Compact phones and large-text layouts stack the clock/facts and metric cards
+  instead of forcing three narrow columns; the daypart graphic has one coherent
+  accessibility description.
+
+### Verification and remaining gates
+
+PR #295's seven pure-policy tests are preserved and one Alpha regression covers
+future timestamp contamination. W0g also keeps the existing shared clock owner
+rather than adding a Profile timer. GitHub-hosted Android CI is still failing
+before runner assignment, so Compose resolution, device rendering, TalkBack,
+timezone broadcast behavior and large-font screenshots remain W0 gates.
+
+PR #295 remains source provenance. Remaining source reconciliations: #297–#298.
