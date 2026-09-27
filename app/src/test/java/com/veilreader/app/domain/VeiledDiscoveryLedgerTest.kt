@@ -103,7 +103,7 @@ class VeiledDiscoveryLedgerTest {
     }
 
     @Test
-    fun `ledger rejects unknown ids while preserving known earned discoveries`() {
+    fun `ledger preserves unknown future ids without treating them as current catalog entries`() {
         val merged = VeiledDiscoveryCatalog.mergeEarned(
             existingIds = setOf(
                 VeiledDiscoveryCatalog.LONG_WATCH,
@@ -113,6 +113,8 @@ class VeiledDiscoveryLedgerTest {
             highlightCount = 0
         )
 
-        assertEquals(setOf(VeiledDiscoveryCatalog.LONG_WATCH), merged)
+        assertTrue(VeiledDiscoveryCatalog.LONG_WATCH in merged)
+        assertTrue("unknown_future_fragment" in merged)
+        assertFalse("unknown_future_fragment" in VeiledDiscoveryCatalog.orderedIds)
     }
 }
