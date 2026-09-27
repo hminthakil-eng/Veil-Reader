@@ -9,6 +9,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
@@ -104,6 +105,13 @@ private val VeilDisplayFamily = FontFamily(
     veilVariableFont(R.font.veil_display_serif, FontWeight.Bold)
 )
 
+private val VazirmatnUiFamily = FontFamily(
+    Font(R.font.vazirmatn_ui_regular, weight = FontWeight.Normal),
+    Font(R.font.vazirmatn_ui_medium, weight = FontWeight.Medium),
+    Font(R.font.vazirmatn_ui_semibold, weight = FontWeight.SemiBold),
+    Font(R.font.vazirmatn_ui_bold, weight = FontWeight.Bold)
+)
+
 private object LatinFamilies {
     val Editorial = VeilDisplayFamily
     val Reading = VeilUiSansFamily
@@ -111,9 +119,9 @@ private object LatinFamilies {
 }
 
 private object RtlFamilies {
-    val Editorial = VeilDisplayFamily
-    val Reading = VeilUiSansFamily
-    val Utility = VeilUiSansFamily
+    val Editorial = VazirmatnUiFamily
+    val Reading = VazirmatnUiFamily
+    val Utility = VazirmatnUiFamily
 }
 
 val VeilLatinTypography = Typography(
@@ -213,91 +221,104 @@ val VeilPersianTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 44.sp,
         lineHeight = 61.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     headlineLarge = TextStyle(
         fontFamily = RtlFamilies.Editorial,
         fontWeight = FontWeight.Bold,
         fontSize = 31.sp,
         lineHeight = 44.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     headlineMedium = TextStyle(
         fontFamily = RtlFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
         fontSize = 25.sp,
         lineHeight = 36.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     headlineSmall = TextStyle(
         fontFamily = RtlFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 30.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     titleLarge = TextStyle(
         fontFamily = RtlFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
         fontSize = 22.sp,
         lineHeight = 32.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     titleMedium = TextStyle(
         fontFamily = RtlFamilies.Editorial,
         fontWeight = FontWeight.SemiBold,
         fontSize = 17.sp,
         lineHeight = 26.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     titleSmall = TextStyle(
         fontFamily = RtlFamilies.Editorial,
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 22.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     bodyLarge = TextStyle(
         fontFamily = RtlFamilies.Reading,
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
         lineHeight = 27.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     bodyMedium = TextStyle(
         fontFamily = RtlFamilies.Reading,
         fontWeight = FontWeight.Normal,
         fontSize = 14.sp,
         lineHeight = 24.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     bodySmall = TextStyle(
         fontFamily = RtlFamilies.Reading,
         fontWeight = FontWeight.Normal,
         fontSize = 12.sp,
         lineHeight = 21.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     labelLarge = TextStyle(
         fontFamily = RtlFamilies.Utility,
         fontWeight = FontWeight.SemiBold,
         fontSize = 12.sp,
         lineHeight = 20.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     labelMedium = TextStyle(
         fontFamily = RtlFamilies.Utility,
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
         lineHeight = 18.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     ),
     labelSmall = TextStyle(
         fontFamily = RtlFamilies.Utility,
         fontWeight = FontWeight.SemiBold,
         fontSize = 9.5.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.sp
+        letterSpacing = 0.sp,
+        textDirection = TextDirection.ContentOrRtl
     )
 )
 
