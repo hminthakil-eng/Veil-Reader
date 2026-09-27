@@ -48,4 +48,13 @@ class TemporalAtmosphereTest {
         assertEquals(temporalAtmosphereFor(23), temporalAtmosphereFor(-1))
         assertEquals(temporalAtmosphereFor(5), temporalAtmosphereFor(29))
     }
+
+    @Test
+    fun `Sanctuary has a hard zero temporal budget`() {
+        assertEquals(0f, temporalRealmWeightFor(VeilRealm.SANCTUARY), 0.0001f)
+        assertTrue(temporalRealmWeightFor(VeilRealm.THRESHOLD) > 0f)
+        assertTrue(temporalRealmWeightFor(VeilRealm.ARCHIVE) > 0f)
+        assertTrue(temporalRealmWeightFor(VeilRealm.CASTLE) > 0f)
+    }
+
 }
