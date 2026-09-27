@@ -497,11 +497,11 @@ private fun ContinueReadingHero(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    "CONTINUE READING",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+                VeilEyebrowText(
+                    text = "CONTINUE READING",
                     color = secondaryInk,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    trackingSp = 1.55f
                 )
                 Text(
                     "${(progress * 100).toInt()}%",
@@ -726,10 +726,9 @@ private fun RecentBooksShelf(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    "RECENT TOMES",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
-                    color = VeilPalette.Brass
+                VeilEyebrowText(
+                    text = "RECENT TOMES",
+                    trackingSp = 1.5f
                 )
                 Text(
                     "Return to another world",
@@ -929,13 +928,13 @@ private fun ThresholdWhisperCard(
                 modifier = Modifier.padding(VeilSpacing.md),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-            Text(
-                when (whisper.kind) {
+            VeilEyebrowText(
+                text = when (whisper.kind) {
                     ThresholdWhisperKind.PRESERVED_PASSAGE -> "WHISPER · PRESERVED PASSAGE"
                     ThresholdWhisperKind.READING_PROMPT -> "WHISPER · OPTIONAL"
                 },
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                color = if (preserved) artifactMuted else VeilPalette.Brass
+                color = if (preserved) artifactMuted else VeilPalette.Brass,
+                trackingSp = 1.25f
             )
             Text(
                 whisper.title,
@@ -1037,11 +1036,10 @@ private fun ReadingPulse(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                "READING RECORD",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                color = VeilPalette.Brass,
-                modifier = Modifier.weight(1f)
+            VeilEyebrowText(
+                text = "READING RECORD",
+                modifier = Modifier.weight(1f),
+                trackingSp = 1.45f
             )
             TextButton(
                 onClick = onOpenCastle,
