@@ -158,7 +158,7 @@ fun ReaderNotebook(
                     val selected = tab == item
                     Surface(
                         modifier = Modifier
-                            .heightIn(min = 44.dp)
+                            .heightIn(min = 48.dp)
                             .selectable(
                                 selected = selected,
                                 role = Role.Tab
