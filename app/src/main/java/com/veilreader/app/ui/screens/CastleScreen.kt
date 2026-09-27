@@ -52,6 +52,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -60,6 +61,7 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.localizeAppNumerals
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -176,6 +178,7 @@ private fun CastleKeep(
     minHeightDp: Float,
     onAdvanceRank: () -> Unit
 ) {
+    val language = LocalVeilLanguage.current
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
     val reducedMotion = LocalVeilReducedMotion.current
@@ -245,7 +248,10 @@ private fun CastleKeep(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "KEEP TIER ${profile.rankIndex + 1}",
+                        localizeAppNumerals(
+                            "KEEP TIER ${profile.rankIndex + 1}",
+                            language
+                        ),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.30.sp),
                         color = VeilPalette.Brass
                     )
@@ -255,14 +261,20 @@ private fun CastleKeep(
                         color = VeilPalette.Moon
                     )
                     Text(
-                        "${profile.path.name} · ${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
+                        localizeAppNumerals(
+                            "${profile.path.name} · ${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
+                            language
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
                 }
 
                 Text(
-                    "${profile.rankIndex + 1}/${profile.path.ranks.size}",
+                    localizeAppNumerals(
+                        "${profile.rankIndex + 1}/${profile.path.ranks.size}",
+                        language
+                    ),
                     style = MaterialTheme.typography.labelLarge,
                     color = VeilPalette.Brass
                 )
@@ -279,7 +291,10 @@ private fun CastleKeep(
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
                 Text(
-                    "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                    localizeAppNumerals(
+                        "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                        language
+                    ),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass
                 )
