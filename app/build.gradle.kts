@@ -63,6 +63,7 @@ dependencies {
     implementation("androidx.fragment:fragment-ktx:1.8.9")
     implementation("androidx.compose.ui:ui:1.10.5")
     implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
+    implementation("androidx.compose.animation:animation:1.10.5")
     implementation("androidx.compose.foundation:foundation:1.10.5")
     implementation("androidx.compose.material3:material3:1.4.0")
     // Stable adaptive window/posture APIs for phone, tablet, desktop-window and foldable layouts.
