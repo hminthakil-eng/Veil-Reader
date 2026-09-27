@@ -36,6 +36,8 @@ import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.deriveReadingSignature
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.hallSharedBoundsKey
+import com.veilreader.app.ui.veilTabSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilScriptGroup
@@ -301,6 +303,7 @@ private fun ProfileGrandMasthead(
     val fontScale = LocalDensity.current.fontScale
     Box(
         modifier = Modifier
+            .veilTabSharedBounds(hallSharedBoundsKey("profile"))
             .fillMaxWidth()
             .heightIn(min = if (fontScale > 1.35f) 330.dp else 260.dp)
             .clip(MaterialTheme.shapes.extraSmall)
