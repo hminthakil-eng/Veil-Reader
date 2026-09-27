@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -1477,7 +1478,7 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 46.dp),
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 48.dp),
         contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
         colors = ButtonDefaults.textButtonColors(
             contentColor = VeilPalette.Moon,
@@ -1523,8 +1524,30 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
         val h = size.height
         when (action) {
             ReaderAction.BACK -> {
-                drawLine(tint, Offset(w * .72f, h * .20f), Offset(w * .34f, h * .50f), stroke.width, StrokeCap.Round)
-                drawLine(tint, Offset(w * .34f, h * .50f), Offset(w * .72f, h * .80f), stroke.width, StrokeCap.Round)
+                val tipX = if (layoutDirection == LayoutDirection.Rtl) {
+                    w * .66f
+                } else {
+                    w * .34f
+                }
+                val tailX = if (layoutDirection == LayoutDirection.Rtl) {
+                    w * .28f
+                } else {
+                    w * .72f
+                }
+                drawLine(
+                    tint,
+                    Offset(tailX, h * .20f),
+                    Offset(tipX, h * .50f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(tipX, h * .50f),
+                    Offset(tailX, h * .80f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
             }
             ReaderAction.NOTEBOOK -> {
                 drawRoundRect(
