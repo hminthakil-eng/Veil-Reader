@@ -351,7 +351,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
             label = "Archive span",
             value = buildString {
                 append(formatDossierDate(history.firstRecordedAtEpochMs))
-                append(" → ")
+                append(" — ")
                 append(formatDossierDate(history.latestRecordedAtEpochMs))
             }
         )
