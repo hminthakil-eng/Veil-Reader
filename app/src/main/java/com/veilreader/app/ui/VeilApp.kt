@@ -44,6 +44,9 @@ import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveLibraryMemoryState
+import com.veilreader.app.domain.deriveReadingWorldSnapshot
+import com.veilreader.app.domain.deriveVeilWorldState
+import com.veilreader.app.domain.toManifestation
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
@@ -198,6 +201,30 @@ fun VeilApp(
     val castleTitle = castleTitleState?.value
     val discoveryRecords = remember(profile?.earnedDiscoveries) {
         profile?.let { game.discoveryRecords(it.earnedDiscoveries) }.orEmpty()
+    }
+
+    // One read-only world contract joins durable Reader history with GameRepository progression.
+    // Keep this outside Reader composition: Readium remains isolated while a publication is open.
+    val readingWorld = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions,
+        readingCycles
+    ) {
+        deriveReadingWorldSnapshot(
+            books = books,
+            highlights = highlights,
+            bookmarks = bookmarks,
+            sessions = readingSessions,
+            readingCycles = readingCycles
+        )
+    }
+    val veilWorldState = remember(readingWorld, profile) {
+        profile?.let { deriveVeilWorldState(readingWorld, it) }
+    }
+    val worldManifestation = remember(veilWorldState) {
+        veilWorldState?.toManifestation()
     }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
