@@ -22,6 +22,16 @@ class VeilRealmMotionPolicyTest {
     }
 
     @Test
+    fun `Hall routes keep tab and realm transition ownership separate`() {
+        listOf("library", "ritual", "profile", "reading").forEach { route ->
+            assertTrue(hallRouteUsesTabTransition(route))
+        }
+        listOf("mirror", "observatory", "treasury", "sanctum").forEach { route ->
+            assertTrue(!hallRouteUsesTabTransition(route))
+        }
+    }
+
+    @Test
     fun `full realm motion uses constitution budgets`() {
         val policy = veilRealmMotionPolicy(reducedMotion = false)
 
