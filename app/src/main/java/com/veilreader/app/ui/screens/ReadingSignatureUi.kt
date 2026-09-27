@@ -137,7 +137,7 @@ internal fun ReadingSignaturePanel(
                 SignatureMetric(
                     label = "NOTE EVENTS / MARK EVENT",
                     value = signature.notesPerHighlightEvent
-                        ?.let(::formatSignaturePercent)
+                        ?.let(::formatSignatureRatio)
                         ?: "—",
                     modifier = Modifier.weight(1f)
                 )
@@ -167,13 +167,13 @@ internal fun ReadingSignaturePanel(
             }
 
             Text(
-                "Rates appear only after at least 15 minutes of recorded active time. Notes/mark uses recorded session note and highlight events, not a personality score.",
+                "Rates appear only after at least 15 minutes of recorded active time. Note-event/mark-event is an event ratio, not the share of current highlights with notes and not a personality score.",
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.66f)
             )
 
             Text(
-                "Session-start dayparts are mapped with the current device timezone (${signature.timezoneId}). Older sessions did not store their original timezone, so Veil does not claim otherwise.",
+                "Daypart uses ${signature.timedSessionCount}/${signature.recordedSessionCount} sessions with recorded start times, mapped through the current device timezone (${signature.timezoneId}). Historical original timezones were not stored.",
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.52f)
             )
