@@ -2885,91 +2885,122 @@ private fun LibraryEmptyState(
     onReset: () -> Unit
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 230.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.38f),
+        color = Color.Transparent,
         border = BorderStroke(
             1.dp,
-            VeilPalette.Brass.copy(alpha = 0.34f)
+            VeilPalette.Brass.copy(alpha = 0.54f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.lg),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-        ) {
-            Box(
-                Modifier
-                    .width(64.dp)
-                    .height(48.dp),
-                contentAlignment = Alignment.CenterStart
-            ) {
-                ShelfIcon(
-                    Modifier.size(32.dp),
-                    VeilPalette.Brass.copy(alpha = 0.88f)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Archive.copy(alpha = 0.94f),
+                            VeilPalette.Ink.copy(alpha = 0.98f)
+                        )
+                    )
                 )
+                .padding(VeilSpacing.lg)
+        ) {
+            VeilRealmEmblem(
+                realm = VeilRealm.ARCHIVE,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .size(156.dp),
+                tint = VeilPalette.Brass.copy(alpha = 0.14f)
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 600.dp),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
                 Box(
                     Modifier
-                        .align(Alignment.BottomStart)
-                        .width(64.dp)
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    VeilPalette.Brass.copy(alpha = 0.72f),
-                                    Color.Transparent
+                        .width(72.dp)
+                        .height(52.dp),
+                    contentAlignment = Alignment.CenterStart
+                ) {
+                    ShelfIcon(
+                        Modifier.size(36.dp),
+                        VeilPalette.Brass.copy(alpha = 0.92f)
+                    )
+                    Box(
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .width(72.dp)
+                            .height(1.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        VeilPalette.Brass.copy(alpha = 0.82f),
+                                        Color.Transparent
+                                    )
                                 )
                             )
-                        )
-                )
-            }
-
-            Text(
-                if (hasBooks) "NO MATCHING VOLUMES" else "YOUR ARCHIVE IS EMPTY",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-                color = VeilPalette.Brass
-            )
-
-            Text(
-                if (hasBooks) "Nothing in this part of the archive" else "The first volume begins the world",
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Text(
-                if (hasBooks) {
-                    "No book matches the current search, shelf, or collection. Clear the filters and the archive will return."
-                } else {
-                    "Import an EPUB or PDF. The first volume establishes your Archive; progress, highlights, and notes remain local on this device."
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (hasBooks) {
-                OutlinedButton(
-                    onClick = onReset,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        VeilPalette.Brass.copy(alpha = 0.44f)
                     )
-                ) {
-                    Text("Clear active filters")
                 }
-            } else {
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
-                    )
-                ) {
-                    Text(if (isImporting) "Preparing publication…" else "Import your first volume")
+
+                VeilEyebrowText(
+                    text = if (hasBooks) "NO MATCHING VOLUMES" else "YOUR ARCHIVE IS EMPTY",
+                    trackingSp = 1.35f
+                )
+
+                Text(
+                    if (hasBooks) {
+                        "Nothing in this part of the archive"
+                    } else {
+                        "The first volume begins the world"
+                    },
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VeilPalette.Moon
+                )
+
+                Text(
+                    if (hasBooks) {
+                        "No book matches the current search, shelf, or collection. Clear the filters and the archive will return."
+                    } else {
+                        "Import an EPUB or PDF. The first volume establishes your Archive; progress, highlights, and notes remain local on this device."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist.copy(alpha = 0.84f),
+                    modifier = Modifier.widthIn(max = 500.dp)
+                )
+
+                if (hasBooks) {
+                    OutlinedButton(
+                        onClick = onReset,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        shape = MaterialTheme.shapes.extraSmall,
+                        border = BorderStroke(
+                            1.dp,
+                            VeilPalette.Brass.copy(alpha = 0.52f)
+                        )
+                    ) {
+                        Text("Clear active filters")
+                    }
+                } else {
+                    Button(
+                        onClick = onImport,
+                        enabled = !isImporting,
+                        modifier = Modifier.heightIn(min = 50.dp),
+                        shape = MaterialTheme.shapes.extraSmall,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VeilPalette.Brass,
+                            contentColor = Color(0xFF17120A)
+                        )
+                    ) {
+                        Text(if (isImporting) "Preparing publication…" else "Import your first volume")
+                    }
                 }
             }
         }
