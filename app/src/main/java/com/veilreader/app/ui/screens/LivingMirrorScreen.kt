@@ -1,7 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import android.content.Context
-import android.view.accessibility.AccessibilityManager
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -20,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -40,6 +37,7 @@ import com.veilreader.app.domain.deriveLivingMirrorNotes
 import com.veilreader.app.ui.BrassRule
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotionClass
@@ -94,7 +92,7 @@ fun LivingMirrorScreen(
     }
     val booksById = remember(books) { books.associateBy { it.id } }
 
-    val touchExplorationEnabled = rememberTouchExplorationEnabled()
+    val touchExplorationEnabled = rememberVeilTouchExplorationEnabled()
 
     var mode by rememberSaveable { mutableStateOf(LivingMirrorMode.MIRROR) }
     var query by rememberSaveable { mutableStateOf("") }
@@ -687,36 +685,6 @@ private fun LivingMirrorNoteDialog(
             TextButton(onClick = onDismiss) { Text("Close") }
         }
     )
-}
-
-@Composable
-private fun rememberTouchExplorationEnabled(): Boolean {
-    val context = LocalContext.current
-    val manager = remember(context) {
-        context.getSystemService(Context.ACCESSIBILITY_SERVICE) as? AccessibilityManager
-    }
-    var enabled by remember(manager) {
-        mutableStateOf(manager?.isTouchExplorationEnabled == true)
-    }
-
-    DisposableEffect(manager) {
-        val accessibilityManager = manager
-        if (accessibilityManager == null) {
-            onDispose { }
-        } else {
-            val listener =
-                AccessibilityManager.TouchExplorationStateChangeListener { value ->
-                    enabled = value
-                }
-            accessibilityManager.addTouchExplorationStateChangeListener(listener)
-            enabled = accessibilityManager.isTouchExplorationEnabled
-            onDispose {
-                accessibilityManager.removeTouchExplorationStateChangeListener(listener)
-            }
-        }
-    }
-
-    return enabled
 }
 
 private fun formatMirrorDate(epochMs: Long): String =
