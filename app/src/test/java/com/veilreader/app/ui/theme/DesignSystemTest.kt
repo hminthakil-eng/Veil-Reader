@@ -27,6 +27,23 @@ class DesignSystemTest {
     }
 
     @Test
+    fun `Cathedral display mastheads stay on bundled editorial families`() {
+        assertEquals(
+            VeilLatinTypography.displayLarge.fontFamily,
+            VeilLatinTypography.displaySmall.fontFamily
+        )
+        assertEquals(
+            VeilPersianTypography.displayLarge.fontFamily,
+            VeilPersianTypography.displaySmall.fontFamily
+        )
+        assertEquals(0f, VeilPersianTypography.displaySmall.letterSpacing.value, 0f)
+        assertTrue(
+            VeilPersianTypography.displaySmall.lineHeight >
+                VeilLatinTypography.displaySmall.lineHeight
+        )
+    }
+
+    @Test
     fun `Persian body metrics preserve more vertical breathing room`() {
         assertTrue(
             VeilPersianTypography.bodyLarge.lineHeight >
