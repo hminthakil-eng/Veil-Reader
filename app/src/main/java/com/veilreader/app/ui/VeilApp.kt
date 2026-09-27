@@ -495,13 +495,6 @@ fun VeilApp(
                         "treasury", "sanctum" -> routeViewModel.openChamber(room)
                     }
                 },
-                onAdvanceRank = {
-                    if (!game.advanceRank()) {
-                        errorMessage = "Complete the current advancement ritual first."
-                    } else {
-                        sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
-                    }
-                },
                 books = books,
                 highlights = highlights,
                 bookmarks = bookmarks,
