@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -184,7 +183,7 @@ fun ReadingTimeCapsuleSheet(
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
-                        "SEALED · LOCAL · IMMUTABLE RECORD",
+                        "SEALED · LOCAL · PRESERVED RECORD",
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
                         color = VeilPalette.Mist.copy(alpha = 0.66f)
                     )
