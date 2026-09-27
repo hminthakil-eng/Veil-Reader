@@ -117,4 +117,19 @@ class VeiledDiscoveryLedgerTest {
         assertTrue("unknown_future_fragment" in merged)
         assertFalse("unknown_future_fragment" in VeiledDiscoveryCatalog.orderedIds)
     }
+
+    @Test
+    fun `legacy seven day sigil can grandfather patient flame after streak expired`() {
+        val qualified = VeiledDiscoveryCatalog.qualifyingIds(
+            profile = profile(
+                streakDays = 0,
+                minutesRead = 600,
+                earnedSigils = setOf("seven_days")
+            ),
+            highlightCount = 0
+        )
+
+        assertTrue(VeiledDiscoveryCatalog.PATIENT_FLAME in qualified)
+    }
+
 }
