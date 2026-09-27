@@ -68,35 +68,35 @@ fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
             motion = 0.10f
         )
         VeilRealm.THRESHOLD -> VeilVisualBudget(
-            richness = 0.48f,
-            atmosphere = 0.56f,
-            ornament = 0.34f,
-            motion = 0.34f
+            richness = 0.68f,
+            atmosphere = 0.72f,
+            ornament = 0.56f,
+            motion = 0.38f
         )
         VeilRealm.ARCHIVE -> VeilVisualBudget(
-            richness = 0.58f,
-            atmosphere = 0.46f,
-            ornament = 0.48f,
-            motion = 0.28f
+            richness = 0.74f,
+            atmosphere = 0.64f,
+            ornament = 0.68f,
+            motion = 0.30f
         )
         VeilRealm.CASTLE,
         VeilRealm.WORLD -> VeilVisualBudget(
-            richness = 0.76f,
-            atmosphere = 0.72f,
-            ornament = 0.66f,
-            motion = 0.52f
+            richness = 0.88f,
+            atmosphere = 0.82f,
+            ornament = 0.78f,
+            motion = 0.54f
         )
         VeilRealm.RITUAL -> VeilVisualBudget(
-            richness = 0.86f,
-            atmosphere = 0.78f,
-            ornament = 0.82f,
-            motion = 0.74f
+            richness = 0.94f,
+            atmosphere = 0.88f,
+            ornament = 0.90f,
+            motion = 0.76f
         )
         VeilRealm.SANCTUM -> VeilVisualBudget(
-            richness = 0.82f,
-            atmosphere = 0.80f,
-            ornament = 0.74f,
-            motion = 0.36f
+            richness = 0.92f,
+            atmosphere = 0.88f,
+            ornament = 0.84f,
+            motion = 0.40f
         )
     }
 
