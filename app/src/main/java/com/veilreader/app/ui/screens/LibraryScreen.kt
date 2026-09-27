@@ -71,6 +71,7 @@ import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.domain.deriveLibraryAtmosphereState
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.deriveLibraryWings
+import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactRecordLabel
 import com.veilreader.app.ui.books.bookArtifactState
@@ -584,14 +585,13 @@ fun LibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        localizeAppNumerals(
+                    VeilEyebrowText(
+                        text = localizeAppNumerals(
                             "${filtered.size.toString().padStart(2, '0')} VOLUMES",
                             LocalVeilLanguage.current
                         ),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
-                        color = VeilPalette.Brass,
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp),
+                        trackingSp = 1.15f
                     )
 
                     if (collections.isNotEmpty()) {
