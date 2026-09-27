@@ -77,10 +77,27 @@ object VeilSpacing {
 }
 
 object VeilMotion {
+    // Motion grammar. Call sites should describe intent, not invent durations.
+    const val MICRO_FAST_MS = 90
     const val TAP_MS = 110
+    const val FUNCTIONAL_ENTER_MS = 140
+    const val FUNCTIONAL_EXIT_MS = 110
     const val FUNCTIONAL_MS = 160
     const val SPATIAL_MS = 320
     const val RITUAL_MS = 900
+
+    // Sanctuary-specific behavior. Spatial motion collapses to a short fade when reduced motion
+    // is requested; the idle timeout itself remains unchanged because it is interaction policy.
+    const val REDUCED_MOTION_FADE_MS = 70
+    const val READER_SNACKBAR_SHIFT_MS = 160
+    const val READER_AUTO_HIDE_MS = 3_600L
+
+    // Physical paper timings are named centrally even though curl geometry remains physics-owned.
+    const val PAPER_TAP_TURN_MS = 440
+    const val PAPER_BOUNDARY_IN_MS = 82
+    const val PAPER_BOUNDARY_OUT_MS = 108
+    const val FRAME_SETTLE_MS = 18L
+    const val PAGE_REVEAL_MS = 28L
 
     // Compatibility aliases while existing call sites migrate to semantic motion roles.
     const val QUICK_MS = TAP_MS
