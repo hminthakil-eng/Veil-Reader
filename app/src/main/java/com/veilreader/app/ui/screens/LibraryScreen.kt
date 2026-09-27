@@ -77,6 +77,7 @@ import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -356,7 +357,8 @@ fun LibraryScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.ARCHIVE,
                 seed = books.size + filtered.size,
-                intensity = 0.88f + atmosphereState.archiveDensity * 0.12f
+                intensity = 0.88f + atmosphereState.archiveDensity * 0.12f,
+                temporalPhase = currentVeilTemporalPhase()
             )
             .libraryArchiveAtmosphere(
                 state = atmosphereState,
@@ -1006,7 +1008,8 @@ private fun BookDetailSheet(
                     .grayfogAtmosphere(
                         realm = VeilRealm.ARCHIVE,
                         seed = book.id.hashCode(),
-                        intensity = 1.0f
+                        intensity = 1.0f,
+                        temporalPhase = currentVeilTemporalPhase()
                     )
             ) {
                 Column(
