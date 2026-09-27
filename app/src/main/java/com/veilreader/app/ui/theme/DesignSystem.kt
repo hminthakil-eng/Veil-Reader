@@ -2,11 +2,16 @@ package com.veilreader.app.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 
 /**
  * Grayfog Design System v3.
@@ -68,23 +73,47 @@ object VeilShapeLanguage {
 }
 
 /**
- * Latin shell typography. Generic families are intentional temporary stand-ins until the
- * approved bundled editorial font pack is committed; roles and metrics are already locked.
+ * Deterministic bundled typography.
+ *
+ * These variable fonts were previously validated for Veil Reader in the P7 typography work.
+ * They contain Latin plus Persian/Arabic coverage and keep app-shell metrics independent from
+ * Samsung/OEM custom system fonts. Publication typography inside Reader remains Readium-owned.
  */
+@OptIn(ExperimentalTextApi::class)
+private fun veilVariableFont(resId: Int, weight: FontWeight): Font = Font(
+    resId = resId,
+    weight = weight,
+    style = FontStyle.Normal,
+    variationSettings = FontVariation.Settings(
+        weight = weight,
+        style = FontStyle.Normal
+    )
+)
+
+private val VeilUiSansFamily = FontFamily(
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.Normal),
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.Medium),
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.SemiBold),
+    veilVariableFont(R.font.veil_ui_sans, FontWeight.Bold)
+)
+
+private val VeilDisplayFamily = FontFamily(
+    veilVariableFont(R.font.veil_display_serif, FontWeight.Normal),
+    veilVariableFont(R.font.veil_display_serif, FontWeight.Medium),
+    veilVariableFont(R.font.veil_display_serif, FontWeight.SemiBold),
+    veilVariableFont(R.font.veil_display_serif, FontWeight.Bold)
+)
+
 private object LatinFamilies {
-    val Editorial = FontFamily.Serif
-    val Reading = FontFamily.Serif
-    val Utility = FontFamily.Monospace
+    val Editorial = VeilDisplayFamily
+    val Reading = VeilUiSansFamily
+    val Utility = VeilUiSansFamily
 }
 
-/**
- * Persian/Arabic shell typography. Sans-serif is safer than forcing the Latin editorial serif
- * onto Arabic shaping. Tracking is kept at zero and vertical metrics are more generous.
- */
 private object RtlFamilies {
-    val Editorial = FontFamily.SansSerif
-    val Reading = FontFamily.SansSerif
-    val Utility = FontFamily.SansSerif
+    val Editorial = VeilDisplayFamily
+    val Reading = VeilUiSansFamily
+    val Utility = VeilUiSansFamily
 }
 
 val VeilLatinTypography = Typography(
