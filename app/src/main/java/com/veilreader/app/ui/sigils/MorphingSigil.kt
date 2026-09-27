@@ -5,6 +5,7 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -14,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.asComposePath
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.dp
@@ -121,7 +123,7 @@ fun MorphingPathSigil(
             StaticSigil(
                 spec = if (finished) endSpec else startSpec,
                 tint = tint,
-                modifier = Modifier
+                modifier = Modifier.fillMaxSize()
             )
         }
         return
@@ -159,12 +161,12 @@ fun MorphingPathSigil(
 
         translate(left = size.width / 2f, top = size.height / 2f) {
             rotate(rotation) {
-                scale(radius, radius) {
+                scale(radius, radius, pivot = Offset.Zero) {
                     drawPath(
                         path = composePath,
                         color = tint.copy(alpha = 0.94f),
                         style = Stroke(
-                            width = (1.25f / radius.coerceAtLeast(1f)).dp.toPx(),
+                            width = 1.25.dp.toPx() / radius.coerceAtLeast(1f),
                             cap = StrokeCap.Round
                         )
                     )
@@ -203,12 +205,12 @@ private fun StaticSigil(
 
         translate(left = size.width / 2f, top = size.height / 2f) {
             rotate(spec.rotationQuarterTurns * 90f) {
-                scale(radius, radius) {
+                scale(radius, radius, pivot = Offset.Zero) {
                     drawPath(
                         path = path,
                         color = tint.copy(alpha = 0.94f),
                         style = Stroke(
-                            width = (1.25f / radius.coerceAtLeast(1f)).dp.toPx(),
+                            width = 1.25.dp.toPx() / radius.coerceAtLeast(1f),
                             cap = StrokeCap.Round
                         )
                     )
