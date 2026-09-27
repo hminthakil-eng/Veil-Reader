@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -27,11 +28,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.MemoryAtlas
@@ -40,6 +44,7 @@ import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.books.bookArtifactState
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -93,16 +98,41 @@ fun ObservatoryScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
                 seed = atlas.nodes.size * 17 + atlas.edges.size * 7,
-                intensity = 0.92f,
+                intensity = 0.98f,
                 temporalPhase = currentVeilTemporalPhase()
             )
             .narrativeArchitectureField(
                 realm = VeilRealm.CASTLE,
                 seed = atlas.nodes.size * 23 + atlas.edges.size * 11,
-                intensity = 0.82f
+                intensity = 0.88f
             ),
         contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = 0.30f,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(720.dp)
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(780.dp)
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.04f),
+                        0.38f to Color.Transparent,
+                        0.72f to VeilPalette.Ink.copy(alpha = 0.62f),
+                        1f to VeilPalette.Ink
+                    )
+                )
+        )
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -124,10 +154,9 @@ fun ObservatoryScreen(
             Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
         }
 
-        ScreenHeader(
-            eyebrow = "OBSERVATORY · MEMORY ATLAS",
-            title = "Constellations of what you read",
-            subtitle = "A private offline map built only from book metadata, durable reading sessions, and passages you chose to preserve."
+        ObservatoryGrandMasthead(
+            volumeCount = atlas.nodes.size,
+            linkCount = atlas.edges.size
         )
 
         ObservatoryAtlasPanel(
@@ -182,6 +211,82 @@ fun ObservatoryScreen(
             color = VeilPalette.Mist.copy(alpha = 0.64f)
         )
     }
+    }
+}
+
+@Composable
+private fun ObservatoryGrandMasthead(
+    volumeCount: Int,
+    linkCount: Int
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 270.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
+                MaterialTheme.shapes.extraSmall
+            )
+    ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            modifier = Modifier.matchParentSize()
+        )
+        Box(
+            Modifier
+                .matchParentSize()
+                .background(
+                    Brush.verticalGradient(
+                        0f to VeilPalette.Ink.copy(alpha = 0.08f),
+                        0.40f to Color.Transparent,
+                        1f to VeilPalette.Ink.copy(alpha = 0.97f)
+                    )
+                )
+        )
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.90f
+        )
+        Text(
+            "OBSERVATORY · MEMORY ATLAS",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+            color = VeilPalette.Brass
+        )
+        Text(
+            "$volumeCount VOLUMES · $linkCount LINKS",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(VeilSpacing.md),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
+            color = VeilPalette.Moon.copy(alpha = 0.74f)
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                "The Sky of Memory",
+                style = MaterialTheme.typography.displaySmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                "Constellations built only from durable reading history and passages you chose to preserve.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.82f),
+                modifier = Modifier.widthIn(max = 600.dp)
+            )
+            BrassRule(Modifier.width(158.dp), strong = true)
+        }
     }
 }
 
