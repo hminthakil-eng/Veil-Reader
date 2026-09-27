@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.theme
 
+import com.veilreader.app.domain.ReaderNavigationMode
+
 /**
  * Executable product rules for Grayfog.
  *
@@ -172,3 +174,20 @@ val VeilSanctuary = VeilSanctuaryContract(
     maximumPageStackDp = 8f,
     chromeAutoHideMillis = VeilMotion.READER_AUTO_HIDE_MS
 )
+
+data class VeilSanctuaryPageMaterial(
+    val showPhysicalPageStack: Boolean,
+    val showEdgeFalloff: Boolean,
+    val showMicroFibres: Boolean
+)
+
+/**
+ * Paged modes are physical sheets; continuous scroll is a paper field.
+ * This prevents the scroll surface from inheriting book-block edges that imply a page turn.
+ */
+fun sanctuaryPageMaterialFor(mode: ReaderNavigationMode): VeilSanctuaryPageMaterial =
+    VeilSanctuaryPageMaterial(
+        showPhysicalPageStack = mode != ReaderNavigationMode.SCROLL,
+        showEdgeFalloff = true,
+        showMicroFibres = true
+    )
