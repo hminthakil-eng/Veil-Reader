@@ -41,8 +41,8 @@ have passed device QA. Compare each slice to the pinned baseline before porting.
 | #294 | Discoveries | W0f keeps ReaderProfile/GameRepository as the sole discovery owner, adds non-fabricated recorded-at metadata, central presentation and Sanctum projection without a parallel ledger. Android/device verification remains pending. |
 | #295 | Reading signature | W0g adds a derived-only factual reading signature, shares the W0b timezone context, filters corrupt future timestamps, and adapts its dossier panel for compact/large-text layouts. Android/device verification remains pending. |
 | #296 | Temporal atmosphere | Source reconciliation completed in W0b below: retain canonical palette/schedule, share a foreground clock, and reject the competing overlay/model. Android lifecycle verification remains pending. |
-| #297 | Persian identity | Canonical already bundles shell fonts. Compare font roles, Arabic/Persian composition and provenance before replacing or adding font families. |
-| #298 | Literary art | Port bounded realm motifs into current screens; preserve phone composition, Reader zero-ornament and canonical artifacts. |
+| #297 | Persian identity | W0h preserves the canonical bundled Latin typography, adds unmodified Vazirmatn UI for Persian/Arabic, script-aware metrics/ornament, bidi-safe mixed metadata and app-owned numeral/date localization. Device verification remains pending. |
+| #298 | Literary art | W0i integrates bounded narrative architecture, Return Passage framing, preserved-memory paper artifacts and Archive catalog slips while keeping Sanctuary ornament hard-zero. Device verification remains pending. |
 | #300 | Governance | Documents carried into this review slice. |
 
 ## APK observation
@@ -218,7 +218,7 @@ No Android build, Compose resolution, device rendering, TalkBack, rotation or
 performance run is claimed by this step. Those remain W0 acceptance gates.
 
 PR #292 remains open as source provenance and should not be merged wholesale.
-Remaining source reconciliations: #297–#298.
+Source reconciliation completed through W0i; W0 acceptance gates remain pending.
 
 
 ## W0e — Archive material reconciliation
@@ -260,7 +260,7 @@ unverified rather than failed by this source. Full small-screen, large-text,
 TalkBack, back-navigation and dossier scroll checks remain W0 gates.
 
 PR #293 remains source provenance and should not be merged wholesale.
-Remaining source reconciliations: #297–#298.
+Source reconciliation completed through W0i; W0 acceptance gates remain pending.
 
 
 ## W0f — persistent discovery reconciliation
@@ -303,7 +303,7 @@ Five domain regressions cover permanence/rules/gating/unknown IDs/legacy proof,
 and presentation order has a dedicated test. Android CI is still blocked before
 runner assignment; restart/restore, device rendering and accessibility remain gates.
 
-PR #294 remains provenance only. Remaining source reconciliations: #297–#298.
+PR #294 remains provenance only. Source reconciliation completed through W0i; W0 acceptance gates remain pending.
 
 
 ## W0g — factual Reading Signature reconciliation
@@ -343,4 +343,106 @@ rather than adding a Profile timer. GitHub-hosted Android CI is still failing
 before runner assignment, so Compose resolution, device rendering, TalkBack,
 timezone broadcast behavior and large-font screenshots remain W0 gates.
 
-PR #295 remains source provenance. Remaining source reconciliations: #297–#298.
+PR #295 remains source provenance. Source reconciliation completed through W0i; W0 acceptance gates remain pending.
+
+
+## W0h — Persian / Arabic identity reconciliation
+
+Inputs: W0g `a0b781cacc0b7280ee210302e3e883f055df18e2` and PR #297
+`9b80963752c0d811cee592aa50ab3291feeed273`.
+
+### Decision
+
+Do not replace the canonical Latin typography with #297's older generic
+Serif/Monospace fallback. Keep the existing bundled Veil Latin display/UI families
+and add a dedicated offline Persian/Arabic family and script policy beside them.
+
+### Implementation and provenance
+
+- Bundle Vazirmatn UI v33.003 under SIL OFL 1.1, with the exact unmodified source
+  blobs recorded by #297:
+  - Regular `0b68e819d5353d7f2b1ea457ccdeffbec8fa7f3d`
+  - Medium `caa2056cf6b7506caba2c93ca23f6b18dad27c72`
+  - SemiBold `9eff472fef7e44718bb35dff7db9ceaf5c5b7671`
+  - Bold `b76f47e958fdef5cf109107a77da325e87399b0f`
+- Preserve `VeilDisplayFamily` and `VeilUiSansFamily` for Latin; only
+  `RtlFamilies` switch to Vazirmatn.
+- All Persian/Arabic Material roles use zero tracking, larger line metrics and
+  `TextDirection.ContentOrRtl`.
+- Add one app-language CompositionLocal without disturbing the W0b temporal
+  provider or the canonical default text style.
+- Localize only Veil-owned metrics/counters. Publication/user/source text such as
+  titles, authors, notes, highlights, identifiers, URLs and seal codes is never
+  numerically rewritten.
+- Apply FSI/PDI isolation to mixed-script metadata values and avoid uppercasing or
+  Latin letter spacing on Arabic-script labels.
+- Persian/Urdu/Pashto/Sorani app metrics use Eastern Arabic digits; Arabic uses
+  Arabic-Indic digits. Decimal/grouping/percent punctuation is localized.
+- Shared headers gain script-specific rule measure/terminal marks. Castle, Library,
+  Profile, Archive and Reading Signature app-owned counters follow the same policy.
+- Dossier dates use the app language locale instead of the JVM default locale.
+- Full Persian translation/resource extraction remains a separate localization
+  pass; W0h establishes identity/shaping policy rather than claiming translation.
+
+### Verification and remaining gates
+
+Eight policy tests cover locale families, digit sets, punctuation, bidi isolation,
+ornament metrics, zero tracking/RTL direction and Arabic-script detection.
+The exact font blob SHAs and OFL provenance are retained in-tree. Source-level
+checks confirm W0b's temporal provider and the canonical Latin font owners remain.
+Android font rendering, glyph fallback, TalkBack/Bidi behavior and large-text
+screenshots remain device gates.
+
+## W0i — literary architecture reconciliation
+
+Inputs: W0h runtime head `3dc88a17be7af86873247a550dc11b7e9151dc3e`
+and PR #298 `43ac3c1493c952d0e044029d67b201469847acbf`.
+
+### Decision
+
+Adopt the source study as an original Veil spatial/material grammar, not as a
+fiction skin. No protected prose, named lore, character art, maps, source-specific
+symbols or scene compositions are copied.
+
+### Implementation
+
+- Add one deterministic `VeilNarrativeGrammar` for passage depth, local lamplight,
+  structural piers, archive rails, measured ticks, restrained fracture and distant
+  ring marks.
+- Realm budgets remain authoritative. `SANCTUARY` is hard-zero for every narrative
+  channel and ReaderScreen never calls `narrativeArchitectureField`.
+- Archive, Library and Castle receive bounded architecture behind content; the
+  Observatory receives measured structural depth without changing atlas behavior.
+- Threshold receives a deliberately weaker global field because its active book
+  now owns the primary spatial metaphor through `HeroPassagePortal`.
+- The Continue Reading cover is framed as a return passage while preserving the
+  same dominant open-book action and existing responsive stacked/wide composition.
+- User-preserved passages receive a paper artifact field; optional system prompts
+  remain shell material, so provenance is visible without modifying source text.
+- Archive section tabs become catalog slips with a selected index spine and registry
+  mark. Their counters also respect W0h numeral policy and Arabic labels avoid
+  uppercase/tracking.
+- No Reader engine, navigation, persistence, progression, XP, rank, discovery,
+  memory model or source publication content is changed.
+
+### Verification and remaining gates
+
+Five grammar tests lock Sanctuary zero ornament, Archive rail ownership, Castle
+verticality, Threshold restraint and bounded motif counts. A final structural
+scan of the high-risk Kotlin files reports balanced braces/parentheses/brackets.
+Owner checks confirm no second discovery StateFlow, guarded rank advancement,
+one canonical ReaderProfile discovery set, Sanctuary hard-zero grammar and no
+Reader narrative-field call.
+
+GitHub-hosted W0 jobs on final source head still fail before execution: Storage,
+Performance and Android CI each report `runner_id=0`, empty runner name and
+`steps=[]`. This is not Android compile/test evidence. Full build, device,
+TalkBack, RTL, font-rendering, small/large-screen screenshots, lifecycle/timezone
+and interaction verification remain required before W0 acceptance.
+
+## W0 source-convergence status
+
+**Source ownership convergence is complete for #291–#298 and #300.**
+The Alpha branch is not yet accepted or production-ready: the remaining gate is
+runtime/build verification on an actually assigned Android runner/device. Do not
+start World Kernel promotion or merge #301 solely from source review.
