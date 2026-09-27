@@ -35,6 +35,8 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
+import com.veilreader.app.ui.hallSharedBoundsKey
+import com.veilreader.app.ui.veilTabSharedBounds
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
@@ -262,6 +264,7 @@ private fun ThresholdHeader(
 
     Box(
         modifier = Modifier
+            .veilTabSharedBounds(hallSharedBoundsKey("reading"))
             .fillMaxWidth()
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.62f)),
