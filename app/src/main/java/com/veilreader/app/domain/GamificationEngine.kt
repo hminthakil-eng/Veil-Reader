@@ -39,7 +39,13 @@ object GamificationEngine {
     /**
      * Advancement is deliberately not XP-only. A reader must satisfy a path-specific ritual.
      */
-    fun canAdvanceRank(profile: ReaderProfile): Boolean =
-        profile.ritualProgress >= profile.ritualTarget &&
+    fun canAdvanceRank(
+        profile: ReaderProfile,
+        expectedPathId: String = profile.path.id,
+        expectedRankIndex: Int = profile.rankIndex
+    ): Boolean =
+        profile.path.id == expectedPathId &&
+            profile.rankIndex == expectedRankIndex &&
+            profile.ritualProgress >= profile.ritualTarget &&
             profile.rankIndex < profile.path.ranks.lastIndex
 }

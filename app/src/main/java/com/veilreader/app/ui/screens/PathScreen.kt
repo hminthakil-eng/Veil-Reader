@@ -35,6 +35,10 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import kotlinx.coroutines.delay
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -93,7 +97,7 @@ internal fun pathGeometryFor(pathId: String): PathGeometryKind =
 @Composable
 fun PathScreen(
     profile: ReaderProfile,
-    onAdvanceRank: () -> Unit,
+    onAdvanceRank: (String, Int) -> Boolean,
     onChoosePath: (String) -> Unit
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
@@ -101,6 +105,8 @@ fun PathScreen(
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
     var showCeremony by rememberSaveable { mutableStateOf(false) }
+    var ceremonyPathId by rememberSaveable { mutableStateOf(profile.path.id) }
+    var ceremonyRankIndex by rememberSaveable { mutableStateOf(profile.rankIndex) }
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { reveal = true }
 
@@ -166,7 +172,11 @@ fun PathScreen(
             profile = profile,
             canAdvance = canAdvance,
             nextRank = nextRank,
-            onPrepareCeremony = { showCeremony = true }
+            onPrepareCeremony = {
+                ceremonyPathId = profile.path.id
+                ceremonyRankIndex = profile.rankIndex
+                showCeremony = true
+            }
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
@@ -202,15 +212,16 @@ fun PathScreen(
     }
     }
 
-    if (showCeremony && nextRank != null) {
+    val ceremonyPath = SampleData.paths.firstOrNull { it.id == ceremonyPathId }
+    val ceremonyTarget = ceremonyPath?.ranks?.getOrNull(ceremonyRankIndex + 1)
+    if (showCeremony && ceremonyPath != null && ceremonyTarget != null) {
         AdvancementCeremonyDialog(
-            profile = profile,
-            nextRank = nextRank,
+            profile = profile.copy(path = ceremonyPath, rankIndex = ceremonyRankIndex),
+            nextRank = ceremonyTarget,
+            currentPathId = profile.path.id,
+            currentRankIndex = profile.rankIndex,
             onDismiss = { showCeremony = false },
-            onConfirm = {
-                showCeremony = false
-                onAdvanceRank()
-            }
+            onConfirm = { onAdvanceRank(ceremonyPathId, ceremonyRankIndex) }
         )
     }
 }
@@ -900,22 +911,38 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
 private fun AdvancementCeremonyDialog(
     profile: ReaderProfile,
     nextRank: String,
+    currentPathId: String,
+    currentRankIndex: Int,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Boolean
 ) {
     val presentation = pathPresentations[profile.path.id]
         ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
     val reducedMotion = LocalVeilReducedMotion.current
     var revealed by remember { mutableStateOf(false) }
+    var stage by rememberSaveable(profile.path.id, profile.rankIndex) {
+        mutableStateOf(AdvancementCeremonyStage.INVOCATION)
+    }
+    val observedResult = advancementStageAfterSeal(
+        profile.path.id, profile.rankIndex, currentPathId, currentRankIndex
+    )
+    // A restored reveal cannot override the authoritative profile after process recreation.
+    val visibleStage = if (stage == AdvancementCeremonyStage.REVEALED) observedResult else stage
+    LaunchedEffect(stage, currentPathId, currentRankIndex, reducedMotion) {
+        if (stage == AdvancementCeremonyStage.SEALING) {
+            delay(if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS.toLong() else 620L)
+            stage = observedResult
+        }
+    }
 
     LaunchedEffect(profile.path.id, profile.rankIndex, nextRank) {
         revealed = true
     }
 
     Dialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { if (canDismissAdvancementCeremony(visibleStage)) onDismiss() },
         properties = DialogProperties(
-            dismissOnBackPress = true,
+            dismissOnBackPress = canDismissAdvancementCeremony(visibleStage),
             dismissOnClickOutside = false,
             usePlatformDefaultWidth = false,
             decorFitsSystemWindows = false
@@ -928,7 +955,8 @@ private fun AdvancementCeremonyDialog(
                 .grayfogAtmosphere(
                     realm = VeilRealm.RITUAL,
                     seed = profile.path.id.hashCode() xor nextRank.hashCode(),
-                    intensity = 1.0f
+                    intensity = 1.0f,
+                    temporalPhase = currentVeilTemporalPhase()
                 )
                 .windowInsetsPadding(WindowInsets.safeDrawing)
                 .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
@@ -956,6 +984,7 @@ private fun AdvancementCeremonyDialog(
                     modifier = Modifier
                         .widthIn(max = 560.dp)
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .clip(MaterialTheme.shapes.medium)
                         .background(
                             Brush.verticalGradient(
@@ -975,7 +1004,13 @@ private fun AdvancementCeremonyDialog(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     Text(
-                        "RITUAL OF ADVANCEMENT",
+                        when (visibleStage) {
+                            AdvancementCeremonyStage.INVOCATION -> "RITUAL OF ADVANCEMENT"
+                            AdvancementCeremonyStage.SEALING -> "THE SEAL IS TURNING"
+                            AdvancementCeremonyStage.REVEALED -> "RANK AWAKENED"
+                            AdvancementCeremonyStage.REJECTED -> "ADVANCEMENT NOT CONFIRMED"
+                        },
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
                         color = VeilPalette.Brass
                     )
@@ -1031,28 +1066,46 @@ private fun AdvancementCeremonyDialog(
                         modifier = Modifier.widthIn(max = 430.dp)
                     )
 
-                    Button(
-                        onClick = onConfirm,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 54.dp),
-                        shape = MaterialTheme.shapes.extraSmall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VeilPalette.Brass,
-                            contentColor = Color(0xFF17120A)
-                        )
-                    ) {
-                        Text("Advance to $nextRank")
-                    }
-
-                    TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = VeilPalette.Moon.copy(alpha = 0.72f)
-                        )
-                    ) {
-                        Text("Not yet")
+                    when (visibleStage) {
+                        AdvancementCeremonyStage.INVOCATION -> {
+                            Button(
+                                onClick = {
+                                    if (canConfirmAdvancementCeremony(stage)) {
+                                        // Guard synchronously before invoking the progression owner.
+                                        stage = AdvancementCeremonyStage.SEALING
+                                        if (!onConfirm()) stage = AdvancementCeremonyStage.REJECTED
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = VeilPalette.Brass,
+                                    contentColor = Color(0xFF17120A)
+                                )
+                            ) { Text("Advance to $nextRank") }
+                            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
+                                Text("Not yet")
+                            }
+                        }
+                        AdvancementCeremonyStage.SEALING -> {
+                            Text("Sealing advancement…", color = VeilPalette.Mist)
+                        }
+                        AdvancementCeremonyStage.REVEALED -> {
+                            Text("Your Path now bears this rank.", color = VeilPalette.Brass)
+                            Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) {
+                                Text("Continue")
+                            }
+                        }
+                        AdvancementCeremonyStage.REJECTED -> {
+                            Text(
+                                "The current Path or ritual no longer matches this request. Close and review your progress.",
+                                color = VeilPalette.Moon,
+                                textAlign = TextAlign.Center
+                            )
+                            TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
+                                Text("Close")
+                            }
+                        }
                     }
                 }
             }

@@ -500,13 +500,7 @@ fun VeilApp(
                         "treasury", "sanctum" -> routeViewModel.openChamber(room)
                     }
                 },
-                onAdvanceRank = {
-                    if (!game.advanceRank()) {
-                        errorMessage = "Complete the current advancement ritual first."
-                    } else {
-                        sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
-                    }
-                },
+                onAdvanceRank = { routeViewModel.selectTab(VeilTab.PATH) },
                 books = books,
                 highlights = highlights,
                 bookmarks = bookmarks,
@@ -515,12 +509,10 @@ fun VeilApp(
 
             VeilTab.PATH -> PathScreen(
                 profile = requireNotNull(profile),
-                onAdvanceRank = {
-                    if (!game.advanceRank()) {
-                        errorMessage = "Complete the current advancement ritual first."
-                    } else {
-                        sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
-                    }
+                onAdvanceRank = { expectedPathId, expectedRankIndex ->
+                    val accepted = game.advanceRank(expectedPathId, expectedRankIndex)
+                    if (accepted) sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
+                    accepted
                 },
                 onChoosePath = { pathId ->
                     if (!game.choosePath(pathId)) {
@@ -837,4 +829,3 @@ private fun sigilDisplayName(id: String): String = when (id) {
     "first_threshold" -> "First Threshold"
     else -> "Unknown Sigil"
 }
-

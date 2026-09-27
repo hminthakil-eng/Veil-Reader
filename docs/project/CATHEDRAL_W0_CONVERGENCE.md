@@ -35,7 +35,7 @@ have passed device QA. Compare each slice to the pinned baseline before porting.
 
 | PR | Area | Required reconciliation |
 |---|---|---|
-| #291 | Ritual | Canonical PathScreen already has a full-screen ceremony. Reconcile phase, target snapshot and reduced-motion behavior under one ceremony owner. |
+| #291 | Ritual | W0c reconciles phases, frozen target, repository result and reduced motion into the canonical chamber. Castle routes to Ritual. Full Android/device verification remains pending. |
 | #292 | Castle mutation | Preserve canonical spatial Keep and integrate factual mutation inputs without overwriting newer composition. |
 | #293 | Archive material | Preserve the canonical BookArtifact model and newer notebook chambers while reconciling material strata and sealed dossiers. |
 | #294 | Discoveries | Canonical already contains VeiledDiscoveryPolicy, profile data and GameRepository persistence. Compare schema, eligibility and restore semantics before choosing one owner; do not install a second ledger. |
@@ -130,3 +130,51 @@ https://developer.android.com/develop/background-work/background-tasks/broadcast
 
 PR #296 stays open as source provenance; it should not be merged wholesale into
 the canonical model. Remaining W0 decisions (#291–#295, #297–#298) are unchanged.
+
+## W0c — advancement ceremony reconciliation
+
+Inputs: Alpha `10e6c8862748e1f23cf53e560f5db919397e50ae` and PR #291
+`ec24786d8a5193a76201f1ae03ebd0e3c9f89c5f`. Canonical remained at
+`7c98d6f4435762dbd2e904252109f54985d1cf4f` during this review.
+
+Keep the current full-screen chamber, safe insets, typography, Path art and
+reduced-motion entry. Selectively reuse the invocation/sealing/reveal contract
+instead of installing the competing dialog from #291.
+
+### Defects and fixes
+
+- Castle's advancement button previously mutated rank directly. It now opens
+  Path/Ritual, which owns the explicit confirmation surface.
+- Freeze path ID and source rank at opening with saveable primitives. Final-rank
+  advancement no longer removes the dialog because the live next rank becomes null.
+- Pass that expected path/rank to GameRepository. The existing pure progression
+  policy now rejects stale/replayed requests even if another rank is eligible.
+- Change the Path callback to return the repository's Boolean result. Rejection
+  has its own dismissible state; it cannot trigger a success reveal or sensory cue.
+- Close the confirmation guard synchronously before dispatch. No effect calls
+  advanceRank, including effects restarted by rotation or process recreation.
+- After the 620 ms sealing interval (70 ms with reduced motion), check the current
+  profile before revealing. A restored reveal is also checked against that profile.
+- Leave success visible until Continue/back; no timed auto-dismiss. Use a polite
+  live region for stage labels and scrolling for compact/large-text layouts.
+
+The progression requirements, XP, rank names and persistence owner stay unchanged.
+The repository still uses its existing SharedPreferences.apply write path: acceptance
+and observing the new profile are not a claim of synchronously durable disk storage.
+No new persistence architecture or process-death guarantee is introduced here.
+
+### Verification
+
+The actual Models, GamificationEngine, ceremony policy and regression test source
+compiled with Kotlin 2.3.21. **8 JUnit tests passed**, covering replay after rank
+change, changed path, incomplete ritual, last rank, submission/dismissal stages,
+missing profile confirmation, restored-profile disagreement and confirmed targets.
+
+The Kotlin compiler PSI parser accepted the modified PathScreen, VeilApp and
+GameRepository. Syntax parsing does not resolve Compose APIs or replace Android
+compilation. Full Android build, TalkBack, small-screen rendering, rapid taps,
+rotation during sealing and process-recreation behavior remain device gates.
+
+PR #291 remains open for provenance, not wholesale merge. Remaining source
+reconciliations are #292–#295 and #297–#298; #292's direct-advancement ownership
+concern is already addressed here, while its Castle mutations are still pending.

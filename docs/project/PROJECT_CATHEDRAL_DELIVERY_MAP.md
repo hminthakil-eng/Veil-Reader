@@ -60,3 +60,7 @@ W0 is not complete until the remaining feature ownership conflicts are reconcile
 W0b reconciles temporal atmosphere under one lifecycle-bound clock and the existing
 canonical palette. Its eight JVM policy tests pass; Android lifecycle verification
 and the remaining feature reconciliations are still pending.
+
+W0c reconciles Ritual into the canonical chamber with a frozen target, guarded
+repository request, result-aware reveal and Castle-to-Ritual routing. Eight new
+JVM regression tests pass; Android build and interaction verification remain pending.

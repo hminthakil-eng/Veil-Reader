@@ -168,9 +168,13 @@ class GameRepository(context: Context) {
         publish()
     }
 
-    fun advanceRank(): Boolean {
+    fun advanceRank(expectedPathId: String? = null, expectedRankIndex: Int? = null): Boolean {
         val current = buildProfile()
-        if (!GamificationEngine.canAdvanceRank(current)) return false
+        if (!GamificationEngine.canAdvanceRank(
+                current,
+                expectedPathId ?: current.path.id,
+                expectedRankIndex ?: current.rankIndex
+            )) return false
         prefs.edit()
             .putInt("rankIndex", current.rankIndex + 1)
             .putInt("ritualProgress", 0)
