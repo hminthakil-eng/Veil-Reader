@@ -512,13 +512,12 @@ private fun SettingsMasthead(
             Text(VeilBackLabel("Back"))
         }
 
-        Text(
-            "SANCTUARY CONTROLS",
+        VeilEyebrowText(
+            text = "SANCTUARY CONTROLS",
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-            color = VeilPalette.Brass
+            trackingSp = 1.25f
         )
 
         Column(
