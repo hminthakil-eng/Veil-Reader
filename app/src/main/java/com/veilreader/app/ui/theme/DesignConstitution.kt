@@ -108,6 +108,64 @@ fun archiveLayoutPolicyFor(
         )
     }
 
+data class VeilThresholdLayoutPolicy(
+    val contentMaxWidthDp: Float,
+    val horizontalPaddingDp: Float,
+    val headerHeightDp: Float,
+    val heroCoverWidthDp: Float,
+    val heroCoverHeightDp: Float,
+    val recentItemWidthDp: Float,
+    val recentCoverWidthDp: Float,
+    val recentCoverHeightDp: Float
+)
+
+fun thresholdLayoutPolicyFor(
+    adaptiveClass: VeilAdaptiveClass
+): VeilThresholdLayoutPolicy =
+    when (adaptiveClass) {
+        VeilAdaptiveClass.COMPACT -> VeilThresholdLayoutPolicy(
+            contentMaxWidthDp = 860f,
+            horizontalPaddingDp = 16f,
+            headerHeightDp = 252f,
+            heroCoverWidthDp = 96f,
+            heroCoverHeightDp = 142f,
+            recentItemWidthDp = 118f,
+            recentCoverWidthDp = 108f,
+            recentCoverHeightDp = 158f
+        )
+        VeilAdaptiveClass.WIDE -> VeilThresholdLayoutPolicy(
+            contentMaxWidthDp = 920f,
+            horizontalPaddingDp = 20f,
+            headerHeightDp = 292f,
+            heroCoverWidthDp = 118f,
+            heroCoverHeightDp = 174f,
+            recentItemWidthDp = 132f,
+            recentCoverWidthDp = 120f,
+            recentCoverHeightDp = 176f
+        )
+        VeilAdaptiveClass.LARGE -> VeilThresholdLayoutPolicy(
+            contentMaxWidthDp = 980f,
+            horizontalPaddingDp = 28f,
+            headerHeightDp = 316f,
+            heroCoverWidthDp = 132f,
+            heroCoverHeightDp = 194f,
+            recentItemWidthDp = 146f,
+            recentCoverWidthDp = 132f,
+            recentCoverHeightDp = 194f
+        )
+    }
+
+/**
+ * Threshold wakes with the library but saturates early; more books must not turn Home into Castle.
+ */
+fun thresholdAtmosphereIntensityFor(bookCount: Int): Float {
+    val count = bookCount.coerceAtLeast(0)
+    if (count == 0) return 0.72f
+    if (count == 1) return 0.84f
+    return (0.84f + (count.coerceAtMost(12) - 1) * 0.0145f)
+        .coerceAtMost(1f)
+}
+
 enum class VeilMotionClass {
     MICRO,
     FUNCTIONAL,
