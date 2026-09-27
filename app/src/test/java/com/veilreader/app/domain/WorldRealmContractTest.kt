@@ -19,29 +19,40 @@ class WorldRealmContractTest {
     }
 
     @Test
-    fun `world realms are read only projections of durable history`() {
+    fun `world realms get read only World Kernel projections`() {
         canonicalWorldRealmContracts
             .filter { it.realm != WorldRealmId.SANCTUARY }
             .forEach { contract ->
-                assertEquals(WorldHistoryAccess.READ_ONLY_PROJECTION, contract.historyAccess)
+                assertEquals(WorldEventAccess.READ_ONLY_PROJECTION, contract.eventAccess)
                 assertTrue(contract.acceptsDecorativeWorldState)
-                assertFalse(contract.mayMutateReadingHistory)
-                assertFalse(contract.mayMutateProgression)
+                assertFalse(contract.worldKernelMayMutateReadingHistory)
+                assertFalse(contract.worldKernelMayMutateProgression)
                 assertFalse(contract.mayAppendWorldEventsDirectly)
                 assertFalse(contract.mayPenalizeInactivity)
             }
     }
 
     @Test
-    fun `Reader sanctuary is isolated from decorative world state`() {
+    fun `Reader sanctuary is isolated from decorative World Kernel state`() {
         val sanctuary = worldRealmContractFor(WorldRealmId.SANCTUARY)
 
-        assertEquals(WorldHistoryAccess.NONE, sanctuary.historyAccess)
+        assertEquals(WorldEventAccess.NONE, sanctuary.eventAccess)
         assertFalse(sanctuary.acceptsDecorativeWorldState)
-        assertFalse(sanctuary.mayMutateReadingHistory)
-        assertFalse(sanctuary.mayMutateProgression)
+        assertFalse(sanctuary.worldKernelMayMutateReadingHistory)
+        assertFalse(sanctuary.worldKernelMayMutateProgression)
         assertFalse(sanctuary.mayAppendWorldEventsDirectly)
         assertFalse(sanctuary.mayPenalizeInactivity)
+    }
+
+    @Test
+    fun `World Kernel cannot own Reader or progression mutation in any realm`() {
+        assertTrue(
+            canonicalWorldRealmContracts.none {
+                it.worldKernelMayMutateReadingHistory ||
+                    it.worldKernelMayMutateProgression ||
+                    it.mayAppendWorldEventsDirectly
+            }
+        )
     }
 
     @Test
