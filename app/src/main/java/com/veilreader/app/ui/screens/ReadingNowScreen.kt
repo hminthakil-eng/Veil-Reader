@@ -7,7 +7,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -22,7 +21,6 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +33,6 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
-import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.adaptiveClassFor
@@ -844,120 +841,6 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-    }
-}
-
-@Composable
-private fun PathSummary(profile: ReaderProfile, onOpenCastle: () -> Unit) {
-    val target = profile.ritualTarget.coerceAtLeast(1)
-    val ritualProgress = (profile.ritualProgress.toFloat() / target).coerceIn(0f, 1f)
-
-    MysteryCard(Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
-            ) {
-                Text(
-                    "${profile.path.name} · ${profile.rankName}",
-                    style = MaterialTheme.typography.titleLarge,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            FilledTonalButton(
-                onClick = onOpenCastle,
-                shape = MaterialTheme.shapes.small,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = VeilPalette.DeepBrass.copy(alpha = 0.64f),
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                ),
-                modifier = Modifier.heightIn(min = 48.dp)
-            ) {
-                Text("Castle")
-            }
-        }
-
-        Spacer(Modifier.height(VeilSpacing.xs))
-        LinearProgressIndicator(
-            progress = { ritualProgress },
-            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
-            color = MaterialTheme.colorScheme.secondary,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
-        )
-        Text(
-            "Ritual ${profile.ritualProgress}/$target · Level ${profile.level}",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
-}
-
-@Composable
-private fun WhispersSection(quests: List<Quest>) {
-    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-        Text("Whispers", style = MaterialTheme.typography.titleLarge)
-        Text(
-            "Optional reading prompts. Nothing is lost if you ignore them today.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        quests.take(3).forEach { quest -> QuestRow(quest) }
-    }
-}
-
-@Composable
-private fun QuestRow(quest: Quest) {
-    val target = quest.target.coerceAtLeast(1)
-    val complete = quest.progress >= target
-    val progress = (quest.progress.toFloat() / target).coerceIn(0f, 1f)
-
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.46f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.36f))
-    ) {
-        Column(
-            modifier = Modifier.padding(VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-            ) {
-                Text(
-                    quest.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    if (complete) "Done" else "+${quest.xpReward} XP",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                    color = if (complete) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.secondary
-                )
-            }
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
-                color = if (complete) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.primary,
-                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.30f)
-            )
-        }
     }
 }
 
