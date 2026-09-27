@@ -52,6 +52,7 @@ import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -272,21 +273,12 @@ private fun PathGrandMasthead(
                 .size(142.dp),
             tint = VeilPalette.Brass.copy(alpha = 0.24f)
         )
-        Text(
-            "THE ${presentation.aspect.uppercase()} PATH",
+        VeilMastheadMetaRow(
+            primary = "THE ${presentation.aspect.uppercase()} PATH",
+            secondary = "RANK ${profile.rankIndex + 1}",
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
-            color = VeilPalette.Brass
-        )
-        Text(
-            "RANK ${profile.rankIndex + 1}",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-            color = VeilPalette.Moon.copy(alpha = 0.74f)
+                .align(Alignment.TopCenter)
+                .padding(VeilSpacing.md)
         )
         Column(
             modifier = Modifier
