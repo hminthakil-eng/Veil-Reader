@@ -61,11 +61,13 @@ import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
+import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.LocalVeilScriptGroup
 import com.veilreader.app.ui.theme.VeilMotion
+import com.veilreader.app.ui.theme.VeilMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -77,6 +79,7 @@ import com.veilreader.app.ui.theme.narrativeArchitectureField
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 import com.veilreader.app.ui.theme.localizeAppNumerals
 import com.veilreader.app.ui.theme.localizedMetadataValue
+import com.veilreader.app.ui.theme.motionBudgetFor
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -95,6 +98,10 @@ fun CastleScreen(
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
     val livingMirrorNoteCount = highlights.count { it.note.isNotBlank() }
+    val touchExplorationEnabled = rememberVeilTouchExplorationEnabled()
+    var greatHallMode by remember { mutableStateOf(GreatHallMode.HALL) }
+    val effectiveGreatHallMode =
+        if (touchExplorationEnabled) GreatHallMode.REGISTRY else greatHallMode
     val temporalPhase = currentVeilTemporalPhase()
     val castleNowEpochMs = remember(
         temporalPhase,
@@ -197,34 +204,15 @@ fun CastleScreen(
         CastleMemoryInscription(memoryState)
         CastleMutationInscription(memoryState)
 
-        LivingMirrorArtifact(
-            noteCount = livingMirrorNoteCount,
-            onOpen = { onOpenRoom("mirror") }
-        )
-
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            VeilEyebrowText(
-                text = "THE INNER KEEP",
-                trackingSp = 1.55f
-            )
-            Text(
-                "Awakened Chambers",
-                style = MaterialTheme.typography.titleLarge,
-                color = VeilPalette.Moon
-            )
-            Text(
-                "Follow the central stair. Open rooms are usable now; sealed rooms reveal the rank that awakens them.",
-                style = MaterialTheme.typography.bodySmall,
-                color = VeilPalette.Mist
-            )
-        }
-
-        CastleWorldMap(
-            rankIndex = profile.rankIndex,
+        GreatHallArtifactNavigator(
+            profile = profile,
             memoryState = memoryState,
-            mapHorizontalPaddingDp = castleLayout.mapHorizontalPaddingDp,
-            chamberMinHeightDp = castleLayout.chamberMinHeightDp,
-            onOpenRoom = onOpenRoom
+            livingMirrorNoteCount = livingMirrorNoteCount,
+            canAdvance = canAdvance,
+            mode = effectiveGreatHallMode,
+            hallModeEnabled = !touchExplorationEnabled,
+            onModeChange = { greatHallMode = it },
+            onOpenArtifact = onOpenRoom
         )
 
         BrassRule(Modifier.fillMaxWidth())
@@ -236,6 +224,755 @@ fun CastleScreen(
             color = VeilPalette.Mist.copy(alpha = 0.82f)
         )
     }
+    }
+}
+
+private enum class GreatHallMode { HALL, REGISTRY }
+
+private enum class GreatHallArtifactKind {
+    MIRROR,
+    ASTROLABE,
+    ARCHIVE_GATE,
+    LEDGER,
+    RITUAL_SEAL,
+    RELIQUARY,
+    VEILED_DOOR,
+    READING_SEAT
+}
+
+private data class GreatHallArtifact(
+    val kind: GreatHallArtifactKind,
+    val title: String,
+    val subtitle: String,
+    val route: String,
+    val unlockRank: Int,
+    val resonance: Float,
+    val awakened: Boolean
+) {
+    val id: String get() = kind.name.lowercase()
+}
+
+private fun greatHallArtifacts(
+    profile: ReaderProfile,
+    memoryState: CastleMemoryState,
+    livingMirrorNoteCount: Int,
+    canAdvance: Boolean
+): List<GreatHallArtifact> =
+    listOf(
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.MIRROR,
+            title = "Living Mirror",
+            subtitle = if (livingMirrorNoteCount > 0) {
+                "$livingMirrorNoteCount notes remember being revisited"
+            } else {
+                "Still water · write the first note to wake it"
+            },
+            route = "mirror",
+            unlockRank = 0,
+            resonance = (livingMirrorNoteCount / 24f).coerceIn(0f, 1f),
+            awakened = livingMirrorNoteCount > 0
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.ASTROLABE,
+            title = "Astrolabe",
+            subtitle = "Observatory · factual relations in reading history",
+            route = "observatory",
+            unlockRank = 2,
+            resonance = memoryState.observatoryResonance,
+            awakened = memoryState.atlasLinkCount > 0
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.ARCHIVE_GATE,
+            title = "Archive Gate",
+            subtitle = "Volumes, collections, and the entrance to the Archive",
+            route = "library",
+            unlockRank = 0,
+            resonance = memoryState.libraryResonance,
+            awakened = memoryState.volumeCount > 0
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.LEDGER,
+            title = "Sealed Ledger",
+            subtitle = "Dossier · reading signature · durable record",
+            route = "profile",
+            unlockRank = 0,
+            resonance = memoryState.archiveResonance,
+            awakened = memoryState.overallPresence > 0.05f
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.RITUAL_SEAL,
+            title = "Ritual Seal",
+            subtitle = if (canAdvance) "Advancement is ready" else "Path, rank, and the next transformation",
+            route = "ritual",
+            unlockRank = 1,
+            resonance = if (canAdvance) 1f else memoryState.overallPresence,
+            awakened = canAdvance
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.RELIQUARY,
+            title = "Reliquary",
+            subtitle = "Treasury · relics, sigils, and reading-earned marks",
+            route = "treasury",
+            unlockRank = 4,
+            resonance = memoryState.treasuryResonance,
+            awakened = memoryState.sealedCapsuleCount > 0
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.VEILED_DOOR,
+            title = "Veiled Door",
+            subtitle = "Inner Sanctum · rare permanent records",
+            route = "sanctum",
+            unlockRank = 5,
+            resonance = memoryState.sanctumResonance,
+            awakened = profile.rankIndex >= 5
+        ),
+        GreatHallArtifact(
+            kind = GreatHallArtifactKind.READING_SEAT,
+            title = "Reading Seat",
+            subtitle = "Return to the quiet center of your reading life",
+            route = "reading",
+            unlockRank = 0,
+            resonance = memoryState.overallPresence,
+            awakened = memoryState.daysSinceLastActivity != null
+        )
+    )
+
+@Composable
+private fun GreatHallArtifactNavigator(
+    profile: ReaderProfile,
+    memoryState: CastleMemoryState,
+    livingMirrorNoteCount: Int,
+    canAdvance: Boolean,
+    mode: GreatHallMode,
+    hallModeEnabled: Boolean,
+    onModeChange: (GreatHallMode) -> Unit,
+    onOpenArtifact: (String) -> Unit
+) {
+    val artifacts = remember(
+        profile.rankIndex,
+        memoryState,
+        livingMirrorNoteCount,
+        canAdvance
+    ) {
+        greatHallArtifacts(
+            profile = profile,
+            memoryState = memoryState,
+            livingMirrorNoteCount = livingMirrorNoteCount,
+            canAdvance = canAdvance
+        )
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            VeilEyebrowText(
+                text = "THE GREAT HALL · ARTIFACTS",
+                trackingSp = 1.45f
+            )
+            Text(
+                "The Hall is not a menu",
+                style = MaterialTheme.typography.titleLarge,
+                color = VeilPalette.Moon
+            )
+            Text(
+                "Every destination manifests as an object. Registry mode keeps the same paths fast and conventional.",
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            GreatHallModeButton(
+                label = "Hall",
+                selected = mode == GreatHallMode.HALL,
+                enabled = hallModeEnabled,
+                onClick = { onModeChange(GreatHallMode.HALL) },
+                modifier = Modifier.weight(1f)
+            )
+            GreatHallModeButton(
+                label = "Registry",
+                selected = mode == GreatHallMode.REGISTRY,
+                onClick = { onModeChange(GreatHallMode.REGISTRY) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+
+        if (!hallModeEnabled) {
+            Text(
+                "TalkBack uses Registry presentation so artifacts follow reading order.",
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = 0.78f)
+            )
+        }
+
+        when (mode) {
+            GreatHallMode.HALL -> GreatHallArtifactField(
+                artifacts = artifacts,
+                rankIndex = profile.rankIndex,
+                memoryState = memoryState,
+                onOpenArtifact = onOpenArtifact
+            )
+            GreatHallMode.REGISTRY -> GreatHallArtifactRegistry(
+                artifacts = artifacts,
+                rankIndex = profile.rankIndex,
+                onOpenArtifact = onOpenArtifact
+            )
+        }
+    }
+}
+
+@Composable
+private fun GreatHallModeButton(
+    label: String,
+    selected: Boolean,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (selected) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier.heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.72f),
+                contentColor = VeilPalette.Moon
+            ),
+            border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.54f))
+        ) {
+            Text(label)
+        }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier.heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            border = BorderStroke(1.dp, VeilPalette.BorderDark)
+        ) {
+            Text(label)
+        }
+    }
+}
+
+@Composable
+private fun GreatHallArtifactField(
+    artifacts: List<GreatHallArtifact>,
+    rankIndex: Int,
+    memoryState: CastleMemoryState,
+    onOpenArtifact: (String) -> Unit
+) {
+    val reducedMotion = LocalVeilReducedMotion.current
+    val revealDuration =
+        if (reducedMotion) 0 else motionBudgetFor(VeilMotionClass.REALM).targetDurationMs
+
+    BoxWithConstraints(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(if (maxWidth < 430.dp) 560.dp else 500.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        Color(0xFF070A0F),
+                        Color(0xFF0B1118),
+                        Color(0xFF11141A),
+                        VeilPalette.Ink
+                    )
+                )
+            )
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                MaterialTheme.shapes.extraSmall
+            )
+            .semantics {
+                contentDescription =
+                    "Great Hall artifact field. ${artifacts.size} destinations."
+            }
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            val w = size.width
+            val h = size.height
+            val vanish = Offset(w * 0.50f, h * 0.13f)
+
+            listOf(0.08f, 0.27f, 0.50f, 0.73f, 0.92f).forEach { fraction ->
+                drawLine(
+                    color = VeilPalette.Brass.copy(alpha = 0.075f),
+                    start = Offset(w * fraction, h * 0.92f),
+                    end = vanish,
+                    strokeWidth = 0.8.dp.toPx()
+                )
+            }
+            repeat(6) { index ->
+                val t = (index + 1f) / 7f
+                val eased = t * t
+                val y = vanish.y + (h * 0.92f - vanish.y) * eased
+                val half = w * (0.11f + eased * 0.39f)
+                drawLine(
+                    color = VeilPalette.StrongBorderDark.copy(alpha = 0.11f + eased * 0.04f),
+                    start = Offset(w * 0.50f - half, y),
+                    end = Offset(w * 0.50f + half, y),
+                    strokeWidth = 0.75.dp.toPx()
+                )
+            }
+
+            repeat(3) { index ->
+                val inset = 0.14f + index * 0.055f
+                drawArc(
+                    color = VeilPalette.Brass.copy(alpha = 0.07f - index * 0.012f),
+                    startAngle = 192f,
+                    sweepAngle = 156f,
+                    useCenter = false,
+                    topLeft = Offset(w * inset, h * (0.03f + index * 0.035f)),
+                    size = Size(w * (1f - inset * 2f), h * (0.32f + index * 0.05f)),
+                    style = Stroke(0.9.dp.toPx())
+                )
+            }
+            drawCircle(
+                brush = Brush.radialGradient(
+                    listOf(
+                        VeilPalette.Brass.copy(alpha = 0.10f + memoryState.returnAwakening * 0.08f),
+                        VeilPalette.Spirit.copy(alpha = 0.028f),
+                        Color.Transparent
+                    ),
+                    center = vanish,
+                    radius = size.minDimension * 0.32f
+                ),
+                center = vanish,
+                radius = size.minDimension * 0.32f
+            )
+
+            listOf(
+                Offset(w * 0.23f, h * 0.36f),
+                Offset(w * 0.77f, h * 0.36f),
+                Offset(w * 0.20f, h * 0.70f),
+                Offset(w * 0.80f, h * 0.70f)
+            ).forEach { center ->
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        listOf(
+                            VeilPalette.Brass.copy(alpha = 0.055f),
+                            Color.Transparent
+                        ),
+                        center = center,
+                        radius = 54.dp.toPx()
+                    ),
+                    center = center,
+                    radius = 54.dp.toPx()
+                )
+            }
+        }
+
+        val nodeWidth = if (maxWidth < 430.dp) 104.dp else 124.dp
+        val nodeHeight = if (maxWidth < 430.dp) 96.dp else 104.dp
+
+        artifacts.forEachIndexed { index, artifact ->
+            val (xFraction, yFraction) = greatHallArtifactPosition(artifact.kind)
+            val x = (maxWidth - nodeWidth) * xFraction
+            val y = (maxHeight - nodeHeight) * yFraction
+            val unlocked = rankIndex >= artifact.unlockRank
+
+            GreatHallArtifactPedestal(
+                artifact = artifact,
+                unlocked = unlocked,
+                revealDelayMs = if (reducedMotion) 0 else index * 45,
+                revealDurationMs = revealDuration,
+                onOpen = { onOpenArtifact(artifact.route) },
+                modifier = Modifier
+                    .offset(x = x, y = y)
+                    .width(nodeWidth)
+                    .heightIn(min = nodeHeight)
+            )
+        }
+
+        VeilEyebrowText(
+            text = "VEIL ABOVE",
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 12.dp),
+            color = VeilPalette.Brass.copy(alpha = 0.72f),
+            trackingSp = 1.6f
+        )
+    }
+}
+
+private fun greatHallArtifactPosition(
+    kind: GreatHallArtifactKind
+): Pair<Float, Float> =
+    when (kind) {
+        GreatHallArtifactKind.MIRROR -> 0.06f to 0.17f
+        GreatHallArtifactKind.ASTROLABE -> 0.94f to 0.17f
+        GreatHallArtifactKind.ARCHIVE_GATE -> 0.02f to 0.43f
+        GreatHallArtifactKind.LEDGER -> 0.50f to 0.35f
+        GreatHallArtifactKind.RITUAL_SEAL -> 0.98f to 0.43f
+        GreatHallArtifactKind.RELIQUARY -> 0.10f to 0.73f
+        GreatHallArtifactKind.READING_SEAT -> 0.50f to 0.68f
+        GreatHallArtifactKind.VEILED_DOOR -> 0.90f to 0.73f
+    }
+
+@Composable
+private fun GreatHallArtifactPedestal(
+    artifact: GreatHallArtifact,
+    unlocked: Boolean,
+    revealDelayMs: Int,
+    revealDurationMs: Int,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var revealed by remember { mutableStateOf(revealDurationMs == 0) }
+    LaunchedEffect(revealDurationMs, revealDelayMs) {
+        if (revealDurationMs > 0) {
+            kotlinx.coroutines.delay(revealDelayMs.toLong())
+        }
+        revealed = true
+    }
+    val presence by animateFloatAsState(
+        targetValue = if (revealed) 1f else 0f,
+        animationSpec = if (revealDurationMs == 0) {
+            snap()
+        } else {
+            tween(revealDurationMs)
+        },
+        label = "hall-artifact-presence"
+    )
+    val active = unlocked
+    val glow = if (artifact.awakened) {
+        (0.42f + artifact.resonance.coerceIn(0f, 1f) * 0.50f)
+    } else {
+        0.24f
+    }
+
+    Column(
+        modifier = modifier
+            .semantics {
+                contentDescription = if (active) {
+                    "${artifact.title}. ${artifact.subtitle}. Open."
+                } else {
+                    "${artifact.title}. Sealed until rank ${artifact.unlockRank + 1}."
+                }
+            }
+            .clickable(
+                enabled = active,
+                role = Role.Button,
+                onClick = onOpen
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .size(62.dp)
+                .clip(CircleShape)
+                .background(
+                    Brush.radialGradient(
+                        listOf(
+                            if (active) {
+                                VeilPalette.Brass.copy(alpha = 0.08f * presence)
+                            } else {
+                                VeilPalette.StrongBorderDark.copy(alpha = 0.08f)
+                            },
+                            VeilPalette.Ink.copy(alpha = 0.88f)
+                        )
+                    )
+                )
+                .border(
+                    BorderStroke(
+                        1.dp,
+                        if (active) {
+                            VeilPalette.Brass.copy(alpha = glow * presence)
+                        } else {
+                            VeilPalette.BorderDark.copy(alpha = 0.52f)
+                        }
+                    ),
+                    CircleShape
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            GreatHallArtifactGlyph(
+                kind = artifact.kind,
+                tint = if (active) {
+                    if (artifact.kind == GreatHallArtifactKind.MIRROR) {
+                        VeilPalette.Spirit.copy(alpha = presence)
+                    } else {
+                        VeilPalette.Brass.copy(alpha = presence)
+                    }
+                } else {
+                    VeilPalette.Mist.copy(alpha = 0.32f)
+                },
+                modifier = Modifier.size(42.dp)
+            )
+        }
+
+        Spacer(Modifier.height(5.dp))
+        Text(
+            artifact.title,
+            style = MaterialTheme.typography.labelMedium,
+            color = if (active) {
+                VeilPalette.Moon.copy(alpha = 0.94f * presence)
+            } else {
+                VeilPalette.Mist.copy(alpha = 0.44f)
+            },
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            if (active) {
+                if (artifact.awakened) "AWAKENED" else "DORMANT"
+            } else {
+                "SEALED · RANK ${artifact.unlockRank + 1}"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = if (active && artifact.awakened) {
+                VeilPalette.Brass.copy(alpha = 0.78f * presence)
+            } else {
+                VeilPalette.Mist.copy(alpha = 0.44f)
+            },
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun GreatHallArtifactRegistry(
+    artifacts: List<GreatHallArtifact>,
+    rankIndex: Int,
+    onOpenArtifact: (String) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        artifacts.forEach { artifact ->
+            val unlocked = rankIndex >= artifact.unlockRank
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 68.dp)
+                    .clickable(
+                        enabled = unlocked,
+                        role = Role.Button
+                    ) {
+                        onOpenArtifact(artifact.route)
+                    }
+                    .semantics {
+                        contentDescription = if (unlocked) {
+                            "${artifact.title}. ${artifact.subtitle}. Open."
+                        } else {
+                            "${artifact.title}. Sealed until rank ${artifact.unlockRank + 1}."
+                        }
+                    },
+                shape = MaterialTheme.shapes.extraSmall,
+                color = VeilPalette.Archive.copy(alpha = if (unlocked) 0.72f else 0.42f),
+                border = BorderStroke(
+                    1.dp,
+                    if (unlocked) {
+                        VeilPalette.Brass.copy(alpha = 0.26f)
+                    } else {
+                        VeilPalette.BorderDark.copy(alpha = 0.40f)
+                    }
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .border(
+                                BorderStroke(
+                                    1.dp,
+                                    if (unlocked) {
+                                        VeilPalette.Brass.copy(alpha = 0.44f)
+                                    } else {
+                                        VeilPalette.BorderDark
+                                    }
+                                ),
+                                CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        GreatHallArtifactGlyph(
+                            kind = artifact.kind,
+                            tint = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.36f),
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text(
+                            artifact.title,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (unlocked) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
+                        )
+                        Text(
+                            artifact.subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = VeilPalette.Mist.copy(alpha = if (unlocked) 0.78f else 0.42f),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                    Text(
+                        if (unlocked) "OPEN" else "R${artifact.unlockRank + 1}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.40f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GreatHallArtifactGlyph(
+    kind: GreatHallArtifactKind,
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val center = Offset(w / 2f, h / 2f)
+        val thin = 0.9.dp.toPx()
+        val strong = 1.2.dp.toPx()
+        val faint = tint.copy(alpha = tint.alpha * 0.44f)
+
+        when (kind) {
+            GreatHallArtifactKind.MIRROR -> {
+                drawOval(
+                    color = tint,
+                    topLeft = Offset(w * 0.22f, h * 0.10f),
+                    size = Size(w * 0.56f, h * 0.72f),
+                    style = Stroke(strong)
+                )
+                repeat(3) { index ->
+                    drawArc(
+                        color = faint,
+                        startAngle = 15f + index * 8f,
+                        sweepAngle = 150f,
+                        useCenter = false,
+                        topLeft = Offset(w * (0.28f + index * 0.04f), h * (0.22f + index * 0.06f)),
+                        size = Size(w * (0.44f - index * 0.08f), h * (0.40f - index * 0.07f)),
+                        style = Stroke(thin)
+                    )
+                }
+            }
+
+            GreatHallArtifactKind.ASTROLABE -> {
+                drawCircle(tint, w * 0.30f, center, style = Stroke(strong))
+                drawOval(
+                    faint,
+                    Offset(w * 0.08f, h * 0.38f),
+                    Size(w * 0.84f, h * 0.24f),
+                    style = Stroke(thin)
+                )
+                drawLine(tint, Offset(center.x, h * 0.08f), Offset(center.x, h * 0.92f), thin)
+                drawCircle(tint, 2.dp.toPx(), center)
+            }
+
+            GreatHallArtifactKind.ARCHIVE_GATE -> {
+                drawArc(
+                    tint,
+                    startAngle = 180f,
+                    sweepAngle = 180f,
+                    useCenter = false,
+                    topLeft = Offset(w * 0.16f, h * 0.10f),
+                    size = Size(w * 0.68f, h * 0.56f),
+                    style = Stroke(strong)
+                )
+                drawLine(tint, Offset(w * 0.16f, h * 0.38f), Offset(w * 0.16f, h * 0.88f), strong)
+                drawLine(tint, Offset(w * 0.84f, h * 0.38f), Offset(w * 0.84f, h * 0.88f), strong)
+                repeat(3) { index ->
+                    val x = w * (0.34f + index * 0.16f)
+                    drawLine(faint, Offset(x, h * 0.44f), Offset(x, h * 0.82f), thin)
+                }
+            }
+
+            GreatHallArtifactKind.LEDGER -> {
+                drawRect(
+                    tint,
+                    topLeft = Offset(w * 0.18f, h * 0.16f),
+                    size = Size(w * 0.64f, h * 0.68f),
+                    style = Stroke(strong)
+                )
+                drawLine(faint, Offset(w * 0.36f, h * 0.16f), Offset(w * 0.36f, h * 0.84f), thin)
+                repeat(3) { index ->
+                    val y = h * (0.34f + index * 0.13f)
+                    drawLine(faint, Offset(w * 0.44f, y), Offset(w * 0.72f, y), thin)
+                }
+            }
+
+            GreatHallArtifactKind.RITUAL_SEAL -> {
+                val diamond = Path().apply {
+                    moveTo(center.x, h * 0.08f)
+                    lineTo(w * 0.90f, center.y)
+                    lineTo(center.x, h * 0.92f)
+                    lineTo(w * 0.10f, center.y)
+                    close()
+                }
+                drawPath(diamond, tint, style = Stroke(strong))
+                drawCircle(faint, w * 0.23f, center, style = Stroke(thin))
+                drawCircle(tint, 2.dp.toPx(), center)
+            }
+
+            GreatHallArtifactKind.RELIQUARY -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * 0.15f, h * 0.34f),
+                    size = Size(w * 0.70f, h * 0.48f),
+                    cornerRadius = CornerRadius(3.dp.toPx()),
+                    style = Stroke(strong)
+                )
+                drawArc(
+                    tint,
+                    startAngle = 180f,
+                    sweepAngle = 180f,
+                    useCenter = false,
+                    topLeft = Offset(w * 0.22f, h * 0.14f),
+                    size = Size(w * 0.56f, h * 0.42f),
+                    style = Stroke(strong)
+                )
+                drawCircle(faint, 3.dp.toPx(), center)
+            }
+
+            GreatHallArtifactKind.VEILED_DOOR -> {
+                drawRect(
+                    tint,
+                    Offset(w * 0.24f, h * 0.10f),
+                    Size(w * 0.52f, h * 0.80f),
+                    style = Stroke(strong)
+                )
+                drawLine(
+                    faint,
+                    Offset(w * 0.50f, h * 0.15f),
+                    Offset(w * 0.54f, h * 0.86f),
+                    thin
+                )
+                drawCircle(tint, 1.8.dp.toPx(), Offset(w * 0.64f, h * 0.54f))
+            }
+
+            GreatHallArtifactKind.READING_SEAT -> {
+                drawLine(tint, Offset(w * 0.28f, h * 0.24f), Offset(w * 0.28f, h * 0.68f), strong)
+                drawLine(tint, Offset(w * 0.28f, h * 0.68f), Offset(w * 0.72f, h * 0.68f), strong)
+                drawLine(tint, Offset(w * 0.72f, h * 0.68f), Offset(w * 0.76f, h * 0.86f), strong)
+                drawLine(tint, Offset(w * 0.34f, h * 0.68f), Offset(w * 0.30f, h * 0.86f), strong)
+                drawLine(faint, Offset(w * 0.30f, h * 0.36f), Offset(w * 0.66f, h * 0.36f), thin)
+            }
+        }
     }
 }
 
