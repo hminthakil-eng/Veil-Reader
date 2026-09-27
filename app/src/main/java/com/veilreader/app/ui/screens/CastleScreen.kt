@@ -477,7 +477,7 @@ private fun GreatHallArtifactField(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
-            .height(if (maxWidth < 430.dp) 560.dp else 500.dp)
+            .height(540.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
                 Brush.verticalGradient(
