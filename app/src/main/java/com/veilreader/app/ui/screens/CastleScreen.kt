@@ -58,6 +58,7 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilLanguage
@@ -293,22 +294,12 @@ private fun CastleGrandMasthead(
             tint = VeilPalette.Brass.copy(alpha = 0.22f)
         )
 
-        Text(
-            "VEIL ABOVE · LIVING ARCHITECTURE",
+        VeilMastheadMetaRow(
+            primary = "VEIL ABOVE · LIVING ARCHITECTURE",
+            secondary = "$awakenedRooms / $totalRooms CHAMBERS",
             modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-            color = VeilPalette.Brass
-        )
-
-        Text(
-            "$awakenedRooms / $totalRooms CHAMBERS",
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(VeilSpacing.md),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.9.sp),
-            color = VeilPalette.Moon.copy(alpha = 0.76f)
+                .align(Alignment.TopCenter)
+                .padding(VeilSpacing.md)
         )
 
         Column(
