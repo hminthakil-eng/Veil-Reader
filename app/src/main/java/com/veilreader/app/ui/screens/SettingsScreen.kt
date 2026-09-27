@@ -2,6 +2,8 @@ package com.veilreader.app.ui.screens
 
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,12 +38,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
@@ -106,14 +112,44 @@ fun SettingsScreen(
     var confirmRestore by remember { mutableStateOf(false) }
     BackHandler(onBack = onClose)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = 0.18f,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(330.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.16f),
+                            VeilPalette.Ink.copy(alpha = 0.62f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .widthIn(max = 840.dp)
+                .systemBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+        ) {
         TextButton(
             onClick = onClose,
             modifier = Modifier.heightIn(min = 48.dp)
@@ -346,6 +382,7 @@ fun SettingsScreen(
             ) {
                 Text("Reset reader defaults")
             }
+        }
         }
     }
 
