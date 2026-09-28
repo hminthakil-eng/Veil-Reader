@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
@@ -61,17 +62,26 @@ import java.text.DateFormat
 import java.util.Date
 
 private data class SigilPresentation(
-    val name: String,
+    @StringRes val nameRes: Int,
     val symbol: String,
-    val description: String
+    @StringRes val descriptionRes: Int
 )
 
-internal enum class RelicRarity(val label: String) {
-    FOUNDATION("FOUNDATION"),
-    RESONANT("RESONANT"),
-    ASCENDANT("ASCENDANT"),
-    SOVEREIGN("SOVEREIGN")
+internal enum class RelicRarity {
+    FOUNDATION,
+    RESONANT,
+    ASCENDANT,
+    SOVEREIGN
 }
+
+@StringRes
+private fun relicRarityLabelRes(rarity: RelicRarity): Int =
+    when (rarity) {
+        RelicRarity.FOUNDATION -> R.string.relic_rarity_foundation
+        RelicRarity.RESONANT -> R.string.relic_rarity_resonant
+        RelicRarity.ASCENDANT -> R.string.relic_rarity_ascendant
+        RelicRarity.SOVEREIGN -> R.string.relic_rarity_sovereign
+    }
 
 internal fun relicRarityFor(relicId: String): RelicRarity =
     when (relicId) {
@@ -86,9 +96,9 @@ internal fun relicRarityFor(relicId: String): RelicRarity =
 
 private data class RelicPresentation(
     val id: String,
-    val name: String,
+    @StringRes val nameRes: Int,
     val symbol: String,
-    val clue: String,
+    @StringRes val clueRes: Int,
     val rarity: RelicRarity
 )
 
@@ -104,7 +114,7 @@ internal data class RelicUnlockState(
     val provenance: RelicProvenance,
     val evidenceCount: Int,
     val target: Int,
-    val evidenceLabel: String
+    @StringRes val evidenceLabelRes: Int
 )
 
 private fun mutationEvidenceCount(
@@ -124,7 +134,7 @@ internal fun relicUnlockState(
     fun evidenceBacked(
         kind: WorldMutationKind,
         target: Int,
-        label: String,
+        @StringRes labelRes: Int,
         legacyAwakened: Boolean
     ): RelicUnlockState {
         val count = mutationEvidenceCount(ledger, kind)
@@ -134,21 +144,21 @@ internal fun relicUnlockState(
                 provenance = RelicProvenance.READING_EVIDENCE,
                 evidenceCount = count,
                 target = target,
-                evidenceLabel = label
+                evidenceLabelRes = labelRes
             )
             legacyAwakened -> RelicUnlockState(
                 awakened = true,
                 provenance = RelicProvenance.LEGACY_PROFILE,
                 evidenceCount = count,
                 target = target,
-                evidenceLabel = label
+                evidenceLabelRes = labelRes
             )
             else -> RelicUnlockState(
                 awakened = false,
                 provenance = RelicProvenance.SEALED,
                 evidenceCount = count,
                 target = target,
-                evidenceLabel = label
+                evidenceLabelRes = labelRes
             )
         }
     }
@@ -157,31 +167,31 @@ internal fun relicUnlockState(
         "ember_bookmark" -> evidenceBacked(
             kind = WorldMutationKind.FOUNDATION_WEIGHT,
             target = 3,
-            label = "recorded reading sessions",
+            labelRes = R.string.relic_evidence_sessions,
             legacyAwakened = profile.streakDays >= 3
         )
         "moonlit_lens" -> evidenceBacked(
             kind = WorldMutationKind.CONSTELLATION_WEB,
             target = 3,
-            label = "recorded atlas links",
+            labelRes = R.string.relic_evidence_atlas_links,
             legacyAwakened = profile.minutesRead >= 180
         )
         "brass_quill" -> evidenceBacked(
             kind = WorldMutationKind.SCRIPTORIUM_LIGHT,
             target = 5,
-            label = "substantial annotations",
+            labelRes = R.string.relic_evidence_annotations,
             legacyAwakened = profile.pagesRead >= 500
         )
         "ivory_bookplate" -> evidenceBacked(
             kind = WorldMutationKind.COMPLETION_ALCOVES,
             target = 3,
-            label = "completed volumes",
+            labelRes = R.string.relic_evidence_completed,
             legacyAwakened = profile.booksFinished >= 3
         )
         "astral_key" -> evidenceBacked(
             kind = WorldMutationKind.PATH_ASCENSION,
             target = 2,
-            label = "Path thresholds",
+            labelRes = R.string.relic_evidence_path,
             legacyAwakened = profile.rankIndex >= 2
         )
         "veil_crown" -> {
@@ -200,7 +210,7 @@ internal fun relicUnlockState(
                     profile.earnedSigils.size.coerceAtMost(5) +
                         if (profile.rankIndex >= finalRank) 1 else 0,
                 target = 6,
-                evidenceLabel = "final Path rank + five core sigils"
+                evidenceLabelRes = R.string.relic_evidence_sovereign
             )
         }
         else -> RelicUnlockState(
@@ -208,104 +218,104 @@ internal fun relicUnlockState(
             provenance = RelicProvenance.SEALED,
             evidenceCount = 0,
             target = 1,
-            evidenceLabel = "unknown evidence"
+            evidenceLabelRes = R.string.relic_evidence_unknown
         )
     }
 }
 
 private data class BookplatePresentation(
-    val name: String,
-    val inscription: String,
+    @StringRes val nameRes: Int,
+    @StringRes val inscriptionRes: Int,
     val awakened: (ReaderProfile) -> Boolean
 )
 
 private val sigils = linkedMapOf(
     "first_hour" to SigilPresentation(
-        "Quiet Hour",
+        R.string.sigil_quiet_hour_name,
         "◷",
-        "A full hour spent inside the written world."
+        R.string.sigil_quiet_hour_desc
     ),
     "passage_keeper" to SigilPresentation(
-        "Passage Keeper",
+        R.string.sigil_passage_keeper_name,
         "✦",
-        "Ten passages preserved from the books that changed you."
+        R.string.sigil_passage_keeper_desc
     ),
     "seven_days" to SigilPresentation(
-        "Seven-Day Lantern",
+        R.string.sigil_seven_day_name,
         "◇",
-        "A reading flame kept alive for seven days."
+        R.string.sigil_seven_day_desc
     ),
     "ten_tomes" to SigilPresentation(
-        "Ten Tomes",
+        R.string.sigil_ten_tomes_name,
         "▥",
-        "Ten completed books now stand in the Grand Library."
+        R.string.sigil_ten_tomes_desc
     ),
     "first_threshold" to SigilPresentation(
-        "First Threshold",
+        R.string.sigil_first_threshold_name,
         "✧",
-        "The first true advancement along your chosen Path."
+        R.string.sigil_first_threshold_desc
     )
 )
 
 private val readingRelics = listOf(
     RelicPresentation(
         id = "ember_bookmark",
-        name = "Ember Bookmark",
+        nameRes = R.string.relic_ember_bookmark_name,
         symbol = "⌇",
-        clue = "Leave at least three recorded reading sessions in the foundation.",
+        clueRes = R.string.relic_ember_bookmark_clue,
         rarity = relicRarityFor("ember_bookmark")
     ),
     RelicPresentation(
         id = "moonlit_lens",
-        name = "Moonlit Lens",
+        nameRes = R.string.relic_moonlit_lens_name,
         symbol = "◐",
-        clue = "Bind at least three factual links between volumes in the Observatory.",
+        clueRes = R.string.relic_moonlit_lens_clue,
         rarity = relicRarityFor("moonlit_lens")
     ),
     RelicPresentation(
         id = "brass_quill",
-        name = "Brass Quill",
+        nameRes = R.string.relic_brass_quill_name,
         symbol = "✒",
-        clue = "Write at least five substantial annotations and wake the scriptorium.",
+        clueRes = R.string.relic_brass_quill_clue,
         rarity = relicRarityFor("brass_quill")
     ),
     RelicPresentation(
         id = "ivory_bookplate",
-        name = "Ivory Bookplate",
+        nameRes = R.string.relic_ivory_bookplate_name,
         symbol = "▤",
-        clue = "Complete three volumes and open three sealed alcoves in the keep.",
+        clueRes = R.string.relic_ivory_bookplate_clue,
         rarity = relicRarityFor("ivory_bookplate")
     ),
     RelicPresentation(
         id = "astral_key",
-        name = "Astral Key",
+        nameRes = R.string.relic_astral_key_name,
         symbol = "⌘",
-        clue = "Cross two Path thresholds and listen for the lock that was not there before.",
+        clueRes = R.string.relic_astral_key_clue,
         rarity = relicRarityFor("astral_key")
     ),
     RelicPresentation(
         id = "veil_crown",
-        name = "Veil Crown",
+        nameRes = R.string.relic_veil_crown_name,
         symbol = "♜",
-        clue = "Awaken the five core sigils and reach the final rank of your Path.",
+        clueRes = R.string.relic_veil_crown_clue,
         rarity = relicRarityFor("veil_crown")
     )
 )
 
 private val bookplates = listOf(
     BookplatePresentation(
-        name = "First Binding",
-        inscription = "This volume belongs to one who returned.",
+        nameRes = R.string.bookplate_first_binding_name,
+        inscriptionRes = R.string.bookplate_first_binding_text,
         awakened = { it.minutesRead >= 60 }
     ),
     BookplatePresentation(
-        name = "Deep Shelf",
-        inscription = "A library becomes a place when finished books begin to gather weight.",
+        nameRes = R.string.bookplate_deep_shelf_name,
+        inscriptionRes = R.string.bookplate_deep_shelf_text,
         awakened = { it.booksFinished >= 10 }
     ),
     BookplatePresentation(
-        name = "Veilbound",
-        inscription = "The reader crossed every threshold and carried the archive forward.",
+        nameRes = R.string.bookplate_veilbound_name,
+        inscriptionRes = R.string.bookplate_veilbound_text,
         awakened = { it.rankIndex >= it.path.ranks.lastIndex }
     )
 )
