@@ -329,6 +329,15 @@ fun ReaderScreen(
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
     val snackbarHostState = remember { SnackbarHostState() }
+    val highlightedMessage = stringResource(R.string.reader_highlighted)
+    val highlightExistsMessage = stringResource(R.string.reader_highlight_exists)
+    val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
+    val restoreLocationFailedMessage = stringResource(R.string.reader_restore_location_failed)
+    val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
+    val noteSavedMessage = stringResource(R.string.reader_note_saved)
+    val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
+    val savedLocationFailedMessage = stringResource(R.string.reader_saved_location_failed)
+    val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
     val bookmarkExistsMessage = stringResource(R.string.reader_bookmark_exists)
     val readerSurfaceDescription = stringResource(R.string.reader_surface_description)
@@ -361,7 +370,8 @@ fun ReaderScreen(
         label = "reader-snackbar-offset"
     )
 
-    val selectionActionModeCallback = remember(opened.book.id, library, readerViewModel, scope) {
+    val selectionActionModeCallback = remember(opened.book.id, library, readerViewModel, scope,
+        highlightedMessage, highlightExistsMessage, passageSaveFailedMessage) {
         ReaderSelectionActionModeCallback(
             coroutineScope = scope,
             navigatorProvider = { navigator as? SelectableNavigator },
@@ -391,7 +401,7 @@ fun ReaderScreen(
 
                     when (action) {
                         ReaderSelectionAction.HIGHLIGHT -> {
-                            readerMessage = if (isNew) "Highlighted" else "Already highlighted"
+                            readerMessage = if (isNew) highlightedMessage else highlightExistsMessage
                         }
                         ReaderSelectionAction.NOTE -> {
                             pendingNoteHighlightId = highlight.id
@@ -400,8 +410,8 @@ fun ReaderScreen(
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
-                } catch (error: Exception) {
-                    readerMessage = error.message ?: "That passage could not be saved."
+                } catch (_: Exception) {
+                    readerMessage = passageSaveFailedMessage
                 }
             }
         )
@@ -453,7 +463,7 @@ fun ReaderScreen(
             previousLocationJson = currentJson?.takeIf { it != targetJson }
             controlsVisible = false
         } else {
-            readerMessage = "The previous reading location could not be restored."
+            readerMessage = restoreLocationFailedMessage
         }
     }
 
@@ -490,7 +500,7 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId(),
                     details = "error=${error::class.java.simpleName}"
                 )
-                readerMessage = "Could not safely close this book because the latest reading position was not confirmed in storage."
+                readerMessage = closeStorageFailedMessage
             }
         }
     }
@@ -1145,14 +1155,14 @@ fun ReaderScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "HIDDEN ARCHIVE · PASSAGE NOTE",
+                        stringResource(R.string.reader_note_eyebrow),
                         style = MaterialTheme.typography.labelSmall.copy(
                             letterSpacing = 1.25.sp
                         ),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Note on this passage",
+                        stringResource(R.string.reader_note_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = VeilPalette.Moon
                     )
@@ -1180,7 +1190,7 @@ fun ReaderScreen(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        "SELECTED PASSAGE",
+                                        stringResource(R.string.reader_selected_passage),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass.copy(alpha = 0.82f)
                                     )
@@ -1199,7 +1209,7 @@ fun ReaderScreen(
                         value = pendingNoteText,
                         onValueChange = { pendingNoteText = it },
                         enabled = !noteSaving,
-                        placeholder = { Text("Write what you want to remember…") },
+                        placeholder = { Text(stringResource(R.string.reader_note_hint)) },
                         minLines = 4,
                         maxLines = 8,
                         shape = MaterialTheme.shapes.extraSmall,
@@ -1217,7 +1227,7 @@ fun ReaderScreen(
                         horizontalArrangement = Arrangement.End
                     ) {
                         Text(
-                            "${pendingNoteText.length} characters",
+                            stringResource(R.string.reader_note_characters, pendingNoteText.length),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
                         )
@@ -1237,11 +1247,11 @@ fun ReaderScreen(
                                 onSensoryEvent(VeilSensoryEvent.NOTE)
                                 pendingNoteHighlightId = null
                                 pendingNoteText = ""
-                                readerMessage = "Note saved"
+                                readerMessage = noteSavedMessage
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
-                            } catch (error: Exception) {
-                                readerMessage = error.message ?: "The note could not be saved."
+                            } catch (_: Exception) {
+                                readerMessage = noteSaveFailedMessage
                             } finally {
                                 noteSaving = false
                             }
@@ -1253,7 +1263,8 @@ fun ReaderScreen(
                         contentColor = Color(0xFF17120A)
                     )
                 ) {
-                    Text(if (noteSaving) "Saving…" else "Save note")
+                    Text(if (noteSaving) stringResource(R.string.reader_note_saving)
+                         else stringResource(R.string.reader_note_save))
                 }
             },
             dismissButton = {
@@ -1265,7 +1276,7 @@ fun ReaderScreen(
                     }
                 ) {
                     Text(
-                        "Cancel",
+                        stringResource(R.string.common_cancel),
                         color = VeilPalette.Moon.copy(alpha = 0.72f)
                     )
                 }
@@ -1294,7 +1305,7 @@ fun ReaderScreen(
                     showNotebook = false
                 } else {
                     showNotebook = false
-                    readerMessage = "That saved location could not be opened."
+                    readerMessage = savedLocationFailedMessage
                 }
             },
             onChapter = { link ->
@@ -1306,7 +1317,7 @@ fun ReaderScreen(
                     showNotebook = false
                 } else {
                     showNotebook = false
-                    readerMessage = "This chapter could not be opened."
+                    readerMessage = chapterFailedMessage
                 }
             },
             onSaveNote = { id, note ->
@@ -1314,7 +1325,7 @@ fun ReaderScreen(
                 library.flushWrites()
                 readerViewModel.onNoteSaved(id, note)
                 onSensoryEvent(VeilSensoryEvent.NOTE)
-                readerMessage = "Note saved"
+                readerMessage = noteSavedMessage
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
