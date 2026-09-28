@@ -496,6 +496,7 @@ fun VeilApp(
 
             VeilTab.CASTLE -> CastleScreen(
                 profile = requireNotNull(profile),
+                quests = quests,
                 onOpenRoom = { room ->
                     when (room) {
                         "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)

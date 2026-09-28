@@ -55,6 +55,9 @@ import com.veilreader.app.domain.CastleMemoryState
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.Quest
+import com.veilreader.app.domain.WorldProgressionProjection
+import com.veilreader.app.domain.deriveWorldProgressionProjection
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
@@ -93,6 +96,7 @@ import com.veilreader.app.ui.theme.motionBudgetFor
 fun CastleScreen(
     profile: ReaderProfile,
     onOpenRoom: (String) -> Unit,
+    quests: List<Quest> = emptyList(),
     books: List<Book> = emptyList(),
     highlights: List<Highlight> = emptyList(),
     bookmarks: List<Bookmark> = emptyList(),
@@ -132,6 +136,13 @@ fun CastleScreen(
             nowEpochMs = castleNowEpochMs
         )
     }
+    val worldProjection = remember(profile, quests, memoryState) {
+        deriveWorldProgressionProjection(
+            profile = profile,
+            quests = quests,
+            memory = memoryState
+        )
+    }
     val castleAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
@@ -142,13 +153,14 @@ fun CastleScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
-                seed = profile.rankIndex * 31 + memoryState.volumeCount,
+                seed = profile.rankIndex * 31 + memoryState.volumeCount + worldProjection.stage.ordinal * 101,
+                intensity = (0.82f + worldProjection.architecturalPresence * 0.16f).coerceIn(0.82f, 0.98f),
                 temporalPhase = temporalPhase
             )
             .narrativeArchitectureField(
                 realm = VeilRealm.CASTLE,
-                seed = profile.rankIndex * 31 + memoryState.volumeCount,
-                intensity = 0.78f
+                seed = profile.rankIndex * 31 + memoryState.volumeCount + worldProjection.stage.ordinal * 101,
+                intensity = (0.62f + worldProjection.architecturalPresence * 0.30f).coerceIn(0.62f, 0.92f)
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -157,7 +169,7 @@ fun CastleScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopEnd,
-            alpha = 0.34f,
+            alpha = (0.26f + worldProjection.architecturalPresence * 0.18f).coerceIn(0.26f, 0.44f),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
@@ -191,6 +203,7 @@ fun CastleScreen(
     ) {
         CastleGrandMasthead(
             memoryState = memoryState,
+            worldProjection = worldProjection,
             awakenedRooms = awakenedRooms,
             totalRooms = SampleData.rooms.size
         )
@@ -198,6 +211,7 @@ fun CastleScreen(
         CastleKeep(
             profile = profile,
             memoryState = memoryState,
+            worldProjection = worldProjection,
             canAdvance = canAdvance,
             awakenedRooms = awakenedRooms,
             totalRooms = SampleData.rooms.size,
@@ -206,11 +220,13 @@ fun CastleScreen(
         )
 
         CastleMemoryInscription(memoryState)
+        CastleWorldProgressionInscription(worldProjection)
         CastleMutationInscription(memoryState)
 
         GreatHallArtifactNavigator(
             profile = profile,
             memoryState = memoryState,
+            worldProjection = worldProjection,
             livingMirrorNoteCount = livingMirrorNoteCount,
             canAdvance = canAdvance,
             mode = effectiveGreatHallMode,
@@ -259,6 +275,7 @@ internal data class GreatHallArtifact(
 internal fun greatHallArtifacts(
     profile: ReaderProfile,
     memoryState: CastleMemoryState,
+    worldProjection: WorldProgressionProjection,
     livingMirrorNoteCount: Int,
     canAdvance: Boolean
 ): List<GreatHallArtifact> =
@@ -273,7 +290,7 @@ internal fun greatHallArtifacts(
             },
             route = "mirror",
             unlockRank = 0,
-            resonance = (livingMirrorNoteCount / 24f).coerceIn(0f, 1f),
+            resonance = maxOf((livingMirrorNoteCount / 24f).coerceIn(0f, 1f), worldProjection.mirrorClarity),
             awakened = livingMirrorNoteCount > 0
         ),
         GreatHallArtifact(
@@ -282,7 +299,7 @@ internal fun greatHallArtifacts(
             subtitle = "Observatory · factual relations in reading history",
             route = "observatory",
             unlockRank = 2,
-            resonance = memoryState.observatoryResonance,
+            resonance = maxOf(memoryState.observatoryResonance, worldProjection.observatorySignal),
             awakened = memoryState.atlasLinkCount > 0
         ),
         GreatHallArtifact(
@@ -291,7 +308,7 @@ internal fun greatHallArtifacts(
             subtitle = "Volumes, collections, and the entrance to the Archive",
             route = "library",
             unlockRank = 0,
-            resonance = memoryState.libraryResonance,
+            resonance = maxOf(memoryState.libraryResonance, worldProjection.architecturalPresence),
             awakened = memoryState.volumeCount > 0
         ),
         GreatHallArtifact(
@@ -300,7 +317,7 @@ internal fun greatHallArtifacts(
             subtitle = "Dossier · reading signature · durable record",
             route = "profile",
             unlockRank = 0,
-            resonance = memoryState.archiveResonance,
+            resonance = maxOf(memoryState.archiveResonance, worldProjection.archiveDepth),
             awakened = memoryState.overallPresence > 0.05f
         ),
         GreatHallArtifact(
@@ -309,7 +326,7 @@ internal fun greatHallArtifacts(
             subtitle = if (canAdvance) "Advancement is ready" else "Path, rank, and the next transformation",
             route = "ritual",
             unlockRank = 1,
-            resonance = if (canAdvance) 1f else memoryState.overallPresence,
+            resonance = if (canAdvance) 1f else maxOf(memoryState.overallPresence, worldProjection.ritualCharge),
             awakened = canAdvance
         ),
         GreatHallArtifact(
@@ -318,7 +335,7 @@ internal fun greatHallArtifacts(
             subtitle = "Treasury · relics, sigils, and reading-earned marks",
             route = "treasury",
             unlockRank = 4,
-            resonance = memoryState.treasuryResonance,
+            resonance = maxOf(memoryState.treasuryResonance, worldProjection.relicWeight),
             awakened = memoryState.sealedCapsuleCount > 0
         ),
         GreatHallArtifact(
@@ -327,7 +344,7 @@ internal fun greatHallArtifacts(
             subtitle = "Inner Sanctum · rare permanent records",
             route = "sanctum",
             unlockRank = 5,
-            resonance = memoryState.sanctumResonance,
+            resonance = maxOf(memoryState.sanctumResonance, worldProjection.sanctumPresence),
             awakened = profile.rankIndex >= 5
         ),
         GreatHallArtifact(
@@ -336,7 +353,7 @@ internal fun greatHallArtifacts(
             subtitle = "Return to the quiet center of your reading life",
             route = "reading",
             unlockRank = 0,
-            resonance = memoryState.overallPresence,
+            resonance = maxOf(memoryState.overallPresence, worldProjection.architecturalPresence),
             awakened = memoryState.daysSinceLastActivity != null
         )
     )
@@ -345,6 +362,7 @@ internal fun greatHallArtifacts(
 private fun GreatHallArtifactNavigator(
     profile: ReaderProfile,
     memoryState: CastleMemoryState,
+    worldProjection: WorldProgressionProjection,
     livingMirrorNoteCount: Int,
     canAdvance: Boolean,
     mode: GreatHallMode,
@@ -355,12 +373,14 @@ private fun GreatHallArtifactNavigator(
     val artifacts = remember(
         profile.rankIndex,
         memoryState,
+        worldProjection,
         livingMirrorNoteCount,
         canAdvance
     ) {
         greatHallArtifacts(
             profile = profile,
             memoryState = memoryState,
+            worldProjection = worldProjection,
             livingMirrorNoteCount = livingMirrorNoteCount,
             canAdvance = canAdvance
         )
@@ -994,6 +1014,7 @@ private fun GreatHallArtifactGlyph(
 @Composable
 private fun CastleGrandMasthead(
     memoryState: CastleMemoryState,
+    worldProjection: WorldProgressionProjection,
     awakenedRooms: Int,
     totalRooms: Int
 ) {
@@ -1053,7 +1074,7 @@ private fun CastleGrandMasthead(
         )
 
         VeilMastheadMetaRow(
-            primary = "VEIL ABOVE · LIVING ARCHITECTURE",
+            primary = "VEIL ABOVE · ${worldProjection.stage.label.uppercase()} ARCHITECTURE",
             secondary = "$awakenedRooms / $totalRooms CHAMBERS",
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -1101,6 +1122,7 @@ private fun CastleGrandMasthead(
 private fun CastleKeep(
     profile: ReaderProfile,
     memoryState: CastleMemoryState,
+    worldProjection: WorldProgressionProjection,
     canAdvance: Boolean,
     awakenedRooms: Int,
     totalRooms: Int,
@@ -1145,7 +1167,8 @@ private fun CastleKeep(
             modifier = Modifier.matchParentSize(),
             rankIndex = profile.rankIndex,
             rankCount = profile.path.ranks.size,
-            memoryState = memoryState
+            memoryState = memoryState,
+            worldProjection = worldProjection
         )
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
@@ -1320,6 +1343,65 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
 }
 
 @Composable
+private fun CastleWorldProgressionInscription(world: WorldProgressionProjection) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    "WORLD RESONANCE · ${world.stage.label.uppercase()}",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                    color = VeilPalette.Brass.copy(alpha = 0.86f)
+                )
+                Text(
+                    world.inscription,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Moon.copy(alpha = 0.86f)
+                )
+            }
+            if (world.streakEmbers > 0) {
+                Text(
+                    "${world.streakEmbers} EMBER",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.86f)
+                )
+            }
+        }
+
+        Text(
+            buildString {
+                append("Ritual ").append((world.ritualCharge * 100f).toInt()).append("%")
+                if (world.directiveCount > 0) {
+                    append(" · ")
+                    append(world.completedDirectives)
+                        .append("/")
+                        .append(world.directiveCount)
+                        .append(" daily directives")
+                }
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.64f)
+        )
+
+        BrassRule(
+            modifier = Modifier.fillMaxWidth(),
+            strong = world.ritualCharge >= 0.80f
+        )
+    }
+}
+
+@Composable
 private fun CastleMutationInscription(memory: CastleMemoryState) {
     Column(
         modifier = Modifier
@@ -1391,6 +1473,7 @@ private fun CastleKeepBackdrop(
     rankIndex: Int,
     rankCount: Int,
     memoryState: CastleMemoryState,
+    worldProjection: WorldProgressionProjection,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier) {
@@ -1402,7 +1485,12 @@ private fun CastleKeepBackdrop(
         val towerBottom = h * 0.78f
         val rankGlow = ((rankIndex + 1f) / rankCount.coerceAtLeast(1)).coerceIn(0f, 1f)
         val memoryGlow = memoryState.overallPresence
-        val glow = (rankGlow * 0.52f + memoryGlow * 0.48f).coerceIn(0f, 1f)
+        val worldGlow = worldProjection.architecturalPresence
+        val glow = (
+            rankGlow * 0.34f +
+                memoryGlow * 0.33f +
+                worldGlow * 0.33f
+            ).coerceIn(0f, 1f)
 
         drawRect(
             color = Color(0xFF07090C).copy(alpha = 0.54f),
@@ -1460,6 +1548,31 @@ private fun CastleKeepBackdrop(
                 Offset(w * 0.885f, y),
                 0.75.dp.toPx()
             )
+        }
+
+        if (worldProjection.ritualCharge > 0.001f) {
+            val charge = worldProjection.ritualCharge.coerceIn(0f, 1f)
+            drawArc(
+                color = VeilPalette.Brass.copy(alpha = 0.07f + charge * 0.18f),
+                startAngle = 205f,
+                sweepAngle = 130f * charge,
+                useCenter = false,
+                topLeft = Offset(w * 0.36f, h * 0.23f),
+                size = Size(w * 0.28f, h * 0.26f),
+                style = Stroke((0.8f + charge * 0.9f).dp.toPx(), cap = StrokeCap.Round)
+            )
+        }
+
+        if (worldProjection.streakEmbers > 0) {
+            repeat(worldProjection.streakEmbers.coerceAtMost(7)) { index ->
+                val x = w * (0.38f + index * 0.04f)
+                val y = h * (0.74f - (index % 2) * 0.018f)
+                drawCircle(
+                    color = VeilPalette.Brass.copy(alpha = 0.16f + worldGlow * 0.18f),
+                    radius = (1.6f + worldGlow * 1.4f).dp.toPx(),
+                    center = Offset(x, y)
+                )
+            }
         }
 
         if (memoryState.returnAwakening > 0.001f) {
