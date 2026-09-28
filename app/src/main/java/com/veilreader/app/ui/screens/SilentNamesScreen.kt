@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -61,6 +62,7 @@ import kotlin.math.roundToInt
 fun SilentNamesScreen(
     profile: ReaderProfile,
     receipt: SilentNamesReceipt?,
+    storageBlocked: Boolean = false,
     onSeal: suspend (SilentNamesChoice, SilentNamesMode) -> Result<SilentNamesReceipt>,
     onClose: () -> Unit
 ) {
@@ -146,7 +148,33 @@ fun SilentNamesScreen(
             )
 
             val sealed = localReceipt
-            if (sealed == null) {
+            if (sealed == null && storageBlocked) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = VeilPalette.InkRaised.copy(alpha = 0.92f),
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text(
+                        stringResource(R.string.silent_names_record_unavailable),
+                        modifier = Modifier.padding(VeilSpacing.lg),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon
+                    )
+                }
+                Button(
+                    onClick = onClose,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 52.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = VeilPalette.DeepBrass,
+                        contentColor = VeilPalette.Moon
+                    )
+                ) {
+                    Text(stringResource(R.string.silent_names_back_hall))
+                }
+            } else if (sealed == null) {
                 SilentNamesModeSelector(
                     selected = selectedMode,
                     enabled = !saving,
