@@ -162,4 +162,29 @@ class DesignConstitutionTest {
         assertEquals(8f, VeilSanctuary.maximumPageStackDp)
         assertEquals(VeilMotion.READER_AUTO_HIDE_MS, VeilSanctuary.chromeAutoHideMillis)
     }
+    @Test
+    fun `paper patina scales archival material while dark themes stay restrained`() {
+        val clean = sanctuarySurfaceProfileFor(
+            ReaderTheme.PAPER,
+            ReaderNavigationMode.PAGED,
+            paperPatina = 0f
+        )
+        val aged = sanctuarySurfaceProfileFor(
+            ReaderTheme.PAPER,
+            ReaderNavigationMode.PAGED,
+            paperPatina = 1f
+        )
+        val oled = sanctuarySurfaceProfileFor(
+            ReaderTheme.OLED,
+            ReaderNavigationMode.PAGED,
+            paperPatina = 1f
+        )
+
+        assertTrue(aged.fibreAlpha > clean.fibreAlpha)
+        assertTrue(aged.mottleAlpha > clean.mottleAlpha)
+        assertTrue(aged.edgeOxidationAlpha > clean.edgeOxidationAlpha)
+        assertTrue(aged.fibreCount > clean.fibreCount)
+        assertEquals(0f, oled.fibreAlpha)
+    }
+
 }

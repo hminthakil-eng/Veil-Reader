@@ -819,6 +819,7 @@ fun ReaderScreen(
             ReaderPageAtmosphere(
                 theme = readerAppearance.theme,
                 navigationMode = readerAppearance.navigationMode,
+                paperPatina = readerAppearance.paperPatina.toFloat(),
                 progress = progress,
                 progression = (navigator as? OverflowableNavigator)
                     ?.overflow
@@ -1424,13 +1425,18 @@ private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
 private fun ReaderPageAtmosphere(
     theme: ReaderTheme,
     navigationMode: ReaderNavigationMode,
+    paperPatina: Float,
     progress: Float,
     progression: ReadingProgression,
     modifier: Modifier = Modifier
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
     val material = sanctuaryPageMaterialFor(navigationMode)
-    val surface = sanctuarySurfaceProfileFor(theme, navigationMode)
+    val surface = sanctuarySurfaceProfileFor(
+        theme = theme,
+        mode = navigationMode,
+        paperPatina = paperPatina
+    )
     val stack = paperPageStackDepth(progress, progression)
 
     Canvas(modifier) {
@@ -2150,6 +2156,28 @@ private fun EpubAppearancePanel(
 
                 BrassRule(Modifier.fillMaxWidth())
 
+                val lightPaperTheme =
+                    draft.theme == ReaderTheme.PAPER || draft.theme == ReaderTheme.SEPIA
+                ReaderConsoleSlider(
+                    label = "Paper patina",
+                    value = draft.paperPatina.toFloat(),
+                    valueRange = 0f..1f,
+                    display = "${(draft.paperPatina * 100).toInt()}%",
+                    enabled = lightPaperTheme,
+                    onValueChange = {
+                        updateDraft(draft.withPaperPatina(it.toDouble()))
+                    }
+                )
+                Text(
+                    if (lightPaperTheme) {
+                        "Controls fibre, mottling, edge oxidation, and page age without changing the book's text."
+                    } else {
+                        "Paper patina is available in Paper and Sepia themes."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.68f)
+                )
+
                 ReaderBrightnessControls(
                     appearance = draft,
                     onChange = ::updateDraft
@@ -2563,6 +2591,7 @@ private fun ReaderAppearancePreview(
                 ReaderPageAtmosphere(
                     theme = appearance.theme,
                     navigationMode = appearance.navigationMode,
+                    paperPatina = appearance.paperPatina.toFloat(),
                     progress = 0.42f,
                     progression = ReadingProgression.LTR,
                     modifier = Modifier.matchParentSize()
