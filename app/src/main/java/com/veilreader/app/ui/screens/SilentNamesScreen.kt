@@ -71,6 +71,33 @@ fun SilentNamesScreen(
     var localReceipt by remember(receipt) { mutableStateOf(receipt) }
     var saving by remember { mutableStateOf(false) }
     var saveFailed by remember { mutableStateOf(false) }
+    // A failed disk commit can leave the original receipt pending in the repository. Keep the
+    // reader's first command visible and retry that exact command, never offer an apparent reroll.
+    var pendingAttempt by remember { mutableStateOf<Pair<SilentNamesChoice, SilentNamesMode>?>(null) }
+    val sealChoice: (SilentNamesChoice, SilentNamesMode) -> Unit = { choice, mode ->
+        if (!saving) {
+            pendingAttempt = choice to mode
+            saving = true
+            saveFailed = false
+            scope.launch {
+                try {
+                    onSeal(choice, mode).fold(
+                        onSuccess = { committed ->
+                            localReceipt = committed
+                            pendingAttempt = null
+                        },
+                        onFailure = { saveFailed = true }
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Throwable) {
+                    saveFailed = true
+                } finally {
+                    saving = false
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -175,44 +202,20 @@ fun SilentNamesScreen(
                     Text(stringResource(R.string.silent_names_back_hall))
                 }
             } else if (sealed == null) {
-                SilentNamesModeSelector(
-                    selected = selectedMode,
-                    enabled = !saving,
-                    onSelected = {
-                        saveFailed = false
-                        selectedMode = it
-                    }
-                )
+                if (pendingAttempt == null) {
+                    SilentNamesModeSelector(
+                        selected = selectedMode,
+                        enabled = !saving,
+                        onSelected = { selectedMode = it }
+                    )
 
-                SilentNamesChoices(
-                    profile = profile,
-                    mode = selectedMode,
-                    enabled = !saving,
-                    onChoice = { choice ->
-                        if (saving) return@SilentNamesChoices
-                        saving = true
-                        saveFailed = false
-                        scope.launch {
-                            try {
-                                val result = onSeal(choice, selectedMode)
-                                result.fold(
-                                    onSuccess = { committed ->
-                                        localReceipt = committed
-                                    },
-                                    onFailure = {
-                                        saveFailed = true
-                                    }
-                                )
-                            } catch (cancelled: CancellationException) {
-                                throw cancelled
-                            } catch (_: Throwable) {
-                                saveFailed = true
-                            } finally {
-                                saving = false
-                            }
-                        }
-                    }
-                )
+                    SilentNamesChoices(
+                        profile = profile,
+                        mode = selectedMode,
+                        enabled = !saving,
+                        onChoice = { choice -> sealChoice(choice, selectedMode) }
+                    )
+                }
 
                 if (saving) {
                     Text(
@@ -223,18 +226,43 @@ fun SilentNamesScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-                if (saveFailed) {
+                if (saveFailed && pendingAttempt != null) {
+                    val attempt = requireNotNull(pendingAttempt)
                     Surface(
                         color = VeilPalette.RaisedIron.copy(alpha = 0.88f),
                         border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
                         shape = MaterialTheme.shapes.small
                     ) {
-                        Text(
-                            stringResource(R.string.silent_names_save_failed),
+                        Column(
                             modifier = Modifier.padding(VeilSpacing.md),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = VeilPalette.Moon
-                        )
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.silent_names_save_failed),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = VeilPalette.Moon
+                            )
+                            Text(
+                                stringResource(
+                                    R.string.silent_names_pending_choice,
+                                    stringResource(attempt.first.labelRes())
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = VeilPalette.Mist
+                            )
+                            Button(
+                                onClick = { sealChoice(attempt.first, attempt.second) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 52.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = VeilPalette.DeepBrass,
+                                    contentColor = VeilPalette.Moon
+                                )
+                            ) {
+                                Text(stringResource(R.string.silent_names_retry_same_choice))
+                            }
+                        }
                     }
                 }
             } else {
