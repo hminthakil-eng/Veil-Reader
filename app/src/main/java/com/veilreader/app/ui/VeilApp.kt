@@ -791,6 +791,18 @@ fun VeilApp(
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (error: Throwable) {
+                                when (val state = game.silentNamesStorageState()) {
+                                    is SilentNamesStorageState.Valid -> {
+                                        silentNamesReceipt = state.receipt
+                                        silentNamesStorageBlocked = false
+                                    }
+                                    is SilentNamesStorageState.Unsupported,
+                                    is SilentNamesStorageState.Corrupt -> {
+                                        silentNamesReceipt = null
+                                        silentNamesStorageBlocked = true
+                                    }
+                                    SilentNamesStorageState.Missing -> Unit
+                                }
                                 Result.failure(error)
                             }
                         },
