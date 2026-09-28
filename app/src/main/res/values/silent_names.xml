@@ -26,4 +26,5 @@
     <string name="silent_names_choose_mode">Choose how uncertainty works</string>
     <string name="silent_names_saving">Sealing your choice…</string>
     <string name="silent_names_roll_result">Roll: %1$d + %2$d vs %3$d</string>
+    <string name="silent_names_record_unavailable">This story record cannot be read by this build. Veil kept it unchanged; update the app before continuing.</string>
 </resources>
