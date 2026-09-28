@@ -84,6 +84,7 @@ import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilQualityTier
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
@@ -1445,11 +1446,16 @@ private fun ReaderPageAtmosphere(
     modifier: Modifier = Modifier
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
-    val material = sanctuaryPageMaterialFor(navigationMode)
+    val qualityTier = LocalVeilQualityTier.current
+    val material = sanctuaryPageMaterialFor(
+        mode = navigationMode,
+        qualityTier = qualityTier
+    )
     val surface = sanctuarySurfaceProfileFor(
         theme = theme,
         mode = navigationMode,
-        paperPatina = paperPatina
+        paperPatina = paperPatina,
+        qualityTier = qualityTier
     )
     val stack = paperPageStackDepth(progress, progression)
 
