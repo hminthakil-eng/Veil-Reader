@@ -35,9 +35,10 @@ data class SilentNamesReceipt(
 )
 
 /**
- * needsCommit is an intent, not proof of durable awarding. The repository must read the existing
- * receipt and commit receipt + reward under one transaction with unique encounter/reward IDs.
- * Do not expose the reward before that transaction succeeds. Replays are read-only.
+ * needsCommit is an intent, not proof of durability. The repository must read the existing
+ * receipt before resolution and durably commit one authoritative receipt. Cosmetic reward
+ * ownership is derived from that committed receipt, avoiding a second fallible award write.
+ * Do not expose the reward before persistence succeeds. Replays are read-only.
  */
 data class SilentNamesResolution(val receipt: SilentNamesReceipt, val needsCommit: Boolean)
 
