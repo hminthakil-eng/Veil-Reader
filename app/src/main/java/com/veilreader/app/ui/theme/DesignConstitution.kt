@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderTheme
 
 /**
  * Executable product rules for Grayfog.
@@ -408,3 +409,70 @@ fun sanctuaryPageMaterialFor(mode: ReaderNavigationMode): VeilSanctuaryPageMater
         showEdgeFalloff = true,
         showMicroFibres = true
     )
+
+data class VeilSanctuarySurfaceProfile(
+    val fibreAlpha: Float,
+    val speckAlpha: Float,
+    val mottleAlpha: Float,
+    val edgeOxidationAlpha: Float,
+    val pageShadeAlpha: Float,
+    val fibreCount: Int,
+    val speckCount: Int
+)
+
+/**
+ * Sanctuary material is stronger than the previous nearly invisible overlay, while remaining
+ * comfortably below body-text contrast. Light themes carry age; dark themes carry quiet depth.
+ */
+fun sanctuarySurfaceProfileFor(
+    theme: ReaderTheme,
+    mode: ReaderNavigationMode
+): VeilSanctuarySurfaceProfile {
+    val base = when (theme) {
+        ReaderTheme.PAPER -> VeilSanctuarySurfaceProfile(
+            fibreAlpha = 0.026f,
+            speckAlpha = 0.020f,
+            mottleAlpha = 0.022f,
+            edgeOxidationAlpha = 0.072f,
+            pageShadeAlpha = 0.042f,
+            fibreCount = 34,
+            speckCount = 42
+        )
+        ReaderTheme.SEPIA -> VeilSanctuarySurfaceProfile(
+            fibreAlpha = 0.032f,
+            speckAlpha = 0.026f,
+            mottleAlpha = 0.030f,
+            edgeOxidationAlpha = 0.092f,
+            pageShadeAlpha = 0.052f,
+            fibreCount = 38,
+            speckCount = 48
+        )
+        ReaderTheme.DUSK -> VeilSanctuarySurfaceProfile(
+            fibreAlpha = 0.008f,
+            speckAlpha = 0.006f,
+            mottleAlpha = 0.010f,
+            edgeOxidationAlpha = 0.030f,
+            pageShadeAlpha = 0.055f,
+            fibreCount = 14,
+            speckCount = 16
+        )
+        ReaderTheme.OLED -> VeilSanctuarySurfaceProfile(
+            fibreAlpha = 0f,
+            speckAlpha = 0f,
+            mottleAlpha = 0f,
+            edgeOxidationAlpha = 0.020f,
+            pageShadeAlpha = 0.040f,
+            fibreCount = 0,
+            speckCount = 0
+        )
+    }
+
+    return if (mode == ReaderNavigationMode.SCROLL) {
+        base.copy(
+            edgeOxidationAlpha = base.edgeOxidationAlpha * 0.55f,
+            pageShadeAlpha = base.pageShadeAlpha * 0.72f
+        )
+    } else {
+        base
+    }
+}

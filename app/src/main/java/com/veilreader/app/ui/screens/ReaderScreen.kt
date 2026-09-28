@@ -87,6 +87,7 @@ import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
+import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -1428,6 +1429,7 @@ private fun ReaderPageAtmosphere(
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
     val material = sanctuaryPageMaterialFor(navigationMode)
+    val surface = sanctuarySurfaceProfileFor(theme, navigationMode)
     val stack = paperPageStackDepth(progress, progression)
 
     Canvas(modifier) {
@@ -1443,6 +1445,12 @@ private fun ReaderPageAtmosphere(
         }
         val leftStackWidth = stack.leftDp.dp.toPx()
         val rightStackWidth = stack.rightDp.dp.toPx()
+        val agedTone = when (theme) {
+            ReaderTheme.PAPER -> Color(0xFF7A5B31)
+            ReaderTheme.SEPIA -> Color(0xFF68451F)
+            ReaderTheme.DUSK -> Color(0xFF09070B)
+            ReaderTheme.OLED -> Color.Black
+        }
 
         // Physical page stack belongs only to paginated modes. Scroll remains a continuous
         // paper field and must not visually imply a detachable sheet at either edge.
@@ -1490,9 +1498,9 @@ private fun ReaderPageAtmosphere(
         // Very soft top/bottom page falloff. Keep it below the threshold where it
         // competes with body text.
         val falloff = if (dark) {
-            Color.Black.copy(alpha = 0.075f)
+            Color.Black.copy(alpha = surface.pageShadeAlpha)
         } else {
-            Color(0xFF7C6544).copy(alpha = 0.040f)
+            agedTone.copy(alpha = surface.pageShadeAlpha)
         }
         val band = 28.dp.toPx()
         if (material.showEdgeFalloff) {
@@ -1515,29 +1523,93 @@ private fun ReaderPageAtmosphere(
             )
         }
 
-        // Deterministic micro-fibres: deliberately sparse and nearly invisible.
-        // They add material character without turning the page into a texture image.
-        if (!dark && material.showMicroFibres) {
-            val fibre = Color(0xFF6F5A3D).copy(alpha = 0.012f)
-            repeat(18) { index ->
+        if (!dark && surface.mottleAlpha > 0f) {
+            val radius = size.minDimension * 0.48f
+            listOf(
+                Offset(size.width * 0.10f, size.height * 0.16f),
+                Offset(size.width * 0.86f, size.height * 0.34f),
+                Offset(size.width * 0.22f, size.height * 0.78f)
+            ).forEachIndexed { index, center ->
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            agedTone.copy(
+                                alpha = surface.mottleAlpha *
+                                    if (index == 1) 0.72f else 1f
+                            ),
+                            Color.Transparent
+                        ),
+                        center = center,
+                        radius = radius
+                    ),
+                    center = center,
+                    radius = radius
+                )
+            }
+        }
+
+        if (surface.edgeOxidationAlpha > 0f) {
+            val sideBand = 34.dp.toPx()
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        agedTone.copy(alpha = surface.edgeOxidationAlpha),
+                        Color.Transparent
+                    ),
+                    startX = 0f,
+                    endX = sideBand
+                ),
+                size = Size(sideBand, size.height)
+            )
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        Color.Transparent,
+                        agedTone.copy(alpha = surface.edgeOxidationAlpha)
+                    ),
+                    startX = size.width - sideBand,
+                    endX = size.width
+                ),
+                topLeft = Offset(size.width - sideBand, 0f),
+                size = Size(sideBand, size.height)
+            )
+        }
+
+        if (material.showMicroFibres && surface.fibreAlpha > 0f) {
+            val fibre = agedTone.copy(alpha = surface.fibreAlpha)
+            repeat(surface.fibreCount) { index ->
                 val y = ((index * 71f + 29f) % size.height)
-                val x = ((index * 43f + 17f) % (size.width * 0.55f))
-                val length = 24.dp.toPx() + (index % 4) * 9.dp.toPx()
+                val x = ((index * 43f + 17f) % (size.width * 0.72f))
+                val length = 20.dp.toPx() + (index % 5) * 10.dp.toPx()
+                val tilt = ((index % 5) - 2) * 0.42.dp.toPx()
                 drawLine(
-                    color = fibre,
+                    color = fibre.copy(
+                        alpha = surface.fibreAlpha *
+                            (0.62f + (index % 4) * 0.10f)
+                    ),
                     start = Offset(x, y),
-                    end = Offset((x + length).coerceAtMost(size.width), y + (index % 3 - 1) * 0.6f),
-                    strokeWidth = 0.55.dp.toPx()
+                    end = Offset(
+                        (x + length).coerceAtMost(size.width),
+                        (y + tilt).coerceIn(0f, size.height)
+                    ),
+                    strokeWidth = if (index % 7 == 0) 0.72.dp.toPx() else 0.48.dp.toPx()
                 )
             }
 
-            val speck = Color(0xFF59462F).copy(alpha = 0.015f)
-            repeat(24) { index ->
+            val speck = agedTone.copy(alpha = surface.speckAlpha)
+            repeat(surface.speckCount) { index ->
                 val x = ((index * 97f + 31f) % size.width)
                 val y = ((index * 137f + 47f) % size.height)
                 drawCircle(
-                    color = speck,
-                    radius = if (index % 5 == 0) 0.75.dp.toPx() else 0.45.dp.toPx(),
+                    color = speck.copy(
+                        alpha = surface.speckAlpha *
+                            (0.58f + (index % 3) * 0.14f)
+                    ),
+                    radius = when {
+                        index % 11 == 0 -> 0.95.dp.toPx()
+                        index % 5 == 0 -> 0.68.dp.toPx()
+                        else -> 0.42.dp.toPx()
+                    },
                     center = Offset(x, y)
                 )
             }

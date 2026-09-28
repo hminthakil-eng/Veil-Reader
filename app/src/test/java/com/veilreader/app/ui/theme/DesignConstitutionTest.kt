@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderTheme
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -109,6 +110,47 @@ class DesignConstitutionTest {
             assertTrue(material.showEdgeFalloff)
             assertTrue(material.showMicroFibres)
         }
+    }
+
+    @Test
+    fun `paper and sepia expose visibly stronger material than dark sanctuary themes`() {
+        val paper = sanctuarySurfaceProfileFor(
+            ReaderTheme.PAPER,
+            ReaderNavigationMode.PAPER_CURL
+        )
+        val sepia = sanctuarySurfaceProfileFor(
+            ReaderTheme.SEPIA,
+            ReaderNavigationMode.PAPER_CURL
+        )
+        val dusk = sanctuarySurfaceProfileFor(
+            ReaderTheme.DUSK,
+            ReaderNavigationMode.PAPER_CURL
+        )
+        val oled = sanctuarySurfaceProfileFor(
+            ReaderTheme.OLED,
+            ReaderNavigationMode.PAPER_CURL
+        )
+
+        assertTrue(paper.fibreAlpha > dusk.fibreAlpha)
+        assertTrue(sepia.edgeOxidationAlpha > paper.edgeOxidationAlpha)
+        assertEquals(0f, oled.fibreAlpha)
+        assertTrue(paper.fibreCount > dusk.fibreCount)
+    }
+
+    @Test
+    fun `scroll keeps material but softens detachable-page edge aging`() {
+        val paged = sanctuarySurfaceProfileFor(
+            ReaderTheme.SEPIA,
+            ReaderNavigationMode.PAGED
+        )
+        val scroll = sanctuarySurfaceProfileFor(
+            ReaderTheme.SEPIA,
+            ReaderNavigationMode.SCROLL
+        )
+
+        assertTrue(scroll.edgeOxidationAlpha < paged.edgeOxidationAlpha)
+        assertEquals(paged.fibreAlpha, scroll.fibreAlpha)
+        assertEquals(paged.fibreCount, scroll.fibreCount)
     }
 
     @Test
