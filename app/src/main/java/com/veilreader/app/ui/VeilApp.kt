@@ -714,6 +714,7 @@ fun VeilApp(
                         readingSessions = readingSessions,
                         readingCycles = readingCycles,
                         passageVisits = passageVisits,
+                        mutationLedger = worldMutationLedger,
                         onClose = routeViewModel::closeArchive,
                         onOpenPassage = { book, locator ->
                             requestOpenBook(book, locator)
@@ -741,6 +742,7 @@ fun VeilApp(
                         highlights = highlights,
                         passageVisits = passageVisits,
                         readingCycles = readingCycles,
+                        mutationLedger = worldMutationLedger,
                         onOpenPassage = { book, locator ->
                             routeViewModel.closeChamber()
                             requestOpenBook(book, locator)
@@ -753,6 +755,7 @@ fun VeilApp(
                         highlights = highlights,
                         readingSessions = readingSessions,
                         profile = profile,
+                        mutationLedger = worldMutationLedger,
                         onOpenBook = { book -> requestOpenBook(book) },
                         onClose = routeViewModel::closeChamber
                     )

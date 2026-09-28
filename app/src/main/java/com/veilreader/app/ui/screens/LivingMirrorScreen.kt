@@ -34,6 +34,8 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.LivingMirrorNote
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.WorldMutationLedger
+import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.domain.deriveLivingMirrorNotes
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
@@ -89,6 +91,7 @@ fun LivingMirrorScreen(
     highlights: List<Highlight>,
     passageVisits: List<PassageVisit>,
     readingCycles: List<ReadingCycleRecord>,
+    mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
     onOpenPassage: (Book, String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -155,6 +158,14 @@ fun LivingMirrorScreen(
                 noteCount = allNotes.size,
                 compact = compactHeight || compactWidth,
                 onClose = onClose
+            )
+
+            WorldMutationEcho(
+                ledger = mutationLedger,
+                realm = WorldMutationRealm.MIRROR,
+                limit = 1,
+                eyebrow = "MIRROR CONSEQUENCE",
+                title = "The glass remembers"
             )
 
             OutlinedTextField(

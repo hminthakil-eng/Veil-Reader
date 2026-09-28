@@ -41,6 +41,8 @@ import com.veilreader.app.domain.HighlightMemory
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.WorldMutationLedger
+import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
@@ -68,6 +70,7 @@ fun ArchiveScreen(
     readingSessions: List<ReadingSessionSnapshot>,
     readingCycles: List<ReadingCycleRecord>,
     passageVisits: List<PassageVisit>,
+    mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
     onClose: () -> Unit,
     onOpenPassage: (Book, String) -> Unit,
     onSaveNote: (String, String) -> Unit,
@@ -282,6 +285,14 @@ fun ArchiveScreen(
                 }
             }
         }
+
+        WorldMutationEcho(
+            ledger = mutationLedger,
+            realm = WorldMutationRealm.ARCHIVE,
+            limit = 2,
+            eyebrow = "ARCHIVE CONSEQUENCE",
+            title = "Marks left by reading"
+        )
 
         VeilReveal(delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(

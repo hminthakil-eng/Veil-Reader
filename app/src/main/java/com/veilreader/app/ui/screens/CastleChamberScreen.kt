@@ -278,7 +278,7 @@ fun TreasuryScreen(
             trailing = "$awakenedRelics RELICS · $awakenedBookplates BOOKPLATES"
         )
 
-        WorldMutationChamberEcho(
+        WorldMutationEcho(
             ledger = mutationLedger,
             realm = WorldMutationRealm.TREASURY
         )
@@ -366,7 +366,7 @@ fun TreasuryScreen(
 }
 
 @Composable
-private fun WorldMutationChamberEcho(
+private fun WorldMutationEcho(
     ledger: WorldMutationLedger,
     realm: WorldMutationRealm,
     durableOnly: Boolean = false
@@ -911,7 +911,7 @@ fun SanctumScreen(
             trailing = if (sovereignReady) "SOVEREIGN SEAL" else "$knownDiscoveryCount DISCOVERIES"
         )
 
-        WorldMutationChamberEcho(
+        WorldMutationEcho(
             ledger = mutationLedger,
             realm = WorldMutationRealm.SANCTUM,
             durableOnly = true

@@ -48,6 +48,8 @@ import com.veilreader.app.domain.PathArchitecturalMotif
 import com.veilreader.app.domain.PathWorldSignature
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.WorldMutationLedger
+import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.domain.derivePathWorldSignature
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.VeilMastheadMetaRow
@@ -90,6 +92,7 @@ fun ObservatoryScreen(
     highlights: List<Highlight>,
     readingSessions: List<ReadingSessionSnapshot>,
     profile: ReaderProfile? = null,
+    mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
     onOpenBook: (Book) -> Unit,
     onClose: () -> Unit
 ) {
@@ -197,6 +200,14 @@ fun ObservatoryScreen(
             volumeCount = atlas.nodes.size,
             linkCount = atlas.edges.size,
             pathSignature = pathSignature
+        )
+
+        WorldMutationEcho(
+            ledger = mutationLedger,
+            realm = WorldMutationRealm.OBSERVATORY,
+            limit = 1,
+            eyebrow = "OBSERVATORY CONSEQUENCE",
+            title = "Recorded structure"
         )
 
         ObservatoryAtlasPanel(
