@@ -277,3 +277,6 @@ internal fun localizedRitualDescription(
 
 internal fun knownLocalizedPathIds(): Set<String> =
     pathIdentityResources.keys.intersect(pathDoctrineResources.keys)
+
+internal fun localizedPathRankResourceCount(pathId: String): Int =
+    pathIdentityResources[pathId]?.rankRes?.size ?: 0
