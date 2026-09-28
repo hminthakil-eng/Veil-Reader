@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
@@ -70,6 +71,16 @@ internal fun selectLivingMirrorSurfaceNotes(
     val matched = notes.filter { it.highlightId in matches }
     val unrelated = notes.filterNot { it.highlightId in matches }
     return (matched + unrelated).take(maxNodes)
+}
+
+internal fun livingMirrorFogAlpha(
+    noteCount: Int,
+    queryActive: Boolean
+): Float {
+    val density = (noteCount.coerceIn(0, 40) / 40f)
+    val resting = 0.28f - density * 0.10f
+    return (if (queryActive) resting * 0.42f else resting)
+        .coerceIn(0.07f, 0.30f)
 }
 
 @Composable
@@ -364,22 +375,34 @@ private fun LivingMirrorSurface(
     modifier: Modifier = Modifier
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
+    val fogAlpha by animateFloatAsState(
+        targetValue = livingMirrorFogAlpha(
+            noteCount = notes.size,
+            queryActive = query.isNotBlank()
+        ),
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(motionBudgetFor(CathedralMotionClass.MATERIAL).targetDurationMs)
+        },
+        label = "living-mirror-fog"
+    )
 
     BoxWithConstraints(
         modifier = modifier
             .heightIn(min = if (compact) 320.dp else 470.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .background(
-                Brush.radialGradient(
+                Brush.verticalGradient(
                     listOf(
-                        Color(0xFF26333B).copy(alpha = 0.72f),
-                        Color(0xFF121A21).copy(alpha = 0.92f),
-                        Color(0xFF070A0F)
+                        Color(0xFF17130F),
+                        Color(0xFF090C10),
+                        Color(0xFF05070A)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Spirit.copy(alpha = 0.42f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
                 MaterialTheme.shapes.extraSmall
             )
             .semantics {
@@ -401,25 +424,144 @@ private fun LivingMirrorSurface(
             if (query.isBlank()) 0 else visibleNotes.count { it.highlightId in matches }
 
         Canvas(Modifier.matchParentSize()) {
-            val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
-            repeat(5) { index ->
+            val w = size.width
+            val h = size.height
+            val insetX = w * 0.055f
+            val insetY = h * 0.035f
+            val mirrorLeft = insetX
+            val mirrorTop = insetY
+            val mirrorWidth = w - insetX * 2f
+            val mirrorHeight = h - insetY * 2f
+            val corner = 34.dp.toPx()
+
+            // Heavy old frame: iron body, brass lip, then the cold glass surface.
+            drawRoundRect(
+                color = Color(0xFF16120E),
+                topLeft = androidx.compose.ui.geometry.Offset(mirrorLeft, mirrorTop),
+                size = androidx.compose.ui.geometry.Size(mirrorWidth, mirrorHeight),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
+            )
+            drawRoundRect(
+                color = VeilPalette.Brass.copy(alpha = 0.54f),
+                topLeft = androidx.compose.ui.geometry.Offset(mirrorLeft, mirrorTop),
+                size = androidx.compose.ui.geometry.Size(mirrorWidth, mirrorHeight),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner),
+                style = Stroke(2.1.dp.toPx())
+            )
+            drawRoundRect(
+                color = Color(0xFF725C34).copy(alpha = 0.42f),
+                topLeft = androidx.compose.ui.geometry.Offset(
+                    mirrorLeft + 6.dp.toPx(),
+                    mirrorTop + 6.dp.toPx()
+                ),
+                size = androidx.compose.ui.geometry.Size(
+                    mirrorWidth - 12.dp.toPx(),
+                    mirrorHeight - 12.dp.toPx()
+                ),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner - 5.dp.toPx()),
+                style = Stroke(0.8.dp.toPx())
+            )
+
+            val glassLeft = mirrorLeft + 12.dp.toPx()
+            val glassTop = mirrorTop + 12.dp.toPx()
+            val glassWidth = mirrorWidth - 24.dp.toPx()
+            val glassHeight = mirrorHeight - 24.dp.toPx()
+
+            drawRoundRect(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        Color(0xFF31434A).copy(alpha = 0.78f),
+                        Color(0xFF152128).copy(alpha = 0.94f),
+                        Color(0xFF070A0D)
+                    ),
+                    center = androidx.compose.ui.geometry.Offset(
+                        glassLeft + glassWidth * 0.34f,
+                        glassTop + glassHeight * 0.28f
+                    ),
+                    radius = size.minDimension * 0.70f
+                ),
+                topLeft = androidx.compose.ui.geometry.Offset(glassLeft, glassTop),
+                size = androidx.compose.ui.geometry.Size(glassWidth, glassHeight),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner - 9.dp.toPx())
+            )
+
+            // Uneven silvering and a narrow reflection make it read as glass, not a panel.
+            drawRoundRect(
+                brush = Brush.horizontalGradient(
+                    colorStops = arrayOf(
+                        0.00f to Color.Transparent,
+                        0.18f to VeilPalette.Spirit.copy(alpha = 0.025f),
+                        0.31f to VeilPalette.Moon.copy(alpha = 0.085f),
+                        0.38f to Color.Transparent,
+                        1.00f to Color.Transparent
+                    ),
+                    startX = glassLeft,
+                    endX = glassLeft + glassWidth
+                ),
+                topLeft = androidx.compose.ui.geometry.Offset(glassLeft, glassTop),
+                size = androidx.compose.ui.geometry.Size(glassWidth, glassHeight),
+                cornerRadius = androidx.compose.ui.geometry.CornerRadius(corner - 9.dp.toPx())
+            )
+
+            val center = androidx.compose.ui.geometry.Offset(w / 2f, h / 2f)
+            repeat(4) { index ->
                 drawCircle(
-                    color = VeilPalette.Spirit.copy(alpha = 0.055f - index * 0.007f),
+                    color = VeilPalette.Spirit.copy(
+                        alpha = 0.040f - index * 0.006f
+                    ),
                     center = center,
-                    radius = size.minDimension * (0.16f + index * 0.095f),
-                    style = Stroke((1.0f - index * 0.10f).dp.toPx())
+                    radius = size.minDimension * (0.15f + index * 0.105f),
+                    style = Stroke((0.9f - index * 0.10f).dp.toPx())
                 )
             }
-            repeat(7) { index ->
-                val y = size.height * (0.12f + index * 0.12f)
-                drawLine(
-                    color = VeilPalette.Mist.copy(alpha = 0.025f),
-                    start = androidx.compose.ui.geometry.Offset(size.width * 0.08f, y),
-                    end = androidx.compose.ui.geometry.Offset(size.width * 0.92f, y),
-                    strokeWidth = 0.7.dp.toPx(),
-                    cap = StrokeCap.Round
+
+            // Fog is strongest while the mirror rests. Summoning clears it without changing data.
+            repeat(5) { index ->
+                val y = glassTop + glassHeight * (0.12f + index * 0.18f)
+                val drift = if (index % 2 == 0) 0.05f else -0.04f
+                drawOval(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            VeilPalette.Mist.copy(
+                                alpha = fogAlpha * (0.22f - index * 0.018f)
+                            ),
+                            Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(
+                            glassLeft + glassWidth * (0.48f + drift),
+                            y
+                        ),
+                        radius = glassWidth * 0.46f
+                    ),
+                    topLeft = androidx.compose.ui.geometry.Offset(
+                        glassLeft + glassWidth * 0.08f,
+                        y - glassHeight * 0.09f
+                    ),
+                    size = androidx.compose.ui.geometry.Size(
+                        glassWidth * 0.84f,
+                        glassHeight * 0.18f
+                    )
                 )
             }
+
+            // A small crown and foot make the frame feel like an object in the Hall.
+            val crown = Path().apply {
+                moveTo(w * 0.43f, mirrorTop + 2.dp.toPx())
+                lineTo(w * 0.50f, mirrorTop - 10.dp.toPx())
+                lineTo(w * 0.57f, mirrorTop + 2.dp.toPx())
+            }
+            drawPath(
+                crown,
+                color = VeilPalette.Brass.copy(alpha = 0.52f),
+                style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round)
+            )
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.38f),
+                start = androidx.compose.ui.geometry.Offset(w * 0.38f, h - 8.dp.toPx()),
+                end = androidx.compose.ui.geometry.Offset(w * 0.62f, h - 8.dp.toPx()),
+                strokeWidth = 1.5.dp.toPx(),
+                cap = StrokeCap.Round
+            )
         }
 
         visibleNotes.forEach { note ->
@@ -440,8 +582,12 @@ private fun LivingMirrorSurface(
                 },
                 label = "mirror-node-scale"
             )
-            val x = ((width - 116f) * note.clusterX).coerceIn(0f, width - 116f)
-            val y = ((surfaceHeight - 92f) * note.clusterY).coerceIn(0f, surfaceHeight - 92f)
+            val horizontalInset = if (compact) 22f else 42f
+            val verticalInset = if (compact) 26f else 42f
+            val usableWidth = (width - horizontalInset * 2f - 116f).coerceAtLeast(1f)
+            val usableHeight = (surfaceHeight - verticalInset * 2f - 92f).coerceAtLeast(1f)
+            val x = horizontalInset + usableWidth * note.clusterX.coerceIn(0f, 1f)
+            val y = verticalInset + usableHeight * note.clusterY.coerceIn(0f, 1f)
 
             LivingMirrorNode(
                 note = note,
@@ -503,34 +649,94 @@ private fun LivingMirrorNode(
                 )
             }
         }
-        Surface(
-            modifier = Modifier.width(94.dp).heightIn(min = 68.dp),
-            shape = MaterialTheme.shapes.extraSmall,
-            color = VeilPalette.Archive.copy(alpha = alpha * (0.72f + note.proximity * 0.18f)),
-            border = BorderStroke(
-                1.dp,
-                VeilPalette.Spirit.copy(alpha = alpha * (0.30f + note.proximity * 0.34f))
-            ),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+        Box(
+            modifier = Modifier
+                .width(102.dp)
+                .heightIn(min = 72.dp),
+            contentAlignment = Alignment.Center
         ) {
+            Canvas(Modifier.matchParentSize()) {
+                val glow = (0.16f + note.proximity * 0.18f) * alpha
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            VeilPalette.Spirit.copy(alpha = glow),
+                            Color.Transparent
+                        ),
+                        center = androidx.compose.ui.geometry.Offset(
+                            size.width / 2f,
+                            size.height / 2f
+                        ),
+                        radius = size.minDimension * 0.62f
+                    ),
+                    radius = size.minDimension * 0.62f,
+                    center = androidx.compose.ui.geometry.Offset(
+                        size.width / 2f,
+                        size.height / 2f
+                    )
+                )
+                drawRoundRect(
+                    color = Color(0xFF0B1116).copy(alpha = 0.54f * alpha),
+                    topLeft = androidx.compose.ui.geometry.Offset(
+                        5.dp.toPx(),
+                        8.dp.toPx()
+                    ),
+                    size = androidx.compose.ui.geometry.Size(
+                        size.width - 10.dp.toPx(),
+                        size.height - 16.dp.toPx()
+                    ),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx())
+                )
+                drawRoundRect(
+                    color = VeilPalette.Spirit.copy(
+                        alpha = alpha * (0.24f + note.proximity * 0.34f)
+                    ),
+                    topLeft = androidx.compose.ui.geometry.Offset(
+                        5.dp.toPx(),
+                        8.dp.toPx()
+                    ),
+                    size = androidx.compose.ui.geometry.Size(
+                        size.width - 10.dp.toPx(),
+                        size.height - 16.dp.toPx()
+                    ),
+                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
+                    style = Stroke(0.8.dp.toPx())
+                )
+                drawLine(
+                    color = VeilPalette.Brass.copy(alpha = alpha * 0.42f),
+                    start = androidx.compose.ui.geometry.Offset(
+                        size.width * 0.25f,
+                        size.height - 9.dp.toPx()
+                    ),
+                    end = androidx.compose.ui.geometry.Offset(
+                        size.width * 0.75f,
+                        size.height - 9.dp.toPx()
+                    ),
+                    strokeWidth = 0.7.dp.toPx()
+                )
+            }
             Column(
-                modifier = Modifier.padding(8.dp),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 10.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     note.bookTitle,
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Moon.copy(alpha = alpha),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
                 )
                 Text(
                     note.note,
                     style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = alpha * 0.90f),
+                    color = VeilPalette.Mist.copy(alpha = alpha * 0.84f),
                     maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
                 )
             }
         }

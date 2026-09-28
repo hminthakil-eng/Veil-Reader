@@ -41,6 +41,24 @@ class LivingMirrorSurfacePolicyTest {
     }
 
     @Test
+    fun `summoning clears the glass fog without erasing material presence`() {
+        val resting = livingMirrorFogAlpha(noteCount = 8, queryActive = false)
+        val summoned = livingMirrorFogAlpha(noteCount = 8, queryActive = true)
+
+        assertTrue(resting > summoned)
+        assertTrue(resting <= 0.30f)
+        assertTrue(summoned >= 0.07f)
+    }
+
+    @Test
+    fun `denser factual memory clears some resting fog`() {
+        val sparse = livingMirrorFogAlpha(noteCount = 1, queryActive = false)
+        val dense = livingMirrorFogAlpha(noteCount = 40, queryActive = false)
+
+        assertTrue(dense < sparse)
+    }
+
+    @Test
     fun `surface budget is explicit and can be disabled safely`() {
         val notes = (0 until 4).map(::note)
 
