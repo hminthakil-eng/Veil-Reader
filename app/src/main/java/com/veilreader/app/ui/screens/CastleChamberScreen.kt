@@ -1252,16 +1252,22 @@ fun SanctumScreen(
         CastleChamberGrandMasthead(
             realm = VeilRealm.SANCTUM,
             sharedKey = hallSharedBoundsKey("sanctum"),
-            eyebrow = "INNER SANCTUM · DEEPEST RECORD",
-            title = castleTitle,
-            subtitle = "Thresholds crossed, constellations completed, and identities the Castle considers permanent.",
-            trailing = if (sovereignReady) "SOVEREIGN SEAL" else "$knownDiscoveryCount DISCOVERIES"
+            eyebrow = stringResource(R.string.sanctum_eyebrow),
+            title = localizedCastleTitle(castleTitle, profile),
+            subtitle = stringResource(R.string.sanctum_subtitle),
+            trailing = if (sovereignReady) {
+                stringResource(R.string.sanctum_sovereign_seal)
+            } else {
+                stringResource(R.string.sanctum_discovery_count, knownDiscoveryCount)
+            }
         )
 
         WorldMutationEcho(
             ledger = mutationLedger,
             realm = WorldMutationRealm.SANCTUM,
-            durableOnly = true
+            durableOnly = true,
+            eyebrow = stringResource(R.string.sanctum_consequence_eyebrow),
+            title = stringResource(R.string.sanctum_consequence_title)
         )
 
         SanctumSealPanel(
@@ -1278,9 +1284,9 @@ fun SanctumScreen(
         )
 
         ArchiveChamberHeading(
-            eyebrow = "Permanent identity",
-            title = "Castle title",
-            trailing = "${availableTitles.size} recognized"
+            eyebrow = stringResource(R.string.sanctum_identity_eyebrow),
+            title = stringResource(R.string.sanctum_identity_title),
+            trailing = stringResource(R.string.sanctum_titles_recognized, availableTitles.size)
         )
 
         availableTitles.forEachIndexed { index, title ->
@@ -1309,7 +1315,13 @@ fun SanctumScreen(
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
-                            if (title == castleTitle) "ACTIVE TITLE" else "RECOGNIZED TITLE",
+                            stringResource(
+                                if (title == castleTitle) {
+                                    R.string.sanctum_title_active
+                                } else {
+                                    R.string.sanctum_title_recognized
+                                }
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (title == castleTitle) {
                                 VeilPalette.Brass
@@ -1318,7 +1330,7 @@ fun SanctumScreen(
                             }
                         )
                         Text(
-                            title,
+                            localizedCastleTitle(title, profile),
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
@@ -1345,12 +1357,12 @@ private fun SanctumDiscoveryLedger(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
     ) {
         ArchiveChamberHeading(
-            eyebrow = "Permanent ledger",
-            title = "Veiled discoveries",
+            eyebrow = stringResource(R.string.sanctum_discoveries_eyebrow),
+            title = stringResource(R.string.sanctum_discoveries_title),
             trailing = "$revealedKnown/${veiledDiscoveryPresentations.size}"
         )
         Text(
-            "The Sanctum reveals one fragment at a time. It never exposes the full condition before discovery, and a completed record never reseals.",
+            stringResource(R.string.sanctum_discoveries_body),
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
         )
@@ -1410,8 +1422,11 @@ private fun SanctumDiscoveryLedger(
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
-                                if (record != null) presentation.title
-                                else "Sealed discovery ${index + 1}",
+                                if (record != null) {
+                                    stringResource(presentation.titleRes)
+                                } else {
+                                    stringResource(R.string.sanctum_discovery_sealed, index + 1)
+                                },
                                 style = MaterialTheme.typography.titleSmall,
                                 color = if (record != null) VeilPalette.Moon
                                 else VeilPalette.Mist.copy(alpha = 0.46f)
@@ -1419,10 +1434,16 @@ private fun SanctumDiscoveryLedger(
                             Text(
                                 if (record != null) {
                                     record.recordedAtEpochMs?.let { timestamp ->
-                                        "PERMANENT · RECORDED ${formatSanctumDate(timestamp)}"
-                                    } ?: "PERMANENT · RECORD DATE UNKNOWN"
+                                        stringResource(
+                                            R.string.sanctum_discovery_recorded,
+                                            formatSanctumDate(timestamp)
+                                        )
+                                    } ?: stringResource(R.string.sanctum_discovery_date_unknown)
                                 } else {
-                                    "VEILED THREAD · FRAGMENT ${(chain?.visibleFragmentIndex ?: 0) + 1}"
+                                    stringResource(
+                                        R.string.sanctum_discovery_fragment,
+                                        (chain?.visibleFragmentIndex ?: 0) + 1
+                                    )
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (record != null) VeilPalette.Spirit.copy(alpha = 0.82f)
@@ -1430,7 +1451,11 @@ private fun SanctumDiscoveryLedger(
                             )
                             if (record == null && chain != null) {
                                 Text(
-                                    chain.visibleClue,
+                                    localizedDiscoveryFragment(
+                                        presentation = presentation,
+                                        fragmentIndex = chain.visibleFragmentIndex,
+                                        fallback = chain.visibleClue
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = VeilPalette.Mist.copy(alpha = 0.66f)
                                 )
@@ -1457,6 +1482,7 @@ private fun SanctumSealPanel(
     sigilProgress: Float,
     sovereignReady: Boolean
 ) {
+    val pathPresentation = localizedPathPresentation(profile.path, profile.rankIndex)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -1528,7 +1554,10 @@ private fun SanctumSealPanel(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                if (sovereignReady) "THE SEAL IS OPEN" else "THE SIXTH DOOR",
+                stringResource(
+                    if (sovereignReady) R.string.sanctum_seal_open
+                    else R.string.sanctum_sixth_door
+                ),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass
             )
@@ -1539,28 +1568,28 @@ private fun SanctumSealPanel(
             )
 
             Text(
-                "${profile.path.name} · ${profile.rankName}",
+                "${pathPresentation.name} · ${pathPresentation.rankName}",
                 style = MaterialTheme.typography.titleLarge,
                 color = VeilPalette.Moon,
                 textAlign = TextAlign.Center
             )
 
             DossierProgressLine(
-                label = "PATH COMPLETION",
+                label = stringResource(R.string.sanctum_path_completion),
                 progress = rankProgress,
                 detail = "${profile.rankIndex + 1}/${profile.path.ranks.size}"
             )
             DossierProgressLine(
-                label = "CORE SIGILS",
+                label = stringResource(R.string.sanctum_core_sigils),
                 progress = sigilProgress,
                 detail = "${profile.earnedSigils.size.coerceAtMost(5)}/5"
             )
 
             Text(
                 if (sovereignReady) {
-                    "The Castle recognizes a complete Path and a full core constellation. A hidden record has surfaced below."
+                    stringResource(R.string.sanctum_ready_body)
                 } else {
-                    "Reach the final Path rank and awaken all five core sigils. The remaining door has no visible handle."
+                    stringResource(R.string.sanctum_locked_body)
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist,
@@ -1682,9 +1711,9 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
         ) {
             Text(
                 if (sovereignReady) {
-                    "SOVEREIGN RECORD · THE STAR BETWEEN SHELVES"
+                    stringResource(R.string.sanctum_record_open_title)
                 } else {
-                    "SOVEREIGN RECORD · SEALED"
+                    stringResource(R.string.sanctum_record_sealed_title)
                 },
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
                 color = if (sovereignReady) {
@@ -1695,9 +1724,9 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
             )
             Text(
                 if (sovereignReady) {
-                    "There was never a final shelf. Only another threshold hidden behind the act of returning."
+                    stringResource(R.string.sanctum_record_open_body)
                 } else {
-                    "A permanent inscription is present here, but its condition has not yet been satisfied."
+                    stringResource(R.string.sanctum_record_sealed_body)
                 },
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (sovereignReady) {
@@ -1708,9 +1737,9 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
             )
             Text(
                 if (sovereignReady) {
-                    "PERMANENT · NON-CONSUMABLE · LOCAL RECORD"
+                    stringResource(R.string.sanctum_record_open_meta)
                 } else {
-                    "NOT YET RECOGNIZED"
+                    stringResource(R.string.sanctum_record_sealed_meta)
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = if (sovereignReady) {
