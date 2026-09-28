@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -73,20 +74,6 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 
-private data class PathPresentation(
-    val aspect: String,
-    val invocation: String
-)
-
-private val pathPresentations = mapOf(
-    "oracle" to PathPresentation("Sight", "What is hidden may still be understood."),
-    "dreamwalker" to PathPresentation("Wonder", "Every page is a door that did not exist before."),
-    "archivist" to PathPresentation("Memory", "What is learned deserves a place to remain."),
-    "vanguard" to PathPresentation("Momentum", "Forward is a discipline, not a speed."),
-    "nocturne" to PathPresentation("Shadow", "Some truths are visible only after the lantern dims."),
-    "artificer" to PathPresentation("Making", "Understand the mechanism and the miracle changes shape.")
-)
-
 internal enum class PathGeometryKind {
     RADIAL_EYE,
     ASYMMETRIC_CONSTELLATION,
@@ -115,8 +102,12 @@ fun PathScreen(
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
-    val presentation = pathPresentations[profile.path.id]
-        ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
+    val localizedNextRank = if (nextRank != null) {
+        localizedPathPresentation(profile.path, profile.rankIndex + 1).rankName
+    } else {
+        null
+    }
+    val presentation = localizedPathPresentation(profile.path, profile.rankIndex)
     var showCeremony by rememberSaveable { mutableStateOf(false) }
     var ceremonyPathId by rememberSaveable { mutableStateOf(profile.path.id) }
     var ceremonyRankIndex by rememberSaveable { mutableStateOf(profile.rankIndex) }
@@ -182,7 +173,7 @@ fun PathScreen(
         RitualPanel(
             profile = profile,
             canAdvance = canAdvance,
-            nextRank = nextRank,
+            nextRank = localizedNextRank,
             onPrepareCeremony = {
                 ceremonyPathId = profile.path.id
                 ceremonyRankIndex = profile.rankIndex
@@ -192,22 +183,26 @@ fun PathScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
-                eyebrow = "Progression",
-                title = "Your ascent"
+                eyebrow = stringResource(R.string.path_progression_eyebrow),
+                title = stringResource(R.string.path_progression_title)
             )
             RankConstellation(profile)
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
-                eyebrow = "Other paths",
-                title = if (profile.rankIndex == 0) "Choose what fits you" else "Your choice is rooted"
+                eyebrow = stringResource(R.string.path_other_eyebrow),
+                title = if (profile.rankIndex == 0) {
+                    stringResource(R.string.path_other_choose_title)
+                } else {
+                    stringResource(R.string.path_other_rooted_title)
+                }
             )
             Text(
                 if (profile.rankIndex == 0) {
-                    "You can change Path until your first advancement. It changes progression flavor, never access to your books."
+                    stringResource(R.string.path_other_choose_body)
                 } else {
-                    "Other Paths stay visible as lore. Your current Path remains fixed for this journey."
+                    stringResource(R.string.path_other_rooted_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Mist
@@ -228,7 +223,10 @@ fun PathScreen(
     if (showCeremony && ceremonyPath != null && ceremonyTarget != null) {
         AdvancementCeremonyDialog(
             profile = profile.copy(path = ceremonyPath, rankIndex = ceremonyRankIndex),
-            nextRank = ceremonyTarget,
+            nextRank = localizedPathPresentation(
+                path = ceremonyPath,
+                rankIndex = ceremonyRankIndex + 1
+            ).rankName,
             currentPathId = profile.path.id,
             currentRankIndex = profile.rankIndex,
             onDismiss = { showCeremony = false },
@@ -240,7 +238,7 @@ fun PathScreen(
 @Composable
 private fun PathGrandMasthead(
     profile: ReaderProfile,
-    presentation: PathPresentation
+    presentation: LocalizedPathPresentation
 ) {
     val fontScale = LocalDensity.current.fontScale
     Box(
@@ -285,8 +283,14 @@ private fun PathGrandMasthead(
             tint = VeilPalette.Brass.copy(alpha = 0.24f)
         )
         VeilMastheadMetaRow(
-            primary = "THE ${presentation.aspect.uppercase()} PATH",
-            secondary = "RANK ${profile.rankIndex + 1}",
+            primary = stringResource(
+                R.string.path_masthead_primary,
+                presentation.aspect.uppercase()
+            ),
+            secondary = stringResource(
+                R.string.path_masthead_rank,
+                profile.rankIndex + 1
+            ),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(VeilSpacing.md)
@@ -299,12 +303,12 @@ private fun PathGrandMasthead(
             verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             Text(
-                profile.path.name,
+                presentation.name,
                 style = MaterialTheme.typography.displaySmall,
                 color = VeilPalette.Moon
             )
             Text(
-                "${profile.path.epithet} · ${profile.rankName}",
+                "${presentation.epithet} · ${presentation.rankName}",
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Moon.copy(alpha = 0.84f)
             )
@@ -321,8 +325,7 @@ private fun PathGrandMasthead(
 
 @Composable
 private fun PathIdentityPanel(profile: ReaderProfile) {
-    val presentation = pathPresentations[profile.path.id]
-        ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
+    val presentation = localizedPathPresentation(profile.path, profile.rankIndex)
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
@@ -379,7 +382,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             )
 
             Text(
-                profile.rankName,
+                presentation.rankName,
                 style = MaterialTheme.typography.headlineMedium,
                 color = VeilPalette.Moon,
                 textAlign = TextAlign.Center
@@ -391,7 +394,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
                 textAlign = TextAlign.Center
             )
             Text(
-                profile.path.description,
+                presentation.description,
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist,
                 textAlign = TextAlign.Center,
@@ -405,12 +408,12 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "LEVEL ${profile.level}",
+                    stringResource(R.string.path_level, profile.level),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                     color = VeilPalette.Brass.copy(alpha = 0.84f)
                 )
                 Text(
-                    "${profile.xp}/$xpTarget XP",
+                    stringResource(R.string.path_xp, profile.xp, xpTarget),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist
                 )
@@ -699,7 +702,10 @@ private fun RitualPanel(
     onPrepareCeremony: () -> Unit
 ) {
     val mastery = effectivePathMastery(profile)
-    val doctrine = pathDoctrineFor(profile.path.id)
+    val doctrine = localizedPathDoctrine(
+        profile.path.id,
+        pathDoctrineFor(profile.path.id)
+    )
     val overallProgress by animateFloatAsState(
         targetValue = mastery.overallProgress,
         animationSpec = tween(VeilMotion.SPATIAL_MS),
@@ -741,13 +747,21 @@ private fun RitualPanel(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                if (nextRank == null) "PATH COMPLETE" else "NEXT THRESHOLD",
+                if (nextRank == null) {
+                    stringResource(R.string.path_threshold_complete)
+                } else {
+                    stringResource(R.string.path_threshold_next)
+                },
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass
             )
 
             Text(
-                if (nextRank == null) "The Path remains open" else nextRank,
+                if (nextRank == null) {
+                    stringResource(R.string.path_threshold_open)
+                } else {
+                    nextRank
+                },
                 style = MaterialTheme.typography.titleLarge,
                 color = VeilPalette.Moon
             )
@@ -760,7 +774,7 @@ private fun RitualPanel(
 
             if (nextRank != null) {
                 Text(
-                    "Advancement is earned by embodying the Path, understanding what you read, and keeping the practice stable. XP cannot substitute for any seal.",
+                    stringResource(R.string.path_advancement_explainer),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.82f)
                 )
@@ -795,7 +809,7 @@ private fun RitualPanel(
 
             if (mastery.dissonance > 0 && !mastery.ritualReady) {
                 Text(
-                    "DISSONANCE · ${mastery.dissonance}% · One seal is advancing faster than the others. Nothing is lost; broaden the way you read before the ritual.",
+                    stringResource(R.string.path_dissonance, mastery.dissonance),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.70f)
                 )
@@ -804,7 +818,7 @@ private fun RitualPanel(
             if (nextRank != null) {
                 BrassRule(Modifier.fillMaxWidth())
                 Text(
-                    ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
+                    localizedRitualDescription(profile.path.id, profile.rankIndex),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.76f),
                     maxLines = 3,
@@ -826,7 +840,11 @@ private fun RitualPanel(
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
                 ) {
                     Text(
-                        if (canAdvance) "Perform advancement" else "Complete the three seals",
+                        if (canAdvance) {
+                            stringResource(R.string.path_perform_advancement)
+                        } else {
+                            stringResource(R.string.path_complete_three_seals)
+                        },
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -907,7 +925,8 @@ private fun RankConstellation(profile: ReaderProfile) {
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            profile.path.ranks.forEachIndexed { index, rank ->
+            profile.path.ranks.forEachIndexed { index, _ ->
+                val localizedRank = localizedPathPresentation(profile.path, index).rankName
                 val mastered = index < profile.rankIndex
                 val current = index == profile.rankIndex
                 val awakened = mastered || current
@@ -960,12 +979,15 @@ private fun RankConstellation(profile: ReaderProfile) {
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
-                                "RANK ${(index + 1).toString().padStart(2, '0')}",
+                                stringResource(
+                                    R.string.path_rank_label,
+                                    (index + 1).toString().padStart(2, '0')
+                                ),
                                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
                                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f)
                             )
                             Text(
-                                rank,
+                                localizedRank,
                                 style = if (current) {
                                     MaterialTheme.typography.titleMedium
                                 } else {
@@ -976,9 +998,9 @@ private fun RankConstellation(profile: ReaderProfile) {
                             )
                             Text(
                                 when {
-                                    mastered -> "MASTERED"
-                                    current -> "CURRENT SEAL"
-                                    else -> "SEALED"
+                                    mastered -> stringResource(R.string.path_mastered)
+                                    current -> stringResource(R.string.path_current_seal)
+                                    else -> stringResource(R.string.path_sealed)
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = when {
@@ -997,8 +1019,11 @@ private fun RankConstellation(profile: ReaderProfile) {
 
 @Composable
 private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> Unit) {
-    val presentation = pathPresentations[path.id]
-        ?: PathPresentation("Reading", "A different way through the archive.")
+    val presentation = localizedPathPresentation(
+        path = path,
+        rankIndex = 0,
+        alternateFallbackInvocation = true
+    )
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1037,9 +1062,9 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
                     )
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(path.name, style = MaterialTheme.typography.titleLarge)
+                    Text(presentation.name, style = MaterialTheme.typography.titleLarge)
                     Text(
-                        "${presentation.aspect} · ${path.epithet}",
+                        "${presentation.aspect} · ${presentation.epithet}",
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Brass.copy(alpha = 0.78f),
                         maxLines = 2,
@@ -1048,7 +1073,7 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
                 }
             }
             Text(
-                path.description,
+                presentation.description,
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Mist
             )
@@ -1058,7 +1083,13 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 shape = MaterialTheme.shapes.extraSmall
             ) {
-                Text(if (enabled) "Choose this Path" else "Locked after first advancement")
+                Text(
+                    if (enabled) {
+                        stringResource(R.string.path_choose_this)
+                    } else {
+                        stringResource(R.string.path_locked_after_first)
+                    }
+                )
             }
         }
     }
@@ -1073,8 +1104,7 @@ private fun AdvancementCeremonyDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Boolean
 ) {
-    val presentation = pathPresentations[profile.path.id]
-        ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
+    val presentation = localizedPathPresentation(profile.path, profile.rankIndex)
     val reducedMotion = LocalVeilReducedMotion.current
     var revealed by remember { mutableStateOf(false) }
     var stage by rememberSaveable(profile.path.id, profile.rankIndex) {
@@ -1117,7 +1147,7 @@ private fun AdvancementCeremonyDialog(
                 .background(VeilPalette.Ink)
                 .grayfogAtmosphere(
                     realm = VeilRealm.RITUAL,
-                    seed = profile.path.id.hashCode() xor nextRank.hashCode(),
+                    seed = profile.path.id.hashCode() xor (profile.rankIndex + 1),
                     intensity = 1.0f,
                     temporalPhase = currentVeilTemporalPhase()
                 )
@@ -1168,10 +1198,14 @@ private fun AdvancementCeremonyDialog(
                 ) {
                     Text(
                         when (visibleStage) {
-                            AdvancementCeremonyStage.INVOCATION -> "RITUAL OF ADVANCEMENT"
-                            AdvancementCeremonyStage.SEALING -> "THE SEAL IS TURNING"
-                            AdvancementCeremonyStage.REVEALED -> "RANK AWAKENED"
-                            AdvancementCeremonyStage.REJECTED -> "ADVANCEMENT NOT CONFIRMED"
+                            AdvancementCeremonyStage.INVOCATION ->
+                                stringResource(R.string.ritual_stage_invocation)
+                            AdvancementCeremonyStage.SEALING ->
+                                stringResource(R.string.ritual_stage_sealing)
+                            AdvancementCeremonyStage.REVEALED ->
+                                stringResource(R.string.ritual_stage_revealed)
+                            AdvancementCeremonyStage.REJECTED ->
+                                stringResource(R.string.ritual_stage_rejected)
                         },
                         modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
@@ -1188,7 +1222,7 @@ private fun AdvancementCeremonyDialog(
                     )
 
                     Text(
-                        profile.path.name,
+                        presentation.name,
                         style = MaterialTheme.typography.labelLarge,
                         color = VeilPalette.Mist
                     )
@@ -1201,7 +1235,7 @@ private fun AdvancementCeremonyDialog(
                     )
 
                     Text(
-                        "${profile.rankName}  →  $nextRank",
+                        "${presentation.rankName}  →  $nextRank",
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Brass.copy(alpha = 0.88f)
                     )
@@ -1209,7 +1243,7 @@ private fun AdvancementCeremonyDialog(
                     BrassRule(Modifier.fillMaxWidth())
 
                     Text(
-                        ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
+                        localizedRitualDescription(profile.path.id, profile.rankIndex),
                         style = MaterialTheme.typography.bodyLarge,
                         color = VeilPalette.Moon.copy(alpha = 0.82f),
                         textAlign = TextAlign.Center,
@@ -1225,7 +1259,7 @@ private fun AdvancementCeremonyDialog(
                     )
 
                     Text(
-                        "This mark is permanent. It changes the language of your Path, never access to your books.",
+                        stringResource(R.string.ritual_permanence),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist,
                         textAlign = TextAlign.Center,
@@ -1248,32 +1282,32 @@ private fun AdvancementCeremonyDialog(
                                     containerColor = VeilPalette.Brass,
                                     contentColor = Color(0xFF17120A)
                                 )
-                            ) { Text("Advance to $nextRank") }
+                            ) { Text(stringResource(R.string.ritual_advance_to, nextRank)) }
                             TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
-                                Text("Not yet")
+                                Text(stringResource(R.string.ritual_not_yet))
                             }
                         }
                         AdvancementCeremonyStage.SEALING -> {
-                            Text("Sealing advancement…", color = VeilPalette.Mist)
+                            Text(stringResource(R.string.ritual_sealing_progress), color = VeilPalette.Mist)
                         }
                         AdvancementCeremonyStage.REVEALED -> {
                             Text(
-                                "Your Path now bears this rank. Its seal has entered the Great Hall, Reliquary, and Sanctum.",
+                                stringResource(R.string.ritual_revealed_body),
                                 color = VeilPalette.Brass,
                                 textAlign = TextAlign.Center
                             )
                             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) {
-                                Text("Continue")
+                                Text(stringResource(R.string.ritual_continue))
                             }
                         }
                         AdvancementCeremonyStage.REJECTED -> {
                             Text(
-                                "The current Path or ritual no longer matches this request. Close and review your progress.",
+                                stringResource(R.string.ritual_rejected_body),
                                 color = VeilPalette.Moon,
                                 textAlign = TextAlign.Center
                             )
                             TextButton(onClick = onDismiss, modifier = Modifier.heightIn(min = 48.dp)) {
-                                Text("Close")
+                                Text(stringResource(R.string.ritual_close))
                             }
                         }
                     }
