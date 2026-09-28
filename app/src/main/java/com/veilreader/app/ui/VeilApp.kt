@@ -46,6 +46,7 @@ import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.domain.deriveWorldMutationLedger
+import com.veilreader.app.domain.deriveStoryRelics
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
@@ -226,12 +227,15 @@ fun VeilApp(
             nowEpochMs = System.currentTimeMillis()
         )
     }
-    val worldMutationLedger = remember(profile, worldMemoryState, silentNamesReceipt) {
+    val storyRelics = remember(silentNamesReceipt) {
+        deriveStoryRelics(silentNamesReceipt = silentNamesReceipt)
+    }
+    val worldMutationLedger = remember(profile, worldMemoryState, storyRelics) {
         profile?.let {
             deriveWorldMutationLedger(
                 profile = it,
                 memory = worldMemoryState,
-                silentNamesReceipt = silentNamesReceipt
+                storyRelics = storyRelics
             )
         } ?: WorldMutationLedger.EMPTY
     }
@@ -551,7 +555,7 @@ fun VeilApp(
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
                 memoryStateOverride = worldMemoryState,
-                silentNamesReceipt = silentNamesReceipt,
+                storyRelics = storyRelics,
                 silentNamesSealed = silentNamesReceipt != null || silentNamesStorageBlocked
             )
 
