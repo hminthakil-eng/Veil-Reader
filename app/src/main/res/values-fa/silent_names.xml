@@ -27,11 +27,4 @@
     <string name="silent_names_saving">در حال مهر کردن انتخاب…</string>
     <string name="silent_names_roll_result">تاس: %1$d + %2$d در برابر %3$d</string>
     <string name="silent_names_record_unavailable">رکورد این روایت با این نسخه قابل خواندن نیست. Veil آن را بدون تغییر نگه داشته است؛ پیش از ادامه، نسخهٔ اپ را به‌روزرسانی کن.</string>
-    <string name="silent_names_treasury_eyebrow">یادگار داستانی · یگانه</string>
-    <string name="silent_names_treasury_heading">یادگارهای تالار</string>
-    <string name="silent_names_treasury_provenance">منشأ · انتخاب مهرشده در تالار</string>
-    <string name="silent_names_treasury_recorded">ثبت‌شده · %1$s</string>
-    <string name="silent_names_treasury_path">مسیر هنگام انتخاب · %1$s</string>
-    <string name="silent_names_mode_story_short">حالت داستانی</string>
-    <string name="silent_names_mode_dice_short">حالت تاس</string>
 </resources>
