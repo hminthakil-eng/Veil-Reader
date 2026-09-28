@@ -42,6 +42,19 @@ data class SilentNamesReceipt(
  */
 data class SilentNamesResolution(val receipt: SilentNamesReceipt, val needsCommit: Boolean)
 
+fun SilentNamesReceipt.toStoryRelicRecordOrNull(): StoryRelicRecord? =
+    takeIf(SilentNamesEncounter::isValid)?.let { receipt ->
+        StoryRelicRecord(
+            relicId = receipt.rewardId,
+            sourceEncounterId = receipt.encounterId,
+            sourceContentVersion = receipt.contentVersion,
+            pathIdAtAcquisition = receipt.pathId,
+            recordedAtEpochMs = receipt.recordedAtEpochMs,
+            routeVariantId = receipt.outcome.name,
+            resolutionModeId = receipt.mode.name
+        )
+    }
+
 object SilentNamesEncounter {
     const val ID = "silent_names_window"
     const val CONTENT_VERSION = 1
