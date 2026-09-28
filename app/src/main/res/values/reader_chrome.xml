@@ -48,4 +48,16 @@
     <string name="reader_mode_slide">SLIDE</string>
     <string name="reader_mode_paged">PAGED</string>
     <string name="reader_mode_scroll">SCROLL</string>
+    <string name="reader_page_movement">PAGE MOVEMENT</string>
+    <string name="reader_mode_curl_description">A weighted paper turn. Drag an edge to turn the page.</string>
+    <string name="reader_mode_slide_description">A horizontal transition between fixed pages.</string>
+    <string name="reader_mode_paged_description">Fixed pages without a decorative transition.</string>
+    <string name="reader_mode_scroll_description">A continuous vertical flow for supported books.</string>
+    <string name="reader_page_section_intro">Adjust the space around the text and the number of columns.</string>
+    <string name="reader_page_margins">Page margins</string>
+    <string name="reader_columns">Columns</string>
+    <string name="reader_columns_auto">Auto</string>
+    <string name="reader_columns_one">One</string>
+    <string name="reader_columns_two">Two</string>
+    <string name="reader_columns_scroll_note">Columns apply to paged EPUB; scrolling uses one continuous flow.</string>
 </resources>
