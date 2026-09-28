@@ -3,6 +3,9 @@ package com.veilreader.app.ui.screens
 import com.veilreader.app.domain.CastleMemoryState
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingPath
+import com.veilreader.app.domain.SilentNamesChoice
+import com.veilreader.app.domain.SilentNamesEncounter
+import com.veilreader.app.domain.SilentNamesMode
 import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.deriveWorldMutationLedger
 import org.junit.Assert.assertEquals
@@ -83,6 +86,25 @@ class TreasuryRelicPolicyTest {
         assertEquals(0, state.evidenceCount)
         assertEquals(3, state.target)
         assertEquals(RelicProvenance.SEALED, state.provenance)
+    }
+
+    @Test
+    fun `story relic ownership derives only from a valid sealed receipt`() {
+        val valid = SilentNamesEncounter.resolve(
+            pathId = "oracle",
+            choice = SilentNamesChoice.FOLLOW_LIGHT,
+            mode = SilentNamesMode.STORY,
+            dice = null,
+            recordedAtEpochMs = 900L
+        ).receipt
+
+        assertTrue(silentNamesStoryRelicOwned(valid))
+        assertFalse(silentNamesStoryRelicOwned(null))
+        assertFalse(
+            silentNamesStoryRelicOwned(
+                valid.copy(rewardId = "forged_reward")
+            )
+        )
     }
 
     @Test
