@@ -44,6 +44,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -2624,17 +2625,16 @@ private fun ReaderAppearancePreview(
     }
 }
 
+@Composable
 internal fun readerNavigationModeDescription(mode: ReaderNavigationMode): String =
-    when (mode) {
-        ReaderNavigationMode.PAPER_CURL ->
-            "Physical page curl with weighted drag, release velocity, and page-stack depth."
-        ReaderNavigationMode.SLIDE ->
-            "Paginated reading with a lightweight horizontal transition and no paper deformation."
-        ReaderNavigationMode.PAGED ->
-            "Static pagination with no decorative page transition."
-        ReaderNavigationMode.SCROLL ->
-            "Continuous vertical reading when the publication format supports it."
-    }
+    stringResource(
+        when (mode) {
+            ReaderNavigationMode.PAPER_CURL -> R.string.reader_nav_curl_desc
+            ReaderNavigationMode.SLIDE -> R.string.reader_nav_slide_desc
+            ReaderNavigationMode.PAGED -> R.string.reader_nav_paged_desc
+            ReaderNavigationMode.SCROLL -> R.string.reader_nav_scroll_desc
+        }
+    )
 
 @Composable
 internal fun ReaderMotionSelector(
@@ -2647,12 +2647,14 @@ internal fun ReaderMotionSelector(
     ) {
         ReaderNavigationMode.entries.forEach { mode ->
             val active = selected == mode
-            val label = when (mode) {
-                ReaderNavigationMode.PAPER_CURL -> "Curl"
-                ReaderNavigationMode.SLIDE -> "Slide"
-                ReaderNavigationMode.PAGED -> "Paged"
-                ReaderNavigationMode.SCROLL -> "Scroll"
-            }
+            val label = stringResource(
+                when (mode) {
+                    ReaderNavigationMode.PAPER_CURL -> R.string.reader_nav_curl
+                    ReaderNavigationMode.SLIDE -> R.string.reader_nav_slide
+                    ReaderNavigationMode.PAGED -> R.string.reader_nav_paged
+                    ReaderNavigationMode.SCROLL -> R.string.reader_nav_scroll
+                }
+            )
             Surface(
                 modifier = Modifier
                     .weight(1f)
