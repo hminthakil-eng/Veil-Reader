@@ -47,6 +47,7 @@ internal fun shouldAnimateDirectionalNavigation(
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
     private val paper: InputListener?,
+    private val staticPaged: InputListener?,
     private val directional: InputListener,
     private val chromeTap: (TapEvent) -> Boolean,
     private val onTapOwner: (ReaderTapOwner) -> Unit = {}
@@ -72,8 +73,11 @@ internal class ReaderInputArbiter(
         return false
     }
 
-    override fun onDrag(event: DragEvent): Boolean =
-        paper?.onDrag(event) == true
+    override fun onDrag(event: DragEvent): Boolean {
+        if (paper?.onDrag(event) == true) return true
+        if (staticPaged?.onDrag(event) == true) return true
+        return false
+    }
 
     override fun onKey(event: KeyEvent): Boolean =
         directional.onKey(event)

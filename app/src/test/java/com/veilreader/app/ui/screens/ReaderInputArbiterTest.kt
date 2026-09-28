@@ -2,11 +2,95 @@ package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderInputArbiterTest {
+
+    @Test
+    fun `static paged drag belongs only to paginated EPUB NONE mode`() {
+        assertTrue(
+            shouldUseStaticPagedDragNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+        assertFalse(
+            shouldUseStaticPagedDragNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+        assertFalse(
+            shouldUseStaticPagedDragNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.PAPER
+            )
+        )
+        assertFalse(
+            shouldUseStaticPagedDragNavigation(
+                format = BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+        assertFalse(
+            shouldUseStaticPagedDragNavigation(
+                format = BookFormat.PDF,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+    }
+
+    @Test
+    fun `static paged drag requires deliberate horizontal travel and respects RTL`() {
+        assertEquals(
+            PaperTurnDirection.FORWARD,
+            staticPagedDragDirection(
+                offsetX = -180f,
+                offsetY = 20f,
+                width = 1000f,
+                density = 1f,
+                progression = org.readium.r2.navigator.preferences.ReadingProgression.LTR
+            )
+        )
+        assertEquals(
+            PaperTurnDirection.BACKWARD,
+            staticPagedDragDirection(
+                offsetX = -180f,
+                offsetY = 20f,
+                width = 1000f,
+                density = 1f,
+                progression = org.readium.r2.navigator.preferences.ReadingProgression.RTL
+            )
+        )
+        assertEquals(
+            null,
+            staticPagedDragDirection(
+                offsetX = -40f,
+                offsetY = 4f,
+                width = 1000f,
+                density = 1f,
+                progression = org.readium.r2.navigator.preferences.ReadingProgression.LTR
+            )
+        )
+        assertEquals(
+            null,
+            staticPagedDragDirection(
+                offsetX = -140f,
+                offsetY = 180f,
+                width = 1000f,
+                density = 1f,
+                progression = org.readium.r2.navigator.preferences.ReadingProgression.LTR
+            )
+        )
+    }
 
     @Test
     fun `directional edge taps belong only to paginated EPUB slide mode`() {

@@ -595,6 +595,28 @@ fun ReaderScreen(
                 null
             }
 
+            val staticPagedListener = if (navigator is EpubNavigatorFragment) {
+                StaticPagedNavigationInputListener(
+                    navigator = nav,
+                    isEnabled = {
+                        shouldUseStaticPagedDragNavigation(
+                            format = opened.format,
+                            scroll = nav.overflow.value.scroll,
+                            pageTurnStyle = latestAppearance.value.pageTurnStyle
+                        )
+                    },
+                    onInteraction = {
+                        readerViewModel.onUserInteraction()
+                        controlsVisible = false
+                    },
+                    onNavigationCommitted = {
+                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                    }
+                )
+            } else {
+                null
+            }
+
             val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
                 isAnimated = {
@@ -618,6 +640,7 @@ fun ReaderScreen(
 
             val inputArbiter = ReaderInputArbiter(
                 paper = paperListener,
+                staticPaged = staticPagedListener,
                 directional = directionalListener,
                 chromeTap = {
                     readerViewModel.onUserInteraction()
