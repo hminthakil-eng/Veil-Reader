@@ -786,6 +786,7 @@ fun VeilApp(
                         profile = requireNotNull(profile),
                         receipt = silentNamesReceipt,
                         storageBlocked = silentNamesStorageBlocked,
+                        pendingAttempt = game.pendingSilentNamesAttempt(),
                         onSeal = { choice, mode ->
                             try {
                                 val committed = game.sealSilentNamesEncounter(choice, mode)
