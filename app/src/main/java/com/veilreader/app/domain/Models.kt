@@ -146,6 +146,8 @@ enum class ReaderColumnMode { AUTO, ONE, TWO }
 
 enum class ReaderPreferenceToggle { DEFAULT, ON, OFF }
 
+enum class ReaderDarkImageTreatment { NONE, DARKEN, INVERT }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.PAPER,
     val fontScale: Double = 1.0,
@@ -156,6 +158,7 @@ data class ReaderAppearance(
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
     val screenBrightness: Double? = null,
     val fontFamily: ReaderFontFamily = ReaderFontFamily.PUBLISHER,
+    val fontWeight: Double? = null,
     val textAlignment: ReaderTextAlignment = ReaderTextAlignment.PUBLISHER,
     val columnMode: ReaderColumnMode = ReaderColumnMode.AUTO,
     val hyphenation: ReaderPreferenceToggle = ReaderPreferenceToggle.DEFAULT,
@@ -166,6 +169,7 @@ data class ReaderAppearance(
     val letterSpacing: Double? = null,
     val wordSpacing: Double? = null,
     val typeScale: Double? = null,
+    val darkImageTreatment: ReaderDarkImageTreatment = ReaderDarkImageTreatment.NONE,
     val paperPatina: Double = 0.72
 ) {
     val navigationMode: ReaderNavigationMode
@@ -205,6 +209,11 @@ data class ReaderAppearance(
             publisherStyles = if (value == ReaderFontFamily.PUBLISHER) publisherStyles else false
         )
 
+    fun withFontWeight(value: Double?): ReaderAppearance =
+        copy(
+            fontWeight = value?.takeIf { it.isFinite() }?.coerceIn(0.0, 2.5)
+        )
+
     fun withTextAlignment(value: ReaderTextAlignment): ReaderAppearance =
         copy(
             textAlignment = value,
@@ -240,6 +249,9 @@ data class ReaderAppearance(
             typeScale = value?.takeIf { it.isFinite() }?.coerceIn(1.0, 2.0),
             publisherStyles = false
         )
+
+    fun withDarkImageTreatment(value: ReaderDarkImageTreatment): ReaderAppearance =
+        copy(darkImageTreatment = value)
 
     fun withPaperPatina(value: Double): ReaderAppearance =
         copy(
