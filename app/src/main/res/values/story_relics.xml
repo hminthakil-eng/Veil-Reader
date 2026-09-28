@@ -8,4 +8,5 @@
     <string name="story_relic_story_mode">STORY MODE</string>
     <string name="story_relic_dice_mode">DICE MODE</string>
     <string name="story_relic_unknown_variant">A sealed route whose inscription belongs to a newer Veil build.</string>
+    <string name="story_relic_unknown_mode">SEALED MODE</string>
 </resources>
