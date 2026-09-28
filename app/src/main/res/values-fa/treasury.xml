@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="treasury_eyebrow">خزانه · تالار یادگارها</string>
+    <string name="treasury_title">خزانه</string>
+    <string name="treasury_subtitle">یادگارها، نشان‌ها، یادبودهای داستانی و لوح‌های کتاب فقط از سابقه‌هایی ظاهر می‌شوند که روی همین دستگاه مهر شده‌اند.</string>
+    <string name="treasury_consequence_eyebrow">پیامد خزانه</string>
+    <string name="treasury_consequence_title">آنچه قلعه اکنون به خاطر دارد</string>
+    <string name="treasury_sigils_eyebrow">صورت فلکی اصلی</string>
+    <string name="treasury_sigils_title">نشان‌ها</string>
+    <string name="treasury_relics_eyebrow">گنجهٔ پنهان</string>
+    <string name="treasury_relics_title">یادگارهای مطالعه</string>
+    <string name="treasury_bookplates_eyebrow">درون جلد</string>
+    <string name="treasury_bookplates_title">لوح‌های کتاب</string>
+
+    <string name="treasury_pedestal">پایهٔ نمایش</string>
+    <string name="treasury_no_sigil">هیچ نشانی روی پایه نیست</string>
+    <string name="treasury_no_sigil_body">یکی از نشان‌های بیدارشده را انتخاب کن. این انتخاب فقط هویت قلعهٔ تو را تغییر می‌دهد.</string>
+    <string name="treasury_clear_pedestal">خالی کردن پایه</string>
+
+    <string name="sigil_quiet_hour_name">ساعت آرام</string>
+    <string name="sigil_quiet_hour_desc">یک ساعت کامل درون جهان نوشته‌شده.</string>
+    <string name="sigil_passage_keeper_name">نگهبان بخش‌ها</string>
+    <string name="sigil_passage_keeper_desc">ده بخش از کتاب‌هایی که تو را تغییر دادند حفظ شده‌اند.</string>
+    <string name="sigil_seven_day_name">فانوس هفت‌روزه</string>
+    <string name="sigil_seven_day_desc">شعلهٔ مطالعه برای هفت روز روشن مانده است.</string>
+    <string name="sigil_ten_tomes_name">ده مجلد</string>
+    <string name="sigil_ten_tomes_desc">ده کتاب تمام‌شده اکنون در کتابخانهٔ بزرگ ایستاده‌اند.</string>
+    <string name="sigil_first_threshold_name">نخستین آستانه</string>
+    <string name="sigil_first_threshold_desc">نخستین ارتقای واقعی در مسیر انتخاب‌شدهٔ تو.</string>
+
+    <string name="relic_ember_bookmark_name">نشانک اخگر</string>
+    <string name="relic_ember_bookmark_clue">دست‌کم سه نشست ثبت‌شدهٔ مطالعه در پیِ قلعه باقی بگذار.</string>
+    <string name="relic_moonlit_lens_name">عدسی مهتابی</string>
+    <string name="relic_moonlit_lens_clue">دست‌کم سه پیوند واقعی میان کتاب‌ها در رصدخانه ثبت کن.</string>
+    <string name="relic_brass_quill_name">پر برنجی</string>
+    <string name="relic_brass_quill_clue">دست‌کم پنج یادداشت معنادار بنویس و کتابت‌خانه را بیدار کن.</string>
+    <string name="relic_ivory_bookplate_name">لوح عاجی</string>
+    <string name="relic_ivory_bookplate_clue">سه کتاب را تمام کن و سه طاقچهٔ مهرشده در قلعه باز کن.</string>
+    <string name="relic_astral_key_name">کلید اختری</string>
+    <string name="relic_astral_key_clue">از دو آستانهٔ مسیر عبور کن و به قفلی گوش بده که پیش‌تر وجود نداشت.</string>
+    <string name="relic_veil_crown_name">تاج پرده</string>
+    <string name="relic_veil_crown_clue">پنج نشان اصلی را بیدار کن و به آخرین رتبهٔ مسیرت برس.</string>
+
+    <string name="relic_rarity_foundation">بنیادی</string>
+    <string name="relic_rarity_resonant">هم‌نوا</string>
+    <string name="relic_rarity_ascendant">صعودی</string>
+    <string name="relic_rarity_sovereign">فرمانروا</string>
+    <string name="relic_awakened">%1$s · بیدار</string>
+    <string name="relic_rarity_veiled">کمیابی پنهان</string>
+    <string name="relic_uncatalogued">یادگار ثبت‌نشده</string>
+    <string name="relic_provenance_evidence">منشأ · %1$d %2$s</string>
+    <string name="relic_provenance_legacy">منشأ · سابقهٔ قدیمی حفظ شده</string>
+    <string name="relic_provenance_sovereign">منشأ · آخرین رتبهٔ مسیر + نشان‌های اصلی</string>
+    <string name="relic_provenance_sealed">منشأ · مهرشده</string>
+    <string name="relic_evidence_progress">شواهد · %1$d/%2$d %3$s</string>
+    <string name="relic_condition_hidden">شرط هنوز پنهان است.</string>
+    <string name="relic_display">نمایش</string>
+    <string name="relic_on_display">روی پایه</string>
+
+    <string name="relic_evidence_sessions">نشست ثبت‌شدهٔ مطالعه</string>
+    <string name="relic_evidence_atlas_links">پیوند ثبت‌شدهٔ اطلس</string>
+    <string name="relic_evidence_annotations">یادداشت معنادار</string>
+    <string name="relic_evidence_completed">کتاب تمام‌شده</string>
+    <string name="relic_evidence_path">آستانهٔ مسیر</string>
+    <string name="relic_evidence_unknown">شاهد ناشناخته</string>
+    <string name="relic_evidence_sovereign">آخرین رتبهٔ مسیر + پنج نشان اصلی</string>
+
+    <string name="bookplate_first_binding_name">نخستین صحافی</string>
+    <string name="bookplate_first_binding_text">این کتاب از آنِ کسی است که بازگشت.</string>
+    <string name="bookplate_deep_shelf_name">قفسهٔ ژرف</string>
+    <string name="bookplate_deep_shelf_text">کتابخانه وقتی به مکان تبدیل می‌شود که کتاب‌های تمام‌شده در آن وزن پیدا کنند.</string>
+    <string name="bookplate_veilbound_name">پرده‌بسته</string>
+    <string name="bookplate_veilbound_text">خواننده از همهٔ آستانه‌ها گذشت و آرشیو را با خود پیش برد.</string>
+    <string name="bookplate_ex_libris">از کتابخانهٔ شخصی · VEIL READER</string>
+    <string name="bookplate_sealed">لوح کتاب مهرشده</string>
+    <string name="bookplate_missing">هنوز کتیبه‌ای ظاهر نشده است.</string>
+</resources>
