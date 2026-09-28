@@ -245,7 +245,12 @@ fun SilentNamesScreen(
                             Text(
                                 stringResource(
                                     R.string.silent_names_pending_choice,
-                                    stringResource(attempt.first.labelRes())
+                                    stringResource(attempt.first.labelRes()),
+                                    stringResource(
+                                        if (attempt.second == SilentNamesMode.STORY)
+                                            R.string.silent_names_story_mode
+                                        else R.string.silent_names_dice_mode
+                                    )
                                 ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = VeilPalette.Mist
