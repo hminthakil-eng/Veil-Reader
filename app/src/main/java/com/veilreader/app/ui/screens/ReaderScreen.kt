@@ -1993,6 +1993,28 @@ private fun EpubAppearancePanel(
             onSelect = { theme -> updateDraft(draft.withTheme(theme)) }
         )
 
+        Text(
+            stringResource(R.string.reader_page_movement),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+            color = VeilPalette.Brass
+        )
+        ReaderMotionSelector(
+            selected = draft.navigationMode,
+            onSelect = { updateDraft(draft.withNavigationMode(it)) }
+        )
+        Text(
+            stringResource(
+                when (draft.navigationMode) {
+                    ReaderNavigationMode.PAPER_CURL -> R.string.reader_mode_curl_description
+                    ReaderNavigationMode.SLIDE -> R.string.reader_mode_slide_description
+                    ReaderNavigationMode.PAGED -> R.string.reader_mode_paged_description
+                    ReaderNavigationMode.SCROLL -> R.string.reader_mode_scroll_description
+                }
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.76f)
+        )
+
         ReaderAppearancePreview(
             appearance = draft,
             modifier = Modifier.fillMaxWidth()
@@ -2103,24 +2125,11 @@ private fun EpubAppearancePanel(
             ReaderConsoleSection.PAGE -> {
                 ReaderConsoleSectionTitle(
                     title = "PAGE",
-                    subtitle = "Choose how the page moves and how much space surrounds the text."
-                )
-
-                Text("Page movement", style = MaterialTheme.typography.labelLarge)
-                ReaderMotionSelector(
-                    selected = draft.navigationMode,
-                    onSelect = {
-                        updateDraft(draft.withNavigationMode(it))
-                    }
-                )
-                Text(
-                    readerNavigationModeDescription(draft.navigationMode),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.76f)
+                    subtitle = stringResource(R.string.reader_page_section_intro)
                 )
 
                 ReaderConsoleSlider(
-                    label = "Page margins",
+                    label = stringResource(R.string.reader_page_margins),
                     value = draft.pageMargins.toFloat(),
                     valueRange = 0.5f..2f,
                     display = "${(draft.pageMargins * 100).toInt()}%",
@@ -2129,7 +2138,7 @@ private fun EpubAppearancePanel(
                     }
                 )
 
-                Text("Columns", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.reader_columns), style = MaterialTheme.typography.labelLarge)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -2137,9 +2146,9 @@ private fun EpubAppearancePanel(
                     ReaderColumnMode.entries.forEach { mode ->
                         ReaderConsoleChoice(
                             label = when (mode) {
-                                ReaderColumnMode.AUTO -> "Auto"
-                                ReaderColumnMode.ONE -> "One"
-                                ReaderColumnMode.TWO -> "Two"
+                                ReaderColumnMode.AUTO -> stringResource(R.string.reader_columns_auto)
+                                ReaderColumnMode.ONE -> stringResource(R.string.reader_columns_one)
+                                ReaderColumnMode.TWO -> stringResource(R.string.reader_columns_two)
                             },
                             selected = draft.columnMode == mode,
                             enabled = draft.navigationMode != ReaderNavigationMode.SCROLL,
@@ -2152,7 +2161,7 @@ private fun EpubAppearancePanel(
                 }
                 if (draft.navigationMode == ReaderNavigationMode.SCROLL) {
                     Text(
-                        "Column count applies to paginated EPUB layouts; scrolling uses one continuous flow.",
+                        stringResource(R.string.reader_columns_scroll_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.68f)
                     )
@@ -2659,10 +2668,10 @@ internal fun ReaderMotionSelector(
         ReaderNavigationMode.entries.forEach { mode ->
             val active = selected == mode
             val label = when (mode) {
-                ReaderNavigationMode.PAPER_CURL -> "Curl"
-                ReaderNavigationMode.SLIDE -> "Slide"
-                ReaderNavigationMode.PAGED -> "Paged"
-                ReaderNavigationMode.SCROLL -> "Scroll"
+                ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.reader_mode_curl)
+                ReaderNavigationMode.SLIDE -> stringResource(R.string.reader_mode_slide)
+                ReaderNavigationMode.PAGED -> stringResource(R.string.reader_mode_paged)
+                ReaderNavigationMode.SCROLL -> stringResource(R.string.reader_mode_scroll)
             }
             Surface(
                 modifier = Modifier
