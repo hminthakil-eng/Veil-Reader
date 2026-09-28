@@ -1,59 +1,104 @@
 package com.veilreader.app.ui.screens
 
+import androidx.annotation.StringRes
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.veilreader.app.R
 import com.veilreader.app.domain.VeiledDiscoveryPolicy
 
 internal data class VeiledDiscoveryPresentation(
     val id: String,
     val symbol: String,
-    val title: String,
-    val clue: String,
-    val lore: String
+    @StringRes val titleRes: Int,
+    @StringRes val clueRes: Int,
+    @StringRes val loreRes: Int,
+    val fragmentRes: List<Int>
 )
 
 internal val veiledDiscoveryPresentations = listOf(
     VeiledDiscoveryPresentation(
         id = VeiledDiscoveryPolicy.PATIENT_FLAME,
         symbol = "◈",
-        title = "The Patient Flame",
-        clue = "A flame kept for many returns begins to remember the hand that lit it.",
-        lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return."
+        titleRes = R.string.discovery_patient_flame_title,
+        clueRes = R.string.discovery_patient_flame_clue,
+        loreRes = R.string.discovery_patient_flame_lore,
+        fragmentRes = listOf(
+            R.string.discovery_patient_flame_fragment_0,
+            R.string.discovery_patient_flame_fragment_1,
+            R.string.discovery_patient_flame_fragment_2
+        )
     ),
     VeiledDiscoveryPresentation(
         id = VeiledDiscoveryPolicy.MARGINALIA_GATE,
         symbol = "✧",
-        title = "The Marginalia Gate",
-        clue = "Some doors are written in the margins rather than printed on the page.",
-        lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves."
+        titleRes = R.string.discovery_marginalia_gate_title,
+        clueRes = R.string.discovery_marginalia_gate_clue,
+        loreRes = R.string.discovery_marginalia_gate_lore,
+        fragmentRes = listOf(
+            R.string.discovery_marginalia_gate_fragment_0,
+            R.string.discovery_marginalia_gate_fragment_1,
+            R.string.discovery_marginalia_gate_fragment_2
+        )
     ),
     VeiledDiscoveryPresentation(
         id = VeiledDiscoveryPolicy.DEEP_SHELF,
         symbol = "▥",
-        title = "The Deep Shelf",
-        clue = "Finished volumes gather weight. Eventually the shelf becomes a foundation.",
-        lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list."
+        titleRes = R.string.discovery_deep_shelf_title,
+        clueRes = R.string.discovery_deep_shelf_clue,
+        loreRes = R.string.discovery_deep_shelf_lore,
+        fragmentRes = listOf(
+            R.string.discovery_deep_shelf_fragment_0,
+            R.string.discovery_deep_shelf_fragment_1,
+            R.string.discovery_deep_shelf_fragment_2
+        )
     ),
     VeiledDiscoveryPresentation(
         id = VeiledDiscoveryPolicy.LONG_WATCH,
         symbol = "◐",
-        title = "The Long Watch",
-        clue = "There is a point when time spent reading stops feeling counted.",
-        lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes."
+        titleRes = R.string.discovery_long_watch_title,
+        clueRes = R.string.discovery_long_watch_clue,
+        loreRes = R.string.discovery_long_watch_lore,
+        fragmentRes = listOf(
+            R.string.discovery_long_watch_fragment_0,
+            R.string.discovery_long_watch_fragment_1,
+            R.string.discovery_long_watch_fragment_2
+        )
     ),
     VeiledDiscoveryPresentation(
         id = VeiledDiscoveryPolicy.VEIL_THINS,
         symbol = "⌁",
-        title = "When the Veil Thins",
-        clue = "Several marks must awaken before they begin to answer one another.",
-        lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil."
+        titleRes = R.string.discovery_veil_thins_title,
+        clueRes = R.string.discovery_veil_thins_clue,
+        loreRes = R.string.discovery_veil_thins_lore,
+        fragmentRes = listOf(
+            R.string.discovery_veil_thins_fragment_0,
+            R.string.discovery_veil_thins_fragment_1,
+            R.string.discovery_veil_thins_fragment_2
+        )
     ),
     VeiledDiscoveryPresentation(
         id = VeiledDiscoveryPolicy.UNNAMED_CHAMBER,
         symbol = "⬡",
-        title = "The Unnamed Chamber",
-        clue = "The deepest chamber does not open to a single achievement.",
-        lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name."
+        titleRes = R.string.discovery_unnamed_chamber_title,
+        clueRes = R.string.discovery_unnamed_chamber_clue,
+        loreRes = R.string.discovery_unnamed_chamber_lore,
+        fragmentRes = listOf(
+            R.string.discovery_unnamed_chamber_fragment_0,
+            R.string.discovery_unnamed_chamber_fragment_1,
+            R.string.discovery_unnamed_chamber_fragment_2
+        )
     )
 )
 
 internal fun discoveryPresentationFor(id: String): VeiledDiscoveryPresentation? =
     veiledDiscoveryPresentations.firstOrNull { it.id == id }
+
+@Composable
+internal fun localizedDiscoveryFragment(
+    presentation: VeiledDiscoveryPresentation,
+    fragmentIndex: Int,
+    fallback: String
+): String {
+    val res = presentation.fragmentRes.getOrNull(fragmentIndex)
+    return if (res != null) stringResource(res) else fallback
+}
