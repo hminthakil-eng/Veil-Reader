@@ -26,4 +26,5 @@
     <string name="silent_names_choose_mode">شیوهٔ عدم‌قطعیت را انتخاب کن</string>
     <string name="silent_names_saving">در حال مهر کردن انتخاب…</string>
     <string name="silent_names_roll_result">تاس: %1$d + %2$d در برابر %3$d</string>
+    <string name="silent_names_record_unavailable">رکورد این روایت با این نسخه قابل خواندن نیست. Veil آن را بدون تغییر نگه داشته است؛ پیش از ادامه، نسخهٔ اپ را به‌روزرسانی کن.</string>
 </resources>
