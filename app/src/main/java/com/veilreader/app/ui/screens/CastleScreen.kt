@@ -445,7 +445,8 @@ internal data class GreatHallArtifact(
     val route: String,
     val unlockRank: Int,
     val resonance: Float,
-    val awakened: Boolean
+    val awakened: Boolean,
+    val evidenceCount: Int = 0
 ) {
     val id: String get() = kind.name.lowercase()
 }
@@ -473,7 +474,8 @@ internal fun greatHallArtifacts(
             route = "mirror",
             unlockRank = 0,
             resonance = maxOf((livingMirrorNoteCount / 24f).coerceIn(0f, 1f), worldProjection.mirrorClarity),
-            awakened = livingMirrorNoteCount > 0
+            awakened = livingMirrorNoteCount > 0,
+            evidenceCount = livingMirrorNoteCount
         ),
         GreatHallArtifact(
             kind = GreatHallArtifactKind.ASTROLABE,
@@ -576,16 +578,16 @@ private fun GreatHallArtifactNavigator(
             verticalArrangement = Arrangement.spacedBy(3.dp)
         ) {
             VeilEyebrowText(
-                text = "THE GREAT HALL · ARTIFACTS",
+                text = stringResource(R.string.castle_hall_eyebrow),
                 trackingSp = 1.45f
             )
             Text(
-                "The Hall is not a menu",
+                stringResource(R.string.castle_hall_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = VeilPalette.Moon
             )
             Text(
-                "Every destination manifests as an object. Registry mode keeps the same paths fast and conventional.",
+                stringResource(R.string.castle_hall_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist
             )
@@ -596,14 +598,14 @@ private fun GreatHallArtifactNavigator(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             GreatHallModeButton(
-                label = "Hall",
+                label = stringResource(R.string.castle_hall_mode),
                 selected = mode == GreatHallMode.HALL,
                 enabled = hallModeEnabled,
                 onClick = { onModeChange(GreatHallMode.HALL) },
                 modifier = Modifier.weight(1f)
             )
             GreatHallModeButton(
-                label = "Registry",
+                label = stringResource(R.string.castle_registry_mode),
                 selected = mode == GreatHallMode.REGISTRY,
                 onClick = { onModeChange(GreatHallMode.REGISTRY) },
                 modifier = Modifier.weight(1f)
@@ -612,7 +614,7 @@ private fun GreatHallArtifactNavigator(
 
         if (!hallModeEnabled) {
             Text(
-                "TalkBack uses Registry presentation so artifacts follow reading order.",
+                stringResource(R.string.castle_registry_talkback),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.78f)
             )
@@ -700,8 +702,10 @@ private fun GreatHallArtifactField(
                 MaterialTheme.shapes.extraSmall
             )
             .semantics {
-                contentDescription =
-                    "Great Hall artifact field. ${artifacts.size} destinations."
+                contentDescription = stringResource(
+                    R.string.castle_hall_field_semantics,
+                    artifacts.size
+                )
             }
     ) {
         Canvas(Modifier.matchParentSize()) {
@@ -804,7 +808,7 @@ private fun GreatHallArtifactField(
         }
 
         VeilEyebrowText(
-            text = "VEIL ABOVE",
+            text = stringResource(R.string.castle_hall_veil_above),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(top = 12.dp),
@@ -837,6 +841,7 @@ private fun GreatHallArtifactPedestal(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val copy = localizedGreatHallArtifactCopy(artifact)
     var revealed by remember { mutableStateOf(revealDurationMs == 0) }
     LaunchedEffect(revealDurationMs, revealDelayMs) {
         if (revealDurationMs > 0) {
@@ -871,9 +876,17 @@ private fun GreatHallArtifactPedestal(
         modifier = sharedModifier
             .semantics {
                 contentDescription = if (active) {
-                    "${artifact.title}. ${artifact.subtitle}. Open."
+                    stringResource(
+                        R.string.castle_artifact_semantics_open,
+                        copy.title,
+                        copy.subtitle
+                    )
                 } else {
-                    "${artifact.title}. Sealed until rank ${artifact.unlockRank + 1}."
+                    stringResource(
+                        R.string.castle_artifact_semantics_sealed,
+                        copy.title,
+                        artifact.unlockRank + 1
+                    )
                 }
             }
             .clickable(
@@ -930,7 +943,7 @@ private fun GreatHallArtifactPedestal(
 
         Spacer(Modifier.height(5.dp))
         Text(
-            artifact.title,
+            copy.title,
             style = MaterialTheme.typography.labelMedium,
             color = if (active) {
                 VeilPalette.Moon.copy(alpha = 0.94f * presence)
@@ -943,9 +956,18 @@ private fun GreatHallArtifactPedestal(
         )
         Text(
             if (active) {
-                if (artifact.awakened) "AWAKENED" else "DORMANT"
+                stringResource(
+                    if (artifact.awakened) {
+                        R.string.castle_artifact_awakened
+                    } else {
+                        R.string.castle_artifact_dormant
+                    }
+                )
             } else {
-                "SEALED · RANK ${artifact.unlockRank + 1}"
+                stringResource(
+                    R.string.castle_artifact_sealed_rank,
+                    artifact.unlockRank + 1
+                )
             },
             style = MaterialTheme.typography.labelSmall,
             color = if (active && artifact.awakened) {
@@ -970,6 +992,7 @@ private fun GreatHallArtifactRegistry(
     ) {
         artifacts.forEach { artifact ->
             val unlocked = rankIndex >= artifact.unlockRank
+            val copy = localizedGreatHallArtifactCopy(artifact)
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -982,9 +1005,17 @@ private fun GreatHallArtifactRegistry(
                     }
                     .semantics {
                         contentDescription = if (unlocked) {
-                            "${artifact.title}. ${artifact.subtitle}. Open."
+                            stringResource(
+                                R.string.castle_artifact_semantics_open,
+                                copy.title,
+                                copy.subtitle
+                            )
                         } else {
-                            "${artifact.title}. Sealed until rank ${artifact.unlockRank + 1}."
+                            stringResource(
+                                R.string.castle_artifact_semantics_sealed,
+                                copy.title,
+                                artifact.unlockRank + 1
+                            )
                         }
                     },
                 shape = MaterialTheme.shapes.extraSmall,
@@ -1031,12 +1062,12 @@ private fun GreatHallArtifactRegistry(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            artifact.title,
+                            copy.title,
                             style = MaterialTheme.typography.titleSmall,
                             color = if (unlocked) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
                         )
                         Text(
-                            artifact.subtitle,
+                            copy.subtitle,
                             style = MaterialTheme.typography.bodySmall,
                             color = VeilPalette.Mist.copy(alpha = if (unlocked) 0.78f else 0.42f),
                             maxLines = 2,
@@ -1044,7 +1075,14 @@ private fun GreatHallArtifactRegistry(
                         )
                     }
                     Text(
-                        if (unlocked) "OPEN" else "R${artifact.unlockRank + 1}",
+                        if (unlocked) {
+                            stringResource(R.string.castle_artifact_open)
+                        } else {
+                            stringResource(
+                                R.string.castle_artifact_rank_short,
+                                artifact.unlockRank + 1
+                            )
+                        },
                         style = MaterialTheme.typography.labelSmall,
                         color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.40f)
                     )
