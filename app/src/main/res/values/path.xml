@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_aspect_oracle">Sight</string>
+    <string name="path_invocation_oracle">What is hidden may still be understood.</string>
+    <string name="path_aspect_dreamwalker">Wonder</string>
+    <string name="path_invocation_dreamwalker">Every page is a door that did not exist before.</string>
+    <string name="path_aspect_archivist">Memory</string>
+    <string name="path_invocation_archivist">What is learned deserves a place to remain.</string>
+    <string name="path_aspect_vanguard">Momentum</string>
+    <string name="path_invocation_vanguard">Forward is a discipline, not a speed.</string>
+    <string name="path_aspect_nocturne">Shadow</string>
+    <string name="path_invocation_nocturne">Some truths are visible only after the lantern dims.</string>
+    <string name="path_aspect_artificer">Making</string>
+    <string name="path_invocation_artificer">Understand the mechanism and the miracle changes shape.</string>
+    <string name="path_aspect_fallback">Reading</string>
+    <string name="path_invocation_fallback">A Path is shaped by returning to the page.</string>
+    <string name="path_invocation_other_fallback">A different way through the archive.</string>
+
+    <string name="path_progression_eyebrow">Progression</string>
+    <string name="path_progression_title">Your ascent</string>
+    <string name="path_other_eyebrow">Other paths</string>
+    <string name="path_other_choose_title">Choose what fits you</string>
+    <string name="path_other_rooted_title">Your choice is rooted</string>
+    <string name="path_other_choose_body">You can change Path until your first advancement. It changes progression flavor, never access to your books.</string>
+    <string name="path_other_rooted_body">Other Paths stay visible as lore. Your current Path remains fixed for this journey.</string>
+
+    <string name="path_masthead_primary">THE %1$s PATH</string>
+    <string name="path_masthead_rank">RANK %1$d</string>
+    <string name="path_threshold_complete">PATH COMPLETE</string>
+    <string name="path_threshold_next">NEXT THRESHOLD</string>
+    <string name="path_threshold_open">The Path remains open</string>
+    <string name="path_advancement_explainer">Advancement is earned by embodying the Path, understanding what you read, and keeping the practice stable. XP cannot substitute for any seal.</string>
+    <string name="path_dissonance">DISSONANCE · %1$d%% · One seal is advancing faster than the others. Nothing is lost; broaden the way you read before the ritual.</string>
+    <string name="path_perform_advancement">Perform advancement</string>
+    <string name="path_complete_three_seals">Complete the three seals</string>
+    <string name="path_rank_label">RANK %1$s</string>
+    <string name="path_current_seal">CURRENT SEAL</string>
+    <string name="path_sealed">SEALED</string>
+    <string name="path_choose_this">Choose this Path</string>
+    <string name="path_locked_after_first">Locked after first advancement</string>
+
+    <string name="ritual_stage_invocation">RITUAL OF ADVANCEMENT</string>
+    <string name="ritual_stage_sealing">THE SEAL IS TURNING</string>
+    <string name="ritual_stage_revealed">RANK AWAKENED</string>
+    <string name="ritual_stage_rejected">ADVANCEMENT NOT CONFIRMED</string>
+    <string name="ritual_permanence">This mark is permanent. It changes the language of your Path, never access to your books.</string>
+    <string name="ritual_advance_to">Advance to %1$s</string>
+    <string name="ritual_not_yet">Not yet</string>
+    <string name="ritual_sealing_progress">Sealing advancement…</string>
+    <string name="ritual_revealed_body">Your Path now bears this rank. Its seal has entered the Great Hall, Reliquary, and Sanctum.</string>
+    <string name="ritual_continue">Continue</string>
+    <string name="ritual_rejected_body">The current Path or ritual no longer matches this request. Close and review your progress.</string>
+    <string name="ritual_close">Close</string>
+</resources>
