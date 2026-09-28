@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_nav_curl">ورق کاغذی</string>
+    <string name="reader_nav_slide">اسلاید</string>
+    <string name="reader_nav_paged">صفحه‌ای</string>
+    <string name="reader_nav_scroll">اسکرول</string>
+    <string name="reader_nav_curl_desc">ورق‌زدن فیزیکی با کشش وزن‌دار، سرعت واقعی رهاسازی و عمق دستهٔ صفحات.</string>
+    <string name="reader_nav_slide_desc">مطالعهٔ صفحه‌ای با جابه‌جایی افقی سبک و بدون تغییر شکل کاغذ.</string>
+    <string name="reader_nav_paged_desc">صفحه‌بندی ثابت بدون انیمیشن تزئینی میان صفحات.</string>
+    <string name="reader_nav_scroll_desc">مطالعهٔ عمودی پیوسته، وقتی قالب کتاب از آن پشتیبانی کند.</string>
+</resources>
