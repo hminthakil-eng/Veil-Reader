@@ -18,6 +18,8 @@
     <string name="silent_names_odds">Direct route: %1$d%%. Either route completes this episode and offers the same lantern.</string>
     <string name="silent_names_continue_book">Return to my book</string>
     <string name="silent_names_saved">This choice is sealed. Your lantern is already recorded.</string>
+    <string name="silent_names_pending_choice">Original choice: %1$s</string>
+    <string name="silent_names_retry_same_choice">Retry this choice</string>
     <string name="silent_names_save_failed">Your choice could not be saved. Try again before leaving.</string>
     <string name="silent_names_hall_eyebrow">HALL STORY · OPTIONAL</string>
     <string name="silent_names_enter">Enter the silent window</string>
