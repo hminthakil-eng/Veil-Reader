@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -73,20 +74,6 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.currentVeilTemporalPhase
 
-private data class PathPresentation(
-    val aspect: String,
-    val invocation: String
-)
-
-private val pathPresentations = mapOf(
-    "oracle" to PathPresentation("Sight", "What is hidden may still be understood."),
-    "dreamwalker" to PathPresentation("Wonder", "Every page is a door that did not exist before."),
-    "archivist" to PathPresentation("Memory", "What is learned deserves a place to remain."),
-    "vanguard" to PathPresentation("Momentum", "Forward is a discipline, not a speed."),
-    "nocturne" to PathPresentation("Shadow", "Some truths are visible only after the lantern dims."),
-    "artificer" to PathPresentation("Making", "Understand the mechanism and the miracle changes shape.")
-)
-
 internal enum class PathGeometryKind {
     RADIAL_EYE,
     ASYMMETRIC_CONSTELLATION,
@@ -115,8 +102,12 @@ fun PathScreen(
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
-    val presentation = pathPresentations[profile.path.id]
-        ?: PathPresentation("Reading", "A Path is shaped by returning to the page.")
+    val localizedNextRank = if (nextRank != null) {
+        localizedPathPresentation(profile.path, profile.rankIndex + 1).rankName
+    } else {
+        null
+    }
+    val presentation = localizedPathPresentation(profile.path, profile.rankIndex)
     var showCeremony by rememberSaveable { mutableStateOf(false) }
     var ceremonyPathId by rememberSaveable { mutableStateOf(profile.path.id) }
     var ceremonyRankIndex by rememberSaveable { mutableStateOf(profile.rankIndex) }
@@ -182,7 +173,7 @@ fun PathScreen(
         RitualPanel(
             profile = profile,
             canAdvance = canAdvance,
-            nextRank = nextRank,
+            nextRank = localizedNextRank,
             onPrepareCeremony = {
                 ceremonyPathId = profile.path.id
                 ceremonyRankIndex = profile.rankIndex
@@ -192,22 +183,26 @@ fun PathScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
-                eyebrow = "Progression",
-                title = "Your ascent"
+                eyebrow = stringResource(R.string.path_progression_eyebrow),
+                title = stringResource(R.string.path_progression_title)
             )
             RankConstellation(profile)
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
-                eyebrow = "Other paths",
-                title = if (profile.rankIndex == 0) "Choose what fits you" else "Your choice is rooted"
+                eyebrow = stringResource(R.string.path_other_eyebrow),
+                title = if (profile.rankIndex == 0) {
+                    stringResource(R.string.path_other_choose_title)
+                } else {
+                    stringResource(R.string.path_other_rooted_title)
+                }
             )
             Text(
                 if (profile.rankIndex == 0) {
-                    "You can change Path until your first advancement. It changes progression flavor, never access to your books."
+                    stringResource(R.string.path_other_choose_body)
                 } else {
-                    "Other Paths stay visible as lore. Your current Path remains fixed for this journey."
+                    stringResource(R.string.path_other_rooted_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Mist
@@ -228,7 +223,10 @@ fun PathScreen(
     if (showCeremony && ceremonyPath != null && ceremonyTarget != null) {
         AdvancementCeremonyDialog(
             profile = profile.copy(path = ceremonyPath, rankIndex = ceremonyRankIndex),
-            nextRank = ceremonyTarget,
+            nextRank = localizedPathPresentation(
+                path = ceremonyPath,
+                rankIndex = ceremonyRankIndex + 1
+            ).rankName,
             currentPathId = profile.path.id,
             currentRankIndex = profile.rankIndex,
             onDismiss = { showCeremony = false },
