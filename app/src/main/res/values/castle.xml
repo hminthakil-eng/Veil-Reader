@@ -32,4 +32,7 @@
     <string name="castle_artifact_open">OPEN</string>
     <string name="castle_artifact_semantics_open">%1$s. %2$s. Open.</string>
     <string name="castle_artifact_semantics_sealed">%1$s. Sealed until rank %2$d.</string>
+    <string name="castle_hall_field_semantics">Great Hall artifact field. %1$d destinations.</string>
+    <string name="castle_hall_veil_above">VEIL ABOVE</string>
+    <string name="castle_artifact_rank_short">R%1$d</string>
 </resources>
