@@ -74,4 +74,7 @@
     <string name="bookplate_ex_libris">از کتابخانهٔ شخصی · VEIL READER</string>
     <string name="bookplate_sealed">لوح کتاب مهرشده</string>
     <string name="bookplate_missing">هنوز کتیبه‌ای ظاهر نشده است.</string>
+    <string name="treasury_summary_reading">%1$d یادگار مطالعه</string>
+    <string name="treasury_summary_story">%1$d یادگار داستانی</string>
+    <string name="treasury_summary_bookplates">%1$d لوح کتاب</string>
 </resources>
