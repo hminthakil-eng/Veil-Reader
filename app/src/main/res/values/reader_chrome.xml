@@ -15,4 +15,20 @@
     <string name="reader_quick_label">READING</string>
     <string name="reader_return_eyebrow">RETURN</string>
     <string name="reader_previous_location">Previous location</string>
+    <string name="reader_highlighted">Passage highlighted</string>
+    <string name="reader_highlight_exists">Already highlighted</string>
+    <string name="reader_passage_save_failed">That passage could not be saved.</string>
+    <string name="reader_restore_location_failed">The previous reading location could not be restored.</string>
+    <string name="reader_close_storage_failed">Could not safely close this book because the latest reading position was not confirmed in storage.</string>
+    <string name="reader_note_saved">Note saved</string>
+    <string name="reader_note_save_failed">The note could not be saved.</string>
+    <string name="reader_saved_location_failed">That saved location could not be opened.</string>
+    <string name="reader_chapter_failed">This chapter could not be opened.</string>
+    <string name="reader_note_eyebrow">HIDDEN ARCHIVE · PASSAGE NOTE</string>
+    <string name="reader_note_title">Note on this passage</string>
+    <string name="reader_selected_passage">SELECTED PASSAGE</string>
+    <string name="reader_note_hint">Write what you want to remember…</string>
+    <string name="reader_note_characters">Characters: %1$d</string>
+    <string name="reader_note_saving">Saving…</string>
+    <string name="reader_note_save">Save note</string>
 </resources>
