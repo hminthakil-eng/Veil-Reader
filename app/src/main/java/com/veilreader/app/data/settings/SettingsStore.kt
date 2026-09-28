@@ -11,6 +11,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -56,6 +57,7 @@ class SettingsStore(private val context: Context) {
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
         val fontFamily = stringPreferencesKey("reader_font_family")
+        val fontWeight = doublePreferencesKey("reader_font_weight")
         val textAlignment = stringPreferencesKey("reader_text_alignment")
         val columnMode = stringPreferencesKey("reader_column_mode")
         val hyphenation = stringPreferencesKey("reader_hyphenation")
@@ -66,6 +68,7 @@ class SettingsStore(private val context: Context) {
         val letterSpacing = doublePreferencesKey("reader_letter_spacing")
         val wordSpacing = doublePreferencesKey("reader_word_spacing")
         val typeScale = doublePreferencesKey("reader_type_scale")
+        val darkImageTreatment = stringPreferencesKey("reader_dark_image_treatment")
         val paperPatina = doublePreferencesKey("reader_paper_patina")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
@@ -102,6 +105,9 @@ class SettingsStore(private val context: Context) {
                         prefs[Keys.fontFamily] ?: ReaderFontFamily.PUBLISHER.name
                     )
                 }.getOrDefault(ReaderFontFamily.PUBLISHER),
+                fontWeight = prefs[Keys.fontWeight]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 2.5),
                 textAlignment = runCatching {
                     ReaderTextAlignment.valueOf(
                         prefs[Keys.textAlignment] ?: ReaderTextAlignment.PUBLISHER.name
@@ -142,6 +148,11 @@ class SettingsStore(private val context: Context) {
                 typeScale = prefs[Keys.typeScale]
                     ?.takeIf { it.isFinite() }
                     ?.coerceIn(1.0, 2.0),
+                darkImageTreatment = runCatching {
+                    ReaderDarkImageTreatment.valueOf(
+                        prefs[Keys.darkImageTreatment] ?: ReaderDarkImageTreatment.NONE.name
+                    )
+                }.getOrDefault(ReaderDarkImageTreatment.NONE),
                 paperPatina = (prefs[Keys.paperPatina] ?: 0.72)
                     .takeIf { it.isFinite() }
                     ?.coerceIn(0.0, 1.0)
@@ -181,6 +192,9 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.publisherStyles] = value.publisherStyles
             prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
             prefs[Keys.fontFamily] = value.fontFamily.name
+            value.fontWeight?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.fontWeight] = it.coerceIn(0.0, 2.5)
+            } ?: prefs.remove(Keys.fontWeight)
             prefs[Keys.textAlignment] = value.textAlignment.name
             prefs[Keys.columnMode] = value.columnMode.name
             prefs[Keys.hyphenation] = value.hyphenation.name
@@ -204,6 +218,7 @@ class SettingsStore(private val context: Context) {
             value.typeScale?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.typeScale] = it.coerceIn(1.0, 2.0)
             } ?: prefs.remove(Keys.typeScale)
+            prefs[Keys.darkImageTreatment] = value.darkImageTreatment.name
             prefs[Keys.paperPatina] = value.paperPatina
                 .takeIf { it.isFinite() }
                 ?.coerceIn(0.0, 1.0)
