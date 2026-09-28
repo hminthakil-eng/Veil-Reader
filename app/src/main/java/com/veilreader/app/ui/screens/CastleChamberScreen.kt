@@ -707,7 +707,7 @@ private fun StoryRelicCopy(
         Text(
             stringResource(
                 R.string.story_relic_path,
-                record.pathIdAtAcquisition.uppercase()
+                storyRelicPathLabel(record.pathIdAtAcquisition)
             ),
             style = MaterialTheme.typography.labelSmall,
             color = VeilPalette.Mist.copy(alpha = 0.72f)
