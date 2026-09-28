@@ -18,6 +18,8 @@
     <string name="silent_names_odds">احتمال مسیر مستقیم: %1$d٪. هر دو مسیر این بخش را تمام می‌کنند و همان فانوس را می‌دهند.</string>
     <string name="silent_names_continue_book">بازگشت به کتابم</string>
     <string name="silent_names_saved">این انتخاب مهر شده است. فانوس تو قبلاً ثبت شده.</string>
+    <string name="silent_names_pending_choice">انتخاب اصلی: %1$s</string>
+    <string name="silent_names_retry_same_choice">تلاش دوباره با همین انتخاب</string>
     <string name="silent_names_save_failed">انتخابت ذخیره نشد. پیش از خروج دوباره تلاش کن.</string>
     <string name="silent_names_hall_eyebrow">روایت تالار · اختیاری</string>
     <string name="silent_names_enter">ورود به پنجرهٔ خاموش</string>
