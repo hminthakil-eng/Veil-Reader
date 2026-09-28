@@ -419,6 +419,16 @@ private fun SilentNamesHallPortal(
     }
 }
 
+private fun silentNamesHallAfterglowRes(pathId: String?): Int = when (pathId) {
+    "oracle" -> R.string.silent_names_hall_afterglow_oracle
+    "dreamwalker" -> R.string.silent_names_hall_afterglow_dreamwalker
+    "archivist" -> R.string.silent_names_hall_afterglow_archivist
+    "vanguard" -> R.string.silent_names_hall_afterglow_vanguard
+    "nocturne" -> R.string.silent_names_hall_afterglow_nocturne
+    "artificer" -> R.string.silent_names_hall_afterglow_artificer
+    else -> R.string.silent_names_saved
+}
+
 internal enum class GreatHallArtifactKind {
     MIRROR,
     ASTROLABE,
