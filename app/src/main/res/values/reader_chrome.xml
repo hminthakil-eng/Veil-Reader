@@ -31,4 +31,9 @@
     <string name="reader_note_characters">Characters: %1$d</string>
     <string name="reader_note_saving">Saving…</string>
     <string name="reader_note_save">Save note</string>
+    <string name="reader_page_material">PAGE MATERIAL</string>
+    <string name="reader_theme_paper">Paper</string>
+    <string name="reader_theme_sepia">Sepia</string>
+    <string name="reader_theme_dark">Dark</string>
+    <string name="reader_theme_night">Night</string>
 </resources>
