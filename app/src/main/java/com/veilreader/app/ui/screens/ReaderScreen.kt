@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -61,6 +62,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.veilreader.app.R
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
@@ -327,6 +329,10 @@ fun ReaderScreen(
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
     val snackbarHostState = remember { SnackbarHostState() }
+    val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
+    val bookmarkExistsMessage = stringResource(R.string.reader_bookmark_exists)
+    val readerSurfaceDescription = stringResource(R.string.reader_surface_description)
+    val toggleReaderControls = stringResource(R.string.reader_toggle_controls)
     val quickSettingsHandleVisible = shouldShowReaderQuickSettingsHandle(
         navigatorReady = navigator != null,
         controlsVisible = controlsVisible,
@@ -771,8 +777,8 @@ fun ReaderScreen(
             .fillMaxSize()
             .background(readerCanvas)
             .semantics {
-                contentDescription = "Reader surface"
-                onClick(label = "Toggle reader controls") {
+                contentDescription = readerSurfaceDescription
+                onClick(label = toggleReaderControls) {
                     readerViewModel.onUserInteraction()
                     controlsVisible = !controlsVisible
                     true
@@ -865,7 +871,7 @@ fun ReaderScreen(
                     ) {
                         ReaderChromeButton(
                             ReaderAction.BACK,
-                            "Close reader"
+                            stringResource(R.string.reader_close)
                         ) { closeReader() }
 
                         Column(
@@ -894,7 +900,7 @@ fun ReaderScreen(
                             "${(progress.coerceIn(0f, 1f) * 100).toInt()}%",
                             modifier = Modifier.semantics {
                                 contentDescription =
-                                    "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
+                                    stringResource(R.string.reader_percent_read, (progress.coerceIn(0f, 1f) * 100).toInt())
                             },
                             color = VeilPalette.Brass,
                             style = MaterialTheme.typography.labelMedium
@@ -994,7 +1000,7 @@ fun ReaderScreen(
                     ) {
                         ReaderControl(
                             action = ReaderAction.NOTEBOOK,
-                            label = "Notes",
+                            label = stringResource(R.string.reader_notes),
                             modifier = Modifier.weight(1f)
                         ) {
                             readerViewModel.onUserInteraction()
@@ -1003,7 +1009,7 @@ fun ReaderScreen(
 
                         ReaderControl(
                             action = ReaderAction.BOOKMARK,
-                            label = "Mark",
+                            label = stringResource(R.string.reader_mark),
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
@@ -1019,9 +1025,9 @@ fun ReaderScreen(
                                     onSensoryEvent(VeilSensoryEvent.MARK)
                                 }
                                 readerMessage = if (added) {
-                                    "Bookmark saved"
+                                    bookmarkSavedMessage
                                 } else {
-                                    "This location is already bookmarked"
+                                    bookmarkExistsMessage
                                 }
                             }
                         }
@@ -1032,7 +1038,9 @@ fun ReaderScreen(
                             } else {
                                 ReaderAction.ZOOM
                             },
-                            label = if (opened.format == BookFormat.EPUB) "Type" else "Zoom",
+                            label = if (opened.format == BookFormat.EPUB)
+                                stringResource(R.string.reader_type)
+                            else stringResource(R.string.reader_zoom),
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
@@ -1083,12 +1091,12 @@ fun ReaderScreen(
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
                     Text(
-                        "RETURN",
+                        stringResource(R.string.reader_return_eyebrow),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass.copy(alpha = 0.84f)
                     )
                     Text(
-                        "Previous location",
+                        stringResource(R.string.reader_previous_location),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -1732,14 +1740,13 @@ private fun ReaderQuickSettingsHandle(
     epub: Boolean,
     onClick: () -> Unit
 ) {
+    val accessibilityDescription = stringResource(
+        if (epub) R.string.reader_quick_appearance else R.string.reader_quick_pdf
+    )
     Surface(
         modifier = Modifier
             .heightIn(min = 48.dp)
-            .semantics {
-                contentDescription =
-                    if (epub) "Open reading appearance and page movement controls"
-                    else "Open PDF reading and zoom controls"
-            }
+            .semantics { contentDescription = accessibilityDescription }
             .clickable(role = Role.Button, onClick = onClick),
         shape = MaterialTheme.shapes.extraSmall,
         color = VeilPalette.Ink.copy(alpha = 0.90f),
@@ -1758,7 +1765,7 @@ private fun ReaderQuickSettingsHandle(
                 color = VeilPalette.Brass
             )
             Text(
-                "READING",
+                stringResource(R.string.reader_quick_label),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                 color = VeilPalette.Moon.copy(alpha = 0.86f)
             )
