@@ -4,8 +4,9 @@ package com.veilreader.app.domain
  * One derived, explainable ledger of visible world consequences.
  *
  * This does not persist a second world state. Every entry is projected from existing reading
- * history or the authoritative Path rank. Removing source data may remove derived mutations;
- * permanent discovery records remain owned by VeiledDiscoveryPolicy.
+ * history, the authoritative Path rank, or a validated durable story receipt. Removing source
+ * data may remove derived mutations; permanent discovery records remain owned by
+ * VeiledDiscoveryPolicy and story-relic ownership remains owned by its originating receipt.
  */
 enum class WorldMutationRealm {
     GREAT_HALL,
