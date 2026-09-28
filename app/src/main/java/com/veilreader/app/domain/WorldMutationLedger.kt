@@ -38,6 +38,11 @@ enum class WorldMutationKind {
     ADVANCEMENT_SEAL
 }
 
+data class WorldMutationCopy(
+    val title: String,
+    val inscription: String
+)
+
 data class WorldMutationEntry(
     val id: String,
     val kind: WorldMutationKind,
@@ -47,8 +52,15 @@ data class WorldMutationEntry(
     val intensity: Float,
     val durable: Boolean,
     val title: String,
-    val inscription: String
-)
+    val inscription: String,
+    val realmCopy: Map<WorldMutationRealm, WorldMutationCopy> = emptyMap()
+) {
+    fun titleFor(realm: WorldMutationRealm): String =
+        realmCopy[realm]?.title ?: title
+
+    fun inscriptionFor(realm: WorldMutationRealm): String =
+        realmCopy[realm]?.inscription ?: inscription
+}
 
 data class WorldMutationLedger(
     val entries: List<WorldMutationEntry>
@@ -88,15 +100,25 @@ fun deriveWorldMutationLedger(
 
         if (profile.rankIndex > 0) {
             val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
+            val rankName = profile.path.ranks.getOrElse(profile.rankIndex) { profile.rankName }
+            val realmCopy = WorldMutationRealm.entries.associateWith { realm ->
+                val mutation = deriveRankRealmMutation(
+                    pathId = profile.path.id,
+                    rankName = rankName,
+                    rankIndex = profile.rankIndex,
+                    rankCount = profile.path.ranks.size,
+                    realm = realm
+                )
+                WorldMutationCopy(
+                    title = mutation.title,
+                    inscription = mutation.inscription
+                )
+            }
             add(
                 WorldMutationEntry(
                     id = "path-ascension",
                     kind = WorldMutationKind.PATH_ASCENSION,
-                    realms = setOf(
-                        WorldMutationRealm.GREAT_HALL,
-                        WorldMutationRealm.TREASURY,
-                        WorldMutationRealm.SANCTUM
-                    ),
+                    realms = WorldMutationRealm.entries.toSet(),
                     evidence = WorldMutationEvidence.PATH_RANK,
                     evidenceCount = profile.rankIndex,
                     intensity =
@@ -105,7 +127,8 @@ fun deriveWorldMutationLedger(
                     durable = true,
                     title = "Path-Bound Architecture",
                     inscription =
-                        "Advancement has entered the architecture. It changes identity and ornament, never factual reading history."
+                        "Advancement has entered the architecture. Realm-specific copy is projected without changing factual reading history.",
+                    realmCopy = realmCopy
                 )
             )
         }
