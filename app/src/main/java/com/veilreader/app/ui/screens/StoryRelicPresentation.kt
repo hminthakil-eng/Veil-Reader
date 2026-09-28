@@ -5,6 +5,7 @@ import com.veilreader.app.R
 import com.veilreader.app.domain.SilentNamesEncounter
 import com.veilreader.app.domain.SilentNamesOutcome
 import com.veilreader.app.domain.StoryRelicRecord
+import com.veilreader.app.domain.SampleData
 import com.veilreader.app.domain.normalizeStoryRelics
 
 internal enum class StoryRelicGlyph {
@@ -70,5 +71,9 @@ internal fun storyRelicModeRes(modeId: String): Int =
     when (modeId) {
         "DICE" -> R.string.story_relic_dice_mode
         "STORY" -> R.string.story_relic_story_mode
-        else -> R.string.story_relic_unknown_variant
+        else -> R.string.story_relic_unknown_mode
     }
+
+internal fun storyRelicPathLabel(pathId: String): String =
+    SampleData.paths.firstOrNull { it.id == pathId }?.name
+        ?: pathId.replace('_', ' ').replaceFirstChar { it.uppercase() }
