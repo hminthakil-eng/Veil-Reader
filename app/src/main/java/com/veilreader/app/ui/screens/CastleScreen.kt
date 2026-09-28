@@ -43,6 +43,7 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -110,7 +111,8 @@ fun CastleScreen(
     bookmarks: List<Bookmark> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
-    memoryStateOverride: CastleMemoryState? = null
+    memoryStateOverride: CastleMemoryState? = null,
+    silentNamesSealed: Boolean = false
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
@@ -260,6 +262,11 @@ fun CastleScreen(
         CastleMutationInscription(memoryState)
         CastleWorldMutationLedger(mutationLedger)
 
+        SilentNamesHallPortal(
+            sealed = silentNamesSealed,
+            onOpen = { onOpenRoom(SILENT_NAMES_HALL_ROUTE) }
+        )
+
         GreatHallArtifactNavigator(
             profile = profile,
             memoryState = memoryState,
@@ -285,6 +292,119 @@ fun CastleScreen(
 }
 
 private enum class GreatHallMode { HALL, REGISTRY }
+
+internal const val SILENT_NAMES_HALL_ROUTE = "silent_names"
+
+@Composable
+private fun SilentNamesHallPortal(
+    sealed: Boolean,
+    onOpen: () -> Unit
+) {
+    val title = stringResource(R.string.silent_names_title)
+    val action = stringResource(
+        if (sealed) R.string.silent_names_revisit else R.string.silent_names_enter
+    )
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 116.dp)
+            .semantics {
+                contentDescription = "$title. $action"
+            }
+            .clickable(
+                role = Role.Button,
+                onClick = onOpen
+            ),
+        color = VeilPalette.InkRaised.copy(alpha = 0.78f),
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = if (sealed) 0.62f else 0.40f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(VeilSpacing.md),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Canvas(
+                modifier = Modifier
+                    .size(68.dp)
+                    .border(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.34f),
+                        CircleShape
+                    )
+                    .padding(8.dp)
+            ) {
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val strong = 1.2.dp.toPx()
+                val thin = 0.75.dp.toPx()
+                drawCircle(
+                    VeilPalette.Brass.copy(alpha = 0.72f),
+                    size.minDimension * 0.38f,
+                    center,
+                    style = Stroke(strong)
+                )
+                drawLine(
+                    VeilPalette.Brass.copy(alpha = 0.48f),
+                    Offset(center.x, size.height * 0.12f),
+                    Offset(center.x, size.height * 0.88f),
+                    strong
+                )
+                drawArc(
+                    VeilPalette.Brass.copy(alpha = if (sealed) 0.92f else 0.56f),
+                    startAngle = 210f,
+                    sweepAngle = 120f,
+                    useCenter = false,
+                    topLeft = Offset(size.width * 0.22f, size.height * 0.20f),
+                    size = Size(size.width * 0.56f, size.height * 0.60f),
+                    style = Stroke(thin)
+                )
+                if (sealed) {
+                    drawCircle(
+                        VeilPalette.Brass,
+                        2.4.dp.toPx(),
+                        Offset(center.x, size.height * 0.69f)
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                VeilEyebrowText(
+                    text = stringResource(R.string.silent_names_hall_eyebrow),
+                    color = VeilPalette.Brass.copy(alpha = 0.86f),
+                    trackingSp = 1.2f
+                )
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    if (sealed) {
+                        stringResource(R.string.silent_names_saved)
+                    } else {
+                        stringResource(R.string.silent_names_intro)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    action,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = VeilPalette.Brass
+                )
+            }
+        }
+    }
+}
 
 internal enum class GreatHallArtifactKind {
     MIRROR,
