@@ -27,16 +27,16 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlin.random.Random
 import org.json.JSONObject
 
-/** Persistent, offline-first reading progression.
- *
- * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
- * the important rule that advancement cannot be farmed with raw points alone.
- */
 data class SilentNamesCommitResult(
     val receipt: SilentNamesReceipt,
     val newlyCommitted: Boolean
 )
 
+/** Persistent, offline-first reading progression.
+ *
+ * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
+ * the important rule that advancement cannot be farmed with raw points alone.
+ */
 class GameRepository(context: Context) {
     private val prefs = context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE)
     private val pageGate = ReadingPolicy.PageGate()
