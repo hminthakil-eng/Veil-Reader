@@ -364,7 +364,7 @@ class GameRepository(context: Context) {
             path = path,
             rankIndex = rankIndex,
             ritualProgress = prefs.getInt("ritualProgress", 0),
-            ritualTarget = ReadingPolicy.ritualTarget(path.id, prefs.getInt("rankIndex", 0)),
+            ritualTarget = ReadingPolicy.ritualTarget(path.id, rankIndex),
             earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
             earnedDiscoveries = prefs
                 .getStringSet("earnedDiscoveries", emptySet())

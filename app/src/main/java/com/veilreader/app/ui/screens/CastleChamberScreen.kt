@@ -366,62 +366,6 @@ fun TreasuryScreen(
 }
 
 @Composable
-private fun WorldMutationEcho(
-    ledger: WorldMutationLedger,
-    realm: WorldMutationRealm,
-    durableOnly: Boolean = false
-) {
-    val entries = ledger.forRealm(realm)
-        .filter { !durableOnly || it.durable }
-        .take(3)
-    if (entries.isEmpty()) return
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        ArchiveChamberHeading(
-            eyebrow = "World consequence",
-            title = if (durableOnly) "Anchored mutations" else "Reading mutations",
-            trailing = "${entries.size} visible"
-        )
-        entries.forEach { mutation ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                Text(
-                    if (mutation.durable) "◆" else "◇",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = if (mutation.durable) VeilPalette.Brass else VeilPalette.Spirit
-                )
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(1.dp)
-                ) {
-                    Text(
-                        mutation.title,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.Moon
-                    )
-                    Text(
-                        mutation.inscription,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = VeilPalette.Mist.copy(alpha = 0.72f)
-                    )
-                }
-                Text(
-                    mutation.evidenceCount.toString(),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.62f)
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun CastleChamberGrandMasthead(
     realm: VeilRealm,
     sharedKey: String,
