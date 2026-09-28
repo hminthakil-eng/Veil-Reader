@@ -813,6 +813,7 @@ fun VeilApp(
                         profile = requireNotNull(profile),
                         equippedSigil = equippedSigil,
                         mutationLedger = worldMutationLedger,
+                        silentNamesReceipt = silentNamesReceipt,
                         onEquip = { id ->
                             if (!game.equipSigil(id)) {
                                 errorMessage = "That sigil has not awakened yet."
