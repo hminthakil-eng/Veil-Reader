@@ -309,8 +309,22 @@ fun ReaderScreen(
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
     val snackbarHostState = remember { SnackbarHostState() }
+    val quickSettingsHandleVisible = shouldShowReaderQuickSettingsHandle(
+        navigatorReady = navigator != null,
+        controlsVisible = controlsVisible,
+        showNotebook = showNotebook,
+        showAppearance = showAppearance,
+        showPdfZoom = showPdfZoom,
+        selectionModeActive = selectionModeActive,
+        closeInFlight = closeInFlight,
+        paperCurlActive = paperCurlState.active
+    )
     val snackbarBottom by animateDpAsState(
-        targetValue = if (controlsVisible) 104.dp else 16.dp,
+        targetValue = when {
+            controlsVisible -> 104.dp
+            quickSettingsHandleVisible -> 68.dp
+            else -> 16.dp
+        },
         animationSpec = if (reducedMotion) {
             snap()
         } else {
@@ -803,6 +817,39 @@ fun ReaderScreen(
         }
 
         AnimatedVisibility(
+            visible = quickSettingsHandleVisible,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 6.dp),
+            enter = fadeIn(
+                tween(
+                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
+                    else VeilMotion.MICRO_FAST_MS
+                )
+            ),
+            exit = fadeOut(
+                tween(
+                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
+                    else VeilMotion.MICRO_FAST_MS
+                )
+            )
+        ) {
+            ReaderQuickSettingsHandle(
+                epub = opened.format == BookFormat.EPUB,
+                onClick = {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = false
+                    if (opened.format == BookFormat.EPUB) {
+                        showAppearance = true
+                    } else {
+                        showPdfZoom = true
+                    }
+                }
+            )
+        }
+
+        AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.BottomCenter),
             enter = if (reducedMotion) {
@@ -1244,6 +1291,25 @@ fun ReaderScreen(
     }
 }
 
+internal fun shouldShowReaderQuickSettingsHandle(
+    navigatorReady: Boolean,
+    controlsVisible: Boolean,
+    showNotebook: Boolean,
+    showAppearance: Boolean,
+    showPdfZoom: Boolean,
+    selectionModeActive: Boolean,
+    closeInFlight: Boolean,
+    paperCurlActive: Boolean
+): Boolean =
+    navigatorReady &&
+        !controlsVisible &&
+        !showNotebook &&
+        !showAppearance &&
+        !showPdfZoom &&
+        !selectionModeActive &&
+        !closeInFlight &&
+        !paperCurlActive
+
 internal fun shouldAutoHideReaderChrome(
     controlsVisible: Boolean,
     showNotebook: Boolean,
@@ -1497,6 +1563,45 @@ private fun ReaderChromeButton(
 }
 
 @Composable
+@Composable
+private fun ReaderQuickSettingsHandle(
+    epub: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .semantics {
+                contentDescription =
+                    if (epub) "Open reading appearance and page movement controls"
+                    else "Open PDF reading and zoom controls"
+            }
+            .clickable(role = Role.Button, onClick = onClick),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Ink.copy(alpha = 0.90f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                if (epub) "Aa" else "±",
+                style = MaterialTheme.typography.titleSmall,
+                color = VeilPalette.Brass
+            )
+            Text(
+                "READING",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                color = VeilPalette.Moon.copy(alpha = 0.86f)
+            )
+        }
+    }
+}
+
 private fun ReaderControl(
     action: ReaderAction,
     label: String,

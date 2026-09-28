@@ -48,6 +48,74 @@ class ReaderChromePolicyTest {
     }
 
     @Test
+    fun `quick settings handle appears only on a quiet ready reader`() {
+        assertTrue(
+            shouldShowReaderQuickSettingsHandle(
+                navigatorReady = true,
+                controlsVisible = false,
+                showNotebook = false,
+                showAppearance = false,
+                showPdfZoom = false,
+                selectionModeActive = false,
+                closeInFlight = false,
+                paperCurlActive = false
+            )
+        )
+        assertFalse(
+            shouldShowReaderQuickSettingsHandle(
+                navigatorReady = true,
+                controlsVisible = true,
+                showNotebook = false,
+                showAppearance = false,
+                showPdfZoom = false,
+                selectionModeActive = false,
+                closeInFlight = false,
+                paperCurlActive = false
+            )
+        )
+        assertFalse(
+            shouldShowReaderQuickSettingsHandle(
+                navigatorReady = true,
+                controlsVisible = false,
+                showNotebook = false,
+                showAppearance = true,
+                showPdfZoom = false,
+                selectionModeActive = false,
+                closeInFlight = false,
+                paperCurlActive = false
+            )
+        )
+        assertFalse(
+            shouldShowReaderQuickSettingsHandle(
+                navigatorReady = true,
+                controlsVisible = false,
+                showNotebook = false,
+                showAppearance = false,
+                showPdfZoom = false,
+                selectionModeActive = false,
+                closeInFlight = false,
+                paperCurlActive = true
+            )
+        )
+    }
+
+    @Test
+    fun `quick settings handle waits for navigator readiness`() {
+        assertFalse(
+            shouldShowReaderQuickSettingsHandle(
+                navigatorReady = false,
+                controlsVisible = false,
+                showNotebook = false,
+                showAppearance = false,
+                showPdfZoom = false,
+                selectionModeActive = false,
+                closeInFlight = false,
+                paperCurlActive = false
+            )
+        )
+    }
+
+    @Test
     fun `open reader surfaces suspend auto-hide`() {
         assertFalse(
             shouldAutoHideReaderChrome(
