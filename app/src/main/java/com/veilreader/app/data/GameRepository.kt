@@ -22,8 +22,10 @@ import com.veilreader.app.domain.SilentNamesOutcome
 import com.veilreader.app.domain.SilentNamesReceipt
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.withContext
 import kotlin.random.Random
 import org.json.JSONObject
 
@@ -183,40 +185,42 @@ class GameRepository(context: Context) {
      * generated. The whole receipt is encoded into one SharedPreferences value and committed
      * synchronously. A revisit therefore cannot reroll, change Path/choice, or duplicate a reward.
      */
-    fun sealSilentNamesEncounter(
+    suspend fun sealSilentNamesEncounter(
         choice: SilentNamesChoice,
         mode: SilentNamesMode,
         nextD20: () -> Int = { Random.nextInt(1, 21) },
         nowEpochMs: () -> Long = { System.currentTimeMillis().coerceAtLeast(1L) }
-    ): SilentNamesCommitResult = synchronized(SILENT_NAMES_LOCK) {
-        readSilentNamesReceiptLocked()?.let {
-            return@synchronized SilentNamesCommitResult(it, newlyCommitted = false)
-        }
+    ): SilentNamesCommitResult = withContext(Dispatchers.IO) {
+        synchronized(SILENT_NAMES_LOCK) {
+            readSilentNamesReceiptLocked()?.let {
+                return@synchronized SilentNamesCommitResult(it, newlyCommitted = false)
+            }
 
-        val pathId = buildProfile().path.id
-        val dice = when (mode) {
-            SilentNamesMode.DICE -> SilentNamesDice(nextD20())
-            SilentNamesMode.STORY -> null
-        }
-        val candidate = SilentNamesEncounter.resolve(
-            pathId = pathId,
-            choice = choice,
-            mode = mode,
-            dice = dice,
-            recordedAtEpochMs = nowEpochMs(),
-            existing = null
-        ).receipt
+            val pathId = buildProfile().path.id
+            val dice = when (mode) {
+                SilentNamesMode.DICE -> SilentNamesDice(nextD20())
+                SilentNamesMode.STORY -> null
+            }
+            val candidate = SilentNamesEncounter.resolve(
+                pathId = pathId,
+                choice = choice,
+                mode = mode,
+                dice = dice,
+                recordedAtEpochMs = nowEpochMs(),
+                existing = null
+            ).receipt
 
-        val committed = prefs.edit()
-            .putString(SILENT_NAMES_RECEIPT_KEY, encodeSilentNamesReceipt(candidate))
-            .commit()
-        check(committed) { "Could not commit Silent Names encounter receipt" }
+            val committed = prefs.edit()
+                .putString(SILENT_NAMES_RECEIPT_KEY, encodeSilentNamesReceipt(candidate))
+                .commit()
+            check(committed) { "Could not commit Silent Names encounter receipt" }
 
-        val restored = checkNotNull(readSilentNamesReceiptLocked()) {
-            "Silent Names receipt was not readable after commit"
+            val restored = checkNotNull(readSilentNamesReceiptLocked()) {
+                "Silent Names receipt was not readable after commit"
+            }
+            check(restored == candidate) { "Silent Names receipt changed during commit" }
+            SilentNamesCommitResult(restored, newlyCommitted = true)
         }
-        check(restored == candidate) { "Silent Names receipt changed during commit" }
-        SilentNamesCommitResult(restored, newlyCommitted = true)
     }
 
     private fun recordRitualEvent(event: String) {
