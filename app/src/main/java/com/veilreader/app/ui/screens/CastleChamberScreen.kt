@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -408,9 +409,9 @@ fun TreasuryScreen(
 
         silentNamesReceipt?.let { receipt ->
             ArchiveChamberHeading(
-                eyebrow = "Authored relic",
-                title = "Hall witness",
-                trailing = "1 SEALED"
+                eyebrow = stringResource(R.string.silent_names_treasury_eyebrow),
+                title = stringResource(R.string.silent_names_treasury_section_title),
+                trailing = stringResource(R.string.silent_names_treasury_sealed_count)
             )
             VeilReveal(delayMillis = 32, distance = 8.dp) {
                 SilentNamesLanternRelic(receipt)
@@ -533,30 +534,22 @@ private fun SilentNamesLanternRelic(receipt: SilentNamesReceipt) {
                 verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Text(
-                    text = androidx.compose.ui.res.stringResource(
-                        R.string.silent_names_treasury_eyebrow
-                    ),
+                    text = stringResource(R.string.silent_names_treasury_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    text = androidx.compose.ui.res.stringResource(
-                        R.string.silent_names_reward_title
-                    ),
+                    text = stringResource(R.string.silent_names_reward_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    text = androidx.compose.ui.res.stringResource(
-                        R.string.silent_names_reward_body
-                    ),
+                    text = stringResource(R.string.silent_names_reward_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist
                 )
                 Text(
-                    text = androidx.compose.ui.res.stringResource(
-                        silentNamesTreasuryEchoRes(receipt.pathId)
-                    ),
+                    text = stringResource(silentNamesTreasuryEchoRes(receipt.pathId)),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Brass.copy(alpha = 0.86f)
                 )
