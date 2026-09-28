@@ -631,6 +631,7 @@ private fun LivingMirrorNode(
 ) {
     Box(
         modifier = modifier
+            .heightIn(min = 92.dp)
             .semantics {
                 contentDescription =
                     "Note from ${note.bookTitle}. ${note.revisitCount} revisits. Reading cycle ${note.cycleIndex}."
@@ -640,105 +641,84 @@ private fun LivingMirrorNode(
     ) {
         Canvas(Modifier.matchParentSize()) {
             val center = androidx.compose.ui.geometry.Offset(size.width / 2f, size.height / 2f)
-            repeat(note.ringCount) { index ->
-                drawCircle(
-                    color = VeilPalette.Spirit.copy(alpha = alpha * (0.26f - index * 0.045f)),
+            val proximity = note.proximity.coerceIn(0f, 1f)
+            val glow = (0.12f + proximity * 0.22f) * alpha
+
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        VeilPalette.Spirit.copy(alpha = glow),
+                        VeilPalette.Spirit.copy(alpha = glow * 0.22f),
+                        Color.Transparent
+                    ),
                     center = center,
-                    radius = size.minDimension * (0.38f + index * 0.08f),
-                    style = Stroke(0.8.dp.toPx())
-                )
-            }
-        }
-        Box(
-            modifier = Modifier
-                .width(102.dp)
-                .heightIn(min = 72.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Canvas(Modifier.matchParentSize()) {
-                val glow = (0.16f + note.proximity * 0.18f) * alpha
-                drawCircle(
-                    brush = Brush.radialGradient(
-                        colors = listOf(
-                            VeilPalette.Spirit.copy(alpha = glow),
-                            Color.Transparent
-                        ),
-                        center = androidx.compose.ui.geometry.Offset(
-                            size.width / 2f,
-                            size.height / 2f
-                        ),
-                        radius = size.minDimension * 0.62f
-                    ),
-                    radius = size.minDimension * 0.62f,
-                    center = androidx.compose.ui.geometry.Offset(
-                        size.width / 2f,
-                        size.height / 2f
-                    )
-                )
-                drawRoundRect(
-                    color = Color(0xFF0B1116).copy(alpha = 0.54f * alpha),
-                    topLeft = androidx.compose.ui.geometry.Offset(
-                        5.dp.toPx(),
-                        8.dp.toPx()
-                    ),
-                    size = androidx.compose.ui.geometry.Size(
-                        size.width - 10.dp.toPx(),
-                        size.height - 16.dp.toPx()
-                    ),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx())
-                )
-                drawRoundRect(
+                    radius = size.minDimension * 0.58f
+                ),
+                radius = size.minDimension * 0.58f,
+                center = center
+            )
+
+            repeat(note.ringCount.coerceAtMost(4)) { index ->
+                drawOval(
                     color = VeilPalette.Spirit.copy(
-                        alpha = alpha * (0.24f + note.proximity * 0.34f)
+                        alpha = alpha * (0.25f - index * 0.045f)
                     ),
                     topLeft = androidx.compose.ui.geometry.Offset(
-                        5.dp.toPx(),
-                        8.dp.toPx()
+                        size.width * (0.18f - index * 0.025f),
+                        size.height * (0.17f - index * 0.018f)
                     ),
                     size = androidx.compose.ui.geometry.Size(
-                        size.width - 10.dp.toPx(),
-                        size.height - 16.dp.toPx()
+                        size.width * (0.64f + index * 0.05f),
+                        size.height * (0.58f + index * 0.036f)
                     ),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
-                    style = Stroke(0.8.dp.toPx())
-                )
-                drawLine(
-                    color = VeilPalette.Brass.copy(alpha = alpha * 0.42f),
-                    start = androidx.compose.ui.geometry.Offset(
-                        size.width * 0.25f,
-                        size.height - 9.dp.toPx()
-                    ),
-                    end = androidx.compose.ui.geometry.Offset(
-                        size.width * 0.75f,
-                        size.height - 9.dp.toPx()
-                    ),
-                    strokeWidth = 0.7.dp.toPx()
+                    style = Stroke((0.72f + index * 0.08f).dp.toPx())
                 )
             }
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp, vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    note.bookTitle,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = VeilPalette.Moon.copy(alpha = alpha),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    note.note,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = alpha * 0.84f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-            }
+
+            drawLine(
+                color = VeilPalette.Moon.copy(alpha = alpha * 0.18f),
+                start = androidx.compose.ui.geometry.Offset(
+                    center.x - size.width * 0.18f,
+                    size.height * 0.31f
+                ),
+                end = androidx.compose.ui.geometry.Offset(
+                    center.x + size.width * 0.10f,
+                    size.height * 0.22f
+                ),
+                strokeWidth = 0.62.dp.toPx(),
+                cap = StrokeCap.Round
+            )
+
+            drawCircle(
+                color = VeilPalette.Brass.copy(alpha = alpha * (0.54f + proximity * 0.20f)),
+                radius = 2.1.dp.toPx(),
+                center = androidx.compose.ui.geometry.Offset(center.x, size.height * 0.79f)
+            )
+        }
+
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                note.bookTitle,
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Moon.copy(alpha = alpha),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                note.note,
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = alpha * 0.76f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
