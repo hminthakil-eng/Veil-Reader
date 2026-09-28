@@ -44,6 +44,8 @@ import com.veilreader.app.ui.rememberVeilTouchExplorationEnabled
 import com.veilreader.app.ui.veilSharedBounds
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilQualityTier
+import com.veilreader.app.ui.theme.VeilQualityTier
 import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -60,6 +62,24 @@ import java.time.format.FormatStyle
 private enum class LivingMirrorMode { MIRROR, INDEX }
 
 private const val MIRROR_SURFACE_NODE_LIMIT = 28
+
+internal data class LivingMirrorPresentationPolicy(
+    val maxSurfaceNodes: Int,
+    val animateMaterial: Boolean
+)
+
+internal fun livingMirrorPresentationPolicy(
+    qualityTier: VeilQualityTier,
+    reducedMotion: Boolean
+): LivingMirrorPresentationPolicy =
+    LivingMirrorPresentationPolicy(
+        maxSurfaceNodes = when (qualityTier) {
+            VeilQualityTier.FULL -> MIRROR_SURFACE_NODE_LIMIT
+            VeilQualityTier.BALANCED -> 20
+            VeilQualityTier.ESSENTIAL -> 12
+        },
+        animateMaterial = !reducedMotion && qualityTier != VeilQualityTier.ESSENTIAL
+    )
 
 internal fun selectLivingMirrorSurfaceNotes(
     notes: List<LivingMirrorNote>,
@@ -386,12 +406,17 @@ private fun LivingMirrorSurface(
     modifier: Modifier = Modifier
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
+    val qualityTier = LocalVeilQualityTier.current
+    val presentation = livingMirrorPresentationPolicy(
+        qualityTier = qualityTier,
+        reducedMotion = reducedMotion
+    )
     val fogAlpha by animateFloatAsState(
         targetValue = livingMirrorFogAlpha(
             noteCount = notes.size,
             queryActive = query.isNotBlank()
         ),
-        animationSpec = if (reducedMotion) {
+        animationSpec = if (!presentation.animateMaterial) {
             snap()
         } else {
             tween(motionBudgetFor(CathedralMotionClass.MATERIAL).targetDurationMs)
@@ -428,7 +453,8 @@ private fun LivingMirrorSurface(
             selectLivingMirrorSurfaceNotes(
                 notes = notes,
                 matches = matches,
-                queryActive = query.isNotBlank()
+                queryActive = query.isNotBlank(),
+                maxNodes = presentation.maxSurfaceNodes
             )
         }
         val visibleMatchCount =
@@ -586,7 +612,7 @@ private fun LivingMirrorSurface(
             )
             val scale by animateFloatAsState(
                 targetValue = targetScale,
-                animationSpec = if (reducedMotion) {
+                animationSpec = if (!presentation.animateMaterial) {
                     snap()
                 } else {
                     tween(motionBudgetFor(CathedralMotionClass.MATERIAL).targetDurationMs)
@@ -749,6 +775,12 @@ private fun LivingMirrorIndex(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .semantics {
+                        contentDescription =
+                            "Note from ${note.bookTitle}. ${note.note}. " +
+                                "${note.revisitCount} revisits. Reading cycle ${note.cycleIndex}. " +
+                                "Open note and passage options."
+                    }
                     .clickable(role = Role.Button) { onSelect(note) },
                 shape = MaterialTheme.shapes.extraSmall,
                 color = VeilPalette.Archive.copy(alpha = 0.70f),
