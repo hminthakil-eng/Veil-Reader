@@ -1221,52 +1221,45 @@ fun ReaderScreen(
     }
 
     if (showAppearance) {
-        Dialog(
+        ModalBottomSheet(
             onDismissRequest = { showAppearance = false },
-            properties = DialogProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = false,
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
+            containerColor = VeilPalette.Ink,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = VeilPalette.Brass.copy(alpha = 0.52f)
+                )
+            }
         ) {
-            Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = VeilPalette.Ink,
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(
-                            Brush.verticalGradient(
-                                listOf(
-                                    Color(0xFF141821),
-                                    VeilPalette.Ink,
-                                    Color(0xFF080A0E)
-                                )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color(0xFF141821),
+                                VeilPalette.Ink,
+                                Color(0xFF080A0E)
                             )
                         )
-                        .windowInsetsPadding(WindowInsets.safeDrawing),
-                    contentAlignment = Alignment.TopCenter
-                ) {
-                    GrayfogOrnamentFrame(
-                        modifier = Modifier.matchParentSize(),
-                        strength = 0.38f
-                    )
-                    EpubAppearancePanel(
-                        appearance = readerAppearance,
-                        onChange = {
-                            readerViewModel.onUserInteraction()
-                            onReaderAppearanceChange(it)
-                        },
-                        onDone = { showAppearance = false },
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .widthIn(max = 720.dp)
-                    )
-                }
+                    ),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                GrayfogOrnamentFrame(
+                    modifier = Modifier.matchParentSize(),
+                    strength = 0.26f
+                )
+                EpubAppearancePanel(
+                    appearance = readerAppearance,
+                    onChange = {
+                        readerViewModel.onUserInteraction()
+                        onReaderAppearanceChange(it)
+                    },
+                    onDone = { showAppearance = false },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 720.dp)
+                        .heightIn(max = 760.dp)
+                )
             }
         }
     }
@@ -1732,6 +1725,13 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
     }
 }
 
+private enum class ReaderConsoleSection(val label: String) {
+    TYPE("TYPE"),
+    PAGE("PAGE"),
+    LIGHT("LIGHT"),
+    MORE("MORE")
+}
+
 @Composable
 private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
@@ -1741,7 +1741,7 @@ private fun EpubAppearancePanel(
 ) {
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
-    var showAdvanced by remember { mutableStateOf(false) }
+    var section by rememberSaveable { mutableStateOf(ReaderConsoleSection.TYPE) }
 
     LaunchedEffect(appearance) {
         when {
@@ -1760,8 +1760,8 @@ private fun EpubAppearancePanel(
         modifier
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp)
-            .padding(top = 14.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(top = 6.dp, bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -1770,251 +1770,340 @@ private fun EpubAppearancePanel(
         ) {
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(5.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "READING INSTRUMENTS",
+                    "READING CONSOLE",
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
                     color = VeilPalette.Brass
                 )
-                BrassRule(Modifier.width(76.dp))
                 Text(
-                    "Appearance",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+                    "Tune the open page",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VeilPalette.Moon
                 )
                 Text(
-                    "Changes apply live to the open publication.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "Every change is applied live. The book remains underneath this sheet.",
+                    color = VeilPalette.Mist.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-
             TextButton(
                 onClick = onDone,
-                modifier = Modifier.heightIn(min = 48.dp),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = VeilPalette.Moon
-                )
+                modifier = Modifier.heightIn(min = 48.dp)
             ) {
-                Text(
-                    "DONE",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp)
-                )
+                Text("DONE", style = MaterialTheme.typography.labelSmall)
             }
         }
 
-        // The preview is the focal instrument; controls stay secondary and compact.
         ReaderAppearancePreview(
             appearance = draft,
             modifier = Modifier.fillMaxWidth()
         )
 
-        /* header consumed above */
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            listOf(false to "QUICK", true to "ADVANCED").forEach { (advanced, label) ->
-                val selected = showAdvanced == advanced
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 48.dp)
-                        .selectable(
-                            selected = selected,
-                            role = Role.Tab
-                        ) { showAdvanced = advanced },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilPalette.DeepBrass.copy(alpha = 0.78f)
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.78f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+        ReaderConsoleTabs(
+            selected = section,
+            onSelect = { section = it }
+        )
+
+        when (section) {
+            ReaderConsoleSection.TYPE -> {
+                ReaderConsoleSectionTitle(
+                    title = "TYPE",
+                    subtitle = "Typeface, rhythm, alignment, and paragraph shape."
+                )
+
+                if (draft.publisherStyles) {
+                    ReaderPublisherStyleNotice(
+                        onOverride = {
+                            updateDraft(draft.copy(publisherStyles = false))
+                        }
                     )
+                }
+
+                Text("Typeface", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                            color = if (selected) VeilPalette.Moon
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                    ReaderFontFamily.entries.forEach { family ->
+                        ReaderConsoleChoice(
+                            label = readerFontFamilyLabel(family),
+                            selected = draft.fontFamily == family,
+                            onClick = { updateDraft(draft.withFontFamily(family)) }
                         )
                     }
                 }
+
+                ReaderConsoleSlider(
+                    label = "Text size",
+                    value = draft.fontScale.toFloat(),
+                    valueRange = 0.75f..1.8f,
+                    display = "${(draft.fontScale * 100).toInt()}%",
+                    onValueChange = {
+                        updateDraft(draft.withFontScale(it.toDouble()))
+                    }
+                )
+
+                ReaderConsoleSlider(
+                    label = "Line spacing",
+                    value = draft.lineHeight.toFloat(),
+                    valueRange = 1.1f..2.0f,
+                    display = "${"%.2f".format(draft.lineHeight)}×",
+                    enabled = !draft.publisherStyles,
+                    onValueChange = {
+                        updateDraft(draft.withLineHeight(it.toDouble()))
+                    }
+                )
+
+                Text("Alignment", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ReaderTextAlignment.entries.forEach { alignment ->
+                        ReaderConsoleChoice(
+                            label = readerTextAlignmentLabel(alignment),
+                            selected = draft.textAlignment == alignment,
+                            enabled = !draft.publisherStyles || alignment == ReaderTextAlignment.PUBLISHER,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                updateDraft(draft.withTextAlignment(alignment))
+                            }
+                        )
+                    }
+                }
+
+                ReaderConsoleNullableSlider(
+                    label = "Paragraph spacing",
+                    value = draft.paragraphSpacing,
+                    valueRange = 0f..2f,
+                    enabled = !draft.publisherStyles,
+                    onValueChange = {
+                        updateDraft(draft.withParagraphSpacing(it.toDouble()))
+                    },
+                    onReset = {
+                        updateDraft(draft.copy(paragraphSpacing = null))
+                    }
+                )
+
+                ReaderConsoleNullableSlider(
+                    label = "Paragraph indent",
+                    value = draft.paragraphIndent,
+                    valueRange = 0f..3f,
+                    enabled = !draft.publisherStyles,
+                    onValueChange = {
+                        updateDraft(draft.withParagraphIndent(it.toDouble()))
+                    },
+                    onReset = {
+                        updateDraft(draft.copy(paragraphIndent = null))
+                    }
+                )
             }
-        }
 
-        if (!showAdvanced) {
-            Text(
-                "THEME",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
-                color = VeilPalette.Brass
-            )
+            ReaderConsoleSection.PAGE -> {
+                ReaderConsoleSectionTitle(
+                    title = "PAGE",
+                    subtitle = "Choose how the page moves and how much space surrounds the text."
+                )
 
-            listOf(
-                listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
-                listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "Night")
-            ).forEach { presets ->
+                Text("Page movement", style = MaterialTheme.typography.labelLarge)
+                ReaderMotionSelector(
+                    selected = draft.navigationMode,
+                    onSelect = {
+                        updateDraft(draft.withNavigationMode(it))
+                    }
+                )
+                Text(
+                    readerNavigationModeDescription(draft.navigationMode),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.76f)
+                )
+
+                ReaderConsoleSlider(
+                    label = "Page margins",
+                    value = draft.pageMargins.toFloat(),
+                    valueRange = 0.5f..2f,
+                    display = "${(draft.pageMargins * 100).toInt()}%",
+                    onValueChange = {
+                        updateDraft(draft.withPageMargins(it.toDouble()))
+                    }
+                )
+
+                Text("Columns", style = MaterialTheme.typography.labelLarge)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    presets.forEach { (theme, label) ->
-                        AppearancePreset(
-                            label = label,
-                            theme = theme,
-                            selected = draft.theme == theme,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            updateDraft(draft.withTheme(theme))
+                    ReaderColumnMode.entries.forEach { mode ->
+                        ReaderConsoleChoice(
+                            label = when (mode) {
+                                ReaderColumnMode.AUTO -> "Auto"
+                                ReaderColumnMode.ONE -> "One"
+                                ReaderColumnMode.TWO -> "Two"
+                            },
+                            selected = draft.columnMode == mode,
+                            enabled = draft.navigationMode != ReaderNavigationMode.SCROLL,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                updateDraft(draft.copy(columnMode = mode))
+                            }
+                        )
+                    }
+                }
+                if (draft.navigationMode == ReaderNavigationMode.SCROLL) {
+                    Text(
+                        "Column count applies to paginated EPUB layouts; scrolling uses one continuous flow.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.68f)
+                    )
+                }
+            }
+
+            ReaderConsoleSection.LIGHT -> {
+                ReaderConsoleSectionTitle(
+                    title = "LIGHT",
+                    subtitle = "Paper tone, darkness, and screen brightness."
+                )
+
+                listOf(
+                    listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
+                    listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "Night")
+                ).forEach { presets ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        presets.forEach { (theme, label) ->
+                            AppearancePreset(
+                                label = label,
+                                theme = theme,
+                                selected = draft.theme == theme,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                updateDraft(draft.withTheme(theme))
+                            }
                         }
                     }
                 }
-            }
 
-            BrassRule(Modifier.fillMaxWidth())
+                BrassRule(Modifier.fillMaxWidth())
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "TEXT SIZE",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                    color = VeilPalette.Brass,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "${(draft.fontScale * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                ReaderBrightnessControls(
+                    appearance = draft,
+                    onChange = ::updateDraft
                 )
             }
-            Slider(
-                value = draft.fontScale.toFloat(),
-                onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
-                valueRange = .75f..1.8f
-            )
 
-            BrassRule(Modifier.fillMaxWidth())
-
-            Text(
-                "PAGE MOVEMENT",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
-            )
-            ReaderMotionSelector(
-                selected = draft.navigationMode,
-                onSelect = { updateDraft(draft.withNavigationMode(it)) }
-            )
-            Text(
-                readerNavigationModeDescription(draft.navigationMode),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        } else {
-            Text(
-                "TYPOGRAPHY & LAYOUT",
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
-            )
-
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Line spacing",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f)
+            ReaderConsoleSection.MORE -> {
+                ReaderConsoleSectionTitle(
+                    title = "MORE",
+                    subtitle = "Publisher ownership, accessibility normalization, and advanced spacing."
                 )
-                Text(
-                    "${"%.2f".format(draft.lineHeight)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Slider(
-                value = draft.lineHeight.toFloat(),
-                onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
-                valueRange = 1.1f..2.0f
-            )
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    "Page margins",
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "${(draft.pageMargins * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Slider(
-                value = draft.pageMargins.toFloat(),
-                onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
-                valueRange = .5f..2.0f
-            )
-
-            BrassRule(Modifier.fillMaxWidth())
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        "Publisher styling",
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    Text(
-                        "Preserve the book's own typography when available.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        Text("Publisher styles", style = MaterialTheme.typography.titleSmall)
+                        Text(
+                            "When enabled, the book owns much of its typography. Veil marks controls that Readium would ignore.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = VeilPalette.Mist.copy(alpha = 0.72f)
+                        )
+                    }
+                    Switch(
+                        checked = draft.publisherStyles,
+                        onCheckedChange = {
+                            updateDraft(draft.copy(publisherStyles = it))
+                        }
                     )
                 }
-                Switch(
-                    checked = draft.publisherStyles,
-                    onCheckedChange = {
-                        updateDraft(draft.copy(publisherStyles = it))
-                    },
-                    modifier = Modifier.semantics {
-                        contentDescription = "Publisher styling"
+
+                ReaderTriStateControl(
+                    title = "Hyphenation",
+                    value = draft.hyphenation,
+                    enabled = !draft.publisherStyles,
+                    onChange = {
+                        updateDraft(draft.copy(hyphenation = it, publisherStyles = false))
                     }
                 )
-            }
 
-            OutlinedButton(
-                onClick = { updateDraft(ReaderAppearance()) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = 48.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
+                ReaderTriStateControl(
+                    title = "Arabic ligatures",
+                    value = draft.ligatures,
+                    enabled = !draft.publisherStyles,
+                    onChange = {
+                        updateDraft(draft.copy(ligatures = it, publisherStyles = false))
+                    }
                 )
-            ) {
-                Text("Reset appearance")
+
+                ReaderTriStateControl(
+                    title = "Text normalization",
+                    value = draft.textNormalization,
+                    enabled = true,
+                    onChange = {
+                        updateDraft(draft.copy(textNormalization = it))
+                    }
+                )
+
+                ReaderConsoleNullableSlider(
+                    label = "Letter spacing",
+                    value = draft.letterSpacing,
+                    valueRange = 0f..0.2f,
+                    enabled = !draft.publisherStyles,
+                    onValueChange = {
+                        updateDraft(draft.withLetterSpacing(it.toDouble()))
+                    },
+                    onReset = {
+                        updateDraft(draft.copy(letterSpacing = null))
+                    }
+                )
+
+                ReaderConsoleNullableSlider(
+                    label = "Word spacing",
+                    value = draft.wordSpacing,
+                    valueRange = 0f..1f,
+                    enabled = !draft.publisherStyles,
+                    onValueChange = {
+                        updateDraft(draft.withWordSpacing(it.toDouble()))
+                    },
+                    onReset = {
+                        updateDraft(draft.copy(wordSpacing = null))
+                    }
+                )
+
+                ReaderConsoleNullableSlider(
+                    label = "Type scale",
+                    value = draft.typeScale,
+                    valueRange = 1f..2f,
+                    enabled = !draft.publisherStyles,
+                    onValueChange = {
+                        updateDraft(draft.withTypeScale(it.toDouble()))
+                    },
+                    onReset = {
+                        updateDraft(draft.copy(typeScale = null))
+                    }
+                )
+
+                OutlinedButton(
+                    onClick = { updateDraft(ReaderAppearance()) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
+                ) {
+                    Text("Reset all reading controls")
+                }
             }
         }
-
-        BrassRule(Modifier.fillMaxWidth())
-
-        ReaderBrightnessControls(
-            appearance = draft,
-            onChange = ::updateDraft
-        )
 
         Button(
             onClick = onDone,
@@ -2031,6 +2120,224 @@ private fun EpubAppearancePanel(
         }
     }
 }
+
+@Composable
+private fun ReaderConsoleTabs(
+    selected: ReaderConsoleSection,
+    onSelect: (ReaderConsoleSection) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        ReaderConsoleSection.entries.forEach { section ->
+            ReaderConsoleChoice(
+                label = section.label,
+                selected = selected == section,
+                modifier = Modifier.weight(1f),
+                onClick = { onSelect(section) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReaderConsoleSectionTitle(
+    title: String,
+    subtitle: String
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(
+            title,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+            color = VeilPalette.Brass
+        )
+        Text(
+            subtitle,
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.74f)
+        )
+    }
+}
+
+@Composable
+private fun ReaderPublisherStyleNotice(
+    onOverride: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.66f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text(
+                "This book currently owns advanced typography. Veil will not pretend inactive controls are applied.",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist
+            )
+            TextButton(
+                onClick = onOverride,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Text("USE VEIL")
+            }
+        }
+    }
+}
+
+@Composable
+private fun ReaderConsoleChoice(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    if (selected) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier.heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.74f),
+                contentColor = VeilPalette.Moon
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Text(label, maxLines = 1)
+        }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier.heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            border = BorderStroke(1.dp, VeilPalette.BorderDark),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Text(label, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun ReaderConsoleSlider(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    display: String,
+    enabled: Boolean = true,
+    onValueChange: (Float) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            Text(
+                display,
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Mist
+            )
+        }
+        Slider(
+            value = value.coerceIn(valueRange.start, valueRange.endInclusive),
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            enabled = enabled
+        )
+    }
+}
+
+@Composable
+private fun ReaderConsoleNullableSlider(
+    label: String,
+    value: Double?,
+    valueRange: ClosedFloatingPointRange<Float>,
+    enabled: Boolean,
+    onValueChange: (Float) -> Unit,
+    onReset: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            TextButton(
+                onClick = onReset,
+                enabled = enabled && value != null,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Text(if (value == null) "BOOK" else "RESET")
+            }
+        }
+        Slider(
+            value = (value?.toFloat() ?: valueRange.start)
+                .coerceIn(valueRange.start, valueRange.endInclusive),
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            enabled = enabled
+        )
+    }
+}
+
+@Composable
+private fun ReaderTriStateControl(
+    title: String,
+    value: ReaderPreferenceToggle,
+    enabled: Boolean,
+    onChange: (ReaderPreferenceToggle) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            ReaderPreferenceToggle.entries.forEach { option ->
+                ReaderConsoleChoice(
+                    label = when (option) {
+                        ReaderPreferenceToggle.DEFAULT -> "Book"
+                        ReaderPreferenceToggle.ON -> "On"
+                        ReaderPreferenceToggle.OFF -> "Off"
+                    },
+                    selected = value == option,
+                    enabled = enabled || option == ReaderPreferenceToggle.DEFAULT,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onChange(option) }
+                )
+            }
+        }
+    }
+}
+
+private fun readerFontFamilyLabel(value: ReaderFontFamily): String =
+    when (value) {
+        ReaderFontFamily.PUBLISHER -> "Book"
+        ReaderFontFamily.SERIF -> "Serif"
+        ReaderFontFamily.SANS_SERIF -> "Sans"
+        ReaderFontFamily.MONOSPACE -> "Mono"
+        ReaderFontFamily.OPEN_DYSLEXIC -> "OpenDyslexic"
+        ReaderFontFamily.ACCESSIBLE_DFA -> "Accessible"
+        ReaderFontFamily.IA_WRITER_DUOSPACE -> "Duospace"
+    }
+
+private fun readerTextAlignmentLabel(value: ReaderTextAlignment): String =
+    when (value) {
+        ReaderTextAlignment.PUBLISHER -> "Book"
+        ReaderTextAlignment.START -> "Start"
+        ReaderTextAlignment.JUSTIFY -> "Justify"
+        ReaderTextAlignment.CENTER -> "Center"
+    }
 
 @Composable
 private fun ReaderAppearancePreview(
