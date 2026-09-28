@@ -54,6 +54,8 @@ import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.CastleMemoryState
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Highlight
+import com.veilreader.app.domain.PathArchitecturalMotif
+import com.veilreader.app.domain.PathWorldSignature
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.WorldProgressionProjection
@@ -61,6 +63,7 @@ import com.veilreader.app.domain.deriveWorldProgressionProjection
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.domain.derivePathWorldSignature
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
@@ -1138,6 +1141,19 @@ private fun CastleKeep(
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
     val reducedMotion = LocalVeilReducedMotion.current
+    val pathSignature = remember(
+        profile.path.id,
+        profile.rankIndex,
+        profile.path.ranks.size,
+        worldProjection.ritualCharge
+    ) {
+        derivePathWorldSignature(
+            pathId = profile.path.id,
+            rankIndex = profile.rankIndex,
+            rankCount = profile.path.ranks.size,
+            ritualCharge = worldProjection.ritualCharge
+        )
+    }
     val castleProgress by animateFloatAsState(
         targetValue = targetProgress,
         animationSpec = if (reducedMotion) {
@@ -1172,7 +1188,8 @@ private fun CastleKeep(
             rankIndex = profile.rankIndex,
             rankCount = profile.path.ranks.size,
             memoryState = memoryState,
-            worldProjection = worldProjection
+            worldProjection = worldProjection,
+            pathSignature = pathSignature
         )
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
@@ -1478,6 +1495,7 @@ private fun CastleKeepBackdrop(
     rankCount: Int,
     memoryState: CastleMemoryState,
     worldProjection: WorldProgressionProjection,
+    pathSignature: PathWorldSignature,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier) {
@@ -1534,6 +1552,119 @@ private fun CastleKeepBackdrop(
                 Offset(w * x, towerBottom),
                 1.dp.toPx()
             )
+        }
+
+        val pathAlpha = (0.055f + pathSignature.strength * 0.16f)
+            .coerceIn(0.055f, 0.22f)
+        val motifCenter = Offset(w * 0.50f, h * 0.31f)
+
+        when (pathSignature.motif) {
+            PathArchitecturalMotif.CIPHER -> {
+                repeat(pathSignature.ornamentCount.coerceAtMost(6)) { index ->
+                    val radius = size.minDimension * (0.055f + index * 0.022f)
+                    drawCircle(
+                        color = brass.copy(alpha = pathAlpha * (1f - index * 0.09f)),
+                        radius = radius,
+                        center = motifCenter,
+                        style = Stroke((0.65f + index * 0.08f).dp.toPx())
+                    )
+                }
+                drawLine(
+                    brass.copy(alpha = pathAlpha),
+                    Offset(motifCenter.x, h * 0.18f),
+                    Offset(motifCenter.x, h * 0.43f),
+                    0.75.dp.toPx()
+                )
+            }
+
+            PathArchitecturalMotif.DREAM -> {
+                repeat(pathSignature.ornamentCount.coerceAtMost(7)) { index ->
+                    val inset = w * (0.23f + index * 0.018f)
+                    drawArc(
+                        color = VeilPalette.Spirit.copy(
+                            alpha = pathAlpha * (0.92f - index * 0.07f)
+                        ),
+                        startAngle = 196f + index * 3f,
+                        sweepAngle = 148f - index * 4f,
+                        useCenter = false,
+                        topLeft = Offset(inset, h * (0.10f + index * 0.012f)),
+                        size = Size(w - inset * 2f, h * (0.34f + index * 0.018f)),
+                        style = Stroke(0.72.dp.toPx())
+                    )
+                }
+            }
+
+            PathArchitecturalMotif.ARCHIVE -> {
+                repeat(pathSignature.ornamentCount.coerceAtMost(8)) { index ->
+                    val y = h * (0.28f + index * 0.045f)
+                    val half = w * (0.11f + index * 0.008f)
+                    drawLine(
+                        color = brass.copy(alpha = pathAlpha * 0.82f),
+                        start = Offset(w * 0.50f - half, y),
+                        end = Offset(w * 0.50f + half, y),
+                        strokeWidth = 0.72.dp.toPx()
+                    )
+                }
+            }
+
+            PathArchitecturalMotif.VANGUARD -> {
+                repeat(pathSignature.ornamentCount.coerceAtMost(6)) { index ->
+                    val y = h * (0.25f + index * 0.052f)
+                    val spread = w * (0.055f + index * 0.010f)
+                    drawLine(
+                        brass.copy(alpha = pathAlpha),
+                        Offset(w * 0.50f - spread, y),
+                        Offset(w * 0.50f, y + h * 0.034f),
+                        0.92.dp.toPx()
+                    )
+                    drawLine(
+                        brass.copy(alpha = pathAlpha),
+                        Offset(w * 0.50f + spread, y),
+                        Offset(w * 0.50f, y + h * 0.034f),
+                        0.92.dp.toPx()
+                    )
+                }
+            }
+
+            PathArchitecturalMotif.NOCTURNE -> {
+                val radius = size.minDimension * (0.095f + pathSignature.strength * 0.025f)
+                drawCircle(
+                    color = VeilPalette.Spirit.copy(alpha = pathAlpha * 0.88f),
+                    radius = radius,
+                    center = motifCenter,
+                    style = Stroke(1.05.dp.toPx())
+                )
+                drawCircle(
+                    color = VeilPalette.Ink.copy(alpha = 0.92f),
+                    radius = radius * 0.91f,
+                    center = motifCenter + Offset(radius * 0.27f, -radius * 0.06f)
+                )
+            }
+
+            PathArchitecturalMotif.ARTIFICE -> {
+                drawCircle(
+                    color = brass.copy(alpha = pathAlpha),
+                    radius = size.minDimension * 0.085f,
+                    center = motifCenter,
+                    style = Stroke(1.0.dp.toPx())
+                )
+                val ticks = listOf(
+                    Offset(0f, -1f), Offset(0.71f, -0.71f),
+                    Offset(1f, 0f), Offset(0.71f, 0.71f),
+                    Offset(0f, 1f), Offset(-0.71f, 0.71f),
+                    Offset(-1f, 0f), Offset(-0.71f, -0.71f)
+                )
+                val inner = size.minDimension * 0.095f
+                val outer = size.minDimension * 0.115f
+                ticks.forEach { unit ->
+                    drawLine(
+                        brass.copy(alpha = pathAlpha),
+                        motifCenter + unit * inner,
+                        motifCenter + unit * outer,
+                        1.0.dp.toPx()
+                    )
+                }
+            }
         }
 
         repeat(memoryState.shelfRibs) { index ->
