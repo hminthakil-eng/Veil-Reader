@@ -260,4 +260,62 @@ class ReaderInputArbiterTest {
         )
     }
 
+    @Test
+    fun `selection always returns gesture ownership to the renderer`() {
+        assertEquals(
+            ReaderInteractionMode.RENDERER_SELECTION,
+            readerInteractionMode(
+                selectionModeActive = true,
+                overlayVisible = true,
+                closeInFlight = true,
+                controlsVisible = true
+            )
+        )
+    }
+
+    @Test
+    fun `modal overlays and durable close block reader navigation`() {
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = true,
+                closeInFlight = false,
+                controlsVisible = false
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = true,
+                controlsVisible = false
+            )
+        )
+    }
+
+    @Test
+    fun `visible chrome owns taps before page navigation while hidden chrome permits navigation`() {
+        assertEquals(
+            ReaderInteractionMode.CHROME_PRIORITY,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = false,
+                controlsVisible = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.NAVIGATION,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = false,
+                controlsVisible = false
+            )
+        )
+    }
+
+
 }
