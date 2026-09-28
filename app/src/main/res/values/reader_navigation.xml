@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_nav_curl">Curl</string>
+    <string name="reader_nav_slide">Slide</string>
+    <string name="reader_nav_paged">Paged</string>
+    <string name="reader_nav_scroll">Scroll</string>
+    <string name="reader_nav_curl_desc">Physical page curl with weighted drag, release velocity, and page-stack depth.</string>
+    <string name="reader_nav_slide_desc">Paginated reading with a lightweight horizontal transition and no paper deformation.</string>
+    <string name="reader_nav_paged_desc">Static pagination with no decorative page transition.</string>
+    <string name="reader_nav_scroll_desc">Continuous vertical reading when the publication format supports it.</string>
+</resources>
