@@ -14,16 +14,29 @@ import com.veilreader.app.domain.pathInsightEvidenceTotal
 import com.veilreader.app.domain.pathStabilityEvidenceTotal
 import com.veilreader.app.domain.validateRitualAftermath
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.domain.SilentNamesChoice
+import com.veilreader.app.domain.SilentNamesDice
+import com.veilreader.app.domain.SilentNamesEncounter
+import com.veilreader.app.domain.SilentNamesMode
+import com.veilreader.app.domain.SilentNamesOutcome
+import com.veilreader.app.domain.SilentNamesReceipt
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlin.random.Random
+import org.json.JSONObject
 
 /** Persistent, offline-first reading progression.
  *
  * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
  * the important rule that advancement cannot be farmed with raw points alone.
  */
+data class SilentNamesCommitResult(
+    val receipt: SilentNamesReceipt,
+    val newlyCommitted: Boolean
+)
+
 class GameRepository(context: Context) {
     private val prefs = context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE)
     private val pageGate = ReadingPolicy.PageGate()
@@ -147,6 +160,63 @@ class GameRepository(context: Context) {
         prefs.edit().putString("castleTitle", title).apply()
         _castleTitle.value = title
         return true
+    }
+
+    /**
+     * Returns the durable encounter receipt, or null when the episode has never been sealed.
+     *
+     * A corrupt/unsupported stored receipt fails closed and is never silently replaced. This is
+     * intentional: the raw record may belong to a newer app version and LibraryExport will retain it.
+     */
+    fun silentNamesReceipt(): SilentNamesReceipt? = synchronized(SILENT_NAMES_LOCK) {
+        readSilentNamesReceiptLocked()
+    }
+
+    /** The cosmetic lantern is derived from the one committed receipt; there is no second award ledger. */
+    fun ownsSilentNamesReward(): Boolean =
+        silentNamesReceipt()?.rewardId == SilentNamesEncounter.REWARD_ID
+
+    /**
+     * Resolves and durably seals Silent Names exactly once per process.
+     *
+     * The existing receipt is checked under a process-wide lock before any die or timestamp is
+     * generated. The whole receipt is encoded into one SharedPreferences value and committed
+     * synchronously. A revisit therefore cannot reroll, change Path/choice, or duplicate a reward.
+     */
+    fun sealSilentNamesEncounter(
+        choice: SilentNamesChoice,
+        mode: SilentNamesMode,
+        nextD20: () -> Int = { Random.nextInt(1, 21) },
+        nowEpochMs: () -> Long = { System.currentTimeMillis().coerceAtLeast(1L) }
+    ): SilentNamesCommitResult = synchronized(SILENT_NAMES_LOCK) {
+        readSilentNamesReceiptLocked()?.let {
+            return@synchronized SilentNamesCommitResult(it, newlyCommitted = false)
+        }
+
+        val pathId = buildProfile().path.id
+        val dice = when (mode) {
+            SilentNamesMode.DICE -> SilentNamesDice(nextD20())
+            SilentNamesMode.STORY -> null
+        }
+        val candidate = SilentNamesEncounter.resolve(
+            pathId = pathId,
+            choice = choice,
+            mode = mode,
+            dice = dice,
+            recordedAtEpochMs = nowEpochMs(),
+            existing = null
+        ).receipt
+
+        val committed = prefs.edit()
+            .putString(SILENT_NAMES_RECEIPT_KEY, encodeSilentNamesReceipt(candidate))
+            .commit()
+        check(committed) { "Could not commit Silent Names encounter receipt" }
+
+        val restored = checkNotNull(readSilentNamesReceiptLocked()) {
+            "Silent Names receipt was not readable after commit"
+        }
+        check(restored == candidate) { "Silent Names receipt changed during commit" }
+        SilentNamesCommitResult(restored, newlyCommitted = true)
     }
 
     private fun recordRitualEvent(event: String) {
@@ -466,6 +536,58 @@ class GameRepository(context: Context) {
         )
     }
 
+    private fun readSilentNamesReceiptLocked(): SilentNamesReceipt? {
+        val raw = prefs.getString(SILENT_NAMES_RECEIPT_KEY, null) ?: return null
+        return runCatching { decodeSilentNamesReceipt(raw) }
+            .getOrElse { error ->
+                throw IllegalStateException(
+                    "Stored Silent Names receipt is unsupported or corrupt; retaining it unchanged.",
+                    error
+                )
+            }
+    }
+
+    private fun encodeSilentNamesReceipt(receipt: SilentNamesReceipt): String = JSONObject().apply {
+        put("encounterId", receipt.encounterId)
+        put("contentVersion", receipt.contentVersion)
+        put("pathId", receipt.pathId)
+        put("choice", receipt.choice.name)
+        put("mode", receipt.mode.name)
+        put("diceFirst", receipt.dice?.first ?: JSONObject.NULL)
+        put("diceSecond", receipt.dice?.second ?: JSONObject.NULL)
+        put("outcome", receipt.outcome.name)
+        put("rewardId", receipt.rewardId)
+        put("recordedAtEpochMs", receipt.recordedAtEpochMs)
+    }.toString()
+
+    private fun decodeSilentNamesReceipt(raw: String): SilentNamesReceipt {
+        val json = JSONObject(raw)
+        val mode = SilentNamesMode.valueOf(json.getString("mode"))
+        val dice = when (mode) {
+            SilentNamesMode.STORY -> {
+                require(json.isNull("diceFirst") && json.isNull("diceSecond"))
+                null
+            }
+            SilentNamesMode.DICE -> SilentNamesDice(
+                first = json.getInt("diceFirst"),
+                second = if (json.isNull("diceSecond")) null else json.getInt("diceSecond")
+            )
+        }
+        val receipt = SilentNamesReceipt(
+            encounterId = json.getString("encounterId"),
+            contentVersion = json.getInt("contentVersion"),
+            pathId = json.getString("pathId"),
+            choice = SilentNamesChoice.valueOf(json.getString("choice")),
+            mode = mode,
+            dice = dice,
+            outcome = SilentNamesOutcome.valueOf(json.getString("outcome")),
+            rewardId = json.getString("rewardId"),
+            recordedAtEpochMs = json.getLong("recordedAtEpochMs")
+        )
+        require(SilentNamesEncounter.isValid(receipt))
+        return receipt
+    }
+
     private fun buildQuests(): List<Quest> {
         val goal = readDailyGoal()
         val pathId = prefs.getString("pathId", SampleData.currentPath.id)
@@ -495,4 +617,9 @@ class GameRepository(context: Context) {
             )
         )
     }
+    private companion object {
+        const val SILENT_NAMES_RECEIPT_KEY = "encounter:${SilentNamesEncounter.ID}:receipt"
+        val SILENT_NAMES_LOCK = Any()
+    }
+
 }
