@@ -69,6 +69,53 @@ class WorldMutationLedgerTest {
     }
 
     @Test
+    fun `sealed Silent Names receipt becomes a durable Hall and Treasury story relic only`() {
+        val receipt = SilentNamesEncounter.resolve(
+            pathId = "archivist",
+            choice = SilentNamesChoice.EXAMINE_SEAL,
+            mode = SilentNamesMode.STORY,
+            dice = null,
+            recordedAtEpochMs = 1234L
+        ).receipt
+
+        val ledger = deriveWorldMutationLedger(
+            profile = profile(),
+            memory = CastleMemoryState.EMPTY,
+            silentNamesReceipt = receipt
+        )
+        val mutation = ledger.entries.single()
+
+        assertEquals(WorldMutationKind.STORY_RELIC, mutation.kind)
+        assertEquals(WorldMutationEvidence.STORY_RECEIPT, mutation.evidence)
+        assertEquals(1, mutation.evidenceCount)
+        assertTrue(mutation.durable)
+        assertEquals(
+            setOf(WorldMutationRealm.GREAT_HALL, WorldMutationRealm.TREASURY),
+            mutation.realms
+        )
+    }
+
+    @Test
+    fun `invalid Silent Names receipt cannot manifest a world relic`() {
+        val valid = SilentNamesEncounter.resolve(
+            pathId = "archivist",
+            choice = SilentNamesChoice.EXAMINE_SEAL,
+            mode = SilentNamesMode.STORY,
+            dice = null,
+            recordedAtEpochMs = 1234L
+        ).receipt
+        val invalid = valid.copy(contentVersion = valid.contentVersion + 1)
+
+        val ledger = deriveWorldMutationLedger(
+            profile = profile(),
+            memory = CastleMemoryState.EMPTY,
+            silentNamesReceipt = invalid
+        )
+
+        assertTrue(ledger.entries.isEmpty())
+    }
+
+    @Test
     fun `return awakening remains Hall-only and non-durable`() {
         val memory = CastleMemoryState.EMPTY.copy(returnAwakening = 0.72f)
         val mutation = deriveWorldMutationLedger(profile(), memory).entries.single()
