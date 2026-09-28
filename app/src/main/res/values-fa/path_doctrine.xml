@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_doctrine_oracle_maxim">مشاهده · پیوند · تفسیر</string>
+    <string name="path_doctrine_oracle_embodiment_name">دید الگو</string>
+    <string name="path_doctrine_oracle_embodiment_desc">بخش‌هایی را نگه دار که سرنخ، تم یا ساختار پنهان را آشکار می‌کنند.</string>
+    <string name="path_doctrine_oracle_insight_name">استنتاج</string>
+    <string name="path_doctrine_oracle_insight_desc">تکه‌ها را به یادداشت، نتیجه و تفسیر کامل تبدیل کن.</string>
+    <string name="path_doctrine_oracle_stability_name">خونسردی</string>
+    <string name="path_doctrine_oracle_stability_desc">آن‌قدر برگرد که جست‌وجوی الگو به سطحی‌خوانی تبدیل نشود.</string>
+
+    <string name="path_doctrine_dreamwalker_maxim">ورود · ماندن · بازگشت</string>
+    <string name="path_doctrine_dreamwalker_embodiment_name">غوطه‌وری</string>
+    <string name="path_doctrine_dreamwalker_embodiment_desc">به‌جای شتاب، زمان فعال را در جهان‌های انتخابی سپری کن.</string>
+    <string name="path_doctrine_dreamwalker_insight_name">حافظهٔ جهان</string>
+    <string name="path_doctrine_dreamwalker_insight_desc">جزئیات، برداشت‌ها و سفرهای کامل‌شده را با خود از کتاب بیرون بیاور.</string>
+    <string name="path_doctrine_dreamwalker_stability_name">زمین‌گیری</string>
+    <string name="path_doctrine_dreamwalker_stability_desc">غوطه‌وری عمیق را با بازگشت پایدار در چند نشست متعادل کن.</string>
+
+    <string name="path_doctrine_archivist_maxim">ثبت · نظم · بازدید دوباره</string>
+    <string name="path_doctrine_archivist_embodiment_name">ثبت</string>
+    <string name="path_doctrine_archivist_embodiment_desc">یادداشت‌های معناداری بنویس که ایده‌های ارزشمند برای بازگشت را حفظ کنند.</string>
+    <string name="path_doctrine_archivist_insight_name">ترکیب</string>
+    <string name="path_doctrine_archivist_insight_desc">بخش‌های ذخیره‌شده را به کتاب‌های تمام‌شده و فهم گسترده‌تر پیوند بده.</string>
+    <string name="path_doctrine_archivist_stability_name">پیوستگی</string>
+    <string name="path_doctrine_archivist_stability_desc">آرشیو را آن‌قدر آهسته بساز که مفید بماند، نه شلوغ.</string>
+
+    <string name="path_doctrine_vanguard_maxim">پیشروی · ریتم · پایان</string>
+    <string name="path_doctrine_vanguard_embodiment_name">شتاب پایدار</string>
+    <string name="path_doctrine_vanguard_embodiment_desc">با ریتم انسانی در صفحات پیش برو؛ لمس‌های سریع تکراری حساب نمی‌شوند.</string>
+    <string name="path_doctrine_vanguard_insight_name">حافظهٔ کارزار</string>
+    <string name="path_doctrine_vanguard_insight_desc">قوس‌ها را تمام کن و لحظه‌هایی را حفظ کن که جهت داستان را تغییر دادند.</string>
+    <string name="path_doctrine_vanguard_stability_name">استقامت</string>
+    <string name="path_doctrine_vanguard_stability_desc">حرکت را در چند نشست حفظ کن، نه فقط در یک جهش کوتاه.</string>
+
+    <string name="path_doctrine_nocturne_maxim">توجه · دوام · بازاندیشی</string>
+    <string name="path_doctrine_nocturne_embodiment_name">نگهبانی شب</string>
+    <string name="path_doctrine_nocturne_embodiment_desc">مطالعهٔ آگاهانه را در ساعت‌های انتخاب‌شده برای این مسیر جمع کن.</string>
+    <string name="path_doctrine_nocturne_insight_name">خوانش سایه</string>
+    <string name="path_doctrine_nocturne_insight_desc">به بخش‌های ناآرام‌کننده فکر کن و تاریکی را صرفاً نمایش نبین.</string>
+    <string name="path_doctrine_nocturne_stability_name">انضباط فانوس</string>
+    <string name="path_doctrine_nocturne_stability_desc">عادت را آن‌قدر پایدار نگه دار که فضا به اجبار تبدیل نشود.</string>
+
+    <string name="path_doctrine_artificer_maxim">مشاهده · واگشایی · بازسازی</string>
+    <string name="path_doctrine_artificer_embodiment_name">سازوکار</string>
+    <string name="path_doctrine_artificer_embodiment_desc">دربارهٔ سیستم‌ها، علت‌ها و نحوهٔ اتصال ایده‌ها یادداشت‌های معنادار ثبت کن.</string>
+    <string name="path_doctrine_artificer_insight_name">ترکیب</string>
+    <string name="path_doctrine_artificer_insight_desc">سازوکارها را به آثار تمام‌شده و شواهد ذخیره‌شده پیوند بده.</string>
+    <string name="path_doctrine_artificer_stability_name">کالیبراسیون</string>
+    <string name="path_doctrine_artificer_stability_desc">در چند نشست برگرد تا فهم فراتر از یک موج کنجکاوی دوام بیاورد.</string>
+
+    <string name="path_doctrine_fallback_maxim">بخوان · بفهم · برگرد</string>
+    <string name="path_doctrine_fallback_embodiment_name">تمرین</string>
+    <string name="path_doctrine_fallback_embodiment_desc">به شیوه‌ای عمل کن که با هویت مطالعاتی انتخاب‌شده‌ات هماهنگ باشد.</string>
+    <string name="path_doctrine_fallback_insight_name">بینش</string>
+    <string name="path_doctrine_fallback_insight_desc">شواهدی را حفظ کن که نشان می‌دهد مطالعه فهم تو را تغییر داده است.</string>
+    <string name="path_doctrine_fallback_stability_name">پایداری</string>
+    <string name="path_doctrine_fallback_stability_desc">آن‌قدر بازگرد که پیشرفت بازتاب یک عادت پایدار باشد.</string>
+
+    <string name="path_ritual_oracle">%1$d بخش تازه را هایلایت کن که سرنخ، تم یا ساختار پنهان را آشکار می‌کنند.</string>
+    <string name="path_ritual_dreamwalker">%1$d دقیقه مطالعهٔ فعال را در جهان‌هایت سپری کن.</string>
+    <string name="path_ritual_vanguard">%1$d صفحه را با ریتم واقعی بخوان. لمس سریع تکراری حساب نمی‌شود.</string>
+    <string name="path_ritual_nocturne">%1$d دقیقه بین ساعت ۸ شب تا ۶ صبح، بر اساس زمان محلی دستگاه، مطالعه کن.</string>
+    <string name="path_ritual_archivist">%1$d یادداشت تازه برای بخش‌ها بنویس که دست‌کم ۴۰ نویسه داشته باشند.</string>
+    <string name="path_ritual_artificer">%1$d یادداشت مفهومی تازه ثبت کن که دست‌کم ۴۰ نویسه داشته باشند.</string>
+</resources>
