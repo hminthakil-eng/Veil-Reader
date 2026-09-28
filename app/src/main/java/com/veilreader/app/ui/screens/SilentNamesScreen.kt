@@ -63,6 +63,7 @@ fun SilentNamesScreen(
     profile: ReaderProfile,
     receipt: SilentNamesReceipt?,
     storageBlocked: Boolean = false,
+    pendingAttempt: Pair<SilentNamesChoice, SilentNamesMode>? = null,
     onSeal: suspend (SilentNamesChoice, SilentNamesMode) -> Result<SilentNamesReceipt>,
     onClose: () -> Unit
 ) {
@@ -70,13 +71,13 @@ fun SilentNamesScreen(
     var selectedMode by remember { mutableStateOf(SilentNamesMode.STORY) }
     var localReceipt by remember(receipt) { mutableStateOf(receipt) }
     var saving by remember { mutableStateOf(false) }
-    var saveFailed by remember { mutableStateOf(false) }
+    var saveFailed by remember { mutableStateOf(pendingAttempt != null) }
     // A failed disk commit can leave the original receipt pending in the repository. Keep the
     // reader's first command visible and retry that exact command, never offer an apparent reroll.
-    var pendingAttempt by remember { mutableStateOf<Pair<SilentNamesChoice, SilentNamesMode>?>(null) }
+    var retryAttempt by remember { mutableStateOf(pendingAttempt) }
     val sealChoice: (SilentNamesChoice, SilentNamesMode) -> Unit = { choice, mode ->
         if (!saving) {
-            pendingAttempt = choice to mode
+            retryAttempt = choice to mode
             saving = true
             saveFailed = false
             scope.launch {
@@ -84,7 +85,7 @@ fun SilentNamesScreen(
                     onSeal(choice, mode).fold(
                         onSuccess = { committed ->
                             localReceipt = committed
-                            pendingAttempt = null
+                            retryAttempt = null
                         },
                         onFailure = { saveFailed = true }
                     )
@@ -175,7 +176,7 @@ fun SilentNamesScreen(
             )
 
             val sealed = localReceipt
-            if (sealed == null && storageBlocked) {
+            if (sealed == null && storageBlocked && retryAttempt == null) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = VeilPalette.RaisedIron.copy(alpha = 0.92f),
@@ -202,7 +203,7 @@ fun SilentNamesScreen(
                     Text(stringResource(R.string.silent_names_back_hall))
                 }
             } else if (sealed == null) {
-                if (pendingAttempt == null) {
+                if (retryAttempt == null) {
                     SilentNamesModeSelector(
                         selected = selectedMode,
                         enabled = !saving,
@@ -226,8 +227,8 @@ fun SilentNamesScreen(
                         textAlign = TextAlign.Center
                     )
                 }
-                if (saveFailed && pendingAttempt != null) {
-                    val attempt = requireNotNull(pendingAttempt)
+                if (saveFailed && retryAttempt != null) {
+                    val attempt = requireNotNull(retryAttempt)
                     Surface(
                         color = VeilPalette.RaisedIron.copy(alpha = 0.88f),
                         border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
