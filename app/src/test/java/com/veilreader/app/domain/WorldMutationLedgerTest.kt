@@ -81,7 +81,7 @@ class WorldMutationLedgerTest {
         val ledger = deriveWorldMutationLedger(
             profile = profile(),
             memory = CastleMemoryState.EMPTY,
-            storyRelics = deriveStoryRelics(receipt)
+            storyRelics = collectStoryRelics(receipt.toStoryRelicRecordOrNull())
         )
         val mutation = ledger.entries.single()
 
@@ -109,7 +109,7 @@ class WorldMutationLedgerTest {
         val ledger = deriveWorldMutationLedger(
             profile = profile(),
             memory = CastleMemoryState.EMPTY,
-            storyRelics = deriveStoryRelics(invalid)
+            storyRelics = collectStoryRelics(invalid.toStoryRelicRecordOrNull())
         )
 
         assertTrue(ledger.entries.isEmpty())
