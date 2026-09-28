@@ -1563,7 +1563,6 @@ private fun ReaderChromeButton(
 }
 
 @Composable
-@Composable
 private fun ReaderQuickSettingsHandle(
     epub: Boolean,
     onClick: () -> Unit
