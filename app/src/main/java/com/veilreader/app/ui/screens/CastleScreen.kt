@@ -1498,7 +1498,7 @@ private fun CastleRitualAftermath(
         }
 
         Text(
-            "\$fromName  →  \$toName",
+            "$fromName  →  $toName",
             style = MaterialTheme.typography.titleMedium,
             color = VeilPalette.Moon
         )

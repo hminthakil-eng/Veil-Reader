@@ -135,7 +135,7 @@ fun deriveWorldMutationLedger(
                     durable = true,
                     title = "Sealed Advancement",
                     inscription =
-                        "\$fromName became \$toName in a recorded Ritual of Advancement. The seal persists after its ceremonial glow fades."
+                        "$fromName became $toName in a recorded Ritual of Advancement. The seal persists after its ceremonial glow fades."
                 )
             )
         }
