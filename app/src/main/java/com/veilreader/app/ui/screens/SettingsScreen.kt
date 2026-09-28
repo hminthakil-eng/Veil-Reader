@@ -234,6 +234,25 @@ fun SettingsScreen(
                 }
             )
 
+            if (appearance.theme == ReaderTheme.PAPER || appearance.theme == ReaderTheme.SEPIA) {
+                ReaderSlider(
+                    label = "Paper age",
+                    value = appearance.paperPatina.toFloat(),
+                    valueRange = 0f..1f,
+                    displayValue = { value -> "${(value * 100).toInt()}%" },
+                    onCommit = { value ->
+                        commitReaderAppearance { current ->
+                            current.withPaperPatina(value.toDouble())
+                        }
+                    }
+                )
+                Text(
+                    "Controls visible fibre, mottling, edge oxidation, and page shading without changing publication text.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
                 appearance = appearance,
