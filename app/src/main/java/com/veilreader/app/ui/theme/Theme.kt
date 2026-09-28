@@ -195,6 +195,7 @@ fun VeilTheme(
     val scriptGroup = veilScriptGroupFor(language)
     val typography = veilTypographyFor(scriptGroup)
     val reducedMotion = !ValueAnimator.areAnimatorsEnabled()
+    val qualityTier = rememberVeilQualityTier()
 
     MaterialTheme(
         colorScheme = colors,
@@ -205,7 +206,8 @@ fun VeilTheme(
             LocalContentColor provides colors.onBackground,
             LocalVeilScriptGroup provides scriptGroup,
             LocalVeilLanguage provides language,
-            LocalVeilReducedMotion provides reducedMotion
+            LocalVeilReducedMotion provides reducedMotion,
+            LocalVeilQualityTier provides qualityTier
         ) {
             // MaterialTheme alone does not force a typography token onto every bare Text call.
             // Keep unstyled app-shell text on the bundled family so OEM font overrides cannot leak
