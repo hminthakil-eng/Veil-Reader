@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="silent_names_title">تالارِ نام‌های خاموش</string>
+    <string name="silent_names_intro">یک پنجره هنوز تاریک است. نام سازنده‌اش از قاب برنجی پاک شده. پروانه‌ای کاغذی کنار سه نشانه منتظر است: مهری شکسته، رشته‌ای از نور و نگهبانی ساعت‌وار.</string>
+    <string name="silent_names_examine_seal">مهر را بررسی کن</string>
+    <string name="silent_names_follow_light">رد نور را دنبال کن</string>
+    <string name="silent_names_speak_to_keeper">با نگهبان گفت‌وگو کن</string>
+    <string name="silent_names_restored_inscription">زیر مهر شکسته، کتیبه‌ای باقی مانده است. نام گم‌شده را ترمیم می‌کنی و پنجره با نور پاسخ می‌دهد.</string>
+    <string name="silent_names_workshop_trail">مهر خوانده نمی‌شود، اما پشت آن نشان یک کارگاه است. ردش را تا فانوسی خاموش دنبال می‌کنی و روشنایی را به پنجره برمی‌گردانی.</string>
+    <string name="silent_names_lantern_bridge">رشتهٔ نور از پلی ناپیدا می‌گذرد. در انتهای آن، فانوسی نام گم‌شده را حفظ کرده است. آن را به خانه می‌آوری.</string>
+    <string name="silent_names_lower_passage">نور پیش از آشکارشدن پل محو می‌شود. پایین آن، گذرگاهی باریک به اتاق چراغ‌ها می‌رسد. از راهی دیگر روشنایی را پیدا می‌کنی.</string>
+    <string name="silent_names_keeper_testimony">نگهبان یک نام و یک قول را به یاد دارد. به هر دو گوش می‌دهی و فانوس را به جای خود برمی‌گردانی.</string>
+    <string name="silent_names_keeper_request">نگهبان نام را به خاطر نمی‌آورد. می‌خواهد به فانوسی بی‌نام پناه بدهی. می‌پذیری و پنجره باز هم روشن می‌شود.</string>
+    <string name="silent_names_reward_title">فانوس یادآوری</string>
+    <string name="silent_names_reward_body">روشنایی‌ای که با انتخاب خودت پیدا کردی. روایتی ساخته‌شده برای تالار؛ مستقل از خاطرات و محتوای کتاب‌هایت.</string>
+    <string name="silent_names_story_mode">بدون تاس انتخاب کن</string>
+    <string name="silent_names_dice_mode">مسیر را به تاس بسپار</string>
+    <string name="silent_names_odds">احتمال مسیر مستقیم: %1$d٪. هر دو مسیر این بخش را تمام می‌کنند و همان فانوس را می‌دهند.</string>
+    <string name="silent_names_continue_book">بازگشت به کتابم</string>
+    <string name="silent_names_saved">این انتخاب مهر شده است. فانوس تو قبلاً ثبت شده.</string>
+    <string name="silent_names_save_failed">انتخابت ذخیره نشد. پیش از خروج دوباره تلاش کن.</string>
+</resources>

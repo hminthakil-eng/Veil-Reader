@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="silent_names_title">The Hall of Silent Names</string>
+    <string name="silent_names_intro">One window remains dark. Its maker’s name has vanished from the brass frame. A paper moth waits beside three traces: a broken seal, a thread of light, and a clockwork keeper.</string>
+    <string name="silent_names_examine_seal">Examine the seal</string>
+    <string name="silent_names_follow_light">Follow the light</string>
+    <string name="silent_names_speak_to_keeper">Speak to the keeper</string>
+    <string name="silent_names_restored_inscription">Under the broken seal, an inscription survives. You restore the missing name and the window answers with light.</string>
+    <string name="silent_names_workshop_trail">The seal cannot be read, but its reverse bears a workshop mark. You follow it to a spare lantern and carry its light back to the window.</string>
+    <string name="silent_names_lantern_bridge">The thread crosses an invisible bridge. At its end, a lantern preserves the name you came to find. You bring it home.</string>
+    <string name="silent_names_lower_passage">The thread fades before the bridge appears. Below it, a narrow passage leads to the lamp room. You recover a light by another route.</string>
+    <string name="silent_names_keeper_testimony">The keeper remembers a name and a promise. You listen to both before returning the lantern to its place.</string>
+    <string name="silent_names_keeper_request">The keeper cannot recall the name. It asks you to shelter a nameless lantern instead. You accept, and the window glows all the same.</string>
+    <string name="silent_names_reward_title">Lantern of Remembrance</string>
+    <string name="silent_names_reward_body">A light recovered through a choice of your own. An original tale from the Hall, not a memory extracted from your books.</string>
+    <string name="silent_names_story_mode">Choose without dice</string>
+    <string name="silent_names_dice_mode">Let the dice shape the route</string>
+    <string name="silent_names_odds">Direct route: %1$d%%. Either route completes this episode and offers the same lantern.</string>
+    <string name="silent_names_continue_book">Return to my book</string>
+    <string name="silent_names_saved">This choice is sealed. Your lantern is already recorded.</string>
+    <string name="silent_names_save_failed">Your choice could not be saved. Try again before leaving.</string>
+</resources>
