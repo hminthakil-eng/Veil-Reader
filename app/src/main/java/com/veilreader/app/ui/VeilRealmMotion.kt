@@ -28,6 +28,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
+import com.veilreader.app.ui.theme.LocalVeilQualityTier
+import com.veilreader.app.ui.theme.VeilQualityTier
 import com.veilreader.app.ui.theme.CathedralMotionClass
 import com.veilreader.app.ui.theme.effectiveMotionDurationMs
 import com.veilreader.app.ui.theme.motionBudgetFor
@@ -95,10 +97,16 @@ fun Modifier.veilSharedBounds(
     key: String
 ): Modifier {
     val reducedMotion = LocalVeilReducedMotion.current
+    val qualityTier = LocalVeilQualityTier.current
     val sharedScope = LocalVeilSharedTransitionScope.current
     val visibilityScope = LocalVeilAnimatedVisibilityScope.current
 
-    if (reducedMotion || sharedScope == null || visibilityScope == null) {
+    if (
+        reducedMotion ||
+        qualityTier == VeilQualityTier.ESSENTIAL ||
+        sharedScope == null ||
+        visibilityScope == null
+    ) {
         return this
     }
 
@@ -122,10 +130,16 @@ fun Modifier.veilTabSharedBounds(
     key: String
 ): Modifier {
     val reducedMotion = LocalVeilReducedMotion.current
+    val qualityTier = LocalVeilQualityTier.current
     val sharedScope = LocalVeilSharedTransitionScope.current
     val visibilityScope = LocalVeilTabAnimatedVisibilityScope.current
 
-    if (reducedMotion || sharedScope == null || visibilityScope == null) {
+    if (
+        reducedMotion ||
+        qualityTier == VeilQualityTier.ESSENTIAL ||
+        sharedScope == null ||
+        visibilityScope == null
+    ) {
         return this
     }
 
@@ -159,8 +173,11 @@ fun VeilRealmMotionHost(
     destinationContent: @Composable (String) -> Unit
 ) {
     val reducedMotion = LocalVeilReducedMotion.current
-    val policy = remember(reducedMotion) {
-        veilRealmMotionPolicy(reducedMotion)
+    val qualityTier = LocalVeilQualityTier.current
+    val minimalMotion =
+        reducedMotion || qualityTier == VeilQualityTier.ESSENTIAL
+    val policy = remember(minimalMotion) {
+        veilRealmMotionPolicy(minimalMotion)
     }
     var predictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var predictiveBackDirection by remember { mutableFloatStateOf(1f) }
@@ -196,7 +213,7 @@ fun VeilRealmMotionHost(
                 targetState = activeDestination,
                 modifier = Modifier.fillMaxSize(),
                 transitionSpec = {
-                    if (reducedMotion) {
+                    if (minimalMotion) {
                         fadeIn(
                             tween(policy.enterDurationMs)
                         ) togetherWith fadeOut(
@@ -224,7 +241,7 @@ fun VeilRealmMotionHost(
                     LocalVeilAnimatedVisibilityScope provides this
                 ) {
                     val progress =
-                        if (chamber == null || reducedMotion) 0f
+                        if (chamber == null || minimalMotion) 0f
                         else predictiveBackProgress
                     val scale =
                         1f - progress * (1f - policy.predictiveScaleAtCommit)
@@ -236,7 +253,7 @@ fun VeilRealmMotionHost(
                     ) {
                         if (
                             chamber != null &&
-                            !reducedMotion &&
+                            !minimalMotion &&
                             predictiveBackProgress > 0f
                         ) {
                             val previewProgress = predictiveBackProgress
