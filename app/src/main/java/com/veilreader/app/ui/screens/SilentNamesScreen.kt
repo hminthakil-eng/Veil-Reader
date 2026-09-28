@@ -147,6 +147,8 @@ fun SilentNamesScreen(
                 textAlign = TextAlign.Center
             )
 
+            SilentNamesPathResonance(profile)
+
             val sealed = localReceipt
             if (sealed == null && storageBlocked) {
                 Surface(
@@ -255,6 +257,36 @@ fun SilentNamesScreen(
             }
 
             Spacer(Modifier.height(VeilSpacing.xl))
+        }
+    }
+}
+
+@Composable
+private fun SilentNamesPathResonance(profile: ReaderProfile) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = VeilPalette.RaisedIron.copy(alpha = 0.62f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.22f)),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            VeilEyebrowText(
+                text = stringResource(R.string.silent_names_path_resonance),
+                color = VeilPalette.Brass.copy(alpha = 0.88f)
+            )
+            Text(
+                text = profile.path.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = VeilPalette.Moon
+            )
+            Text(
+                text = stringResource(pathResonanceRes(profile.path.id)),
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Mist
+            )
         }
     }
 }
@@ -416,6 +448,28 @@ private fun SilentNamesSealedResult(receipt: SilentNamesReceipt) {
                 color = VeilPalette.Moon
             )
 
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                color = VeilPalette.Ink.copy(alpha = 0.38f),
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.24f)),
+                shape = MaterialTheme.shapes.small
+            ) {
+                Column(
+                    modifier = Modifier.padding(VeilSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    VeilEyebrowText(
+                        text = stringResource(R.string.silent_names_hall_echo),
+                        color = VeilPalette.Brass.copy(alpha = 0.86f)
+                    )
+                    Text(
+                        stringResource(pathEchoRes(receipt.pathId)),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Mist
+                    )
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -477,6 +531,28 @@ private fun SilentNamesWindowSigil(modifier: Modifier = Modifier) {
         )
         drawCircle(brass, 2.2.dp.toPx(), Offset(center.x, size.height * 0.69f))
     }
+}
+
+@StringRes
+private fun pathResonanceRes(pathId: String): Int = when (pathId) {
+    "oracle" -> R.string.silent_names_path_oracle
+    "dreamwalker" -> R.string.silent_names_path_dreamwalker
+    "archivist" -> R.string.silent_names_path_archivist
+    "vanguard" -> R.string.silent_names_path_vanguard
+    "nocturne" -> R.string.silent_names_path_nocturne
+    "artificer" -> R.string.silent_names_path_artificer
+    else -> R.string.silent_names_path_neutral
+}
+
+@StringRes
+private fun pathEchoRes(pathId: String): Int = when (pathId) {
+    "oracle" -> R.string.silent_names_echo_oracle
+    "dreamwalker" -> R.string.silent_names_echo_dreamwalker
+    "archivist" -> R.string.silent_names_echo_archivist
+    "vanguard" -> R.string.silent_names_echo_vanguard
+    "nocturne" -> R.string.silent_names_echo_nocturne
+    "artificer" -> R.string.silent_names_echo_artificer
+    else -> R.string.silent_names_echo_neutral
 }
 
 @StringRes
