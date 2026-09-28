@@ -51,4 +51,7 @@
     <string name="ritual_continue">Continue</string>
     <string name="ritual_rejected_body">The current Path or ritual no longer matches this request. Close and review your progress.</string>
     <string name="ritual_close">Close</string>
+    <string name="path_level">LEVEL %1$d</string>
+    <string name="path_xp">%1$d/%2$d XP</string>
+    <string name="path_mastered">MASTERED</string>
 </resources>
