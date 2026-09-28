@@ -19,4 +19,11 @@
     <string name="silent_names_continue_book">بازگشت به کتابم</string>
     <string name="silent_names_saved">این انتخاب مهر شده است. فانوس تو قبلاً ثبت شده.</string>
     <string name="silent_names_save_failed">انتخابت ذخیره نشد. پیش از خروج دوباره تلاش کن.</string>
+    <string name="silent_names_hall_eyebrow">روایت تالار · اختیاری</string>
+    <string name="silent_names_enter">ورود به پنجرهٔ خاموش</string>
+    <string name="silent_names_revisit">بازدید دوباره از خاطرهٔ مهرشده</string>
+    <string name="silent_names_back_hall">بازگشت به تالار بزرگ</string>
+    <string name="silent_names_choose_mode">شیوهٔ عدم‌قطعیت را انتخاب کن</string>
+    <string name="silent_names_saving">در حال مهر کردن انتخاب…</string>
+    <string name="silent_names_roll_result">تاس: %1$d + %2$d در برابر %3$d</string>
 </resources>
