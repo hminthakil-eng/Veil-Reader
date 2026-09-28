@@ -12,9 +12,9 @@ Feature-complete means the current recovery program in #312–#316 plus the expl
 - [x] Persisted font family, alignment, columns, hyphenation, ligatures, normalization, paragraph/letter/word spacing, type scale
 - [x] Publisher-style effectiveness communication
 - [x] Adjustable Paper Patina
-- [ ] Font-weight control where renderer supports it
-- [ ] Paragraph-indent control where renderer supports it
-- [ ] Dark-theme image treatment control/fallback
+- [x] Font-weight control for reflowable EPUB mapped to Readium 3.4 `0.0..2.5`
+- [x] Paragraph-indent control for supported reflowable EPUB layouts
+- [x] Dark-theme EPUB image treatment (`Original / Darken / Invert`) with Readium effectiveness guard
 - [ ] Final capability matrix proving no previous reader feature became hidden
 
 ### R2 Page Engine
@@ -42,11 +42,11 @@ Feature-complete means the current recovery program in #312–#316 plus the expl
 - [x] Evidence-backed relics
 - [x] Silent Names playable vertical slice foundation
 - [x] Dual-book provenance contract for Silent Names
-- [ ] Optional Covenants
-- [ ] Relic temperaments
-- [ ] Veil-original Orders / factions
-- [ ] Deeper rank-specific world mutations
-- [ ] Dual-book provenance extended from Silent Names to all narrative gamification copy/state
+- [x] Optional Covenants
+- [x] Relic temperaments
+- [x] Veil-original Orders / factions
+- [x] Deeper rank-specific world mutations
+- [x] Dual-book provenance registry extended across Paths, directives, mutations, relics and discoveries
 
 ### World projection coverage
 - [x] Great Hall
@@ -55,7 +55,7 @@ Feature-complete means the current recovery program in #312–#316 plus the expl
 - [x] Mirror mutation echo
 - [x] Treasury mutation echo
 - [x] Sanctum mutation echo
-- [ ] Rank-specific mutations feel different per realm rather than sharing only generic intensity
+- [x] Rank-specific mutations project distinct copy into all six realms
 - [ ] Silent Names consequence is visible beyond encounter page (Hall + Treasury completed; remaining realm reactions as designed)
 
 ### W1 Living Mirror
