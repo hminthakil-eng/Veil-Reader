@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_masthead_eyebrow">ARCHIVIST DOSSIER</string>
+    <string name="profile_masthead_meta">LVL %1$d · %2$d SESSIONS</string>
+    <string name="profile_masthead_body">A factual ledger of reading, preserved passages, completed journeys, and discovered marks.</string>
+    <string name="profile_record_eyebrow">Recorded history</string>
+    <string name="profile_record_title">Reading record</string>
+    <string name="profile_rhythm_eyebrow">Rhythm</string>
+    <string name="profile_goal_title">Daily reading goal</string>
+    <string name="profile_goal_body">Your first daily quest follows this target. Choose a pace that supports reading instead of turning it into a chore.</string>
+    <string name="profile_minutes_short">%1$dm</string>
+
+    <string name="profile_sigils_eyebrow">Known marks</string>
+    <string name="profile_sigils_title">Sigil registry</string>
+    <string name="profile_sigils_awakened">%1$d awakened</string>
+    <string name="profile_sigil_first_hour">First Hour</string>
+    <string name="profile_sigil_passage_keeper">Passage Keeper</string>
+    <string name="profile_sigil_seven_days">Seven-Day Journey</string>
+    <string name="profile_sigil_ten_tomes">Ten Tomes</string>
+    <string name="profile_sigil_first_threshold">First Threshold</string>
+    <string name="profile_sigil_awakened">AWAKENED</string>
+    <string name="profile_unknown_sigil">Unknown Sigil</string>
+
+    <string name="profile_discoveries_eyebrow">Restricted folio</string>
+    <string name="profile_discoveries_title">Veiled discoveries</string>
+    <string name="profile_discoveries_revealed">%1$d/%2$d revealed</string>
+    <string name="profile_discoveries_body">Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.</string>
+    <string name="profile_open_archive">Open Hidden Archive</string>
+    <string name="profile_discovery_veiled">Veiled Fragment %1$d</string>
+    <string name="profile_discovery_revealed">REVEALED</string>
+    <string name="profile_discovery_clue">CLUE</string>
+    <string name="profile_discovery_ledger">PERMANENT LEDGER · RECORDED %1$s</string>
+    <string name="profile_discovery_permanent_body">Once recorded, this discovery remains part of your local reading history even if a temporary signal such as a streak later changes.</string>
+
+    <string name="profile_private_record">PRIVATE READING RECORD</string>
+    <string name="profile_settings">SETTINGS</string>
+    <string name="profile_fact_path">PATH</string>
+    <string name="profile_fact_level">LEVEL</string>
+    <string name="profile_fact_castle_tier">CASTLE TIER</string>
+    <string name="profile_fact_equipped_sigil">EQUIPPED SIGIL</string>
+    <string name="profile_experience">EXPERIENCE</string>
+    <string name="profile_xp">%1$d/%2$d XP</string>
+    <string name="profile_count_sigils">%1$d SIGILS</string>
+    <string name="profile_count_discoveries">%1$d/%2$d DISCOVERIES</string>
+    <string name="profile_count_marks">%1$d MARKS</string>
+
+    <string name="profile_stat_return">RETURN</string>
+    <string name="profile_stat_return_label">current streak</string>
+    <string name="profile_stat_volumes">VOLUMES</string>
+    <string name="profile_stat_volumes_label">finished</string>
+    <string name="profile_stat_marks">MARKS</string>
+    <string name="profile_stat_marks_label">highlights</string>
+    <string name="profile_stat_pages">PAGES</string>
+    <string name="profile_stat_pages_label">turned</string>
+    <string name="profile_stat_time">TIME</string>
+    <string name="profile_stat_time_label">inside books</string>
+    <string name="profile_stat_tier">TIER</string>
+    <string name="profile_stat_tier_label">castle</string>
+
+    <string name="profile_ledger_eyebrow">DURABLE LEDGER</string>
+    <string name="profile_ledger_title">Recorded history</string>
+    <string name="profile_ledger_sessions">%1$d sessions</string>
+    <string name="profile_ledger_archive_span">Archive span</string>
+    <string name="profile_ledger_active_time">Recorded active time</string>
+    <string name="profile_ledger_completions">Completion records</string>
+    <string name="profile_ledger_rereads">Reread cycles</string>
+    <string name="profile_ledger_volumes">Archived volumes</string>
+    <string name="profile_ledger_body">This ledger uses durable local book, session, and completion records; it does not infer missing reading history.</string>
+</resources>
