@@ -66,4 +66,9 @@
     <string name="profile_ledger_rereads">Reread cycles</string>
     <string name="profile_ledger_volumes">Archived volumes</string>
     <string name="profile_ledger_body">This ledger uses durable local book, session, and completion records; it does not infer missing reading history.</string>
+    <string name="profile_days_short">%1$dd</string>
+    <string name="profile_duration_hours">%1$dh</string>
+    <string name="profile_duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="profile_duration_minutes">%1$dm</string>
+    <string name="profile_duration_less_minute">&lt;1m</string>
 </resources>
