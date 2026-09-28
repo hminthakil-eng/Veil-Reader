@@ -219,8 +219,9 @@ fun GrayfogOrnamentFrame(
     modifier: Modifier = Modifier,
     strength: Float = 1f
 ) {
+    val quality = qualityPolicyFor(LocalVeilQualityTier.current)
     Canvas(modifier) {
-        val s = strength.coerceIn(0f, 1f)
+        val s = (strength * quality.ornamentalDetail).coerceIn(0f, 1f)
         if (s <= 0.001f || size.width <= 1f || size.height <= 1f) return@Canvas
 
         val brass = VeilPalette.Brass
