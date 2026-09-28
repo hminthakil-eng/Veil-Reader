@@ -5,7 +5,6 @@ import com.veilreader.app.domain.SilentNamesEncounter
 import com.veilreader.app.domain.SilentNamesOutcome
 import com.veilreader.app.domain.StoryRelicCatalog
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Test
 
 class StoryRelicPresentationTest {
@@ -19,7 +18,7 @@ class StoryRelicPresentationTest {
 
     @Test
     fun `Lantern presentation maps every authored Silent Names outcome`() {
-        val presentation = assertNotNull(
+        val presentation = requireNotNull(
             storyRelicPresentationFor(SilentNamesEncounter.REWARD_ID)
         )
 
