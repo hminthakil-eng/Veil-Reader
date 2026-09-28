@@ -8,6 +8,7 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -41,7 +42,7 @@ class GameRepositorySilentNamesTest {
     }
 
     @Test
-    fun `first seal persists one receipt and revisit never rerolls`() {
+    fun `first seal persists one receipt and revisit never rerolls`() = runBlocking {
         val repository = GameRepository(context)
         assertTrue(repository.choosePath("oracle"))
 
@@ -86,7 +87,7 @@ class GameRepositorySilentNamesTest {
         try {
             val one = pool.submit<SilentNamesCommitResult> {
                 start.await(5, TimeUnit.SECONDS)
-                firstRepository.sealSilentNamesEncounter(
+                runBlocking { firstRepository.sealSilentNamesEncounter(
                     choice = SilentNamesChoice.EXAMINE_SEAL,
                     mode = SilentNamesMode.DICE,
                     nextD20 = {
@@ -94,11 +95,11 @@ class GameRepositorySilentNamesTest {
                         3
                     },
                     nowEpochMs = { 2_000L }
-                )
+                ) }
             }
             val two = pool.submit<SilentNamesCommitResult> {
                 start.await(5, TimeUnit.SECONDS)
-                secondRepository.sealSilentNamesEncounter(
+                runBlocking { secondRepository.sealSilentNamesEncounter(
                     choice = SilentNamesChoice.FOLLOW_LIGHT,
                     mode = SilentNamesMode.DICE,
                     nextD20 = {
@@ -106,7 +107,7 @@ class GameRepositorySilentNamesTest {
                         19
                     },
                     nowEpochMs = { 3_000L }
-                )
+                ) }
             }
 
             start.countDown()
@@ -129,18 +130,18 @@ class GameRepositorySilentNamesTest {
 
         val repository = GameRepository(context)
         assertThrows(IllegalStateException::class.java) {
-            repository.sealSilentNamesEncounter(
+            runBlocking { repository.sealSilentNamesEncounter(
                 choice = SilentNamesChoice.EXAMINE_SEAL,
                 mode = SilentNamesMode.STORY,
                 nowEpochMs = { 4_000L }
-            )
+            ) }
         }
 
         assertEquals(raw, prefs.getString("encounter:silent_names_window:receipt", null))
     }
 
     @Test
-    fun `story mode seals without consuming randomness`() {
+    fun `story mode seals without consuming randomness`() = runBlocking {
         val repository = GameRepository(context)
         val rolls = AtomicInteger(0)
 
