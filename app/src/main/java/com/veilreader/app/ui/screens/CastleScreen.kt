@@ -316,7 +316,7 @@ private fun SilentNamesHallPortal(
                 role = Role.Button,
                 onClick = onOpen
             ),
-        color = VeilPalette.InkRaised.copy(alpha = 0.78f),
+        color = VeilPalette.RaisedIron.copy(alpha = 0.78f),
         shape = MaterialTheme.shapes.small,
         border = BorderStroke(
             1.dp,
