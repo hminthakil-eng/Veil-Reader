@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - "alpha/cathedral-convergence-w0"
-      - "alpha/g1-usable-silent-names-v1"
     paths:
       - "app/**"
       - "benchmark/**"
