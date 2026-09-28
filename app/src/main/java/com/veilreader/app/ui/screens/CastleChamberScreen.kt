@@ -602,12 +602,15 @@ private fun CastleChamberGrandMasthead(
 private fun SilentNamesTreasuryRelic(
     receipt: SilentNamesReceipt
 ) {
+    val compactLayout =
+        LocalConfiguration.current.screenWidthDp < 420 ||
+            LocalDensity.current.fontScale > 1.25f
     val recorded = formatSanctumDate(receipt.recordedAtEpochMs)
     val modeLabel = stringResource(
         if (receipt.mode == com.veilreader.app.domain.SilentNamesMode.DICE) {
-            R.string.silent_names_dice_mode
+            R.string.silent_names_mode_dice_short
         } else {
-            R.string.silent_names_story_mode
+            R.string.silent_names_mode_story_short
         }
     )
 
@@ -619,116 +622,156 @@ private fun SilentNamesTreasuryRelic(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Box {
-            Canvas(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = VeilSpacing.md)
-                    .size(138.dp)
-            ) {
-                val center = Offset(size.width / 2f, size.height / 2f)
-                val brass = VeilPalette.Brass
-                val spirit = VeilPalette.Spirit
-                val strong = 1.35.dp.toPx()
-                val thin = 0.8.dp.toPx()
-
-                drawCircle(
-                    brass.copy(alpha = 0.08f),
-                    size.minDimension * 0.46f,
-                    center
-                )
-                drawCircle(
-                    brass.copy(alpha = 0.42f),
-                    size.minDimension * 0.36f,
-                    center,
-                    style = Stroke(strong)
-                )
-                drawLine(
-                    brass.copy(alpha = 0.72f),
-                    Offset(center.x, size.height * 0.16f),
-                    Offset(center.x, size.height * 0.78f),
-                    strong,
-                    StrokeCap.Round
-                )
-                drawArc(
-                    brass.copy(alpha = 0.86f),
-                    startAngle = 202f,
-                    sweepAngle = 136f,
-                    useCenter = false,
-                    topLeft = Offset(size.width * 0.28f, size.height * 0.24f),
-                    size = Size(size.width * 0.44f, size.height * 0.50f),
-                    style = Stroke(strong)
-                )
-                drawCircle(
-                    spirit.copy(alpha = 0.52f),
-                    size.minDimension * 0.105f,
-                    Offset(center.x, size.height * 0.63f)
-                )
-                drawCircle(
-                    brass,
-                    2.2.dp.toPx(),
-                    Offset(center.x, size.height * 0.63f)
-                )
-                repeat(4) { index ->
-                    val y = size.height * (0.31f + index * 0.12f)
-                    drawLine(
-                        brass.copy(alpha = 0.16f),
-                        Offset(size.width * 0.20f, y),
-                        Offset(size.width * 0.80f, y),
-                        thin
-                    )
-                }
-            }
-
+        if (compactLayout) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth(0.72f)
-                    .padding(VeilSpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(7.dp)
+                modifier = Modifier.padding(VeilSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
             ) {
-                Text(
-                    stringResource(R.string.silent_names_treasury_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
-                    color = VeilPalette.Brass
+                SilentNamesLanternGlyph(
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .size(116.dp)
                 )
-                Text(
-                    stringResource(R.string.silent_names_reward_title),
-                    style = MaterialTheme.typography.headlineSmall,
-                    color = VeilPalette.Moon
-                )
-                Text(
-                    stringResource(R.string.silent_names_reward_body),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Mist
-                )
-                Text(
-                    stringResource(receipt.outcome.outcomeRes()),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Moon.copy(alpha = 0.82f)
-                )
-                BrassRule(Modifier.width(112.dp))
-                Text(
-                    stringResource(R.string.silent_names_treasury_provenance),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Spirit.copy(alpha = 0.84f)
-                )
-                Text(
-                    stringResource(
-                        R.string.silent_names_treasury_path,
-                        receipt.pathId.uppercase()
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.72f)
-                )
-                Text(
-                    "$modeLabel · " + stringResource(
-                        R.string.silent_names_treasury_recorded,
-                        recorded
-                    ),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.62f)
+                SilentNamesRelicCopy(
+                    receipt = receipt,
+                    modeLabel = modeLabel,
+                    recorded = recorded,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
+        } else {
+            Box {
+                SilentNamesLanternGlyph(
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(end = VeilSpacing.lg)
+                        .size(142.dp)
+                )
+                SilentNamesRelicCopy(
+                    receipt = receipt,
+                    modeLabel = modeLabel,
+                    recorded = recorded,
+                    modifier = Modifier
+                        .fillMaxWidth(0.70f)
+                        .padding(VeilSpacing.lg)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SilentNamesRelicCopy(
+    receipt: SilentNamesReceipt,
+    modeLabel: String,
+    recorded: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Text(
+            stringResource(R.string.silent_names_treasury_eyebrow),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
+            color = VeilPalette.Brass
+        )
+        Text(
+            stringResource(R.string.silent_names_reward_title),
+            style = MaterialTheme.typography.headlineSmall,
+            color = VeilPalette.Moon
+        )
+        Text(
+            stringResource(R.string.silent_names_reward_body),
+            style = MaterialTheme.typography.bodyMedium,
+            color = VeilPalette.Mist
+        )
+        Text(
+            stringResource(receipt.outcome.outcomeRes()),
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Moon.copy(alpha = 0.82f)
+        )
+        BrassRule(Modifier.width(112.dp))
+        Text(
+            stringResource(R.string.silent_names_treasury_provenance),
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Spirit.copy(alpha = 0.84f)
+        )
+        Text(
+            stringResource(
+                R.string.silent_names_treasury_path,
+                receipt.pathId.uppercase()
+            ),
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Mist.copy(alpha = 0.72f)
+        )
+        Text(
+            "$modeLabel · " + stringResource(
+                R.string.silent_names_treasury_recorded,
+                recorded
+            ),
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Mist.copy(alpha = 0.62f)
+        )
+    }
+}
+
+@Composable
+private fun SilentNamesLanternGlyph(
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val brass = VeilPalette.Brass
+        val spirit = VeilPalette.Spirit
+        val strong = 1.35.dp.toPx()
+        val thin = 0.8.dp.toPx()
+
+        drawCircle(
+            brass.copy(alpha = 0.08f),
+            size.minDimension * 0.46f,
+            center
+        )
+        drawCircle(
+            brass.copy(alpha = 0.42f),
+            size.minDimension * 0.36f,
+            center,
+            style = Stroke(strong)
+        )
+        drawLine(
+            brass.copy(alpha = 0.72f),
+            Offset(center.x, size.height * 0.16f),
+            Offset(center.x, size.height * 0.78f),
+            strong,
+            StrokeCap.Round
+        )
+        drawArc(
+            brass.copy(alpha = 0.86f),
+            startAngle = 202f,
+            sweepAngle = 136f,
+            useCenter = false,
+            topLeft = Offset(size.width * 0.28f, size.height * 0.24f),
+            size = Size(size.width * 0.44f, size.height * 0.50f),
+            style = Stroke(strong)
+        )
+        drawCircle(
+            spirit.copy(alpha = 0.52f),
+            size.minDimension * 0.105f,
+            Offset(center.x, size.height * 0.63f)
+        )
+        drawCircle(
+            brass,
+            2.2.dp.toPx(),
+            Offset(center.x, size.height * 0.63f)
+        )
+        repeat(4) { index ->
+            val y = size.height * (0.31f + index * 0.12f)
+            drawLine(
+                brass.copy(alpha = 0.16f),
+                Offset(size.width * 0.20f, y),
+                Offset(size.width * 0.80f, y),
+                thin
+            )
         }
     }
 }
