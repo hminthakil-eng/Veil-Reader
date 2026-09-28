@@ -15,7 +15,7 @@ class StoryRelicTest {
             recordedAtEpochMs = 500L
         ).receipt
 
-        val relic = deriveStoryRelics(receipt).single()
+        val relic = collectStoryRelics(receipt.toStoryRelicRecordOrNull()).single()
 
         assertEquals(SilentNamesEncounter.REWARD_ID, relic.relicId)
         assertEquals(SilentNamesEncounter.ID, relic.sourceEncounterId)
@@ -37,13 +37,15 @@ class StoryRelicTest {
         ).receipt
 
         assertTrue(
-            deriveStoryRelics(
+            collectStoryRelics(
                 valid.copy(contentVersion = valid.contentVersion + 1)
+                    .toStoryRelicRecordOrNull()
             ).isEmpty()
         )
         assertTrue(
-            deriveStoryRelics(
+            collectStoryRelics(
                 valid.copy(rewardId = "forged")
+                    .toStoryRelicRecordOrNull()
             ).isEmpty()
         )
     }
