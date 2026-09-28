@@ -190,7 +190,24 @@ fun ReaderScreen(
     val accessibilityManager = remember(activity) {
         activity.getSystemService(AccessibilityManager::class.java)
     }
-    val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
+    var touchExplorationEnabled by remember(accessibilityManager) {
+        mutableStateOf(accessibilityManager?.isTouchExplorationEnabled == true)
+    }
+    DisposableEffect(accessibilityManager) {
+        val manager = accessibilityManager
+        if (manager == null) {
+            onDispose {}
+        } else {
+            val listener = AccessibilityManager.TouchExplorationStateChangeListener { enabled ->
+                touchExplorationEnabled = enabled
+            }
+            manager.addTouchExplorationStateChangeListener(listener)
+            touchExplorationEnabled = manager.isTouchExplorationEnabled
+            onDispose {
+                manager.removeTouchExplorationStateChangeListener(listener)
+            }
+        }
+    }
     val reducedMotion = LocalVeilReducedMotion.current
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
