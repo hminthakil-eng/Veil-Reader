@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="profile_masthead_eyebrow">پروندهٔ آرشیویست</string>
+    <string name="profile_masthead_meta">سطح %1$d · %2$d نشست</string>
+    <string name="profile_masthead_body">دفتر واقعیِ مطالعه، بخش‌های حفظ‌شده، سفرهای کامل‌شده و نشان‌های کشف‌شده.</string>
+    <string name="profile_record_eyebrow">تاریخ ثبت‌شده</string>
+    <string name="profile_record_title">سابقهٔ مطالعه</string>
+    <string name="profile_rhythm_eyebrow">ریتم</string>
+    <string name="profile_goal_title">هدف روزانهٔ مطالعه</string>
+    <string name="profile_goal_body">نخستین مأموریت روزانه از این هدف پیروی می‌کند. ریتمی انتخاب کن که از مطالعه حمایت کند، نه اینکه آن را به وظیفه تبدیل کند.</string>
+    <string name="profile_minutes_short">%1$d دقیقه</string>
+
+    <string name="profile_sigils_eyebrow">نشان‌های شناخته‌شده</string>
+    <string name="profile_sigils_title">دفتر نشان‌ها</string>
+    <string name="profile_sigils_awakened">%1$d بیدار</string>
+    <string name="profile_sigil_first_hour">ساعت نخست</string>
+    <string name="profile_sigil_passage_keeper">نگهبان بخش‌ها</string>
+    <string name="profile_sigil_seven_days">سفر هفت‌روزه</string>
+    <string name="profile_sigil_ten_tomes">ده مجلد</string>
+    <string name="profile_sigil_first_threshold">نخستین آستانه</string>
+    <string name="profile_sigil_awakened">بیدار</string>
+    <string name="profile_unknown_sigil">نشان ناشناخته</string>
+
+    <string name="profile_discoveries_eyebrow">برگ محرمانه</string>
+    <string name="profile_discoveries_title">کشف‌های پرده‌پوش</string>
+    <string name="profile_discoveries_revealed">%1$d/%2$d آشکار</string>
+    <string name="profile_discoveries_body">شرط‌هایشان پنهان می‌ماند. وقتی بخش‌های جداگانهٔ تاریخ مطالعه‌ات الگویی بسازند، خودشان ظاهر می‌شوند.</string>
+    <string name="profile_open_archive">باز کردن آرشیو پنهان</string>
+    <string name="profile_discovery_veiled">پارهٔ پرده‌پوش %1$d</string>
+    <string name="profile_discovery_revealed">آشکار</string>
+    <string name="profile_discovery_clue">سرنخ</string>
+    <string name="profile_discovery_ledger">دفتر ماندگار · ثبت‌شده %1$s</string>
+    <string name="profile_discovery_permanent_body">پس از ثبت، این کشف بخشی از تاریخ محلی مطالعهٔ تو باقی می‌ماند؛ حتی اگر یک نشانهٔ موقت مثل زنجیرهٔ روزانه بعداً تغییر کند.</string>
+
+    <string name="profile_private_record">سابقهٔ خصوصی مطالعه</string>
+    <string name="profile_settings">تنظیمات</string>
+    <string name="profile_fact_path">مسیر</string>
+    <string name="profile_fact_level">سطح</string>
+    <string name="profile_fact_castle_tier">ردهٔ قلعه</string>
+    <string name="profile_fact_equipped_sigil">نشان روی پایه</string>
+    <string name="profile_experience">تجربه</string>
+    <string name="profile_xp">%1$d/%2$d امتیاز تجربه</string>
+    <string name="profile_count_sigils">%1$d نشان</string>
+    <string name="profile_count_discoveries">%1$d/%2$d کشف</string>
+    <string name="profile_count_marks">%1$d علامت</string>
+
+    <string name="profile_stat_return">بازگشت</string>
+    <string name="profile_stat_return_label">زنجیرهٔ فعلی</string>
+    <string name="profile_stat_volumes">مجلدها</string>
+    <string name="profile_stat_volumes_label">تمام‌شده</string>
+    <string name="profile_stat_marks">نشان‌ها</string>
+    <string name="profile_stat_marks_label">هایلایت</string>
+    <string name="profile_stat_pages">صفحات</string>
+    <string name="profile_stat_pages_label">ورق‌خورده</string>
+    <string name="profile_stat_time">زمان</string>
+    <string name="profile_stat_time_label">درون کتاب‌ها</string>
+    <string name="profile_stat_tier">رده</string>
+    <string name="profile_stat_tier_label">قلعه</string>
+
+    <string name="profile_ledger_eyebrow">دفتر پایدار</string>
+    <string name="profile_ledger_title">تاریخ ثبت‌شده</string>
+    <string name="profile_ledger_sessions">%1$d نشست</string>
+    <string name="profile_ledger_archive_span">بازهٔ آرشیو</string>
+    <string name="profile_ledger_active_time">زمان فعال ثبت‌شده</string>
+    <string name="profile_ledger_completions">سابقه‌های تکمیل</string>
+    <string name="profile_ledger_rereads">چرخه‌های بازخوانی</string>
+    <string name="profile_ledger_volumes">مجلدهای آرشیوشده</string>
+    <string name="profile_ledger_body">این دفتر فقط از سابقه‌های محلی و پایدار کتاب، نشست و تکمیل استفاده می‌کند و تاریخ مطالعهٔ گمشده را حدس نمی‌زند.</string>
+</resources>
