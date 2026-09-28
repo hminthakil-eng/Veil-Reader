@@ -8,4 +8,5 @@
     <string name="story_relic_story_mode">حالت داستانی</string>
     <string name="story_relic_dice_mode">حالت تاس</string>
     <string name="story_relic_unknown_variant">مسیری مهرشده که شرح آن متعلق به نسخه‌ای جدیدتر از Veil است.</string>
+    <string name="story_relic_unknown_mode">حالت مهرشده</string>
 </resources>
