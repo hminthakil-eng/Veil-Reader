@@ -100,9 +100,13 @@ object GamificationEngine {
         profile: ReaderProfile,
         expectedPathId: String = profile.path.id,
         expectedRankIndex: Int = profile.rankIndex
-    ): Boolean =
-        profile.path.id == expectedPathId &&
+    ): Boolean {
+        val masteryReady =
+            profile.pathMastery?.ritualReady
+                ?: (profile.ritualProgress >= profile.ritualTarget)
+        return profile.path.id == expectedPathId &&
             profile.rankIndex == expectedRankIndex &&
-            profile.ritualProgress >= profile.ritualTarget &&
+            masteryReady &&
             profile.rankIndex < profile.path.ranks.lastIndex
+    }
 }

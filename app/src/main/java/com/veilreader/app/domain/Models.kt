@@ -84,7 +84,8 @@ data class ReaderProfile(
     val ritualTarget: Int,
     val earnedSigils: Set<String> = emptySet(),
     val earnedDiscoveries: Set<String> = emptySet(),
-    val ritualAftermath: RitualAftermathRecord? = null
+    val ritualAftermath: RitualAftermathRecord? = null,
+    val pathMastery: PathMasterySnapshot? = null
 ) {
     val rankName: String get() = path.ranks.getOrElse(rankIndex) { path.ranks.last() }
 }

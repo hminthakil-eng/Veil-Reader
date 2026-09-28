@@ -9,6 +9,7 @@ import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.RitualAftermathRecord
 import com.veilreader.app.domain.VeiledDiscoveryPolicy
+import com.veilreader.app.domain.derivePathMastery
 import com.veilreader.app.domain.validateRitualAftermath
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import java.time.LocalDate
@@ -245,7 +246,12 @@ class GameRepository(context: Context) {
             ChronoUnit.DAYS.between(last, today) == 1L -> prefs.getInt("streakDays", 0) + 1
             else -> 1
         }
-        prefs.edit().putString("lastReadDate", todayString).putInt("streakDays", streak).apply()
+        val readingDaysTotal = prefs.getInt("readingDaysTotal", 0).coerceAtLeast(0) + 1
+        prefs.edit()
+            .putString("lastReadDate", todayString)
+            .putInt("streakDays", streak)
+            .putInt("readingDaysTotal", readingDaysTotal)
+            .apply()
     }
 
     private fun rollDayIfNeeded() {
@@ -350,6 +356,23 @@ class GameRepository(context: Context) {
             currentRankIndex = rankIndex,
             rankCount = path.ranks.size
         )
+        val ritualProgress = prefs.getInt("ritualProgress", 0).coerceAtLeast(0)
+        val ritualTarget = ReadingPolicy.ritualTarget(path.id, rankIndex).coerceAtLeast(1)
+        val pagesRead = prefs.getInt("pagesRead", 0).coerceAtLeast(0)
+        val minutesRead = prefs.getInt("minutesRead", 0).coerceAtLeast(0)
+        val booksFinished = prefs.getInt("booksFinished", 0).coerceAtLeast(0)
+        val pathMastery = derivePathMastery(
+            pathId = path.id,
+            rankIndex = rankIndex,
+            embodimentValue = ritualProgress,
+            embodimentTarget = ritualTarget,
+            totalHighlights = prefs.getInt("totalHighlights", 0),
+            substantialNotes = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().size,
+            pagesRead = pagesRead,
+            minutesRead = minutesRead,
+            booksFinished = booksFinished,
+            readingDays = prefs.getInt("readingDaysTotal", 0)
+        )
         return ReaderProfile(
             level = GamificationEngine.levelFor(totalXp),
             xp = inside,
@@ -358,19 +381,20 @@ class GameRepository(context: Context) {
                 val date = runCatching { LocalDate.parse(raw) }.getOrNull()
                 if (date != null && ChronoUnit.DAYS.between(date, LocalDate.now()) in 0L..1L) prefs.getInt("streakDays", 0) else 0
             } ?: 0,
-            pagesRead = prefs.getInt("pagesRead", 0),
-            minutesRead = prefs.getInt("minutesRead", 0),
-            booksFinished = prefs.getInt("booksFinished", 0),
+            pagesRead = pagesRead,
+            minutesRead = minutesRead,
+            booksFinished = booksFinished,
             path = path,
             rankIndex = rankIndex,
-            ritualProgress = prefs.getInt("ritualProgress", 0),
-            ritualTarget = ReadingPolicy.ritualTarget(path.id, rankIndex),
+            ritualProgress = ritualProgress,
+            ritualTarget = ritualTarget,
             earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
             earnedDiscoveries = prefs
                 .getStringSet("earnedDiscoveries", emptySet())
                 .orEmpty()
                 .toSet(),
-            ritualAftermath = ritualAftermath
+            ritualAftermath = ritualAftermath,
+            pathMastery = pathMastery
         )
     }
 

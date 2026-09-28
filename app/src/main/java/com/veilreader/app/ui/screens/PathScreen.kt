@@ -50,7 +50,10 @@ import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.GamificationEngine
+import com.veilreader.app.domain.PathMasteryAxis
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.effectivePathMastery
+import com.veilreader.app.domain.pathDoctrineFor
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.VeilEyebrowText
@@ -695,12 +698,12 @@ private fun RitualPanel(
     nextRank: String?,
     onPrepareCeremony: () -> Unit
 ) {
-    val target = profile.ritualTarget.coerceAtLeast(1)
-    val targetProgress = (profile.ritualProgress.toFloat() / target).coerceIn(0f, 1f)
-    val progress by animateFloatAsState(
-        targetValue = targetProgress,
+    val mastery = effectivePathMastery(profile)
+    val doctrine = pathDoctrineFor(profile.path.id)
+    val overallProgress by animateFloatAsState(
+        targetValue = mastery.overallProgress,
         animationSpec = tween(VeilMotion.SPATIAL_MS),
-        label = "ritual-progress"
+        label = "path-mastery-overall"
     )
 
     Box(
@@ -718,16 +721,16 @@ private fun RitualPanel(
             )
     ) {
         Canvas(Modifier.matchParentSize()) {
-            val center = Offset(size.width * 0.84f, size.height * 0.50f)
+            val center = Offset(size.width * 0.84f, size.height * 0.42f)
             drawCircle(
-                color = VeilPalette.Brass.copy(alpha = if (canAdvance) 0.085f else 0.035f),
-                radius = size.minDimension * 0.34f,
+                color = VeilPalette.Brass.copy(alpha = if (canAdvance) 0.095f else 0.038f),
+                radius = size.minDimension * 0.30f,
                 center = center,
                 style = Stroke(1.dp.toPx())
             )
             drawCircle(
-                color = VeilPalette.Brass.copy(alpha = if (canAdvance) 0.055f else 0.025f),
-                radius = size.minDimension * 0.23f,
+                color = VeilPalette.Spirit.copy(alpha = if (canAdvance) 0.062f else 0.026f),
+                radius = size.minDimension * 0.20f,
                 center = center,
                 style = Stroke(1.dp.toPx())
             )
@@ -735,57 +738,78 @@ private fun RitualPanel(
 
         Column(
             modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
-            verticalArrangement = Arrangement.spacedBy(9.dp)
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
-                if (nextRank == null) "RITUAL COMPLETE" else "NEXT THRESHOLD",
+                if (nextRank == null) "PATH COMPLETE" else "NEXT THRESHOLD",
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass
             )
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                Column(
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    Text(
-                        if (nextRank == null) "The Path remains open" else nextRank,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = VeilPalette.Moon
-                    )
-                    Text(
-                        if (nextRank == null) {
-                            "No higher rank remains."
-                        } else {
-                            ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = VeilPalette.Mist,
-                        maxLines = 3,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+            Text(
+                if (nextRank == null) "The Path remains open" else nextRank,
+                style = MaterialTheme.typography.titleLarge,
+                color = VeilPalette.Moon
+            )
 
+            Text(
+                doctrine.maxim.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                color = VeilPalette.Spirit.copy(alpha = 0.82f)
+            )
+
+            if (nextRank != null) {
                 Text(
-                    "${profile.ritualProgress}/$target",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (canAdvance) VeilPalette.Brass else VeilPalette.Mist
+                    "Advancement is earned by embodying the Path, understanding what you read, and keeping the practice stable. XP cannot substitute for any seal.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.82f)
                 )
             }
 
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { overallProgress },
                 modifier = Modifier.fillMaxWidth().height(2.dp),
                 color = if (canAdvance) VeilPalette.Brass else VeilPalette.Spirit,
                 trackColor = VeilPalette.Moon.copy(alpha = 0.08f),
                 drawStopIndicator = {}
             )
 
+            PathMasteryRow(
+                title = doctrine.embodimentName,
+                description = doctrine.embodimentDescription,
+                axis = mastery.embodiment,
+                readyColor = VeilPalette.Brass
+            )
+            PathMasteryRow(
+                title = doctrine.insightName,
+                description = doctrine.insightDescription,
+                axis = mastery.insight,
+                readyColor = VeilPalette.Spirit
+            )
+            PathMasteryRow(
+                title = doctrine.stabilityName,
+                description = doctrine.stabilityDescription,
+                axis = mastery.stability,
+                readyColor = VeilPalette.Moon
+            )
+
+            if (mastery.dissonance > 0 && !mastery.ritualReady) {
+                Text(
+                    "DISSONANCE · ${mastery.dissonance}% · One seal is advancing faster than the others. Nothing is lost; broaden the way you read before the ritual.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.70f)
+                )
+            }
+
             if (nextRank != null) {
+                BrassRule(Modifier.fillMaxWidth())
+                Text(
+                    ReadingPolicy.ritualDescription(profile.path.id, profile.rankIndex),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.76f),
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Button(
                     onClick = onPrepareCeremony,
                     enabled = canAdvance,
@@ -802,13 +826,57 @@ private fun RitualPanel(
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
                 ) {
                     Text(
-                        if (canAdvance) "Perform advancement"
-                        else "Keep reading · ${profile.ritualProgress}/$target",
+                        if (canAdvance) "Perform advancement" else "Complete the three seals",
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun PathMasteryRow(
+    title: String,
+    description: String,
+    axis: PathMasteryAxis,
+    readyColor: Color
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (axis.ready) readyColor else VeilPalette.Moon
+            )
+            Text(
+                "${axis.value}/${axis.target}",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (axis.ready) readyColor else VeilPalette.Mist
+            )
+        }
+        LinearProgressIndicator(
+            progress = { axis.progress },
+            modifier = Modifier.fillMaxWidth().height(2.dp),
+            color = readyColor,
+            trackColor = VeilPalette.Moon.copy(alpha = 0.07f),
+            drawStopIndicator = {}
+        )
+        Text(
+            description,
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.68f),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
