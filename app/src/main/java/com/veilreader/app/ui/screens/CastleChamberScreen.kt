@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.ui.VeilMastheadMetaRow
@@ -85,9 +86,129 @@ private data class RelicPresentation(
     val name: String,
     val symbol: String,
     val clue: String,
-    val rarity: RelicRarity,
-    val awakened: (ReaderProfile) -> Boolean
+    val rarity: RelicRarity
 )
+
+internal enum class RelicProvenance {
+    READING_EVIDENCE,
+    LEGACY_PROFILE,
+    SOVEREIGN_COMPOSITE,
+    SEALED
+}
+
+internal data class RelicUnlockState(
+    val awakened: Boolean,
+    val provenance: RelicProvenance,
+    val evidenceCount: Int,
+    val target: Int,
+    val evidenceLabel: String
+)
+
+private fun mutationEvidenceCount(
+    ledger: WorldMutationLedger,
+    kind: WorldMutationKind
+): Int =
+    ledger.entries
+        .filter { it.kind == kind }
+        .maxOfOrNull { it.evidenceCount }
+        ?: 0
+
+internal fun relicUnlockState(
+    relicId: String,
+    profile: ReaderProfile,
+    ledger: WorldMutationLedger
+): RelicUnlockState {
+    fun evidenceBacked(
+        kind: WorldMutationKind,
+        target: Int,
+        label: String,
+        legacyAwakened: Boolean
+    ): RelicUnlockState {
+        val count = mutationEvidenceCount(ledger, kind)
+        return when {
+            count >= target -> RelicUnlockState(
+                awakened = true,
+                provenance = RelicProvenance.READING_EVIDENCE,
+                evidenceCount = count,
+                target = target,
+                evidenceLabel = label
+            )
+            legacyAwakened -> RelicUnlockState(
+                awakened = true,
+                provenance = RelicProvenance.LEGACY_PROFILE,
+                evidenceCount = count,
+                target = target,
+                evidenceLabel = label
+            )
+            else -> RelicUnlockState(
+                awakened = false,
+                provenance = RelicProvenance.SEALED,
+                evidenceCount = count,
+                target = target,
+                evidenceLabel = label
+            )
+        }
+    }
+
+    return when (relicId) {
+        "ember_bookmark" -> evidenceBacked(
+            kind = WorldMutationKind.FOUNDATION_WEIGHT,
+            target = 3,
+            label = "recorded reading sessions",
+            legacyAwakened = profile.streakDays >= 3
+        )
+        "moonlit_lens" -> evidenceBacked(
+            kind = WorldMutationKind.CONSTELLATION_WEB,
+            target = 3,
+            label = "recorded atlas links",
+            legacyAwakened = profile.minutesRead >= 180
+        )
+        "brass_quill" -> evidenceBacked(
+            kind = WorldMutationKind.SCRIPTORIUM_LIGHT,
+            target = 5,
+            label = "substantial annotations",
+            legacyAwakened = profile.pagesRead >= 500
+        )
+        "ivory_bookplate" -> evidenceBacked(
+            kind = WorldMutationKind.COMPLETION_ALCOVES,
+            target = 3,
+            label = "completed volumes",
+            legacyAwakened = profile.booksFinished >= 3
+        )
+        "astral_key" -> evidenceBacked(
+            kind = WorldMutationKind.PATH_ASCENSION,
+            target = 2,
+            label = "Path thresholds",
+            legacyAwakened = profile.rankIndex >= 2
+        )
+        "veil_crown" -> {
+            val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(0)
+            val ready =
+                profile.rankIndex >= finalRank &&
+                    profile.earnedSigils.size >= 5
+            RelicUnlockState(
+                awakened = ready,
+                provenance = if (ready) {
+                    RelicProvenance.SOVEREIGN_COMPOSITE
+                } else {
+                    RelicProvenance.SEALED
+                },
+                evidenceCount =
+                    profile.earnedSigils.size.coerceAtMost(5) +
+                        if (profile.rankIndex >= finalRank) 1 else 0,
+                target = 6,
+                evidenceLabel = "final Path rank + five core sigils"
+            )
+        }
+        else -> RelicUnlockState(
+            awakened = false,
+            provenance = RelicProvenance.SEALED,
+            evidenceCount = 0,
+            target = 1,
+            evidenceLabel = "unknown evidence"
+        )
+    }
+}
 
 private data class BookplatePresentation(
     val name: String,
@@ -129,50 +250,42 @@ private val readingRelics = listOf(
         name = "Ember Bookmark",
         symbol = "⌇",
         clue = "Return often enough that the page begins to remember you.",
-        rarity = relicRarityFor("ember_bookmark"),
-        awakened = { it.streakDays >= 3 }
+        rarity = relicRarityFor("ember_bookmark")
     ),
     RelicPresentation(
         id = "moonlit_lens",
         name = "Moonlit Lens",
         symbol = "◐",
         clue = "Spend three quiet hours beyond the first threshold of attention.",
-        rarity = relicRarityFor("moonlit_lens"),
-        awakened = { it.minutesRead >= 180 }
+        rarity = relicRarityFor("moonlit_lens")
     ),
     RelicPresentation(
         id = "brass_quill",
         name = "Brass Quill",
         symbol = "✒",
         clue = "Turn five hundred pages and leave the mechanism warm.",
-        rarity = relicRarityFor("brass_quill"),
-        awakened = { it.pagesRead >= 500 }
+        rarity = relicRarityFor("brass_quill")
     ),
     RelicPresentation(
         id = "ivory_bookplate",
         name = "Ivory Bookplate",
         symbol = "▤",
         clue = "Complete three volumes and the archive will grant a mark of ownership.",
-        rarity = relicRarityFor("ivory_bookplate"),
-        awakened = { it.booksFinished >= 3 }
+        rarity = relicRarityFor("ivory_bookplate")
     ),
     RelicPresentation(
         id = "astral_key",
         name = "Astral Key",
         symbol = "⌘",
         clue = "Cross two Path thresholds and listen for the lock that was not there before.",
-        rarity = relicRarityFor("astral_key"),
-        awakened = { it.rankIndex >= 2 }
+        rarity = relicRarityFor("astral_key")
     ),
     RelicPresentation(
         id = "veil_crown",
         name = "Veil Crown",
         symbol = "♜",
         clue = "Awaken the five core sigils and reach the final rank of your Path.",
-        rarity = relicRarityFor("veil_crown"),
-        awakened = {
-            it.rankIndex >= it.path.ranks.lastIndex && it.earnedSigils.size >= 5
-        }
+        rarity = relicRarityFor("veil_crown")
     )
 )
 
@@ -204,7 +317,14 @@ fun TreasuryScreen(
 ) {
     BackHandler { onClose() }
     val equipped = equippedSigil?.let(sigils::get)
-    val awakenedRelics = readingRelics.count { it.awakened(profile) }
+    val relicStates = readingRelics.associate { relic ->
+        relic.id to relicUnlockState(
+            relicId = relic.id,
+            profile = profile,
+            ledger = mutationLedger
+        )
+    }
+    val awakenedRelics = relicStates.values.count { it.awakened }
     val awakenedBookplates = bookplates.count { it.awakened(profile) }
     val treasuryAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
@@ -332,7 +452,7 @@ fun TreasuryScreen(
                         ) {
                             RelicCabinetCell(
                                 relic = relic,
-                                awakened = relic.awakened(profile),
+                                unlockState = requireNotNull(relicStates[relic.id]),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -627,9 +747,10 @@ private fun SigilRelicRow(
 @Composable
 private fun RelicCabinetCell(
     relic: RelicPresentation,
-    awakened: Boolean,
+    unlockState: RelicUnlockState,
     modifier: Modifier = Modifier
 ) {
+    val awakened = unlockState.awakened
     Box(
         modifier = modifier
             .heightIn(min = 132.dp)
@@ -685,12 +806,34 @@ private fun RelicCabinetCell(
                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f),
                 maxLines = 1
             )
-            if (!awakened) {
+            if (awakened) {
+                Text(
+                    when (unlockState.provenance) {
+                        RelicProvenance.READING_EVIDENCE ->
+                            "PROVENANCE · ${unlockState.evidenceCount} ${unlockState.evidenceLabel}"
+                        RelicProvenance.LEGACY_PROFILE ->
+                            "PROVENANCE · LEGACY RECORD PRESERVED"
+                        RelicProvenance.SOVEREIGN_COMPOSITE ->
+                            "PROVENANCE · FINAL PATH + CORE SIGILS"
+                        RelicProvenance.SEALED ->
+                            "PROVENANCE · SEALED"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.72f),
+                    maxLines = 2
+                )
+            } else {
                 Text(
                     relic.clue,
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.58f),
                     maxLines = 4
+                )
+                Text(
+                    "EVIDENCE · ${unlockState.evidenceCount}/${unlockState.target} ${unlockState.evidenceLabel}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.42f),
+                    maxLines = 2
                 )
             }
         }
