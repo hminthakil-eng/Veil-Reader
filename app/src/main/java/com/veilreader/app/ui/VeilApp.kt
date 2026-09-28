@@ -63,6 +63,7 @@ import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
+import com.veilreader.app.ui.screens.SilentNamesScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.sensory.VeilSensoryFeedback
@@ -94,6 +95,13 @@ fun VeilApp(
     }
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
+    val initialSilentNamesRead = remember(game) { runCatching { game.silentNamesReceipt() } }
+    var silentNamesReceipt by remember(game) {
+        mutableStateOf(initialSilentNamesRead.getOrNull())
+    }
+    var silentNamesStorageBlocked by remember(game) {
+        mutableStateOf(initialSilentNamesRead.isFailure)
+    }
     val readerEngine = remember(context) { ReadiumEngine(context) }
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
@@ -529,7 +537,8 @@ fun VeilApp(
                         "archive" -> routeViewModel.openArchive()
                         "profile" -> routeViewModel.selectTab(VeilTab.PROFILE)
                         "reading" -> routeViewModel.selectTab(VeilTab.READING)
-                        "treasury", "sanctum" -> routeViewModel.openChamber(room)
+                        "treasury", "sanctum", "silent_names" ->
+                            routeViewModel.openChamber(room)
                     }
                 },
                 books = books,
@@ -537,7 +546,8 @@ fun VeilApp(
                 bookmarks = bookmarks,
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
-                memoryStateOverride = worldMemoryState
+                memoryStateOverride = worldMemoryState,
+                silentNamesSealed = silentNamesReceipt != null || silentNamesStorageBlocked
             )
 
             VeilTab.PATH -> PathScreen(
@@ -757,6 +767,25 @@ fun VeilApp(
                         profile = profile,
                         mutationLedger = worldMutationLedger,
                         onOpenBook = { book -> requestOpenBook(book) },
+                        onClose = routeViewModel::closeChamber
+                    )
+
+                    "silent_names" -> SilentNamesScreen(
+                        profile = requireNotNull(profile),
+                        receipt = silentNamesReceipt,
+                        storageBlocked = silentNamesStorageBlocked,
+                        onSeal = { choice, mode ->
+                            try {
+                                val committed = game.sealSilentNamesEncounter(choice, mode)
+                                silentNamesReceipt = committed.receipt
+                                silentNamesStorageBlocked = false
+                                Result.success(committed.receipt)
+                            } catch (cancelled: CancellationException) {
+                                throw cancelled
+                            } catch (error: Throwable) {
+                                Result.failure(error)
+                            }
+                        },
                         onClose = routeViewModel::closeChamber
                     )
 
