@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.LivingMirrorNote
+import com.veilreader.app.ui.theme.VeilQualityTier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -91,4 +92,59 @@ class LivingMirrorSurfacePolicyTest {
             proximity = 1f - index / 40f,
             ringCount = 1
         )
+    @Test
+    fun `quality tier reduces only spatial surface density while Index can retain all notes`() {
+        val full = livingMirrorPresentationPolicy(
+            qualityTier = VeilQualityTier.FULL,
+            reducedMotion = false
+        )
+        val balanced = livingMirrorPresentationPolicy(
+            qualityTier = VeilQualityTier.BALANCED,
+            reducedMotion = false
+        )
+        val essential = livingMirrorPresentationPolicy(
+            qualityTier = VeilQualityTier.ESSENTIAL,
+            reducedMotion = false
+        )
+
+        assertEquals(28, full.maxSurfaceNodes)
+        assertTrue(balanced.maxSurfaceNodes < full.maxSurfaceNodes)
+        assertTrue(essential.maxSurfaceNodes < balanced.maxSurfaceNodes)
+
+        val notes = (0 until 40).map(::note)
+        assertEquals(
+            essential.maxSurfaceNodes,
+            selectLivingMirrorSurfaceNotes(
+                notes = notes,
+                matches = emptySet(),
+                queryActive = false,
+                maxNodes = essential.maxSurfaceNodes
+            ).size
+        )
+        assertEquals(40, notes.size)
+    }
+
+    @Test
+    fun `reduced motion and essential quality remove material animation without changing facts`() {
+        assertTrue(
+            livingMirrorPresentationPolicy(
+                qualityTier = VeilQualityTier.FULL,
+                reducedMotion = false
+            ).animateMaterial
+        )
+        assertTrue(
+            !livingMirrorPresentationPolicy(
+                qualityTier = VeilQualityTier.FULL,
+                reducedMotion = true
+            ).animateMaterial
+        )
+        assertTrue(
+            !livingMirrorPresentationPolicy(
+                qualityTier = VeilQualityTier.ESSENTIAL,
+                reducedMotion = false
+            ).animateMaterial
+        )
+    }
+
+
 }
