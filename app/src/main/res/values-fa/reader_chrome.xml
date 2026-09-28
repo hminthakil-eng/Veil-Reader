@@ -36,4 +36,16 @@
     <string name="reader_theme_sepia">سپیا</string>
     <string name="reader_theme_dark">تیره</string>
     <string name="reader_theme_night">شب</string>
+    <string name="reader_console_eyebrow">تنظیم صفحهٔ مطالعه</string>
+    <string name="reader_console_title">صفحه را به سلیقهٔ خودت بساز</string>
+    <string name="reader_console_intro">تغییرها همان لحظه روی کتابِ باز اعمال می‌شوند.</string>
+    <string name="reader_console_done">تمام</string>
+    <string name="reader_preview_eyebrow">پیش‌نمایش زندهٔ صفحه</string>
+    <string name="reader_preview_chapter">فصل هفتم</string>
+    <string name="reader_preview_title">آن سوی پرده</string>
+    <string name="reader_preview_body">صفحه باید زیر داستان محو شود. قلم، فاصله و حرکت تنها زمانی دیده شوند که چشم را برای ادامهٔ خواندن یاری می‌کنند.</string>
+    <string name="reader_mode_curl">ورق</string>
+    <string name="reader_mode_slide">اسلاید</string>
+    <string name="reader_mode_paged">بی‌حرکت</string>
+    <string name="reader_mode_scroll">پیوسته</string>
 </resources>
