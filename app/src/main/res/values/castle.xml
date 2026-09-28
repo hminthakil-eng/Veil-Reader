@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="castle_hall_eyebrow">THE GREAT HALL · ARTIFACTS</string>
+    <string name="castle_hall_title">The Hall is not a menu</string>
+    <string name="castle_hall_body">Every destination manifests as an object. Registry mode keeps the same paths fast and conventional.</string>
+    <string name="castle_hall_mode">Hall</string>
+    <string name="castle_registry_mode">Registry</string>
+    <string name="castle_registry_talkback">TalkBack uses Registry presentation so artifacts follow reading order.</string>
+
+    <string name="castle_artifact_mirror_title">Living Mirror</string>
+    <string name="castle_artifact_mirror_awake">%1$d notes remember being revisited</string>
+    <string name="castle_artifact_mirror_dormant">Still water · write the first note to wake it</string>
+    <string name="castle_artifact_astrolabe_title">Astrolabe</string>
+    <string name="castle_artifact_astrolabe_subtitle">Observatory · factual relations in reading history</string>
+    <string name="castle_artifact_archive_title">Archive Gate</string>
+    <string name="castle_artifact_archive_subtitle">Volumes, collections, and the entrance to the Archive</string>
+    <string name="castle_artifact_ledger_title">Sealed Ledger</string>
+    <string name="castle_artifact_ledger_subtitle">Dossier · reading signature · durable record</string>
+    <string name="castle_artifact_ritual_title">Ritual Seal</string>
+    <string name="castle_artifact_ritual_ready">Advancement is ready</string>
+    <string name="castle_artifact_ritual_waiting">Path, rank, and the next transformation</string>
+    <string name="castle_artifact_reliquary_title">Reliquary</string>
+    <string name="castle_artifact_reliquary_subtitle">Treasury · relics, sigils, and reading-earned marks</string>
+    <string name="castle_artifact_door_title">Veiled Door</string>
+    <string name="castle_artifact_door_subtitle">Inner Sanctum · rare permanent records</string>
+    <string name="castle_artifact_reading_title">Reading Seat</string>
+    <string name="castle_artifact_reading_subtitle">Return to the quiet center of your reading life</string>
+
+    <string name="castle_artifact_awakened">AWAKENED</string>
+    <string name="castle_artifact_dormant">DORMANT</string>
+    <string name="castle_artifact_sealed_rank">SEALED · RANK %1$d</string>
+    <string name="castle_artifact_open">OPEN</string>
+    <string name="castle_artifact_semantics_open">%1$s. %2$s. Open.</string>
+    <string name="castle_artifact_semantics_sealed">%1$s. Sealed until rank %2$d.</string>
+</resources>
