@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,7 +62,7 @@ fun ProfileScreen(
     highlightCount: Int,
     dailyGoalMinutes: Int,
     castleTitle: String,
-    equippedSigilName: String?,
+    equippedSigilId: String?,
     books: List<Book> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
@@ -73,6 +74,9 @@ fun ProfileScreen(
     val p = profile
     val language = LocalVeilLanguage.current
     val scriptGroup = LocalVeilScriptGroup.current
+    val pathPresentation = localizedPathPresentation(p.path, p.rankIndex)
+    val localizedCastleTitle = localizedCastleTitle(castleTitle, p)
+    val equippedSigilName = equippedSigilId?.let { localizedEquippedSigilName(it) }
     val discoveriesById = remember(discoveries) { discoveries.associateBy { it.id } }
     val revealedDiscoveries = veiledDiscoveryPresentations.count { it.id in discoveriesById }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
@@ -144,10 +148,10 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         ProfileGrandMasthead(
-            castleTitle = castleTitle,
+            castleTitle = localizedCastleTitle,
             pathLabel = listOf(
-                localizedMetadataValue(p.path.name, language),
-                localizedMetadataValue(p.rankName, language)
+                localizedMetadataValue(pathPresentation.name, language),
+                localizedMetadataValue(pathPresentation.rankName, language)
             ).joinToString(appMetadataDivider(scriptGroup)),
             level = p.level,
             recordedSessions = dossierHistory.recordedSessionCount
@@ -165,8 +169,8 @@ fun ProfileScreen(
         }
 
         ProfileSectionHeading(
-            eyebrow = "Recorded history",
-            title = "Reading record"
+            eyebrow = stringResource(R.string.profile_record_eyebrow),
+            title = stringResource(R.string.profile_record_title)
         )
         DossierRecordGrid(
             profile = p,
@@ -180,11 +184,11 @@ fun ProfileScreen(
         )
 
         ProfileSectionHeading(
-            eyebrow = "Rhythm",
-            title = "Daily reading goal"
+            eyebrow = stringResource(R.string.profile_rhythm_eyebrow),
+            title = stringResource(R.string.profile_goal_title)
         )
         Text(
-            "Your first daily quest follows this target. Choose a pace that supports reading instead of turning it into a chore.",
+            stringResource(R.string.profile_goal_body),
             color = VeilPalette.Mist,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -207,7 +211,7 @@ fun ProfileScreen(
                             .weight(1f)
                             .heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.profile_minutes_short, minutes), style = MaterialTheme.typography.labelMedium)
                     }
                 } else {
                     OutlinedButton(
@@ -219,26 +223,26 @@ fun ProfileScreen(
                             .weight(1f)
                             .heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.profile_minutes_short, minutes), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
         }
 
         ProfileSectionHeading(
-            eyebrow = "Known marks",
-            title = "Sigil registry",
-            trailing = "${p.earnedSigils.size} awakened"
+            eyebrow = stringResource(R.string.profile_sigils_eyebrow),
+            title = stringResource(R.string.profile_sigils_title),
+            trailing = stringResource(R.string.profile_sigils_awakened, p.earnedSigils.size)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
             listOf(
-                Triple("first_hour", "First Hour", p.minutesRead to 60),
-                Triple("passage_keeper", "Passage Keeper", highlightCount to 10),
-                Triple("seven_days", "Seven-Day Journey", p.streakDays to 7),
-                Triple("ten_tomes", "Ten Tomes", p.booksFinished to 10),
-                Triple("first_threshold", "First Threshold", p.rankIndex to 1)
-            ).forEachIndexed { index, (id, name, progress) ->
+                Triple("first_hour", R.string.profile_sigil_first_hour, p.minutesRead to 60),
+                Triple("passage_keeper", R.string.profile_sigil_passage_keeper, highlightCount to 10),
+                Triple("seven_days", R.string.profile_sigil_seven_days, p.streakDays to 7),
+                Triple("ten_tomes", R.string.profile_sigil_ten_tomes, p.booksFinished to 10),
+                Triple("first_threshold", R.string.profile_sigil_first_threshold, p.rankIndex to 1)
+            ).forEachIndexed { index, (id, nameRes, progress) ->
                 val (value, target) = progress
                 val earned = id in p.earnedSigils
                 VeilReveal(
@@ -246,7 +250,7 @@ fun ProfileScreen(
                     distance = 7.dp
                 ) {
                     SigilProgressRow(
-                        name = name,
+                        name = stringResource(nameRes),
                         value = value,
                         target = target,
                         earned = earned
@@ -256,12 +260,16 @@ fun ProfileScreen(
         }
 
         ProfileSectionHeading(
-            eyebrow = "Restricted folio",
-            title = "Veiled discoveries",
-            trailing = "$revealedDiscoveries/${veiledDiscoveryPresentations.size} revealed"
+            eyebrow = stringResource(R.string.profile_discoveries_eyebrow),
+            title = stringResource(R.string.profile_discoveries_title),
+            trailing = stringResource(
+                R.string.profile_discoveries_revealed,
+                revealedDiscoveries,
+                veiledDiscoveryPresentations.size
+            )
         )
         Text(
-            "Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.",
+            stringResource(R.string.profile_discoveries_body),
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
         )
@@ -287,7 +295,7 @@ fun ProfileScreen(
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
         ) {
-            Text("Open Hidden Archive", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.profile_open_archive), style = MaterialTheme.typography.labelMedium)
         }
     }
     }
