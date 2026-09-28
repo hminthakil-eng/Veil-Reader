@@ -52,6 +52,9 @@ private val storyRelicPresentations = listOf(
 internal fun storyRelicPresentationFor(relicId: String): StoryRelicPresentation? =
     storyRelicPresentations[relicId]
 
+internal fun knownStoryRelicPresentationIds(): Set<String> =
+    storyRelicPresentations.keys
+
 internal fun storyRelicDisplayModels(
     records: Iterable<StoryRelicRecord>
 ): List<StoryRelicDisplayModel> =
