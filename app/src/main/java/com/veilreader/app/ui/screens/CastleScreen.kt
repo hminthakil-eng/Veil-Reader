@@ -275,7 +275,11 @@ internal data class GreatHallArtifact(
 internal fun greatHallArtifacts(
     profile: ReaderProfile,
     memoryState: CastleMemoryState,
-    worldProjection: WorldProgressionProjection,
+    worldProjection: WorldProgressionProjection = deriveWorldProgressionProjection(
+        profile = profile,
+        quests = emptyList(),
+        memory = memoryState
+    ),
     livingMirrorNoteCount: Int,
     canAdvance: Boolean
 ): List<GreatHallArtifact> =
