@@ -74,4 +74,7 @@
     <string name="bookplate_ex_libris">EX LIBRIS · VEIL READER</string>
     <string name="bookplate_sealed">SEALED BOOKPLATE</string>
     <string name="bookplate_missing">An inscription has not yet appeared.</string>
+    <string name="treasury_summary_reading">%1$d READING RELICS</string>
+    <string name="treasury_summary_story">%1$d STORY RELICS</string>
+    <string name="treasury_summary_bookplates">%1$d BOOKPLATES</string>
 </resources>
