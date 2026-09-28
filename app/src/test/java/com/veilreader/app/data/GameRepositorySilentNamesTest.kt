@@ -12,6 +12,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -123,20 +124,55 @@ class GameRepositorySilentNamesTest {
     }
 
     @Test
-    fun `unsupported receipt is retained and fails closed`() {
+    fun `unsupported receipt is retained visible and fails closed without read crash`() {
         val prefs = context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE)
         val raw = """{"encounterId":"silent_names_window","contentVersion":99}"""
         assertTrue(prefs.edit().putString("encounter:silent_names_window:receipt", raw).commit())
 
         val repository = GameRepository(context)
+        val state = repository.silentNamesStorageState()
+        assertTrue(state is SilentNamesStorageState.Unsupported)
+        assertEquals(99, (state as SilentNamesStorageState.Unsupported).contentVersion)
+        assertEquals(raw, state.raw)
+        assertNull(repository.silentNamesReceipt())
+        assertFalse(repository.ownsSilentNamesReward())
+
         assertThrows(IllegalStateException::class.java) {
-            runBlocking { repository.sealSilentNamesEncounter(
-                choice = SilentNamesChoice.EXAMINE_SEAL,
-                mode = SilentNamesMode.STORY,
-                nowEpochMs = { 4_000L }
-            ) }
+            runBlocking {
+                repository.sealSilentNamesEncounter(
+                    choice = SilentNamesChoice.EXAMINE_SEAL,
+                    mode = SilentNamesMode.STORY,
+                    nowEpochMs = { 4_000L }
+                )
+            }
         }
 
+        assertEquals(raw, prefs.getString("encounter:silent_names_window:receipt", null))
+    }
+
+    @Test
+    fun `corrupt receipt is retained visible and cannot be replayed into a reward`() {
+        val prefs = context.getSharedPreferences("veil_game_v1", Context.MODE_PRIVATE)
+        val raw = "{not-json"
+        assertTrue(prefs.edit().putString("encounter:silent_names_window:receipt", raw).commit())
+
+        val repository = GameRepository(context)
+        val state = repository.silentNamesStorageState()
+        assertTrue(state is SilentNamesStorageState.Corrupt)
+        assertEquals(raw, (state as SilentNamesStorageState.Corrupt).raw)
+        assertNull(repository.silentNamesReceipt())
+        assertFalse(repository.ownsSilentNamesReward())
+
+        assertThrows(IllegalStateException::class.java) {
+            runBlocking {
+                repository.sealSilentNamesEncounter(
+                    choice = SilentNamesChoice.FOLLOW_LIGHT,
+                    mode = SilentNamesMode.DICE,
+                    nextD20 = { 20 },
+                    nowEpochMs = { 4_100L }
+                )
+            }
+        }
         assertEquals(raw, prefs.getString("encounter:silent_names_window:receipt", null))
     }
 
