@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.os.SystemClock
+import android.view.HapticFeedbackConstants
 import kotlin.math.abs
 import kotlin.math.max
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +43,7 @@ internal class SlideNavigationInputListener(
     private var lastSampleAtMillis = 0L
     private var lastDistance = 0f
     private var releaseVelocityPxPerSec = 0f
+    private var commitHapticSent = false
 
     override fun onTap(event: TapEvent): Boolean {
         if (!slideModeEnabled() || state.active) return false
@@ -94,6 +96,7 @@ internal class SlideNavigationInputListener(
         lastSampleAtMillis = SystemClock.uptimeMillis()
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
+        commitHapticSent = false
         if (!isReducedMotion()) {
             state.begin(navigator.publicationView)
         }
@@ -117,6 +120,7 @@ internal class SlideNavigationInputListener(
         if (spec != null) {
             state.updateDrag(constrainedOffset(spec.side, event.offset.x))
             sampleVelocity(spec, event)
+            maybeSignalCommitThreshold(spec, event)
         }
         return true
     }
@@ -147,6 +151,7 @@ internal class SlideNavigationInputListener(
             slideProgress = state.dragProgress(),
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
+        if (commit) signalCommitThreshold()
 
         scope.launch {
             navigationJob?.join()
@@ -278,6 +283,27 @@ internal class SlideNavigationInputListener(
             PaperCurlSide.LEFT -> offsetX
         }.coerceAtLeast(0f)
 
+    private fun maybeSignalCommitThreshold(spec: TurnSpec, event: DragEvent) {
+        if (commitHapticSent) return
+        val view = navigator.publicationView
+        val crossed = shouldCommitSlideTurn(
+            inwardDistance = inwardDistance(spec.side, event.offset.x),
+            width = view.width.toFloat(),
+            density = view.resources.displayMetrics.density,
+            slideProgress = state.dragProgress(),
+            releaseVelocityPxPerSec = releaseVelocityPxPerSec
+        )
+        if (crossed) signalCommitThreshold()
+    }
+
+    private fun signalCommitThreshold() {
+        if (commitHapticSent) return
+        commitHapticSent = true
+        navigator.publicationView.performHapticFeedback(
+            HapticFeedbackConstants.CLOCK_TICK
+        )
+    }
+
     private fun sampleVelocity(spec: TurnSpec, event: DragEvent) {
         val now = SystemClock.uptimeMillis()
         val distance = inwardDistance(spec.side, event.offset.x)
@@ -323,6 +349,7 @@ internal class SlideNavigationInputListener(
         lastSampleAtMillis = 0L
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
+        commitHapticSent = false
     }
 
     private fun visualDirectionSign(side: PaperCurlSide): Float =

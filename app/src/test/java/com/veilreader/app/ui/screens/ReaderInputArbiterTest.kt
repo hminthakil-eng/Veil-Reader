@@ -172,8 +172,8 @@ class ReaderInputArbiterTest {
     }
 
     @Test
-    fun `directional edge taps belong only to paginated EPUB slide mode`() {
-        assertTrue(
+    fun `directional edge taps belong only to static paged EPUB mode`() {
+        assertFalse(
             shouldUseDirectionalTapNavigation(
                 format = BookFormat.EPUB,
                 scroll = false,

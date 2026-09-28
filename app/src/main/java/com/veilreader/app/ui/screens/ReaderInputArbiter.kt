@@ -23,7 +23,7 @@ internal fun shouldUseDirectionalTapNavigation(
 ): Boolean =
     format == BookFormat.EPUB &&
         !scroll &&
-        pageTurnStyle != PageTurnStyle.PAPER
+        pageTurnStyle == PageTurnStyle.NONE
 
 /**
  * Page-turn style is an EPUB-only preference.
@@ -43,7 +43,7 @@ internal fun shouldAnimateDirectionalNavigation(
  * One Veil input listener is registered with Readium.
  *
  * Internal delegate order is product policy, not an incidental registration order:
- * paper turn -> directional edge navigation -> Veil chrome -> renderer fallback.
+ * paper curl -> Veil slide -> static paged navigation -> directional keys -> Veil chrome -> renderer fallback.
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(

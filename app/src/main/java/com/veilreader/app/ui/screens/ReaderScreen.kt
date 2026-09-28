@@ -190,6 +190,7 @@ fun ReaderScreen(
     }
     val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
     val reducedMotion = LocalVeilReducedMotion.current
+    val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     val slidePageState = remember(opened.book.id) { SlidePageState() }
     var showAppearance by remember { mutableStateOf(false) }
@@ -601,7 +602,7 @@ fun ReaderScreen(
                             latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
                     },
                     scope = scope,
-                    isReducedMotion = { reducedMotion },
+                    isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
                         readerViewModel.onUserInteraction()
                         controlsVisible = false
@@ -629,7 +630,7 @@ fun ReaderScreen(
                         )
                     },
                     scope = scope,
-                    isReducedMotion = { reducedMotion },
+                    isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
                         readerViewModel.onUserInteraction()
                         controlsVisible = false
@@ -673,7 +674,7 @@ fun ReaderScreen(
             val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
                 isAnimated = {
-                    !reducedMotion &&
+                    !latestReducedMotion.value &&
                         shouldAnimateDirectionalNavigation(
                             format = opened.format,
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
