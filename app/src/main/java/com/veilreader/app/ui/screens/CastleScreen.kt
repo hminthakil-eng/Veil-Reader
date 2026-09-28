@@ -58,7 +58,8 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PathArchitecturalMotif
 import com.veilreader.app.domain.PathWorldSignature
 import com.veilreader.app.domain.ReaderProfile
-import com.veilreader.app.domain.SilentNamesReceipt
+import com.veilreader.app.domain.StoryRelicCatalog
+import com.veilreader.app.domain.StoryRelicRecord
 import com.veilreader.app.domain.RitualAftermathRecord
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.WorldMutationKind
@@ -114,7 +115,7 @@ fun CastleScreen(
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
     memoryStateOverride: CastleMemoryState? = null,
-    silentNamesReceipt: SilentNamesReceipt? = null,
+    storyRelics: List<StoryRelicRecord> = emptyList(),
     silentNamesSealed: Boolean = false
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
@@ -151,15 +152,18 @@ fun CastleScreen(
             nowEpochMs = castleNowEpochMs
         )
     }
-    val mutationLedger = remember(profile, memoryState, silentNamesReceipt) {
+    val mutationLedger = remember(profile, memoryState, storyRelics) {
         deriveWorldMutationLedger(
             profile = profile,
             memory = memoryState,
-            silentNamesReceipt = silentNamesReceipt
+            storyRelics = storyRelics
         )
     }
-    val storyRelicManifested = remember(mutationLedger) {
-        mutationLedger.entries.any { it.kind == WorldMutationKind.STORY_RELIC }
+    val storyRelicManifested = storyRelics.isNotEmpty()
+    val storyRelicSeedSalt = remember(storyRelics) {
+        storyRelics.sumOf { relic ->
+            StoryRelicCatalog.definitionFor(relic.relicId)?.atmosphereSeedSalt ?: 0
+        }
     }
     val ritualAfterglow = remember(profile.ritualAftermath, castleNowEpochMs) {
         ritualAfterglowIntensity(
@@ -178,7 +182,7 @@ fun CastleScreen(
         profile.rankIndex * 31 +
             memoryState.volumeCount +
             worldProjection.stage.ordinal * 101 +
-            if (storyRelicManifested) 211 else 0
+            storyRelicSeedSalt
     val castleAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
