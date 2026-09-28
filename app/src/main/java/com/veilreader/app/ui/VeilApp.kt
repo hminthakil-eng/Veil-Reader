@@ -780,6 +780,7 @@ fun VeilApp(
                         availableTitles = game.availableCastleTitles(),
                         discoveries = discoveryRecords,
                         mutationLedger = worldMutationLedger,
+                        highlightCount = highlights.size,
                         onSelectTitle = { title ->
                             if (!game.selectCastleTitle(title)) {
                                 errorMessage = "That Castle title is still sealed."

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.domain.mysteryChainSnapshot
 import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.WorldMutationRealm
@@ -910,6 +911,7 @@ fun SanctumScreen(
     availableTitles: List<String>,
     discoveries: List<VeiledDiscoveryRecord> = emptyList(),
     mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
+    highlightCount: Int = 0,
     onSelectTitle: (String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -1011,7 +1013,11 @@ fun SanctumScreen(
             sovereignReady = sovereignReady
         )
 
-        SanctumDiscoveryLedger(discoveries)
+        SanctumDiscoveryLedger(
+            profile = profile,
+            highlightCount = highlightCount,
+            discoveries = discoveries
+        )
 
         ArchiveChamberHeading(
             eyebrow = "Permanent identity",
@@ -1069,6 +1075,8 @@ fun SanctumScreen(
 
 @Composable
 private fun SanctumDiscoveryLedger(
+    profile: ReaderProfile,
+    highlightCount: Int,
     discoveries: List<VeiledDiscoveryRecord>
 ) {
     val recordsById = discoveries.associateBy { it.id }
@@ -1084,13 +1092,18 @@ private fun SanctumDiscoveryLedger(
             trailing = "$revealedKnown/${veiledDiscoveryPresentations.size}"
         )
         Text(
-            "The Sanctum reads only durable discovery records. Once revealed, a fragment does not vanish when a temporary signal changes.",
+            "The Sanctum reveals one fragment at a time. It never exposes the full condition before discovery, and a completed record never reseals.",
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
         )
 
         veiledDiscoveryPresentations.forEachIndexed { index, presentation ->
             val record = recordsById[presentation.id]
+            val chain = mysteryChainSnapshot(
+                id = presentation.id,
+                profile = profile,
+                highlightCount = highlightCount
+            )
             VeilReveal(delayMillis = 55 + index * 35, distance = 6.dp) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
@@ -1151,12 +1164,19 @@ private fun SanctumDiscoveryLedger(
                                         "PERMANENT · RECORDED ${formatSanctumDate(timestamp)}"
                                     } ?: "PERMANENT · RECORD DATE UNKNOWN"
                                 } else {
-                                    "CONDITION VEILED"
+                                    "VEILED THREAD · FRAGMENT ${(chain?.visibleFragmentIndex ?: 0) + 1}"
                                 },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (record != null) VeilPalette.Spirit.copy(alpha = 0.82f)
-                                else VeilPalette.Mist.copy(alpha = 0.38f)
+                                else VeilPalette.Mist.copy(alpha = 0.46f)
                             )
+                            if (record == null && chain != null) {
+                                Text(
+                                    chain.visibleClue,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = VeilPalette.Mist.copy(alpha = 0.66f)
+                                )
+                            }
                         }
                     }
                 }
