@@ -36,4 +36,16 @@
     <string name="reader_theme_sepia">Sepia</string>
     <string name="reader_theme_dark">Dark</string>
     <string name="reader_theme_night">Night</string>
+    <string name="reader_console_eyebrow">READING CONSOLE</string>
+    <string name="reader_console_title">Tune the open page</string>
+    <string name="reader_console_intro">Changes appear on the open book as you make them.</string>
+    <string name="reader_console_done">DONE</string>
+    <string name="reader_preview_eyebrow">LIVE PAGE PREVIEW</string>
+    <string name="reader_preview_chapter">CHAPTER VII</string>
+    <string name="reader_preview_title">Beyond the Veil</string>
+    <string name="reader_preview_body">The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.</string>
+    <string name="reader_mode_curl">CURL</string>
+    <string name="reader_mode_slide">SLIDE</string>
+    <string name="reader_mode_paged">PAGED</string>
+    <string name="reader_mode_scroll">SCROLL</string>
 </resources>
