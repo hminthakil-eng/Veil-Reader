@@ -70,30 +70,26 @@ data class WorldMutationLedger(
 fun deriveWorldMutationLedger(
     profile: ReaderProfile,
     memory: CastleMemoryState,
-    silentNamesReceipt: SilentNamesReceipt? = null
+    storyRelics: List<StoryRelicRecord> = emptyList()
 ): WorldMutationLedger {
     val entries = buildList {
-        silentNamesReceipt
-            ?.takeIf(SilentNamesEncounter::isValid)
-            ?.let {
-                add(
-                    WorldMutationEntry(
-                        id = "story-relic:${SilentNamesEncounter.REWARD_ID}",
-                        kind = WorldMutationKind.STORY_RELIC,
-                        realms = setOf(
-                            WorldMutationRealm.GREAT_HALL,
-                            WorldMutationRealm.TREASURY
-                        ),
-                        evidence = WorldMutationEvidence.STORY_RECEIPT,
-                        evidenceCount = 1,
-                        intensity = 1f,
-                        durable = true,
-                        title = "Lantern of Remembrance",
-                        inscription =
-                            "A sealed choice in the Hall has become a permanent story relic. It records no reading claim and grants no rank or access."
-                    )
+        normalizeStoryRelics(storyRelics).forEach { relic ->
+            val definition = StoryRelicCatalog.definitionFor(relic.relicId)
+                ?: return@forEach
+            add(
+                WorldMutationEntry(
+                    id = "story-relic:${relic.relicId}",
+                    kind = WorldMutationKind.STORY_RELIC,
+                    realms = definition.visibleRealms,
+                    evidence = WorldMutationEvidence.STORY_RECEIPT,
+                    evidenceCount = 1,
+                    intensity = 1f,
+                    durable = true,
+                    title = definition.worldTitle,
+                    inscription = definition.worldInscription
                 )
-            }
+            )
+        }
 
         if (memory.returnAwakening > 0.001f) {
             add(
