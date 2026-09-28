@@ -57,6 +57,20 @@ class GreatHallArtifactPolicyTest {
     }
 
     @Test
+    fun `Silent Names is an optional story portal not a ninth rank-gated artifact`() {
+        val artifacts = greatHallArtifacts(
+            profile = profile(0),
+            memoryState = CastleMemoryState.EMPTY,
+            livingMirrorNoteCount = 0,
+            canAdvance = false
+        )
+
+        assertEquals("silent_names", SILENT_NAMES_HALL_ROUTE)
+        assertFalse(artifacts.any { it.route == SILENT_NAMES_HALL_ROUTE })
+        assertEquals(8, artifacts.size)
+    }
+
+    @Test
     fun `artifact unlock ranks preserve existing progression authority`() {
         val artifacts = greatHallArtifacts(
             profile = profile(0),
