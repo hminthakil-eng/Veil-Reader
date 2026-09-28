@@ -175,6 +175,14 @@ class GameRepository(context: Context) {
         readSilentNamesReceiptLocked()
     }
 
+    /** An unconfirmed same-process write can be retried without presenting a different choice. */
+    fun pendingSilentNamesAttempt(): Pair<SilentNamesChoice, SilentNamesMode>? =
+        synchronized(SILENT_NAMES_LOCK) {
+            SILENT_NAMES_UNCERTAIN_WRITES[prefs]
+                ?.let(::decodeSilentNamesReceipt)
+                ?.let { it.choice to it.mode }
+        }
+
     /** The cosmetic lantern is derived from the one committed receipt; there is no second award ledger. */
     fun ownsSilentNamesReward(): Boolean =
         silentNamesReceipt()?.rewardId == SilentNamesEncounter.REWARD_ID
