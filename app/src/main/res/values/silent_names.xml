@@ -32,4 +32,6 @@
     <string name="silent_names_treasury_provenance">PROVENANCE · SEALED HALL CHOICE</string>
     <string name="silent_names_treasury_recorded">RECORDED · %1$s</string>
     <string name="silent_names_treasury_path">PATH AT CHOICE · %1$s</string>
+    <string name="silent_names_mode_story_short">STORY MODE</string>
+    <string name="silent_names_mode_dice_short">DICE MODE</string>
 </resources>
