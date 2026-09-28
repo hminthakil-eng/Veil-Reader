@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="reader_surface_description">Book reading surface</string>
+    <string name="reader_toggle_controls">Show or hide reader controls</string>
+    <string name="reader_close">Close reader</string>
+    <string name="reader_percent_read">%1$d percent read</string>
+    <string name="reader_notes">Notes</string>
+    <string name="reader_mark">Mark</string>
+    <string name="reader_type">Type</string>
+    <string name="reader_zoom">Zoom</string>
+    <string name="reader_bookmark_saved">Bookmark saved</string>
+    <string name="reader_bookmark_exists">This location is already bookmarked</string>
+    <string name="reader_quick_appearance">Open reading appearance and page movement controls</string>
+    <string name="reader_quick_pdf">Open PDF reading and zoom controls</string>
+    <string name="reader_quick_label">READING</string>
+    <string name="reader_return_eyebrow">RETURN</string>
+    <string name="reader_previous_location">Previous location</string>
+</resources>
