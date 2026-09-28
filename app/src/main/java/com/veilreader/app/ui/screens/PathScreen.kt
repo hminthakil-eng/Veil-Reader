@@ -1147,7 +1147,7 @@ private fun AdvancementCeremonyDialog(
                 .background(VeilPalette.Ink)
                 .grayfogAtmosphere(
                     realm = VeilRealm.RITUAL,
-                    seed = profile.path.id.hashCode() xor nextRank.hashCode(),
+                    seed = profile.path.id.hashCode() xor (profile.rankIndex + 1),
                     intensity = 1.0f,
                     temporalPhase = currentVeilTemporalPhase()
                 )
