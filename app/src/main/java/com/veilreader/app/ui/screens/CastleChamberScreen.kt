@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.SilentNamesReceipt
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.mysteryChainSnapshot
 import com.veilreader.app.domain.WorldMutationKind
@@ -313,6 +314,7 @@ fun TreasuryScreen(
     profile: ReaderProfile,
     equippedSigil: String?,
     mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
+    silentNamesReceipt: SilentNamesReceipt? = null,
     onEquip: (String?) -> Unit,
     onClose: () -> Unit
 ) {
@@ -404,6 +406,17 @@ fun TreasuryScreen(
             realm = WorldMutationRealm.TREASURY
         )
 
+        silentNamesReceipt?.let { receipt ->
+            ArchiveChamberHeading(
+                eyebrow = "Authored relic",
+                title = "Hall witness",
+                trailing = "1 SEALED"
+            )
+            VeilReveal(delayMillis = 32, distance = 8.dp) {
+                SilentNamesLanternRelic(receipt)
+            }
+        }
+
         VeilReveal(delayMillis = 40, distance = 10.dp) {
             TreasuryPedestal(
                 equipped = equipped,
@@ -484,6 +497,82 @@ fun TreasuryScreen(
         }
     }
     }
+}
+
+@Composable
+private fun SilentNamesLanternRelic(receipt: SilentNamesReceipt) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = VeilPalette.RaisedIron.copy(alpha = 0.82f),
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f))
+    ) {
+        Row(
+            modifier = Modifier.padding(VeilSpacing.md),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(78.dp)
+                    .border(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.42f),
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "◈",
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = VeilPalette.Brass
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        R.string.silent_names_treasury_eyebrow
+                    ),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        R.string.silent_names_reward_title
+                    ),
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        R.string.silent_names_reward_body
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist
+                )
+                Text(
+                    text = androidx.compose.ui.res.stringResource(
+                        silentNamesTreasuryEchoRes(receipt.pathId)
+                    ),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Brass.copy(alpha = 0.86f)
+                )
+            }
+        }
+    }
+}
+
+private fun silentNamesTreasuryEchoRes(pathId: String): Int = when (pathId) {
+    "oracle" -> R.string.silent_names_echo_oracle
+    "dreamwalker" -> R.string.silent_names_echo_dreamwalker
+    "archivist" -> R.string.silent_names_echo_archivist
+    "vanguard" -> R.string.silent_names_echo_vanguard
+    "nocturne" -> R.string.silent_names_echo_nocturne
+    "artificer" -> R.string.silent_names_echo_artificer
+    else -> R.string.silent_names_echo_neutral
 }
 
 @Composable
