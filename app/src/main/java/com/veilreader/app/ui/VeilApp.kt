@@ -36,6 +36,7 @@ import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.data.SilentNamesStorageState
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
@@ -95,12 +96,17 @@ fun VeilApp(
     }
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
-    val initialSilentNamesRead = remember(game) { runCatching { game.silentNamesReceipt() } }
+    val initialSilentNamesState = remember(game) { game.silentNamesStorageState() }
     var silentNamesReceipt by remember(game) {
-        mutableStateOf(initialSilentNamesRead.getOrNull())
+        mutableStateOf(
+            (initialSilentNamesState as? SilentNamesStorageState.Valid)?.receipt
+        )
     }
     var silentNamesStorageBlocked by remember(game) {
-        mutableStateOf(initialSilentNamesRead.isFailure)
+        mutableStateOf(
+            initialSilentNamesState is SilentNamesStorageState.Unsupported ||
+                initialSilentNamesState is SilentNamesStorageState.Corrupt
+        )
     }
     val readerEngine = remember(context) { ReadiumEngine(context) }
     val routeViewModel: VeilAppViewModel = viewModel()
@@ -547,7 +553,9 @@ fun VeilApp(
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
                 memoryStateOverride = worldMemoryState,
-                silentNamesSealed = silentNamesReceipt != null || silentNamesStorageBlocked
+                silentNamesSealed = silentNamesReceipt != null,
+                silentNamesReceiptPathId = silentNamesReceipt?.pathId,
+                silentNamesStorageBlocked = silentNamesStorageBlocked
             )
 
             VeilTab.PATH -> PathScreen(
