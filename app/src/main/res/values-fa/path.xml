@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_aspect_oracle">بصیرت</string>
+    <string name="path_invocation_oracle">آنچه پنهان است، هنوز می‌تواند فهمیده شود.</string>
+    <string name="path_aspect_dreamwalker">شگفتی</string>
+    <string name="path_invocation_dreamwalker">هر صفحه دری است که پیش از این وجود نداشت.</string>
+    <string name="path_aspect_archivist">حافظه</string>
+    <string name="path_invocation_archivist">آنچه آموخته می‌شود، سزاوار جایی برای ماندن است.</string>
+    <string name="path_aspect_vanguard">پیشروی</string>
+    <string name="path_invocation_vanguard">پیش رفتن یک انضباط است، نه یک سرعت.</string>
+    <string name="path_aspect_nocturne">سایه</string>
+    <string name="path_invocation_nocturne">بعضی حقیقت‌ها فقط پس از کم‌نور شدن فانوس دیده می‌شوند.</string>
+    <string name="path_aspect_artificer">ساختن</string>
+    <string name="path_invocation_artificer">سازوکار را که بفهمی، شکل معجزه عوض می‌شود.</string>
+    <string name="path_aspect_fallback">مطالعه</string>
+    <string name="path_invocation_fallback">یک مسیر با بازگشت مداوم به صفحه شکل می‌گیرد.</string>
+    <string name="path_invocation_other_fallback">راهی دیگر در میان آرشیو.</string>
+
+    <string name="path_progression_eyebrow">پیشرفت</string>
+    <string name="path_progression_title">صعود تو</string>
+    <string name="path_other_eyebrow">مسیرهای دیگر</string>
+    <string name="path_other_choose_title">آنچه با تو هماهنگ است انتخاب کن</string>
+    <string name="path_other_rooted_title">انتخابت ریشه گرفته است</string>
+    <string name="path_other_choose_body">تا پیش از نخستین ارتقا می‌توانی مسیر را عوض کنی. مسیر فقط حال‌وهوای پیشرفت را تغییر می‌دهد و هرگز دسترسی به کتاب‌هایت را محدود نمی‌کند.</string>
+    <string name="path_other_rooted_body">مسیرهای دیگر به‌عنوان بخشی از جهان باقی می‌مانند. مسیر فعلی تو برای این سفر ثابت شده است.</string>
+
+    <string name="path_masthead_primary">مسیرِ %1$s</string>
+    <string name="path_masthead_rank">رتبه %1$d</string>
+    <string name="path_threshold_complete">مسیر کامل شده</string>
+    <string name="path_threshold_next">آستانه بعدی</string>
+    <string name="path_threshold_open">مسیر همچنان باز است</string>
+    <string name="path_advancement_explainer">ارتقا با زیستنِ مسیر، فهم آنچه می‌خوانی و حفظ پایداری در تمرین به‌دست می‌آید. امتیاز تجربه نمی‌تواند جای هیچ‌یک از مهرها را بگیرد.</string>
+    <string name="path_dissonance">ناهم‌خوانی · %1$d٪ · یکی از مهرها سریع‌تر از بقیه پیش می‌رود. چیزی از دست نمی‌رود؛ پیش از مراسم، شیوهٔ مطالعه‌ات را گسترده‌تر کن.</string>
+    <string name="path_perform_advancement">اجرای مراسم ارتقا</string>
+    <string name="path_complete_three_seals">سه مهر را کامل کن</string>
+    <string name="path_rank_label">رتبه %1$s</string>
+    <string name="path_current_seal">مهر فعلی</string>
+    <string name="path_sealed">مهرشده</string>
+    <string name="path_choose_this">انتخاب این مسیر</string>
+    <string name="path_locked_after_first">پس از نخستین ارتقا قفل شده</string>
+
+    <string name="ritual_stage_invocation">مراسم ارتقا</string>
+    <string name="ritual_stage_sealing">مهر در حال دگرگونی است</string>
+    <string name="ritual_stage_revealed">رتبه بیدار شد</string>
+    <string name="ritual_stage_rejected">ارتقا تأیید نشد</string>
+    <string name="ritual_permanence">این نشان ماندگار است. زبان مسیرت را تغییر می‌دهد، نه دسترسی به کتاب‌هایت را.</string>
+    <string name="ritual_advance_to">ارتقا به %1$s</string>
+    <string name="ritual_not_yet">فعلاً نه</string>
+    <string name="ritual_sealing_progress">در حال مهر کردن ارتقا…</string>
+    <string name="ritual_revealed_body">مسیر تو اکنون این رتبه را بر خود دارد. مهر آن وارد تالار بزرگ، خزانه و قدس درونی شده است.</string>
+    <string name="ritual_continue">ادامه</string>
+    <string name="ritual_rejected_body">مسیر یا مراسم فعلی دیگر با این درخواست هم‌خوان نیست. ببند و پیشرفتت را دوباره بررسی کن.</string>
+    <string name="ritual_close">بستن</string>
+    <string name="path_level">سطح %1$d</string>
+    <string name="path_xp">%1$d/%2$d امتیاز تجربه</string>
+    <string name="path_mastered">کامل‌شده</string>
+</resources>
