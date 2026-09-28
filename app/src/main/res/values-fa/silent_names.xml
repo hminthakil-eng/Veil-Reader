@@ -54,4 +54,7 @@
     <string name="silent_names_hall_afterglow_vanguard">رگه‌ای نازک از اخگر در قاب برنجی به دام افتاده است.</string>
     <string name="silent_names_hall_afterglow_nocturne">سایهٔ نگهبان هنوز اندکی زودتر از بدنش حرکت می‌کند.</string>
     <string name="silent_names_hall_afterglow_artificer">دندانه‌های پنهان هنوز روی لحظهٔ مهر شدن رکورد متوقف مانده‌اند.</string>
+    <string name="silent_names_treasury_eyebrow">یادگار روایی</string>
+    <string name="silent_names_treasury_section_title">شاهد تالار</string>
+    <string name="silent_names_treasury_sealed_count">۱ مهرشده</string>
 </resources>
