@@ -33,11 +33,14 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.SilentNamesEncounter
+import com.veilreader.app.domain.SilentNamesReceipt
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.mysteryChainSnapshot
 import com.veilreader.app.domain.WorldMutationKind
@@ -104,6 +107,9 @@ internal data class RelicUnlockState(
     val target: Int,
     val evidenceLabel: String
 )
+
+internal fun silentNamesStoryRelicOwned(receipt: SilentNamesReceipt?): Boolean =
+    receipt?.let(SilentNamesEncounter::isValid) == true
 
 private fun mutationEvidenceCount(
     ledger: WorldMutationLedger,
@@ -313,6 +319,7 @@ fun TreasuryScreen(
     profile: ReaderProfile,
     equippedSigil: String?,
     mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
+    silentNamesReceipt: SilentNamesReceipt? = null,
     onEquip: (String?) -> Unit,
     onClose: () -> Unit
 ) {
@@ -326,6 +333,7 @@ fun TreasuryScreen(
         )
     }
     val awakenedRelics = relicStates.values.count { it.awakened }
+    val storyRelicOwned = silentNamesStoryRelicOwned(silentNamesReceipt)
     val awakenedBookplates = bookplates.count { it.awakened(profile) }
     val treasuryAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
@@ -337,7 +345,10 @@ fun TreasuryScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
-                seed = profile.earnedSigils.size * 31 + awakenedRelics * 11,
+                seed =
+                    profile.earnedSigils.size * 31 +
+                        awakenedRelics * 11 +
+                        if (storyRelicOwned) 73 else 0,
                 intensity = 0.90f,
                 temporalPhase = currentVeilTemporalPhase()
             ),
@@ -396,13 +407,29 @@ fun TreasuryScreen(
             eyebrow = "TREASURY · RELIC VAULT",
             title = "The Treasury",
             subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
-            trailing = "$awakenedRelics RELICS · $awakenedBookplates BOOKPLATES"
+            trailing = buildString {
+                append("$awakenedRelics READING RELICS")
+                if (storyRelicOwned) append(" · 1 STORY RELIC")
+                append(" · $awakenedBookplates BOOKPLATES")
+            }
         )
 
         WorldMutationEcho(
             ledger = mutationLedger,
             realm = WorldMutationRealm.TREASURY
         )
+
+        if (storyRelicOwned) {
+            val receipt = requireNotNull(silentNamesReceipt)
+            ArchiveChamberHeading(
+                eyebrow = stringResource(R.string.silent_names_treasury_eyebrow),
+                title = stringResource(R.string.silent_names_treasury_heading),
+                trailing = "1/1"
+            )
+            VeilReveal(delayMillis = 30, distance = 8.dp) {
+                SilentNamesTreasuryRelic(receipt)
+            }
+        }
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
             TreasuryPedestal(
@@ -565,6 +592,141 @@ private fun CastleChamberGrandMasthead(
                 modifier = Modifier.widthIn(max = 600.dp)
             )
             BrassRule(Modifier.width(158.dp), strong = true)
+        }
+    }
+}
+
+@Composable
+private fun SilentNamesTreasuryRelic(
+    receipt: SilentNamesReceipt
+) {
+    val recorded = formatSanctumDate(receipt.recordedAtEpochMs)
+    val modeLabel = stringResource(
+        if (receipt.mode == com.veilreader.app.domain.SilentNamesMode.DICE) {
+            R.string.silent_names_dice_mode
+        } else {
+            R.string.silent_names_story_mode
+        }
+    )
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
+        color = VeilPalette.RaisedIron.copy(alpha = 0.88f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Box {
+            Canvas(
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = VeilSpacing.md)
+                    .size(138.dp)
+            ) {
+                val center = Offset(size.width / 2f, size.height / 2f)
+                val brass = VeilPalette.Brass
+                val spirit = VeilPalette.Spirit
+                val strong = 1.35.dp.toPx()
+                val thin = 0.8.dp.toPx()
+
+                drawCircle(
+                    brass.copy(alpha = 0.08f),
+                    size.minDimension * 0.46f,
+                    center
+                )
+                drawCircle(
+                    brass.copy(alpha = 0.42f),
+                    size.minDimension * 0.36f,
+                    center,
+                    style = Stroke(strong)
+                )
+                drawLine(
+                    brass.copy(alpha = 0.72f),
+                    Offset(center.x, size.height * 0.16f),
+                    Offset(center.x, size.height * 0.78f),
+                    strong,
+                    StrokeCap.Round
+                )
+                drawArc(
+                    brass.copy(alpha = 0.86f),
+                    startAngle = 202f,
+                    sweepAngle = 136f,
+                    useCenter = false,
+                    topLeft = Offset(size.width * 0.28f, size.height * 0.24f),
+                    size = Size(size.width * 0.44f, size.height * 0.50f),
+                    style = Stroke(strong)
+                )
+                drawCircle(
+                    spirit.copy(alpha = 0.52f),
+                    size.minDimension * 0.105f,
+                    Offset(center.x, size.height * 0.63f)
+                )
+                drawCircle(
+                    brass,
+                    2.2.dp.toPx(),
+                    Offset(center.x, size.height * 0.63f)
+                )
+                repeat(4) { index ->
+                    val y = size.height * (0.31f + index * 0.12f)
+                    drawLine(
+                        brass.copy(alpha = 0.16f),
+                        Offset(size.width * 0.20f, y),
+                        Offset(size.width * 0.80f, y),
+                        thin
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.72f)
+                    .padding(VeilSpacing.lg),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Text(
+                    stringResource(R.string.silent_names_treasury_eyebrow),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    stringResource(R.string.silent_names_reward_title),
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    stringResource(R.string.silent_names_reward_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist
+                )
+                Text(
+                    stringResource(receipt.outcome.outcomeRes()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Moon.copy(alpha = 0.82f)
+                )
+                BrassRule(Modifier.width(112.dp))
+                Text(
+                    stringResource(R.string.silent_names_treasury_provenance),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.84f)
+                )
+                Text(
+                    stringResource(
+                        R.string.silent_names_treasury_path,
+                        receipt.pathId.uppercase()
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.72f)
+                )
+                Text(
+                    "$modeLabel · " + stringResource(
+                        R.string.silent_names_treasury_recorded,
+                        recorded
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.62f)
+                )
+            }
         }
     }
 }
