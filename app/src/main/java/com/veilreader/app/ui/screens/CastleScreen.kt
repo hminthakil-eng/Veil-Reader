@@ -58,8 +58,10 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PathArchitecturalMotif
 import com.veilreader.app.domain.PathWorldSignature
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.SilentNamesReceipt
 import com.veilreader.app.domain.RitualAftermathRecord
 import com.veilreader.app.domain.Quest
+import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.domain.WorldProgressionProjection
@@ -112,6 +114,7 @@ fun CastleScreen(
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
     memoryStateOverride: CastleMemoryState? = null,
+    silentNamesReceipt: SilentNamesReceipt? = null,
     silentNamesSealed: Boolean = false
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
@@ -148,8 +151,15 @@ fun CastleScreen(
             nowEpochMs = castleNowEpochMs
         )
     }
-    val mutationLedger = remember(profile, memoryState) {
-        deriveWorldMutationLedger(profile, memoryState)
+    val mutationLedger = remember(profile, memoryState, silentNamesReceipt) {
+        deriveWorldMutationLedger(
+            profile = profile,
+            memory = memoryState,
+            silentNamesReceipt = silentNamesReceipt
+        )
+    }
+    val storyRelicManifested = remember(mutationLedger) {
+        mutationLedger.entries.any { it.kind == WorldMutationKind.STORY_RELIC }
     }
     val ritualAfterglow = remember(profile.ritualAftermath, castleNowEpochMs) {
         ritualAfterglowIntensity(
@@ -164,6 +174,11 @@ fun CastleScreen(
             memory = memoryState
         )
     }
+    val castleWorldSeed =
+        profile.rankIndex * 31 +
+            memoryState.volumeCount +
+            worldProjection.stage.ordinal * 101 +
+            if (storyRelicManifested) 211 else 0
     val castleAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
@@ -174,21 +189,23 @@ fun CastleScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
-                seed = profile.rankIndex * 31 + memoryState.volumeCount + worldProjection.stage.ordinal * 101,
+                seed = castleWorldSeed,
                 intensity = (
                     0.82f +
                         worldProjection.architecturalPresence * 0.14f +
-                        ritualAfterglow * 0.04f
+                        ritualAfterglow * 0.04f +
+                        if (storyRelicManifested) 0.015f else 0f
                     ).coerceIn(0.82f, 0.98f),
                 temporalPhase = temporalPhase
             )
             .narrativeArchitectureField(
                 realm = VeilRealm.CASTLE,
-                seed = profile.rankIndex * 31 + memoryState.volumeCount + worldProjection.stage.ordinal * 101,
+                seed = castleWorldSeed,
                 intensity = (
                     0.62f +
                         worldProjection.architecturalPresence * 0.26f +
-                        ritualAfterglow * 0.06f
+                        ritualAfterglow * 0.06f +
+                        if (storyRelicManifested) 0.025f else 0f
                     ).coerceIn(0.62f, 0.94f)
             ),
         contentAlignment = Alignment.TopCenter
