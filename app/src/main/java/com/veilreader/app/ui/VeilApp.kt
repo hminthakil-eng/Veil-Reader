@@ -208,11 +208,18 @@ fun VeilApp(
     } else {
         null
     }
+
+    val covenantIdState = if (openedPublication == null) {
+        game.covenantId.collectAsStateWithLifecycle()
+    } else {
+        null
+    }
     val profile = profileState?.value
     val quests = questsState?.value.orEmpty()
     val dailyGoalMinutes = dailyGoalState?.value
     val equippedSigil = equippedSigilState?.value
     val castleTitle = castleTitleState?.value
+    val covenantId = covenantIdState?.value
     val discoveryRecords = remember(profile?.earnedDiscoveries) {
         profile?.let { game.discoveryRecords(it.earnedDiscoveries) }.orEmpty()
     }
@@ -560,6 +567,12 @@ fun VeilApp(
 
             VeilTab.PATH -> PathScreen(
                 profile = requireNotNull(profile),
+                covenantId = covenantId,
+                onSetCovenant = { id ->
+                    if (!game.setCovenant(id)) {
+                        errorMessage = "That covenant could not be recorded."
+                    }
+                },
                 onAdvanceRank = { expectedPathId, expectedRankIndex ->
                     val accepted = game.advanceRank(expectedPathId, expectedRankIndex)
                     if (accepted) sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
@@ -814,6 +827,7 @@ fun VeilApp(
                         equippedSigil = equippedSigil,
                         mutationLedger = worldMutationLedger,
                         silentNamesReceipt = silentNamesReceipt,
+                        covenantId = covenantId,
                         onEquip = { id ->
                             if (!game.equipSigil(id)) {
                                 errorMessage = "That sigil has not awakened yet."
@@ -830,6 +844,7 @@ fun VeilApp(
                         availableTitles = game.availableCastleTitles(),
                         discoveries = discoveryRecords,
                         mutationLedger = worldMutationLedger,
+                        covenantId = covenantId,
                         highlightCount = highlights.size,
                         onSelectTitle = { title ->
                             if (!game.selectCastleTitle(title)) {
