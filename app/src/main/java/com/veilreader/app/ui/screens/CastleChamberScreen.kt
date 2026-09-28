@@ -249,28 +249,28 @@ private val readingRelics = listOf(
         id = "ember_bookmark",
         name = "Ember Bookmark",
         symbol = "⌇",
-        clue = "Return often enough that the page begins to remember you.",
+        clue = "Leave at least three recorded reading sessions in the foundation.",
         rarity = relicRarityFor("ember_bookmark")
     ),
     RelicPresentation(
         id = "moonlit_lens",
         name = "Moonlit Lens",
         symbol = "◐",
-        clue = "Spend three quiet hours beyond the first threshold of attention.",
+        clue = "Bind at least three factual links between volumes in the Observatory.",
         rarity = relicRarityFor("moonlit_lens")
     ),
     RelicPresentation(
         id = "brass_quill",
         name = "Brass Quill",
         symbol = "✒",
-        clue = "Turn five hundred pages and leave the mechanism warm.",
+        clue = "Write at least five substantial annotations and wake the scriptorium.",
         rarity = relicRarityFor("brass_quill")
     ),
     RelicPresentation(
         id = "ivory_bookplate",
         name = "Ivory Bookplate",
         symbol = "▤",
-        clue = "Complete three volumes and the archive will grant a mark of ownership.",
+        clue = "Complete three volumes and open three sealed alcoves in the keep.",
         rarity = relicRarityFor("ivory_bookplate")
     ),
     RelicPresentation(
