@@ -39,8 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
-import com.veilreader.app.domain.SilentNamesEncounter
-import com.veilreader.app.domain.SilentNamesReceipt
+import com.veilreader.app.domain.StoryRelicRecord
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.mysteryChainSnapshot
 import com.veilreader.app.domain.WorldMutationKind
@@ -107,9 +106,6 @@ internal data class RelicUnlockState(
     val target: Int,
     val evidenceLabel: String
 )
-
-internal fun silentNamesStoryRelicOwned(receipt: SilentNamesReceipt?): Boolean =
-    receipt?.let(SilentNamesEncounter::isValid) == true
 
 private fun mutationEvidenceCount(
     ledger: WorldMutationLedger,
@@ -319,7 +315,7 @@ fun TreasuryScreen(
     profile: ReaderProfile,
     equippedSigil: String?,
     mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
-    silentNamesReceipt: SilentNamesReceipt? = null,
+    storyRelics: List<StoryRelicRecord> = emptyList(),
     onEquip: (String?) -> Unit,
     onClose: () -> Unit
 ) {
@@ -333,7 +329,8 @@ fun TreasuryScreen(
         )
     }
     val awakenedRelics = relicStates.values.count { it.awakened }
-    val storyRelicOwned = silentNamesStoryRelicOwned(silentNamesReceipt)
+    val storyRelicDisplays = storyRelicDisplayModels(storyRelics)
+    val storyRelicCount = storyRelicDisplays.size
     val awakenedBookplates = bookplates.count { it.awakened(profile) }
     val treasuryAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
@@ -348,7 +345,12 @@ fun TreasuryScreen(
                 seed =
                     profile.earnedSigils.size * 31 +
                         awakenedRelics * 11 +
-                        if (storyRelicOwned) 73 else 0,
+                        storyRelicDisplays.sumOf { display ->
+                            com.veilreader.app.domain.StoryRelicCatalog
+                                .definitionFor(display.record.relicId)
+                                ?.atmosphereSeedSalt
+                                ?: 0
+                        },
                 intensity = 0.90f,
                 temporalPhase = currentVeilTemporalPhase()
             ),
@@ -409,7 +411,7 @@ fun TreasuryScreen(
             subtitle = "Relics, sigils, story keepsakes, and bookplates projected only from records already sealed on this device.",
             trailing = buildString {
                 append("$awakenedRelics READING RELICS")
-                if (storyRelicOwned) append(" · 1 STORY RELIC")
+                if (storyRelicCount > 0) append(" · $storyRelicCount STORY RELICS")
                 append(" · $awakenedBookplates BOOKPLATES")
             }
         )
@@ -421,15 +423,21 @@ fun TreasuryScreen(
             title = "What the Castle now remembers"
         )
 
-        if (storyRelicOwned) {
-            val receipt = requireNotNull(silentNamesReceipt)
+        if (storyRelicDisplays.isNotEmpty()) {
             ArchiveChamberHeading(
-                eyebrow = stringResource(R.string.silent_names_treasury_eyebrow),
-                title = stringResource(R.string.silent_names_treasury_heading),
-                trailing = "1/1"
+                eyebrow = stringResource(R.string.story_relic_section_eyebrow),
+                title = stringResource(R.string.story_relic_section_title),
+                trailing = storyRelicCount.toString()
             )
-            VeilReveal(delayMillis = 30, distance = 8.dp) {
-                SilentNamesTreasuryRelic(receipt)
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                storyRelicDisplays.forEachIndexed { index, display ->
+                    VeilReveal(
+                        delayMillis = 30 + index * 40,
+                        distance = 8.dp
+                    ) {
+                        StoryRelicTreasuryCard(display)
+                    }
+                }
             }
         }
 
@@ -599,20 +607,15 @@ private fun CastleChamberGrandMasthead(
 }
 
 @Composable
-private fun SilentNamesTreasuryRelic(
-    receipt: SilentNamesReceipt
+private fun StoryRelicTreasuryCard(
+    display: StoryRelicDisplayModel
 ) {
+    val record = display.record
     val compactLayout =
         LocalConfiguration.current.screenWidthDp < 420 ||
             LocalDensity.current.fontScale > 1.25f
-    val recorded = formatSanctumDate(receipt.recordedAtEpochMs)
-    val modeLabel = stringResource(
-        if (receipt.mode == com.veilreader.app.domain.SilentNamesMode.DICE) {
-            R.string.silent_names_mode_dice_short
-        } else {
-            R.string.silent_names_mode_story_short
-        }
-    )
+    val recorded = formatSanctumDate(record.recordedAtEpochMs)
+    val modeLabel = stringResource(storyRelicModeRes(record.resolutionModeId))
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -627,13 +630,14 @@ private fun SilentNamesTreasuryRelic(
                 modifier = Modifier.padding(VeilSpacing.lg),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
             ) {
-                SilentNamesLanternGlyph(
+                StoryRelicGlyphArtwork(
+                    glyph = display.presentation.glyph,
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .size(116.dp)
                 )
-                SilentNamesRelicCopy(
-                    receipt = receipt,
+                StoryRelicCopy(
+                    display = display,
                     modeLabel = modeLabel,
                     recorded = recorded,
                     modifier = Modifier.fillMaxWidth()
@@ -641,14 +645,15 @@ private fun SilentNamesTreasuryRelic(
             }
         } else {
             Box {
-                SilentNamesLanternGlyph(
+                StoryRelicGlyphArtwork(
+                    glyph = display.presentation.glyph,
                     modifier = Modifier
                         .align(Alignment.CenterEnd)
                         .padding(end = VeilSpacing.lg)
                         .size(142.dp)
                 )
-                SilentNamesRelicCopy(
-                    receipt = receipt,
+                StoryRelicCopy(
+                    display = display,
                     modeLabel = modeLabel,
                     recorded = recorded,
                     modifier = Modifier
@@ -661,53 +666,55 @@ private fun SilentNamesTreasuryRelic(
 }
 
 @Composable
-private fun SilentNamesRelicCopy(
-    receipt: SilentNamesReceipt,
+private fun StoryRelicCopy(
+    display: StoryRelicDisplayModel,
     modeLabel: String,
     recorded: String,
     modifier: Modifier = Modifier
 ) {
+    val record = display.record
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         Text(
-            stringResource(R.string.silent_names_treasury_eyebrow),
+            stringResource(R.string.story_relic_section_eyebrow),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
             color = VeilPalette.Brass
         )
         Text(
-            stringResource(R.string.silent_names_reward_title),
+            stringResource(display.presentation.titleRes),
             style = MaterialTheme.typography.headlineSmall,
             color = VeilPalette.Moon
         )
         Text(
-            stringResource(R.string.silent_names_reward_body),
+            stringResource(display.presentation.bodyRes),
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
         )
         Text(
-            stringResource(receipt.outcome.outcomeRes()),
+            display.routeVariantRes?.let { stringResource(it) }
+                ?: stringResource(R.string.story_relic_unknown_variant),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Moon.copy(alpha = 0.82f)
         )
         BrassRule(Modifier.width(112.dp))
         Text(
-            stringResource(R.string.silent_names_treasury_provenance),
+            stringResource(R.string.story_relic_provenance),
             style = MaterialTheme.typography.labelSmall,
             color = VeilPalette.Spirit.copy(alpha = 0.84f)
         )
         Text(
             stringResource(
-                R.string.silent_names_treasury_path,
-                receipt.pathId.uppercase()
+                R.string.story_relic_path,
+                record.pathIdAtAcquisition.uppercase()
             ),
             style = MaterialTheme.typography.labelSmall,
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
         Text(
             "$modeLabel · " + stringResource(
-                R.string.silent_names_treasury_recorded,
+                R.string.story_relic_recorded,
                 recorded
             ),
             style = MaterialTheme.typography.labelSmall,
@@ -717,7 +724,17 @@ private fun SilentNamesRelicCopy(
 }
 
 @Composable
-private fun SilentNamesLanternGlyph(
+private fun StoryRelicGlyphArtwork(
+    glyph: StoryRelicGlyph,
+    modifier: Modifier = Modifier
+) {
+    when (glyph) {
+        StoryRelicGlyph.LANTERN -> LanternStoryRelicGlyph(modifier)
+    }
+}
+
+@Composable
+private fun LanternStoryRelicGlyph(
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier) {
