@@ -10,6 +10,8 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.RitualAftermathRecord
 import com.veilreader.app.domain.VeiledDiscoveryPolicy
 import com.veilreader.app.domain.derivePathMastery
+import com.veilreader.app.domain.pathInsightEvidenceTotal
+import com.veilreader.app.domain.pathStabilityEvidenceTotal
 import com.veilreader.app.domain.validateRitualAftermath
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import java.time.LocalDate
@@ -53,6 +55,24 @@ class GameRepository(context: Context) {
         if (prefs.getInt("ritualVersion", 1) < 2) {
             val editor = prefs.edit().putInt("ritualVersion", 2)
             if (prefs.getString("pathId", "oracle") != "oracle") editor.putInt("ritualProgress", 0)
+            editor.apply()
+        }
+        if (prefs.getInt("pathMasteryVersion", 0) < 1) {
+            val path = SampleData.paths.firstOrNull {
+                it.id == prefs.getString("pathId", SampleData.currentPath.id)
+            } ?: SampleData.currentPath
+            val rank = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex)
+            val legacyProgress = prefs.getInt("ritualProgress", 0).coerceAtLeast(0)
+            val legacyTarget = ReadingPolicy.ritualTarget(path.id, rank).coerceAtLeast(1)
+            val editor = prefs.edit()
+                .putInt("pathMasteryVersion", 1)
+                .putInt("pathMasteryInsightBaseline", 0)
+                .putInt("pathMasteryStabilityBaseline", 0)
+            if (legacyProgress >= legacyTarget && rank < path.ranks.lastIndex) {
+                editor
+                    .putString("pathMasteryGrandfatherPath", path.id)
+                    .putInt("pathMasteryGrandfatherRank", rank)
+            }
             editor.apply()
         }
         rollDayIfNeeded()
@@ -207,6 +227,7 @@ class GameRepository(context: Context) {
             )) return false
         val nextRankIndex = current.rankIndex + 1
         val sealedAt = System.currentTimeMillis().coerceAtLeast(1L)
+        val evidenceTotals = currentMasteryEvidenceTotals(current.path.id)
         // Rank and its descriptive ritual seal are committed in one editor transaction.
         // Rank remains authoritative; the seal can be discarded safely if metadata is corrupt.
         prefs.edit()
@@ -216,6 +237,10 @@ class GameRepository(context: Context) {
             .putInt("ritualAftermathFromRank", current.rankIndex)
             .putInt("ritualAftermathToRank", nextRankIndex)
             .putLong("ritualAftermathSealedAt", sealedAt)
+            .putInt("pathMasteryInsightBaseline", evidenceTotals.first)
+            .putInt("pathMasteryStabilityBaseline", evidenceTotals.second)
+            .remove("pathMasteryGrandfatherPath")
+            .remove("pathMasteryGrandfatherRank")
             .apply()
         publish()
         return true
@@ -227,9 +252,14 @@ class GameRepository(context: Context) {
         if (currentRank > 0) return false
         if (prefs.getString("pathId", "oracle") == pathId) return true
         if (SampleData.paths.none { it.id == pathId }) return false
+        val evidenceTotals = currentMasteryEvidenceTotals(pathId)
         prefs.edit()
             .putString("pathId", pathId)
             .putInt("ritualProgress", 0)
+            .putInt("pathMasteryInsightBaseline", evidenceTotals.first)
+            .putInt("pathMasteryStabilityBaseline", 0)
+            .remove("pathMasteryGrandfatherPath")
+            .remove("pathMasteryGrandfatherRank")
             .apply()
         publish()
         return true
@@ -340,6 +370,25 @@ class GameRepository(context: Context) {
         _equippedSigil.value = prefs.getString("equippedSigil", null)
     }
 
+    private fun currentMasteryEvidenceTotals(pathId: String): Pair<Int, Int> {
+        val pagesRead = prefs.getInt("pagesRead", 0).coerceAtLeast(0)
+        val minutesRead = prefs.getInt("minutesRead", 0).coerceAtLeast(0)
+        val booksFinished = prefs.getInt("booksFinished", 0).coerceAtLeast(0)
+        val insight = pathInsightEvidenceTotal(
+            pathId = pathId,
+            totalHighlights = prefs.getInt("totalHighlights", 0),
+            substantialNotes = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().size,
+            pagesRead = pagesRead,
+            booksFinished = booksFinished
+        )
+        val stability = pathStabilityEvidenceTotal(
+            minutesRead = minutesRead,
+            booksFinished = booksFinished,
+            readingDays = prefs.getInt("readingDaysTotal", 0)
+        )
+        return insight to stability
+    }
+
     private fun buildProfile(): ReaderProfile {
         val (inside, needed) = GamificationEngine.progressInsideLevel(totalXp)
         val path = SampleData.paths.firstOrNull { it.id == prefs.getString("pathId", SampleData.currentPath.id) }
@@ -361,7 +410,7 @@ class GameRepository(context: Context) {
         val pagesRead = prefs.getInt("pagesRead", 0).coerceAtLeast(0)
         val minutesRead = prefs.getInt("minutesRead", 0).coerceAtLeast(0)
         val booksFinished = prefs.getInt("booksFinished", 0).coerceAtLeast(0)
-        val pathMastery = derivePathMastery(
+        val derivedMastery = derivePathMastery(
             pathId = path.id,
             rankIndex = rankIndex,
             embodimentValue = ritualProgress,
@@ -371,8 +420,27 @@ class GameRepository(context: Context) {
             pagesRead = pagesRead,
             minutesRead = minutesRead,
             booksFinished = booksFinished,
-            readingDays = prefs.getInt("readingDaysTotal", 0)
+            readingDays = prefs.getInt("readingDaysTotal", 0),
+            insightBaseline = prefs.getInt("pathMasteryInsightBaseline", 0),
+            stabilityBaseline = prefs.getInt("pathMasteryStabilityBaseline", 0)
         )
+        val grandfathered =
+            prefs.getString("pathMasteryGrandfatherPath", null) == path.id &&
+                prefs.getInt("pathMasteryGrandfatherRank", -1) == rankIndex &&
+                ritualProgress >= ritualTarget
+        val pathMastery = if (grandfathered) {
+            derivedMastery.copy(
+                insight = derivedMastery.insight.copy(
+                    value = maxOf(derivedMastery.insight.value, derivedMastery.insight.target)
+                ),
+                stability = derivedMastery.stability.copy(
+                    value = maxOf(derivedMastery.stability.value, derivedMastery.stability.target)
+                ),
+                dissonance = 0
+            )
+        } else {
+            derivedMastery
+        }
         return ReaderProfile(
             level = GamificationEngine.levelFor(totalXp),
             xp = inside,

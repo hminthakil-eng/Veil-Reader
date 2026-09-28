@@ -122,6 +122,37 @@ fun pathDoctrineFor(pathId: String): PathDoctrine =
         )
     }
 
+fun pathInsightEvidenceTotal(
+    pathId: String,
+    totalHighlights: Int,
+    substantialNotes: Int,
+    pagesRead: Int,
+    booksFinished: Int
+): Int {
+    val safeHighlights = totalHighlights.coerceAtLeast(0)
+    val safeNotes = substantialNotes.coerceAtLeast(0)
+    val safePages = pagesRead.coerceAtLeast(0)
+    val safeBooks = booksFinished.coerceAtLeast(0)
+    return when (pathId) {
+        "oracle" -> safeNotes * 2 + safeBooks + safeHighlights / 3
+        "dreamwalker" -> safeBooks * 2 + safeNotes + safeHighlights / 4
+        "archivist" -> safeNotes * 2 + safeBooks + safeHighlights / 2
+        "vanguard" -> safeBooks * 3 + safeNotes + safePages / 120
+        "nocturne" -> safeNotes * 2 + safeBooks * 2 + safeHighlights / 2
+        "artificer" -> safeNotes * 2 + safeBooks + safeHighlights / 3
+        else -> safeNotes + safeBooks + safeHighlights / 3
+    }
+}
+
+fun pathStabilityEvidenceTotal(
+    minutesRead: Int,
+    booksFinished: Int,
+    readingDays: Int
+): Int =
+    readingDays.coerceAtLeast(0) * 2 +
+        minutesRead.coerceAtLeast(0) / 45 +
+        booksFinished.coerceAtLeast(0) * 2
+
 fun derivePathMastery(
     pathId: String,
     rankIndex: Int,
@@ -132,30 +163,25 @@ fun derivePathMastery(
     pagesRead: Int,
     minutesRead: Int,
     booksFinished: Int,
-    readingDays: Int
+    readingDays: Int,
+    insightBaseline: Int = 0,
+    stabilityBaseline: Int = 0
 ): PathMasterySnapshot {
     val rank = rankIndex.coerceAtLeast(0)
-    val safeHighlights = totalHighlights.coerceAtLeast(0)
-    val safeNotes = substantialNotes.coerceAtLeast(0)
-    val safePages = pagesRead.coerceAtLeast(0)
-    val safeMinutes = minutesRead.coerceAtLeast(0)
-    val safeBooks = booksFinished.coerceAtLeast(0)
-    val safeDays = readingDays.coerceAtLeast(0)
-
-    val insightValue = when (pathId) {
-        "oracle" -> safeNotes * 2 + safeBooks + safeHighlights / 3
-        "dreamwalker" -> safeBooks * 2 + safeNotes + safeHighlights / 4
-        "archivist" -> safeNotes * 2 + safeBooks + safeHighlights / 2
-        "vanguard" -> safeBooks * 3 + safeNotes + safePages / 120
-        "nocturne" -> safeNotes * 2 + safeBooks * 2 + safeHighlights / 2
-        "artificer" -> safeNotes * 2 + safeBooks + safeHighlights / 3
-        else -> safeNotes + safeBooks + safeHighlights / 3
-    }
-
-    val stabilityValue =
-        safeDays * 2 +
-            safeMinutes / 45 +
-            safeBooks * 2
+    val insightTotal = pathInsightEvidenceTotal(
+        pathId = pathId,
+        totalHighlights = totalHighlights,
+        substantialNotes = substantialNotes,
+        pagesRead = pagesRead,
+        booksFinished = booksFinished
+    )
+    val stabilityTotal = pathStabilityEvidenceTotal(
+        minutesRead = minutesRead,
+        booksFinished = booksFinished,
+        readingDays = readingDays
+    )
+    val insightValue = (insightTotal - insightBaseline.coerceAtLeast(0)).coerceAtLeast(0)
+    val stabilityValue = (stabilityTotal - stabilityBaseline.coerceAtLeast(0)).coerceAtLeast(0)
 
     val insightTarget = 3 + rank * 2
     val stabilityTarget = 3 + rank * 2

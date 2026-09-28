@@ -122,6 +122,53 @@ class GamificationEngineTest {
     }
 
     @Test
+    fun `mastery baselines make each new rank earn fresh evidence`() {
+        val withoutBaseline = derivePathMastery(
+            pathId = "oracle",
+            rankIndex = 1,
+            embodimentValue = 7,
+            embodimentTarget = 7,
+            totalHighlights = 30,
+            substantialNotes = 5,
+            pagesRead = 500,
+            minutesRead = 600,
+            booksFinished = 4,
+            readingDays = 10
+        )
+        val insightTotal = pathInsightEvidenceTotal(
+            pathId = "oracle",
+            totalHighlights = 30,
+            substantialNotes = 5,
+            pagesRead = 500,
+            booksFinished = 4
+        )
+        val stabilityTotal = pathStabilityEvidenceTotal(
+            minutesRead = 600,
+            booksFinished = 4,
+            readingDays = 10
+        )
+        val freshRank = derivePathMastery(
+            pathId = "oracle",
+            rankIndex = 1,
+            embodimentValue = 0,
+            embodimentTarget = 7,
+            totalHighlights = 30,
+            substantialNotes = 5,
+            pagesRead = 500,
+            minutesRead = 600,
+            booksFinished = 4,
+            readingDays = 10,
+            insightBaseline = insightTotal,
+            stabilityBaseline = stabilityTotal
+        )
+
+        assertTrue(withoutBaseline.insight.value > 0)
+        assertTrue(withoutBaseline.stability.value > 0)
+        assertEquals(0, freshRank.insight.value)
+        assertEquals(0, freshRank.stability.value)
+    }
+
+    @Test
     fun `higher Path ranks require deeper secondary mastery`() {
         val low = derivePathMastery(
             pathId = "archivist",
