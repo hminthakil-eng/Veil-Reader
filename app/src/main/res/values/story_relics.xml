@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="story_relic_section_eyebrow">HALL KEEPSAKES · SEALED</string>
+    <string name="story_relic_section_title">Relics of the Hall</string>
+    <string name="story_relic_provenance">PROVENANCE · SEALED STORY RECEIPT</string>
+    <string name="story_relic_recorded">RECORDED · %1$s</string>
+    <string name="story_relic_path">PATH AT CHOICE · %1$s</string>
+    <string name="story_relic_story_mode">STORY MODE</string>
+    <string name="story_relic_dice_mode">DICE MODE</string>
+    <string name="story_relic_unknown_variant">A sealed route whose inscription belongs to a newer Veil build.</string>
+</resources>
