@@ -32,4 +32,7 @@
     <string name="castle_artifact_open">باز</string>
     <string name="castle_artifact_semantics_open">%1$s. %2$s. باز.</string>
     <string name="castle_artifact_semantics_sealed">%1$s. تا رتبه %2$d مهرشده است.</string>
+    <string name="castle_hall_field_semantics">میدان آثار تالار بزرگ. %1$d مقصد.</string>
+    <string name="castle_hall_veil_above">پرده در فراز</string>
+    <string name="castle_artifact_rank_short">ر%1$d</string>
 </resources>
