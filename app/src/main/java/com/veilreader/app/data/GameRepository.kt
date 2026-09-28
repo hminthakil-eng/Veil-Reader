@@ -26,6 +26,8 @@ class GameRepository(context: Context) {
     private var todayMinutes = prefs.getInt("todayMinutes", 0)
     private var todayPages = prefs.getInt("todayPages", 0)
     private var todayHighlights = prefs.getInt("todayHighlights", 0)
+    private var todayNotes = prefs.getInt("todayNotes", 0)
+    private var todayNightMinutes = prefs.getInt("todayNightMinutes", 0)
     private var dayKey = prefs.getString("dayKey", "") ?: ""
 
     private val _profile = MutableStateFlow(buildProfile())
@@ -132,11 +134,14 @@ class GameRepository(context: Context) {
 
     fun recordNote(id: String, note: String) {
         if (!ReadingPolicy.qualifiesNote(note)) return
-        if (!ReadingPolicy.acceptsEvent(buildProfile().path.id, "note")) return
+        rollDayIfNeeded()
         val credited = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().toMutableSet()
         if (!credited.add(id)) return
         prefs.edit().putStringSet("creditedNotes", credited).apply()
+        todayNotes += 1
         recordRitualEvent("note")
+        awardCompletedQuestRewards()
+        persistCounters()
         publish()
     }
 
@@ -145,7 +150,10 @@ class GameRepository(context: Context) {
         totalXp += GamificationEngine.XP_PER_MINUTE
         todayMinutes += 1
         recordRitualEvent("minute")
-        if (ReadingPolicy.isNight(LocalTime.now().hour)) recordRitualEvent("nightMinute")
+        if (ReadingPolicy.isNight(LocalTime.now().hour)) {
+            todayNightMinutes += 1
+            recordRitualEvent("nightMinute")
+        }
         val previousMinutes = prefs.getInt("minutesRead", 0)
         prefs.edit().putInt("minutesRead", previousMinutes + 1).apply()
         touchReadingDay()
@@ -237,6 +245,8 @@ class GameRepository(context: Context) {
         todayMinutes = 0
         todayPages = 0
         todayHighlights = 0
+        todayNotes = 0
+        todayNightMinutes = 0
         prefs.edit().remove("claimedQuestIds").apply()
         persistCounters()
     }
@@ -259,6 +269,8 @@ class GameRepository(context: Context) {
             .putInt("todayMinutes", todayMinutes)
             .putInt("todayPages", todayPages)
             .putInt("todayHighlights", todayHighlights)
+            .putInt("todayNotes", todayNotes)
+            .putInt("todayNightMinutes", todayNightMinutes)
             .apply()
     }
 
@@ -341,10 +353,31 @@ class GameRepository(context: Context) {
 
     private fun buildQuests(): List<Quest> {
         val goal = readDailyGoal()
+        val pathId = prefs.getString("pathId", SampleData.currentPath.id)
+            ?: SampleData.currentPath.id
         return listOf(
-            Quest("read", "Read for $goal minutes", todayMinutes.coerceAtMost(goal), goal, 90),
-            Quest("pages", "Read 15 paced pages", todayPages.coerceAtMost(15), 15, 120),
-            Quest("mark", "Mark 3 intriguing passages", todayHighlights.coerceAtMost(3), 3, 75)
+            Quest(
+                "read",
+                "Keep a quiet reading session for $goal minutes",
+                todayMinutes.coerceAtLeast(0).coerceAtMost(goal),
+                goal,
+                90
+            ),
+            Quest(
+                "pages",
+                "Turn 15 paced pages without rushing",
+                todayPages.coerceAtLeast(0).coerceAtMost(15),
+                15,
+                120
+            ),
+            GamificationEngine.pathDirective(
+                pathId = pathId,
+                todayMinutes = todayMinutes,
+                todayPages = todayPages,
+                todayHighlights = todayHighlights,
+                todayNotes = todayNotes,
+                todayNightMinutes = todayNightMinutes
+            )
         )
     }
 }
