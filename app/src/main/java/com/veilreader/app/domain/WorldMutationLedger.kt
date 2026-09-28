@@ -24,7 +24,8 @@ enum class WorldMutationEvidence {
     ATLAS_LINKS,
     RETURN_EVENT,
     PATH_RANK,
-    RITUAL_SEAL
+    RITUAL_SEAL,
+    STORY_RECEIPT
 }
 
 enum class WorldMutationKind {
@@ -35,7 +36,8 @@ enum class WorldMutationKind {
     CONSTELLATION_WEB,
     RETURN_AWAKENING,
     PATH_ASCENSION,
-    ADVANCEMENT_SEAL
+    ADVANCEMENT_SEAL,
+    STORY_RELIC
 }
 
 data class WorldMutationEntry(
@@ -66,9 +68,32 @@ data class WorldMutationLedger(
 
 fun deriveWorldMutationLedger(
     profile: ReaderProfile,
-    memory: CastleMemoryState
+    memory: CastleMemoryState,
+    silentNamesReceipt: SilentNamesReceipt? = null
 ): WorldMutationLedger {
     val entries = buildList {
+        silentNamesReceipt
+            ?.takeIf(SilentNamesEncounter::isValid)
+            ?.let {
+                add(
+                    WorldMutationEntry(
+                        id = "story-relic:${SilentNamesEncounter.REWARD_ID}",
+                        kind = WorldMutationKind.STORY_RELIC,
+                        realms = setOf(
+                            WorldMutationRealm.GREAT_HALL,
+                            WorldMutationRealm.TREASURY
+                        ),
+                        evidence = WorldMutationEvidence.STORY_RECEIPT,
+                        evidenceCount = 1,
+                        intensity = 1f,
+                        durable = true,
+                        title = "Lantern of Remembrance",
+                        inscription =
+                            "A sealed choice in the Hall has become a permanent story relic. It records no reading claim and grants no rank or access."
+                    )
+                )
+            }
+
         if (memory.returnAwakening > 0.001f) {
             add(
                 WorldMutationEntry(
