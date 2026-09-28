@@ -65,4 +65,5 @@
     <string name="settings_masthead_eyebrow">کنترل‌های پناهگاه</string>
     <string name="settings_masthead_title">اتاق مطالعه</string>
     <string name="settings_masthead_body">کنترل‌های مطالعه، ظاهر، ذخیره‌سازی، حریم خصوصی و پشتیبان — به‌طور پیش‌فرض محلی.</string>
+    <string name="settings_back">بازگشت</string>
 </resources>
