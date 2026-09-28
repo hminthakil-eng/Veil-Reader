@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_doctrine_oracle_maxim">Observe · connect · interpret</string>
+    <string name="path_doctrine_oracle_embodiment_name">Pattern Sight</string>
+    <string name="path_doctrine_oracle_embodiment_desc">Preserve passages that expose clues, themes, or hidden structure.</string>
+    <string name="path_doctrine_oracle_insight_name">Deduction</string>
+    <string name="path_doctrine_oracle_insight_desc">Turn fragments into notes, conclusions, and finished interpretations.</string>
+    <string name="path_doctrine_oracle_stability_name">Composure</string>
+    <string name="path_doctrine_oracle_stability_desc">Return often enough that pattern-seeking does not become skimming.</string>
+
+    <string name="path_doctrine_dreamwalker_maxim">Enter · dwell · return</string>
+    <string name="path_doctrine_dreamwalker_embodiment_name">Immersion</string>
+    <string name="path_doctrine_dreamwalker_embodiment_desc">Spend active time inside chosen worlds instead of rushing through them.</string>
+    <string name="path_doctrine_dreamwalker_insight_name">World Memory</string>
+    <string name="path_doctrine_dreamwalker_insight_desc">Carry details, reflections, and completed journeys back out of the book.</string>
+    <string name="path_doctrine_dreamwalker_stability_name">Grounding</string>
+    <string name="path_doctrine_dreamwalker_stability_desc">Balance deep immersion with durable return across multiple sessions.</string>
+
+    <string name="path_doctrine_archivist_maxim">Capture · order · revisit</string>
+    <string name="path_doctrine_archivist_embodiment_name">Record</string>
+    <string name="path_doctrine_archivist_embodiment_desc">Write substantial notes that preserve ideas worth returning to.</string>
+    <string name="path_doctrine_archivist_insight_name">Synthesis</string>
+    <string name="path_doctrine_archivist_insight_desc">Connect preserved passages to completed books and broader understanding.</string>
+    <string name="path_doctrine_archivist_stability_name">Continuity</string>
+    <string name="path_doctrine_archivist_stability_desc">Build a record slowly enough that the archive remains useful instead of noisy.</string>
+
+    <string name="path_doctrine_vanguard_maxim">Advance · pace · finish</string>
+    <string name="path_doctrine_vanguard_embodiment_name">Momentum</string>
+    <string name="path_doctrine_vanguard_embodiment_desc">Move through pages at a human pace; repeated fast taps do not count.</string>
+    <string name="path_doctrine_vanguard_insight_name">Campaign Memory</string>
+    <string name="path_doctrine_vanguard_insight_desc">Finish arcs and preserve the moments that changed the direction of the story.</string>
+    <string name="path_doctrine_vanguard_stability_name">Endurance</string>
+    <string name="path_doctrine_vanguard_stability_desc">Sustain momentum across sessions instead of burning through one burst.</string>
+
+    <string name="path_doctrine_nocturne_maxim">Attend · endure · reflect</string>
+    <string name="path_doctrine_nocturne_embodiment_name">Night Watch</string>
+    <string name="path_doctrine_nocturne_embodiment_desc">Accumulate deliberate reading during the hours chosen for this Path.</string>
+    <string name="path_doctrine_nocturne_insight_name">Shadow Reading</string>
+    <string name="path_doctrine_nocturne_insight_desc">Reflect on unsettling passages instead of treating darkness as pure spectacle.</string>
+    <string name="path_doctrine_nocturne_stability_name">Lantern Discipline</string>
+    <string name="path_doctrine_nocturne_stability_desc">Keep the habit steady enough that atmosphere never becomes compulsion.</string>
+
+    <string name="path_doctrine_artificer_maxim">Observe · deconstruct · rebuild</string>
+    <string name="path_doctrine_artificer_embodiment_name">Mechanism</string>
+    <string name="path_doctrine_artificer_embodiment_desc">Capture substantial notes about systems, causes, and how ideas fit together.</string>
+    <string name="path_doctrine_artificer_insight_name">Synthesis</string>
+    <string name="path_doctrine_artificer_insight_desc">Relate mechanisms to finished works and preserved evidence.</string>
+    <string name="path_doctrine_artificer_stability_name">Calibration</string>
+    <string name="path_doctrine_artificer_stability_desc">Return across sessions until understanding survives beyond one burst of curiosity.</string>
+
+    <string name="path_doctrine_fallback_maxim">Read · understand · return</string>
+    <string name="path_doctrine_fallback_embodiment_name">Practice</string>
+    <string name="path_doctrine_fallback_embodiment_desc">Act in ways that match the reading identity you selected.</string>
+    <string name="path_doctrine_fallback_insight_name">Insight</string>
+    <string name="path_doctrine_fallback_insight_desc">Preserve evidence that reading changed what you understand.</string>
+    <string name="path_doctrine_fallback_stability_name">Stability</string>
+    <string name="path_doctrine_fallback_stability_desc">Return often enough that progression reflects a durable habit.</string>
+
+    <string name="path_ritual_oracle">Highlight %1$d new passages that reveal clues, themes or hidden structure.</string>
+    <string name="path_ritual_dreamwalker">Explore your worlds for %1$d active reading minutes.</string>
+    <string name="path_ritual_vanguard">Read %1$d paced pages. Fast tapping does not count.</string>
+    <string name="path_ritual_nocturne">Read for %1$d minutes between 8 PM and 6 AM, in your device’s local time.</string>
+    <string name="path_ritual_archivist">Write %1$d new passage notes of at least 40 characters.</string>
+    <string name="path_ritual_artificer">Capture %1$d new concept notes of at least 40 characters.</string>
+</resources>
