@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sanctum_eyebrow">INNER SANCTUM · DEEPEST RECORD</string>
+    <string name="sanctum_subtitle">Thresholds crossed, constellations completed, and identities the Castle considers permanent.</string>
+    <string name="sanctum_sovereign_seal">SOVEREIGN SEAL</string>
+    <string name="sanctum_discovery_count">%1$d DISCOVERIES</string>
+    <string name="sanctum_consequence_eyebrow">SANCTUM CONSEQUENCE</string>
+    <string name="sanctum_consequence_title">Permanent world marks</string>
+    <string name="sanctum_identity_eyebrow">Permanent identity</string>
+    <string name="sanctum_identity_title">Castle title</string>
+    <string name="sanctum_titles_recognized">%1$d recognized</string>
+    <string name="sanctum_title_active">ACTIVE TITLE</string>
+    <string name="sanctum_title_recognized">RECOGNIZED TITLE</string>
+
+    <string name="castle_title_reader">Reader of the Veil</string>
+    <string name="castle_title_threshold">Threshold Walker</string>
+    <string name="castle_title_quiet">Keeper of the Quiet Hour</string>
+    <string name="castle_title_passages">Warden of Passages</string>
+    <string name="castle_title_seven">Lantern of Seven Nights</string>
+    <string name="castle_title_ten">Keeper of Ten Tomes</string>
+    <string name="castle_title_veilbound">Veilbound %1$s</string>
+    <string name="castle_title_sovereign">Sovereign of the Living Library</string>
+
+    <string name="sanctum_discoveries_eyebrow">Permanent ledger</string>
+    <string name="sanctum_discoveries_title">Veiled discoveries</string>
+    <string name="sanctum_discoveries_body">The Sanctum reveals one fragment at a time. It never exposes the full condition before discovery, and a completed record never reseals.</string>
+    <string name="sanctum_discovery_sealed">Sealed discovery %1$d</string>
+    <string name="sanctum_discovery_recorded">PERMANENT · RECORDED %1$s</string>
+    <string name="sanctum_discovery_date_unknown">PERMANENT · RECORD DATE UNKNOWN</string>
+    <string name="sanctum_discovery_fragment">VEILED THREAD · FRAGMENT %1$d</string>
+
+    <string name="discovery_patient_flame_title">The Patient Flame</string>
+    <string name="discovery_patient_flame_clue">A flame kept for many returns begins to remember the hand that lit it.</string>
+    <string name="discovery_patient_flame_lore">Consistency leaves a different mark than intensity. The Castle has begun to recognize your return.</string>
+    <string name="discovery_patient_flame_fragment_0">A quiet flame answers duration before it answers devotion.</string>
+    <string name="discovery_patient_flame_fragment_1">Returning matters more than one long vigil.</string>
+    <string name="discovery_patient_flame_fragment_2">Time and return must become the same habit.</string>
+
+    <string name="discovery_marginalia_gate_title">The Marginalia Gate</string>
+    <string name="discovery_marginalia_gate_clue">Some doors are written in the margins rather than printed on the page.</string>
+    <string name="discovery_marginalia_gate_lore">Enough passages have been preserved that your annotations now form a second text beside the books themselves.</string>
+    <string name="discovery_marginalia_gate_fragment_0">The margin begins as an echo.</string>
+    <string name="discovery_marginalia_gate_fragment_1">A second text forms only when preserved passages become numerous.</string>
+    <string name="discovery_marginalia_gate_fragment_2">The gate appears when reading and marginalia become inseparable.</string>
+
+    <string name="discovery_deep_shelf_title">The Deep Shelf</string>
+    <string name="discovery_deep_shelf_clue">Finished volumes gather weight. Eventually the shelf becomes a foundation.</string>
+    <string name="discovery_deep_shelf_lore">Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list.</string>
+    <string name="discovery_deep_shelf_fragment_0">Finished books weigh more than unfinished possibility.</string>
+    <string name="discovery_deep_shelf_fragment_1">A Path threshold changes what the shelf can bear.</string>
+    <string name="discovery_deep_shelf_fragment_2">Completion and advancement must reinforce the same foundation.</string>
+
+    <string name="discovery_long_watch_title">The Long Watch</string>
+    <string name="discovery_long_watch_clue">There is a point when time spent reading stops feeling counted.</string>
+    <string name="discovery_long_watch_lore">Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes.</string>
+    <string name="discovery_long_watch_fragment_0">Some clocks measure pages badly.</string>
+    <string name="discovery_long_watch_fragment_1">Long attention changes the room before it changes the title.</string>
+    <string name="discovery_long_watch_fragment_2">Remain long enough that counted time stops being the point.</string>
+
+    <string name="discovery_veil_thins_title">When the Veil Thins</string>
+    <string name="discovery_veil_thins_clue">Several marks must awaken before they begin to answer one another.</string>
+    <string name="discovery_veil_thins_lore">Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil.</string>
+    <string name="discovery_veil_thins_fragment_0">One sigil is a mark. Several begin to answer one another.</string>
+    <string name="discovery_veil_thins_fragment_1">The pattern needs more than isolated milestones.</string>
+    <string name="discovery_veil_thins_fragment_2">When enough marks resonate, the hidden surface becomes legible.</string>
+
+    <string name="discovery_unnamed_chamber_title">The Unnamed Chamber</string>
+    <string name="discovery_unnamed_chamber_clue">The deepest chamber does not open to a single achievement.</string>
+    <string name="discovery_unnamed_chamber_lore">A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name.</string>
+    <string name="discovery_unnamed_chamber_fragment_0">The deepest door ignores solitary achievements.</string>
+    <string name="discovery_unnamed_chamber_fragment_1">Mature Path identity must meet a nearly complete constellation.</string>
+    <string name="discovery_unnamed_chamber_fragment_2">Only convergence reveals the chamber that early ranks cannot name.</string>
+
+    <string name="sanctum_seal_open">THE SEAL IS OPEN</string>
+    <string name="sanctum_sixth_door">THE SIXTH DOOR</string>
+    <string name="sanctum_path_completion">PATH COMPLETION</string>
+    <string name="sanctum_core_sigils">CORE SIGILS</string>
+    <string name="sanctum_ready_body">The Castle recognizes a complete Path and a full core constellation. A hidden record has surfaced below.</string>
+    <string name="sanctum_locked_body">Reach the final Path rank and awaken all five core sigils. The remaining door has no visible handle.</string>
+    <string name="sanctum_record_open_title">SOVEREIGN RECORD · THE STAR BETWEEN SHELVES</string>
+    <string name="sanctum_record_sealed_title">SOVEREIGN RECORD · SEALED</string>
+    <string name="sanctum_record_open_body">There was never a final shelf. Only another threshold hidden behind the act of returning.</string>
+    <string name="sanctum_record_sealed_body">A permanent inscription is present here, but its condition has not yet been satisfied.</string>
+    <string name="sanctum_record_open_meta">PERMANENT · NON-CONSUMABLE · LOCAL RECORD</string>
+    <string name="sanctum_record_sealed_meta">NOT YET RECOGNIZED</string>
+</resources>
