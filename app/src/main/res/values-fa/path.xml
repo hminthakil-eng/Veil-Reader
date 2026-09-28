@@ -51,4 +51,7 @@
     <string name="ritual_continue">ادامه</string>
     <string name="ritual_rejected_body">مسیر یا مراسم فعلی دیگر با این درخواست هم‌خوان نیست. ببند و پیشرفتت را دوباره بررسی کن.</string>
     <string name="ritual_close">بستن</string>
+    <string name="path_level">سطح %1$d</string>
+    <string name="path_xp">%1$d/%2$d امتیاز تجربه</string>
+    <string name="path_mastered">کامل‌شده</string>
 </resources>
