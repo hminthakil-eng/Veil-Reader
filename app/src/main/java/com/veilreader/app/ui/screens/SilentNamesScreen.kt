@@ -151,7 +151,7 @@ fun SilentNamesScreen(
             if (sealed == null && storageBlocked) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    color = VeilPalette.InkRaised.copy(alpha = 0.92f),
+                    color = VeilPalette.RaisedIron.copy(alpha = 0.92f),
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
                     shape = MaterialTheme.shapes.medium
                 ) {
@@ -225,7 +225,7 @@ fun SilentNamesScreen(
                 }
                 if (saveFailed) {
                     Surface(
-                        color = VeilPalette.InkRaised.copy(alpha = 0.88f),
+                        color = VeilPalette.RaisedIron.copy(alpha = 0.88f),
                         border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
                         shape = MaterialTheme.shapes.small
                     ) {
@@ -383,7 +383,7 @@ private fun SilentNamesChoices(
 private fun SilentNamesSealedResult(receipt: SilentNamesReceipt) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = VeilPalette.InkRaised.copy(alpha = 0.92f),
+        color = VeilPalette.RaisedIron.copy(alpha = 0.92f),
         border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
         shape = MaterialTheme.shapes.medium
     ) {
