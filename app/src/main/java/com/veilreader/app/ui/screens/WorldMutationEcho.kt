@@ -69,12 +69,12 @@ internal fun WorldMutationEcho(
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
                     Text(
-                        mutation.title,
+                        mutation.titleFor(realm),
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Moon
                     )
                     Text(
-                        mutation.inscription,
+                        mutation.inscriptionFor(realm),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.72f)
                     )
