@@ -48,4 +48,16 @@
     <string name="reader_mode_slide">اسلاید</string>
     <string name="reader_mode_paged">بی‌حرکت</string>
     <string name="reader_mode_scroll">پیوسته</string>
+    <string name="reader_page_movement">حرکت صفحه</string>
+    <string name="reader_mode_curl_description">ورق کاغذی با حرکت دست؛ لبهٔ صفحه را بکش تا ورق بخورد.</string>
+    <string name="reader_mode_slide_description">جابجایی افقی میان صفحه‌های ثابت.</string>
+    <string name="reader_mode_paged_description">صفحه‌بندی ثابت، بدون حرکت نمایشی.</string>
+    <string name="reader_mode_scroll_description">متن پیوسته با حرکت عمودی برای کتاب‌های سازگار.</string>
+    <string name="reader_page_section_intro">فاصلهٔ متن از لبه‌ها و تعداد ستون‌ها را تنظیم کن.</string>
+    <string name="reader_page_margins">حاشیهٔ صفحه</string>
+    <string name="reader_columns">ستون‌ها</string>
+    <string name="reader_columns_auto">خودکار</string>
+    <string name="reader_columns_one">یک</string>
+    <string name="reader_columns_two">دو</string>
+    <string name="reader_columns_scroll_note">ستون‌ها برای کتاب الکترونیکی صفحه‌بندی‌شده‌اند؛ حالت پیوسته یک جریان عمودی دارد.</string>
 </resources>
