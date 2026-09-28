@@ -406,7 +406,7 @@ fun TreasuryScreen(
             sharedKey = hallSharedBoundsKey("treasury"),
             eyebrow = "TREASURY · RELIC VAULT",
             title = "The Treasury",
-            subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
+            subtitle = "Relics, sigils, story keepsakes, and bookplates projected only from records already sealed on this device.",
             trailing = buildString {
                 append("$awakenedRelics READING RELICS")
                 if (storyRelicOwned) append(" · 1 STORY RELIC")
@@ -416,7 +416,9 @@ fun TreasuryScreen(
 
         WorldMutationEcho(
             ledger = mutationLedger,
-            realm = WorldMutationRealm.TREASURY
+            realm = WorldMutationRealm.TREASURY,
+            eyebrow = "TREASURY CONSEQUENCE",
+            title = "What the Castle now remembers"
         )
 
         if (storyRelicOwned) {
