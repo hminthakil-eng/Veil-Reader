@@ -112,7 +112,9 @@ fun CastleScreen(
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
     memoryStateOverride: CastleMemoryState? = null,
-    silentNamesSealed: Boolean = false
+    silentNamesSealed: Boolean = false,
+    silentNamesReceiptPathId: String? = null,
+    silentNamesStorageBlocked: Boolean = false
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
@@ -264,6 +266,8 @@ fun CastleScreen(
 
         SilentNamesHallPortal(
             sealed = silentNamesSealed,
+            receiptPathId = silentNamesReceiptPathId,
+            storageBlocked = silentNamesStorageBlocked,
             onOpen = { onOpenRoom(SILENT_NAMES_HALL_ROUTE) }
         )
 
@@ -298,11 +302,24 @@ internal const val SILENT_NAMES_HALL_ROUTE = "silent_names"
 @Composable
 private fun SilentNamesHallPortal(
     sealed: Boolean,
+    receiptPathId: String?,
+    storageBlocked: Boolean,
     onOpen: () -> Unit
 ) {
     val title = stringResource(R.string.silent_names_title)
     val action = stringResource(
-        if (sealed) R.string.silent_names_revisit else R.string.silent_names_enter
+        when {
+            storageBlocked -> R.string.silent_names_inspect_preserved
+            sealed -> R.string.silent_names_revisit
+            else -> R.string.silent_names_enter
+        }
+    )
+    val summary = stringResource(
+        when {
+            storageBlocked -> R.string.silent_names_record_unavailable_short
+            sealed -> silentNamesHallAfterglowRes(receiptPathId)
+            else -> R.string.silent_names_intro
+        }
     )
 
     Surface(
@@ -386,11 +403,7 @@ private fun SilentNamesHallPortal(
                     color = VeilPalette.Moon
                 )
                 Text(
-                    if (sealed) {
-                        stringResource(R.string.silent_names_saved)
-                    } else {
-                        stringResource(R.string.silent_names_intro)
-                    },
+                    summary,
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist,
                     maxLines = 2,
