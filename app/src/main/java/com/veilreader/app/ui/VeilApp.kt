@@ -727,6 +727,7 @@ fun VeilApp(
                         books = books,
                         highlights = highlights,
                         readingSessions = readingSessions,
+                        profile = profile,
                         onOpenBook = { book -> requestOpenBook(book) },
                         onClose = routeViewModel::closeChamber
                     )

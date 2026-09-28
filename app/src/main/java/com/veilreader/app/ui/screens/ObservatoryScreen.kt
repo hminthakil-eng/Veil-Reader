@@ -24,9 +24,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -42,7 +44,11 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.MemoryAtlas
 import com.veilreader.app.domain.MemoryAtlasEdge
 import com.veilreader.app.domain.MemoryRelationKind
+import com.veilreader.app.domain.PathArchitecturalMotif
+import com.veilreader.app.domain.PathWorldSignature
+import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.domain.derivePathWorldSignature
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
@@ -64,11 +70,26 @@ import kotlin.math.hypot
 import kotlin.math.sin
 import kotlin.math.sqrt
 
+internal fun observatoryPathSignature(profile: ReaderProfile?): PathWorldSignature? {
+    val value = profile ?: return null
+    val ritualTarget = value.ritualTarget.coerceAtLeast(1)
+    val ritualCharge =
+        (value.ritualProgress.coerceAtLeast(0).toFloat() / ritualTarget.toFloat())
+            .coerceIn(0f, 1f)
+    return derivePathWorldSignature(
+        pathId = value.path.id,
+        rankIndex = value.rankIndex,
+        rankCount = value.path.ranks.size,
+        ritualCharge = ritualCharge
+    )
+}
+
 @Composable
 fun ObservatoryScreen(
     books: List<Book>,
     highlights: List<Highlight>,
     readingSessions: List<ReadingSessionSnapshot>,
+    profile: ReaderProfile? = null,
     onOpenBook: (Book) -> Unit,
     onClose: () -> Unit
 ) {
@@ -80,6 +101,9 @@ fun ObservatoryScreen(
             highlights = highlights,
             sessions = readingSessions
         )
+    }
+    val pathSignature = remember(profile) {
+        observatoryPathSignature(profile)
     }
     var selectedBookId by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -102,14 +126,24 @@ fun ObservatoryScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
-                seed = atlas.nodes.size * 17 + atlas.edges.size * 7,
-                intensity = 0.98f,
+                seed =
+                    atlas.nodes.size * 17 +
+                        atlas.edges.size * 7 +
+                        (pathSignature?.motif?.ordinal ?: 0) * 101,
+                intensity = (
+                    0.88f + (pathSignature?.strength ?: 0f) * 0.10f
+                    ).coerceIn(0.88f, 0.98f),
                 temporalPhase = currentVeilTemporalPhase()
             )
             .narrativeArchitectureField(
                 realm = VeilRealm.CASTLE,
-                seed = atlas.nodes.size * 23 + atlas.edges.size * 11,
-                intensity = 0.88f
+                seed =
+                    atlas.nodes.size * 23 +
+                        atlas.edges.size * 11 +
+                        (pathSignature?.motif?.ordinal ?: 0) * 131,
+                intensity = (
+                    0.78f + (pathSignature?.strength ?: 0f) * 0.12f
+                    ).coerceIn(0.78f, 0.90f)
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -161,12 +195,14 @@ fun ObservatoryScreen(
 
         ObservatoryGrandMasthead(
             volumeCount = atlas.nodes.size,
-            linkCount = atlas.edges.size
+            linkCount = atlas.edges.size,
+            pathSignature = pathSignature
         )
 
         ObservatoryAtlasPanel(
             atlas = atlas,
             selectedBookId = selectedBookId,
+            pathSignature = pathSignature,
             panelHeightDp = observatoryLayout.observatoryHeightDp,
             onSelectBook = { selectedBookId = it }
         )
@@ -222,7 +258,8 @@ fun ObservatoryScreen(
 @Composable
 private fun ObservatoryGrandMasthead(
     volumeCount: Int,
-    linkCount: Int
+    linkCount: Int,
+    pathSignature: PathWorldSignature?
 ) {
     val fontScale = LocalDensity.current.fontScale
     Box(
@@ -291,6 +328,16 @@ private fun ObservatoryGrandMasthead(
                 color = VeilPalette.Moon.copy(alpha = 0.82f),
                 modifier = Modifier.widthIn(max = 600.dp)
             )
+            pathSignature?.let { signature ->
+                Text(
+                    "PATH LENS · ${signature.motif.name} · ${signature.inscription}",
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                    color = VeilPalette.Spirit.copy(
+                        alpha = 0.62f + signature.strength * 0.22f
+                    ),
+                    modifier = Modifier.widthIn(max = 640.dp)
+                )
+            }
             BrassRule(Modifier.width(158.dp), strong = true)
         }
     }
@@ -300,6 +347,7 @@ private fun ObservatoryGrandMasthead(
 private fun ObservatoryAtlasPanel(
     atlas: MemoryAtlas,
     selectedBookId: String?,
+    pathSignature: PathWorldSignature?,
     panelHeightDp: Float,
     onSelectBook: (String) -> Unit
 ) {
@@ -368,6 +416,9 @@ private fun ObservatoryAtlasPanel(
                 }
         ) {
             val center = Offset(size.width / 2f, size.height / 2f)
+            pathSignature?.let { signature ->
+                drawObservatoryPathLens(signature, center)
+            }
             listOf(0.19f, 0.31f, 0.43f).forEach { fraction ->
                 drawCircle(
                     color = VeilPalette.Brass.copy(alpha = 0.07f),
@@ -481,6 +532,90 @@ private fun ObservatoryAtlasPanel(
                     "Import volumes and preserve passages; the Observatory will map only relations your archive can support.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist
+                )
+            }
+        }
+    }
+}
+
+private fun DrawScope.drawObservatoryPathLens(
+    signature: PathWorldSignature,
+    center: Offset
+) {
+    val strength = signature.strength.coerceIn(0f, 1f)
+    val alpha = (0.025f + strength * 0.075f).coerceAtMost(0.10f)
+    val brass = VeilPalette.Brass.copy(alpha = alpha)
+    val spirit = VeilPalette.Spirit.copy(alpha = alpha * 0.82f)
+    val w = size.width
+    val h = size.height
+    val count = signature.ornamentCount.coerceIn(2, 9)
+
+    when (signature.motif) {
+        PathArchitecturalMotif.CIPHER -> {
+            repeat(count.coerceAtMost(6)) { index ->
+                val radius = size.minDimension * (0.08f + index * 0.045f)
+                drawArc(
+                    color = if (index % 2 == 0) brass else spirit,
+                    startAngle = 18f + index * 21f,
+                    sweepAngle = 214f - index * 9f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius, center.y - radius),
+                    size = Size(radius * 2f, radius * 2f),
+                    style = Stroke((0.55f + index * 0.06f).dp.toPx())
+                )
+            }
+        }
+        PathArchitecturalMotif.DREAM -> {
+            repeat(count.coerceAtMost(6)) { index ->
+                val rx = w * (0.18f + index * 0.028f)
+                val ry = h * (0.08f + index * 0.018f)
+                drawOval(
+                    color = spirit.copy(alpha = alpha * (0.92f - index * 0.08f)),
+                    topLeft = Offset(center.x - rx, center.y - ry),
+                    size = Size(rx * 2f, ry * 2f),
+                    style = Stroke(0.65.dp.toPx())
+                )
+            }
+        }
+        PathArchitecturalMotif.ARCHIVE -> {
+            repeat(count.coerceAtMost(8)) { index ->
+                val x = w * (0.25f + index * 0.07f)
+                drawLine(brass.copy(alpha = alpha * 0.78f), Offset(x, h * 0.18f), Offset(x, h * 0.82f), 0.55.dp.toPx())
+            }
+            repeat(4) { index ->
+                val y = h * (0.30f + index * 0.13f)
+                drawLine(spirit.copy(alpha = alpha * 0.58f), Offset(w * 0.20f, y), Offset(w * 0.80f, y), 0.50.dp.toPx())
+            }
+        }
+        PathArchitecturalMotif.VANGUARD -> {
+            repeat(count.coerceAtMost(6)) { index ->
+                val spread = w * (0.09f + index * 0.028f)
+                val y = h * (0.26f + index * 0.07f)
+                drawLine(brass, Offset(center.x - spread, y), Offset(center.x, y + h * 0.055f), 0.72.dp.toPx())
+                drawLine(brass, Offset(center.x + spread, y), Offset(center.x, y + h * 0.055f), 0.72.dp.toPx())
+            }
+        }
+        PathArchitecturalMotif.NOCTURNE -> {
+            val radius = size.minDimension * (0.22f + strength * 0.04f)
+            drawCircle(spirit, radius, center, style = Stroke(0.85.dp.toPx()))
+            drawCircle(
+                color = VeilPalette.Ink.copy(alpha = 0.38f + strength * 0.22f),
+                radius = radius * 0.88f,
+                center = center + Offset(radius * 0.24f, -radius * 0.05f)
+            )
+        }
+        PathArchitecturalMotif.ARTIFICE -> {
+            val inner = size.minDimension * 0.18f
+            val outer = size.minDimension * 0.25f
+            drawCircle(brass, inner, center, style = Stroke(0.78.dp.toPx()))
+            repeat(count.coerceAtLeast(6)) { index ->
+                val angle = (index.toDouble() / count.coerceAtLeast(1)) * PI * 2.0
+                val unit = Offset(cos(angle).toFloat(), sin(angle).toFloat())
+                drawLine(
+                    if (index % 2 == 0) brass else spirit,
+                    center + unit * inner,
+                    center + unit * outer,
+                    0.65.dp.toPx()
                 )
             }
         }
