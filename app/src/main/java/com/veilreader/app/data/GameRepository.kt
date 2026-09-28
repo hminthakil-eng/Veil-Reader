@@ -1,6 +1,7 @@
 package com.veilreader.app.data
 
 import android.content.Context
+import android.content.SharedPreferences
 import android.os.SystemClock
 import java.time.LocalTime
 import com.veilreader.app.domain.ReadingPolicy
@@ -192,7 +193,7 @@ class GameRepository(context: Context) {
         nowEpochMs: () -> Long = { System.currentTimeMillis().coerceAtLeast(1L) }
     ): SilentNamesCommitResult = withContext(Dispatchers.IO) {
         synchronized(SILENT_NAMES_LOCK) {
-            readSilentNamesReceiptLocked()?.let {
+            readSilentNamesReceiptLocked(retryUncertainWrite = true)?.let {
                 return@synchronized SilentNamesCommitResult(it, newlyCommitted = false)
             }
 
@@ -210,10 +211,13 @@ class GameRepository(context: Context) {
                 existing = null
             ).receipt
 
-            val committed = prefs.edit()
-                .putString(SILENT_NAMES_RECEIPT_KEY, encodeSilentNamesReceipt(candidate))
-                .commit()
+            val serialized = encodeSilentNamesReceipt(candidate)
+            // commit() may update the process cache even when it reports a disk failure. Until
+            // success, no reader in this process may treat that cached value as earned ownership.
+            SILENT_NAMES_UNCERTAIN_WRITES[prefs] = serialized
+            val committed = prefs.edit().putString(SILENT_NAMES_RECEIPT_KEY, serialized).commit()
             check(committed) { "Could not commit Silent Names encounter receipt" }
+            SILENT_NAMES_UNCERTAIN_WRITES.remove(prefs)
 
             val restored = checkNotNull(readSilentNamesReceiptLocked()) {
                 "Silent Names receipt was not readable after commit"
@@ -540,15 +544,36 @@ class GameRepository(context: Context) {
         )
     }
 
-    private fun readSilentNamesReceiptLocked(): SilentNamesReceipt? {
-        val raw = prefs.getString(SILENT_NAMES_RECEIPT_KEY, null) ?: return null
-        return runCatching { decodeSilentNamesReceipt(raw) }
+    private fun readSilentNamesReceiptLocked(retryUncertainWrite: Boolean = false): SilentNamesReceipt? {
+        val pending = SILENT_NAMES_UNCERTAIN_WRITES[prefs]
+        val raw = prefs.getString(SILENT_NAMES_RECEIPT_KEY, null) ?: run {
+            if (pending == null) return null
+            check(retryUncertainWrite) { "Silent Names receipt has not been committed to disk" }
+            check(prefs.edit().putString(SILENT_NAMES_RECEIPT_KEY, pending).commit()) {
+                "Silent Names receipt is still not committed to disk"
+            }
+            SILENT_NAMES_UNCERTAIN_WRITES.remove(prefs)
+            pending
+        }
+        val receipt = runCatching { decodeSilentNamesReceipt(raw) }
             .getOrElse { error ->
                 throw IllegalStateException(
                     "Stored Silent Names receipt is unsupported or corrupt; retaining it unchanged.",
                     error
                 )
             }
+        val uncertain = SILENT_NAMES_UNCERTAIN_WRITES[prefs]
+        if (uncertain != null) {
+            if (uncertain == raw) {
+                check(retryUncertainWrite) { "Silent Names receipt has not been committed to disk" }
+                check(prefs.edit().putString(SILENT_NAMES_RECEIPT_KEY, raw).commit()) {
+                    "Silent Names receipt is still not committed to disk"
+                }
+            }
+            // A changed raw value belongs to a later completed restore/write, not this attempt.
+            SILENT_NAMES_UNCERTAIN_WRITES.remove(prefs)
+        }
+        return receipt
     }
 
     private fun encodeSilentNamesReceipt(receipt: SilentNamesReceipt): String = JSONObject().apply {
@@ -624,6 +649,7 @@ class GameRepository(context: Context) {
     private companion object {
         const val SILENT_NAMES_RECEIPT_KEY = "encounter:${SilentNamesEncounter.ID}:receipt"
         val SILENT_NAMES_LOCK = Any()
+        val SILENT_NAMES_UNCERTAIN_WRITES = java.util.WeakHashMap<SharedPreferences, String>()
     }
 
 }
