@@ -7,6 +7,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -53,6 +54,7 @@ class SettingsStoreInstrumentedTest {
             pageTurnStyle = PageTurnStyle.SLIDE,
             screenBrightness = 0.42,
             fontFamily = ReaderFontFamily.OPEN_DYSLEXIC,
+            fontWeight = 1.75,
             textAlignment = ReaderTextAlignment.JUSTIFY,
             columnMode = ReaderColumnMode.TWO,
             hyphenation = ReaderPreferenceToggle.ON,
@@ -63,6 +65,7 @@ class SettingsStoreInstrumentedTest {
             letterSpacing = 0.08,
             wordSpacing = 0.24,
             typeScale = 1.15,
+            darkImageTreatment = ReaderDarkImageTreatment.INVERT,
             paperPatina = 0.84
         )
 
