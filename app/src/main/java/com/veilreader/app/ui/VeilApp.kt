@@ -46,7 +46,8 @@ import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.domain.deriveWorldMutationLedger
-import com.veilreader.app.domain.deriveStoryRelics
+import com.veilreader.app.domain.collectStoryRelics
+import com.veilreader.app.domain.toStoryRelicRecordOrNull
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
@@ -228,7 +229,9 @@ fun VeilApp(
         )
     }
     val storyRelics = remember(silentNamesReceipt) {
-        deriveStoryRelics(silentNamesReceipt = silentNamesReceipt)
+        collectStoryRelics(
+            silentNamesReceipt?.toStoryRelicRecordOrNull()
+        )
     }
     val worldMutationLedger = remember(profile, worldMemoryState, storyRelics) {
         profile?.let {
