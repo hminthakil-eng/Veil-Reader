@@ -13,6 +13,7 @@ import com.veilreader.app.domain.derivePathMastery
 import com.veilreader.app.domain.pathInsightEvidenceTotal
 import com.veilreader.app.domain.pathStabilityEvidenceTotal
 import com.veilreader.app.domain.validateRitualAftermath
+import com.veilreader.app.domain.narrativeCovenantFor
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.SilentNamesChoice
 import com.veilreader.app.domain.SilentNamesDice
@@ -71,6 +72,12 @@ class GameRepository(context: Context) {
 
     private val _castleTitle = MutableStateFlow(prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil")
     val castleTitle: StateFlow<String> = _castleTitle
+
+    private val _covenantId = MutableStateFlow(
+        prefs.getString("covenantId", null)
+            ?.takeIf { narrativeCovenantFor(it) != null }
+    )
+    val covenantId: StateFlow<String?> = _covenantId
 
     init {
         // Old builds counted every highlight for every Path. Preserve Oracle progress only.
@@ -168,6 +175,19 @@ class GameRepository(context: Context) {
         if (title !in availableCastleTitles()) return false
         prefs.edit().putString("castleTitle", title).apply()
         _castleTitle.value = title
+        return true
+    }
+
+    /**
+     * Covenants are optional narrative identity only. They never grant XP, Rank, rooms or reading
+     * evidence. Passing null releases the current vow without penalty.
+     */
+    fun setCovenant(covenantId: String?): Boolean {
+        if (covenantId != null && narrativeCovenantFor(covenantId) == null) return false
+        val editor = prefs.edit()
+        if (covenantId == null) editor.remove("covenantId") else editor.putString("covenantId", covenantId)
+        if (!editor.commit()) return false
+        _covenantId.value = covenantId
         return true
     }
 
