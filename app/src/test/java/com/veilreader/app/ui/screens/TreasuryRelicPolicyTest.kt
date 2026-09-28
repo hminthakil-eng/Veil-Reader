@@ -6,6 +6,7 @@ import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.SilentNamesChoice
 import com.veilreader.app.domain.SilentNamesEncounter
 import com.veilreader.app.domain.SilentNamesMode
+import com.veilreader.app.domain.deriveStoryRelics
 import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.deriveWorldMutationLedger
 import org.junit.Assert.assertEquals
@@ -89,7 +90,7 @@ class TreasuryRelicPolicyTest {
     }
 
     @Test
-    fun `story relic ownership derives only from a valid sealed receipt`() {
+    fun `Treasury story relic registry accepts only projected known records`() {
         val valid = SilentNamesEncounter.resolve(
             pathId = "oracle",
             choice = SilentNamesChoice.FOLLOW_LIGHT,
@@ -98,13 +99,15 @@ class TreasuryRelicPolicyTest {
             recordedAtEpochMs = 900L
         ).receipt
 
-        assertTrue(silentNamesStoryRelicOwned(valid))
-        assertFalse(silentNamesStoryRelicOwned(null))
-        assertFalse(
-            silentNamesStoryRelicOwned(
-                valid.copy(rewardId = "forged_reward")
-            )
+        val validDisplays = storyRelicDisplayModels(deriveStoryRelics(valid))
+        val forgedDisplays = storyRelicDisplayModels(
+            deriveStoryRelics(valid.copy(rewardId = "forged_reward"))
         )
+
+        assertEquals(1, validDisplays.size)
+        assertEquals(SilentNamesEncounter.REWARD_ID, validDisplays.single().record.relicId)
+        assertTrue(forgedDisplays.isEmpty())
+        assertTrue(storyRelicDisplayModels(emptyList()).isEmpty())
     }
 
     @Test
