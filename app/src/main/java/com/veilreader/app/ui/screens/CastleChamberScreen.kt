@@ -39,6 +39,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.deriveRelicTemperament
+import com.veilreader.app.domain.narrativeCovenantFor
+import com.veilreader.app.domain.veilOrderForPath
 import com.veilreader.app.domain.SilentNamesReceipt
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import com.veilreader.app.domain.mysteryChainSnapshot
@@ -316,6 +319,7 @@ fun TreasuryScreen(
     equippedSigil: String?,
     mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
     silentNamesReceipt: SilentNamesReceipt? = null,
+    covenantId: String? = null,
     onEquip: (String?) -> Unit,
     onClose: () -> Unit
 ) {
@@ -468,6 +472,8 @@ fun TreasuryScreen(
                             RelicCabinetCell(
                                 relic = relic,
                                 unlockState = requireNotNull(relicStates[relic.id]),
+                                pathId = profile.path.id,
+                                covenantId = covenantId,
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
@@ -831,9 +837,19 @@ private fun SigilRelicRow(
 private fun RelicCabinetCell(
     relic: RelicPresentation,
     unlockState: RelicUnlockState,
+    pathId: String,
+    covenantId: String?,
     modifier: Modifier = Modifier
 ) {
     val awakened = unlockState.awakened
+    val temperament = deriveRelicTemperament(
+        relicId = relic.id,
+        pathId = pathId,
+        awakened = awakened,
+        evidenceCount = unlockState.evidenceCount,
+        target = unlockState.target,
+        covenantId = covenantId
+    )
     Box(
         modifier = modifier
             .heightIn(min = 132.dp)
@@ -904,6 +920,17 @@ private fun RelicCabinetCell(
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Spirit.copy(alpha = 0.72f),
                     maxLines = 2
+                )
+                Text(
+                    "TEMPERAMENT · ${temperament.label.uppercase()}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass.copy(alpha = 0.78f)
+                )
+                Text(
+                    temperament.description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.66f),
+                    maxLines = 4
                 )
             } else {
                 Text(
@@ -993,6 +1020,7 @@ fun SanctumScreen(
     availableTitles: List<String>,
     discoveries: List<VeiledDiscoveryRecord> = emptyList(),
     mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
+    covenantId: String? = null,
     highlightCount: Int = 0,
     onSelectTitle: (String) -> Unit,
     onClose: () -> Unit
@@ -1088,6 +1116,11 @@ fun SanctumScreen(
             durableOnly = true
         )
 
+        SanctumOrderResonance(
+            profile = profile,
+            covenantId = covenantId
+        )
+
         SanctumSealPanel(
             profile = profile,
             rankProgress = rankProgress,
@@ -1152,6 +1185,52 @@ fun SanctumScreen(
 
         HiddenSanctumRecord(sovereignReady = sovereignReady)
     }
+    }
+}
+
+@Composable
+private fun SanctumOrderResonance(
+    profile: ReaderProfile,
+    covenantId: String?
+) {
+    val order = veilOrderForPath(profile.path.id)
+    val covenant = narrativeCovenantFor(covenantId)
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.62f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f))
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Text(
+                "ORDER RESONANCE · ${order.name.uppercase()}",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
+                color = VeilPalette.Brass
+            )
+            Text(
+                order.maxim,
+                style = MaterialTheme.typography.titleMedium,
+                color = VeilPalette.Moon
+            )
+            Text(
+                order.worldFunction,
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist
+            )
+            Text(
+                if (covenant != null) {
+                    "COVENANT · ${covenant.name} · ${covenant.vow}"
+                } else {
+                    "NO COVENANT · YOUR PATH REMAINS COMPLETE WITHOUT ONE"
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = if (covenant != null) VeilPalette.Spirit.copy(alpha = 0.78f)
+                else VeilPalette.Mist.copy(alpha = 0.52f)
+            )
+        }
     }
 }
 
