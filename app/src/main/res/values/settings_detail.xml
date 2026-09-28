@@ -65,4 +65,5 @@
     <string name="settings_masthead_eyebrow">SANCTUARY CONTROLS</string>
     <string name="settings_masthead_title">The Reading Room</string>
     <string name="settings_masthead_body">Reading, appearance, storage, privacy, and backup controls — local by default.</string>
+    <string name="settings_back">Back</string>
 </resources>
