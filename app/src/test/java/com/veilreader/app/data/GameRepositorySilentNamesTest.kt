@@ -199,6 +199,11 @@ class GameRepositorySilentNamesTest {
         }
         assertThrows(IllegalStateException::class.java) { game.silentNamesReceipt() }
         assertThrows(IllegalStateException::class.java) { game.ownsSilentNamesReward() }
+        val revisited = GameRepository(wrapped)
+        assertEquals(
+            SilentNamesChoice.EXAMINE_SEAL to SilentNamesMode.DICE,
+            revisited.pendingSilentNamesAttempt()
+        )
         val restored = game.sealSilentNamesEncounter(
             SilentNamesChoice.SPEAK_TO_KEEPER, SilentNamesMode.STORY,
             nextD20 = { rolls.incrementAndGet(); 20 }, nowEpochMs = { 9999L })
@@ -206,5 +211,6 @@ class GameRepositorySilentNamesTest {
         assertEquals(SilentNamesChoice.EXAMINE_SEAL, restored.receipt.choice)
         assertEquals(1, rolls.get())
         assertTrue(game.ownsSilentNamesReward())
+        assertEquals(null, revisited.pendingSilentNamesAttempt())
     }
 }
