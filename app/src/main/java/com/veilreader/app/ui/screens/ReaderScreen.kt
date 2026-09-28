@@ -71,6 +71,7 @@ import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReadingContinuitySummary
@@ -116,6 +117,7 @@ import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.ColumnCount
 import org.readium.r2.navigator.preferences.Fit
 import org.readium.r2.navigator.preferences.FontFamily
+import org.readium.r2.navigator.preferences.ImageFilter
 import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.navigator.preferences.TextAlign as ReadiumTextAlign
 import org.readium.r2.navigator.preferences.Theme
@@ -2012,6 +2014,26 @@ private fun EpubAppearancePanel(
                     }
                 )
 
+                ReaderConsoleNullableSlider(
+                    label = "Text weight",
+                    value = draft.fontWeight,
+                    valueRange = 0f..2.5f,
+                    enabled = true,
+                    nullPreviewValue = 1f,
+                    valueLabel = { "${(it * 100).toInt()}%" },
+                    onValueChange = {
+                        updateDraft(draft.withFontWeight(it.toDouble()))
+                    },
+                    onReset = {
+                        updateDraft(draft.copy(fontWeight = null))
+                    }
+                )
+                Text(
+                    "Readium base weight for reflowable EPUB. Reset keeps the book/default weight; text normalization can extend the effect to styled headings.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.68f)
+                )
+
                 ReaderConsoleSlider(
                     label = "Line spacing",
                     value = draft.lineHeight.toFloat(),
@@ -2173,6 +2195,39 @@ private fun EpubAppearancePanel(
                         "Controls fibre, mottling, edge oxidation, and page age without changing the book's text."
                     } else {
                         "Paper patina is available in Paper and Sepia themes."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.68f)
+                )
+
+                val darkTheme =
+                    draft.theme == ReaderTheme.DUSK || draft.theme == ReaderTheme.OLED
+                Text("Dark-theme images", style = MaterialTheme.typography.labelLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ReaderDarkImageTreatment.entries.forEach { treatment ->
+                        ReaderConsoleChoice(
+                            label = when (treatment) {
+                                ReaderDarkImageTreatment.NONE -> "Original"
+                                ReaderDarkImageTreatment.DARKEN -> "Darken"
+                                ReaderDarkImageTreatment.INVERT -> "Invert"
+                            },
+                            selected = draft.darkImageTreatment == treatment,
+                            enabled = darkTheme,
+                            modifier = Modifier.weight(1f),
+                            onClick = {
+                                updateDraft(draft.withDarkImageTreatment(treatment))
+                            }
+                        )
+                    }
+                }
+                Text(
+                    if (darkTheme) {
+                        "Applies Readium's image filter to reflowable EPUB images in Dusk/Night only."
+                    } else {
+                        "Image treatment becomes active only in Dusk or Night, matching Readium's dark-theme constraint."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.68f)
@@ -2450,6 +2505,8 @@ private fun ReaderConsoleNullableSlider(
     value: Double?,
     valueRange: ClosedFloatingPointRange<Float>,
     enabled: Boolean,
+    nullPreviewValue: Float = valueRange.start,
+    valueLabel: ((Float) -> String)? = null,
     onValueChange: (Float) -> Unit,
     onReset: () -> Unit
 ) {
@@ -2459,6 +2516,13 @@ private fun ReaderConsoleNullableSlider(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
+            valueLabel?.let { format ->
+                Text(
+                    if (value == null) "BOOK" else format(value.toFloat()),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.70f)
+                )
+            }
             TextButton(
                 onClick = onReset,
                 enabled = enabled && value != null,
@@ -2468,7 +2532,7 @@ private fun ReaderConsoleNullableSlider(
             }
         }
         Slider(
-            value = (value?.toFloat() ?: valueRange.start)
+            value = (value?.toFloat() ?: nullPreviewValue)
                 .coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             valueRange = valueRange,
@@ -2922,6 +2986,11 @@ internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
             ReaderTheme.SEPIA -> Theme.SEPIA
             ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
         },
+        imageFilter = when (darkImageTreatment) {
+            ReaderDarkImageTreatment.NONE -> null
+            ReaderDarkImageTreatment.DARKEN -> ImageFilter.DARKEN
+            ReaderDarkImageTreatment.INVERT -> ImageFilter.INVERT
+        },
         backgroundColor = colors?.first?.let(::ReadiumColor),
         textColor = colors?.second?.let(::ReadiumColor),
         fontFamily = when (fontFamily) {
@@ -2934,6 +3003,7 @@ internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
             ReaderFontFamily.IA_WRITER_DUOSPACE -> FontFamily.IA_WRITER_DUOSPACE
         },
         fontSize = readiumFontSizeRatio(fontScale),
+        fontWeight = fontWeight?.coerceIn(0.0, 2.5),
         lineHeight = lineHeight.coerceIn(1.1, 2.0),
         pageMargins = pageMargins.coerceIn(0.5, 2.0),
         paragraphSpacing = paragraphSpacing?.coerceIn(0.0, 2.0),
