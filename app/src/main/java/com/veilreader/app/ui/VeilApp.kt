@@ -226,9 +226,13 @@ fun VeilApp(
             nowEpochMs = System.currentTimeMillis()
         )
     }
-    val worldMutationLedger = remember(profile, worldMemoryState) {
+    val worldMutationLedger = remember(profile, worldMemoryState, silentNamesReceipt) {
         profile?.let {
-            deriveWorldMutationLedger(it, worldMemoryState)
+            deriveWorldMutationLedger(
+                profile = it,
+                memory = worldMemoryState,
+                silentNamesReceipt = silentNamesReceipt
+            )
         } ?: WorldMutationLedger.EMPTY
     }
 
@@ -547,6 +551,7 @@ fun VeilApp(
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
                 memoryStateOverride = worldMemoryState,
+                silentNamesReceipt = silentNamesReceipt,
                 silentNamesSealed = silentNamesReceipt != null || silentNamesStorageBlocked
             )
 
@@ -793,6 +798,7 @@ fun VeilApp(
                         profile = requireNotNull(profile),
                         equippedSigil = equippedSigil,
                         mutationLedger = worldMutationLedger,
+                        silentNamesReceipt = silentNamesReceipt,
                         onEquip = { id ->
                             if (!game.equipSigil(id)) {
                                 errorMessage = "That sigil has not awakened yet."
