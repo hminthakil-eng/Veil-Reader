@@ -111,6 +111,25 @@ still pending.
 | Replay-safe rule resolution | New | Existing valid receipt wins before RNG/time generation | Policy tests + repository tests authored |
 | Durable single award | Not implemented in initial policy | One committed receipt; reward derived from it | Source inspection; runtime process-death/backup round-trip pending |
 
+## Treasury and Castle manifestation
+
+A committed Lantern is now projected rather than independently stored:
+
+- `GameRepository` still owns the one authoritative Silent Names receipt.
+- `WorldMutationLedger` accepts that validated receipt as `STORY_RECEIPT` evidence and emits one
+  durable `STORY_RELIC` consequence into Great Hall and Treasury only.
+- This mutation grants no XP, rank, room access, quest progress or reading evidence.
+- Treasury renders the Lantern in a dedicated Story Relics section instead of pretending it is one
+  of the reading-evidence relics. Its outcome, Path-at-choice, mode and recorded date come directly
+  from the sealed receipt.
+- The canonical reading relic rarity/unlock policy is unchanged. The Lantern cannot be equipped as
+  a core sigil and does not enter the sovereign-crown requirement.
+- Great Hall uses the presence of the valid story mutation only as a restrained atmosphere/seed
+  change plus the existing mutation ledger entry; its eight rank-gated artifact destinations stay
+  unchanged.
+- Invalid/future receipts do not manifest a relic. The fail-closed UI remains the only presentation
+  until a compatible build can read the record.
+
 ## Verification
 
 Earlier local results on 2026-09-28: 8 pure encounter JUnit tests passed and the existing
