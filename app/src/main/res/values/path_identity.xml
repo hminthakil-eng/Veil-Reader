@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_name_oracle">The Oracle Path</string>
+    <string name="path_epithet_oracle">Seek what hides between the lines</string>
+    <string name="path_description_oracle">For mystery, deduction, layered worlds, and readers who live for clues.</string>
+    <string name="path_rank_oracle_0">Observer</string>
+    <string name="path_rank_oracle_1">Cipher</string>
+    <string name="path_rank_oracle_2">Investigator</string>
+    <string name="path_rank_oracle_3">Augur</string>
+    <string name="path_rank_oracle_4">Oracle</string>
+    <string name="path_rank_oracle_5">Veilseer</string>
+
+    <string name="path_name_dreamwalker">The Dreamwalker Path</string>
+    <string name="path_epithet_dreamwalker">Cross worlds no map can hold</string>
+    <string name="path_description_dreamwalker">For fantasy, myth, wonder, and impossible journeys.</string>
+    <string name="path_rank_dreamwalker_0">Wanderer</string>
+    <string name="path_rank_dreamwalker_1">Wayfarer</string>
+    <string name="path_rank_dreamwalker_2">Storybinder</string>
+    <string name="path_rank_dreamwalker_3">Dreamwalker</string>
+    <string name="path_rank_dreamwalker_4">Worldweaver</string>
+    <string name="path_rank_dreamwalker_5">Mythborne</string>
+
+    <string name="path_name_archivist">The Archivist Path</string>
+    <string name="path_epithet_archivist">Nothing learned is ever lost</string>
+    <string name="path_description_archivist">For history, science, philosophy, and knowledge-heavy reading.</string>
+    <string name="path_rank_archivist_0">Novice</string>
+    <string name="path_rank_archivist_1">Scribe</string>
+    <string name="path_rank_archivist_2">Scholar</string>
+    <string name="path_rank_archivist_3">Curator</string>
+    <string name="path_rank_archivist_4">Archivist</string>
+    <string name="path_rank_archivist_5">Keeper</string>
+
+    <string name="path_name_vanguard">The Vanguard Path</string>
+    <string name="path_epithet_vanguard">Turn every page like a battlefield</string>
+    <string name="path_description_vanguard">For action, adventure, progression fantasy, and relentless momentum.</string>
+    <string name="path_rank_vanguard_0">Recruit</string>
+    <string name="path_rank_vanguard_1">Strider</string>
+    <string name="path_rank_vanguard_2">Vanguard</string>
+    <string name="path_rank_vanguard_3">Champion</string>
+    <string name="path_rank_vanguard_4">Paragon</string>
+    <string name="path_rank_vanguard_5">Legend</string>
+
+    <string name="path_name_nocturne">The Nocturne Path</string>
+    <string name="path_epithet_nocturne">Read where the lantern fades</string>
+    <string name="path_description_nocturne">For horror, gothic fiction, dark fantasy, and unsettling mysteries.</string>
+    <string name="path_rank_nocturne_0">Listener</string>
+    <string name="path_rank_nocturne_1">Watcher</string>
+    <string name="path_rank_nocturne_2">Shade</string>
+    <string name="path_rank_nocturne_3">Nocturne</string>
+    <string name="path_rank_nocturne_4">Nightwarden</string>
+    <string name="path_rank_nocturne_5">Eclipse</string>
+
+    <string name="path_name_artificer">The Artificer Path</string>
+    <string name="path_epithet_artificer">Understand the machinery beneath the miracle</string>
+    <string name="path_description_artificer">For technology, engineering, hard science fiction, and systems thinkers.</string>
+    <string name="path_rank_artificer_0">Tinkerer</string>
+    <string name="path_rank_artificer_1">Analyst</string>
+    <string name="path_rank_artificer_2">Maker</string>
+    <string name="path_rank_artificer_3">Artificer</string>
+    <string name="path_rank_artificer_4">Architect</string>
+    <string name="path_rank_artificer_5">Prime Mechanist</string>
+</resources>
