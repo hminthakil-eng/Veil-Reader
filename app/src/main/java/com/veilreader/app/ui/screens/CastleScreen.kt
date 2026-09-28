@@ -58,7 +58,10 @@ import com.veilreader.app.domain.PathArchitecturalMotif
 import com.veilreader.app.domain.PathWorldSignature
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.Quest
+import com.veilreader.app.domain.WorldMutationLedger
+import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.domain.WorldProgressionProjection
+import com.veilreader.app.domain.deriveWorldMutationLedger
 import com.veilreader.app.domain.deriveWorldProgressionProjection
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
@@ -104,7 +107,8 @@ fun CastleScreen(
     highlights: List<Highlight> = emptyList(),
     bookmarks: List<Bookmark> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
-    readingCycles: List<ReadingCycleRecord> = emptyList()
+    readingCycles: List<ReadingCycleRecord> = emptyList(),
+    memoryStateOverride: CastleMemoryState? = null
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
@@ -123,6 +127,7 @@ fun CastleScreen(
         readingCycles
     ) { System.currentTimeMillis() }
     val memoryState = remember(
+        memoryStateOverride,
         books,
         highlights,
         bookmarks,
@@ -130,7 +135,7 @@ fun CastleScreen(
         readingCycles,
         castleNowEpochMs
     ) {
-        deriveCastleMemoryState(
+        memoryStateOverride ?: deriveCastleMemoryState(
             books = books,
             highlights = highlights,
             bookmarks = bookmarks,
@@ -138,6 +143,9 @@ fun CastleScreen(
             readingCycles = readingCycles,
             nowEpochMs = castleNowEpochMs
         )
+    }
+    val mutationLedger = remember(profile, memoryState) {
+        deriveWorldMutationLedger(profile, memoryState)
     }
     val worldProjection = remember(profile, quests, memoryState) {
         deriveWorldProgressionProjection(
@@ -225,6 +233,7 @@ fun CastleScreen(
         CastleMemoryInscription(memoryState)
         CastleWorldProgressionInscription(worldProjection)
         CastleMutationInscription(memoryState)
+        CastleWorldMutationLedger(mutationLedger)
 
         GreatHallArtifactNavigator(
             profile = profile,
@@ -1419,6 +1428,77 @@ private fun CastleWorldProgressionInscription(world: WorldProgressionProjection)
             modifier = Modifier.fillMaxWidth(),
             strong = world.ritualCharge >= 0.80f
         )
+    }
+}
+
+@Composable
+private fun CastleWorldMutationLedger(ledger: WorldMutationLedger) {
+    val entries = ledger.forRealm(WorldMutationRealm.GREAT_HALL).take(5)
+    if (entries.isEmpty()) return
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                "MUTATION LEDGER",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                color = VeilPalette.Brass.copy(alpha = 0.86f)
+            )
+            Text(
+                "${ledger.durableCount} ANCHORED",
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Mist.copy(alpha = 0.64f)
+            )
+        }
+
+        entries.forEach { mutation ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(9.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Box(
+                    Modifier
+                        .padding(top = 6.dp)
+                        .size(5.dp)
+                        .background(
+                            if (mutation.durable) VeilPalette.Brass
+                            else VeilPalette.Spirit,
+                            CircleShape
+                        )
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        mutation.title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        mutation.inscription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.72f)
+                    )
+                }
+                Text(
+                    mutation.evidenceCount.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Spirit.copy(alpha = 0.78f)
+                )
+            }
+        }
+
+        BrassRule(Modifier.fillMaxWidth())
     }
 }
 

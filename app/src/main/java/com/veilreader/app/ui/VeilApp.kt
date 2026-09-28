@@ -42,7 +42,10 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.deriveBookReturnRitual
+import com.veilreader.app.domain.deriveCastleMemoryState
+import com.veilreader.app.domain.deriveWorldMutationLedger
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
@@ -198,6 +201,27 @@ fun VeilApp(
     val castleTitle = castleTitleState?.value
     val discoveryRecords = remember(profile?.earnedDiscoveries) {
         profile?.let { game.discoveryRecords(it.earnedDiscoveries) }.orEmpty()
+    }
+    val worldMemoryState = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions,
+        readingCycles
+    ) {
+        deriveCastleMemoryState(
+            books = books,
+            highlights = highlights,
+            bookmarks = bookmarks,
+            sessions = readingSessions,
+            readingCycles = readingCycles,
+            nowEpochMs = System.currentTimeMillis()
+        )
+    }
+    val worldMutationLedger = remember(profile, worldMemoryState) {
+        profile?.let {
+            deriveWorldMutationLedger(it, worldMemoryState)
+        } ?: WorldMutationLedger.EMPTY
     }
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -512,7 +536,8 @@ fun VeilApp(
                 highlights = highlights,
                 bookmarks = bookmarks,
                 readingSessions = readingSessions,
-                readingCycles = readingCycles
+                readingCycles = readingCycles,
+                memoryStateOverride = worldMemoryState
             )
 
             VeilTab.PATH -> PathScreen(
@@ -735,6 +760,7 @@ fun VeilApp(
                     "treasury" -> TreasuryScreen(
                         profile = requireNotNull(profile),
                         equippedSigil = equippedSigil,
+                        mutationLedger = worldMutationLedger,
                         onEquip = { id ->
                             if (!game.equipSigil(id)) {
                                 errorMessage = "That sigil has not awakened yet."
@@ -750,6 +776,7 @@ fun VeilApp(
                         castleTitle = requireNotNull(castleTitle),
                         availableTitles = game.availableCastleTitles(),
                         discoveries = discoveryRecords,
+                        mutationLedger = worldMutationLedger,
                         onSelectTitle = { title ->
                             if (!game.selectCastleTitle(title)) {
                                 errorMessage = "That Castle title is still sealed."

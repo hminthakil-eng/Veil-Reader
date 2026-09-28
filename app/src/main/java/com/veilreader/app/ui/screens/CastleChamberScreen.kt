@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.VeiledDiscoveryRecord
+import com.veilreader.app.domain.WorldMutationLedger
+import com.veilreader.app.domain.WorldMutationRealm
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
 import com.veilreader.app.ui.hallSharedBoundsKey
@@ -196,6 +198,7 @@ private val bookplates = listOf(
 fun TreasuryScreen(
     profile: ReaderProfile,
     equippedSigil: String?,
+    mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
     onEquip: (String?) -> Unit,
     onClose: () -> Unit
 ) {
@@ -273,6 +276,11 @@ fun TreasuryScreen(
             title = "The Treasury",
             subtitle = "Relics, sigils, and bookplates awakened only by reading already stored on this device.",
             trailing = "$awakenedRelics RELICS · $awakenedBookplates BOOKPLATES"
+        )
+
+        WorldMutationChamberEcho(
+            ledger = mutationLedger,
+            realm = WorldMutationRealm.TREASURY
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -354,6 +362,62 @@ fun TreasuryScreen(
             }
         }
     }
+    }
+}
+
+@Composable
+private fun WorldMutationChamberEcho(
+    ledger: WorldMutationLedger,
+    realm: WorldMutationRealm,
+    durableOnly: Boolean = false
+) {
+    val entries = ledger.forRealm(realm)
+        .filter { !durableOnly || it.durable }
+        .take(3)
+    if (entries.isEmpty()) return
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        ArchiveChamberHeading(
+            eyebrow = "World consequence",
+            title = if (durableOnly) "Anchored mutations" else "Reading mutations",
+            trailing = "${entries.size} visible"
+        )
+        entries.forEach { mutation ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                Text(
+                    if (mutation.durable) "◆" else "◇",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (mutation.durable) VeilPalette.Brass else VeilPalette.Spirit
+                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        mutation.title,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        mutation.inscription,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.72f)
+                    )
+                }
+                Text(
+                    mutation.evidenceCount.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.62f)
+                )
+            }
+        }
     }
 }
 
@@ -758,6 +822,7 @@ fun SanctumScreen(
     castleTitle: String,
     availableTitles: List<String>,
     discoveries: List<VeiledDiscoveryRecord> = emptyList(),
+    mutationLedger: WorldMutationLedger = WorldMutationLedger.EMPTY,
     onSelectTitle: (String) -> Unit,
     onClose: () -> Unit
 ) {
@@ -844,6 +909,12 @@ fun SanctumScreen(
             title = castleTitle,
             subtitle = "Thresholds crossed, constellations completed, and identities the Castle considers permanent.",
             trailing = if (sovereignReady) "SOVEREIGN SEAL" else "$knownDiscoveryCount DISCOVERIES"
+        )
+
+        WorldMutationChamberEcho(
+            ledger = mutationLedger,
+            realm = WorldMutationRealm.SANCTUM,
+            durableOnly = true
         )
 
         SanctumSealPanel(
