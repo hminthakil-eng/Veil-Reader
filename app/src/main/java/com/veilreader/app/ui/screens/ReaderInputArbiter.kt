@@ -13,7 +13,27 @@ internal enum class ReaderTapOwner {
     SLIDE,
     DIRECTIONAL,
     CHROME,
-    RENDERER
+    RENDERER,
+    BLOCKED
+}
+
+internal enum class ReaderInteractionMode {
+    NAVIGATION,
+    CHROME_PRIORITY,
+    RENDERER_SELECTION,
+    BLOCKED
+}
+
+internal fun readerInteractionMode(
+    selectionModeActive: Boolean,
+    overlayVisible: Boolean,
+    closeInFlight: Boolean,
+    controlsVisible: Boolean
+): ReaderInteractionMode = when {
+    selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
+    overlayVisible || closeInFlight -> ReaderInteractionMode.BLOCKED
+    controlsVisible -> ReaderInteractionMode.CHROME_PRIORITY
+    else -> ReaderInteractionMode.NAVIGATION
 }
 
 internal fun shouldUseDirectionalTapNavigation(
@@ -52,10 +72,33 @@ internal class ReaderInputArbiter(
     private val staticPaged: InputListener?,
     private val directional: InputListener,
     private val chromeTap: (TapEvent) -> Boolean,
+    private val interactionMode: () -> ReaderInteractionMode = {
+        ReaderInteractionMode.NAVIGATION
+    },
     private val onTapOwner: (ReaderTapOwner) -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
+        when (interactionMode()) {
+            ReaderInteractionMode.RENDERER_SELECTION -> {
+                onTapOwner(ReaderTapOwner.RENDERER)
+                return false
+            }
+            ReaderInteractionMode.BLOCKED -> {
+                onTapOwner(ReaderTapOwner.BLOCKED)
+                return true
+            }
+            ReaderInteractionMode.CHROME_PRIORITY -> {
+                if (chromeTap(event)) {
+                    onTapOwner(ReaderTapOwner.CHROME)
+                    return true
+                }
+                onTapOwner(ReaderTapOwner.BLOCKED)
+                return true
+            }
+            ReaderInteractionMode.NAVIGATION -> Unit
+        }
+
         if (paper?.onTap(event) == true) {
             onTapOwner(ReaderTapOwner.PAPER)
             return true
@@ -81,6 +124,13 @@ internal class ReaderInputArbiter(
     }
 
     override fun onDrag(event: DragEvent): Boolean {
+        when (interactionMode()) {
+            ReaderInteractionMode.RENDERER_SELECTION -> return false
+            ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.NAVIGATION,
+            ReaderInteractionMode.CHROME_PRIORITY -> Unit
+        }
+
         if (paper?.onDrag(event) == true) return true
         if (slide?.onDrag(event) == true) return true
         if (staticPaged?.onDrag(event) == true) return true
@@ -88,6 +138,13 @@ internal class ReaderInputArbiter(
     }
 
     override fun onKey(event: KeyEvent): Boolean {
+        when (interactionMode()) {
+            ReaderInteractionMode.RENDERER_SELECTION -> return false
+            ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.NAVIGATION,
+            ReaderInteractionMode.CHROME_PRIORITY -> Unit
+        }
+
         if (slide?.onKey(event) == true) return true
         return directional.onKey(event)
     }
