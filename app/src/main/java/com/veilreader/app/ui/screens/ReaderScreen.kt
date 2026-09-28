@@ -704,6 +704,18 @@ fun ReaderScreen(
                     controlsVisible = !controlsVisible
                     true
                 },
+                interactionMode = {
+                    readerInteractionMode(
+                        selectionModeActive = selectionModeActive,
+                        overlayVisible =
+                            showNotebook ||
+                                showAppearance ||
+                                showPdfZoom ||
+                                pendingNoteHighlightId != null,
+                        closeInFlight = closeInFlight,
+                        controlsVisible = controlsVisible
+                    )
+                },
                 onTapOwner = { owner ->
                     ReaderTrace.event(
                         "gesture_owned",
