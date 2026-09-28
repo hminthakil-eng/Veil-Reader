@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sanctum_eyebrow">قدس درونی · ژرف‌ترین سابقه</string>
+    <string name="sanctum_subtitle">آستانه‌های عبورشده، صورت‌های فلکی کامل و هویت‌هایی که قلعه آن‌ها را ماندگار می‌داند.</string>
+    <string name="sanctum_sovereign_seal">مهر فرمانروایی</string>
+    <string name="sanctum_discovery_count">%1$d کشف</string>
+    <string name="sanctum_consequence_eyebrow">پیامد قدس</string>
+    <string name="sanctum_consequence_title">نشان‌های ماندگار جهان</string>
+    <string name="sanctum_identity_eyebrow">هویت ماندگار</string>
+    <string name="sanctum_identity_title">عنوان قلعه</string>
+    <string name="sanctum_titles_recognized">%1$d عنوان شناخته‌شده</string>
+    <string name="sanctum_title_active">عنوان فعال</string>
+    <string name="sanctum_title_recognized">عنوان شناخته‌شده</string>
+
+    <string name="castle_title_reader">خوانندهٔ پرده</string>
+    <string name="castle_title_threshold">رهرو آستانه</string>
+    <string name="castle_title_quiet">نگهبان ساعت آرام</string>
+    <string name="castle_title_passages">پاسدار بخش‌ها</string>
+    <string name="castle_title_seven">فانوس هفت شب</string>
+    <string name="castle_title_ten">نگهبان ده مجلد</string>
+    <string name="castle_title_veilbound">پرده‌بسته · %1$s</string>
+    <string name="castle_title_sovereign">فرمانروای کتابخانهٔ زنده</string>
+
+    <string name="sanctum_discoveries_eyebrow">دفتر ماندگار</string>
+    <string name="sanctum_discoveries_title">کشف‌های پرده‌پوش</string>
+    <string name="sanctum_discoveries_body">قدس هر بار فقط یک پاره را آشکار می‌کند. پیش از کشف، شرط کامل را نشان نمی‌دهد و سابقهٔ کامل‌شده هرگز دوباره مهر نمی‌شود.</string>
+    <string name="sanctum_discovery_sealed">کشف مهرشده %1$d</string>
+    <string name="sanctum_discovery_recorded">ماندگار · ثبت‌شده %1$s</string>
+    <string name="sanctum_discovery_date_unknown">ماندگار · تاریخ ثبت نامشخص</string>
+    <string name="sanctum_discovery_fragment">رشتهٔ پرده‌پوش · پاره %1$d</string>
+
+    <string name="discovery_patient_flame_title">شعلهٔ صبور</string>
+    <string name="discovery_patient_flame_clue">شعله‌ای که بارها برایش بازگردی، کم‌کم دستی را که روشنش کرده به یاد می‌آورد.</string>
+    <string name="discovery_patient_flame_lore">پیوستگی نشانی متفاوت از شدت برجا می‌گذارد. قلعه بازگشت تو را به رسمیت شناخته است.</string>
+    <string name="discovery_patient_flame_fragment_0">شعلهٔ آرام پیش از دلبستگی، به دوام پاسخ می‌دهد.</string>
+    <string name="discovery_patient_flame_fragment_1">بازگشت از یک شب‌زنده‌داری بلند مهم‌تر است.</string>
+    <string name="discovery_patient_flame_fragment_2">زمان و بازگشت باید به یک عادت تبدیل شوند.</string>
+
+    <string name="discovery_marginalia_gate_title">دروازهٔ حاشیه‌نویسی</string>
+    <string name="discovery_marginalia_gate_clue">بعضی درها در حاشیه نوشته می‌شوند، نه روی متن چاپ‌شده.</string>
+    <string name="discovery_marginalia_gate_lore">آن‌قدر بخش حفظ شده که یادداشت‌های تو اکنون در کنار کتاب‌ها، متن دومی ساخته‌اند.</string>
+    <string name="discovery_marginalia_gate_fragment_0">حاشیه با یک پژواک آغاز می‌شود.</string>
+    <string name="discovery_marginalia_gate_fragment_1">متن دوم فقط وقتی شکل می‌گیرد که بخش‌های حفظ‌شده فراوان شوند.</string>
+    <string name="discovery_marginalia_gate_fragment_2">دروازه وقتی ظاهر می‌شود که خواندن و حاشیه‌نویسی از هم جدا نباشند.</string>
+
+    <string name="discovery_deep_shelf_title">قفسهٔ ژرف</string>
+    <string name="discovery_deep_shelf_clue">کتاب‌های تمام‌شده وزن می‌گیرند. سرانجام قفسه به پی تبدیل می‌شود.</string>
+    <string name="discovery_deep_shelf_lore">کتاب‌های تمام‌شده و نخستین آستانهٔ مسیرت اکنون یکدیگر را تقویت می‌کنند. آرشیو دارد به مکان تبدیل می‌شود، نه فهرست.</string>
+    <string name="discovery_deep_shelf_fragment_0">کتاب تمام‌شده از امکان ناتمام سنگین‌تر است.</string>
+    <string name="discovery_deep_shelf_fragment_1">یک آستانهٔ مسیر، آنچه قفسه می‌تواند تحمل کند تغییر می‌دهد.</string>
+    <string name="discovery_deep_shelf_fragment_2">پایان و ارتقا باید یک پی را با هم تقویت کنند.</string>
+
+    <string name="discovery_long_watch_title">دیدبانی بلند</string>
+    <string name="discovery_long_watch_clue">جایی می‌رسد که زمان مطالعه دیگر شبیه چیزی قابل شمارش نیست.</string>
+    <string name="discovery_long_watch_lore">پنجاه ساعت درون کتاب‌ها گذشته است. قلعه زمان را ثبت می‌کند، اما تغییر ژرف‌تر با دقیقه سنجیده نمی‌شود.</string>
+    <string name="discovery_long_watch_fragment_0">بعضی ساعت‌ها صفحات را بد اندازه می‌گیرند.</string>
+    <string name="discovery_long_watch_fragment_1">توجه بلند پیش از آنکه عنوان را عوض کند، اتاق را تغییر می‌دهد.</string>
+    <string name="discovery_long_watch_fragment_2">آن‌قدر بمان که زمانِ شمرده‌شده دیگر اصل ماجرا نباشد.</string>
+
+    <string name="discovery_veil_thins_title">وقتی پرده نازک می‌شود</string>
+    <string name="discovery_veil_thins_clue">چند نشان باید بیدار شوند تا شروع به پاسخ دادن به یکدیگر کنند.</string>
+    <string name="discovery_veil_thins_lore">نشان‌های به‌دست‌آمده دیگر نقاط جدا نیستند. کنار هم نخستین الگوی خوانای پرده را می‌سازند.</string>
+    <string name="discovery_veil_thins_fragment_0">یک نشان فقط یک علامت است. چند نشان شروع به پاسخ دادن به هم می‌کنند.</string>
+    <string name="discovery_veil_thins_fragment_1">الگو به چیزی بیش از دستاوردهای جدا نیاز دارد.</string>
+    <string name="discovery_veil_thins_fragment_2">وقتی نشان‌های کافی هم‌نوا شوند، سطح پنهان خوانا می‌شود.</string>
+
+    <string name="discovery_unnamed_chamber_title">تالار بی‌نام</string>
+    <string name="discovery_unnamed_chamber_clue">ژرف‌ترین تالار با یک دستاورد منفرد باز نمی‌شود.</string>
+    <string name="discovery_unnamed_chamber_lore">مسیر بالغ و صورت فلکی کاملِ نشان‌های اصلی، تالاری را آشکار کرده‌اند که قلعهٔ نخستین نامی برایش نداشت.</string>
+    <string name="discovery_unnamed_chamber_fragment_0">ژرف‌ترین در، دستاوردهای منفرد را نادیده می‌گیرد.</string>
+    <string name="discovery_unnamed_chamber_fragment_1">هویت بالغ مسیر باید با صورت فلکی تقریباً کامل روبه‌رو شود.</string>
+    <string name="discovery_unnamed_chamber_fragment_2">فقط همگرایی تالاری را آشکار می‌کند که رتبه‌های آغازین نمی‌توانند نامش را بدانند.</string>
+
+    <string name="sanctum_seal_open">مهر باز است</string>
+    <string name="sanctum_sixth_door">درِ ششم</string>
+    <string name="sanctum_path_completion">تکمیل مسیر</string>
+    <string name="sanctum_core_sigils">نشان‌های اصلی</string>
+    <string name="sanctum_ready_body">قلعه یک مسیر کامل و صورت فلکی کاملِ نشان‌ها را شناخته است. سابقه‌ای پنهان در پایین آشکار شده.</string>
+    <string name="sanctum_locked_body">به آخرین رتبهٔ مسیر برس و هر پنج نشان اصلی را بیدار کن. درِ باقی‌مانده دستگیرهٔ آشکاری ندارد.</string>
+    <string name="sanctum_record_open_title">سابقهٔ فرمانروایی · ستاره میان قفسه‌ها</string>
+    <string name="sanctum_record_sealed_title">سابقهٔ فرمانروایی · مهرشده</string>
+    <string name="sanctum_record_open_body">هرگز قفسهٔ نهایی وجود نداشت؛ فقط آستانه‌ای دیگر که پشت عملِ بازگشت پنهان بود.</string>
+    <string name="sanctum_record_sealed_body">کتیبه‌ای ماندگار اینجاست، اما شرط آن هنوز برآورده نشده است.</string>
+    <string name="sanctum_record_open_meta">ماندگار · مصرف‌نشدنی · سابقهٔ محلی</string>
+    <string name="sanctum_record_sealed_meta">هنوز شناخته نشده</string>
+</resources>
