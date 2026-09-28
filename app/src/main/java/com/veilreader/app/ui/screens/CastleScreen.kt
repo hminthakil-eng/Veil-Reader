@@ -57,6 +57,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PathArchitecturalMotif
 import com.veilreader.app.domain.PathWorldSignature
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.RitualAftermathRecord
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.WorldMutationLedger
 import com.veilreader.app.domain.WorldMutationRealm
@@ -67,6 +68,7 @@ import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.domain.derivePathWorldSignature
+import com.veilreader.app.domain.ritualAfterglowIntensity
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilMastheadMetaRow
 import com.veilreader.app.ui.VeilRealmEmblem
@@ -147,6 +149,12 @@ fun CastleScreen(
     val mutationLedger = remember(profile, memoryState) {
         deriveWorldMutationLedger(profile, memoryState)
     }
+    val ritualAfterglow = remember(profile.ritualAftermath, castleNowEpochMs) {
+        ritualAfterglowIntensity(
+            record = profile.ritualAftermath,
+            nowEpochMs = castleNowEpochMs
+        )
+    }
     val worldProjection = remember(profile, quests, memoryState) {
         deriveWorldProgressionProjection(
             profile = profile,
@@ -165,13 +173,21 @@ fun CastleScreen(
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
                 seed = profile.rankIndex * 31 + memoryState.volumeCount + worldProjection.stage.ordinal * 101,
-                intensity = (0.82f + worldProjection.architecturalPresence * 0.16f).coerceIn(0.82f, 0.98f),
+                intensity = (
+                    0.82f +
+                        worldProjection.architecturalPresence * 0.14f +
+                        ritualAfterglow * 0.04f
+                    ).coerceIn(0.82f, 0.98f),
                 temporalPhase = temporalPhase
             )
             .narrativeArchitectureField(
                 realm = VeilRealm.CASTLE,
                 seed = profile.rankIndex * 31 + memoryState.volumeCount + worldProjection.stage.ordinal * 101,
-                intensity = (0.62f + worldProjection.architecturalPresence * 0.30f).coerceIn(0.62f, 0.92f)
+                intensity = (
+                    0.62f +
+                        worldProjection.architecturalPresence * 0.26f +
+                        ritualAfterglow * 0.06f
+                    ).coerceIn(0.62f, 0.94f)
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -180,7 +196,11 @@ fun CastleScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopEnd,
-            alpha = (0.26f + worldProjection.architecturalPresence * 0.18f).coerceIn(0.26f, 0.44f),
+            alpha = (
+                0.26f +
+                    worldProjection.architecturalPresence * 0.16f +
+                    ritualAfterglow * 0.04f
+                ).coerceIn(0.26f, 0.46f),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .fillMaxWidth()
@@ -230,6 +250,11 @@ fun CastleScreen(
             onOpenRitual = { onOpenRoom("ritual") }
         )
 
+        CastleRitualAftermath(
+            profile = profile,
+            aftermath = profile.ritualAftermath,
+            afterglow = ritualAfterglow
+        )
         CastleMemoryInscription(memoryState)
         CastleWorldProgressionInscription(worldProjection)
         CastleMutationInscription(memoryState)
@@ -1428,6 +1453,76 @@ private fun CastleWorldProgressionInscription(world: WorldProgressionProjection)
             modifier = Modifier.fillMaxWidth(),
             strong = world.ritualCharge >= 0.80f
         )
+    }
+}
+
+@Composable
+private fun CastleRitualAftermath(
+    profile: ReaderProfile,
+    aftermath: RitualAftermathRecord?,
+    afterglow: Float
+) {
+    val record = aftermath ?: return
+    val fromName = profile.path.ranks.getOrElse(record.fromRankIndex) {
+        "Rank ${record.fromRankIndex}"
+    }
+    val toName = profile.path.ranks.getOrElse(record.toRankIndex) {
+        "Rank ${record.toRankIndex}"
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                "RITUAL AFTERMATH · SEALED",
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                color = VeilPalette.Brass.copy(alpha = 0.90f)
+            )
+            Text(
+                if (afterglow > 0.01f) "SEAL WARM" else "SEAL ANCHORED",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (afterglow > 0.01f) {
+                    VeilPalette.Spirit.copy(alpha = 0.88f)
+                } else {
+                    VeilPalette.Mist.copy(alpha = 0.62f)
+                }
+            )
+        }
+
+        Text(
+            "\$fromName  →  \$toName",
+            style = MaterialTheme.typography.titleMedium,
+            color = VeilPalette.Moon
+        )
+        Text(
+            if (afterglow > 0.01f) {
+                "The ceremonial glow is still moving through the Hall. The architectural change is already permanent."
+            } else {
+                "The ceremonial glow has cooled. The advancement remains written into the Hall, Reliquary, and Sanctum."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.76f)
+        )
+
+        if (afterglow > 0.01f) {
+            LinearProgressIndicator(
+                progress = { afterglow.coerceIn(0f, 1f) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp),
+                color = VeilPalette.Brass,
+                trackColor = VeilPalette.BorderDark.copy(alpha = 0.42f)
+            )
+        }
+        BrassRule(Modifier.fillMaxWidth())
     }
 }
 

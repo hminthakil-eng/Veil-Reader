@@ -7,7 +7,9 @@ import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.RitualAftermathRecord
 import com.veilreader.app.domain.VeiledDiscoveryPolicy
+import com.veilreader.app.domain.validateRitualAftermath
 import com.veilreader.app.domain.VeiledDiscoveryRecord
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -202,9 +204,17 @@ class GameRepository(context: Context) {
                 expectedPathId ?: current.path.id,
                 expectedRankIndex ?: current.rankIndex
             )) return false
+        val nextRankIndex = current.rankIndex + 1
+        val sealedAt = System.currentTimeMillis().coerceAtLeast(1L)
+        // Rank and its descriptive ritual seal are committed in one editor transaction.
+        // Rank remains authoritative; the seal can be discarded safely if metadata is corrupt.
         prefs.edit()
-            .putInt("rankIndex", current.rankIndex + 1)
+            .putInt("rankIndex", nextRankIndex)
             .putInt("ritualProgress", 0)
+            .putString("ritualAftermathPathId", current.path.id)
+            .putInt("ritualAftermathFromRank", current.rankIndex)
+            .putInt("ritualAftermathToRank", nextRankIndex)
+            .putLong("ritualAftermathSealedAt", sealedAt)
             .apply()
         publish()
         return true
@@ -328,6 +338,18 @@ class GameRepository(context: Context) {
         val (inside, needed) = GamificationEngine.progressInsideLevel(totalXp)
         val path = SampleData.paths.firstOrNull { it.id == prefs.getString("pathId", SampleData.currentPath.id) }
             ?: SampleData.currentPath
+        val rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex)
+        val ritualAftermath = validateRitualAftermath(
+            record = RitualAftermathRecord(
+                pathId = prefs.getString("ritualAftermathPathId", "") ?: "",
+                fromRankIndex = prefs.getInt("ritualAftermathFromRank", -1),
+                toRankIndex = prefs.getInt("ritualAftermathToRank", -1),
+                sealedAtEpochMs = prefs.getLong("ritualAftermathSealedAt", 0L)
+            ),
+            currentPathId = path.id,
+            currentRankIndex = rankIndex,
+            rankCount = path.ranks.size
+        )
         return ReaderProfile(
             level = GamificationEngine.levelFor(totalXp),
             xp = inside,
@@ -340,14 +362,15 @@ class GameRepository(context: Context) {
             minutesRead = prefs.getInt("minutesRead", 0),
             booksFinished = prefs.getInt("booksFinished", 0),
             path = path,
-            rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex),
+            rankIndex = rankIndex,
             ritualProgress = prefs.getInt("ritualProgress", 0),
             ritualTarget = ReadingPolicy.ritualTarget(path.id, prefs.getInt("rankIndex", 0)),
             earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
             earnedDiscoveries = prefs
                 .getStringSet("earnedDiscoveries", emptySet())
                 .orEmpty()
-                .toSet()
+                .toSet(),
+            ritualAftermath = ritualAftermath
         )
     }
 

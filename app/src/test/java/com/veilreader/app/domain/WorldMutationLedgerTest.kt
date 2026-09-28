@@ -48,6 +48,27 @@ class WorldMutationLedgerTest {
     }
 
     @Test
+    fun `recorded advancement seal persists into Hall Treasury and Sanctum`() {
+        val profile = profile(rank = 2).copy(
+            ritualAftermath = RitualAftermathRecord(
+                pathId = path.id,
+                fromRankIndex = 1,
+                toRankIndex = 2,
+                sealedAtEpochMs = 100L
+            )
+        )
+        val seal = deriveWorldMutationLedger(profile, CastleMemoryState.EMPTY)
+            .entries
+            .first { it.kind == WorldMutationKind.ADVANCEMENT_SEAL }
+
+        assertEquals(WorldMutationEvidence.RITUAL_SEAL, seal.evidence)
+        assertTrue(seal.durable)
+        assertTrue(WorldMutationRealm.GREAT_HALL in seal.realms)
+        assertTrue(WorldMutationRealm.TREASURY in seal.realms)
+        assertTrue(WorldMutationRealm.SANCTUM in seal.realms)
+    }
+
+    @Test
     fun `return awakening remains Hall-only and non-durable`() {
         val memory = CastleMemoryState.EMPTY.copy(returnAwakening = 0.72f)
         val mutation = deriveWorldMutationLedger(profile(), memory).entries.single()

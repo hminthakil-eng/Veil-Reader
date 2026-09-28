@@ -1189,7 +1189,11 @@ private fun AdvancementCeremonyDialog(
                             Text("Sealing advancement…", color = VeilPalette.Mist)
                         }
                         AdvancementCeremonyStage.REVEALED -> {
-                            Text("Your Path now bears this rank.", color = VeilPalette.Brass)
+                            Text(
+                                "Your Path now bears this rank. Its seal has entered the Great Hall, Reliquary, and Sanctum.",
+                                color = VeilPalette.Brass,
+                                textAlign = TextAlign.Center
+                            )
                             Button(onClick = onDismiss, modifier = Modifier.fillMaxWidth().heightIn(min = 54.dp)) {
                                 Text("Continue")
                             }

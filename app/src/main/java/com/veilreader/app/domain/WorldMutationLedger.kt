@@ -23,7 +23,8 @@ enum class WorldMutationEvidence {
     REREAD_CYCLES,
     ATLAS_LINKS,
     RETURN_EVENT,
-    PATH_RANK
+    PATH_RANK,
+    RITUAL_SEAL
 }
 
 enum class WorldMutationKind {
@@ -33,7 +34,8 @@ enum class WorldMutationKind {
     REREAD_PATINA,
     CONSTELLATION_WEB,
     RETURN_AWAKENING,
-    PATH_ASCENSION
+    PATH_ASCENSION,
+    ADVANCEMENT_SEAL
 }
 
 data class WorldMutationEntry(
@@ -104,6 +106,36 @@ fun deriveWorldMutationLedger(
                     title = "Path-Bound Architecture",
                     inscription =
                         "Advancement has entered the architecture. It changes identity and ornament, never factual reading history."
+                )
+            )
+        }
+
+        profile.ritualAftermath?.let { aftermath ->
+            val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
+            val fromName = profile.path.ranks.getOrElse(aftermath.fromRankIndex) {
+                "Rank ${aftermath.fromRankIndex}"
+            }
+            val toName = profile.path.ranks.getOrElse(aftermath.toRankIndex) {
+                "Rank ${aftermath.toRankIndex}"
+            }
+            add(
+                WorldMutationEntry(
+                    id = "advancement-seal:${aftermath.pathId}:${aftermath.toRankIndex}",
+                    kind = WorldMutationKind.ADVANCEMENT_SEAL,
+                    realms = setOf(
+                        WorldMutationRealm.GREAT_HALL,
+                        WorldMutationRealm.TREASURY,
+                        WorldMutationRealm.SANCTUM
+                    ),
+                    evidence = WorldMutationEvidence.RITUAL_SEAL,
+                    evidenceCount = aftermath.toRankIndex,
+                    intensity =
+                        (aftermath.toRankIndex.toFloat() / finalRank.toFloat())
+                            .coerceIn(0f, 1f),
+                    durable = true,
+                    title = "Sealed Advancement",
+                    inscription =
+                        "\$fromName became \$toName in a recorded Ritual of Advancement. The seal persists after its ceremonial glow fades."
                 )
             )
         }
