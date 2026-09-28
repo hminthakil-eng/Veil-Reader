@@ -1960,17 +1960,17 @@ private fun EpubAppearancePanel(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    "READING CONSOLE",
+                    stringResource(R.string.reader_console_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Tune the open page",
+                    stringResource(R.string.reader_console_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    "Every change is applied live. The book remains underneath this sheet.",
+                    stringResource(R.string.reader_console_intro),
                     color = VeilPalette.Mist.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -1979,7 +1979,7 @@ private fun EpubAppearancePanel(
                 onClick = onDone,
                 modifier = Modifier.heightIn(min = 48.dp)
             ) {
-                Text("DONE", style = MaterialTheme.typography.labelSmall)
+                Text(stringResource(R.string.reader_console_done), style = MaterialTheme.typography.labelSmall)
             }
         }
 
@@ -2567,17 +2567,17 @@ private fun ReaderAppearancePreview(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "LIVE PAGE PREVIEW",
+                    stringResource(R.string.reader_preview_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     when (appearance.navigationMode) {
-                        ReaderNavigationMode.PAPER_CURL -> "CURL"
-                        ReaderNavigationMode.SLIDE -> "SLIDE"
-                        ReaderNavigationMode.PAGED -> "PAGED"
-                        ReaderNavigationMode.SCROLL -> "SCROLL"
+                        ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.reader_mode_curl)
+                        ReaderNavigationMode.SLIDE -> stringResource(R.string.reader_mode_slide)
+                        ReaderNavigationMode.PAGED -> stringResource(R.string.reader_mode_paged)
+                        ReaderNavigationMode.SCROLL -> stringResource(R.string.reader_mode_scroll)
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2614,17 +2614,17 @@ private fun ReaderAppearancePreview(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "CHAPTER VII",
+                        stringResource(R.string.reader_preview_chapter),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = ink.copy(alpha = 0.58f)
                     )
                     Text(
-                        "Beyond the Veil",
+                        stringResource(R.string.reader_preview_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = ink
                     )
                     Text(
-                        "The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.",
+                        stringResource(R.string.reader_preview_body),
                         fontSize = sampleSize,
                         lineHeight = sampleLineHeight,
                         color = ink.copy(alpha = 0.92f)
