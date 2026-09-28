@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_name_oracle">مسیر پیشگو</string>
+    <string name="path_epithet_oracle">آنچه میان سطرها پنهان است بجوی</string>
+    <string name="path_description_oracle">برای راز، استنتاج، جهان‌های لایه‌لایه و خوانندگانی که برای سرنخ‌ها زندگی می‌کنند.</string>
+    <string name="path_rank_oracle_0">ناظر</string>
+    <string name="path_rank_oracle_1">رمزخوان</string>
+    <string name="path_rank_oracle_2">کاوشگر</string>
+    <string name="path_rank_oracle_3">پیش‌آگاه</string>
+    <string name="path_rank_oracle_4">پیشگو</string>
+    <string name="path_rank_oracle_5">پرده‌بین</string>
+
+    <string name="path_name_dreamwalker">مسیر رویاگرد</string>
+    <string name="path_epithet_dreamwalker">از جهان‌هایی بگذر که هیچ نقشه‌ای نگهشان نمی‌دارد</string>
+    <string name="path_description_dreamwalker">برای فانتزی، اسطوره، شگفتی و سفرهای ناممکن.</string>
+    <string name="path_rank_dreamwalker_0">سرگردان</string>
+    <string name="path_rank_dreamwalker_1">راه‌پیما</string>
+    <string name="path_rank_dreamwalker_2">داستان‌بند</string>
+    <string name="path_rank_dreamwalker_3">رویاگرد</string>
+    <string name="path_rank_dreamwalker_4">جهان‌باف</string>
+    <string name="path_rank_dreamwalker_5">اسطوره‌زاد</string>
+
+    <string name="path_name_archivist">مسیر آرشیویست</string>
+    <string name="path_epithet_archivist">هیچ آموخته‌ای هرگز گم نمی‌شود</string>
+    <string name="path_description_archivist">برای تاریخ، علم، فلسفه و مطالعه‌های سنگین از دانش.</string>
+    <string name="path_rank_archivist_0">نوآموز</string>
+    <string name="path_rank_archivist_1">کاتب</string>
+    <string name="path_rank_archivist_2">دانش‌پژوه</string>
+    <string name="path_rank_archivist_3">امین آرشیو</string>
+    <string name="path_rank_archivist_4">آرشیویست</string>
+    <string name="path_rank_archivist_5">نگهبان</string>
+
+    <string name="path_name_vanguard">مسیر پیشتاز</string>
+    <string name="path_epithet_vanguard">هر صفحه را مانند میدان نبرد ورق بزن</string>
+    <string name="path_description_vanguard">برای اکشن، ماجراجویی، فانتزی پیشرفت و حرکت بی‌وقفه.</string>
+    <string name="path_rank_vanguard_0">نیروی تازه</string>
+    <string name="path_rank_vanguard_1">پیش‌رو</string>
+    <string name="path_rank_vanguard_2">پیشتاز</string>
+    <string name="path_rank_vanguard_3">قهرمان</string>
+    <string name="path_rank_vanguard_4">سرآمد</string>
+    <string name="path_rank_vanguard_5">افسانه</string>
+
+    <string name="path_name_nocturne">مسیر نوکتورن</string>
+    <string name="path_epithet_nocturne">آنجا بخوان که نور فانوس محو می‌شود</string>
+    <string name="path_description_nocturne">برای وحشت، گوتیک، فانتزی تاریک و رازهای ناآرام‌کننده.</string>
+    <string name="path_rank_nocturne_0">شنونده</string>
+    <string name="path_rank_nocturne_1">دیدبان</string>
+    <string name="path_rank_nocturne_2">سایه</string>
+    <string name="path_rank_nocturne_3">نوکتورن</string>
+    <string name="path_rank_nocturne_4">نگهبان شب</string>
+    <string name="path_rank_nocturne_5">کسوف</string>
+
+    <string name="path_name_artificer">مسیر صنعتگر</string>
+    <string name="path_epithet_artificer">ماشین زیر معجزه را بفهم</string>
+    <string name="path_description_artificer">برای فناوری، مهندسی، علمی‌تخیلی سخت و ذهن‌های سیستم‌محور.</string>
+    <string name="path_rank_artificer_0">دست‌کار</string>
+    <string name="path_rank_artificer_1">تحلیل‌گر</string>
+    <string name="path_rank_artificer_2">سازنده</string>
+    <string name="path_rank_artificer_3">صنعتگر</string>
+    <string name="path_rank_artificer_4">معمار</string>
+    <string name="path_rank_artificer_5">مکانیک اعظم</string>
+</resources>
