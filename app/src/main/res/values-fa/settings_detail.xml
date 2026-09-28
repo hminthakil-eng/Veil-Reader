@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_appearance_title">ظاهر</string>
+    <string name="settings_appearance_desc">تعیین کن پوستهٔ آرشیو چگونه از حالت دستگاهت پیروی کند.</string>
+    <string name="settings_app_theme_system">سیستم</string>
+    <string name="settings_app_theme_light">روشن</string>
+    <string name="settings_app_theme_dark">تیره</string>
+
+    <string name="settings_reading_title">تنظیمات مطالعه</string>
+    <string name="settings_reading_desc">تم پیش‌فرض، تایپوگرافی، حرکت صفحه، روشنایی و چیدمان را تنظیم کن.</string>
+    <string name="settings_publication_theme">تم کتاب</string>
+    <string name="settings_reader_theme_paper">کاغذ</string>
+    <string name="settings_reader_theme_sepia">سپیا</string>
+    <string name="settings_reader_theme_dusk">گرگ‌ومیش</string>
+    <string name="settings_reader_theme_oled">OLED</string>
+    <string name="settings_text_size">اندازهٔ متن</string>
+    <string name="settings_line_height">فاصلهٔ خطوط</string>
+    <string name="settings_page_margins">حاشیهٔ صفحه</string>
+    <string name="settings_reading_motion">حرکت مطالعه</string>
+    <string name="settings_publisher_styles">سبک ناشر</string>
+    <string name="settings_publisher_styles_desc">اگر موجود باشد، تایپوگرافی و سبک خود کتاب را حفظ می‌کند و ممکن است رنگ‌های تم Veil را بازنویسی کند.</string>
+    <string name="settings_paper_age">کهنگی کاغذ</string>
+    <string name="settings_paper_age_desc">بافت الیاف، لکه‌گذاری، اکسیدشدگی لبه و سایه‌پردازی صفحه را بدون تغییر متن کتاب کنترل می‌کند.</string>
+    <string name="settings_reading_brightness">روشنایی مطالعه</string>
+
+    <string name="settings_sensory_title">صدا و لمس</string>
+    <string name="settings_sensory_desc">بازخوردها ظریف، اختیاری و کاملاً محلی می‌مانند. لرزش به صدا وابسته نیست و صدای محیط به‌طور پیش‌فرض خاموش است.</string>
+    <string name="settings_haptics">بازخورد لمسی</string>
+    <string name="settings_haptics_desc">نشانهٔ لمسی کنترل‌شده برای ورق‌زدن، ذخیرهٔ نشان‌ها و بازشدن‌های مهم.</string>
+    <string name="settings_interaction_sounds">صداهای تعامل</string>
+    <string name="settings_interaction_sounds_desc">نشانه‌های آرام کاغذ و آرشیو؛ پیش‌فرض خاموش و هرگز ضروری برای مطالعه نیستند.</string>
+    <string name="settings_ambient_room">صدای محیط</string>
+    <string name="settings_ambient_off">خاموش</string>
+    <string name="settings_ambient_library">سکوت کتابخانه</string>
+    <string name="settings_ambient_rain">باران</string>
+    <string name="settings_ambient_fire">شومینه</string>
+    <string name="settings_audio_level">سطح صدا</string>
+    <string name="settings_audio_silence_hint">برای سکوت کامل، صدای محیط را خاموش و صداهای تعامل را غیرفعال کن.</string>
+
+    <string name="settings_backup_title">کتابخانه و پشتیبان</string>
+    <string name="settings_backup_desc">آرشیو خصوصی محلی، یادداشت‌ها و وضعیت مطالعه را خروجی بگیر یا بازیابی کن.</string>
+    <string name="settings_exporting">در حال خروجی…</string>
+    <string name="settings_export_backup">خروجی پشتیبان کتابخانه</string>
+    <string name="settings_restoring">در حال بازیابی…</string>
+    <string name="settings_restore_backup">بازیابی پشتیبان کتابخانه</string>
+    <string name="settings_export_notebook">خروجی دفترچه به Markdown</string>
+
+    <string name="settings_privacy_title">حریم خصوصی و درباره</string>
+    <string name="settings_privacy_desc">کتابخانه، پیشرفت و یادداشت‌ها روی همین دستگاه می‌مانند مگر اینکه خودت صریحاً خروجی بگیری.</string>
+    <string name="settings_app_version">نسخهٔ برنامه · %1$s</string>
+    <string name="settings_reader_engine">موتور خواندن · %1$s</string>
+    <string name="settings_no_account">برای مطالعهٔ اصلی هیچ حساب یا همگام‌سازی ابری لازم نیست.</string>
+    <string name="settings_unknown">نامشخص</string>
+
+    <string name="settings_reset_title">بازنشانی تنظیمات مطالعه</string>
+    <string name="settings_reset_desc">تنظیمات Reader را بدون دست‌زدن به کتاب‌ها، پیشرفت، یادداشت‌ها، هایلایت‌ها یا پشتیبان‌ها به حالت پیش‌فرض برگردان.</string>
+    <string name="settings_reset_button">بازنشانی پیش‌فرض‌های مطالعه</string>
+
+    <string name="settings_restore_eyebrow">بازیابی آرشیو · محلی</string>
+    <string name="settings_restore_title">دادهٔ محلی Veil Reader جایگزین شود؟</string>
+    <string name="settings_restore_body">بازیابی، کتابخانهٔ فعلی، یادداشت‌ها، پیشرفت مطالعه، پیشرفت مسیر و وضعیت قلعه را با پشتیبان انتخابی جایگزین می‌کند. اگر وضعیت فعلی را لازم داری، ابتدا یک پشتیبان تازه بگیر.</string>
+    <string name="settings_cancel">لغو</string>
+    <string name="settings_choose_backup">انتخاب پشتیبان</string>
+
+    <string name="settings_masthead_eyebrow">کنترل‌های پناهگاه</string>
+    <string name="settings_masthead_title">اتاق مطالعه</string>
+    <string name="settings_masthead_body">کنترل‌های مطالعه، ظاهر، ذخیره‌سازی، حریم خصوصی و پشتیبان — به‌طور پیش‌فرض محلی.</string>
+</resources>
