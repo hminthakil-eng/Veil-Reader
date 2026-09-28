@@ -10,6 +10,10 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -51,6 +55,17 @@ class SettingsStore(private val context: Context) {
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
+        val fontFamily = stringPreferencesKey("reader_font_family")
+        val textAlignment = stringPreferencesKey("reader_text_alignment")
+        val columnMode = stringPreferencesKey("reader_column_mode")
+        val hyphenation = stringPreferencesKey("reader_hyphenation")
+        val ligatures = stringPreferencesKey("reader_ligatures")
+        val textNormalization = stringPreferencesKey("reader_text_normalization")
+        val paragraphSpacing = doublePreferencesKey("reader_paragraph_spacing")
+        val paragraphIndent = doublePreferencesKey("reader_paragraph_indent")
+        val letterSpacing = doublePreferencesKey("reader_letter_spacing")
+        val wordSpacing = doublePreferencesKey("reader_word_spacing")
+        val typeScale = doublePreferencesKey("reader_type_scale")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
         val sensoryInteractionSounds = booleanPreferencesKey("sensory_interaction_sounds")
@@ -80,7 +95,52 @@ class SettingsStore(private val context: Context) {
                 }.getOrDefault(PageTurnStyle.PAPER),
                 screenBrightness = prefs[Keys.screenBrightness]
                     ?.takeIf { it.isFinite() }
-                    ?.coerceIn(0.05, 1.0)
+                    ?.coerceIn(0.05, 1.0),
+                fontFamily = runCatching {
+                    ReaderFontFamily.valueOf(
+                        prefs[Keys.fontFamily] ?: ReaderFontFamily.PUBLISHER.name
+                    )
+                }.getOrDefault(ReaderFontFamily.PUBLISHER),
+                textAlignment = runCatching {
+                    ReaderTextAlignment.valueOf(
+                        prefs[Keys.textAlignment] ?: ReaderTextAlignment.PUBLISHER.name
+                    )
+                }.getOrDefault(ReaderTextAlignment.PUBLISHER),
+                columnMode = runCatching {
+                    ReaderColumnMode.valueOf(
+                        prefs[Keys.columnMode] ?: ReaderColumnMode.AUTO.name
+                    )
+                }.getOrDefault(ReaderColumnMode.AUTO),
+                hyphenation = runCatching {
+                    ReaderPreferenceToggle.valueOf(
+                        prefs[Keys.hyphenation] ?: ReaderPreferenceToggle.DEFAULT.name
+                    )
+                }.getOrDefault(ReaderPreferenceToggle.DEFAULT),
+                ligatures = runCatching {
+                    ReaderPreferenceToggle.valueOf(
+                        prefs[Keys.ligatures] ?: ReaderPreferenceToggle.DEFAULT.name
+                    )
+                }.getOrDefault(ReaderPreferenceToggle.DEFAULT),
+                textNormalization = runCatching {
+                    ReaderPreferenceToggle.valueOf(
+                        prefs[Keys.textNormalization] ?: ReaderPreferenceToggle.DEFAULT.name
+                    )
+                }.getOrDefault(ReaderPreferenceToggle.DEFAULT),
+                paragraphSpacing = prefs[Keys.paragraphSpacing]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 2.0),
+                paragraphIndent = prefs[Keys.paragraphIndent]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 3.0),
+                letterSpacing = prefs[Keys.letterSpacing]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 0.2),
+                wordSpacing = prefs[Keys.wordSpacing]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 1.0),
+                typeScale = prefs[Keys.typeScale]
+                    ?.takeIf { it.isFinite() }
+                    ?.coerceIn(1.0, 2.0)
             ),
             sensory = SensorySettings(
                 hapticsEnabled = prefs[Keys.sensoryHaptics] ?: true,
@@ -115,9 +175,30 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.scroll] = value.scroll
             prefs[Keys.publisherStyles] = value.publisherStyles
             prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
+            prefs[Keys.fontFamily] = value.fontFamily.name
+            prefs[Keys.textAlignment] = value.textAlignment.name
+            prefs[Keys.columnMode] = value.columnMode.name
+            prefs[Keys.hyphenation] = value.hyphenation.name
+            prefs[Keys.ligatures] = value.ligatures.name
+            prefs[Keys.textNormalization] = value.textNormalization.name
             value.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
+            value.paragraphSpacing?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.paragraphSpacing] = it.coerceIn(0.0, 2.0)
+            } ?: prefs.remove(Keys.paragraphSpacing)
+            value.paragraphIndent?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.paragraphIndent] = it.coerceIn(0.0, 3.0)
+            } ?: prefs.remove(Keys.paragraphIndent)
+            value.letterSpacing?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.letterSpacing] = it.coerceIn(0.0, 0.2)
+            } ?: prefs.remove(Keys.letterSpacing)
+            value.wordSpacing?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.wordSpacing] = it.coerceIn(0.0, 1.0)
+            } ?: prefs.remove(Keys.wordSpacing)
+            value.typeScale?.takeIf { it.isFinite() }?.let {
+                prefs[Keys.typeScale] = it.coerceIn(1.0, 2.0)
+            } ?: prefs.remove(Keys.typeScale)
         }
     }
 

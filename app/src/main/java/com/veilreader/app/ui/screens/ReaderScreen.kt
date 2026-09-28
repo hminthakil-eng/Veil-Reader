@@ -70,8 +70,12 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -108,8 +112,11 @@ import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
+import org.readium.r2.navigator.preferences.ColumnCount
 import org.readium.r2.navigator.preferences.Fit
+import org.readium.r2.navigator.preferences.FontFamily
 import org.readium.r2.navigator.preferences.ReadingProgression
+import org.readium.r2.navigator.preferences.TextAlign as ReadiumTextAlign
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -2422,13 +2429,48 @@ internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
         },
         backgroundColor = colors?.first?.let(::ReadiumColor),
         textColor = colors?.second?.let(::ReadiumColor),
+        fontFamily = when (fontFamily) {
+            ReaderFontFamily.PUBLISHER -> null
+            ReaderFontFamily.SERIF -> FontFamily.SERIF
+            ReaderFontFamily.SANS_SERIF -> FontFamily.SANS_SERIF
+            ReaderFontFamily.MONOSPACE -> FontFamily.MONOSPACE
+            ReaderFontFamily.OPEN_DYSLEXIC -> FontFamily.OPEN_DYSLEXIC
+            ReaderFontFamily.ACCESSIBLE_DFA -> FontFamily.ACCESSIBLE_DFA
+            ReaderFontFamily.IA_WRITER_DUOSPACE -> FontFamily.IA_WRITER_DUOSPACE
+        },
         fontSize = readiumFontSizeRatio(fontScale),
         lineHeight = lineHeight.coerceIn(1.1, 2.0),
         pageMargins = pageMargins.coerceIn(0.5, 2.0),
+        paragraphSpacing = paragraphSpacing?.coerceIn(0.0, 2.0),
+        paragraphIndent = paragraphIndent?.coerceIn(0.0, 3.0),
+        letterSpacing = letterSpacing?.coerceIn(0.0, 0.2),
+        wordSpacing = wordSpacing?.coerceIn(0.0, 1.0),
+        typeScale = typeScale?.coerceIn(1.0, 2.0),
+        textAlign = when (textAlignment) {
+            ReaderTextAlignment.PUBLISHER -> null
+            ReaderTextAlignment.START -> ReadiumTextAlign.START
+            ReaderTextAlignment.JUSTIFY -> ReadiumTextAlign.JUSTIFY
+            ReaderTextAlignment.CENTER -> ReadiumTextAlign.CENTER
+        },
+        columnCount = when (columnMode) {
+            ReaderColumnMode.AUTO -> ColumnCount.AUTO
+            ReaderColumnMode.ONE -> ColumnCount.ONE
+            ReaderColumnMode.TWO -> ColumnCount.TWO
+        },
+        hyphens = hyphenation.toNullableBoolean(),
+        ligatures = ligatures.toNullableBoolean(),
+        textNormalization = textNormalization.toNullableBoolean(),
         scroll = scroll,
         publisherStyles = publisherStyles
     )
 }
+
+private fun ReaderPreferenceToggle.toNullableBoolean(): Boolean? =
+    when (this) {
+        ReaderPreferenceToggle.DEFAULT -> null
+        ReaderPreferenceToggle.ON -> true
+        ReaderPreferenceToggle.OFF -> false
+    }
 
 internal fun readiumFontSizeRatio(scale: Double): Double =
     (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)

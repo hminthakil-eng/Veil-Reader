@@ -2,7 +2,11 @@ package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -99,6 +103,34 @@ class ReaderPreferenceMappingTest {
         val margins = original.withPageMargins(1.3)
         assertEquals(1.3, margins.pageMargins, 0.0001)
         assertFalse(margins.publisherStyles)
+    }
+
+    @Test
+    fun `advanced typography overrides are deterministic and disable publisher styles`() {
+        val original = ReaderAppearance(publisherStyles = true)
+            .withFontFamily(ReaderFontFamily.OPEN_DYSLEXIC)
+            .withTextAlignment(ReaderTextAlignment.JUSTIFY)
+            .withParagraphSpacing(9.0)
+            .withParagraphIndent(-3.0)
+            .withLetterSpacing(2.0)
+            .withWordSpacing(Double.NaN)
+            .withTypeScale(9.0)
+            .copy(
+                columnMode = ReaderColumnMode.TWO,
+                hyphenation = ReaderPreferenceToggle.ON,
+                ligatures = ReaderPreferenceToggle.OFF,
+                textNormalization = ReaderPreferenceToggle.ON
+            )
+
+        assertFalse(original.publisherStyles)
+        assertEquals(ReaderFontFamily.OPEN_DYSLEXIC, original.fontFamily)
+        assertEquals(ReaderTextAlignment.JUSTIFY, original.textAlignment)
+        assertEquals(2.0, original.paragraphSpacing!!, 0.0001)
+        assertEquals(0.0, original.paragraphIndent!!, 0.0001)
+        assertEquals(0.2, original.letterSpacing!!, 0.0001)
+        assertEquals(null, original.wordSpacing)
+        assertEquals(2.0, original.typeScale!!, 0.0001)
+        assertEquals(ReaderColumnMode.TWO, original.columnMode)
     }
 
 }
