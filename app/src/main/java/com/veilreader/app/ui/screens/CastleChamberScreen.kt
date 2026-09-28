@@ -416,21 +416,23 @@ fun TreasuryScreen(
         CastleChamberGrandMasthead(
             realm = VeilRealm.CASTLE,
             sharedKey = hallSharedBoundsKey("treasury"),
-            eyebrow = "TREASURY · RELIC VAULT",
-            title = "The Treasury",
-            subtitle = "Relics, sigils, story keepsakes, and bookplates projected only from records already sealed on this device.",
-            trailing = buildString {
-                append("$awakenedRelics READING RELICS")
-                if (storyRelicCount > 0) append(" · $storyRelicCount STORY RELICS")
-                append(" · $awakenedBookplates BOOKPLATES")
-            }
+            eyebrow = stringResource(R.string.treasury_eyebrow),
+            title = stringResource(R.string.treasury_title),
+            subtitle = stringResource(R.string.treasury_subtitle),
+            trailing = buildList {
+                add(stringResource(R.string.treasury_summary_reading, awakenedRelics))
+                if (storyRelicCount > 0) {
+                    add(stringResource(R.string.treasury_summary_story, storyRelicCount))
+                }
+                add(stringResource(R.string.treasury_summary_bookplates, awakenedBookplates))
+            }.joinToString(" · ")
         )
 
         WorldMutationEcho(
             ledger = mutationLedger,
             realm = WorldMutationRealm.TREASURY,
-            eyebrow = "TREASURY CONSEQUENCE",
-            title = "What the Castle now remembers"
+            eyebrow = stringResource(R.string.treasury_consequence_eyebrow),
+            title = stringResource(R.string.treasury_consequence_title)
         )
 
         if (storyRelicDisplays.isNotEmpty()) {
@@ -459,8 +461,8 @@ fun TreasuryScreen(
         }
 
         ArchiveChamberHeading(
-            eyebrow = "Core constellation",
-            title = "Sigils",
+            eyebrow = stringResource(R.string.treasury_sigils_eyebrow),
+            title = stringResource(R.string.treasury_sigils_title),
             trailing = "${profile.earnedSigils.size.coerceAtMost(sigils.size)}/${sigils.size}"
         )
 
@@ -481,8 +483,8 @@ fun TreasuryScreen(
         }
 
         ArchiveChamberHeading(
-            eyebrow = "Hidden cabinet",
-            title = "Reading relics",
+            eyebrow = stringResource(R.string.treasury_relics_eyebrow),
+            title = stringResource(R.string.treasury_relics_title),
             trailing = "$awakenedRelics/${readingRelics.size}"
         )
 
@@ -511,8 +513,8 @@ fun TreasuryScreen(
         }
 
         ArchiveChamberHeading(
-            eyebrow = "Inside the cover",
-            title = "Bookplates",
+            eyebrow = stringResource(R.string.treasury_bookplates_eyebrow),
+            title = stringResource(R.string.treasury_bookplates_title),
             trailing = "$awakenedBookplates/${bookplates.size}"
         )
 
@@ -841,7 +843,7 @@ private fun TreasuryPedestal(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "DISPLAY PEDESTAL",
+                stringResource(R.string.treasury_pedestal),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass
             )
@@ -853,24 +855,24 @@ private fun TreasuryPedestal(
 
             if (equipped == null) {
                 Text(
-                    "No sigil equipped",
+                    stringResource(R.string.treasury_no_sigil),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    "Choose an awakened sigil below. It changes only your Castle identity.",
+                    stringResource(R.string.treasury_no_sigil_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist,
                     textAlign = TextAlign.Center
                 )
             } else {
                 Text(
-                    equipped.name,
+                    stringResource(equipped.nameRes),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    equipped.description,
+                    stringResource(equipped.descriptionRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist,
                     textAlign = TextAlign.Center
@@ -881,7 +883,7 @@ private fun TreasuryPedestal(
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.36f)),
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Clear pedestal", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.treasury_clear_pedestal), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -943,12 +945,16 @@ private fun SigilRelicRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    presentation.name,
+                    stringResource(presentation.nameRes),
                     style = MaterialTheme.typography.titleSmall,
                     color = if (earned) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
                 )
                 Text(
-                    if (earned) presentation.description else "The condition remains hidden.",
+                    if (earned) {
+                        stringResource(presentation.descriptionRes)
+                    } else {
+                        stringResource(R.string.relic_condition_hidden)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = if (earned) 0.82f else 0.46f),
                     maxLines = 2
@@ -970,7 +976,9 @@ private fun SigilRelicRow(
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
-                        if (equipped) "ON DISPLAY" else "DISPLAY",
+                        stringResource(
+                            if (equipped) R.string.relic_on_display else R.string.relic_display
+                        ),
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -1027,15 +1035,22 @@ private fun RelicCabinetCell(
                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.30f)
             )
             Text(
-                if (awakened) relic.name else "Uncatalogued relic",
+                if (awakened) {
+                    stringResource(relic.nameRes)
+                } else {
+                    stringResource(R.string.relic_uncatalogued)
+                },
                 style = MaterialTheme.typography.titleSmall,
                 color = if (awakened) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
             )
             Text(
                 if (awakened) {
-                    "${relic.rarity.label} · AWAKENED"
+                    stringResource(
+                        R.string.relic_awakened,
+                        stringResource(relicRarityLabelRes(relic.rarity))
+                    )
                 } else {
-                    "RARITY VEILED"
+                    stringResource(R.string.relic_rarity_veiled)
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f),
@@ -1045,13 +1060,17 @@ private fun RelicCabinetCell(
                 Text(
                     when (unlockState.provenance) {
                         RelicProvenance.READING_EVIDENCE ->
-                            "PROVENANCE · ${unlockState.evidenceCount} ${unlockState.evidenceLabel}"
+                            stringResource(
+                                R.string.relic_provenance_evidence,
+                                unlockState.evidenceCount,
+                                stringResource(unlockState.evidenceLabelRes)
+                            )
                         RelicProvenance.LEGACY_PROFILE ->
-                            "PROVENANCE · LEGACY RECORD PRESERVED"
+                            stringResource(R.string.relic_provenance_legacy)
                         RelicProvenance.SOVEREIGN_COMPOSITE ->
-                            "PROVENANCE · FINAL PATH + CORE SIGILS"
+                            stringResource(R.string.relic_provenance_sovereign)
                         RelicProvenance.SEALED ->
-                            "PROVENANCE · SEALED"
+                            stringResource(R.string.relic_provenance_sealed)
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Spirit.copy(alpha = 0.72f),
@@ -1059,13 +1078,18 @@ private fun RelicCabinetCell(
                 )
             } else {
                 Text(
-                    relic.clue,
+                    stringResource(relic.clueRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.58f),
                     maxLines = 4
                 )
                 Text(
-                    "EVIDENCE · ${unlockState.evidenceCount}/${unlockState.target} ${unlockState.evidenceLabel}",
+                    stringResource(
+                        R.string.relic_evidence_progress,
+                        unlockState.evidenceCount,
+                        unlockState.target,
+                        stringResource(unlockState.evidenceLabelRes)
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.42f),
                     maxLines = 2
@@ -1105,17 +1129,17 @@ private fun BookplateRecord(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "EX LIBRIS · VEIL READER",
+                    stringResource(R.string.bookplate_ex_libris),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                     color = Color(0xFF6B5332)
                 )
                 Text(
-                    plate.name,
+                    stringResource(plate.nameRes),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF2A251F)
                 )
                 Text(
-                    plate.inscription,
+                    stringResource(plate.inscriptionRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF4A4034),
                     textAlign = TextAlign.Center
@@ -1124,12 +1148,12 @@ private fun BookplateRecord(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    "SEALED BOOKPLATE",
+                    stringResource(R.string.bookplate_sealed),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
                     color = VeilPalette.Mist.copy(alpha = 0.44f)
                 )
                 Text(
-                    "An inscription has not yet appeared.",
+                    stringResource(R.string.bookplate_missing),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.52f)
                 )
