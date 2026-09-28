@@ -10,6 +10,85 @@ import org.junit.Test
 class ReaderInputArbiterTest {
 
     @Test
+    fun `Veil slide owns only paginated EPUB slide mode`() {
+        assertTrue(
+            shouldUseVeilSlideNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+        assertFalse(
+            shouldUseVeilSlideNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+        assertFalse(
+            shouldUseVeilSlideNavigation(
+                format = BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+        assertFalse(
+            shouldUseVeilSlideNavigation(
+                format = BookFormat.PDF,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+    }
+
+    @Test
+    fun `weighted slide commits by distance progress or deliberate flick`() {
+        assertTrue(
+            shouldCommitSlideTurn(
+                inwardDistance = 180f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.10f
+            )
+        )
+        assertTrue(
+            shouldCommitSlideTurn(
+                inwardDistance = 40f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.34f
+            )
+        )
+        assertTrue(
+            shouldCommitSlideTurn(
+                inwardDistance = 40f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.04f,
+                releaseVelocityPxPerSec = 1200f
+            )
+        )
+        assertFalse(
+            shouldCommitSlideTurn(
+                inwardDistance = 20f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.02f,
+                releaseVelocityPxPerSec = 2200f
+            )
+        )
+        assertFalse(
+            shouldCommitSlideTurn(
+                inwardDistance = -20f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.80f,
+                releaseVelocityPxPerSec = 2200f
+            )
+        )
+    }
+
+    @Test
     fun `static paged drag belongs only to paginated EPUB NONE mode`() {
         assertTrue(
             shouldUseStaticPagedDragNavigation(

@@ -10,6 +10,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
     PAPER,
+    SLIDE,
     DIRECTIONAL,
     CHROME,
     RENDERER
@@ -47,6 +48,7 @@ internal fun shouldAnimateDirectionalNavigation(
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
     private val paper: InputListener?,
+    private val slide: InputListener?,
     private val staticPaged: InputListener?,
     private val directional: InputListener,
     private val chromeTap: (TapEvent) -> Boolean,
@@ -56,6 +58,11 @@ internal class ReaderInputArbiter(
     override fun onTap(event: TapEvent): Boolean {
         if (paper?.onTap(event) == true) {
             onTapOwner(ReaderTapOwner.PAPER)
+            return true
+        }
+
+        if (slide?.onTap(event) == true) {
+            onTapOwner(ReaderTapOwner.SLIDE)
             return true
         }
 
@@ -75,10 +82,13 @@ internal class ReaderInputArbiter(
 
     override fun onDrag(event: DragEvent): Boolean {
         if (paper?.onDrag(event) == true) return true
+        if (slide?.onDrag(event) == true) return true
         if (staticPaged?.onDrag(event) == true) return true
         return false
     }
 
-    override fun onKey(event: KeyEvent): Boolean =
-        directional.onKey(event)
+    override fun onKey(event: KeyEvent): Boolean {
+        if (slide?.onKey(event) == true) return true
+        return directional.onKey(event)
+    }
 }
