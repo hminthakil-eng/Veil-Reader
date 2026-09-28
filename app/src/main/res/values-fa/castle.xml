@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="castle_hall_eyebrow">تالار بزرگ · آثار</string>
+    <string name="castle_hall_title">تالار یک منو نیست</string>
+    <string name="castle_hall_body">هر مقصد به شکل یک شیء در جهان ظاهر می‌شود. حالت فهرست همان مسیرها را سریع و آشنا نگه می‌دارد.</string>
+    <string name="castle_hall_mode">تالار</string>
+    <string name="castle_registry_mode">فهرست</string>
+    <string name="castle_registry_talkback">با TalkBack، نمایش فهرست استفاده می‌شود تا آثار با ترتیب خواندن حرکت کنند.</string>
+
+    <string name="castle_artifact_mirror_title">آینهٔ زنده</string>
+    <string name="castle_artifact_mirror_awake">%1$d یادداشت، بازدید دوباره را به خاطر دارد</string>
+    <string name="castle_artifact_mirror_dormant">آب هنوز آرام است · نخستین یادداشت را بنویس تا بیدار شود</string>
+    <string name="castle_artifact_astrolabe_title">اسطرلاب</string>
+    <string name="castle_artifact_astrolabe_subtitle">رصدخانه · روابط واقعی در تاریخ مطالعه</string>
+    <string name="castle_artifact_archive_title">دروازهٔ آرشیو</string>
+    <string name="castle_artifact_archive_subtitle">کتاب‌ها، مجموعه‌ها و ورودی آرشیو</string>
+    <string name="castle_artifact_ledger_title">دفتر مهرشده</string>
+    <string name="castle_artifact_ledger_subtitle">پرونده · امضای مطالعه · سابقهٔ پایدار</string>
+    <string name="castle_artifact_ritual_title">مهر آیین</string>
+    <string name="castle_artifact_ritual_ready">ارتقا آماده است</string>
+    <string name="castle_artifact_ritual_waiting">مسیر، رتبه و دگرگونی بعدی</string>
+    <string name="castle_artifact_reliquary_title">یادگارخانه</string>
+    <string name="castle_artifact_reliquary_subtitle">خزانه · یادگارها، نشان‌ها و آثار حاصل از مطالعه</string>
+    <string name="castle_artifact_door_title">درِ پرده‌پوش</string>
+    <string name="castle_artifact_door_subtitle">قدس درونی · سابقه‌های نادر و ماندگار</string>
+    <string name="castle_artifact_reading_title">جایگاه مطالعه</string>
+    <string name="castle_artifact_reading_subtitle">بازگشت به مرکز آرام زندگی مطالعاتی تو</string>
+
+    <string name="castle_artifact_awakened">بیدار</string>
+    <string name="castle_artifact_dormant">خاموش</string>
+    <string name="castle_artifact_sealed_rank">مهرشده · رتبه %1$d</string>
+    <string name="castle_artifact_open">باز</string>
+    <string name="castle_artifact_semantics_open">%1$s. %2$s. باز.</string>
+    <string name="castle_artifact_semantics_sealed">%1$s. تا رتبه %2$d مهرشده است.</string>
+</resources>
