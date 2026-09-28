@@ -59,6 +59,7 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.VeilEyebrowText
 import com.veilreader.app.ui.VeilRealmEmblem
@@ -194,6 +195,21 @@ fun SettingsScreen(
                     commitReaderAppearance { current -> current.withFontScale(value.toDouble()) }
                 }
             )
+            ReaderOptionalSlider(
+                label = "Text weight",
+                value = appearance.fontWeight,
+                defaultValue = 1f,
+                valueRange = 0f..2.5f,
+                displayValue = { "${(it * 100).toInt()}%" },
+                onCommit = { value ->
+                    commitReaderAppearance { current -> current.withFontWeight(value?.toDouble()) }
+                }
+            )
+            Text(
+                "Base weight for reflowable EPUB. Book keeps the publication/default weight.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
             ReaderSlider(
                 label = "Line height",
                 value = appearance.lineHeight.toFloat(),
@@ -248,6 +264,39 @@ fun SettingsScreen(
                 )
                 Text(
                     "Controls visible fibre, mottling, edge oxidation, and page shading without changing publication text.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            val darkReadingTheme =
+                appearance.theme == ReaderTheme.DUSK || appearance.theme == ReaderTheme.OLED
+            if (darkReadingTheme) {
+                Text("Dark-theme images", style = MaterialTheme.typography.labelLarge)
+                ChoiceRow(
+                    entries = ReaderDarkImageTreatment.entries,
+                    selected = appearance.darkImageTreatment,
+                    label = { treatment ->
+                        when (treatment) {
+                            ReaderDarkImageTreatment.NONE -> "Original"
+                            ReaderDarkImageTreatment.DARKEN -> "Darken"
+                            ReaderDarkImageTreatment.INVERT -> "Invert"
+                        }
+                    },
+                    onSelected = { treatment ->
+                        commitReaderAppearance { current ->
+                            current.withDarkImageTreatment(treatment)
+                        }
+                    }
+                )
+                Text(
+                    "Readium applies this only to reflowable EPUB images in Dusk/Night.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                Text(
+                    "Dark-image treatment becomes available when the default theme is Dusk or Night.",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -654,6 +703,53 @@ private fun <T> ChoiceRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ReaderOptionalSlider(
+    label: String,
+    value: Double?,
+    defaultValue: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    displayValue: (Float) -> String,
+    onCommit: (Double?) -> Unit
+) {
+    var draft by remember(value, defaultValue) {
+        mutableFloatStateOf((value?.toFloat() ?: defaultValue).coerceIn(valueRange.start, valueRange.endInclusive))
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (value == null) "Book" else displayValue(draft),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                TextButton(
+                    onClick = {
+                        draft = defaultValue.coerceIn(valueRange.start, valueRange.endInclusive)
+                        onCommit(null)
+                    },
+                    enabled = value != null,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text("Reset")
+                }
+            }
+        }
+        Slider(
+            value = draft,
+            onValueChange = { draft = it },
+            onValueChangeFinished = { onCommit(draft.toDouble()) },
+            valueRange = valueRange
+        )
     }
 }
 
