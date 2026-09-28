@@ -134,6 +134,27 @@ class VeilAppViewModelTest {
         assertFalse(model.route.value.showArchive)
     }
     @Test
+    fun silentNamesChamber_opensPersistsAndRestoresWithoutReaderState() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+
+        model.selectTab(VeilTab.CASTLE)
+        model.openChamber("silent_names")
+
+        assertEquals("silent_names", model.route.value.activeChamber)
+        assertNull(model.route.value.activeBookId)
+        assertNull(model.route.value.readerLocatorCheckpointJson)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
+        assertEquals("silent_names", recreated.route.value.activeChamber)
+
+        recreated.closeChamber()
+        assertNull(recreated.route.value.activeChamber)
+        assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
+    }
+
+    @Test
     fun livingMirrorChamber_opensPersistsAndRestores() {
         val handle = SavedStateHandle()
         val model = VeilAppViewModel(handle)
