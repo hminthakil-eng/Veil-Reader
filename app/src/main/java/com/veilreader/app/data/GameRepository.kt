@@ -34,6 +34,13 @@ data class SilentNamesCommitResult(
     val newlyCommitted: Boolean
 )
 
+sealed interface SilentNamesStorageState {
+    data object Missing : SilentNamesStorageState
+    data class Valid(val receipt: SilentNamesReceipt) : SilentNamesStorageState
+    data class Unsupported(val raw: String, val contentVersion: Int) : SilentNamesStorageState
+    data class Corrupt(val raw: String) : SilentNamesStorageState
+}
+
 /** Persistent, offline-first reading progression.
  *
  * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
@@ -165,14 +172,17 @@ class GameRepository(context: Context) {
     }
 
     /**
-     * Returns the durable encounter receipt, or null when the episode has never been sealed.
+     * Non-throwing durable state for the Hall story.
      *
-     * A corrupt/unsupported stored receipt fails closed and is never silently replaced. This is
-     * intentional: the raw record may belong to a newer app version and LibraryExport will retain it.
+     * Unsupported and corrupt records are retained byte-for-byte. The UI can therefore fail closed
+     * without crashing or silently resetting an encounter that may belong to a newer app build.
      */
-    fun silentNamesReceipt(): SilentNamesReceipt? = synchronized(SILENT_NAMES_LOCK) {
-        readSilentNamesReceiptLocked()
+    fun silentNamesStorageState(): SilentNamesStorageState = synchronized(SILENT_NAMES_LOCK) {
+        readSilentNamesStorageStateLocked()
     }
+
+    fun silentNamesReceipt(): SilentNamesReceipt? =
+        (silentNamesStorageState() as? SilentNamesStorageState.Valid)?.receipt
 
     /** The cosmetic lantern is derived from the one committed receipt; there is no second award ledger. */
     fun ownsSilentNamesReward(): Boolean =
@@ -192,8 +202,21 @@ class GameRepository(context: Context) {
         nowEpochMs: () -> Long = { System.currentTimeMillis().coerceAtLeast(1L) }
     ): SilentNamesCommitResult = withContext(Dispatchers.IO) {
         synchronized(SILENT_NAMES_LOCK) {
-            readSilentNamesReceiptLocked()?.let {
-                return@synchronized SilentNamesCommitResult(it, newlyCommitted = false)
+            when (val stored = readSilentNamesStorageStateLocked()) {
+                is SilentNamesStorageState.Valid ->
+                    return@synchronized SilentNamesCommitResult(
+                        stored.receipt,
+                        newlyCommitted = false
+                    )
+                is SilentNamesStorageState.Unsupported ->
+                    throw IllegalStateException(
+                        "Silent Names was sealed by a newer content version; the original record was retained."
+                    )
+                is SilentNamesStorageState.Corrupt ->
+                    throw IllegalStateException(
+                        "Silent Names storage is unreadable; the original record was retained."
+                    )
+                SilentNamesStorageState.Missing -> Unit
             }
 
             val pathId = buildProfile().path.id
@@ -215,11 +238,11 @@ class GameRepository(context: Context) {
                 .commit()
             check(committed) { "Could not commit Silent Names encounter receipt" }
 
-            val restored = checkNotNull(readSilentNamesReceiptLocked()) {
-                "Silent Names receipt was not readable after commit"
-            }
-            check(restored == candidate) { "Silent Names receipt changed during commit" }
-            SilentNamesCommitResult(restored, newlyCommitted = true)
+            val restored = readSilentNamesStorageStateLocked()
+            val durable = (restored as? SilentNamesStorageState.Valid)?.receipt
+                ?: error("Silent Names receipt was not readable after commit")
+            check(durable == candidate) { "Silent Names receipt changed during commit" }
+            SilentNamesCommitResult(durable, newlyCommitted = true)
         }
     }
 
@@ -540,15 +563,21 @@ class GameRepository(context: Context) {
         )
     }
 
-    private fun readSilentNamesReceiptLocked(): SilentNamesReceipt? {
-        val raw = prefs.getString(SILENT_NAMES_RECEIPT_KEY, null) ?: return null
-        return runCatching { decodeSilentNamesReceipt(raw) }
-            .getOrElse { error ->
-                throw IllegalStateException(
-                    "Stored Silent Names receipt is unsupported or corrupt; retaining it unchanged.",
-                    error
-                )
+    private fun readSilentNamesStorageStateLocked(): SilentNamesStorageState {
+        val raw = prefs.getString(SILENT_NAMES_RECEIPT_KEY, null)
+            ?: return SilentNamesStorageState.Missing
+        return try {
+            val envelope = JSONObject(raw)
+            val contentVersion = envelope.optInt("contentVersion", -1)
+            if (contentVersion > SilentNamesEncounter.CONTENT_VERSION) {
+                SilentNamesStorageState.Unsupported(raw, contentVersion)
+            } else {
+                val receipt = decodeSilentNamesReceipt(raw)
+                SilentNamesStorageState.Valid(receipt)
             }
+        } catch (_: Throwable) {
+            SilentNamesStorageState.Corrupt(raw)
+        }
     }
 
     private fun encodeSilentNamesReceipt(receipt: SilentNamesReceipt): String = JSONObject().apply {
