@@ -54,6 +54,10 @@ import com.veilreader.app.domain.PathMasteryAxis
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.effectivePathMastery
 import com.veilreader.app.domain.pathDoctrineFor
+import com.veilreader.app.domain.CovenantResonance
+import com.veilreader.app.domain.allNarrativeCovenants
+import com.veilreader.app.domain.covenantResonance
+import com.veilreader.app.domain.veilOrderForPath
 import com.veilreader.app.domain.ReadingPath
 import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.ui.VeilEyebrowText
@@ -110,6 +114,8 @@ internal fun pathGeometryFor(pathId: String): PathGeometryKind =
 @Composable
 fun PathScreen(
     profile: ReaderProfile,
+    covenantId: String? = null,
+    onSetCovenant: (String?) -> Unit = {},
     onAdvanceRank: (String, Int) -> Boolean,
     onChoosePath: (String) -> Unit
 ) {
@@ -190,6 +196,12 @@ fun PathScreen(
             }
         )
 
+        NarrativeIdentityPanel(
+            profile = profile,
+            covenantId = covenantId,
+            onSetCovenant = onSetCovenant
+        )
+
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
                 eyebrow = "Progression",
@@ -234,6 +246,132 @@ fun PathScreen(
             onDismiss = { showCeremony = false },
             onConfirm = { onAdvanceRank(ceremonyPathId, ceremonyRankIndex) }
         )
+    }
+}
+
+@Composable
+private fun NarrativeIdentityPanel(
+    profile: ReaderProfile,
+    covenantId: String?,
+    onSetCovenant: (String?) -> Unit
+) {
+    val order = veilOrderForPath(profile.path.id)
+    val covenants = allNarrativeCovenants()
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        SectionHeading(
+            eyebrow = "Narrative identity",
+            title = "Order & Covenant"
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.extraSmall,
+            color = VeilPalette.Archive.copy(alpha = 0.72f),
+            border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.26f))
+        ) {
+            Column(
+                modifier = Modifier.padding(VeilSpacing.md),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                VeilEyebrowText(
+                    text = "ORDER RESONANCE · ${order.name.uppercase()}",
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    order.maxim,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    order.worldFunction,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist
+                )
+                Text(
+                    "Your Order is a world resonance derived from Path identity. It grants no rank, XP, room, or factual book claim.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.62f)
+                )
+            }
+        }
+
+        Text(
+            "A Covenant is an optional vow that changes authored Veil wording and atmosphere only. You can release or change it without penalty.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = VeilPalette.Mist
+        )
+
+        covenants.forEach { covenant ->
+            val selected = covenant.id == covenantId
+            val resonance = covenantResonance(profile.path.id, covenant.id)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = if (selected) {
+                    VeilPalette.DeepBrass.copy(alpha = 0.18f)
+                } else {
+                    VeilPalette.Ink.copy(alpha = 0.34f)
+                },
+                border = BorderStroke(
+                    1.dp,
+                    if (selected) VeilPalette.Brass.copy(alpha = 0.54f)
+                    else VeilPalette.BorderDark.copy(alpha = 0.68f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(VeilSpacing.md),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            covenant.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = VeilPalette.Moon,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            when (resonance) {
+                                CovenantResonance.AFFINITY -> "AFFINITY"
+                                CovenantResonance.CROSS_CURRENT -> "CROSS-CURRENT"
+                                null -> "OPTIONAL"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = VeilPalette.Brass
+                        )
+                    }
+                    Text(
+                        covenant.vow,
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        covenant.invitation,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist
+                    )
+                    OutlinedButton(
+                        onClick = { onSetCovenant(if (selected) null else covenant.id) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (selected) VeilPalette.Brass.copy(alpha = 0.48f)
+                            else VeilPalette.BorderDark
+                        )
+                    ) {
+                        Text(if (selected) "Release covenant" else "Take this covenant")
+                    }
+                }
+            }
+        }
     }
 }
 
