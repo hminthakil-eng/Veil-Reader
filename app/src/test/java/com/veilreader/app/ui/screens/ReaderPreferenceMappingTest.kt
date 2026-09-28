@@ -133,4 +133,11 @@ class ReaderPreferenceMappingTest {
         assertEquals(ReaderColumnMode.TWO, original.columnMode)
     }
 
+    @Test
+    fun `paper patina is finite and clamped`() {
+        assertEquals(1.0, ReaderAppearance().withPaperPatina(9.0).paperPatina, 0.0001)
+        assertEquals(0.0, ReaderAppearance().withPaperPatina(-2.0).paperPatina, 0.0001)
+        assertEquals(0.72, ReaderAppearance().withPaperPatina(Double.NaN).paperPatina, 0.0001)
+    }
+
 }

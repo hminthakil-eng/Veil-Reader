@@ -62,7 +62,8 @@ class SettingsStoreInstrumentedTest {
             paragraphIndent = 1.2,
             letterSpacing = 0.08,
             wordSpacing = 0.24,
-            typeScale = 1.15
+            typeScale = 1.15,
+            paperPatina = 0.84
         )
 
         try {

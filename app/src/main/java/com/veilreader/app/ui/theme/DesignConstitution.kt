@@ -426,7 +426,8 @@ data class VeilSanctuarySurfaceProfile(
  */
 fun sanctuarySurfaceProfileFor(
     theme: ReaderTheme,
-    mode: ReaderNavigationMode
+    mode: ReaderNavigationMode,
+    paperPatina: Float = 0.72f
 ): VeilSanctuarySurfaceProfile {
     val base = when (theme) {
         ReaderTheme.PAPER -> VeilSanctuarySurfaceProfile(
@@ -467,12 +468,31 @@ fun sanctuarySurfaceProfileFor(
         )
     }
 
-    return if (mode == ReaderNavigationMode.SCROLL) {
+    val patina = paperPatina.coerceIn(0f, 1f)
+    val aged = if (theme == ReaderTheme.PAPER || theme == ReaderTheme.SEPIA) {
+        val alphaScale = 0.55f + patina * 1.65f
+        val densityScale = 0.70f + patina * 0.80f
         base.copy(
-            edgeOxidationAlpha = base.edgeOxidationAlpha * 0.55f,
-            pageShadeAlpha = base.pageShadeAlpha * 0.72f
+            fibreAlpha = (base.fibreAlpha * alphaScale).coerceAtMost(0.065f),
+            speckAlpha = (base.speckAlpha * alphaScale).coerceAtMost(0.060f),
+            mottleAlpha = (base.mottleAlpha * alphaScale).coerceAtMost(0.070f),
+            edgeOxidationAlpha =
+                (base.edgeOxidationAlpha * alphaScale).coerceAtMost(0.20f),
+            pageShadeAlpha =
+                (base.pageShadeAlpha * (0.80f + patina * 0.55f)).coerceAtMost(0.085f),
+            fibreCount = (base.fibreCount * densityScale).toInt().coerceIn(16, 72),
+            speckCount = (base.speckCount * densityScale).toInt().coerceIn(20, 88)
         )
     } else {
         base
+    }
+
+    return if (mode == ReaderNavigationMode.SCROLL) {
+        aged.copy(
+            edgeOxidationAlpha = aged.edgeOxidationAlpha * 0.55f,
+            pageShadeAlpha = aged.pageShadeAlpha * 0.72f
+        )
+    } else {
+        aged
     }
 }

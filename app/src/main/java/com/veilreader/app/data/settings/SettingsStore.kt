@@ -66,6 +66,7 @@ class SettingsStore(private val context: Context) {
         val letterSpacing = doublePreferencesKey("reader_letter_spacing")
         val wordSpacing = doublePreferencesKey("reader_word_spacing")
         val typeScale = doublePreferencesKey("reader_type_scale")
+        val paperPatina = doublePreferencesKey("reader_paper_patina")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
         val sensoryInteractionSounds = booleanPreferencesKey("sensory_interaction_sounds")
@@ -140,7 +141,11 @@ class SettingsStore(private val context: Context) {
                     ?.coerceIn(0.0, 1.0),
                 typeScale = prefs[Keys.typeScale]
                     ?.takeIf { it.isFinite() }
-                    ?.coerceIn(1.0, 2.0)
+                    ?.coerceIn(1.0, 2.0),
+                paperPatina = (prefs[Keys.paperPatina] ?: 0.72)
+                    .takeIf { it.isFinite() }
+                    ?.coerceIn(0.0, 1.0)
+                    ?: 0.72
             ),
             sensory = SensorySettings(
                 hapticsEnabled = prefs[Keys.sensoryHaptics] ?: true,
@@ -199,6 +204,10 @@ class SettingsStore(private val context: Context) {
             value.typeScale?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.typeScale] = it.coerceIn(1.0, 2.0)
             } ?: prefs.remove(Keys.typeScale)
+            prefs[Keys.paperPatina] = value.paperPatina
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 1.0)
+                ?: 0.72
         }
     }
 

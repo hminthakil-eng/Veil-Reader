@@ -156,7 +156,8 @@ data class ReaderAppearance(
     val paragraphIndent: Double? = null,
     val letterSpacing: Double? = null,
     val wordSpacing: Double? = null,
-    val typeScale: Double? = null
+    val typeScale: Double? = null,
+    val paperPatina: Double = 0.72
 ) {
     val navigationMode: ReaderNavigationMode
         get() = when {
@@ -229,6 +230,11 @@ data class ReaderAppearance(
         copy(
             typeScale = value?.takeIf { it.isFinite() }?.coerceIn(1.0, 2.0),
             publisherStyles = false
+        )
+
+    fun withPaperPatina(value: Double): ReaderAppearance =
+        copy(
+            paperPatina = value.takeIf { it.isFinite() }?.coerceIn(0.0, 1.0) ?: 0.72
         )
 
     fun withScreenBrightness(value: Double?): ReaderAppearance =
