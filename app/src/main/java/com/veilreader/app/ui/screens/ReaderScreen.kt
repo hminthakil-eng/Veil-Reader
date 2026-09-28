@@ -333,6 +333,10 @@ fun ReaderScreen(
     val bookmarkExistsMessage = stringResource(R.string.reader_bookmark_exists)
     val readerSurfaceDescription = stringResource(R.string.reader_surface_description)
     val toggleReaderControls = stringResource(R.string.reader_toggle_controls)
+    val progressDescription = stringResource(
+        R.string.reader_percent_read,
+        (progress.coerceIn(0f, 1f) * 100).toInt()
+    )
     val quickSettingsHandleVisible = shouldShowReaderQuickSettingsHandle(
         navigatorReady = navigator != null,
         controlsVisible = controlsVisible,
@@ -900,7 +904,7 @@ fun ReaderScreen(
                             "${(progress.coerceIn(0f, 1f) * 100).toInt()}%",
                             modifier = Modifier.semantics {
                                 contentDescription =
-                                    stringResource(R.string.reader_percent_read, (progress.coerceIn(0f, 1f) * 100).toInt())
+                                    progressDescription
                             },
                             color = VeilPalette.Brass,
                             style = MaterialTheme.typography.labelMedium
