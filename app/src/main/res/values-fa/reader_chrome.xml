@@ -31,4 +31,9 @@
     <string name="reader_note_characters">تعداد نویسه‌ها: %1$d</string>
     <string name="reader_note_saving">در حال ذخیره…</string>
     <string name="reader_note_save">ذخیرهٔ یادداشت</string>
+    <string name="reader_page_material">جنس صفحه</string>
+    <string name="reader_theme_paper">کاغذی</string>
+    <string name="reader_theme_sepia">سپیا</string>
+    <string name="reader_theme_dark">تیره</string>
+    <string name="reader_theme_night">شب</string>
 </resources>
