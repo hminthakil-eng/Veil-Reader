@@ -68,30 +68,13 @@ object StoryRelicCatalog {
 }
 
 /**
- * Converts known valid encounter receipts into Castle projections.
+ * Collects already-validated projections from independent encounter owners.
  *
- * Invalid/future receipts intentionally project nothing. Their authoritative raw data remains
- * retained by the owning repository until a compatible app version can understand it.
+ * Future encounters add their own receipt adapter and pass its nullable record here. The collector
+ * never learns source-specific receipt types, which keeps persistence ownership decentralized.
  */
-fun deriveStoryRelics(
-    silentNamesReceipt: SilentNamesReceipt? = null
-): List<StoryRelicRecord> = buildList {
-    silentNamesReceipt
-        ?.takeIf(SilentNamesEncounter::isValid)
-        ?.let { receipt ->
-            add(
-                StoryRelicRecord(
-                    relicId = receipt.rewardId,
-                    sourceEncounterId = receipt.encounterId,
-                    sourceContentVersion = receipt.contentVersion,
-                    pathIdAtAcquisition = receipt.pathId,
-                    recordedAtEpochMs = receipt.recordedAtEpochMs,
-                    routeVariantId = receipt.outcome.name,
-                    resolutionModeId = receipt.mode.name
-                )
-            )
-        }
-}
+fun collectStoryRelics(vararg records: StoryRelicRecord?): List<StoryRelicRecord> =
+    normalizeStoryRelics(records.filterNotNull())
 
 /** Stable deduplication by relic identity for future multi-encounter aggregation. */
 fun normalizeStoryRelics(records: Iterable<StoryRelicRecord>): List<StoryRelicRecord> =
