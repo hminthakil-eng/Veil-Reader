@@ -1983,6 +1983,16 @@ private fun EpubAppearancePanel(
             }
         }
 
+        Text(
+            stringResource(R.string.reader_page_material),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+            color = VeilPalette.Brass
+        )
+        ReaderThemeStrip(
+            selected = draft.theme,
+            onSelect = { theme -> updateDraft(draft.withTheme(theme)) }
+        )
+
         ReaderAppearancePreview(
             appearance = draft,
             modifier = Modifier.fillMaxWidth()
@@ -2154,27 +2164,6 @@ private fun EpubAppearancePanel(
                     title = "LIGHT",
                     subtitle = "Paper tone, darkness, and screen brightness."
                 )
-
-                listOf(
-                    listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
-                    listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "Night")
-                ).forEach { presets ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        presets.forEach { (theme, label) ->
-                            AppearancePreset(
-                                label = label,
-                                theme = theme,
-                                selected = draft.theme == theme,
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                updateDraft(draft.withTheme(theme))
-                            }
-                        }
-                    }
-                }
 
                 BrassRule(Modifier.fillMaxWidth())
 
@@ -2857,6 +2846,32 @@ internal fun ReaderMotionPreview(
 }
 
 @Composable
+private fun ReaderThemeStrip(
+    selected: ReaderTheme,
+    onSelect: (ReaderTheme) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        listOf(
+            ReaderTheme.PAPER to R.string.reader_theme_paper,
+            ReaderTheme.SEPIA to R.string.reader_theme_sepia,
+            ReaderTheme.DUSK to R.string.reader_theme_dark,
+            ReaderTheme.OLED to R.string.reader_theme_night
+        ).forEach { (theme, labelRes) ->
+            AppearancePreset(
+                label = stringResource(labelRes),
+                theme = theme,
+                selected = selected == theme,
+                modifier = Modifier.weight(1f),
+                onClick = { onSelect(theme) }
+            )
+        }
+    }
+}
+
+@Composable
 private fun AppearancePreset(
     label: String,
     theme: ReaderTheme,
@@ -2897,7 +2912,7 @@ private fun AppearancePreset(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
+                    .height(58.dp)
                     .background(paper, MaterialTheme.shapes.extraSmall)
                     .border(
                         1.dp,
@@ -2905,12 +2920,26 @@ private fun AppearancePreset(
                         MaterialTheme.shapes.extraSmall
                     )
             ) {
-                Text(
-                    "Aa",
-                    modifier = Modifier.align(Alignment.Center),
-                    color = ink,
-                    style = MaterialTheme.typography.titleLarge
-                )
+                Canvas(Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 7.dp)) {
+                    val center = size.width / 2f
+                    val stroke = 0.8.dp.toPx()
+                    drawLine(
+                        ink.copy(alpha = 0.38f),
+                        Offset(center - size.width * 0.12f, size.height * 0.12f),
+                        Offset(center + size.width * 0.12f, size.height * 0.12f),
+                        stroke
+                    )
+                    repeat(4) { line ->
+                        val y = size.height * (0.36f + line * 0.16f)
+                        val end = if (line == 3) size.width * 0.70f else size.width * 0.88f
+                        drawLine(
+                            ink.copy(alpha = if (line == 0) 0.62f else 0.42f),
+                            Offset(size.width * 0.12f, y),
+                            Offset(end, y),
+                            stroke
+                        )
+                    }
+                }
             }
             Row(
                 Modifier.fillMaxWidth(),
