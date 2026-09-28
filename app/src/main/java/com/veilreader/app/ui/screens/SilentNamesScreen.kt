@@ -480,7 +480,7 @@ private fun SilentNamesWindowSigil(modifier: Modifier = Modifier) {
 }
 
 @StringRes
-private fun SilentNamesChoice.labelRes(): Int =
+internal fun SilentNamesChoice.labelRes(): Int =
     when (this) {
         SilentNamesChoice.EXAMINE_SEAL -> R.string.silent_names_examine_seal
         SilentNamesChoice.FOLLOW_LIGHT -> R.string.silent_names_follow_light
@@ -488,7 +488,7 @@ private fun SilentNamesChoice.labelRes(): Int =
     }
 
 @StringRes
-private fun SilentNamesOutcome.outcomeRes(): Int =
+internal fun SilentNamesOutcome.outcomeRes(): Int =
     when (this) {
         SilentNamesOutcome.RESTORED_INSCRIPTION -> R.string.silent_names_restored_inscription
         SilentNamesOutcome.WORKSHOP_TRAIL -> R.string.silent_names_workshop_trail
