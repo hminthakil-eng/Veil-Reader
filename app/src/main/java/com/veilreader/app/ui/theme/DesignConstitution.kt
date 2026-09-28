@@ -403,11 +403,14 @@ data class VeilSanctuaryPageMaterial(
  * Paged modes are physical sheets; continuous scroll is a paper field.
  * This prevents the scroll surface from inheriting book-block edges that imply a page turn.
  */
-fun sanctuaryPageMaterialFor(mode: ReaderNavigationMode): VeilSanctuaryPageMaterial =
+fun sanctuaryPageMaterialFor(
+    mode: ReaderNavigationMode,
+    qualityTier: VeilQualityTier = VeilQualityTier.FULL
+): VeilSanctuaryPageMaterial =
     VeilSanctuaryPageMaterial(
         showPhysicalPageStack = mode != ReaderNavigationMode.SCROLL,
         showEdgeFalloff = true,
-        showMicroFibres = true
+        showMicroFibres = qualityTier != VeilQualityTier.ESSENTIAL
     )
 
 data class VeilSanctuarySurfaceProfile(
@@ -427,7 +430,8 @@ data class VeilSanctuarySurfaceProfile(
 fun sanctuarySurfaceProfileFor(
     theme: ReaderTheme,
     mode: ReaderNavigationMode,
-    paperPatina: Float = 0.72f
+    paperPatina: Float = 0.72f,
+    qualityTier: VeilQualityTier = VeilQualityTier.FULL
 ): VeilSanctuarySurfaceProfile {
     val base = when (theme) {
         ReaderTheme.PAPER -> VeilSanctuarySurfaceProfile(
@@ -487,7 +491,7 @@ fun sanctuarySurfaceProfileFor(
         base
     }
 
-    return if (mode == ReaderNavigationMode.SCROLL) {
+    val modeAdjusted = if (mode == ReaderNavigationMode.SCROLL) {
         aged.copy(
             edgeOxidationAlpha = aged.edgeOxidationAlpha * 0.55f,
             pageShadeAlpha = aged.pageShadeAlpha * 0.72f
@@ -495,4 +499,13 @@ fun sanctuarySurfaceProfileFor(
     } else {
         aged
     }
+    val quality = qualityPolicyFor(qualityTier)
+    val detail = quality.ornamentalDetail.coerceIn(0f, 1f)
+    return modeAdjusted.copy(
+        fibreAlpha = modeAdjusted.fibreAlpha * detail,
+        speckAlpha = modeAdjusted.speckAlpha * detail,
+        mottleAlpha = modeAdjusted.mottleAlpha * detail,
+        fibreCount = (modeAdjusted.fibreCount * detail).toInt().coerceAtLeast(0),
+        speckCount = (modeAdjusted.speckCount * detail).toInt().coerceAtLeast(0)
+    )
 }
