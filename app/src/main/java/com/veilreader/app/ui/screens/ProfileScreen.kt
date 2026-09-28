@@ -351,8 +351,8 @@ private fun ProfileGrandMasthead(
             tint = VeilPalette.Brass.copy(alpha = 0.20f)
         )
         VeilMastheadMetaRow(
-            primary = "ARCHIVIST DOSSIER",
-            secondary = "LVL $level · $recordedSessions SESSIONS",
+            primary = stringResource(R.string.profile_masthead_eyebrow),
+            secondary = stringResource(R.string.profile_masthead_meta, level, recordedSessions),
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .padding(VeilSpacing.md)
@@ -375,7 +375,7 @@ private fun ProfileGrandMasthead(
                 color = VeilPalette.Moon.copy(alpha = 0.84f)
             )
             Text(
-                "A factual ledger of reading, preserved passages, completed journeys, and discovered marks.",
+                stringResource(R.string.profile_masthead_body),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.82f),
                 modifier = Modifier.widthIn(max = 580.dp)
@@ -444,18 +444,18 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "DURABLE LEDGER",
+                    stringResource(R.string.profile_ledger_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Recorded history",
+                    stringResource(R.string.profile_ledger_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
             }
             Text(
-                localizeAppNumerals("${history.recordedSessionCount} sessions", language),
+                stringResource(R.string.profile_ledger_sessions, history.recordedSessionCount),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -464,7 +464,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         BrassRule(Modifier.fillMaxWidth())
 
         DossierLedgerLine(
-            label = "Archive span",
+            label = stringResource(R.string.profile_ledger_archive_span),
             value = buildString {
                 append(formatDossierDate(history.firstRecordedAtEpochMs, language))
                 append(" — ")
@@ -472,24 +472,24 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
             }
         )
         DossierLedgerLine(
-            label = "Recorded active time",
-            value = localizeAppNumerals(formatDossierDuration(history.recordedActiveMillis), language)
+            label = stringResource(R.string.profile_ledger_active_time),
+            value = localizedProfileDurationMillis(history.recordedActiveMillis)
         )
         DossierLedgerLine(
-            label = "Completion records",
+            label = stringResource(R.string.profile_ledger_completions),
             value = localizeAppNumerals("${history.completionCycleCount}", language)
         )
         DossierLedgerLine(
-            label = "Reread cycles",
+            label = stringResource(R.string.profile_ledger_rereads),
             value = localizeAppNumerals("${history.rereadCycleCount}", language)
         )
         DossierLedgerLine(
-            label = "Archived volumes",
+            label = stringResource(R.string.profile_ledger_volumes),
             value = localizeAppNumerals("${history.archivedVolumeCount}", language)
         )
 
         Text(
-            "This ledger uses durable local book, session, and completion records; it does not infer missing reading history.",
+            stringResource(R.string.profile_ledger_body),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.58f)
         )
@@ -563,6 +563,7 @@ private fun ArchivistDossierPanel(
     totalDiscoveries: Int,
     onOpenSettings: () -> Unit
 ) {
+    val pathPresentation = localizedPathPresentation(profile.path, profile.rankIndex)
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
 
@@ -602,17 +603,17 @@ private fun ArchivistDossierPanel(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "PRIVATE READING RECORD",
+                        stringResource(R.string.profile_private_record),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        profile.rankName,
+                        pathPresentation.rankName,
                         style = MaterialTheme.typography.headlineMedium,
                         color = VeilPalette.Moon
                     )
                     Text(
-                        profile.path.epithet,
+                        pathPresentation.epithet,
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
@@ -624,7 +625,7 @@ private fun ArchivistDossierPanel(
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        "SETTINGS",
+                        stringResource(R.string.profile_settings),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -645,10 +646,10 @@ private fun ArchivistDossierPanel(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    DossierFact("PATH", profile.path.name)
-                    DossierFact("LEVEL", profile.level.toString())
-                    DossierFact("CASTLE TIER", (profile.rankIndex + 1).toString())
-                    equippedSigilName?.let { DossierFact("EQUIPPED SIGIL", it) }
+                    DossierFact(stringResource(R.string.profile_fact_path), pathPresentation.name)
+                    DossierFact(stringResource(R.string.profile_fact_level), profile.level.toString())
+                    DossierFact(stringResource(R.string.profile_fact_castle_tier), (profile.rankIndex + 1).toString())
+                    equippedSigilName?.let { DossierFact(stringResource(R.string.profile_fact_equipped_sigil), it) }
                 }
             }
 
@@ -659,12 +660,12 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "EXPERIENCE",
+                    stringResource(R.string.profile_experience),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
                     color = VeilPalette.Mist
                 )
                 Text(
-                    "${profile.xp}/$xpTarget XP",
+                    stringResource(R.string.profile_xp, profile.xp, xpTarget),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
@@ -682,17 +683,17 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "${profile.earnedSigils.size} SIGILS",
+                    stringResource(R.string.profile_count_sigils, profile.earnedSigils.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$revealedDiscoveries/$totalDiscoveries DISCOVERIES",
+                    stringResource(R.string.profile_count_discoveries, revealedDiscoveries, totalDiscoveries),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$highlightCount MARKS",
+                    stringResource(R.string.profile_count_marks, highlightCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
@@ -824,14 +825,44 @@ private fun DossierRecordGrid(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("RETURN", "${profile.streakDays}d", "current streak", Modifier.weight(1f))
-            DossierStat("VOLUMES", "${profile.booksFinished}", "finished", Modifier.weight(1f))
-            DossierStat("MARKS", "$highlightCount", "highlights", Modifier.weight(1f))
+            DossierStat(
+                stringResource(R.string.profile_stat_return),
+                stringResource(R.string.profile_days_short, profile.streakDays),
+                stringResource(R.string.profile_stat_return_label),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_volumes),
+                profile.booksFinished.toString(),
+                stringResource(R.string.profile_stat_volumes_label),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_marks),
+                highlightCount.toString(),
+                stringResource(R.string.profile_stat_marks_label),
+                Modifier.weight(1f)
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("PAGES", "${profile.pagesRead}", "turned", Modifier.weight(1f))
-            DossierStat("TIME", formatMinutes(profile.minutesRead), "inside books", Modifier.weight(1f))
-            DossierStat("TIER", "${profile.rankIndex + 1}", "castle", Modifier.weight(1f))
+            DossierStat(
+                stringResource(R.string.profile_stat_pages),
+                profile.pagesRead.toString(),
+                stringResource(R.string.profile_stat_pages_label),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_time),
+                localizedProfileMinutes(profile.minutesRead),
+                stringResource(R.string.profile_stat_time_label),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_tier),
+                (profile.rankIndex + 1).toString(),
+                stringResource(R.string.profile_stat_tier_label),
+                Modifier.weight(1f)
+            )
         }
     }
 }
@@ -932,7 +963,11 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
                     color = VeilPalette.Moon
                 )
                 Text(
-                    if (earned) "AWAKENED" else "${value.coerceAtMost(target)}/$target",
+                    if (earned) {
+                        stringResource(R.string.profile_sigil_awakened)
+                    } else {
+                        "${value.coerceAtMost(target)}/$target"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = if (earned) VeilPalette.Brass else VeilPalette.Mist
                 )
@@ -993,35 +1028,40 @@ private fun DiscoveryCard(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 Text(
-                    if (revealed) discovery.title else "Veiled Fragment ${index + 1}",
+                    if (revealed) {
+                        stringResource(discovery.titleRes)
+                    } else {
+                        stringResource(R.string.profile_discovery_veiled, index + 1)
+                    },
                     style = MaterialTheme.typography.titleLarge,
                     color = if (revealed) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.62f)
                 )
                 Text(
-                    if (revealed) "REVEALED" else "CLUE",
+                    stringResource(
+                        if (revealed) R.string.profile_discovery_revealed
+                        else R.string.profile_discovery_clue
+                    ),
                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.3.sp),
                     color = accent
                 )
                 Text(
-                    if (revealed) discovery.lore else discovery.clue,
+                    stringResource(
+                        if (revealed) discovery.loreRes else discovery.clueRes
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist
                 )
                 if (revealed) {
                     Text(
-                        buildString {
-                            append("PERMANENT LEDGER")
-                            record.recordedAtEpochMs.let { timestamp ->
-                                append(" · RECORDED ").append(
-                                    formatDossierDate(timestamp, language)
-                                )
-                            }
-                        },
+                        stringResource(
+                            R.string.profile_discovery_ledger,
+                            formatDossierDate(record.recordedAtEpochMs, language)
+                        ),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
                         color = VeilPalette.Brass.copy(alpha = 0.82f)
                     )
                     Text(
-                        "Once recorded, this discovery remains part of your local reading history even if a temporary signal such as a streak later changes.",
+                        stringResource(R.string.profile_discovery_permanent_body),
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Spirit
                     )
@@ -1053,6 +1093,42 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
                 textAlign = TextAlign.End
             )
         }
+    }
+}
+
+@Composable
+private fun localizedProfileMinutes(minutes: Int): String =
+    when {
+        minutes >= 60 && minutes % 60 == 0 ->
+            stringResource(R.string.profile_duration_hours, minutes / 60)
+        minutes >= 60 ->
+            stringResource(
+                R.string.profile_duration_hours_minutes,
+                minutes / 60,
+                minutes % 60
+            )
+        minutes > 0 ->
+            stringResource(R.string.profile_duration_minutes, minutes)
+        else ->
+            stringResource(R.string.profile_duration_less_minute)
+    }
+
+@Composable
+private fun localizedProfileDurationMillis(activeMillis: Long): String {
+    val totalMinutes = (activeMillis.coerceAtLeast(0L) / 60_000L)
+    return when {
+        totalMinutes >= 60L && totalMinutes % 60L == 0L ->
+            stringResource(R.string.profile_duration_hours, totalMinutes / 60L)
+        totalMinutes >= 60L ->
+            stringResource(
+                R.string.profile_duration_hours_minutes,
+                totalMinutes / 60L,
+                totalMinutes % 60L
+            )
+        totalMinutes > 0L ->
+            stringResource(R.string.profile_duration_minutes, totalMinutes)
+        else ->
+            stringResource(R.string.profile_duration_less_minute)
     }
 }
 
