@@ -248,6 +248,38 @@ internal class SlideNavigationInputListener(
         return true
     }
 
+    /**
+     * Cancels an uncommitted preview and waits until any preview navigation has been restored.
+     * This is the only safe path before taking a durable close snapshot.
+     */
+    suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val requested = cancelPendingTurn()
+        if (!requested) return false
+        completionJob?.join()
+        return true
+    }
+
+    /**
+     * Synchronous teardown for configuration changes and composition disposal. The reader's
+     * composition scope can disappear immediately, so locator restoration cannot depend on it.
+     */
+    fun forceCancelPendingTurn(): Boolean {
+        if (!reserved && activeSpec == null) return false
+        if (turnCommitted) return false
+
+        cancellationRequested = true
+        navigationJob?.cancel()
+        completionJob?.cancel()
+
+        val spec = activeSpec
+        if (spec != null && previewNavigationSucceeded) {
+            restoreDragStart(spec)
+        }
+        state.clearImmediately()
+        resetDrag()
+        return true
+    }
+
     private fun performDiscreteTurn(spec: TurnSpec) {
         val visualReady = !isReducedMotion() && state.begin(navigator.publicationView)
         onInteraction()
