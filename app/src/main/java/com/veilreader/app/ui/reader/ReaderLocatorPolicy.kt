@@ -17,6 +17,18 @@ internal enum class ReaderLocatorEvent(
     FINAL_SNAPSHOT(commitsLocator = true, countsPageTurn = false)
 }
 
+/** The navigator's first position is an opening checkpoint, even if loading took a long time. */
+internal fun navigatorLocatorEvent(
+    isInitialEmission: Boolean,
+    isContinuousScroll: Boolean,
+    isPaperMode: Boolean
+): ReaderLocatorEvent = when {
+    isContinuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
+    isInitialEmission -> ReaderLocatorEvent.FINAL_SNAPSHOT
+    isPaperMode -> ReaderLocatorEvent.NAVIGATOR_POSITION
+    else -> ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+}
+
 internal data class ReaderLocatorCommit(
     val sequence: Long,
     val locatorJson: String,
