@@ -702,4 +702,13 @@
     <string name="path_artificer_insight_description">Relate mechanisms to finished works and preserved evidence.</string>
     <string name="path_artificer_stability_name">Calibration</string>
     <string name="path_artificer_stability_description">Return across sessions until understanding survives beyond one burst of curiosity.</string>
+
+    <string name="path_generic_aspect">Reading</string>
+    <string name="path_generic_maxim">Read · understand · return</string>
+    <string name="path_generic_embodiment_name">Embodiment</string>
+    <string name="path_generic_embodiment_description">Act in ways that match the reading identity you selected.</string>
+    <string name="path_generic_insight_name">Insight</string>
+    <string name="path_generic_insight_description">Preserve evidence that reading changed what you understand.</string>
+    <string name="path_generic_stability_name">Stability</string>
+    <string name="path_generic_stability_description">Return often enough that progression reflects a durable habit.</string>
 </resources>
