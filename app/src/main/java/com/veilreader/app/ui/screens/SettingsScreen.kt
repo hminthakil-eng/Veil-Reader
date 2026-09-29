@@ -37,7 +37,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
@@ -84,11 +86,29 @@ fun SettingsScreen(
 
     val appearance = appearanceDraft
     val context = LocalContext.current
-    val appVersion = remember(context) {
+    val unknownVersion = stringResource(R.string.settings_unknown)
+    val appVersion = remember(context, unknownVersion) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
-        }.getOrDefault("").ifBlank { "Unknown" }
+        }.getOrDefault("").ifBlank { unknownVersion }
     }
+    val appThemeLabels = mapOf(
+        AppThemeMode.SYSTEM to stringResource(R.string.settings_theme_system),
+        AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
+        AppThemeMode.DARK to stringResource(R.string.settings_theme_dark)
+    )
+    val readerThemeLabels = mapOf(
+        ReaderTheme.PAPER to stringResource(R.string.reader_theme_paper),
+        ReaderTheme.SEPIA to stringResource(R.string.reader_theme_sepia),
+        ReaderTheme.DUSK to stringResource(R.string.reader_theme_dusk),
+        ReaderTheme.OLED to stringResource(R.string.reader_theme_night)
+    )
+    val ambientSoundLabels = mapOf(
+        AmbientSound.OFF to stringResource(R.string.settings_ambient_off),
+        AmbientSound.LIBRARY to stringResource(R.string.settings_ambient_library),
+        AmbientSound.RAIN to stringResource(R.string.settings_ambient_rain),
+        AmbientSound.FIRE to stringResource(R.string.settings_ambient_fire)
+    )
     val backupPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { it?.let(onExportBackup) }
@@ -113,57 +133,57 @@ fun SettingsScreen(
             onClick = onClose,
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel("Back"))
+            Text(VeilBackLabel(stringResource(R.string.common_back)))
         }
 
         Column(
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             Text(
-                "GRAYFOG SETTINGS",
+                stringResource(R.string.settings_grayfog_title),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass
             )
             Text(
-                "The Reading Room",
+                stringResource(R.string.settings_reading_room),
                 style = MaterialTheme.typography.headlineLarge
             )
             BrassRule(Modifier.width(92.dp), strong = true)
             Text(
-                "Reading, appearance, storage, privacy, and backup controls. Everything remains local unless you export it.",
+                stringResource(R.string.settings_intro),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
         SettingsSection(
-            title = "Appearance",
-            description = "Choose how the archive shell follows your device."
+            title = stringResource(R.string.settings_appearance_title),
+            description = stringResource(R.string.settings_appearance_body)
         ) {
             ChoiceRow(
                 entries = AppThemeMode.entries,
                 selected = settings.appThemeMode,
-                label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
+                label = { appThemeLabels.getValue(it) },
                 onSelected = onSetAppThemeMode
             )
         }
 
         SettingsSection(
-            title = "Reading settings",
-            description = "Set default theme, typography, page movement, brightness, and layout."
+            title = stringResource(R.string.settings_reading_title),
+            description = stringResource(R.string.settings_reading_body)
         ) {
-            Text("Publication theme", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_publication_theme), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = ReaderTheme.entries,
                 selected = appearance.theme,
-                label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
+                label = { readerThemeLabels.getValue(it) },
                 onSelected = { theme ->
                     commitReaderAppearance { current -> current.withTheme(theme) }
                 }
             )
 
             ReaderSlider(
-                label = "Text size",
+                label = stringResource(R.string.settings_text_size),
                 value = appearance.fontScale.toFloat(),
                 valueRange = 0.75f..1.8f,
                 displayValue = { "${(it * 100).toInt()}%" },
@@ -172,7 +192,7 @@ fun SettingsScreen(
                 }
             )
             ReaderSlider(
-                label = "Line height",
+                label = stringResource(R.string.settings_line_height),
                 value = appearance.lineHeight.toFloat(),
                 valueRange = 1.1f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
@@ -181,7 +201,7 @@ fun SettingsScreen(
                 }
             )
             ReaderSlider(
-                label = "Page margins",
+                label = stringResource(R.string.settings_page_margins),
                 value = appearance.pageMargins.toFloat(),
                 valueRange = 0.5f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
@@ -190,7 +210,7 @@ fun SettingsScreen(
                 }
             )
 
-            Text("Reading motion", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_reading_motion), style = MaterialTheme.typography.labelLarge)
             ReaderMotionSelector(
                 selected = appearance.navigationMode,
                 onSelect = { mode ->
@@ -198,20 +218,20 @@ fun SettingsScreen(
                 }
             )
             Text(
-                readerNavigationModeDescription(appearance.navigationMode),
+                readerNavigationModeDescriptionLocalized(appearance.navigationMode),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
             SettingsSwitchRow(
-                title = "Publisher styles",
-                subtitle = "Keep the publication's typography and styling when available. This can override Veil theme colors.",
+                title = stringResource(R.string.settings_publisher_styles),
+                subtitle = stringResource(R.string.settings_publisher_styles_body),
                 checked = appearance.publisherStyles,
                 onCheckedChange = { enabled ->
                     commitReaderAppearance { current -> current.copy(publisherStyles = enabled) }
                 }
             )
 
-            Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_reading_brightness), style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
                 appearance = appearance,
                 onChange = { proposed ->
@@ -223,12 +243,12 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Sound & touch",
-            description = "Keep feedback subtle, optional, and fully local. Haptics never require sound; ambient playback is off by default."
+            title = stringResource(R.string.settings_sound_touch_title),
+            description = stringResource(R.string.settings_sound_touch_body)
         ) {
             SettingsSwitchRow(
-                title = "Haptic feedback",
-                subtitle = "A restrained tactile cue for page turns, saved marks, and major unlocks.",
+                title = stringResource(R.string.settings_haptic_feedback),
+                subtitle = stringResource(R.string.settings_haptic_feedback_body),
                 checked = settings.sensory.hapticsEnabled,
                 onCheckedChange = { enabled ->
                     onSaveSensorySettings(
@@ -237,8 +257,8 @@ fun SettingsScreen(
                 }
             )
             SettingsSwitchRow(
-                title = "Interaction sounds",
-                subtitle = "Soft paper and archive cues. Disabled by default and never required for reading.",
+                title = stringResource(R.string.settings_interaction_sounds),
+                subtitle = stringResource(R.string.settings_interaction_sounds_body),
                 checked = settings.sensory.interactionSoundsEnabled,
                 onCheckedChange = { enabled ->
                     onSaveSensorySettings(
@@ -247,18 +267,11 @@ fun SettingsScreen(
                 }
             )
 
-            Text("Ambient room", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_ambient_room), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = AmbientSound.entries,
                 selected = settings.sensory.ambientSound,
-                label = { mode ->
-                    when (mode) {
-                        AmbientSound.OFF -> "Off"
-                        AmbientSound.LIBRARY -> "Library hush"
-                        AmbientSound.RAIN -> "Rain"
-                        AmbientSound.FIRE -> "Fireplace"
-                    }
-                },
+                label = { mode -> ambientSoundLabels.getValue(mode) },
                 onSelected = { mode ->
                     onSaveSensorySettings(
                         settings.sensory.copy(ambientSound = mode)
@@ -271,7 +284,7 @@ fun SettingsScreen(
                 settings.sensory.ambientSound != AmbientSound.OFF
             ) {
                 ReaderSlider(
-                    label = "Audio level",
+                    label = stringResource(R.string.settings_audio_level),
                     value = settings.sensory.audioVolume.toFloat(),
                     valueRange = 0.05f..0.55f,
                     displayValue = { "${(it * 100).toInt()}%" },
@@ -284,15 +297,15 @@ fun SettingsScreen(
             }
 
             Text(
-                "Set Ambient room to Off and disable Interaction sounds for complete audio silence.",
+                stringResource(R.string.settings_audio_silence_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
         }
 
         SettingsSection(
-            title = "Library & backup",
-            description = "Export or restore your private local archive, annotations, and reading state."
+            title = stringResource(R.string.settings_library_backup_title),
+            description = stringResource(R.string.settings_library_backup_body)
         ) {
             Button(
                 enabled = !exporting && !restoring,
@@ -303,35 +316,35 @@ fun SettingsScreen(
                     containerColor = VeilPalette.Brass,
                     contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
                 )
-            ) { Text(if (exporting) "Exporting…" else "Export library backup") }
+            ) { Text(if (exporting) stringResource(R.string.settings_exporting) else stringResource(R.string.settings_export_backup)) }
             OutlinedButton(
                 enabled = !exporting && !restoring,
                 onClick = { confirmRestore = true },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            ) { Text(if (restoring) "Restoring…" else "Restore library backup") }
+            ) { Text(if (restoring) stringResource(R.string.settings_restoring) else stringResource(R.string.settings_restore_backup)) }
             OutlinedButton(
                 enabled = !exporting && !restoring,
                 onClick = { notesPicker.launch("veil-reader-notebook.md") },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            ) { Text("Export notebook as Markdown") }
+            ) { Text(stringResource(R.string.settings_export_markdown)) }
         }
 
         SettingsSection(
-            title = "Privacy & about",
-            description = "Your library, progress, and annotations stay on this device unless you explicitly export them."
+            title = stringResource(R.string.settings_privacy_about_title),
+            description = stringResource(R.string.settings_privacy_about_body)
         ) {
-            Text("App version · $appVersion", style = MaterialTheme.typography.labelLarge)
-            Text("Reader engine · Readium Kotlin Toolkit 3.4.0", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_app_version, appVersion), style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_reader_engine), style = MaterialTheme.typography.labelLarge)
             Text(
-                "No account or cloud sync is required for core reading.",
+                stringResource(R.string.settings_no_account),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
         }
 
         SettingsSection(
-            title = "Reset reading defaults",
-            description = "Restore reader preferences without touching books, progress, notes, highlights, or backups."
+            title = stringResource(R.string.settings_reset_title),
+            description = stringResource(R.string.settings_reset_body)
         ) {
             OutlinedButton(
                 onClick = { commitReaderAppearance { ReaderAppearance() } },
@@ -339,7 +352,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
             ) {
-                Text("Reset reader defaults")
+                Text(stringResource(R.string.settings_reset_reader_defaults))
             }
         }
     }
@@ -355,23 +368,23 @@ fun SettingsScreen(
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "RESTORE ARCHIVE",
+                        stringResource(R.string.settings_restore_eyebrow),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Replace local Veil Reader data?",
+                        stringResource(R.string.settings_restore_title),
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
             },
             text = {
                 Text(
-                    "Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state."
+                    stringResource(R.string.settings_restore_body)
                 )
             },
             dismissButton = {
-                TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             confirmButton = {
                 Button(
@@ -384,7 +397,7 @@ fun SettingsScreen(
                         containerColor = VeilPalette.Brass,
                         contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
                     )
-                ) { Text("Choose backup") }
+                ) { Text(stringResource(R.string.settings_choose_backup)) }
             }
         )
     }
