@@ -150,7 +150,7 @@
     <string name="reader_sample_body">صفحه باید زیر داستان ناپدید شود. قلم، فاصله و حرکت تنها زمانی دیده شوند که خواندن را روان‌تر کنند.</string>
     <string name="reader_system_brightness">استفاده از روشنایی دستگاه</string>
     <string name="reader_system_brightness_description">روشنایی دستگاه را دنبال می‌کند و پس از خروج به وضعیت قبلی بازمی‌گردد.</string>
-    <string name="reader_custom_brightness_description">روشنایی انتخاب‌شده فقط هنگام مطالعه اعمال می‌شود.</string>
+    <string name="reader_custom_brightness_description">تا زمانی که خواننده باز است اعمال می‌شود؛ پس از خروج، روشنایی دستگاه بازمی‌گردد.</string>
 
     <!-- Reader chrome and passage-note controls -->
     <string name="reader_surface_label">سطح مطالعه</string>
@@ -183,4 +183,23 @@
     <string name="reader_note_save_failed">یادداشت ذخیره نشد.</string>
     <string name="reader_saved_location_failed">موقعیت ذخیره‌شده باز نشد.</string>
     <string name="reader_chapter_failed">این فصل باز نشد.</string>
+
+    <!-- ابزارهای مطالعهٔ PDF -->
+    <string name="pdf_controls_eyebrow">ابزارهای مطالعهٔ PDF</string>
+    <string name="pdf_controls_title">نمای PDF</string>
+    <string name="pdf_controls_intro">تنظیم عرض، بزرگ‌نمایی، چیدمان و روشنایی کنار صفحه‌اند. بزرگ‌نمایی با دو انگشت و دوبار لمس روی سند نیز فعال است.</string>
+    <string name="pdf_layout">چیدمان</string>
+    <string name="pdf_page">صفحه‌ای</string>
+    <string name="pdf_scroll">پیمایش</string>
+    <string name="pdf_continuous_scroll">پیمایش پیوستهٔ PDF</string>
+    <string name="pdf_paginated_layout">نمای صفحه‌ای PDF</string>
+    <string name="pdf_scroll_description">پیمایش عمودی پیوسته؛ صفحه‌ها با عرض مطالعه هماهنگ می‌شوند.</string>
+    <string name="pdf_page_description">تمرکز روی یک صفحه؛ صفحه در محدودهٔ نمایش جا می‌گیرد.</string>
+    <string name="pdf_preparing">آماده‌سازی سند</string>
+    <string name="pdf_renderer_connecting">در حال اتصال به نمایشگر PDF…</string>
+    <string name="pdf_zoom">بزرگ‌نمایی</string>
+    <string name="pdf_zoom_out">کم‌کردن بزرگ‌نمایی</string>
+    <string name="pdf_zoom_in">افزایش بزرگ‌نمایی</string>
+    <string name="pdf_zoom_reset">بازنشانی بزرگ‌نمایی به ۱۰۰٪</string>
+    <string name="pdf_fit_width">هماهنگ‌کردن با عرض صفحه</string>
 </resources>
