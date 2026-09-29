@@ -35,3 +35,34 @@ internal fun normalizeLibrarySearchText(value: String): String {
         }
     }
 }
+
+/**
+ * Parses small user-entered decimal metadata across Latin, Persian and Arabic keyboards.
+ * Series indices are not financial values, so a single comma may safely act as a decimal mark.
+ */
+internal fun parseLocalizedDecimalInput(value: String): Double? {
+    val source = value.trim()
+    if (source.isEmpty()) return null
+
+    val commaAsDecimal =
+        '.' !in source &&
+            '\u066B' !in source &&
+            source.count { it == ',' } == 1
+
+    val normalized = buildString(source.length) {
+        for (char in source) {
+            when (char) {
+                in '\u0660'..'\u0669' -> append('0' + (char - '\u0660'))
+                in '\u06F0'..'\u06F9' -> append('0' + (char - '\u06F0'))
+                '\u066B' -> append('.')
+                ',' -> if (commaAsDecimal) append('.')
+                '\u066C', '_', ' ', '\u00A0', '\u202F' -> Unit
+                '\u2212' -> append('-')
+                else -> append(char)
+            }
+        }
+    }
+
+    return normalized.toDoubleOrNull()?.takeIf(Double::isFinite)
+}
+
