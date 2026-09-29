@@ -579,4 +579,36 @@
         <item quantity="one">%1$d DAY PRESERVED</item>
         <item quantity="other">%1$d DAYS PRESERVED</item>
     </plurals>
+
+    <string name="threshold_archive_unwritten">The Archive Is Unwritten</string>
+    <string name="threshold_first_volume_arrived">The First Volume Has Arrived</string>
+    <string name="threshold_library_awaits">The Library Awaits</string>
+    <string name="threshold_return_archive">Return to the Archive</string>
+    <string name="threshold_intro_empty">A private archive for books, notes, and worlds that stay with you.</string>
+    <string name="threshold_intro_first">The first chamber has awakened. Your reading history begins from this volume.</string>
+    <string name="threshold_intro_current">Every book is a door. The nearest one is already open.</string>
+    <string name="threshold_intro_return">Your volumes remain here, quiet and local, until you choose another door.</string>
+    <string name="threshold_continue_reading">CONTINUE READING</string>
+    <string name="threshold_return_volume">Return to the volume</string>
+    <string name="threshold_open_volume">Open the volume</string>
+    <string name="threshold_hero_finished">Finished — open again anytime</string>
+    <string name="threshold_ready_begin">Ready to begin</string>
+    <string name="threshold_chapter_progress">%1$s · %2$d%%</string>
+    <string name="threshold_progress_complete">%1$d%% complete</string>
+    <string name="threshold_recent_tomes">RECENT TOMES</string>
+    <string name="threshold_recent_subtitle">Return to another world</string>
+    <string name="threshold_view_all">View all</string>
+    <string name="threshold_whisper_preserved">WHISPER · PRESERVED PASSAGE</string>
+    <string name="threshold_whisper_optional">WHISPER · OPTIONAL</string>
+    <string name="threshold_quiet_invitation">A quiet invitation</string>
+    <string name="threshold_quest_progress">%1$d/%2$d complete</string>
+    <string name="threshold_reading_record">READING RECORD</string>
+    <string name="threshold_castle">Castle</string>
+    <string name="threshold_stat_day_streak">day streak</string>
+    <string name="threshold_stat_reading">reading</string>
+    <string name="threshold_stat_finished">finished</string>
+    <string name="threshold_first_threshold">THE FIRST THRESHOLD</string>
+    <string name="threshold_first_volume_waiting">Your first volume is waiting</string>
+    <string name="threshold_first_volume_body">Import an EPUB or PDF. Once you begin, this page becomes the shortest path back into the book.</string>
+    <string name="threshold_enter_library">Enter the Library</string>
 </resources>
