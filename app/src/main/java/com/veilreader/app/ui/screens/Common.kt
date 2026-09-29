@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -555,12 +556,15 @@ fun BookCover(
                 ),
                 shape
             )
+            // Every current cover placement already presents the book title beside the artwork.
+            // Keep the image layers decorative so TalkBack does not announce the same title twice.
+            .clearAndSetSemantics { }
     ) {
         GeneratedBookCover(title = title, subtitle = subtitle)
         cachedCover?.let { cover ->
             Image(
                 bitmap = cover.bitmap,
-                contentDescription = stringResource(R.string.common_cover_of, title),
+                contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().alpha(imageAlpha)
             )
