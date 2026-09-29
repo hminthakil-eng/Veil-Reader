@@ -89,7 +89,8 @@ let sequenceToken = 0;
 let requestedByUser = false;
 
 function wait(ms, token) {
-  const delay = reducedMotion ? Math.min(ms, 140) : ms;
+  const isReadingHold = ms >= CONFIG.timings.hold;
+  const delay = reducedMotion && !isReadingHold ? Math.min(ms, 140) : ms;
   return new Promise((resolve) => {
     window.setTimeout(() => resolve(token === sequenceToken), delay);
   });
