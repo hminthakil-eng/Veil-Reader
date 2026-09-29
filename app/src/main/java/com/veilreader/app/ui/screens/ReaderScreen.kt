@@ -81,6 +81,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReadingContinuitySummary
@@ -132,6 +133,7 @@ import org.readium.r2.navigator.preferences.ImageFilter
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Fit
 import org.readium.r2.navigator.preferences.ReadingProgression
+import org.readium.r2.navigator.preferences.Spread
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.preferences.TextAlign as ReadiumTextAlign
 import org.readium.r2.shared.DelicateReadiumApi
@@ -148,7 +150,9 @@ fun ReaderScreen(
     library: LocalLibraryRepository,
     game: GameRepository,
     readerAppearance: ReaderAppearance,
+    fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
+    onFixedLayoutSpreadChange: (ReaderFixedLayoutSpread) -> Unit = {},
     entryContinuity: ReadingContinuitySummary? = null,
     returnRitual: BookReturnRitual? = null,
     initialReturnLocatorJson: String? = null,
@@ -784,12 +788,15 @@ fun ReaderScreen(
 
     val fragmentFactory = remember(
         opened.book.id,
+        effectiveReaderAppearance,
+        fixedLayoutSpread,
         selectionActionModeCallback,
         epubNavigatorListener
     ) {
         createReaderFactory(
             opened = opened,
             appearance = effectiveReaderAppearance,
+            fixedLayoutSpread = fixedLayoutSpread,
             selectionActionModeCallback = selectionActionModeCallback,
             epubNavigatorListener = epubNavigatorListener
         )
@@ -1138,14 +1145,20 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(navigator, effectiveReaderAppearance, opened.format) {
+    LaunchedEffect(
+        navigator,
+        effectiveReaderAppearance,
+        fixedLayoutSpread,
+        opened.format
+    ) {
         game.rebasePagePacing()
         readerViewModel.onUserInteraction()
         val traceDetails =
             "format=${opened.format} theme=${effectiveReaderAppearance.theme} " +
                 "publisherStyles=${effectiveReaderAppearance.publisherStyles} " +
                 "scroll=${effectiveReaderAppearance.scroll} " +
-                "pageTurn=${effectiveReaderAppearance.pageTurnStyle}"
+                "pageTurn=${effectiveReaderAppearance.pageTurnStyle} " +
+                "spread=$fixedLayoutSpread"
         ReaderTrace.event(
             "appearance_submit_requested",
             bookId = opened.book.id,
@@ -1155,7 +1168,11 @@ fun ReaderScreen(
         when (opened.format) {
             BookFormat.EPUB ->
                 (navigator as? EpubNavigatorFragment)
-                    ?.submitPreferences(effectiveReaderAppearance.toEpubPreferences())
+                    ?.submitPreferences(
+                        effectiveReaderAppearance.toEpubPreferences(
+                            fixedLayoutSpread = fixedLayoutSpread
+                        )
+                    )
 
             BookFormat.PDF -> {
                 @Suppress("UNCHECKED_CAST")
@@ -1928,7 +1945,12 @@ fun ReaderScreen(
                     EpubAppearancePanel(
                         appearance = readerAppearance,
                         fixedLayout = fixedLayoutPublication,
+                        fixedLayoutSpread = fixedLayoutSpread,
                         publicationLanguage = publicationLanguage,
+                        onSpreadChange = { mode ->
+                            readerViewModel.onUserInteraction()
+                            onFixedLayoutSpreadChange(mode)
+                        },
                         onChange = {
                             readerViewModel.onUserInteraction()
                             onReaderAppearanceChange(it)
@@ -2360,6 +2382,7 @@ private fun ReaderPageAtmosphere(
 private fun createReaderFactory(
     opened: OpenedPublication,
     appearance: ReaderAppearance,
+    fixedLayoutSpread: ReaderFixedLayoutSpread,
     selectionActionModeCallback: ActionMode.Callback,
     epubNavigatorListener: EpubNavigatorFragment.Listener
 ): FragmentFactory = when (opened.format) {
@@ -2367,7 +2390,9 @@ private fun createReaderFactory(
         .createFragmentFactory(
             initialLocator = opened.initialLocator,
             listener = epubNavigatorListener,
-            initialPreferences = appearance.toEpubPreferences(),
+            initialPreferences = appearance.toEpubPreferences(
+                fixedLayoutSpread = fixedLayoutSpread
+            ),
             configuration = EpubNavigatorFragment.Configuration {
                 useReadiumCssFontSize = false
                 disablePageTurnsWhileScrolling = false
@@ -2588,7 +2613,9 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
     fixedLayout: Boolean,
+    fixedLayoutSpread: ReaderFixedLayoutSpread,
     publicationLanguage: String?,
+    onSpreadChange: (ReaderFixedLayoutSpread) -> Unit,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
@@ -2688,6 +2715,42 @@ private fun EpubAppearancePanel(
             ReaderCapabilityNotice(
                 text = stringResource(R.string.reader_fixed_layout_notice)
             )
+        }
+
+        if (capabilities.fixedLayout) {
+            Text(
+                stringResource(R.string.reader_fixed_spread_title),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                color = VeilPalette.Brass
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderFixedLayoutSpread.entries.forEach { mode ->
+                    ReaderAppearanceChoice(
+                        label = when (mode) {
+                            ReaderFixedLayoutSpread.AUTO ->
+                                stringResource(R.string.reader_fixed_spread_auto)
+                            ReaderFixedLayoutSpread.SINGLE ->
+                                stringResource(R.string.reader_fixed_spread_single)
+                            ReaderFixedLayoutSpread.DUAL ->
+                                stringResource(R.string.reader_fixed_spread_dual)
+                        },
+                        selected = fixedLayoutSpread == mode,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSpreadChange(mode) }
+                    )
+                }
+            }
+            Text(
+                stringResource(R.string.reader_fixed_spread_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            BrassRule(Modifier.fillMaxWidth())
         }
 
         if (!capabilities.fixedLayout) {
@@ -3801,10 +3864,13 @@ private fun AppearancePreset(
 }
 
 @OptIn(ExperimentalReadiumApi::class)
-internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
+internal fun ReaderAppearance.toEpubPreferences(
+    fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO
+): EpubPreferences {
     val safe = normalized()
     val colors = if (safe.publisherStyles) null else readiumThemeColors(safe.theme)
     return EpubPreferences(
+        spread = fixedLayoutSpread.toReadiumSpread(),
         theme = when (safe.theme) {
             ReaderTheme.PAPER -> Theme.LIGHT
             ReaderTheme.SEPIA -> Theme.SEPIA
@@ -3863,6 +3929,13 @@ private fun ReaderPreferenceToggle.toNullableBoolean(): Boolean? =
 
 internal fun readiumFontSizeRatio(scale: Double): Double =
     (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
+
+internal fun ReaderFixedLayoutSpread.toReadiumSpread(): Spread? =
+    when (this) {
+        ReaderFixedLayoutSpread.AUTO -> null
+        ReaderFixedLayoutSpread.SINGLE -> Spread.NEVER
+        ReaderFixedLayoutSpread.DUAL -> Spread.ALWAYS
+    }
 
 internal fun readerHighlightTint(theme: ReaderTheme): Int =
     when (theme) {
