@@ -394,4 +394,18 @@
     <string name="library_sort_progress">پیشرفت</string>
     <string name="library_series_filter">مجموعهٔ داستانی · %1$s ×</string>
     <string name="library_reset_filters">پاک کردن فیلترها</string>
+    <string name="library_shelves_eyebrow">آرشیو</string>
+    <string name="library_shelves_title">قفسه‌ها</string>
+    <string name="library_shelves_hint">برای فیلتر، قفسه‌ای را انتخاب کنید</string>
+    <string name="library_shelf_favorites">علاقه‌مندی‌ها</string>
+    <string name="library_shelf_favorites_subtitle">کتاب‌هایی که نزدیک نگه داشته‌اید</string>
+    <string name="library_shelf_reading">در حال مطالعه</string>
+    <string name="library_shelf_reading_subtitle">سفرهای ناتمام</string>
+    <string name="library_shelf_completed">تمام‌شده</string>
+    <string name="library_shelf_completed_subtitle">کتاب‌های به‌پایان‌رسیده</string>
+    <string name="library_shelf_deep">قفسهٔ ژرف</string>
+    <string name="library_shelf_deep_subtitle">کتاب‌هایی که مدتی باز نشده‌اند</string>
+    <string name="library_shelf_unread">برای مطالعه</string>
+    <string name="library_shelf_unread_subtitle">هنوز گشوده نشده‌اند</string>
+    <string name="library_shelf_count">%1$02d</string>
 </resources>
