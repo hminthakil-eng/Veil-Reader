@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -32,6 +33,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -41,9 +43,9 @@ import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 
 private data class SigilPresentation(
-    val name: String,
+    val nameRes: Int,
     val symbol: String,
-    val description: String
+    val descriptionRes: Int
 )
 
 internal enum class RelicRarity(val label: String) {
@@ -66,44 +68,44 @@ internal fun relicRarityFor(relicId: String): RelicRarity =
 
 private data class RelicPresentation(
     val id: String,
-    val name: String,
+    val nameRes: Int,
     val symbol: String,
-    val clue: String,
+    val clueRes: Int,
     val rarity: RelicRarity,
     val awakened: (ReaderProfile) -> Boolean
 )
 
 private data class BookplatePresentation(
-    val name: String,
-    val inscription: String,
+    val nameRes: Int,
+    val inscriptionRes: Int,
     val awakened: (ReaderProfile) -> Boolean
 )
 
 private val sigils = linkedMapOf(
     "first_hour" to SigilPresentation(
-        "Quiet Hour",
+        R.string.treasury_sigil_quiet_hour,
         "◷",
-        "A full hour spent inside the written world."
+        R.string.treasury_sigil_quiet_hour_body
     ),
     "passage_keeper" to SigilPresentation(
-        "Passage Keeper",
+        R.string.treasury_sigil_passage_keeper,
         "✦",
-        "Ten passages preserved from the books that changed you."
+        R.string.treasury_sigil_passage_keeper_body
     ),
     "seven_days" to SigilPresentation(
-        "Seven-Day Lantern",
+        R.string.treasury_sigil_seven_day_lantern,
         "◇",
-        "A reading flame kept alive for seven days."
+        R.string.treasury_sigil_seven_day_lantern_body
     ),
     "ten_tomes" to SigilPresentation(
-        "Ten Tomes",
+        R.string.treasury_sigil_ten_tomes,
         "▥",
-        "Ten completed books now stand in the Grand Library."
+        R.string.treasury_sigil_ten_tomes_body
     ),
     "first_threshold" to SigilPresentation(
-        "First Threshold",
+        R.string.treasury_sigil_first_threshold,
         "✧",
-        "The first true advancement along your chosen Path."
+        R.string.treasury_sigil_first_threshold_body
     )
 )
 
@@ -113,49 +115,49 @@ internal fun emberBookmarkAwakened(profile: ReaderProfile): Boolean =
 private val readingRelics = listOf(
     RelicPresentation(
         id = "ember_bookmark",
-        name = "Ember Bookmark",
+        nameRes = R.string.treasury_relic_ember_bookmark,
         symbol = "⌇",
-        clue = "Return often enough that the page begins to remember you.",
+        clueRes = R.string.treasury_relic_ember_bookmark_clue,
         rarity = relicRarityFor("ember_bookmark"),
         awakened = ::emberBookmarkAwakened
     ),
     RelicPresentation(
         id = "moonlit_lens",
-        name = "Moonlit Lens",
+        nameRes = R.string.treasury_relic_moonlit_lens,
         symbol = "◐",
-        clue = "Spend three quiet hours beyond the first threshold of attention.",
+        clueRes = R.string.treasury_relic_moonlit_lens_clue,
         rarity = relicRarityFor("moonlit_lens"),
         awakened = { it.minutesRead >= 180 }
     ),
     RelicPresentation(
         id = "brass_quill",
-        name = "Brass Quill",
+        nameRes = R.string.treasury_relic_brass_quill,
         symbol = "✒",
-        clue = "Turn five hundred pages and leave the mechanism warm.",
+        clueRes = R.string.treasury_relic_brass_quill_clue,
         rarity = relicRarityFor("brass_quill"),
         awakened = { it.pagesRead >= 500 }
     ),
     RelicPresentation(
         id = "ivory_bookplate",
-        name = "Ivory Bookplate",
+        nameRes = R.string.treasury_relic_ivory_bookplate,
         symbol = "▤",
-        clue = "Complete three volumes and the archive will grant a mark of ownership.",
+        clueRes = R.string.treasury_relic_ivory_bookplate_clue,
         rarity = relicRarityFor("ivory_bookplate"),
         awakened = { it.booksFinished >= 3 }
     ),
     RelicPresentation(
         id = "astral_key",
-        name = "Astral Key",
+        nameRes = R.string.treasury_relic_astral_key,
         symbol = "⌘",
-        clue = "Cross two Path thresholds and listen for the lock that was not there before.",
+        clueRes = R.string.treasury_relic_astral_key_clue,
         rarity = relicRarityFor("astral_key"),
         awakened = { it.rankIndex >= 2 }
     ),
     RelicPresentation(
         id = "veil_crown",
-        name = "Veil Crown",
+        nameRes = R.string.treasury_relic_veil_crown,
         symbol = "♜",
-        clue = "Awaken the five core sigils and reach the final rank of your Path.",
+        clueRes = R.string.treasury_relic_veil_crown_clue,
         rarity = relicRarityFor("veil_crown"),
         awakened = {
             it.rankIndex >= it.path.ranks.lastIndex && it.earnedSigils.size >= 5
@@ -165,18 +167,18 @@ private val readingRelics = listOf(
 
 private val bookplates = listOf(
     BookplatePresentation(
-        name = "First Binding",
-        inscription = "This volume belongs to one who returned.",
+        nameRes = R.string.treasury_bookplate_first_binding,
+        inscriptionRes = R.string.treasury_bookplate_first_binding_body,
         awakened = { it.minutesRead >= 60 }
     ),
     BookplatePresentation(
-        name = "Deep Shelf",
-        inscription = "A library becomes a place when finished books begin to gather weight.",
+        nameRes = R.string.treasury_bookplate_deep_shelf,
+        inscriptionRes = R.string.treasury_bookplate_deep_shelf_body,
         awakened = { it.booksFinished >= 10 }
     ),
     BookplatePresentation(
-        name = "Veilbound",
-        inscription = "The reader crossed every threshold and carried the archive forward.",
+        nameRes = R.string.treasury_bookplate_veilbound,
+        inscriptionRes = R.string.treasury_bookplate_veilbound_body,
         awakened = { it.rankIndex >= it.path.ranks.lastIndex }
     )
 )
@@ -225,13 +227,13 @@ fun TreasuryScreen(
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
+            Text(VeilBackLabel(stringResource(R.string.profile_stat_castle)), style = MaterialTheme.typography.labelMedium)
         }
 
         ScreenHeader(
-            eyebrow = "TREASURY · RELIC VAULT",
-            title = "Relics of your reading life",
-            subtitle = "Nothing here is bought. Every mark, relic, and bookplate is awakened by reading already stored on this device."
+            eyebrow = stringResource(R.string.treasury_header_eyebrow),
+            title = stringResource(R.string.treasury_header_title),
+            subtitle = stringResource(R.string.treasury_header_body)
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -242,8 +244,8 @@ fun TreasuryScreen(
         }
 
         ArchiveChamberHeading(
-            eyebrow = "Core constellation",
-            title = "Sigils",
+            eyebrow = stringResource(R.string.treasury_core_constellation),
+            title = stringResource(R.string.treasury_sigils),
             trailing = "${profile.earnedSigils.size.coerceAtMost(sigils.size)}/${sigils.size}"
         )
 
@@ -264,8 +266,8 @@ fun TreasuryScreen(
         }
 
         ArchiveChamberHeading(
-            eyebrow = "Hidden cabinet",
-            title = "Reading relics",
+            eyebrow = stringResource(R.string.treasury_hidden_cabinet),
+            title = stringResource(R.string.treasury_reading_relics),
             trailing = "$awakenedRelics/${readingRelics.size}"
         )
 
@@ -294,8 +296,8 @@ fun TreasuryScreen(
         }
 
         ArchiveChamberHeading(
-            eyebrow = "Inside the cover",
-            title = "Bookplates",
+            eyebrow = stringResource(R.string.treasury_inside_cover),
+            title = stringResource(R.string.treasury_bookplates),
             trailing = "$awakenedBookplates/${bookplates.size}"
         )
 
@@ -350,7 +352,7 @@ private fun TreasuryPedestal(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                "DISPLAY PEDESTAL",
+                stringResource(R.string.treasury_display_pedestal),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass
             )
@@ -362,24 +364,24 @@ private fun TreasuryPedestal(
 
             if (equipped == null) {
                 Text(
-                    "No sigil equipped",
+                    stringResource(R.string.treasury_no_sigil),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    "Choose an awakened sigil below. It changes only your Castle identity.",
+                    stringResource(R.string.treasury_choose_sigil_body),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist,
                     textAlign = TextAlign.Center
                 )
             } else {
                 Text(
-                    equipped.name,
+                    stringResource(equipped.nameRes),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    equipped.description,
+                    stringResource(equipped.descriptionRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist,
                     textAlign = TextAlign.Center
@@ -390,7 +392,7 @@ private fun TreasuryPedestal(
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.36f)),
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Clear pedestal", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.treasury_clear_pedestal), style = MaterialTheme.typography.labelMedium)
                 }
             }
         }
@@ -452,12 +454,13 @@ private fun SigilRelicRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    presentation.name,
+                    stringResource(presentation.nameRes),
                     style = MaterialTheme.typography.titleSmall,
                     color = if (earned) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
                 )
                 Text(
-                    if (earned) presentation.description else "The condition remains hidden.",
+                    if (earned) stringResource(presentation.descriptionRes)
+                    else stringResource(R.string.treasury_condition_hidden),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = if (earned) 0.82f else 0.46f),
                     maxLines = 2
@@ -479,7 +482,10 @@ private fun SigilRelicRow(
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
-                        if (equipped) "ON DISPLAY" else "DISPLAY",
+                        stringResource(
+                            if (equipped) R.string.treasury_on_display
+                            else R.string.treasury_display
+                        ),
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -535,15 +541,19 @@ private fun RelicCabinetCell(
                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.30f)
             )
             Text(
-                if (awakened) relic.name else "Uncatalogued relic",
+                if (awakened) stringResource(relic.nameRes)
+                else stringResource(R.string.treasury_uncatalogued_relic),
                 style = MaterialTheme.typography.titleSmall,
                 color = if (awakened) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
             )
             Text(
                 if (awakened) {
-                    "${relic.rarity.label} · AWAKENED"
+                    stringResource(
+                        R.string.treasury_rarity_awakened,
+                        localizedRelicRarity(relic.rarity)
+                    )
                 } else {
-                    "RARITY VEILED"
+                    stringResource(R.string.treasury_rarity_veiled)
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f),
@@ -551,7 +561,7 @@ private fun RelicCabinetCell(
             )
             if (!awakened) {
                 Text(
-                    relic.clue,
+                    stringResource(relic.clueRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.58f),
                     maxLines = 4
@@ -591,17 +601,17 @@ private fun BookplateRecord(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "EX LIBRIS · VEIL READER",
+                    stringResource(R.string.treasury_ex_libris),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                     color = Color(0xFF6B5332)
                 )
                 Text(
-                    plate.name,
+                    stringResource(plate.nameRes),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color(0xFF2A251F)
                 )
                 Text(
-                    plate.inscription,
+                    stringResource(plate.inscriptionRes),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color(0xFF4A4034),
                     textAlign = TextAlign.Center
@@ -610,12 +620,12 @@ private fun BookplateRecord(
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
-                    "SEALED BOOKPLATE",
+                    stringResource(R.string.treasury_sealed_bookplate),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
                     color = VeilPalette.Mist.copy(alpha = 0.44f)
                 )
                 Text(
-                    "An inscription has not yet appeared.",
+                    stringResource(R.string.treasury_no_inscription),
                     style = MaterialTheme.typography.bodySmall,
                     color = VeilPalette.Mist.copy(alpha = 0.52f)
                 )
@@ -675,9 +685,9 @@ fun SanctumScreen(
         }
 
         ScreenHeader(
-            eyebrow = "INNER SANCTUM · DEEPEST RECORD",
-            title = castleTitle,
-            subtitle = "The Sanctum records thresholds crossed, constellations completed, and titles the Castle considers permanent."
+            eyebrow = stringResource(R.string.sanctum_header_eyebrow),
+            title = localizedCastleTitle(profile, castleTitle),
+            subtitle = stringResource(R.string.sanctum_header_body)
         )
 
         SanctumSealPanel(
@@ -688,9 +698,9 @@ fun SanctumScreen(
         )
 
         ArchiveChamberHeading(
-            eyebrow = "Permanent identity",
-            title = "Castle title",
-            trailing = "${availableTitles.size} recognized"
+            eyebrow = stringResource(R.string.sanctum_permanent_identity),
+            title = stringResource(R.string.sanctum_castle_title),
+            trailing = stringResource(R.string.sanctum_recognized_count, availableTitles.size)
         )
 
         availableTitles.forEachIndexed { index, title ->
@@ -719,7 +729,10 @@ fun SanctumScreen(
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
-                            if (title == castleTitle) "ACTIVE TITLE" else "RECOGNIZED TITLE",
+                            stringResource(
+                                if (title == castleTitle) R.string.sanctum_active_title
+                                else R.string.sanctum_recognized_title
+                            ),
                             style = MaterialTheme.typography.labelSmall,
                             color = if (title == castleTitle) {
                                 VeilPalette.Brass
@@ -728,7 +741,7 @@ fun SanctumScreen(
                             }
                         )
                         Text(
-                            title,
+                            localizedCastleTitle(profile, title),
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
@@ -815,7 +828,10 @@ private fun SanctumSealPanel(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                if (sovereignReady) "THE SEAL IS OPEN" else "THE SIXTH DOOR",
+                stringResource(
+                    if (sovereignReady) R.string.sanctum_seal_open
+                    else R.string.sanctum_sixth_door
+                ),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass
             )
@@ -826,29 +842,28 @@ private fun SanctumSealPanel(
             )
 
             Text(
-                "${profile.path.name} · ${profile.rankName}",
+                "${localizedPathName(profile.path)} · ${localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)}",
                 style = MaterialTheme.typography.titleLarge,
                 color = VeilPalette.Moon,
                 textAlign = TextAlign.Center
             )
 
             DossierProgressLine(
-                label = "PATH COMPLETION",
+                label = stringResource(R.string.sanctum_path_completion),
                 progress = rankProgress,
                 detail = "${profile.rankIndex + 1}/${profile.path.ranks.size}"
             )
             DossierProgressLine(
-                label = "CORE SIGILS",
+                label = stringResource(R.string.sanctum_core_sigils),
                 progress = sigilProgress,
                 detail = "${profile.earnedSigils.size.coerceAtMost(5)}/5"
             )
 
             Text(
-                if (sovereignReady) {
-                    "The Castle recognizes a complete Path and a full core constellation. A hidden record has surfaced below."
-                } else {
-                    "Reach the final Path rank and awaken all five core sigils. The remaining door has no visible handle."
-                },
+                stringResource(
+                    if (sovereignReady) R.string.sanctum_ready_body
+                    else R.string.sanctum_locked_body
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist,
                 textAlign = TextAlign.Center
@@ -968,11 +983,10 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
             Text(
-                if (sovereignReady) {
-                    "SOVEREIGN RECORD · THE STAR BETWEEN SHELVES"
-                } else {
-                    "SOVEREIGN RECORD · SEALED"
-                },
+                stringResource(
+                    if (sovereignReady) R.string.sanctum_record_open
+                    else R.string.sanctum_record_sealed
+                ),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
                 color = if (sovereignReady) {
                     VeilPalette.Brass
@@ -981,11 +995,10 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
                 }
             )
             Text(
-                if (sovereignReady) {
-                    "There was never a final shelf. Only another threshold hidden behind the act of returning."
-                } else {
-                    "A permanent inscription is present here, but its condition has not yet been satisfied."
-                },
+                stringResource(
+                    if (sovereignReady) R.string.sanctum_record_open_body
+                    else R.string.sanctum_record_sealed_body
+                ),
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (sovereignReady) {
                     VeilPalette.Moon
@@ -994,11 +1007,10 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
                 }
             )
             Text(
-                if (sovereignReady) {
-                    "PERMANENT · NON-CONSUMABLE · LOCAL RECORD"
-                } else {
-                    "NOT YET RECOGNIZED"
-                },
+                stringResource(
+                    if (sovereignReady) R.string.sanctum_record_permanent
+                    else R.string.sanctum_not_recognized
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (sovereignReady) {
                     VeilPalette.Spirit.copy(alpha = 0.76f)
@@ -1008,6 +1020,32 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
             )
         }
     }
+}
+
+@Composable
+private fun localizedRelicRarity(rarity: RelicRarity): String = stringResource(
+    when (rarity) {
+        RelicRarity.FOUNDATION -> R.string.treasury_rarity_foundation
+        RelicRarity.RESONANT -> R.string.treasury_rarity_resonant
+        RelicRarity.ASCENDANT -> R.string.treasury_rarity_ascendant
+        RelicRarity.SOVEREIGN -> R.string.treasury_rarity_sovereign
+    }
+)
+
+@Composable
+internal fun localizedCastleTitle(profile: ReaderProfile, title: String): String = when {
+    title == "Reader of the Veil" -> stringResource(R.string.castle_title_reader_of_veil)
+    title == "Threshold Walker" -> stringResource(R.string.castle_title_threshold_walker)
+    title == "Keeper of the Quiet Hour" -> stringResource(R.string.castle_title_quiet_hour)
+    title == "Warden of Passages" -> stringResource(R.string.castle_title_passages)
+    title == "Lantern of Seven Nights" -> stringResource(R.string.castle_title_seven_nights)
+    title == "Keeper of Ten Tomes" -> stringResource(R.string.castle_title_ten_tomes)
+    title == "Sovereign of the Living Library" -> stringResource(R.string.castle_title_sovereign)
+    title.startsWith("Veilbound ") -> stringResource(
+        R.string.castle_title_veilbound,
+        localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
+    )
+    else -> title
 }
 
 @Composable
