@@ -579,4 +579,36 @@
         <item quantity="one">%1$d روز حفظ‌شده</item>
         <item quantity="other">%1$d روز حفظ‌شده</item>
     </plurals>
+
+    <string name="threshold_archive_unwritten">آرشیو هنوز نوشته نشده</string>
+    <string name="threshold_first_volume_arrived">نخستین جلد رسیده است</string>
+    <string name="threshold_library_awaits">کتابخانه در انتظار است</string>
+    <string name="threshold_return_archive">بازگشت به آرشیو</string>
+    <string name="threshold_intro_empty">آرشیوی خصوصی برای کتاب‌ها، یادداشت‌ها و جهان‌هایی که با شما می‌مانند.</string>
+    <string name="threshold_intro_first">نخستین تالار بیدار شده است؛ تاریخچهٔ مطالعهٔ شما از همین جلد آغاز می‌شود.</string>
+    <string name="threshold_intro_current">هر کتاب یک در است؛ نزدیک‌ترین در همین حالا باز است.</string>
+    <string name="threshold_intro_return">جلدهای شما اینجا، آرام و محلی، می‌مانند تا در دیگری را انتخاب کنید.</string>
+    <string name="threshold_continue_reading">ادامهٔ مطالعه</string>
+    <string name="threshold_return_volume">بازگشت به جلد</string>
+    <string name="threshold_open_volume">باز کردن جلد</string>
+    <string name="threshold_hero_finished">تمام‌شده — هر زمان خواستید دوباره باز کنید</string>
+    <string name="threshold_ready_begin">آمادهٔ آغاز</string>
+    <string name="threshold_chapter_progress">%1$s · %2$d٪</string>
+    <string name="threshold_progress_complete">%1$d٪ تکمیل</string>
+    <string name="threshold_recent_tomes">جلدهای اخیر</string>
+    <string name="threshold_recent_subtitle">بازگشت به جهانی دیگر</string>
+    <string name="threshold_view_all">مشاهدهٔ همه</string>
+    <string name="threshold_whisper_preserved">نجوا · بخش حفظ‌شده</string>
+    <string name="threshold_whisper_optional">نجوا · اختیاری</string>
+    <string name="threshold_quiet_invitation">دعوتی آرام</string>
+    <string name="threshold_quest_progress">%1$d/%2$d تکمیل</string>
+    <string name="threshold_reading_record">رکورد مطالعه</string>
+    <string name="threshold_castle">قلعه</string>
+    <string name="threshold_stat_day_streak">روز پیاپی</string>
+    <string name="threshold_stat_reading">مطالعه</string>
+    <string name="threshold_stat_finished">تمام‌شده</string>
+    <string name="threshold_first_threshold">نخستین آستانه</string>
+    <string name="threshold_first_volume_waiting">نخستین جلد شما در انتظار است</string>
+    <string name="threshold_first_volume_body">یک EPUB یا PDF اضافه کنید. پس از شروع، این صفحه کوتاه‌ترین مسیر بازگشت به کتاب می‌شود.</string>
+    <string name="threshold_enter_library">ورود به کتابخانه</string>
 </resources>
