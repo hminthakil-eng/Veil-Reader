@@ -163,23 +163,23 @@ fun ArchiveScreen(
                         modifier = Modifier.heightIn(min = 48.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp)
                     ) {
-                        Text(VeilBackLabel("Archive"))
+                        Text(VeilBackLabel(stringResource(R.string.archive_back)))
                     }
                     Spacer(Modifier.weight(1f))
                     Text(
-                        "PRIVATE · LOCAL · OFFLINE",
+                        stringResource(R.string.archive_privacy),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
                         color = VeilPalette.Mist.copy(alpha = 0.70f)
                     )
                 }
 
                 Text(
-                    "HIDDEN ARCHIVE",
+                    stringResource(R.string.notebook_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Fragments worth keeping",
+                    stringResource(R.string.archive_title),
                     style = MaterialTheme.typography.headlineLarge,
                     color = VeilPalette.Moon
                 )
@@ -199,7 +199,14 @@ fun ArchiveScreen(
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
-            placeholder = { Text("Search the archive…") },
+            placeholder = { Text(stringResource(R.string.archive_search)) },
+            trailingIcon = {
+                if (query.isNotEmpty()) {
+                    TextButton(onClick = { query = "" }) {
+                        Text(stringResource(R.string.archive_clear_search))
+                    }
+                }
+            },
             singleLine = true,
             shape = MaterialTheme.shapes.extraSmall,
             colors = OutlinedTextFieldDefaults.colors(
@@ -223,35 +230,35 @@ fun ArchiveScreen(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 ArchiveSectionTab(
-                    label = "Notes",
+                    label = stringResource(R.string.archive_notes),
                     count = highlights.count { it.note.isNotBlank() },
                     selected = selectedSection == NotebookSection.NOTES,
                     modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.NOTES.name }
 
                 ArchiveSectionTab(
-                    label = "Passages",
+                    label = stringResource(R.string.archive_passages),
                     count = highlights.size,
                     selected = selectedSection == NotebookSection.HIGHLIGHTS,
                     modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.HIGHLIGHTS.name }
 
                 ArchiveSectionTab(
-                    label = "Marks",
+                    label = stringResource(R.string.archive_marks),
                     count = bookmarks.size,
                     selected = selectedSection == NotebookSection.BOOKMARKS,
                     modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.BOOKMARKS.name }
 
                 ArchiveSectionTab(
-                    label = "Echoes",
+                    label = stringResource(R.string.archive_echoes),
                     count = echoes.size,
                     selected = selectedSection == NotebookSection.ECHOES,
                     modifier = Modifier.widthIn(min = 92.dp)
                 ) { selectedSectionName = NotebookSection.ECHOES.name }
 
                 ArchiveSectionTab(
-                    label = "Capsules",
+                    label = stringResource(R.string.archive_capsules),
                     count = capsules.size,
                     selected = selectedSection == NotebookSection.CAPSULES,
                     modifier = Modifier.widthIn(min = 104.dp)
@@ -272,14 +279,14 @@ fun ArchiveScreen(
                         item {
                             NotebookEmptyState(
                                 title = if (highlights.none { it.note.isNotBlank() }) {
-                                    "No notes yet"
+                                    stringResource(R.string.archive_no_notes)
                                 } else {
-                                    "No matching notes"
+                                    stringResource(R.string.archive_no_matching_notes)
                                 },
                                 body = if (highlights.none { it.note.isNotBlank() }) {
-                                    "Add a note to any highlighted passage and it will appear here."
+                                    stringResource(R.string.archive_notes_empty_body)
                                 } else {
-                                    "Try a different word, title, or author."
+                                    stringResource(R.string.archive_try_search)
                                 }
                             )
                         }
@@ -299,6 +306,7 @@ fun ArchiveScreen(
                             highlight = highlight,
                             book = book,
                             memory = memory,
+                            nowEpochMs = archiveNow,
                             onRead = if (book == null) null else { { onOpenPassage(book, highlight.locatorJson) } },
                             onEditNote = {
                                 editingHighlightId = highlight.id
@@ -339,6 +347,7 @@ fun ArchiveScreen(
                             highlight = highlight,
                             book = book,
                             memory = memory,
+                            nowEpochMs = archiveNow,
                             onRead = if (book == null) null else { { onOpenPassage(book, highlight.locatorJson) } },
                             onEditNote = {
                                 editingHighlightId = highlight.id
@@ -354,11 +363,11 @@ fun ArchiveScreen(
                     if (matchingEchoes.isEmpty()) {
                         item {
                             NotebookEmptyState(
-                                title = if (echoes.isEmpty()) "No echoes yet" else "No matching echoes",
+                                title = if (echoes.isEmpty()) stringResource(R.string.archive_no_echoes) else stringResource(R.string.archive_no_matching_echoes),
                                 body = if (echoes.isEmpty()) {
-                                    "Preserved passages quietly return after they have lived in the archive for a while."
+                                    stringResource(R.string.archive_echoes_empty_body)
                                 } else {
-                                    "Try a different word, title, or author."
+                                    stringResource(R.string.archive_try_search)
                                 }
                             )
                         }
@@ -376,6 +385,7 @@ fun ArchiveScreen(
                                 nowEpochMs = archiveNow,
                                 passageVisits = passageVisits
                             ),
+                            nowEpochMs = archiveNow,
                             onRead = { onOpenPassage(echo.book, echo.highlight.locatorJson) },
                             onEditNote = {
                                 editingHighlightId = echo.highlight.id
@@ -393,14 +403,14 @@ fun ArchiveScreen(
                         item {
                             NotebookEmptyState(
                                 title = if (capsules.isEmpty()) {
-                                    "No sealed capsules yet"
+                                    stringResource(R.string.archive_no_capsules)
                                 } else {
-                                    "No matching capsules"
+                                    stringResource(R.string.archive_no_matching_capsules)
                                 },
                                 body = if (capsules.isEmpty()) {
-                                    "When a volume is completed, Veil can preserve its durable reading history here without inventing missing dates."
+                                    stringResource(R.string.archive_capsules_empty_body)
                                 } else {
-                                    "Try a different title, author, or seal code."
+                                    stringResource(R.string.archive_try_capsule_search)
                                 }
                             )
                         }
@@ -460,7 +470,7 @@ fun ArchiveScreen(
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "MANUSCRIPT NOTE",
+                        stringResource(R.string.archive_manuscript_note),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
@@ -474,7 +484,7 @@ fun ArchiveScreen(
                 OutlinedTextField(
                     value = noteDraft,
                     onValueChange = { noteDraft = it },
-                    placeholder = { Text("Write in the margin…") },
+                    placeholder = { Text(stringResource(R.string.archive_note_hint)) },
                     minLines = 4,
                     maxLines = 8,
                     modifier = Modifier.fillMaxWidth()
@@ -551,11 +561,11 @@ private fun ArchiveRegister(
             .padding(horizontal = 12.dp, vertical = 9.dp),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        ArchiveRegisterStat("NOTES", notes)
-        ArchiveRegisterStat("PASSAGES", highlights)
-        ArchiveRegisterStat("MARKS", bookmarks)
-        ArchiveRegisterStat("ECHOES", echoes)
-        ArchiveRegisterStat("SEALED", capsules)
+        ArchiveRegisterStat(stringResource(R.string.archive_notes), notes)
+        ArchiveRegisterStat(stringResource(R.string.archive_passages), highlights)
+        ArchiveRegisterStat(stringResource(R.string.archive_marks), bookmarks)
+        ArchiveRegisterStat(stringResource(R.string.archive_echoes), echoes)
+        ArchiveRegisterStat(stringResource(R.string.archive_sealed), capsules)
     }
 }
 
@@ -617,7 +627,7 @@ private fun ArchiveSectionTab(
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             Text(
-                label.uppercase(),
+                label,
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) VeilPalette.Moon
                 else MaterialTheme.colorScheme.onSurfaceVariant
@@ -637,6 +647,7 @@ private fun NotebookHighlightCard(
     highlight: Highlight,
     book: Book?,
     memory: HighlightMemory,
+    nowEpochMs: Long,
     onRead: (() -> Unit)?,
     onEditNote: () -> Unit,
     onDelete: () -> Unit,
@@ -665,7 +676,7 @@ private fun NotebookHighlightCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "FOLIO ${recordNumber.toString().padStart(3, '0')}",
+                        stringResource(R.string.archive_folio, recordNumber),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -687,9 +698,9 @@ private fun NotebookHighlightCard(
                     }
                 }
                 Text(
-                    if (echoMode) "ECHO"
-                    else if (highlight.note.isNotBlank()) "ANNOTATED"
-                    else "PASSAGE",
+                    if (echoMode) stringResource(R.string.archive_echo)
+                    else if (highlight.note.isNotBlank()) stringResource(R.string.archive_annotated)
+                    else stringResource(R.string.archive_passage),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
                     color = if (echoMode) VeilPalette.Brass
                     else VeilPalette.Mist.copy(alpha = 0.64f)
@@ -698,7 +709,8 @@ private fun NotebookHighlightCard(
 
             LivingMarginMemoryStrip(
                 memory = memory,
-                echoMode = echoMode
+                echoMode = echoMode,
+                nowEpochMs = nowEpochMs
             )
 
             if (!emphasizeNote || highlight.note.isBlank()) {
@@ -735,7 +747,7 @@ private fun NotebookHighlightCard(
                         verticalArrangement = Arrangement.spacedBy(3.dp)
                     ) {
                         Text(
-                            "ANNOTATION",
+                            stringResource(R.string.archive_annotation),
                             style = MaterialTheme.typography.labelSmall,
                             color = VeilPalette.Brass
                         )
@@ -758,13 +770,13 @@ private fun NotebookHighlightCard(
                     TextButton(
                         onClick = onRead,
                         modifier = Modifier.heightIn(min = 48.dp)
-                    ) { Text("Return to passage") }
+                    ) { Text(stringResource(R.string.archive_return_to_passage)) }
                 }
                 TextButton(
                     onClick = onEditNote,
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text(if (highlight.note.isBlank()) "Annotate" else "Edit annotation")
+                    Text(if (highlight.note.isBlank()) stringResource(R.string.archive_annotate) else stringResource(R.string.archive_edit_annotation))
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(
@@ -784,35 +796,85 @@ private fun NotebookHighlightCard(
 @Composable
 private fun LivingMarginMemoryStrip(
     memory: HighlightMemory,
-    echoMode: Boolean
+    echoMode: Boolean,
+    nowEpochMs: Long
 ) {
+    val ageLabel = if (!memory.ageKnown) {
+        stringResource(R.string.archive_mark_unknown)
+    } else {
+        archiveElapsedLabel(memory.ageDays, if (echoMode) ArchiveElapsedKind.ECHO else ArchiveElapsedKind.MARK)
+    }
+    val lastViewedLabel = memory.lastViewedAtEpochMs?.let { lastViewed ->
+        val days = ((nowEpochMs - lastViewed).coerceAtLeast(0L) / 86_400_000L)
+            .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+        archiveElapsedLabel(days, ArchiveElapsedKind.VIEW)
+    }
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
-            if (echoMode) memory.echoLabel ?: memory.ageLabel else memory.ageLabel,
+            ageLabel,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
             color = if (echoMode) VeilPalette.Brass
             else VeilPalette.Mist.copy(alpha = 0.64f)
         )
         if (memory.revisitCount > 0) {
             Text(
-                buildString {
-                    append("REVISITED ").append(memory.revisitCount)
-                    append(if (memory.revisitCount == 1) " TIME" else " TIMES")
-                    memory.lastViewedLabel?.let { append(" · ").append(it) }
-                },
+                stringResource(
+                    if (memory.revisitCount == 1) R.string.archive_revisited_once
+                    else R.string.archive_revisited_many,
+                    memory.revisitCount
+                ) + (lastViewedLabel?.let { " · $it" } ?: ""),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Spirit.copy(alpha = 0.72f)
             )
         } else if (memory.bookActivityAfterMark) {
             Text(
-                "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
+                stringResource(R.string.archive_later_volume_activity),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Mist.copy(alpha = 0.46f)
             )
         }
+    }
+}
+
+private enum class ArchiveElapsedKind { MARK, ECHO, VIEW }
+
+@Composable
+private fun archiveElapsedLabel(days: Int, kind: ArchiveElapsedKind): String {
+    val label = when {
+        days == 0 -> when (kind) {
+            ArchiveElapsedKind.MARK -> R.string.archive_mark_today
+            ArchiveElapsedKind.ECHO -> R.string.archive_echo_today
+            ArchiveElapsedKind.VIEW -> R.string.archive_view_today
+        }
+        days == 1 -> when (kind) {
+            ArchiveElapsedKind.MARK -> R.string.archive_mark_yesterday
+            ArchiveElapsedKind.ECHO -> R.string.archive_echo_yesterday
+            ArchiveElapsedKind.VIEW -> R.string.archive_view_yesterday
+        }
+        days < 60 -> when (kind) {
+            ArchiveElapsedKind.MARK -> R.string.archive_mark_days
+            ArchiveElapsedKind.ECHO -> R.string.archive_echo_days
+            ArchiveElapsedKind.VIEW -> R.string.archive_view_days
+        }
+        days < 730 -> when (kind) {
+            ArchiveElapsedKind.MARK -> R.string.archive_mark_months
+            ArchiveElapsedKind.ECHO -> R.string.archive_echo_months
+            ArchiveElapsedKind.VIEW -> R.string.archive_view_months
+        }
+        else -> when (kind) {
+            ArchiveElapsedKind.MARK -> R.string.archive_mark_years
+            ArchiveElapsedKind.ECHO -> R.string.archive_echo_years
+            ArchiveElapsedKind.VIEW -> R.string.archive_view_years
+        }
+    }
+    return when {
+        days <= 1 -> stringResource(label)
+        days < 60 -> stringResource(label, days)
+        days < 730 -> stringResource(label, (days / 30).coerceAtLeast(2))
+        else -> stringResource(label, (days / 365).coerceAtLeast(2))
     }
 }
 
@@ -845,7 +907,7 @@ private fun NotebookBookmarkCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "FOLIO ${recordNumber.toString().padStart(3, '0')}",
+                        stringResource(R.string.archive_folio, recordNumber),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -858,7 +920,7 @@ private fun NotebookBookmarkCard(
                     )
                 }
                 Text(
-                    "BOOKMARK",
+                    stringResource(R.string.archive_bookmark),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.65.sp),
                     color = VeilPalette.Mist.copy(alpha = 0.64f)
                 )
@@ -882,7 +944,7 @@ private fun NotebookBookmarkCard(
                     TextButton(
                         onClick = onRead,
                         modifier = Modifier.heightIn(min = 48.dp)
-                    ) { Text("Return here") }
+                    ) { Text(stringResource(R.string.archive_return_here)) }
                 }
                 Spacer(Modifier.weight(1f))
                 TextButton(
@@ -917,7 +979,7 @@ private fun NotebookEmptyState(title: String, body: String) {
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             Text(
-                "THE ARCHIVE IS QUIET",
+                stringResource(R.string.archive_quiet),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass
             )
@@ -952,7 +1014,7 @@ private fun DeleteNotebookItemDialog(
         title = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
-                    "REMOVE RECORD",
+                    stringResource(R.string.archive_remove_record),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
