@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderTheme
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -109,6 +110,38 @@ class DesignConstitutionTest {
             assertTrue(material.showEdgeFalloff)
             assertTrue(material.showMicroFibres)
         }
+    }
+
+    @Test
+    fun `paper patina monotonically deepens light material`() {
+        val clean = sanctuarySurfaceProfileFor(ReaderTheme.PAPER, 0f)
+        val aged = sanctuarySurfaceProfileFor(ReaderTheme.PAPER, 1f)
+
+        assertTrue(aged.pageShadeAlpha > clean.pageShadeAlpha)
+        assertTrue(aged.stackEdgeAlpha > clean.stackEdgeAlpha)
+        assertTrue(aged.edgeOxidationAlpha > clean.edgeOxidationAlpha)
+        assertTrue(aged.fibreAlpha > clean.fibreAlpha)
+        assertTrue(aged.fibreCount > clean.fibreCount)
+        assertTrue(aged.speckCount > clean.speckCount)
+    }
+
+    @Test
+    fun `dark sanctuary suppresses paper aging texture`() {
+        listOf(ReaderTheme.DUSK, ReaderTheme.OLED).forEach { theme ->
+            val surface = sanctuarySurfaceProfileFor(theme, 1f)
+            assertEquals(0f, surface.patina)
+            assertEquals(0f, surface.mottleAlpha)
+            assertEquals(0f, surface.edgeOxidationAlpha)
+            assertEquals(0, surface.fibreCount)
+            assertEquals(0, surface.speckCount)
+        }
+    }
+
+    @Test
+    fun `invalid paper patina fails calm to clean paper`() {
+        val invalid = sanctuarySurfaceProfileFor(ReaderTheme.PAPER, Float.NaN)
+        val clean = sanctuarySurfaceProfileFor(ReaderTheme.PAPER, 0f)
+        assertEquals(clean, invalid)
     }
 
     @Test
