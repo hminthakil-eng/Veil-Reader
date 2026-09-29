@@ -66,4 +66,35 @@
     <string name="book_metadata_series_number_error">عددی مانند ۱ یا ۲٫۵ وارد کنید.</string>
     <string name="book_metadata_language">برچسب زبان (اختیاری)</string>
     <string name="book_metadata_language_hint">BCP-47، برای نمونه fa، en، tr یا en-US.</string>
+
+    <string name="library_search_placeholder">جست‌وجو در آرشیو…</string>
+    <string name="library_clear">پاک کردن</string>
+    <string name="library_archive_eyebrow">آرشیو</string>
+    <string name="library_shelves_title">قفسه‌ها</string>
+    <string name="library_tap_to_filter">برای فیلتر لمس کنید</string>
+    <string name="library_favorites">علاقه‌مندی‌ها</string>
+    <string name="library_favorites_subtitle">جلدهای نزدیک و محبوب</string>
+    <string name="library_currently_reading">در حال مطالعه</string>
+    <string name="library_currently_reading_subtitle">سفرهای باز</string>
+    <string name="library_completed">تمام‌شده</string>
+    <string name="library_completed_subtitle">جلدهای به پایان رسیده</string>
+    <string name="library_deep_shelf">قفسهٔ عمیق</string>
+    <string name="library_deep_shelf_subtitle">جلدهایی که مدت‌ها باز نشده‌اند</string>
+    <string name="library_plan_to_read">برای مطالعه</string>
+    <string name="library_plan_to_read_subtitle">هنوز گشوده نشده</string>
+    <string name="library_collection">مجموعه</string>
+    <string name="library_all_collections">همهٔ مجموعه‌ها</string>
+    <string name="library_reset">بازنشانی</string>
+    <string name="library_settings">تنظیمات</string>
+    <string name="library_import">افزودن کتاب</string>
+    <string name="library_importing">در حال افزودن…</string>
+    <string name="library_archive_status">وضعیت آرشیو</string>
+    <string name="library_archive_status_body">به‌صورت محلی فهرست شده؛ خصوصی، آفلاین و آمادهٔ بازگشت.</string>
+    <string name="library_stat_books">کتاب‌ها</string>
+    <string name="library_stat_reading">در حال مطالعه</string>
+    <string name="library_stat_finished">تمام‌شده</string>
+    <string name="library_stat_collections">مجموعه‌ها</string>
+    <string name="library_clear_active_filters">پاک کردن فیلترهای فعال</string>
+    <string name="library_preparing_publication">در حال آماده‌سازی کتاب…</string>
+    <string name="library_import_first_volume">اولین کتاب را اضافه کنید</string>
 </resources>
