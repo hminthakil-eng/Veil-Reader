@@ -2513,7 +2513,8 @@ private fun ReaderAppearanceSlider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
-            valueRange = valueRange
+            valueRange = valueRange,
+            modifier = Modifier.semantics { contentDescription = label }
         )
     }
 }
@@ -2554,7 +2555,8 @@ private fun ReaderAppearanceNullableSlider(
                 .coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
-            valueRange = valueRange
+            valueRange = valueRange,
+            modifier = Modifier.semantics { contentDescription = label }
         )
     }
 }
