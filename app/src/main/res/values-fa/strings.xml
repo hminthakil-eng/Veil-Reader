@@ -1060,6 +1060,7 @@
     <string name="reader_notebook_activity_after_mark">فعالیت جلد پس از این علامت ادامه داشته است</string>
     <string name="reader_notebook_annotate">یادداشت‌گذاری</string>
     <string name="reader_notebook_edit_annotation">ویرایش یادداشت</string>
+    <string name="reader_notebook_search_limited">%1$d نتیجهٔ نخست نمایش داده می‌شود. برای محدودتر کردن نتایج، عبارت جست‌وجو را دقیق‌تر کنید.</string>
     <string name="reader_notebook_no_search_matches">در این کتاب نتیجه‌ای پیدا نشد.</string>
     <string name="reader_notebook_match">نتیجه</string>
     <string name="reader_notebook_search_match">نتیجهٔ جست‌وجو</string>
