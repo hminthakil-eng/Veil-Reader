@@ -228,6 +228,38 @@ internal class PaperCurlInputListener(
         return true
     }
 
+    /**
+     * Cancels an uncommitted preview and does not return until the source locator is restored.
+     * Use this before taking a durable locator snapshot.
+     */
+    suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val requested = cancelPendingTurn()
+        if (!requested) return false
+        completionJob?.join()
+        return true
+    }
+
+    /**
+     * Synchronous teardown for composition/lifecycle disposal where the composition scope may be
+     * cancelled before an asynchronous restoration job can run.
+     */
+    fun forceCancelPendingTurn(): Boolean {
+        if (!dragReserved && activeDrag == null) return false
+        if (turnCommitted) return false
+
+        cancellationRequested = true
+        navigationJob?.cancel()
+        completionJob?.cancel()
+
+        val spec = activeDrag
+        if (spec != null && previewNavigationSucceeded) {
+            restoreDragStart(spec)
+        }
+        state.clearImmediately()
+        resetDrag()
+        return true
+    }
+
     private fun beginReservedDragIfReady(event: DragEvent): Boolean {
         if (activeDrag != null || state.active) return activeDrag != null
         if (!isMostlyHorizontal(event)) return false
