@@ -150,7 +150,7 @@
     <string name="reader_sample_body">The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.</string>
     <string name="reader_system_brightness">Use system brightness</string>
     <string name="reader_system_brightness_description">Follows the device and restores naturally.</string>
-    <string name="reader_custom_brightness_description">Reader brightness is isolated to this reading session.</string>
+    <string name="reader_custom_brightness_description">Applied while the Reader is open; device brightness is restored when you leave.</string>
 
     <!-- Reader chrome and passage-note controls -->
     <string name="reader_surface_label">Reading surface</string>
@@ -183,4 +183,23 @@
     <string name="reader_note_save_failed">The note could not be saved.</string>
     <string name="reader_saved_location_failed">That saved location could not be opened.</string>
     <string name="reader_chapter_failed">This chapter could not be opened.</string>
+
+    <!-- PDF reading instruments -->
+    <string name="pdf_controls_eyebrow">PDF READING INSTRUMENTS</string>
+    <string name="pdf_controls_title">PDF view</string>
+    <string name="pdf_controls_intro">Fit, zoom, layout, and brightness stay close to the page. Pinch and double-tap remain available directly on the document.</string>
+    <string name="pdf_layout">LAYOUT</string>
+    <string name="pdf_page">Page</string>
+    <string name="pdf_scroll">Scroll</string>
+    <string name="pdf_continuous_scroll">PDF continuous scroll</string>
+    <string name="pdf_paginated_layout">PDF paginated layout</string>
+    <string name="pdf_scroll_description">Continuous vertical flow · pages fit the reading width.</string>
+    <string name="pdf_page_description">Single-page focus · pages remain contained in the viewport.</string>
+    <string name="pdf_preparing">PREPARING DOCUMENT</string>
+    <string name="pdf_renderer_connecting">Connecting to the PDF renderer…</string>
+    <string name="pdf_zoom">ZOOM</string>
+    <string name="pdf_zoom_out">Zoom out</string>
+    <string name="pdf_zoom_in">Zoom in</string>
+    <string name="pdf_zoom_reset">Reset zoom to 100%</string>
+    <string name="pdf_fit_width">Fit page width</string>
 </resources>
