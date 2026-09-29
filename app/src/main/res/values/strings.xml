@@ -357,7 +357,7 @@
     <string name="notice_success_eyebrow">ARCHIVE RECORD</string>
     <string name="notice_success_title">The action is complete</string>
     <string name="notice_warning_eyebrow">NEEDS ATTENTION</string>
-    <string name="notice_warning_title">Keep this place safe</string>
+    <string name="notice_warning_title">A change needs your attention</string>
     <string name="notice_error_eyebrow">INTERRUPTION · LOCAL</string>
     <string name="notice_error_title">The action could not be completed</string>
     <string name="notice_return">Return</string>
