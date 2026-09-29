@@ -17,6 +17,8 @@ class CastleMemoryStateTest {
         )
 
         assertEquals(CastleMemoryState.EMPTY, state)
+        assertEquals(CastleMemoryNarrative.EMPTY, state.memoryNarrative)
+        assertEquals(CastleMutationSignal.NONE, state.mutationSignal)
         assertEquals(1, state.litWindows)
         assertEquals(0, state.starPoints)
         assertEquals(0f, state.resonanceFor("observatory"), 0.0001f)
@@ -145,6 +147,7 @@ class CastleMemoryStateTest {
         )
 
         assertTrue(state.longSilence > 0.70f)
+        assertEquals(CastleMutationSignal.LONG_SILENCE, state.mutationSignal)
         assertEquals(0f, state.returnAwakening, 0.0001f)
         assertTrue(state.mutationInscription.contains("cold"))
         assertTrue(state.volumeCount == 1)
@@ -193,6 +196,7 @@ class CastleMemoryStateTest {
         )
 
         assertTrue(state.returnAwakening > 0.35f)
+        assertEquals(CastleMutationSignal.RETURN_AWAKENING, state.mutationSignal)
         assertTrue(state.mutationInscription.startsWith("After a long quiet"))
         assertTrue(state.litWindows >= 1)
     }
@@ -227,6 +231,7 @@ class CastleMemoryStateTest {
 
         assertEquals(3, state.rereadCycleCount)
         assertEquals(3, state.rereadRings)
+        assertEquals(CastleMutationSignal.REREAD_PATINA, state.mutationSignal)
         assertTrue(state.patina > 0.20f)
         assertTrue(state.mutationInscription.contains("Repeated journeys"))
     }
@@ -261,6 +266,7 @@ class CastleMemoryStateTest {
         )
 
         assertTrue(state.scriptoriumLamps >= 3)
+        assertEquals(CastleMutationSignal.SCRIPTORIUM_LIGHT, state.mutationSignal)
         assertTrue(state.mutationInscription.contains("scriptorium"))
         assertTrue(state.archiveResonance > 0f)
     }
