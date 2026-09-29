@@ -13,6 +13,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 
 private val Context.veilSettingsDataStore by preferencesDataStore(name = "veil_settings")
 
@@ -33,12 +34,91 @@ data class SensorySettings(
 data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
+    val readerAppearanceOverrides: Map<String, ReaderAppearance> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
     val legacyLibraryImported: Boolean = false,
     val legacyGameImported: Boolean = false
 )
+
+private fun ReaderAppearance.toSettingsJson(): JSONObject =
+    JSONObject().apply {
+        put("theme", theme.name)
+        put("fontScale", fontScale)
+        put("lineHeight", lineHeight)
+        put("pageMargins", pageMargins)
+        put("scroll", scroll)
+        put("publisherStyles", publisherStyles)
+        put("pageTurnStyle", pageTurnStyle.name)
+        screenBrightness
+            ?.takeIf { it.isFinite() }
+            ?.coerceIn(0.05, 1.0)
+            ?.let { put("screenBrightness", it) }
+    }
+
+private fun readerAppearanceFromSettingsJson(value: JSONObject): ReaderAppearance =
+    ReaderAppearance(
+        theme = runCatching {
+            ReaderTheme.valueOf(value.optString("theme", ReaderTheme.PAPER.name))
+        }.getOrDefault(ReaderTheme.PAPER),
+        fontScale = value.optDouble("fontScale", 1.0)
+            .takeIf { it.isFinite() }
+            ?.coerceIn(0.75, 1.8)
+            ?: 1.0,
+        lineHeight = value.optDouble("lineHeight", 1.45)
+            .takeIf { it.isFinite() }
+            ?.coerceIn(1.1, 2.0)
+            ?: 1.45,
+        pageMargins = value.optDouble("pageMargins", 1.0)
+            .takeIf { it.isFinite() }
+            ?.coerceIn(0.5, 2.0)
+            ?: 1.0,
+        scroll = value.optBoolean("scroll", false),
+        publisherStyles = value.optBoolean("publisherStyles", true),
+        pageTurnStyle = runCatching {
+            PageTurnStyle.valueOf(
+                value.optString("pageTurnStyle", PageTurnStyle.PAPER.name)
+            )
+        }.getOrDefault(PageTurnStyle.PAPER),
+        screenBrightness = if (
+            value.has("screenBrightness") && !value.isNull("screenBrightness")
+        ) {
+            value.optDouble("screenBrightness")
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.05, 1.0)
+        } else {
+            null
+        }
+    )
+
+private fun decodeReaderAppearanceOverrides(
+    raw: String?
+): Map<String, ReaderAppearance> {
+    if (raw.isNullOrBlank()) return emptyMap()
+    return runCatching {
+        val root = JSONObject(raw)
+        val result = linkedMapOf<String, ReaderAppearance>()
+        val keys = root.keys()
+        while (keys.hasNext()) {
+            val bookId = keys.next()
+            val encoded = root.optJSONObject(bookId) ?: continue
+            result[bookId] = readerAppearanceFromSettingsJson(encoded)
+        }
+        result
+    }.getOrDefault(emptyMap())
+}
+
+private fun encodeReaderAppearanceOverrides(
+    values: Map<String, ReaderAppearance>
+): String =
+    JSONObject().apply {
+        values
+            .toSortedMap()
+            .forEach { (bookId, appearance) ->
+                put(bookId, appearance.toSettingsJson())
+            }
+    }.toString()
 
 class SettingsStore(private val context: Context) {
     private object Keys {
@@ -51,6 +131,7 @@ class SettingsStore(private val context: Context) {
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
+        val readerAppearanceOverrides = stringPreferencesKey("reader_book_appearance_overrides_v1")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
         val sensoryInteractionSounds = booleanPreferencesKey("sensory_interaction_sounds")
@@ -81,6 +162,9 @@ class SettingsStore(private val context: Context) {
                 screenBrightness = prefs[Keys.screenBrightness]
                     ?.takeIf { it.isFinite() }
                     ?.coerceIn(0.05, 1.0)
+            ),
+            readerAppearanceOverrides = decodeReaderAppearanceOverrides(
+                prefs[Keys.readerAppearanceOverrides]
             ),
             sensory = SensorySettings(
                 hapticsEnabled = prefs[Keys.sensoryHaptics] ?: true,
@@ -118,6 +202,32 @@ class SettingsStore(private val context: Context) {
             value.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
+        }
+    }
+
+    suspend fun saveBookReaderAppearance(bookId: String, value: ReaderAppearance) {
+        if (bookId.isBlank()) return
+        context.veilSettingsDataStore.edit { prefs ->
+            val current = decodeReaderAppearanceOverrides(
+                prefs[Keys.readerAppearanceOverrides]
+            ).toMutableMap()
+            current[bookId] = value
+            prefs[Keys.readerAppearanceOverrides] = encodeReaderAppearanceOverrides(current)
+        }
+    }
+
+    suspend fun clearBookReaderAppearance(bookId: String) {
+        if (bookId.isBlank()) return
+        context.veilSettingsDataStore.edit { prefs ->
+            val current = decodeReaderAppearanceOverrides(
+                prefs[Keys.readerAppearanceOverrides]
+            ).toMutableMap()
+            current.remove(bookId)
+            if (current.isEmpty()) {
+                prefs.remove(Keys.readerAppearanceOverrides)
+            } else {
+                prefs[Keys.readerAppearanceOverrides] = encodeReaderAppearanceOverrides(current)
+            }
         }
     }
 
