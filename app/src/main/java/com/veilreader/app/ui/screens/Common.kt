@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.draw.clip
@@ -55,9 +56,24 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
 import java.io.File
+import java.text.NumberFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+@Composable
+internal fun rememberVeilPercentFormatter(): (Float) -> String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale) {
+        NumberFormat.getPercentInstance(locale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 0
+        }
+    }
+    return remember(formatter) {
+        { value -> formatter.format(value.toDouble()) }
+    }
+}
 
 @Composable
 fun VeilReveal(
