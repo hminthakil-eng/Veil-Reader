@@ -28,19 +28,21 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun saveReaderAppearance(appearance: ReaderAppearance) {
-        val details = "theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
+        val canonical = appearance.canonicalizedNavigation()
+        val details = "theme=${canonical.theme} scroll=${canonical.scroll} pageTurn=${canonical.pageTurnStyle}"
         ReaderTrace.event("appearance_requested", details = details)
         viewModelScope.launch {
-            store.saveReaderAppearance(appearance)
+            store.saveReaderAppearance(canonical)
             ReaderTrace.event("appearance_persisted", details = details)
         }
     }
 
     fun saveBookReaderAppearance(bookId: String, appearance: ReaderAppearance) {
-        val details = "book=$bookId theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
+        val canonical = appearance.canonicalizedNavigation()
+        val details = "book=$bookId theme=${canonical.theme} scroll=${canonical.scroll} pageTurn=${canonical.pageTurnStyle}"
         ReaderTrace.event("book_appearance_requested", details = details)
         viewModelScope.launch {
-            store.saveBookReaderAppearance(bookId, appearance)
+            store.saveBookReaderAppearance(bookId, canonical)
             ReaderTrace.event("book_appearance_persisted", details = details)
         }
     }
