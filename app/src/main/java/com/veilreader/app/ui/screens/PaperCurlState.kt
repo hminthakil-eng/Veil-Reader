@@ -209,7 +209,11 @@ internal class PaperCurlState {
     }
 
     suspend fun clear() {
-        clearVisual(keepInputLock = true)
+        resetVisual()
+        // Keep one frame of input lock so Compose fully drops the overlay
+        // before the reusable bitmap can be drawn into again.
+        delay(VeilMotion.FRAME_SETTLE_MS)
+        active = false
     }
 
     /**
@@ -217,21 +221,15 @@ internal class PaperCurlState {
      * a cancelled preview cannot survive a configuration change or a reader teardown.
      */
     fun clearImmediately() {
-        clearVisual(keepInputLock = false)
+        resetVisual()
+        active = false
     }
 
-    private suspend fun clearVisual(keepInputLock: Boolean) {
+    private fun resetVisual() {
         snapshot = null
         width = 0f
         height = 0f
         edge = PaperCurlEdge(Offset.Zero, Offset.Zero)
-
-        if (keepInputLock) {
-            // Keep one frame of input lock so Compose fully drops the overlay
-            // before the reusable bitmap can be drawn into again.
-            delay(VeilMotion.FRAME_SETTLE_MS)
-        }
-        active = false
     }
 
     fun dispose() {
