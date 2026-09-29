@@ -20,7 +20,8 @@ internal class StaticPagedNavigationInputListener(
     private val navigator: OverflowableNavigator,
     private val isEnabled: () -> Boolean,
     private val onInteraction: () -> Unit,
-    private val onNavigationCommitted: () -> Unit
+    private val onNavigationCommitted: () -> Unit,
+    private val onBoundaryHit: () -> Unit = {}
 ) : InputListener {
     private var reserved = false
 
@@ -57,7 +58,11 @@ internal class StaticPagedNavigationInputListener(
                     PaperTurnDirection.FORWARD -> navigator.goForward(animated = false)
                     PaperTurnDirection.BACKWARD -> navigator.goBackward(animated = false)
                 }
-                if (moved) onNavigationCommitted()
+                if (moved) {
+                    onNavigationCommitted()
+                } else {
+                    onBoundaryHit()
+                }
                 true
             }
         }
