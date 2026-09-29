@@ -1630,6 +1630,7 @@ private fun EpubAppearancePanel(
 ) {
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
+    var sliderPending by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
 
@@ -1643,6 +1644,7 @@ private fun EpubAppearancePanel(
     fun updateDraft(value: ReaderAppearance) {
         draft = value
         hasPendingDraft = true
+        sliderPending = false
         onChange(value)
     }
 
@@ -1651,10 +1653,27 @@ private fun EpubAppearancePanel(
     fun previewDraft(value: ReaderAppearance) {
         draft = value
         hasPendingDraft = true
+        sliderPending = true
     }
 
     fun commitDraft() {
-        if (hasPendingDraft) onChange(draft)
+        if (sliderPending) {
+            sliderPending = false
+            onChange(draft)
+        }
+    }
+
+    val latestDraftForDispose by rememberUpdatedState(draft)
+    val latestSliderPendingForDispose by rememberUpdatedState(sliderPending)
+    val latestOnChangeForDispose by rememberUpdatedState(onChange)
+    DisposableEffect(Unit) {
+        onDispose {
+            // Dismissing the sheet with Back or a downward swipe still saves
+            // the last previewed slider value.
+            if (latestSliderPendingForDispose) {
+                latestOnChangeForDispose(latestDraftForDispose)
+            }
+        }
     }
 
     Column(
