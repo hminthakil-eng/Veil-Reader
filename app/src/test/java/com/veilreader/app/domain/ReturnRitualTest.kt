@@ -85,7 +85,7 @@ class ReturnRitualTest {
 
         assertEquals("newer-old", ritual.fragment?.highlightId)
         assertTrue(ritual.fragment?.annotated == true)
-        assertEquals("7 MONTHS SILENT", ritual.silenceLabel)
+        assertEquals(220L * day, ritual.silenceMillis)
     }
 
     @Test
