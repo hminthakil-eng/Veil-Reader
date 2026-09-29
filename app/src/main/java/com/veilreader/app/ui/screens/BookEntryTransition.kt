@@ -379,10 +379,11 @@ fun BookThresholdTransitionOverlay(
                 Text(
                     when {
                         ritual != null && stage == BookEntryStage.PREPARING ->
-                            "RETURN RITUAL · DEEP SHELF"
-                        ritual != null -> "THE OLD SEAL OPENS"
-                        stage == BookEntryStage.PREPARING -> "OPENING THRESHOLD"
-                        else -> "ENTERING SANCTUARY"
+                            stringResource(R.string.entry_stage_return_ritual)
+                        ritual != null -> stringResource(R.string.entry_stage_old_seal)
+                        stage == BookEntryStage.PREPARING ->
+                            stringResource(R.string.entry_stage_opening_threshold)
+                        else -> stringResource(R.string.entry_stage_entering_sanctuary)
                     },
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.65.sp),
                     color = VeilPalette.Brass
@@ -443,7 +444,7 @@ fun BookThresholdTransitionOverlay(
 
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleLarge,
+                    style = veilContentTextStyle(MaterialTheme.typography.titleLarge, book.title),
                     color = VeilPalette.Moon,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -452,7 +453,7 @@ fun BookThresholdTransitionOverlay(
                 if (book.author.isNotBlank()) {
                     Text(
                         book.author,
-                        style = MaterialTheme.typography.bodySmall,
+                        style = veilContentTextStyle(MaterialTheme.typography.bodySmall, book.author),
                         color = VeilPalette.Mist.copy(alpha = 0.78f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -460,35 +461,41 @@ fun BookThresholdTransitionOverlay(
                 }
 
                 if (ritual != null) {
+                    val ritualTitle = returnRitualTitle(ritual)
                     Text(
-                        ritual.title.uppercase(),
-                        style = MaterialTheme.typography.titleMedium,
+                        ritualTitle,
+                        style = veilContentTextStyle(
+                            MaterialTheme.typography.titleMedium,
+                            ritualTitle
+                        ),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        ritual.silenceLabel,
+                        returnRitualSilenceLabel(ritual.silenceMillis),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.05.sp),
                         color = VeilPalette.Moon.copy(alpha = 0.82f)
                     )
                     if (stage == BookEntryStage.PREPARING) {
                         Text(
-                            ritual.invocation,
+                            stringResource(R.string.ritual_forgotten_invocation),
                             style = MaterialTheme.typography.bodySmall,
                             color = VeilPalette.Mist.copy(alpha = 0.66f)
                         )
                         ritual.fragment?.let { fragment ->
+                            val marginLabel = if (fragment.annotated) {
+                                stringResource(R.string.ritual_annotated_margin)
+                            } else {
+                                stringResource(R.string.ritual_preserved_margin)
+                            }
                             ReturnRitualFragmentPanel(
-                                quote = fragment.quote,
-                                label = buildString {
-                                    append(if (fragment.annotated) "ANNOTATED MARGIN" else "PRESERVED MARGIN")
-                                    append(" · ")
-                                    append(returnRitualFragmentAgeLabel(fragment))
-                                }
+                                quote = fragment.quote
+                                    ?: stringResource(R.string.library_memory_preserved_passage),
+                                label = "$marginLabel · ${returnRitualFragmentAgeLabel(fragment.ageDays)}"
                             )
                         }
                     }
                 } else {
-                    memory.returnGapLabel?.let { returnLabel ->
+                    bookEntryReturnGapLabel(memory)?.let { returnLabel ->
                         Text(
                             returnLabel,
                             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
@@ -499,18 +506,25 @@ fun BookThresholdTransitionOverlay(
                     }
                 }
 
+                val memoryLabel = bookEntryMemoryLabel(memory)
                 Text(
-                    memory.label,
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                    memoryLabel,
+                    style = veilContentTextStyle(
+                        MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                        memoryLabel
+                    ),
                     color = aura.copy(alpha = 0.92f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                memory.historyLabel?.let { historyLabel ->
+                bookEntryHistoryLabel(memory)?.let { historyLabel ->
                     Text(
                         historyLabel,
-                        style = MaterialTheme.typography.labelSmall,
+                        style = veilContentTextStyle(
+                            MaterialTheme.typography.labelSmall,
+                            historyLabel
+                        ),
                         color = VeilPalette.Mist.copy(alpha = 0.58f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -528,9 +542,9 @@ fun BookThresholdTransitionOverlay(
                 } else {
                     Text(
                         when {
-                            ritual != null -> "The old seal opens. Your page remains."
-                            memory.returning -> "The archive recedes. Your book remains."
-                            else -> "The archive recedes. The first page remains."
+                            ritual != null -> stringResource(R.string.entry_handoff_ritual)
+                            memory.returning -> stringResource(R.string.entry_handoff_returning)
+                            else -> stringResource(R.string.entry_handoff_first)
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.58f)
