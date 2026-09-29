@@ -239,9 +239,11 @@ fun ReaderScreen(
     LaunchedEffect(touchExplorationEnabled, opened.book.id) {
         if (touchExplorationEnabled) {
             controlsVisible = true
-            val restoredPaper = paperInputListener?.cancelPendingTurn() == true
+            val restoredPaper =
+                paperInputListener?.cancelPendingTurnAndAwait() == true
             if (!restoredPaper && paperCurlState.active) paperCurlState.clear()
-            val restoredSlide = slideInputListener?.cancelPendingTurn() == true
+            val restoredSlide =
+                slideInputListener?.cancelPendingTurnAndAwait() == true
             if (!restoredSlide && slidePageState.active) slidePageState.clear()
         }
     }
@@ -336,7 +338,8 @@ fun ReaderScreen(
             readerAppearance.scroll ||
             readerAppearance.pageTurnStyle != PageTurnStyle.PAPER
         ) {
-            val cancelingDrag = paperInputListener?.cancelPendingTurn() == true
+            val cancelingDrag =
+                paperInputListener?.cancelPendingTurnAndAwait() == true
             if (!cancelingDrag && paperCurlState.active) {
                 paperCurlState.clear()
             }
@@ -345,7 +348,8 @@ fun ReaderScreen(
             readerAppearance.scroll ||
             readerAppearance.pageTurnStyle != PageTurnStyle.SLIDE
         ) {
-            val cancelingSlide = slideInputListener?.cancelPendingTurn() == true
+            val cancelingSlide =
+                slideInputListener?.cancelPendingTurnAndAwait() == true
             if (!cancelingSlide && slidePageState.active) {
                 slidePageState.clear()
             }
@@ -493,10 +497,25 @@ fun ReaderScreen(
 
     fun closeReader() {
         if (closeInFlight) return
-        latestNavigator.value?.currentLocator?.value?.let { locator ->
-            recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
-        }
         closeInFlight = true
+
+        // A drag preview can already have moved the live navigator underneath its captured page.
+        // Roll it back synchronously before reading currentLocator; otherwise Close can persist the
+        // preview destination even though the user never committed that page turn.
+        paperInputListener?.forceCancelPendingTurn()
+        slideInputListener?.forceCancelPendingTurn()
+
+        val unresolvedPreview = shouldSuppressNavigatorLocatorDuringPagePreview(
+            format = opened.format,
+            paperPreviewActive = paperCurlState.active,
+            slidePreviewActive = slidePageState.active
+        )
+        if (!unresolvedPreview) {
+            latestNavigator.value?.currentLocator?.value?.let { locator ->
+                recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+            }
+        }
+
         scope.launch {
             try {
                 ReaderTrace.event(
@@ -592,16 +611,17 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
-                    // A paper preview may already have navigated underneath the lifted sheet.
-                    // Cancel it before any final snapshot is allowed to become durable.
-                    val cancelingPaper = paperInputListener?.cancelPendingTurn() == true
-                    val cancelingSlide = slideInputListener?.cancelPendingTurn() == true
-                    if (
-                        !cancelingPaper &&
-                        !cancelingSlide &&
-                        !paperCurlState.active &&
-                        !slidePageState.active
-                    ) {
+                    // Lifecycle teardown may cancel the composition scope immediately. Restore an
+                    // uncommitted preview synchronously before any final locator can be flushed.
+                    paperInputListener?.forceCancelPendingTurn()
+                    slideInputListener?.forceCancelPendingTurn()
+                    val unresolvedPreview =
+                        shouldSuppressNavigatorLocatorDuringPagePreview(
+                            format = opened.format,
+                            paperPreviewActive = paperCurlState.active,
+                            slidePreviewActive = slidePageState.active
+                        )
+                    if (!unresolvedPreview) {
                         latestNavigator.value?.currentLocator?.value?.let { locator ->
                             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
                         }
@@ -613,6 +633,8 @@ fun ReaderScreen(
         }
         lifecycle.addObserver(observer)
         onDispose {
+            paperInputListener?.forceCancelPendingTurn()
+            slideInputListener?.forceCancelPendingTurn()
             readerViewModel.onPause()
             lifecycle.removeObserver(observer)
         }
@@ -627,13 +649,11 @@ fun ReaderScreen(
                 locationTitle = locator.title?.trim().orEmpty()
 
                 val pagePreviewActive =
-                    opened.format == BookFormat.EPUB &&
-                        (
-                            latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER &&
-                                paperCurlState.active ||
-                                latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE &&
-                                slidePageState.active
-                            )
+                    shouldSuppressNavigatorLocatorDuringPagePreview(
+                        format = opened.format,
+                        paperPreviewActive = paperCurlState.active,
+                        slidePreviewActive = slidePageState.active
+                    )
                 if (pagePreviewActive) return@collect
 
                 val json = locator.toVeilPersistedJson(opened.format)
@@ -812,6 +832,8 @@ fun ReaderScreen(
             slideInputListener = slideListener
             nav.addInputListener(inputArbiter)
             onDispose {
+                paperListener?.forceCancelPendingTurn()
+                slideListener?.forceCancelPendingTurn()
                 nav.removeInputListener(inputArbiter)
                 if (paperInputListener === paperListener) paperInputListener = null
                 if (slideInputListener === slideListener) slideInputListener = null
@@ -1516,6 +1538,14 @@ fun ReaderScreen(
         }
     }
 }
+
+internal fun shouldSuppressNavigatorLocatorDuringPagePreview(
+    format: BookFormat,
+    paperPreviewActive: Boolean,
+    slidePreviewActive: Boolean
+): Boolean =
+    format == BookFormat.EPUB &&
+        (paperPreviewActive || slidePreviewActive)
 
 internal enum class ReaderBackDisposition {
     SWALLOW,
