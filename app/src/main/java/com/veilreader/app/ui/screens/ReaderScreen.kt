@@ -1181,7 +1181,7 @@ fun ReaderScreen(
                 library.flushWrites()
                 readerViewModel.onNoteSaved(id, note)
                 onSensoryEvent(VeilSensoryEvent.NOTE)
-                readerMessage = "Note saved"
+                readerMessage = noteSavedMessage
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
