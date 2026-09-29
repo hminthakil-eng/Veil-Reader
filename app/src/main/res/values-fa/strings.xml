@@ -381,4 +381,17 @@
     <string name="notice_title_sealed">این عنوان قلعه هنوز بسته است.</string>
     <string name="notice_loading_restore">در حال بازیابی آرشیو</string>
     <string name="notice_loading_open">در حال گشودن آرشیو</string>
+    <string name="library_volume_count_one">%1$02d کتاب</string>
+    <string name="library_volume_count_many">%1$02d کتاب</string>
+    <string name="library_collection">مجموعه</string>
+    <string name="library_all_collections">همهٔ مجموعه‌ها</string>
+    <string name="library_sort_description">مرتب‌سازی کتاب‌ها: %1$s</string>
+    <string name="library_sort_recent">تازه‌ترین</string>
+    <string name="library_sort_archive_depth">قدمت آرشیوی</string>
+    <string name="library_sort_title">عنوان</string>
+    <string name="library_sort_author">نویسنده</string>
+    <string name="library_sort_series">مجموعهٔ داستانی</string>
+    <string name="library_sort_progress">پیشرفت</string>
+    <string name="library_series_filter">مجموعهٔ داستانی · %1$s ×</string>
+    <string name="library_reset_filters">پاک کردن فیلترها</string>
 </resources>
