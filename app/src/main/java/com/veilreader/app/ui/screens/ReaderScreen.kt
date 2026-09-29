@@ -225,8 +225,18 @@ fun ReaderScreen(
         }
     }
     val reducedMotion = LocalVeilReducedMotion.current
-    val fixedLayoutPublication = remember(opened.book.id) {
-        opened.publication.metadata.layout == Layout.FIXED
+    val fixedLayoutPublication = remember(opened.book.id, opened.format) {
+        opened.format == BookFormat.EPUB &&
+            opened.publication.metadata.layout == Layout.FIXED
+    }
+    val effectiveReaderAppearance = remember(
+        readerAppearance,
+        fixedLayoutPublication
+    ) {
+        effectiveReaderAppearanceForPublication(
+            appearance = readerAppearance,
+            fixedLayout = fixedLayoutPublication
+        )
     }
     val publicationLanguage = remember(opened.book.id, opened.book.language) {
         opened.book.language
@@ -325,9 +335,9 @@ fun ReaderScreen(
             appearanceCloseJob = null
         }
     }
-    val latestAppearance = rememberUpdatedState(readerAppearance)
-    val paperCurlConfig = remember(readerAppearance.theme) {
-        when (readerAppearance.theme) {
+    val latestAppearance = rememberUpdatedState(effectiveReaderAppearance)
+    val paperCurlConfig = remember(effectiveReaderAppearance.theme) {
+        when (effectiveReaderAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFFE3D3B5),
                 backPageContentAlpha = 0.10f,
@@ -409,10 +419,13 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(readerAppearance.scroll, readerAppearance.pageTurnStyle) {
+    LaunchedEffect(
+        effectiveReaderAppearance.scroll,
+        effectiveReaderAppearance.pageTurnStyle
+    ) {
         if (
-            readerAppearance.scroll ||
-            readerAppearance.pageTurnStyle != PageTurnStyle.PAPER
+            effectiveReaderAppearance.scroll ||
+            effectiveReaderAppearance.pageTurnStyle != PageTurnStyle.PAPER
         ) {
             val cancelingDrag =
                 paperInputListener?.cancelPendingTurnAndAwait() == true
@@ -421,8 +434,8 @@ fun ReaderScreen(
             }
         }
         if (
-            readerAppearance.scroll ||
-            readerAppearance.pageTurnStyle != PageTurnStyle.SLIDE
+            effectiveReaderAppearance.scroll ||
+            effectiveReaderAppearance.pageTurnStyle != PageTurnStyle.SLIDE
         ) {
             val cancelingSlide =
                 slideInputListener?.cancelPendingTurnAndAwait() == true
@@ -732,7 +745,7 @@ fun ReaderScreen(
     ) {
         createReaderFactory(
             opened = opened,
-            appearance = readerAppearance,
+            appearance = effectiveReaderAppearance,
             selectionActionModeCallback = selectionActionModeCallback,
             epubNavigatorListener = epubNavigatorListener
         )
@@ -1022,10 +1035,14 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(navigator, readerAppearance, opened.format) {
+    LaunchedEffect(navigator, effectiveReaderAppearance, opened.format) {
         game.rebasePagePacing()
         readerViewModel.onUserInteraction()
-        val traceDetails = "format=${opened.format} theme=${readerAppearance.theme} publisherStyles=${readerAppearance.publisherStyles} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
+        val traceDetails =
+            "format=${opened.format} theme=${effectiveReaderAppearance.theme} " +
+                "publisherStyles=${effectiveReaderAppearance.publisherStyles} " +
+                "scroll=${effectiveReaderAppearance.scroll} " +
+                "pageTurn=${effectiveReaderAppearance.pageTurnStyle}"
         ReaderTrace.event(
             "appearance_submit_requested",
             bookId = opened.book.id,
@@ -1035,12 +1052,12 @@ fun ReaderScreen(
         when (opened.format) {
             BookFormat.EPUB ->
                 (navigator as? EpubNavigatorFragment)
-                    ?.submitPreferences(readerAppearance.toEpubPreferences())
+                    ?.submitPreferences(effectiveReaderAppearance.toEpubPreferences())
 
             BookFormat.PDF -> {
                 @Suppress("UNCHECKED_CAST")
                 val pdfNavigator = navigator as? PdfiumNavigatorFragment
-                pdfNavigator?.submitPreferences(readerAppearance.toPdfiumPreferences())
+                pdfNavigator?.submitPreferences(effectiveReaderAppearance.toPdfiumPreferences())
             }
 
             else -> Unit
@@ -1067,7 +1084,7 @@ fun ReaderScreen(
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
     }
 
-    val readerCanvas = readerCanvasColor(readerAppearance.theme)
+    val readerCanvas = readerCanvasColor(effectiveReaderAppearance.theme)
     val readerSurfaceLabel = stringResource(R.string.reader_surface_label)
     val controlsActionLabel = stringResource(
         if (touchExplorationEnabled) {
@@ -1110,8 +1127,8 @@ fun ReaderScreen(
 
         if (
             opened.format == BookFormat.EPUB &&
-            !readerAppearance.scroll &&
-            readerAppearance.pageTurnStyle == PageTurnStyle.PAPER
+            !effectiveReaderAppearance.scroll &&
+            effectiveReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
         ) {
             PaperCurlOverlay(
                 state = paperCurlState,
@@ -1122,8 +1139,8 @@ fun ReaderScreen(
 
         if (
             opened.format == BookFormat.EPUB &&
-            !readerAppearance.scroll &&
-            readerAppearance.pageTurnStyle == PageTurnStyle.SLIDE
+            !effectiveReaderAppearance.scroll &&
+            effectiveReaderAppearance.pageTurnStyle == PageTurnStyle.SLIDE
         ) {
             SlidePageOverlay(
                 state = slidePageState,
@@ -1133,9 +1150,9 @@ fun ReaderScreen(
 
         if (opened.format == BookFormat.EPUB) {
             ReaderPageAtmosphere(
-                theme = readerAppearance.theme,
-                navigationMode = readerAppearance.navigationMode,
-                paperPatina = readerAppearance.paperPatina.toFloat(),
+                theme = effectiveReaderAppearance.theme,
+                navigationMode = effectiveReaderAppearance.navigationMode,
+                paperPatina = effectiveReaderAppearance.paperPatina.toFloat(),
                 progress = progress,
                 progression = (navigator as? OverflowableNavigator)
                     ?.overflow
@@ -1149,7 +1166,7 @@ fun ReaderScreen(
         boundaryPulseSide?.let { side ->
             ReaderBoundaryPulse(
                 side = side,
-                theme = readerAppearance.theme,
+                theme = effectiveReaderAppearance.theme,
                 alpha = boundaryPulseAlpha.value,
                 modifier = Modifier.fillMaxSize()
             )
@@ -1818,6 +1835,16 @@ fun ReaderScreen(
 
 internal fun shouldAnimateReaderJump(reducedMotion: Boolean): Boolean =
     !reducedMotion
+
+internal fun effectiveReaderAppearanceForPublication(
+    appearance: ReaderAppearance,
+    fixedLayout: Boolean
+): ReaderAppearance =
+    if (fixedLayout && appearance.scroll) {
+        appearance.copy(scroll = false)
+    } else {
+        appearance
+    }
 
 internal data class ReaderAppearanceCapabilities(
     val fixedLayout: Boolean,
