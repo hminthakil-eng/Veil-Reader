@@ -1897,6 +1897,7 @@ private fun EpubAppearancePanel(
     var sliderPending by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
+    val textSizeLabel = stringResource(R.string.settings_text_size)
 
     LaunchedEffect(appearance) {
         when {
@@ -2069,7 +2070,8 @@ private fun EpubAppearancePanel(
                 value = draft.fontScale.toFloat(),
                 onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
-                valueRange = .75f..1.8f
+                valueRange = .75f..1.8f,
+                modifier = Modifier.semantics { contentDescription = textSizeLabel }
             )
 
             BrassRule(Modifier.fillMaxWidth())
