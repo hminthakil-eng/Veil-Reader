@@ -149,6 +149,7 @@ fun ReadingCycleRecord.toEntity(): ReadingCycleEntity = ReadingCycleEntity(
                 put("timestampEpochMs", event.timestampEpochMs)
                 put("title", event.title)
                 put("detail", event.detail ?: JSONObject.NULL)
+                put("annotated", event.annotated)
             })
         }
     }.toString()
@@ -169,7 +170,13 @@ fun ReadingCycleEntity.toDomain(): ReadingCycleRecord {
                     timestampEpochMs = item.optLong("timestampEpochMs", 0L),
                     title = item.optString("title"),
                     detail = if (item.isNull("detail")) null
-                    else item.optString("detail").takeIf { it.isNotBlank() }
+                    else item.optString("detail").takeIf { it.isNotBlank() },
+                    annotated = if (item.has("annotated")) {
+                        item.optBoolean("annotated", false)
+                    } else {
+                        // Backward compatibility for timelines sealed before the structured flag.
+                        item.optString("title") == "Annotated passage preserved"
+                    }
                 )
             )
         }
