@@ -1096,4 +1096,6 @@
     <string name="path_generic_invocation">با نیت بخوان؛ با نشانه بازگرد.</string>
     <string name="path_generic_epithet">خوانندهٔ ناشناخته</string>
     <string name="path_generic_description">مسیری که هویت کامل آن هنوز در این نسخه از Veil ثبت نشده است.</string>
+    <string name="book_detail_percent_read_text">%1$s خوانده‌شده</string>
+    <string name="library_collection_more">%1$s +%2$s</string>
 </resources>
