@@ -15,8 +15,8 @@ class BookCoverSampleSizeTest {
     }
 
     @Test
-    fun `extreme aspect ratio stays within a memory budget`() {
-        assertEquals(4, bookCoverSampleSize(30000, 1000, 200, 300))
+    fun `extreme aspect ratio preserves display height within memory budget`() {
+        assertEquals(2, bookCoverSampleSize(30000, 1000, 200, 300))
     }
 
     @Test
