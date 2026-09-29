@@ -182,6 +182,7 @@ fun ReaderScreen(
     }
     val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
     val reducedMotion = LocalVeilReducedMotion.current
+    val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
     val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
@@ -194,6 +195,7 @@ fun ReaderScreen(
     val savedLocationFailedMessage = stringResource(R.string.reader_saved_location_failed)
     val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
+    val slidePageState = remember(opened.book.id) { SlidePageState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
     val latestAppearance = rememberUpdatedState(readerAppearance)
@@ -287,6 +289,14 @@ fun ReaderScreen(
         ) {
             if (paperCurlState.active) {
                 paperCurlState.clear()
+            }
+        }
+        if (
+            readerAppearance.scroll ||
+            readerAppearance.pageTurnStyle != PageTurnStyle.SLIDE
+        ) {
+            if (slidePageState.active) {
+                slidePageState.clear()
             }
         }
     }
@@ -469,7 +479,12 @@ fun ReaderScreen(
     }
 
     BackHandler(
-        enabled = !closeInFlight && !showNotebook && !showAppearance && !showPdfZoom && !paperCurlState.active
+        enabled = !closeInFlight &&
+            !showNotebook &&
+            !showAppearance &&
+            !showPdfZoom &&
+            !paperCurlState.active &&
+            !slidePageState.active
     ) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
@@ -493,6 +508,9 @@ fun ReaderScreen(
 
     DisposableEffect(paperCurlState) {
         onDispose { paperCurlState.dispose() }
+    }
+    DisposableEffect(slidePageState) {
+        onDispose { slidePageState.dispose() }
     }
 
     DisposableEffect(lifecycle, readerViewModel) {
@@ -524,11 +542,15 @@ fun ReaderScreen(
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
 
-                val paperPreviewActive =
+                val pagePreviewActive =
                     opened.format == BookFormat.EPUB &&
-                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER &&
-                        paperCurlState.active
-                if (paperPreviewActive) return@collect
+                        (
+                            latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER &&
+                                paperCurlState.active ||
+                                latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE &&
+                                slidePageState.active
+                            )
+                if (pagePreviewActive) return@collect
 
                 val json = locator.toVeilPersistedJson(opened.format)
                 ReaderTrace.event(
@@ -573,7 +595,7 @@ fun ReaderScreen(
                             latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
                     },
                     scope = scope,
-                    isReducedMotion = { reducedMotion },
+                    isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
                         readerViewModel.onUserInteraction()
                         controlsVisible = false
@@ -589,10 +611,69 @@ fun ReaderScreen(
                 null
             }
 
+            val slideListener = if (navigator is EpubNavigatorFragment) {
+                SlideNavigationInputListener(
+                    navigator = nav,
+                    state = slidePageState,
+                    isEnabled = {
+                        shouldUseVeilSlideNavigation(
+                            format = opened.format,
+                            scroll = nav.overflow.value.scroll,
+                            pageTurnStyle = latestAppearance.value.pageTurnStyle
+                        )
+                    },
+                    scope = scope,
+                    isReducedMotion = { latestReducedMotion.value },
+                    onInteraction = {
+                        readerViewModel.onUserInteraction()
+                        controlsVisible = false
+                    },
+                    onCommittedTurn = {
+                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        nav.currentLocator.value.let { locator ->
+                            recordLocator(
+                                locator,
+                                ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                            )
+                        }
+                    }
+                )
+            } else {
+                null
+            }
+
+            val staticPagedListener = if (navigator is EpubNavigatorFragment) {
+                StaticPagedNavigationInputListener(
+                    navigator = nav,
+                    isEnabled = {
+                        shouldUseStaticPagedDragNavigation(
+                            format = opened.format,
+                            scroll = nav.overflow.value.scroll,
+                            pageTurnStyle = latestAppearance.value.pageTurnStyle
+                        )
+                    },
+                    onInteraction = {
+                        readerViewModel.onUserInteraction()
+                        controlsVisible = false
+                    },
+                    onNavigationCommitted = {
+                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        nav.currentLocator.value.let { locator ->
+                            recordLocator(
+                                locator,
+                                ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                            )
+                        }
+                    }
+                )
+            } else {
+                null
+            }
+
             val directionalListener = VeilDirectionalNavigationInputListener(
                 navigator = nav,
                 isAnimated = {
-                    !reducedMotion &&
+                    !latestReducedMotion.value &&
                         shouldAnimateDirectionalNavigation(
                             format = opened.format,
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
@@ -612,11 +693,25 @@ fun ReaderScreen(
 
             val inputArbiter = ReaderInputArbiter(
                 paper = paperListener,
+                slide = slideListener,
+                staticPaged = staticPagedListener,
                 directional = directionalListener,
                 chromeTap = {
                     readerViewModel.onUserInteraction()
                     controlsVisible = !controlsVisible
                     true
+                },
+                interactionMode = {
+                    readerInteractionMode(
+                        selectionModeActive = selectionModeActive,
+                        overlayVisible =
+                            showNotebook ||
+                                showAppearance ||
+                                showPdfZoom ||
+                                pendingNoteHighlightId != null,
+                        closeInFlight = closeInFlight,
+                        controlsVisible = controlsVisible
+                    )
                 },
                 onTapOwner = { owner ->
                     ReaderTrace.event(
@@ -723,6 +818,17 @@ fun ReaderScreen(
             PaperCurlOverlay(
                 state = paperCurlState,
                 config = paperCurlConfig,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (
+            opened.format == BookFormat.EPUB &&
+            !readerAppearance.scroll &&
+            readerAppearance.pageTurnStyle == PageTurnStyle.SLIDE
+        ) {
+            SlidePageOverlay(
+                state = slidePageState,
                 modifier = Modifier.fillMaxSize()
             )
         }
