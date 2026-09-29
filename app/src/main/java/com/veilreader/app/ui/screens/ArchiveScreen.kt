@@ -43,6 +43,7 @@ import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.NumberFormat
+import kotlinx.coroutines.delay
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
@@ -71,7 +72,12 @@ fun ArchiveScreen(
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
         .getOrDefault(NotebookSection.HIGHLIGHTS)
     val booksById = remember(books) { books.associateBy { it.id } }
-    val archiveNow = remember { System.currentTimeMillis() }
+    val archiveNow by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(60_000L)
+            value = System.currentTimeMillis()
+        }
+    }
     val echoes = remember(highlights, booksById, archiveNow, passageVisits) {
         deriveArchiveEchoes(
             highlights = highlights,
