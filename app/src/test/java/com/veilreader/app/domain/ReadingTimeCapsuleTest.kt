@@ -169,4 +169,31 @@ class ReadingTimeCapsuleTest {
         assertTrue(first.startsWith("VR-"))
         assertTrue(first != changed)
     }
+    @Test
+    fun `annotated preserved passage carries structured presentation evidence`() {
+        val book = Book(
+            id = "annotated",
+            title = "Annotated",
+            author = "Veil",
+            finished = true
+        )
+        val highlight = Highlight(
+            id = "h",
+            bookId = book.id,
+            quote = "A preserved sentence",
+            locatorJson = "{}",
+            note = "A note",
+            createdAtEpochMs = 10L
+        )
+
+        val event = deriveReadingTimeCapsule(
+            book = book,
+            sessions = emptyList(),
+            highlights = listOf(highlight),
+            bookmarks = emptyList()
+        ).timeline.single { it.kind == ReadingHistoryEventKind.PASSAGE_PRESERVED }
+
+        assertTrue(event.annotated)
+    }
+
 }
