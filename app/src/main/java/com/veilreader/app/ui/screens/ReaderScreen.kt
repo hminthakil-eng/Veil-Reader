@@ -1808,6 +1808,10 @@ private fun EpubAppearancePanel(
         onChange(value)
     }
 
+    fun updateTypography(value: ReaderAppearance) {
+        updateDraft(value.copy(publisherStyles = false))
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -1844,7 +1848,10 @@ private fun EpubAppearancePanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            listOf(false to stringResource(R.string.reader_quick), true to stringResource(R.string.reader_advanced)).forEach { (advanced, label) ->
+            listOf(
+                false to stringResource(R.string.reader_quick),
+                true to stringResource(R.string.reader_advanced)
+            ).forEach { (advanced, label) ->
                 val selected = showAdvanced == advanced
                 Surface(
                     modifier = Modifier
@@ -1886,8 +1893,14 @@ private fun EpubAppearancePanel(
             )
 
             listOf(
-                listOf(ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper), ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)),
-                listOf(ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk), ReaderTheme.OLED to stringResource(R.string.settings_reader_oled))
+                listOf(
+                    ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper),
+                    ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)
+                ),
+                listOf(
+                    ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk),
+                    ReaderTheme.OLED to stringResource(R.string.settings_reader_oled)
+                )
             ).forEach { presets ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1953,51 +1966,277 @@ private fun EpubAppearancePanel(
                 color = VeilPalette.Brass
             )
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.settings_line_height),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "${"%.2f".format(draft.lineHeight)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            if (draft.publisherStyles) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = VeilPalette.Archive.copy(alpha = 0.60f),
+                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f))
+                ) {
+                    Text(
+                        stringResource(R.string.reader_publisher_override_note),
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
-            Slider(
-                value = draft.lineHeight.toFloat(),
-                onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
-                valueRange = 1.1f..2.0f
+
+            Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.titleSmall)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderFontFamily.entries.forEach { family ->
+                    ReaderAppearanceChoice(
+                        label = when (family) {
+                            ReaderFontFamily.PUBLISHER -> stringResource(R.string.settings_book_default)
+                            ReaderFontFamily.SERIF -> stringResource(R.string.settings_font_serif)
+                            ReaderFontFamily.SANS_SERIF -> stringResource(R.string.settings_font_sans)
+                            ReaderFontFamily.MONOSPACE -> stringResource(R.string.settings_font_mono)
+                            ReaderFontFamily.OPEN_DYSLEXIC -> stringResource(R.string.settings_font_opendyslexic)
+                            ReaderFontFamily.ACCESSIBLE_DFA -> stringResource(R.string.settings_font_accessible)
+                            ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
+                        },
+                        selected = draft.fontFamily == family,
+                        onClick = { updateDraft(draft.withFontFamily(family)) }
+                    )
+                }
+            }
+
+            ReaderAppearanceNullableSlider(
+                label = stringResource(R.string.settings_font_weight),
+                value = draft.fontWeight,
+                valueRange = 0f..2.5f,
+                nullPreviewValue = 1f,
+                valueLabel = { "${(it * 100).toInt()}%" },
+                onValueChange = {
+                    updateTypography(draft.withFontWeight(it.toDouble()))
+                },
+                onReset = { updateDraft(draft.copy(fontWeight = null)) }
             )
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    stringResource(R.string.settings_page_margins),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    "${(draft.pageMargins * 100).toInt()}%",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            Slider(
+            ReaderAppearanceSlider(
+                label = stringResource(R.string.settings_line_height),
+                value = draft.lineHeight.toFloat(),
+                valueRange = 1.1f..2.0f,
+                valueLabel = { "%.2f×".format(it) },
+                onValueChange = { updateTypography(draft.withLineHeight(it.toDouble())) }
+            )
+
+            ReaderAppearanceSlider(
+                label = stringResource(R.string.settings_page_margins),
                 value = draft.pageMargins.toFloat(),
-                onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
-                valueRange = .5f..2.0f
+                valueRange = 0.5f..2.0f,
+                valueLabel = { "${(it * 100).toInt()}%" },
+                onValueChange = { updateTypography(draft.withPageMargins(it.toDouble())) }
+            )
+
+            Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.titleSmall)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderTextAlignment.entries.forEach { alignment ->
+                    ReaderAppearanceChoice(
+                        label = when (alignment) {
+                            ReaderTextAlignment.PUBLISHER -> stringResource(R.string.settings_book_default)
+                            ReaderTextAlignment.START -> stringResource(R.string.settings_align_start)
+                            ReaderTextAlignment.JUSTIFY -> stringResource(R.string.settings_align_justify)
+                            ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
+                        },
+                        selected = draft.textAlignment == alignment,
+                        modifier = Modifier.weight(1f),
+                        onClick = { updateDraft(draft.withTextAlignment(alignment)) }
+                    )
+                }
+            }
+
+            Text(stringResource(R.string.settings_columns), style = MaterialTheme.typography.titleSmall)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderColumnMode.entries.forEach { mode ->
+                    ReaderAppearanceChoice(
+                        label = when (mode) {
+                            ReaderColumnMode.AUTO -> stringResource(R.string.settings_column_auto)
+                            ReaderColumnMode.ONE -> stringResource(R.string.settings_column_one)
+                            ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
+                        },
+                        selected = draft.columnMode == mode,
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            updateDraft(
+                                draft.copy(
+                                    columnMode = mode,
+                                    publisherStyles = if (mode == ReaderColumnMode.AUTO) {
+                                        draft.publisherStyles
+                                    } else {
+                                        false
+                                    }
+                                )
+                            )
+                        }
+                    )
+                }
+            }
+
+            BrassRule(Modifier.fillMaxWidth())
+
+            Text(
+                stringResource(R.string.reader_spacing_shaping),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                color = VeilPalette.Brass
+            )
+
+            ReaderAppearanceTriState(
+                title = stringResource(R.string.reader_hyphenation),
+                value = draft.hyphenation,
+                onChange = { option ->
+                    updateDraft(
+                        draft.copy(
+                            hyphenation = option,
+                            publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
+                                draft.publisherStyles
+                            } else {
+                                false
+                            }
+                        )
+                    )
+                }
+            )
+            ReaderAppearanceTriState(
+                title = stringResource(R.string.reader_ligatures),
+                value = draft.ligatures,
+                onChange = { option ->
+                    updateDraft(
+                        draft.copy(
+                            ligatures = option,
+                            publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
+                                draft.publisherStyles
+                            } else {
+                                false
+                            }
+                        )
+                    )
+                }
+            )
+            ReaderAppearanceTriState(
+                title = stringResource(R.string.reader_text_normalization),
+                value = draft.textNormalization,
+                onChange = { option ->
+                    updateDraft(
+                        draft.copy(
+                            textNormalization = option,
+                            publisherStyles = if (option == ReaderPreferenceToggle.DEFAULT) {
+                                draft.publisherStyles
+                            } else {
+                                false
+                            }
+                        )
+                    )
+                }
+            )
+
+            ReaderAppearanceNullableSlider(
+                label = stringResource(R.string.reader_paragraph_spacing),
+                value = draft.paragraphSpacing,
+                valueRange = 0f..2f,
+                nullPreviewValue = 0f,
+                valueLabel = { "%.2f×".format(it) },
+                onValueChange = { updateDraft(draft.withParagraphSpacing(it.toDouble())) },
+                onReset = { updateDraft(draft.copy(paragraphSpacing = null)) }
+            )
+            ReaderAppearanceNullableSlider(
+                label = stringResource(R.string.reader_paragraph_indent),
+                value = draft.paragraphIndent,
+                valueRange = 0f..3f,
+                nullPreviewValue = 0f,
+                valueLabel = { "%.2f×".format(it) },
+                onValueChange = { updateDraft(draft.withParagraphIndent(it.toDouble())) },
+                onReset = { updateDraft(draft.copy(paragraphIndent = null)) }
+            )
+            ReaderAppearanceNullableSlider(
+                label = stringResource(R.string.reader_letter_spacing),
+                value = draft.letterSpacing,
+                valueRange = 0f..0.2f,
+                nullPreviewValue = 0f,
+                valueLabel = { "%.2f".format(it) },
+                onValueChange = { updateDraft(draft.withLetterSpacing(it.toDouble())) },
+                onReset = { updateDraft(draft.copy(letterSpacing = null)) }
+            )
+            ReaderAppearanceNullableSlider(
+                label = stringResource(R.string.reader_word_spacing),
+                value = draft.wordSpacing,
+                valueRange = 0f..1f,
+                nullPreviewValue = 0f,
+                valueLabel = { "%.2f".format(it) },
+                onValueChange = { updateDraft(draft.withWordSpacing(it.toDouble())) },
+                onReset = { updateDraft(draft.copy(wordSpacing = null)) }
+            )
+            ReaderAppearanceNullableSlider(
+                label = stringResource(R.string.reader_type_scale),
+                value = draft.typeScale,
+                valueRange = 1f..2f,
+                nullPreviewValue = 1f,
+                valueLabel = { "%.2f×".format(it) },
+                onValueChange = { updateDraft(draft.withTypeScale(it.toDouble())) },
+                onReset = { updateDraft(draft.copy(typeScale = null)) }
             )
 
             BrassRule(Modifier.fillMaxWidth())
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            if (draft.theme == ReaderTheme.PAPER || draft.theme == ReaderTheme.SEPIA) {
+                ReaderAppearanceSlider(
+                    label = stringResource(R.string.settings_paper_age),
+                    value = draft.paperPatina.toFloat(),
+                    valueRange = 0f..1f,
+                    valueLabel = { "${(it * 100).toInt()}%" },
+                    onValueChange = { updateDraft(draft.withPaperPatina(it.toDouble())) }
+                )
+                Text(
+                    stringResource(R.string.settings_paper_age_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            val darkTheme = draft.theme == ReaderTheme.DUSK || draft.theme == ReaderTheme.OLED
+            Text(stringResource(R.string.settings_dark_images), style = MaterialTheme.typography.titleSmall)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderDarkImageTreatment.entries.forEach { treatment ->
+                    ReaderAppearanceChoice(
+                        label = when (treatment) {
+                            ReaderDarkImageTreatment.NONE -> stringResource(R.string.settings_dark_images_original)
+                            ReaderDarkImageTreatment.DARKEN -> stringResource(R.string.settings_dark_images_darken)
+                            ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
+                        },
+                        selected = draft.darkImageTreatment == treatment,
+                        enabled = darkTheme,
+                        modifier = Modifier.weight(1f),
+                        onClick = { updateDraft(draft.withDarkImageTreatment(treatment)) }
+                    )
+                }
+            }
+            Text(
+                stringResource(
+                    if (darkTheme) R.string.settings_dark_images_hint
+                    else R.string.settings_dark_images_unavailable
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -2057,6 +2296,140 @@ private fun EpubAppearancePanel(
             )
         ) {
             Text(stringResource(R.string.reader_back_to_reading))
+        }
+    }
+}
+
+@Composable
+private fun ReaderAppearanceChoice(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    onClick: () -> Unit
+) {
+    if (selected) {
+        Button(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier.heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.76f),
+                contentColor = VeilPalette.Moon
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Text(label, maxLines = 1)
+        }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            enabled = enabled,
+            modifier = modifier.heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            border = BorderStroke(
+                1.dp,
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)
+            ),
+            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+        ) {
+            Text(label, maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun ReaderAppearanceSlider(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    valueLabel: (Float) -> String,
+    onValueChange: (Float) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(
+                valueLabel(value),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+        Slider(
+            value = value.coerceIn(valueRange.start, valueRange.endInclusive),
+            onValueChange = onValueChange,
+            valueRange = valueRange
+        )
+    }
+}
+
+@Composable
+private fun ReaderAppearanceNullableSlider(
+    label: String,
+    value: Double?,
+    valueRange: ClosedFloatingPointRange<Float>,
+    nullPreviewValue: Float,
+    valueLabel: (Float) -> String,
+    onValueChange: (Float) -> Unit,
+    onReset: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(
+                if (value == null) stringResource(R.string.settings_book_default)
+                else valueLabel(value.toFloat()),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            TextButton(
+                onClick = onReset,
+                enabled = value != null,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.reader_value_reset))
+            }
+        }
+        Slider(
+            value = (value?.toFloat() ?: nullPreviewValue)
+                .coerceIn(valueRange.start, valueRange.endInclusive),
+            onValueChange = onValueChange,
+            valueRange = valueRange
+        )
+    }
+}
+
+@Composable
+private fun ReaderAppearanceTriState(
+    title: String,
+    value: ReaderPreferenceToggle,
+    onChange: (ReaderPreferenceToggle) -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            ReaderPreferenceToggle.entries.forEach { option ->
+                ReaderAppearanceChoice(
+                    label = when (option) {
+                        ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
+                        ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
+                        ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
+                    },
+                    selected = value == option,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onChange(option) }
+                )
+            }
         }
     }
 }
