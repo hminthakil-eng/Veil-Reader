@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Path
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.max
 import kotlin.math.sin
 import com.veilreader.app.ui.theme.VeilSanctuary
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -209,7 +210,17 @@ internal fun paperLineIntersection(
     val denominator =
         (line1a.x - line1b.x) * (line2a.y - line2b.y) -
             (line1a.y - line1b.y) * (line2a.x - line2b.x)
-    if (denominator == 0f) return null
+    // Near-parallel fold lines are numerically unstable even when the denominator
+    // is not exactly zero. Treat them as non-intersecting before huge coordinates
+    // leak into clipping/shadow geometry.
+    val scale = max(
+        1f,
+        max(
+            abs(line1a.x - line1b.x) + abs(line1a.y - line1b.y),
+            abs(line2a.x - line2b.x) + abs(line2a.y - line2b.y)
+        )
+    )
+    if (abs(denominator) <= 1e-5f * scale * scale) return null
 
     val first =
         (line1a.x * line1b.y - line1a.y * line1b.x) *
@@ -226,7 +237,22 @@ internal fun paperLineIntersection(
         (line1a.y - line1b.y) *
             (line2a.x * line2b.y - line2a.y * line2b.x)
     val y = (third - fourth) / denominator
-    return Offset(x, y)
+    return if (x.isFinite() && y.isFinite()) Offset(x, y) else null
+}
+
+/**
+ * How diagonal the fold is: 0 = vertical spine-like fold, 1 = horizontal fold.
+ * A diagonal fold catches more directional light without changing turn geometry.
+ */
+internal fun paperFoldObliqueness(
+    top: Offset,
+    bottom: Offset
+): Float {
+    val dx = abs(bottom.x - top.x)
+    val dy = abs(bottom.y - top.y)
+    val total = dx + dy
+    if (!total.isFinite() || total <= 1e-4f) return 0f
+    return (dx / total).coerceIn(0f, 1f)
 }
 
 private fun Offset.normalized(): Offset {
