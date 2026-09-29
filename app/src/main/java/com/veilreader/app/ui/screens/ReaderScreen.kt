@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.graphics.Color as AndroidColor
+import android.os.SystemClock
 import android.view.ActionMode
 import android.view.accessibility.AccessibilityManager
 import android.view.View
@@ -242,7 +243,26 @@ fun ReaderScreen(
         mutableStateOf<PaperCurlSide?>(null)
     }
     var boundaryPulseSerial by remember(opened.book.id) { mutableIntStateOf(0) }
+    var lastBoundaryFeedbackAtMillis by remember(opened.book.id) {
+        mutableLongStateOf(0L)
+    }
     val boundaryPulseAlpha = remember(opened.book.id) { Animatable(0f) }
+
+    fun emitBoundaryFeedback(side: PaperCurlSide) {
+        val now = SystemClock.uptimeMillis()
+        if (
+            !shouldEmitReaderBoundaryFeedback(
+                nowMillis = now,
+                lastEmissionMillis = lastBoundaryFeedbackAtMillis
+            )
+        ) {
+            return
+        }
+        lastBoundaryFeedbackAtMillis = now
+        boundaryPulseSide = side
+        boundaryPulseSerial += 1
+        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
+    }
 
     LaunchedEffect(boundaryPulseSerial, opened.book.id) {
         if (boundaryPulseSerial <= 0) return@LaunchedEffect
@@ -756,11 +776,7 @@ fun ReaderScreen(
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
-                    onBoundaryHit = { side ->
-                        boundaryPulseSide = side
-                        boundaryPulseSerial += 1
-                        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
-                    }
+                    onBoundaryHit = ::emitBoundaryFeedback
                 )
             } else {
                 null
@@ -792,11 +808,7 @@ fun ReaderScreen(
                             )
                         }
                     },
-                    onBoundaryHit = { side ->
-                        boundaryPulseSide = side
-                        boundaryPulseSerial += 1
-                        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
-                    }
+                    onBoundaryHit = ::emitBoundaryFeedback
                 )
             } else {
                 null
@@ -825,11 +837,7 @@ fun ReaderScreen(
                             )
                         }
                     },
-                    onBoundaryHit = { side ->
-                        boundaryPulseSide = side
-                        boundaryPulseSerial += 1
-                        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
-                    }
+                    onBoundaryHit = ::emitBoundaryFeedback
                 )
             } else {
                 null
@@ -867,11 +875,7 @@ fun ReaderScreen(
                     }
                     onSensoryEvent(event)
                 },
-                onBoundaryHit = { side ->
-                    boundaryPulseSide = side
-                    boundaryPulseSerial += 1
-                    onSensoryEvent(VeilSensoryEvent.BOUNDARY)
-                }
+                onBoundaryHit = ::emitBoundaryFeedback
             )
 
             val inputArbiter = ReaderInputArbiter(
@@ -1628,6 +1632,15 @@ fun ReaderScreen(
         }
     }
 }
+
+internal fun shouldEmitReaderBoundaryFeedback(
+    nowMillis: Long,
+    lastEmissionMillis: Long,
+    minimumIntervalMillis: Long = 180L
+): Boolean =
+    lastEmissionMillis <= 0L ||
+        nowMillis < lastEmissionMillis ||
+        nowMillis - lastEmissionMillis >= minimumIntervalMillis.coerceAtLeast(0L)
 
 internal fun shouldSuppressNavigatorLocatorDuringPagePreview(
     format: BookFormat,
