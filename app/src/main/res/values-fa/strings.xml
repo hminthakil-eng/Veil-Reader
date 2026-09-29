@@ -228,7 +228,7 @@
     <string name="archive_try_capsule_search">عنوان، نویسنده یا کد مهر دیگری را جست‌وجو کنید.</string>
     <string name="archive_manuscript_note">یادداشت دست‌نویس</string>
     <string name="archive_note_hint">در حاشیه بنویسید…</string>
-    <string name="archive_folio">برگ %1$03d</string>
+    <string name="archive_folio">برگ %1$s</string>
     <string name="archive_echo">طنین</string>
     <string name="archive_annotated">یادداشت‌دار</string>
     <string name="archive_passage">متن</string>
@@ -262,11 +262,11 @@
 
     <!-- تاریخچهٔ مهرشدهٔ مطالعه -->
     <string name="capsule_sealed_record">رکورد مهرشدهٔ مطالعه</string>
-    <string name="capsule_sealed_cycle">رکورد مهرشدهٔ مطالعه · دور %1$d</string>
+    <string name="capsule_sealed_cycle">رکورد مهرشدهٔ مطالعه · دور %1$s</string>
     <string name="capsule_completed_at">پایان یافته · %1$s</string>
     <string name="capsule_open_history">دیدن تاریخچهٔ نگه‌داشته‌شده</string>
     <string name="capsule_sheet_title">کپسول زمان · مهرشده</string>
-    <string name="capsule_sheet_cycle">کپسول زمان · دور %1$d · مهرشده</string>
+    <string name="capsule_sheet_cycle">کپسول زمان · دور %1$s · مهرشده</string>
     <string name="capsule_sessions">نشست‌ها</string>
     <string name="capsule_active">زمان فعال</string>
     <string name="capsule_passages">متن‌ها</string>
@@ -276,16 +276,16 @@
     <string name="capsule_completion_unknown">پایان کتاب به‌عنوان یک وضعیت حفظ شده است. این نسخهٔ آرشیو زمان دقیق نخستین پایان را ثبت نکرده است؛ بنابراین Veil تاریخی برای آن نمی‌سازد.</string>
     <string name="capsule_close">بستن رکورد</string>
     <string name="capsule_date_unknown">تاریخ نامعلوم</string>
-    <string name="capsule_hours">%1$d ساعت</string>
-    <string name="capsule_hours_minutes">%1$d ساعت و %2$d دقیقه</string>
-    <string name="capsule_minutes">%1$d دقیقه</string>
+    <string name="capsule_hours">%1$s ساعت</string>
+    <string name="capsule_hours_minutes">%1$s ساعت و %2$s دقیقه</string>
+    <string name="capsule_minutes">%1$s دقیقه</string>
     <string name="capsule_less_than_minute">کمتر از ۱ دقیقه</string>
-    <string name="capsule_one_session">%1$d نشست</string>
-    <string name="capsule_many_sessions">%1$d نشست</string>
-    <string name="capsule_one_passage">%1$d متن</string>
-    <string name="capsule_many_passages">%1$d متن</string>
-    <string name="capsule_one_note">%1$d یادداشت</string>
-    <string name="capsule_many_notes">%1$d یادداشت</string>
+    <string name="capsule_one_session">%1$s نشست</string>
+    <string name="capsule_many_sessions">%1$s نشست</string>
+    <string name="capsule_one_passage">%1$s متن</string>
+    <string name="capsule_many_passages">%1$s متن</string>
+    <string name="capsule_one_note">%1$s یادداشت</string>
+    <string name="capsule_many_notes">%1$s یادداشت</string>
     <string name="capsule_event_archived">ورود به آرشیو مه‌آلود</string>
     <string name="capsule_event_session">نشست مطالعه</string>
     <string name="capsule_event_passage">متن نگه‌داشته شد</string>
