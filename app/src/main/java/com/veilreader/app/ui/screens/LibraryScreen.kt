@@ -2604,6 +2604,14 @@ private fun BookLibraryRow(
     onDetails: () -> Unit
 ) {
     val artifact = bookArtifactState(book, memory = artifactMemory)
+    val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
+    val favoriteLabel = stringResource(
+        if (book.favorite) R.string.library_remove_favorite_semantics
+        else R.string.library_add_favorite_semantics,
+        book.title
+    )
+    val recordLabel = stringResource(R.string.library_archive_record_semantics, book.title)
+    val unknownAuthor = stringResource(R.string.common_unknown_author)
     val registrationColor = when {
         book.finished -> VeilPalette.Brass
         artifact.recentlyOpened -> VeilPalette.Spirit
@@ -2617,7 +2625,7 @@ private fun BookLibraryRow(
             .fillMaxWidth()
             .clickable(
                 role = Role.Button,
-                onClickLabel = "Read ${book.title}",
+                onClickLabel = readLabel,
                 onClick = onOpen
             ),
         shape = MaterialTheme.shapes.extraSmall,
@@ -2659,9 +2667,7 @@ private fun BookLibraryRow(
                 Text(
                     buildString {
                         append(
-                            book.author.ifBlank {
-                                "Unknown author"
-                            }
+                            book.author.ifBlank { unknownAuthor }
                         )
                         book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                             append(" · ").append(series)
@@ -2683,10 +2689,12 @@ private fun BookLibraryRow(
                 ) {
                     Text(
                         when {
-                            book.finished -> "COMPLETED"
-                            book.progress > 0f ->
-                                "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}%"
-                            else -> "UNOPENED"
+                            book.finished -> stringResource(R.string.library_completed)
+                            book.progress > 0f -> stringResource(
+                                R.string.book_detail_percent_read,
+                                (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                            )
+                            else -> stringResource(R.string.library_unopened)
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass.copy(alpha = 0.84f)
@@ -2713,14 +2721,20 @@ private fun BookLibraryRow(
                 artifactMemory != null &&
                 (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
             ) {
+                val marksText = stringResource(
+                    R.string.library_mark_count,
+                    artifactMemory.highlightCount
+                )
+                val savedText = stringResource(
+                    R.string.library_saved_count,
+                    artifactMemory.bookmarkCount
+                )
                 Text(
                     buildString {
-                        if (artifactMemory.highlightCount > 0) {
-                            append(artifactMemory.highlightCount).append(" marks")
-                        }
+                        if (artifactMemory.highlightCount > 0) append(marksText)
                         if (artifactMemory.bookmarkCount > 0) {
                             if (isNotEmpty()) append(" · ")
-                            append(artifactMemory.bookmarkCount).append(" saved")
+                            append(savedText)
                         }
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -2734,11 +2748,7 @@ private fun BookLibraryRow(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = if (book.favorite) {
-                            "Remove ${book.title} from favorites"
-                        } else {
-                            "Add ${book.title} to favorites"
-                        }
+                        contentDescription = favoriteLabel
                     }
             ) {
                 FavoriteIcon(book.favorite, Modifier.size(17.dp))
@@ -2749,7 +2759,7 @@ private fun BookLibraryRow(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = "Archive record for ${book.title}"
+                        contentDescription = recordLabel
                     }
             ) {
                 EllipsisIcon(
@@ -2776,8 +2786,11 @@ private fun BookProgress(book: Book) {
         Text(
             when {
                 book.finished -> stringResource(R.string.book_detail_finished)
-                book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
-                else -> "Unopened"
+                book.progress > 0f -> stringResource(
+                    R.string.book_detail_percent_read,
+                    (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                )
+                else -> stringResource(R.string.book_detail_not_started)
             },
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2975,7 +2988,7 @@ private fun LibraryShelvesView(
                     LibrarySectionHeading(
                         eyebrow = group.eyebrow,
                         title = group.title,
-                        trailing = "${group.books.size} volumes"
+                        trailing = stringResource(R.string.library_group_volume_count, group.books.size)
                     )
                     BrassRule(Modifier.fillMaxWidth())
                     LazyRow(
@@ -2983,12 +2996,13 @@ private fun LibraryShelvesView(
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                     ) {
                         lazyRowItems(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
+                            val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
                             Column(
                                 modifier = Modifier
                                     .width(itemWidthDp.dp)
                                     .clickable(
                                         role = Role.Button,
-                                        onClickLabel = "Read ${book.title}"
+                                        onClickLabel = readLabel
                                     ) { onOpen(book) },
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
@@ -3013,9 +3027,11 @@ private fun LibraryShelvesView(
                                 )
                                 Text(
                                     when {
-                                        book.finished -> "Completed"
-                                        book.progress > 0f ->
-                                            "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
+                                        book.finished -> stringResource(R.string.book_detail_finished)
+                                        book.progress > 0f -> stringResource(
+                                            R.string.book_detail_percent_read,
+                                            (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                                        )
                                         else -> book.format.name
                                     },
                                     style = MaterialTheme.typography.labelSmall,
@@ -3045,17 +3061,18 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
         verticalAlignment = Alignment.CenterVertically
     ) {
         listOf(
-            LibraryViewMode.GALLERY to "Gallery",
-            LibraryViewMode.SHELVES to "Shelves",
-            LibraryViewMode.INDEX to "Index"
+            LibraryViewMode.GALLERY to stringResource(R.string.library_view_gallery),
+            LibraryViewMode.SHELVES to stringResource(R.string.library_view_shelves),
+            LibraryViewMode.INDEX to stringResource(R.string.library_view_index)
         ).forEach { (candidate, label) ->
             val active = mode == candidate
+            val viewDescription = stringResource(R.string.library_view_semantics, label)
             TextButton(
                 onClick = { onChange(candidate) },
                 modifier = Modifier
                     .heightIn(min = 48.dp)
                     .semantics {
-                        contentDescription = "$label view"
+                        contentDescription = viewDescription
                         selected = active
                     },
                 contentPadding = PaddingValues(horizontal = 9.dp),
