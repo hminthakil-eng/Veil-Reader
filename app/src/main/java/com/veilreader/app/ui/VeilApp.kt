@@ -759,6 +759,7 @@ fun VeilApp(
         )
     }
 }
+}
 
 internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
     windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
