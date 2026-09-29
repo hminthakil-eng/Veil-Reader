@@ -78,12 +78,15 @@ import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.archiveTimePhaseForHour
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+import java.time.LocalTime
+import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -204,6 +207,13 @@ fun LibraryScreen(
     var sort by rememberSaveable { mutableStateOf("Recent") }
     var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GALLERY.name) }
     val viewMode = libraryViewModeFromStored(viewModeName)
+    var temporalPhase by remember { mutableStateOf(archiveTimePhaseForHour(LocalTime.now().hour)) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000L)
+            temporalPhase = archiveTimePhaseForHour(LocalTime.now().hour)
+        }
+    }
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
@@ -384,7 +394,8 @@ fun LibraryScreen(
             )
             .libraryArchiveAtmosphere(
                 state = atmosphereState,
-                seed = books.size * 31 + collections.size * 7
+                seed = books.size * 31 + collections.size * 7,
+                timePhase = temporalPhase
             ),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
