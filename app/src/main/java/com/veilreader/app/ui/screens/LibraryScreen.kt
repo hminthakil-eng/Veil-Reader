@@ -2916,6 +2916,27 @@ private fun LibraryEmptyState(
 }
 
 @Composable
+private fun localizedShelfHeading(group: LibraryShelfGroup): Pair<String, String> =
+    when (group.eyebrow) {
+        "Filtered archive" ->
+            stringResource(R.string.library_group_filtered_eyebrow) to
+                stringResource(R.string.library_group_matching)
+        "Journey" ->
+            stringResource(R.string.library_group_journey) to
+                stringResource(R.string.library_shelf_reading)
+        "Collection" -> stringResource(R.string.library_collection) to group.title
+        "Series" -> stringResource(R.string.library_sort_series) to group.title
+        "Author" -> stringResource(R.string.library_sort_author) to group.title
+        "Record" ->
+            stringResource(R.string.library_group_record) to
+                stringResource(R.string.library_group_completed)
+        "Unopened" ->
+            stringResource(R.string.library_group_unopened) to
+                stringResource(R.string.library_group_waiting)
+        else -> group.eyebrow to group.title
+    }
+
+@Composable
 private fun LibraryShelvesView(
     groups: List<LibraryShelfGroup>,
     artifactMemoryByBookId: Map<String, BookArtifactMemory>,
@@ -2931,14 +2952,15 @@ private fun LibraryShelvesView(
     ) {
         groups.forEach { group ->
             key(group.eyebrow, group.title) {
+                val (eyebrow, heading) = localizedShelfHeading(group)
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
                     LibrarySectionHeading(
-                        eyebrow = group.eyebrow,
-                        title = group.title,
-                        trailing = "${group.books.size} volumes"
+                        eyebrow = eyebrow,
+                        title = heading,
+                        trailing = stringResource(R.string.library_group_count, group.books.size)
                     )
                     BrassRule(Modifier.fillMaxWidth())
                     LazyRow(
@@ -2951,7 +2973,7 @@ private fun LibraryShelvesView(
                                     .width(itemWidthDp.dp)
                                     .clickable(
                                         role = Role.Button,
-                                        onClickLabel = "Read ${book.title}"
+                                        onClickLabel = stringResource(R.string.library_group_read_book, book.title)
                                     ) { onOpen(book) },
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
@@ -2976,9 +2998,12 @@ private fun LibraryShelvesView(
                                 )
                                 Text(
                                     when {
-                                        book.finished -> "Completed"
+                                        book.finished -> stringResource(R.string.library_shelf_completed)
                                         book.progress > 0f ->
-                                            "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
+                                            stringResource(
+                                                R.string.library_group_read_progress,
+                                                (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                                            )
                                         else -> book.format.name
                                     },
                                     style = MaterialTheme.typography.labelSmall,
@@ -2990,7 +3015,7 @@ private fun LibraryShelvesView(
                                     modifier = Modifier.heightIn(min = 48.dp),
                                     contentPadding = PaddingValues(horizontal = 0.dp)
                                 ) {
-                                    Text("Archive record")
+                                    Text(stringResource(R.string.library_group_archive_record))
                                 }
                             }
                         }
