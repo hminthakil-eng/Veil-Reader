@@ -7,6 +7,7 @@ import android.view.View
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
@@ -235,6 +236,25 @@ fun ReaderScreen(
     val slidePageState = remember(opened.book.id) { SlidePageState() }
     var slideInputListener by remember(opened.book.id) {
         mutableStateOf<SlideNavigationInputListener?>(null)
+    }
+    var boundaryPulseSide by remember(opened.book.id) {
+        mutableStateOf<PaperCurlSide?>(null)
+    }
+    var boundaryPulseSerial by remember(opened.book.id) { mutableIntStateOf(0) }
+    val boundaryPulseAlpha = remember(opened.book.id) { Animatable(0f) }
+
+    LaunchedEffect(boundaryPulseSerial, opened.book.id) {
+        if (boundaryPulseSerial <= 0) return@LaunchedEffect
+        boundaryPulseAlpha.snapTo(0f)
+        boundaryPulseAlpha.animateTo(
+            targetValue = 1f,
+            animationSpec = tween(if (reducedMotion) 1 else 52)
+        )
+        boundaryPulseAlpha.animateTo(
+            targetValue = 0f,
+            animationSpec = tween(if (reducedMotion) 70 else 170)
+        )
+        boundaryPulseSide = null
     }
     LaunchedEffect(touchExplorationEnabled, opened.book.id) {
         if (touchExplorationEnabled) {
@@ -720,7 +740,9 @@ fun ReaderScreen(
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
-                    onBoundaryHit = {
+                    onBoundaryHit = { side ->
+                        boundaryPulseSide = side
+                        boundaryPulseSerial += 1
                         onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                     }
                 )
@@ -754,7 +776,9 @@ fun ReaderScreen(
                             )
                         }
                     },
-                    onBoundaryHit = {
+                    onBoundaryHit = { side ->
+                        boundaryPulseSide = side
+                        boundaryPulseSerial += 1
                         onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                     }
                 )
@@ -785,7 +809,9 @@ fun ReaderScreen(
                             )
                         }
                     },
-                    onBoundaryHit = {
+                    onBoundaryHit = { side ->
+                        boundaryPulseSide = side
+                        boundaryPulseSerial += 1
                         onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                     }
                 )
@@ -813,7 +839,9 @@ fun ReaderScreen(
                 onNavigationCommitted = {
                     onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                 },
-                onBoundaryHit = {
+                onBoundaryHit = { side ->
+                    boundaryPulseSide = side
+                    boundaryPulseSerial += 1
                     onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                 }
             )
@@ -984,6 +1012,15 @@ fun ReaderScreen(
                     ?.value
                     ?.readingProgression
                     ?: ReadingProgression.LTR,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        boundaryPulseSide?.let { side ->
+            ReaderBoundaryPulse(
+                side = side,
+                theme = readerAppearance.theme,
+                alpha = boundaryPulseAlpha.value,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -1621,6 +1658,49 @@ private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
     ReaderTheme.SEPIA -> Color(0xFFE2D0AA)
     ReaderTheme.DUSK -> Color(0xFF18151D)
     ReaderTheme.OLED -> Color.Black
+}
+
+@Composable
+private fun ReaderBoundaryPulse(
+    side: PaperCurlSide,
+    theme: ReaderTheme,
+    alpha: Float,
+    modifier: Modifier = Modifier
+) {
+    if (alpha <= 0.001f) return
+    val pulseColor = when (theme) {
+        ReaderTheme.PAPER -> Color(0xFF74542D)
+        ReaderTheme.SEPIA -> Color(0xFF684721)
+        ReaderTheme.DUSK -> Color(0xFFD9C7A5)
+        ReaderTheme.OLED -> Color(0xFFD8D8D8)
+    }
+
+    Canvas(modifier) {
+        val pulseWidth = 54.dp.toPx().coerceAtMost(size.width * 0.12f)
+        if (pulseWidth <= 0f) return@Canvas
+        val left = side == PaperCurlSide.LEFT
+        val startX = if (left) 0f else size.width - pulseWidth
+        val endX = if (left) pulseWidth else size.width
+        drawRect(
+            brush = Brush.horizontalGradient(
+                colorStops = if (left) {
+                    arrayOf(
+                        0f to pulseColor.copy(alpha = 0.16f * alpha),
+                        1f to Color.Transparent
+                    )
+                } else {
+                    arrayOf(
+                        0f to Color.Transparent,
+                        1f to pulseColor.copy(alpha = 0.16f * alpha)
+                    )
+                },
+                startX = startX,
+                endX = endX
+            ),
+            topLeft = Offset(startX, 0f),
+            size = Size(pulseWidth, size.height)
+        )
+    }
 }
 
 @Composable
