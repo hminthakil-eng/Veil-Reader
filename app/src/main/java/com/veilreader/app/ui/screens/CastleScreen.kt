@@ -50,6 +50,13 @@ import com.veilreader.app.domain.CastleMemoryState
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.Quest
+import com.veilreader.app.domain.ReadingCycleRecord
+import com.veilreader.app.domain.WorldMutationLedger
+import com.veilreader.app.domain.WorldProgressionProjection
+import com.veilreader.app.domain.deriveWorldMutationLedger
+import com.veilreader.app.domain.deriveWorldProgressionProjection
+import com.veilreader.app.domain.ritualAfterglowIntensity
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -70,20 +77,47 @@ fun CastleScreen(
     profile: ReaderProfile,
     onAdvanceRank: () -> Unit,
     onOpenRoom: (String) -> Unit,
+    quests: List<Quest> = emptyList(),
     books: List<Book> = emptyList(),
     highlights: List<Highlight> = emptyList(),
     bookmarks: List<Bookmark> = emptyList(),
-    readingSessions: List<ReadingSessionSnapshot> = emptyList()
+    readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    readingCycles: List<ReadingCycleRecord> = emptyList()
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
-    val memoryState = remember(books, highlights, bookmarks, readingSessions) {
+    val castleNowEpochMs = remember(books, highlights, bookmarks, readingSessions, readingCycles) {
+        System.currentTimeMillis()
+    }
+    val memoryState = remember(
+        books,
+        highlights,
+        bookmarks,
+        readingSessions,
+        readingCycles,
+        castleNowEpochMs
+    ) {
         deriveCastleMemoryState(
             books = books,
             highlights = highlights,
             bookmarks = bookmarks,
-            sessions = readingSessions
+            sessions = readingSessions,
+            readingCycles = readingCycles,
+            nowEpochMs = castleNowEpochMs
         )
+    }
+    val worldProjection = remember(profile, quests, memoryState) {
+        deriveWorldProgressionProjection(
+            profile = profile,
+            quests = quests,
+            memory = memoryState
+        )
+    }
+    val mutationLedger = remember(profile, memoryState) {
+        deriveWorldMutationLedger(profile, memoryState)
+    }
+    val ritualAfterglow = remember(profile.ritualAftermath, castleNowEpochMs) {
+        ritualAfterglowIntensity(profile.ritualAftermath, castleNowEpochMs)
     }
     val castleAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
@@ -95,7 +129,14 @@ fun CastleScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.CASTLE,
-                seed = profile.rankIndex * 31 + memoryState.volumeCount
+                seed = profile.rankIndex * 31 +
+                    memoryState.volumeCount +
+                    worldProjection.stage.ordinal * 101,
+                intensity = (
+                    0.82f +
+                        worldProjection.architecturalPresence * 0.14f +
+                        ritualAfterglow * 0.04f
+                    ).coerceIn(0.82f, 0.98f)
             ),
         contentAlignment = Alignment.TopCenter
     ) {
@@ -127,6 +168,10 @@ fun CastleScreen(
         )
 
         CastleMemoryInscription(memoryState)
+        CastleWorldProgressionInscription(worldProjection)
+        CastleMutationInscription(memoryState)
+        CastleRitualAftermath(profile, ritualAfterglow)
+        CastleMutationLedgerSummary(mutationLedger)
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
@@ -365,6 +410,136 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
 }
 
 @Composable
+private fun CastleWorldProgressionInscription(world: WorldProgressionProjection) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 2.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            "WORLD · ${world.stage.label.uppercase()}",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+            color = VeilPalette.Brass.copy(alpha = 0.82f)
+        )
+        Text(
+            world.inscription,
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.76f)
+        )
+        LinearProgressIndicator(
+            progress = { world.architecturalPresence },
+            modifier = Modifier.fillMaxWidth().height(2.dp),
+            color = VeilPalette.Brass.copy(alpha = 0.82f),
+            trackColor = VeilPalette.Moon.copy(alpha = 0.08f),
+            drawStopIndicator = {}
+        )
+    }
+}
+
+@Composable
+private fun CastleMutationInscription(memory: CastleMemoryState) {
+    if (
+        memory.mutationInscription.isBlank() ||
+        memory == CastleMemoryState.EMPTY
+    ) return
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.46f),
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.20f)),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Text(
+            memory.mutationInscription,
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = VeilPalette.Mist.copy(alpha = 0.80f)
+        )
+    }
+}
+
+@Composable
+private fun CastleRitualAftermath(
+    profile: ReaderProfile,
+    afterglow: Float
+) {
+    val aftermath = profile.ritualAftermath ?: return
+    val fromRank = profile.path.ranks.getOrNull(aftermath.fromRankIndex) ?: return
+    val toRank = profile.path.ranks.getOrNull(aftermath.toRankIndex) ?: return
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Ink.copy(alpha = 0.56f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.24f + afterglow * 0.36f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                "SEALED ADVANCEMENT",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+                color = VeilPalette.Brass
+            )
+            Text(
+                "$fromRank → $toRank",
+                style = MaterialTheme.typography.titleSmall,
+                color = VeilPalette.Moon
+            )
+            Text(
+                if (afterglow > 0f) {
+                    "The ritual seal still carries visible afterglow; the recorded advancement itself is permanent."
+                } else {
+                    "The ceremonial glow has faded; the recorded advancement remains in the keep."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = 0.74f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun CastleMutationLedgerSummary(ledger: WorldMutationLedger) {
+    if (ledger.entries.isEmpty()) return
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(
+            "WORLD MUTATIONS · ${ledger.durableCount} DURABLE",
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+            color = VeilPalette.Brass.copy(alpha = 0.80f)
+        )
+        ledger.entries.take(3).forEach { entry ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(
+                    entry.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    entry.inscription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.68f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun CastleKeepBackdrop(
     rankIndex: Int,
     rankCount: Int,
@@ -482,6 +657,33 @@ private fun CastleKeepBackdrop(
                 radius = 3.2.dp.toPx(),
                 center = Offset(x, baseY - 6.dp.toPx()),
                 style = Stroke(0.8.dp.toPx())
+            )
+        }
+
+        // Durable reading history becomes architecture, never a second unlock system.
+        repeat(memoryState.foundationCourses.coerceIn(2, 10)) { index ->
+            val y = baseY + (index - 1) * 2.1.dp.toPx()
+            drawLine(
+                color = stone.copy(alpha = 0.06f + memoryState.overallPresence * 0.05f),
+                start = Offset(w * 0.18f, y),
+                end = Offset(w * 0.82f, y),
+                strokeWidth = 0.72.dp.toPx()
+            )
+        }
+        repeat(memoryState.scriptoriumLamps.coerceIn(0, 7)) { index ->
+            val x = w * (0.24f + index * 0.085f)
+            drawCircle(
+                color = brass.copy(alpha = 0.10f + memoryState.archiveResonance * 0.16f),
+                radius = 2.1.dp.toPx(),
+                center = Offset(x, h * 0.44f)
+            )
+        }
+        repeat(memoryState.rereadRings.coerceIn(0, 6)) { index ->
+            drawCircle(
+                color = brass.copy(alpha = 0.035f + memoryState.patina * 0.06f),
+                radius = size.minDimension * (0.08f + index * 0.026f),
+                center = Offset(w * 0.50f, h * 0.64f),
+                style = Stroke(0.65.dp.toPx())
             )
         }
 
