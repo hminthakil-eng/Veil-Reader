@@ -123,6 +123,7 @@ fun ReaderScreen(
     library: LocalLibraryRepository,
     game: GameRepository,
     readerAppearance: ReaderAppearance,
+    globalReaderAppearance: ReaderAppearance = readerAppearance,
     appearanceScope: ReaderAppearanceScope = ReaderAppearanceScope.GLOBAL,
     onReaderAppearanceChange: (ReaderAppearanceScope, ReaderAppearance) -> Unit,
     onAppearanceScopeChange: (ReaderAppearanceScope) -> Unit = {},
@@ -208,6 +209,12 @@ fun ReaderScreen(
     LaunchedEffect(appearanceScope, opened.book.id) {
         activeAppearanceScope = appearanceScope
     }
+    val scopedReaderAppearance =
+        if (activeAppearanceScope == ReaderAppearanceScope.GLOBAL) {
+            globalReaderAppearance
+        } else {
+            readerAppearance
+        }
     val latestAppearance = rememberUpdatedState(readerAppearance)
     val paperCurlConfig = remember(readerAppearance.theme) {
         when (readerAppearance.theme) {
@@ -1212,7 +1219,7 @@ fun ReaderScreen(
             }
         ) {
             EpubAppearancePanel(
-                appearance = readerAppearance,
+                appearance = scopedReaderAppearance,
                 scope = activeAppearanceScope,
                 onScopeChange = { selected ->
                     if (selected != activeAppearanceScope) {
@@ -1255,7 +1262,7 @@ fun ReaderScreen(
                 )
                 PdfZoomControls(
                     navigator = navigator,
-                    appearance = readerAppearance,
+                    appearance = scopedReaderAppearance,
                     onAppearanceChange = { updated ->
                         readerViewModel.onUserInteraction()
                         onReaderAppearanceChange(activeAppearanceScope, updated)
