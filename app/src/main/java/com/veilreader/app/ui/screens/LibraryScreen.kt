@@ -1824,15 +1824,15 @@ private fun ArchiveOverview(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            ArchiveStat("Books", total, Modifier.weight(1f))
-                            ArchiveStat("Reading", reading, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_books), total, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_reading), reading, Modifier.weight(1f))
                         }
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            ArchiveStat("Finished", finished, Modifier.weight(1f))
-                            ArchiveStat("Collections", collections, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_finished), finished, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_collections), collections, Modifier.weight(1f))
                         }
                     }
                 } else {
@@ -1840,10 +1840,10 @@ private fun ArchiveOverview(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                     ) {
-                        ArchiveStat("Books", total, Modifier.weight(1f))
-                        ArchiveStat("Reading", reading, Modifier.weight(1f))
-                        ArchiveStat("Finished", finished, Modifier.weight(1f))
-                        ArchiveStat("Collections", collections, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_books), total, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_reading), reading, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_finished), finished, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_collections), collections, Modifier.weight(1f))
                     }
                 }
             }
@@ -1867,13 +1867,15 @@ private fun ArchiveStat(label: String, count: Int, modifier: Modifier = Modifier
 private fun LibraryAtmosphereLedger(state: LibraryAtmosphereState) {
     if (state.volumeCount <= 0) return
 
-    val phrase = when {
-        state.deepQuiet >= 0.72f -> "The lower stacks are quiet and deep."
-        state.archiveDensity >= 0.72f -> "The Archive has grown into many chambers."
-        state.memoryWarmth >= 0.58f -> "Reading light is active through the stacks."
-        state.archiveDensity >= 0.32f -> "The shelves are beginning to gain depth."
-        else -> "The first shelves are taking shape."
-    }
+    val phrase = stringResource(
+        when {
+            state.deepQuiet >= 0.72f -> R.string.library_atmosphere_deep_quiet
+            state.archiveDensity >= 0.72f -> R.string.library_atmosphere_many_chambers
+            state.memoryWarmth >= 0.58f -> R.string.library_atmosphere_reading_light
+            state.archiveDensity >= 0.32f -> R.string.library_atmosphere_gaining_depth
+            else -> R.string.library_atmosphere_first_shelves
+        }
+    )
 
     Row(
         modifier = Modifier
@@ -2108,6 +2110,23 @@ private fun LibraryArchiveWings(
 }
 
 @Composable
+private fun libraryWingSummary(
+    volumeCount: Int,
+    activeCount: Int,
+    completedCount: Int
+): String {
+    val parts = mutableListOf<String>()
+    parts += stringResource(
+        if (volumeCount == 1) R.string.library_wing_volume_one
+        else R.string.library_wing_volumes_many,
+        volumeCount
+    )
+    if (activeCount > 0) parts += stringResource(R.string.library_wing_active, activeCount)
+    if (completedCount > 0) parts += stringResource(R.string.library_wing_sealed, completedCount)
+    return parts.joinToString(" · ")
+}
+
+@Composable
 private fun ArchiveWingPortal(
     wing: ArchiveWing,
     selected: Boolean,
@@ -2154,10 +2173,12 @@ private fun ArchiveWingPortal(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    when (wing.kind) {
-                        ArchiveWingKind.COLLECTION -> "COLLECTION WING"
-                        ArchiveWingKind.SERIES -> "SERIES CORRIDOR"
-                    },
+                    stringResource(
+                        when (wing.kind) {
+                            ArchiveWingKind.COLLECTION -> R.string.library_wing_collection
+                            ArchiveWingKind.SERIES -> R.string.library_wing_series
+                        }
+                    ),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
                     color = VeilPalette.Brass.copy(alpha = if (selected) 0.96f else 0.72f)
                 )
@@ -2169,16 +2190,11 @@ private fun ArchiveWingPortal(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    buildString {
-                        append(wing.volumeCount)
-                            .append(if (wing.volumeCount == 1) " volume" else " volumes")
-                        if (wing.activeCount > 0) {
-                            append(" · ").append(wing.activeCount).append(" active")
-                        }
-                        if (wing.completedCount > 0) {
-                            append(" · ").append(wing.completedCount).append(" sealed")
-                        }
-                    },
+                    libraryWingSummary(
+                        volumeCount = wing.volumeCount,
+                        activeCount = wing.activeCount,
+                        completedCount = wing.completedCount
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.58f),
                     maxLines = 2,
@@ -2265,11 +2281,13 @@ private fun MemoryReturnCard(
     book: Book,
     onInspect: () -> Unit
 ) {
-    val eyebrow = when (event.kind) {
-        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> "RETURN EVENT"
-        LibraryMemoryEventKind.OLD_MARGIN_RETURN -> "MARGIN ECHO"
-        LibraryMemoryEventKind.LONG_SILENCE_RETURN -> "ARCHIVE RETURN"
-    }
+    val eyebrow = stringResource(
+        when (event.kind) {
+            LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> R.string.library_memory_event_return
+            LibraryMemoryEventKind.OLD_MARGIN_RETURN -> R.string.library_memory_event_margin_echo
+            LibraryMemoryEventKind.LONG_SILENCE_RETURN -> R.string.library_memory_event_archive_return
+        }
+    )
 
     Surface(
         onClick = onInspect,
@@ -2380,7 +2398,11 @@ private fun DeepShelfPortal(
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "$count ${if (count == 1) "volume has" else "volumes have"} gone quiet",
+                    stringResource(
+                        if (count == 1) R.string.library_quiet_volume_one
+                        else R.string.library_quiet_volumes_many,
+                        count
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     color = VeilPalette.Moon
                 )
