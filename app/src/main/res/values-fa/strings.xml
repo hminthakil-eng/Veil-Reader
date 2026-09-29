@@ -466,4 +466,60 @@
         <item quantity="one">%1$d بار بازدید دوباره</item>
         <item quantity="other">%1$d بار بازدید دوباره</item>
     </plurals>
+
+    <string name="capsule_sealed_record">رکورد مهرشدهٔ مطالعه</string>
+    <string name="capsule_sealed_record_cycle">رکورد مهرشدهٔ مطالعه · چرخه %1$d</string>
+    <string name="capsule_completed">تمام‌شده · %1$s</string>
+    <string name="capsule_open_history">باز کردن تاریخچهٔ حفظ‌شده</string>
+    <string name="capsule_sheet_sealed">کپسول زمان · مهرشده</string>
+    <string name="capsule_sheet_sealed_cycle">کپسول زمان · چرخه %1$d · مهرشده</string>
+    <string name="capsule_metric_sessions">نشست‌ها</string>
+    <string name="capsule_metric_active">زمان فعال</string>
+    <string name="capsule_metric_passages">بخش‌ها</string>
+    <string name="capsule_metric_notes_marks">یادداشت / نشانک</string>
+    <string name="capsule_reading_history">تاریخچهٔ مطالعه</string>
+    <string name="capsule_empty_history">این جلد کامل‌شده مربوط به زمانی پیش از ثبت جزئیات نشست‌هاست. وضعیت تکمیل حفظ شده، اما timeline تاریخ‌دار باقی نمانده است.</string>
+    <string name="capsule_completion_unknown">تکمیل به‌عنوان وضعیت حفظ شده است. این نسخهٔ آرشیو لحظهٔ دقیق نخستین تکمیل کتاب را ذخیره نمی‌کند، بنابراین Veil زمانی را از خودش نمی‌سازد.</string>
+    <string name="capsule_close_record">بستن رکورد</string>
+    <string name="capsule_date_unknown">تاریخ نامشخص</string>
+    <string name="capsule_event_archived">وارد آرشیو مه‌خاکستری شد</string>
+    <string name="capsule_event_reading_session">نشست مطالعه</string>
+    <string name="capsule_event_passage_preserved">بخش حفظ شد</string>
+    <string name="capsule_event_annotated_passage">بخش یادداشت‌دار حفظ شد</string>
+    <string name="capsule_event_location_marked">موقعیت نشان‌گذاری شد</string>
+    <string name="capsule_event_first_opened">نخستین بازشدن</string>
+    <string name="capsule_event_reached_25">رسیدن به ۲۵٪</string>
+    <string name="capsule_event_reached_50">رسیدن به ۵۰٪</string>
+    <string name="capsule_event_reached_75">رسیدن به ۷۵٪</string>
+    <string name="capsule_event_completed">چرخهٔ مطالعه کامل شد</string>
+    <string name="capsule_event_latest_activity">آخرین فعالیت ثبت‌شدهٔ جلد</string>
+    <string name="capsule_active_duration">%1$s فعال</string>
+    <string name="capsule_duration_hours_minutes">%1$d ساعت %2$d دقیقه</string>
+    <string name="capsule_duration_hours">%1$d ساعت</string>
+    <string name="capsule_duration_minutes">%1$d دقیقه</string>
+    <string name="capsule_duration_less_than_minute">کمتر از ۱ دقیقه</string>
+    <plurals name="capsule_sessions_count">
+        <item quantity="one">%1$d نشست</item>
+        <item quantity="other">%1$d نشست</item>
+    </plurals>
+    <plurals name="capsule_passages_count">
+        <item quantity="one">%1$d بخش</item>
+        <item quantity="other">%1$d بخش</item>
+    </plurals>
+    <plurals name="capsule_notes_count">
+        <item quantity="one">%1$d یادداشت</item>
+        <item quantity="other">%1$d یادداشت</item>
+    </plurals>
+    <plurals name="capsule_paced_turns_count">
+        <item quantity="one">%1$d ورق‌زدن سنجیده</item>
+        <item quantity="other">%1$d ورق‌زدن سنجیده</item>
+    </plurals>
+    <plurals name="capsule_highlight_events_count">
+        <item quantity="one">%1$d رویداد هایلایت</item>
+        <item quantity="other">%1$d رویداد هایلایت</item>
+    </plurals>
+    <plurals name="capsule_note_events_count">
+        <item quantity="one">%1$d رویداد یادداشت</item>
+        <item quantity="other">%1$d رویداد یادداشت</item>
+    </plurals>
 </resources>
