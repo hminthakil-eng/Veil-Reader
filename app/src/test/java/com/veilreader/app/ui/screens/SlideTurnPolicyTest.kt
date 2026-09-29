@@ -114,4 +114,51 @@ class SlideTurnPolicyTest {
         )
     }
 
+    @Test
+    fun `slide intent is density aware and rejects diagonal jitter`() {
+        assertFalse(
+            hasDeliberateSlideIntent(
+                offsetX = 20f,
+                offsetY = 2f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertFalse(
+            hasDeliberateSlideIntent(
+                offsetX = 42f,
+                offsetY = 40f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertTrue(
+            hasDeliberateSlideIntent(
+                offsetX = 48f,
+                offsetY = 12f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+    }
+
+    @Test
+    fun `slide drag starts weighted and converges toward the finger`() {
+        val early = slideHorizontalDragResponse(0.05f)
+        val middle = slideHorizontalDragResponse(0.50f)
+        val late = slideHorizontalDragResponse(0.95f)
+
+        assertTrue(early < middle)
+        assertTrue(middle < late)
+        assertTrue(early >= 0.75f)
+        assertTrue(late <= 0.98f)
+    }
+
+    @Test
+    fun `slide edge shadow belongs only to an in-flight page`() {
+        assertTrue(slideEdgeShadowIntensity(0f) == 0f)
+        assertTrue(slideEdgeShadowIntensity(1f) < 0.0001f)
+        assertTrue(slideEdgeShadowIntensity(0.5f) > 0.99f)
+    }
+
 }
