@@ -318,6 +318,15 @@ fun VeilBottomDock(
 }
 
 @Composable
+private fun veilTabLabel(tab: VeilTab): String =
+    when (tab) {
+        VeilTab.READING -> stringResource(R.string.nav_reading)
+        VeilTab.LIBRARY -> stringResource(R.string.nav_library)
+        VeilTab.CASTLE -> stringResource(R.string.nav_castle)
+        VeilTab.PATH -> stringResource(R.string.nav_path)
+        VeilTab.PROFILE -> stringResource(R.string.nav_profile)
+    }
+@Composable
 private fun VeilDockItem(
     tab: VeilTab,
     selected: Boolean,
@@ -330,6 +339,7 @@ private fun VeilDockItem(
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
+    val tabLabel = veilTabLabel(tab)
 
     Column(
         modifier = modifier
@@ -344,11 +354,14 @@ private fun VeilDockItem(
         VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(21.dp))
         Spacer(Modifier.height(3.dp))
         Text(
-            tab.label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 9.5.sp,
-                letterSpacing = 0.48.sp,
-                fontWeight = FontWeight.Medium
+            tabLabel,
+            style = veilContentTextStyle(
+                MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 9.5.sp,
+                    letterSpacing = 0.48.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                tabLabel
             ),
             color = foreground,
             maxLines = 2,
@@ -397,6 +410,7 @@ fun VeilNavigationRail(
             ) {
                 VeilTab.entries.forEach { tab ->
                     val isSelected = selected == tab
+                    val tabLabel = veilTabLabel(tab)
                     val foreground = if (isSelected) {
                         VeilPalette.Brass
                     } else {
@@ -414,10 +428,13 @@ fun VeilNavigationRail(
                         VeilTabIcon(tab, foreground, Modifier.size(22.dp))
                         Spacer(Modifier.height(5.dp))
                         Text(
-                            tab.label,
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontSize = 9.5.sp,
-                                letterSpacing = 0.36.sp
+                            tabLabel,
+                            style = veilContentTextStyle(
+                                MaterialTheme.typography.labelMedium.copy(
+                                    fontSize = 9.5.sp,
+                                    letterSpacing = 0.36.sp
+                                ),
+                                tabLabel
                             ),
                             color = foreground,
                             maxLines = 2,
