@@ -14,6 +14,7 @@ data class HighlightMemory(
     val bookActivityAfterMark: Boolean,
     val revisitCount: Int,
     val lastViewedAtEpochMs: Long?,
+    val lastViewedDaysAgo: Int?,
     val annotated: Boolean,
     val eligibleForEcho: Boolean,
     val resonanceScore: Int
@@ -64,6 +65,11 @@ fun deriveHighlightMemory(
 
     val exactVisits = exactPassageVisits(highlight, passageVisits)
     val lastViewedAt = exactVisits.lastOrNull()?.viewedAtEpochMs
+    val lastViewedDaysAgo = lastViewedAt?.let { viewedAt ->
+        ((safeNow - viewedAt).coerceAtLeast(0L) / DAY_MS)
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
+    }
     val annotated = highlight.note.isNotBlank()
     val eligible = depth != EchoDepth.FRESH
 
@@ -95,6 +101,7 @@ fun deriveHighlightMemory(
         bookActivityAfterMark = laterActivity,
         revisitCount = exactVisits.size,
         lastViewedAtEpochMs = lastViewedAt,
+        lastViewedDaysAgo = lastViewedDaysAgo,
         annotated = annotated,
         eligibleForEcho = eligible,
         resonanceScore = resonance
