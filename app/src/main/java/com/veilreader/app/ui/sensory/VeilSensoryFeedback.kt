@@ -70,7 +70,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         if (snapshot.hapticsEnabled) {
             val feedback = when (event) {
                 VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
-                VeilSensoryEvent.SLIDE_TURN -> HapticFeedbackConstants.CLOCK_TICK
+                VeilSensoryEvent.SLIDE_TURN -> HapticFeedbackConstants.VIRTUAL_KEY
                 VeilSensoryEvent.PAGED_TURN -> HapticFeedbackConstants.KEYBOARD_TAP
                 VeilSensoryEvent.BOUNDARY -> HapticFeedbackConstants.CONTEXT_CLICK
                 VeilSensoryEvent.MARK,
