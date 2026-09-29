@@ -151,4 +151,36 @@
     <string name="reader_system_brightness">Use system brightness</string>
     <string name="reader_system_brightness_description">Follows the device and restores naturally.</string>
     <string name="reader_custom_brightness_description">Reader brightness is isolated to this reading session.</string>
+
+    <!-- Reader chrome and passage-note controls -->
+    <string name="reader_surface_label">Reading surface</string>
+    <string name="reader_show_controls">Show reading controls</string>
+    <string name="reader_hide_controls">Hide reading controls</string>
+    <string name="reader_close">Close reader</string>
+    <string name="reader_percent_read">%1$d%% read</string>
+    <string name="reader_notes">Notes</string>
+    <string name="reader_mark">Mark</string>
+    <string name="reader_type">Type</string>
+    <string name="reader_zoom">Zoom</string>
+    <string name="reader_return">RETURN</string>
+    <string name="reader_previous_location">Previous location</string>
+    <string name="reader_note_eyebrow">HIDDEN ARCHIVE · PASSAGE NOTE</string>
+    <string name="reader_selected_passage">SELECTED PASSAGE</string>
+    <string name="reader_note_hint">Write what you want to remember…</string>
+    <string name="reader_characters_count">Characters: %1$d</string>
+    <string name="reader_saving_note">Saving…</string>
+    <string name="reader_save_note">Save note</string>
+
+    <!-- Reader feedback and recoverable errors -->
+    <string name="reader_highlighted">Passage highlighted</string>
+    <string name="reader_already_highlighted">Passage already highlighted</string>
+    <string name="reader_passage_save_failed">That passage could not be saved.</string>
+    <string name="reader_previous_location_failed">The previous reading location could not be restored.</string>
+    <string name="reader_close_storage_failed">The latest reading position was not saved. Try closing the book again.</string>
+    <string name="reader_bookmark_saved">Bookmark saved</string>
+    <string name="reader_bookmark_duplicate">This location is already bookmarked</string>
+    <string name="reader_note_saved">Note saved</string>
+    <string name="reader_note_save_failed">The note could not be saved.</string>
+    <string name="reader_saved_location_failed">That saved location could not be opened.</string>
+    <string name="reader_chapter_failed">This chapter could not be opened.</string>
 </resources>
