@@ -48,4 +48,20 @@ class LibrarySearchTest {
         assertEquals(stored, normalizeLibrarySearchText("جلد ١٢"))
         assertEquals(stored, normalizeLibrarySearchText("جلد12"))
     }
+
+    @Test
+    fun `localized decimal metadata accepts Persian Arabic and comma keyboards`() {
+        assertEquals(12.5, parseLocalizedDecimalInput("۱۲٫۵")!!, 0.0001)
+        assertEquals(12.5, parseLocalizedDecimalInput("١٢٫٥")!!, 0.0001)
+        assertEquals(12.5, parseLocalizedDecimalInput("12,5")!!, 0.0001)
+        assertEquals(-2.0, parseLocalizedDecimalInput("−۲")!!, 0.0001)
+    }
+
+    @Test
+    fun `localized decimal metadata rejects malformed and non finite values`() {
+        assertEquals(null, parseLocalizedDecimalInput("۱۲٫۵٫۲"))
+        assertEquals(null, parseLocalizedDecimalInput("NaN"))
+        assertEquals(null, parseLocalizedDecimalInput("Infinity"))
+    }
+
 }
