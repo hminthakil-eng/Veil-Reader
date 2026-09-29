@@ -376,16 +376,20 @@ fun BookThresholdTransitionOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
+                val stageLabel = when {
+                    ritual != null && stage == BookEntryStage.PREPARING ->
+                        stringResource(R.string.entry_stage_return_ritual)
+                    ritual != null -> stringResource(R.string.entry_stage_old_seal)
+                    stage == BookEntryStage.PREPARING ->
+                        stringResource(R.string.entry_stage_opening_threshold)
+                    else -> stringResource(R.string.entry_stage_entering_sanctuary)
+                }
                 Text(
-                    when {
-                        ritual != null && stage == BookEntryStage.PREPARING ->
-                            stringResource(R.string.entry_stage_return_ritual)
-                        ritual != null -> stringResource(R.string.entry_stage_old_seal)
-                        stage == BookEntryStage.PREPARING ->
-                            stringResource(R.string.entry_stage_opening_threshold)
-                        else -> stringResource(R.string.entry_stage_entering_sanctuary)
-                    },
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.65.sp),
+                    stageLabel,
+                    style = veilContentTextStyle(
+                        MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.65.sp),
+                        stageLabel
+                    ),
                     color = VeilPalette.Brass
                 )
 
@@ -470,15 +474,20 @@ fun BookThresholdTransitionOverlay(
                         ),
                         color = VeilPalette.Brass
                     )
+                    val silenceLabel = returnRitualSilenceLabel(ritual.silenceMillis)
                     Text(
-                        returnRitualSilenceLabel(ritual.silenceMillis),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.05.sp),
+                        silenceLabel,
+                        style = veilContentTextStyle(
+                            MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.05.sp),
+                            silenceLabel
+                        ),
                         color = VeilPalette.Moon.copy(alpha = 0.82f)
                     )
                     if (stage == BookEntryStage.PREPARING) {
+                        val invocation = stringResource(R.string.ritual_forgotten_invocation)
                         Text(
-                            stringResource(R.string.ritual_forgotten_invocation),
-                            style = MaterialTheme.typography.bodySmall,
+                            invocation,
+                            style = veilContentTextStyle(MaterialTheme.typography.bodySmall, invocation),
                             color = VeilPalette.Mist.copy(alpha = 0.66f)
                         )
                         ritual.fragment?.let { fragment ->
@@ -498,7 +507,10 @@ fun BookThresholdTransitionOverlay(
                     bookEntryReturnGapLabel(memory)?.let { returnLabel ->
                         Text(
                             returnLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
+                            style = veilContentTextStyle(
+                                MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
+                                returnLabel
+                            ),
                             color = VeilPalette.Brass.copy(alpha = 0.86f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -540,13 +552,14 @@ fun BookThresholdTransitionOverlay(
                         trackColor = VeilPalette.Moon.copy(alpha = 0.08f)
                     )
                 } else {
+                    val handoffLabel = when {
+                        ritual != null -> stringResource(R.string.entry_handoff_ritual)
+                        memory.returning -> stringResource(R.string.entry_handoff_returning)
+                        else -> stringResource(R.string.entry_handoff_first)
+                    }
                     Text(
-                        when {
-                            ritual != null -> stringResource(R.string.entry_handoff_ritual)
-                            memory.returning -> stringResource(R.string.entry_handoff_returning)
-                            else -> stringResource(R.string.entry_handoff_first)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
+                        handoffLabel,
+                        style = veilContentTextStyle(MaterialTheme.typography.bodySmall, handoffLabel),
                         color = VeilPalette.Mist.copy(alpha = 0.58f)
                     )
                 }
@@ -620,12 +633,15 @@ private fun ReturnRitualFragmentPanel(
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+            style = veilContentTextStyle(
+                MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                label
+            ),
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
         Text(
             "“$quote”",
-            style = MaterialTheme.typography.bodySmall,
+            style = veilContentTextStyle(MaterialTheme.typography.bodySmall, quote),
             color = VeilPalette.Moon.copy(alpha = 0.80f),
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
