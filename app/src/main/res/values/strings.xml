@@ -228,7 +228,7 @@
     <string name="archive_try_capsule_search">Try a different title, author, or seal code.</string>
     <string name="archive_manuscript_note">MANUSCRIPT NOTE</string>
     <string name="archive_note_hint">Write in the margin…</string>
-    <string name="archive_folio">FOLIO %1$03d</string>
+    <string name="archive_folio">FOLIO %1$s</string>
     <string name="archive_echo">ECHO</string>
     <string name="archive_annotated">ANNOTATED</string>
     <string name="archive_passage">PASSAGE</string>
@@ -262,11 +262,11 @@
 
     <!-- Sealed reading history -->
     <string name="capsule_sealed_record">SEALED READING RECORD</string>
-    <string name="capsule_sealed_cycle">SEALED READING RECORD · CYCLE %1$d</string>
+    <string name="capsule_sealed_cycle">SEALED READING RECORD · CYCLE %1$s</string>
     <string name="capsule_completed_at">COMPLETED · %1$s</string>
     <string name="capsule_open_history">Open preserved history</string>
     <string name="capsule_sheet_title">TIME CAPSULE · SEALED</string>
-    <string name="capsule_sheet_cycle">TIME CAPSULE · CYCLE %1$d · SEALED</string>
+    <string name="capsule_sheet_cycle">TIME CAPSULE · CYCLE %1$s · SEALED</string>
     <string name="capsule_sessions">SESSIONS</string>
     <string name="capsule_active">ACTIVE</string>
     <string name="capsule_passages">PASSAGES</string>
@@ -276,16 +276,16 @@
     <string name="capsule_completion_unknown">Completion is preserved as a state. This archive version does not store the exact instant the book first reached completion, so Veil does not invent one.</string>
     <string name="capsule_close">Close record</string>
     <string name="capsule_date_unknown">DATE UNKNOWN</string>
-    <string name="capsule_hours">%1$dH</string>
-    <string name="capsule_hours_minutes">%1$dH %2$dM</string>
-    <string name="capsule_minutes">%1$dM</string>
+    <string name="capsule_hours">%1$sH</string>
+    <string name="capsule_hours_minutes">%1$sH %2$sM</string>
+    <string name="capsule_minutes">%1$sM</string>
     <string name="capsule_less_than_minute">&lt;1M</string>
-    <string name="capsule_one_session">%1$d session</string>
-    <string name="capsule_many_sessions">%1$d sessions</string>
-    <string name="capsule_one_passage">%1$d passage</string>
-    <string name="capsule_many_passages">%1$d passages</string>
-    <string name="capsule_one_note">%1$d note</string>
-    <string name="capsule_many_notes">%1$d notes</string>
+    <string name="capsule_one_session">%1$s session</string>
+    <string name="capsule_many_sessions">%1$s sessions</string>
+    <string name="capsule_one_passage">%1$s passage</string>
+    <string name="capsule_many_passages">%1$s passages</string>
+    <string name="capsule_one_note">%1$s note</string>
+    <string name="capsule_many_notes">%1$s notes</string>
     <string name="capsule_event_archived">Entered the Grayfog Archive</string>
     <string name="capsule_event_session">Reading session</string>
     <string name="capsule_event_passage">Passage preserved</string>
