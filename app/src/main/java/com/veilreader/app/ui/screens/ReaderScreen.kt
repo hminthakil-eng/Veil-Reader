@@ -480,6 +480,9 @@ fun ReaderScreen(
     var locationTitle by remember(opened.book.id) {
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
+    var currentLocationHref by remember(opened.book.id) {
+        mutableStateOf(opened.initialLocator?.href?.toString())
+    }
     val snackbarHostState = remember { SnackbarHostState() }
     val snackbarBottom by animateDpAsState(
         targetValue = if (controlsVisible) 104.dp else 16.dp,
@@ -821,6 +824,7 @@ fun ReaderScreen(
             .debounce(500)
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
+                currentLocationHref = locator.href.toString()
 
                 val pagePreviewActive =
                     shouldSuppressNavigatorLocatorDuringPagePreview(
@@ -1708,6 +1712,7 @@ fun ReaderScreen(
     if (showNotebook) {
         ReaderNotebook(
             opened = opened,
+            currentHref = currentLocationHref,
             highlights = bookHighlights,
             bookmarks = bookBookmarks,
             passageVisits = bookPassageVisits,
