@@ -24,6 +24,7 @@ import com.veilreader.app.domain.ReadingTimeCapsule
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
+import java.text.NumberFormat
 import java.util.Date
 
 @Composable
@@ -65,7 +66,7 @@ fun ReadingTimeCapsuleCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sealed_cycle, capsule.cycleIndex)
+                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sealed_cycle, capsuleNumber(capsule.cycleIndex))
                         else stringResource(R.string.capsule_sealed_record),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
@@ -167,7 +168,7 @@ fun ReadingTimeCapsuleSheet(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sheet_cycle, capsule.cycleIndex)
+                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sheet_cycle, capsuleNumber(capsule.cycleIndex))
                         else stringResource(R.string.capsule_sheet_title),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass
@@ -195,7 +196,7 @@ fun ReadingTimeCapsuleSheet(
             ) {
                 CapsuleMetric(
                     label = stringResource(R.string.capsule_sessions),
-                    value = capsule.sessionCount.toString(),
+                    value = capsuleNumber(capsule.sessionCount),
                     modifier = Modifier.weight(1f)
                 )
                 CapsuleMetric(
@@ -210,12 +211,12 @@ fun ReadingTimeCapsuleSheet(
             ) {
                 CapsuleMetric(
                     label = stringResource(R.string.capsule_passages),
-                    value = capsule.highlightCount.toString(),
+                    value = capsuleNumber(capsule.highlightCount),
                     modifier = Modifier.weight(1f)
                 )
                 CapsuleMetric(
                     label = stringResource(R.string.capsule_notes_marks),
-                    value = "${capsule.noteCount} / ${capsule.bookmarkCount}",
+                    value = "${capsuleNumber(capsule.noteCount)} / ${capsuleNumber(capsule.bookmarkCount)}",
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -385,6 +386,12 @@ private fun eventColor(kind: ReadingHistoryEventKind) = when (kind) {
 }
 
 @Composable
+private fun capsuleNumber(value: Number): String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    return NumberFormat.getIntegerInstance(locale).format(value)
+}
+
+@Composable
 private fun capsuleEventTitle(event: ReadingHistoryEvent): String = when (event.kind) {
     ReadingHistoryEventKind.ARCHIVED -> stringResource(R.string.capsule_event_archived)
     ReadingHistoryEventKind.READING_SESSION -> stringResource(R.string.capsule_event_session)
@@ -414,10 +421,10 @@ private fun formatCapsuleDuration(activeMillis: Long): String {
         minutes >= 60L -> {
             val hours = minutes / 60L
             val rest = minutes % 60L
-            if (rest == 0L) stringResource(R.string.capsule_hours, hours)
-            else stringResource(R.string.capsule_hours_minutes, hours, rest)
+            if (rest == 0L) stringResource(R.string.capsule_hours, capsuleNumber(hours))
+            else stringResource(R.string.capsule_hours_minutes, capsuleNumber(hours), capsuleNumber(rest))
         }
-        minutes > 0L -> stringResource(R.string.capsule_minutes, minutes)
+        minutes > 0L -> stringResource(R.string.capsule_minutes, capsuleNumber(minutes))
         else -> stringResource(R.string.capsule_less_than_minute)
     }
 }
@@ -426,16 +433,16 @@ private fun formatCapsuleDuration(activeMillis: Long): String {
 private fun buildCapsuleMetricLine(capsule: ReadingTimeCapsule): String {
     val sessions = stringResource(
         if (capsule.sessionCount == 1) R.string.capsule_one_session else R.string.capsule_many_sessions,
-        capsule.sessionCount
+        capsuleNumber(capsule.sessionCount)
     )
     val passages = stringResource(
         if (capsule.highlightCount == 1) R.string.capsule_one_passage else R.string.capsule_many_passages,
-        capsule.highlightCount
+        capsuleNumber(capsule.highlightCount)
     )
     val duration = formatCapsuleDuration(capsule.totalActiveMillis)
     val notes = if (capsule.noteCount > 0) stringResource(
         if (capsule.noteCount == 1) R.string.capsule_one_note else R.string.capsule_many_notes,
-        capsule.noteCount
+        capsuleNumber(capsule.noteCount)
     ) else null
     return listOfNotNull(sessions, duration, passages, notes).joinToString(" · ")
 }
