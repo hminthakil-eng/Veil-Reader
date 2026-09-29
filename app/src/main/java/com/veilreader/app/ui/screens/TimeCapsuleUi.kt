@@ -9,6 +9,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.veilreader.app.R
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -62,12 +65,14 @@ fun ReadingTimeCapsuleCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (capsule.cycleIndex > 1) "SEALED READING RECORD · CYCLE ${capsule.cycleIndex}"
-                        else "SEALED READING RECORD",
+                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sealed_cycle, capsule.cycleIndex)
+                        else stringResource(R.string.capsule_sealed_record),
+                        modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                        color = VeilPalette.Brass
+                        color = VeilPalette.Brass,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Spacer(Modifier.weight(1f))
                     Text(
                         capsule.sealCode,
                         style = MaterialTheme.typography.labelSmall,
@@ -105,14 +110,14 @@ fun ReadingTimeCapsuleCard(
                     ?.takeIf { capsule.exactCompletionTimeKnown && it > 0L }
                     ?.let { completedAt ->
                         Text(
-                            "COMPLETED · ${formatCapsuleDate(completedAt)}",
+                            stringResource(R.string.capsule_completed_at, formatCapsuleDate(completedAt)),
                             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
                             color = VeilPalette.Brass.copy(alpha = 0.78f)
                         )
                     }
 
                 Text(
-                    "Open preserved history",
+                    stringResource(R.string.capsule_open_history),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass.copy(alpha = 0.88f)
                 )
@@ -162,8 +167,8 @@ fun ReadingTimeCapsuleSheet(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        if (capsule.cycleIndex > 1) "TIME CAPSULE · CYCLE ${capsule.cycleIndex} · SEALED"
-                        else "TIME CAPSULE · SEALED",
+                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sheet_cycle, capsule.cycleIndex)
+                        else stringResource(R.string.capsule_sheet_title),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass
                     )
@@ -189,12 +194,12 @@ fun ReadingTimeCapsuleSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CapsuleMetric(
-                    label = "SESSIONS",
+                    label = stringResource(R.string.capsule_sessions),
                     value = capsule.sessionCount.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 CapsuleMetric(
-                    label = "ACTIVE",
+                    label = stringResource(R.string.capsule_active),
                     value = formatCapsuleDuration(capsule.totalActiveMillis),
                     modifier = Modifier.weight(1f)
                 )
@@ -204,26 +209,26 @@ fun ReadingTimeCapsuleSheet(
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 CapsuleMetric(
-                    label = "PASSAGES",
+                    label = stringResource(R.string.capsule_passages),
                     value = capsule.highlightCount.toString(),
                     modifier = Modifier.weight(1f)
                 )
                 CapsuleMetric(
-                    label = "NOTES / MARKS",
+                    label = stringResource(R.string.capsule_notes_marks),
                     value = "${capsule.noteCount} / ${capsule.bookmarkCount}",
                     modifier = Modifier.weight(1f)
                 )
             }
 
             Text(
-                "READING HISTORY",
+                stringResource(R.string.capsule_history),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                 color = VeilPalette.Brass
             )
 
             if (capsule.timeline.isEmpty()) {
                 Text(
-                    "This completed volume predates detailed session history. Its completion state is preserved, but no dated timeline survives.",
+                    stringResource(R.string.capsule_no_timeline),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist
                 )
@@ -251,7 +256,7 @@ fun ReadingTimeCapsuleSheet(
                     tonalElevation = 0.dp
                 ) {
                     Text(
-                        "Completion is preserved as a state. This archive version does not store the exact instant the book first reached completion, so Veil does not invent one.",
+                        stringResource(R.string.capsule_completion_unknown),
                         modifier = Modifier.padding(12.dp),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.76f)
@@ -265,7 +270,7 @@ fun ReadingTimeCapsuleSheet(
                     .align(Alignment.End)
                     .heightIn(min = 48.dp)
             ) {
-                Text("Close record")
+                Text(stringResource(R.string.capsule_close))
             }
         }
     }
@@ -352,7 +357,7 @@ private fun CapsuleTimelineEvent(event: ReadingHistoryEvent) {
                 color = VeilPalette.Brass.copy(alpha = 0.78f)
             )
             Text(
-                event.title,
+                capsuleEventTitle(event),
                 style = MaterialTheme.typography.titleSmall,
                 color = VeilPalette.Moon
             )
@@ -379,32 +384,58 @@ private fun eventColor(kind: ReadingHistoryEventKind) = when (kind) {
     ReadingHistoryEventKind.LATEST_VOLUME_ACTIVITY -> VeilPalette.Brass
 }
 
+@Composable
+private fun capsuleEventTitle(event: ReadingHistoryEvent): String = when (event.kind) {
+    ReadingHistoryEventKind.ARCHIVED -> stringResource(R.string.capsule_event_archived)
+    ReadingHistoryEventKind.READING_SESSION -> stringResource(R.string.capsule_event_session)
+    ReadingHistoryEventKind.PASSAGE_PRESERVED -> stringResource(
+        if (event.title == "Annotated passage preserved") R.string.capsule_event_annotated
+        else R.string.capsule_event_passage
+    )
+    ReadingHistoryEventKind.LOCATION_MARKED -> stringResource(R.string.capsule_event_location)
+    ReadingHistoryEventKind.READING_MILESTONE -> stringResource(R.string.capsule_event_milestone)
+    ReadingHistoryEventKind.COMPLETED -> stringResource(R.string.capsule_event_completed)
+    ReadingHistoryEventKind.LATEST_VOLUME_ACTIVITY -> stringResource(R.string.capsule_event_latest)
+}
+
+@Composable
 private fun formatCapsuleDate(epochMs: Long): String =
     if (epochMs <= 0L) {
-        "DATE UNKNOWN"
+        stringResource(R.string.capsule_date_unknown)
     } else {
-        DateFormat.getDateInstance(DateFormat.MEDIUM)
-            .format(Date(epochMs))
-            .uppercase()
+        val locale = LocalContext.current.resources.configuration.locales[0]
+        DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(Date(epochMs))
     }
 
+@Composable
 private fun formatCapsuleDuration(activeMillis: Long): String {
     val minutes = activeMillis.coerceAtLeast(0L) / 60_000L
     return when {
         minutes >= 60L -> {
             val hours = minutes / 60L
             val rest = minutes % 60L
-            if (rest == 0L) "${hours}H" else "${hours}H ${rest}M"
+            if (rest == 0L) stringResource(R.string.capsule_hours, hours)
+            else stringResource(R.string.capsule_hours_minutes, hours, rest)
         }
-        minutes > 0L -> "${minutes}M"
-        else -> "<1M"
+        minutes > 0L -> stringResource(R.string.capsule_minutes, minutes)
+        else -> stringResource(R.string.capsule_less_than_minute)
     }
 }
 
-private fun buildCapsuleMetricLine(capsule: ReadingTimeCapsule): String =
-    buildString {
-        append(capsule.sessionCount).append(" sessions")
-        append(" · ").append(formatCapsuleDuration(capsule.totalActiveMillis))
-        append(" · ").append(capsule.highlightCount).append(" passages")
-        if (capsule.noteCount > 0) append(" · ").append(capsule.noteCount).append(" notes")
-    }
+@Composable
+private fun buildCapsuleMetricLine(capsule: ReadingTimeCapsule): String {
+    val sessions = stringResource(
+        if (capsule.sessionCount == 1) R.string.capsule_one_session else R.string.capsule_many_sessions,
+        capsule.sessionCount
+    )
+    val passages = stringResource(
+        if (capsule.highlightCount == 1) R.string.capsule_one_passage else R.string.capsule_many_passages,
+        capsule.highlightCount
+    )
+    val duration = formatCapsuleDuration(capsule.totalActiveMillis)
+    val notes = if (capsule.noteCount > 0) stringResource(
+        if (capsule.noteCount == 1) R.string.capsule_one_note else R.string.capsule_many_notes,
+        capsule.noteCount
+    ) else null
+    return listOfNotNull(sessions, duration, passages, notes).joinToString(" · ")
+}
