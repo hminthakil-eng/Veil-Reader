@@ -28,4 +28,9 @@ class ReaderPreferencesTest {
         assertEquals(Axis.VERTICAL, prefs.scrollAxis)
     }
 
+    @Test
+    fun scrollMode_hardDisablesNativePageTurns() {
+        assertTrue(DISABLE_PAGE_TURNS_WHILE_SCROLLING)
+    }
+
 }
