@@ -341,4 +341,17 @@
     <string name="library_header_empty">The shelves are waiting for their first volume.</string>
     <string name="library_header_one">%1$d volume catalogued on this device.</string>
     <string name="library_header_many">%1$d volumes catalogued on this device.</string>
+    <string name="library_search_hint">Search the archive…</string>
+    <string name="library_search_clear">Clear</string>
+    <string name="library_import_preparing_label">PREPARING PUBLICATION</string>
+    <string name="library_import_preparing_body">Inspecting the file and preparing its local archive record.</string>
+    <string name="library_empty_no_match_eyebrow">NO MATCHING VOLUMES</string>
+    <string name="library_empty_archive_eyebrow">YOUR ARCHIVE IS EMPTY</string>
+    <string name="library_empty_no_match_title">Nothing in this part of the archive</string>
+    <string name="library_empty_archive_title">The first volume begins the world</string>
+    <string name="library_empty_no_match_body">No book matches the current search, shelf, or collection. Clear the filters and the archive will return.</string>
+    <string name="library_empty_archive_body">Import an EPUB or PDF. The first volume establishes your Archive; progress, highlights, and notes remain local on this device.</string>
+    <string name="library_empty_clear_filters">Clear active filters</string>
+    <string name="library_empty_preparing">Preparing publication…</string>
+    <string name="library_empty_import_first">Import your first volume</string>
 </resources>
