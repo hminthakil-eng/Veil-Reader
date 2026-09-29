@@ -977,4 +977,24 @@
     <string name="observatory_relation_series">مجموعه</string>
     <string name="observatory_relation_collection">کالکشن</string>
     <string name="observatory_relation_passage_pattern">الگوی واژگان محفوظ</string>
+    <string name="library_stat_books">کتاب‌ها</string>
+    <string name="library_stat_reading">در حال مطالعه</string>
+    <string name="library_stat_finished">تمام‌شده</string>
+    <string name="library_stat_collections">کالکشن‌ها</string>
+    <string name="library_atmosphere_deep_quiet">قفسه‌های پایین آرام و عمیق شده‌اند.</string>
+    <string name="library_atmosphere_many_chambers">آرشیو به تالارهای بسیاری گسترش یافته است.</string>
+    <string name="library_atmosphere_reading_light">نور مطالعه در میان قفسه‌ها زنده است.</string>
+    <string name="library_atmosphere_gaining_depth">قفسه‌ها دارند عمق پیدا می‌کنند.</string>
+    <string name="library_atmosphere_first_shelves">نخستین قفسه‌ها در حال شکل‌گرفتن‌اند.</string>
+    <string name="library_wing_collection">بالِ کالکشن</string>
+    <string name="library_wing_series">راهروی مجموعه</string>
+    <string name="library_wing_volume_one">%1$d جلد</string>
+    <string name="library_wing_volumes_many">%1$d جلد</string>
+    <string name="library_wing_active">%1$d فعال</string>
+    <string name="library_wing_sealed">%1$d مهرشده</string>
+    <string name="library_memory_event_return">رویداد بازگشت</string>
+    <string name="library_memory_event_margin_echo">پژواک حاشیه</string>
+    <string name="library_memory_event_archive_return">بازگشت آرشیو</string>
+    <string name="library_quiet_volume_one">%1$d جلد به سکوت رفته است</string>
+    <string name="library_quiet_volumes_many">%1$d جلد به سکوت رفته‌اند</string>
 </resources>
