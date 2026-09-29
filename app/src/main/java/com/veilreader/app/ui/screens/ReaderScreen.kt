@@ -1,7 +1,6 @@
 package com.veilreader.app.ui.screens
 
 import android.content.Intent
-import android.graphics.Color as AndroidColor
 import android.net.Uri
 import android.text.Html
 import android.os.SystemClock
