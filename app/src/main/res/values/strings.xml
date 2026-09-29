@@ -466,4 +466,60 @@
         <item quantity="one">REVISITED %1$d TIME</item>
         <item quantity="other">REVISITED %1$d TIMES</item>
     </plurals>
+
+    <string name="capsule_sealed_record">SEALED READING RECORD</string>
+    <string name="capsule_sealed_record_cycle">SEALED READING RECORD · CYCLE %1$d</string>
+    <string name="capsule_completed">COMPLETED · %1$s</string>
+    <string name="capsule_open_history">Open preserved history</string>
+    <string name="capsule_sheet_sealed">TIME CAPSULE · SEALED</string>
+    <string name="capsule_sheet_sealed_cycle">TIME CAPSULE · CYCLE %1$d · SEALED</string>
+    <string name="capsule_metric_sessions">SESSIONS</string>
+    <string name="capsule_metric_active">ACTIVE</string>
+    <string name="capsule_metric_passages">PASSAGES</string>
+    <string name="capsule_metric_notes_marks">NOTES / MARKS</string>
+    <string name="capsule_reading_history">READING HISTORY</string>
+    <string name="capsule_empty_history">This completed volume predates detailed session history. Its completion state is preserved, but no dated timeline survives.</string>
+    <string name="capsule_completion_unknown">Completion is preserved as a state. This archive version does not store the exact instant the book first reached completion, so Veil does not invent one.</string>
+    <string name="capsule_close_record">Close record</string>
+    <string name="capsule_date_unknown">DATE UNKNOWN</string>
+    <string name="capsule_event_archived">Entered the Grayfog Archive</string>
+    <string name="capsule_event_reading_session">Reading session</string>
+    <string name="capsule_event_passage_preserved">Passage preserved</string>
+    <string name="capsule_event_annotated_passage">Annotated passage preserved</string>
+    <string name="capsule_event_location_marked">Location marked</string>
+    <string name="capsule_event_first_opened">First opened</string>
+    <string name="capsule_event_reached_25">Reached 25%</string>
+    <string name="capsule_event_reached_50">Reached 50%</string>
+    <string name="capsule_event_reached_75">Reached 75%</string>
+    <string name="capsule_event_completed">Reading cycle completed</string>
+    <string name="capsule_event_latest_activity">Latest recorded volume activity</string>
+    <string name="capsule_active_duration">%1$s active</string>
+    <string name="capsule_duration_hours_minutes">%1$d h %2$d m</string>
+    <string name="capsule_duration_hours">%1$d h</string>
+    <string name="capsule_duration_minutes">%1$d m</string>
+    <string name="capsule_duration_less_than_minute">&lt;1 m</string>
+    <plurals name="capsule_sessions_count">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="capsule_passages_count">
+        <item quantity="one">%1$d passage</item>
+        <item quantity="other">%1$d passages</item>
+    </plurals>
+    <plurals name="capsule_notes_count">
+        <item quantity="one">%1$d note</item>
+        <item quantity="other">%1$d notes</item>
+    </plurals>
+    <plurals name="capsule_paced_turns_count">
+        <item quantity="one">%1$d paced turn</item>
+        <item quantity="other">%1$d paced turns</item>
+    </plurals>
+    <plurals name="capsule_highlight_events_count">
+        <item quantity="one">%1$d highlight event</item>
+        <item quantity="other">%1$d highlight events</item>
+    </plurals>
+    <plurals name="capsule_note_events_count">
+        <item quantity="one">%1$d note event</item>
+        <item quantity="other">%1$d note events</item>
+    </plurals>
 </resources>
