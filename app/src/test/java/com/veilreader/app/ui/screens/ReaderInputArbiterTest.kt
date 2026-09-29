@@ -277,12 +277,30 @@ class ReaderInputArbiterTest {
     }
 
     @Test
-    fun `selection always returns gesture ownership to the renderer`() {
+    fun `selection owns renderer only while no modal or durable close blocks input`() {
         assertEquals(
             ReaderInteractionMode.RENDERER_SELECTION,
             readerInteractionMode(
                 selectionModeActive = true,
+                overlayVisible = false,
+                closeInFlight = false,
+                controlsVisible = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = true,
                 overlayVisible = true,
+                closeInFlight = false,
+                controlsVisible = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = true,
+                overlayVisible = false,
                 closeInFlight = true,
                 controlsVisible = true
             )
