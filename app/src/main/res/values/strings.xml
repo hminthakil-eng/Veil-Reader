@@ -394,4 +394,18 @@
     <string name="library_sort_progress">Progress</string>
     <string name="library_series_filter">Series · %1$s ×</string>
     <string name="library_reset_filters">Reset</string>
+    <string name="library_shelves_eyebrow">Archive</string>
+    <string name="library_shelves_title">Shelves</string>
+    <string name="library_shelves_hint">Tap to filter</string>
+    <string name="library_shelf_favorites">Favorites</string>
+    <string name="library_shelf_favorites_subtitle">Volumes kept close</string>
+    <string name="library_shelf_reading">Currently Reading</string>
+    <string name="library_shelf_reading_subtitle">Open journeys</string>
+    <string name="library_shelf_completed">Completed</string>
+    <string name="library_shelf_completed_subtitle">Closed volumes</string>
+    <string name="library_shelf_deep">Deep Shelf</string>
+    <string name="library_shelf_deep_subtitle">Long-unopened volumes</string>
+    <string name="library_shelf_unread">Plan to Read</string>
+    <string name="library_shelf_unread_subtitle">Still unopened</string>
+    <string name="library_shelf_count">%1$02d</string>
 </resources>
