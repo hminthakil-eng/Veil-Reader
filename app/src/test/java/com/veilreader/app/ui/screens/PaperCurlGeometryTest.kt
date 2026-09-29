@@ -293,4 +293,54 @@ class PaperCurlGeometryTest {
         assertTrue(deepCenter < shallowCenter)
         assertTrue(deep.top != deep.bottom)
     }
+    @Test
+    fun `paper curl waits for deliberate movement before lifting the sheet`() {
+        assertFalse(
+            hasDeliberatePaperIntent(
+                offsetX = 12f,
+                offsetY = 1f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertFalse(
+            hasDeliberatePaperIntent(
+                offsetX = 34f,
+                offsetY = 33f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertTrue(
+            hasDeliberatePaperIntent(
+                offsetX = 34f,
+                offsetY = 12f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+    }
+
+    @Test
+    fun `paper and slide intent remain distinct rather than sharing accidental thresholds`() {
+        val x = 28f
+        val y = 4f
+        assertTrue(
+            hasDeliberatePaperIntent(
+                offsetX = x,
+                offsetY = y,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertFalse(
+            hasDeliberateSlideIntent(
+                offsetX = x,
+                offsetY = y,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+    }
+
 }
