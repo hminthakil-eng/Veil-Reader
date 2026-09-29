@@ -2195,10 +2195,35 @@ private fun MemoryReturnCard(
     book: Book,
     onInspect: () -> Unit
 ) {
+    val silence = formatArchiveSilence(event.gapMillis)
     val eyebrow = when (event.kind) {
-        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> "RETURN EVENT"
-        LibraryMemoryEventKind.OLD_MARGIN_RETURN -> "MARGIN ECHO"
-        LibraryMemoryEventKind.LONG_SILENCE_RETURN -> "ARCHIVE RETURN"
+        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN ->
+            stringResource(R.string.library_memory_return_event)
+        LibraryMemoryEventKind.OLD_MARGIN_RETURN ->
+            stringResource(R.string.library_memory_margin_echo)
+        LibraryMemoryEventKind.LONG_SILENCE_RETURN ->
+            stringResource(R.string.library_memory_archive_return)
+    }
+    val title = when (event.kind) {
+        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN ->
+            stringResource(R.string.library_memory_forgotten_title)
+        LibraryMemoryEventKind.OLD_MARGIN_RETURN ->
+            stringResource(R.string.library_memory_old_margin_title)
+        LibraryMemoryEventKind.LONG_SILENCE_RETURN ->
+            stringResource(R.string.library_memory_long_silence_title)
+    }
+    val detail = when (event.kind) {
+        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN ->
+            stringResource(R.string.library_memory_forgotten_detail, book.title, silence)
+        LibraryMemoryEventKind.OLD_MARGIN_RETURN ->
+            stringResource(
+                R.string.library_memory_old_margin_detail,
+                book.title,
+                silence,
+                event.quoteExcerpt ?: stringResource(R.string.library_memory_preserved_passage)
+            )
+        LibraryMemoryEventKind.LONG_SILENCE_RETURN ->
+            stringResource(R.string.library_memory_long_silence_detail, book.title, silence)
     }
 
     Surface(
@@ -2242,20 +2267,20 @@ private fun MemoryReturnCard(
                 )
             }
             Text(
-                event.title,
+                title,
                 style = MaterialTheme.typography.titleMedium,
                 color = VeilPalette.Moon
             )
             Text(
                 book.title,
-                style = MaterialTheme.typography.labelMedium,
+                style = veilContentTextStyle(MaterialTheme.typography.labelMedium, book.title),
                 color = VeilPalette.Mist.copy(alpha = 0.78f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                event.detail,
-                style = MaterialTheme.typography.bodySmall,
+                detail,
+                style = veilContentTextStyle(MaterialTheme.typography.bodySmall, detail),
                 color = VeilPalette.Mist.copy(alpha = 0.66f),
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
@@ -2303,21 +2328,24 @@ private fun DeepShelfPortal(
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
-                    "THE DEEP SHELF",
+                    stringResource(R.string.library_deep_shelf),
                     style = MaterialTheme.typography.labelSmall.copy(
                         letterSpacing = 1.32.sp
                     ),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "$count ${if (count == 1) "volume has" else "volumes have"} gone quiet",
+                    pluralStringResource(R.plurals.library_quiet_volumes, count, count),
                     style = MaterialTheme.typography.titleMedium,
                     color = VeilPalette.Moon
                 )
                 if (oldestBook != null && oldestMemory != null) {
                     Text(
-                        "Deepest record · ${oldestBook.title} · " +
-                            formatArchiveSilence(oldestMemory.inactiveMillis),
+                        stringResource(
+                            R.string.library_deepest_record,
+                            oldestBook.title,
+                            formatArchiveSilence(oldestMemory.inactiveMillis)
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.66f),
                         maxLines = 2,
@@ -2325,7 +2353,7 @@ private fun DeepShelfPortal(
                     )
                 }
                 Text(
-                    "DESCEND",
+                    stringResource(R.string.library_descend),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass.copy(alpha = 0.82f)
                 )
@@ -2398,28 +2426,46 @@ private fun formatArchiveRecordDate(epochMs: Long): String =
         .format(Date(epochMs))
         .uppercase(Locale.getDefault())
 
+@Composable
 private fun archiveDepthRecord(memory: BookArchiveMemory): String {
     val age = formatArchiveSilence(memory.inactiveMillis)
     return when (memory.depth) {
-        ArchiveDepth.SURFACE -> "Surface shelf"
-        ArchiveDepth.SETTLED -> "Settled · $age"
-        ArchiveDepth.DEEP_SHELF -> "Deep Shelf · $age silent"
-        ArchiveDepth.FORGOTTEN -> "Forgotten · $age silent"
+        ArchiveDepth.SURFACE -> stringResource(R.string.library_archive_depth_surface)
+        ArchiveDepth.SETTLED ->
+            stringResource(R.string.library_archive_depth_settled, age)
+        ArchiveDepth.DEEP_SHELF ->
+            stringResource(R.string.library_archive_depth_deep, age)
+        ArchiveDepth.FORGOTTEN ->
+            stringResource(R.string.library_archive_depth_forgotten, age)
     }
 }
 
+@Composable
 private fun formatArchiveSilence(inactiveMillis: Long): String {
     val days = inactiveMillis.coerceAtLeast(0L) / 86_400_000L
     return when {
         days >= 365L -> {
-            val years = days / 365L
-            val months = (days % 365L) / 30L
-            if (months > 0L) "${years}y ${months}mo" else "${years}y"
+            val years = (days / 365L).toInt()
+            val months = ((days % 365L) / 30L).toInt()
+            if (months > 0) {
+                stringResource(R.string.library_duration_year_month, years, months)
+            } else {
+                pluralStringResource(R.plurals.library_duration_years, years, years)
+            }
         }
-        days >= 60L -> "${days / 30L} months"
-        days >= 14L -> "${days / 7L} weeks"
-        days > 0L -> "$days days"
-        else -> "today"
+        days >= 60L -> {
+            val months = (days / 30L).toInt()
+            pluralStringResource(R.plurals.library_duration_months, months, months)
+        }
+        days >= 14L -> {
+            val weeks = (days / 7L).toInt()
+            pluralStringResource(R.plurals.library_duration_weeks, weeks, weeks)
+        }
+        days > 0L -> {
+            val count = days.toInt()
+            pluralStringResource(R.plurals.library_duration_days, count, count)
+        }
+        else -> stringResource(R.string.library_duration_today)
     }
 }
 
