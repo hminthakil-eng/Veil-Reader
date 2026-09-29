@@ -209,22 +209,35 @@ internal class PaperCurlState {
     }
 
     suspend fun clear() {
+        clearVisual(keepInputLock = true)
+    }
+
+    /**
+     * Lifecycle/disposal escape hatch. Unlike [clear], this drops the visual lock immediately so
+     * a cancelled preview cannot survive a configuration change or a reader teardown.
+     */
+    fun clearImmediately() {
+        clearVisual(keepInputLock = false)
+    }
+
+    private suspend fun clearVisual(keepInputLock: Boolean) {
         snapshot = null
         width = 0f
         height = 0f
         edge = PaperCurlEdge(Offset.Zero, Offset.Zero)
 
-        // Keep one frame of input lock so Compose fully drops the overlay
-        // before the reusable bitmap can be drawn into again.
-        delay(VeilMotion.FRAME_SETTLE_MS)
+        if (keepInputLock) {
+            // Keep one frame of input lock so Compose fully drops the overlay
+            // before the reusable bitmap can be drawn into again.
+            delay(VeilMotion.FRAME_SETTLE_MS)
+        }
         active = false
     }
 
     fun dispose() {
-        snapshot = null
+        clearImmediately()
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
-        active = false
     }
     private suspend fun animateTo(
         target: PaperCurlEdge,
