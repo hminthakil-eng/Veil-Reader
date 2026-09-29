@@ -523,4 +523,60 @@
         <item quantity="other">%1$d note events</item>
     </plurals>
     <string name="capsule_event_milestone">Reading milestone</string>
+
+    <string name="entry_stage_return_ritual">RETURN RITUAL · DEEP SHELF</string>
+    <string name="entry_stage_old_seal">THE OLD SEAL OPENS</string>
+    <string name="entry_stage_opening_threshold">OPENING THRESHOLD</string>
+    <string name="entry_stage_entering_sanctuary">ENTERING SANCTUARY</string>
+    <string name="entry_memory_completed_return">COMPLETED VOLUME · RETURNING</string>
+    <string name="entry_memory_progress_chapter">RETURNING · %1$d%% · %2$s</string>
+    <string name="entry_memory_progress">RETURNING · %1$d%%</string>
+    <string name="entry_memory_opening_again">OPENING AGAIN</string>
+    <string name="entry_memory_first_entry">FIRST ENTRY</string>
+    <string name="entry_gap_returning_page">RETURNING TO THE PAGE</string>
+    <string name="entry_history_preserved">%1$s · %2$s PRESERVED</string>
+    <string name="entry_handoff_ritual">The old seal opens. Your page remains.</string>
+    <string name="entry_handoff_returning">The archive recedes. Your book remains.</string>
+    <string name="entry_handoff_first">The archive recedes. The first page remains.</string>
+    <string name="ritual_forgotten_invocation">A sealed volume has returned from the Deep Shelf.</string>
+    <string name="ritual_annotated_margin">ANNOTATED MARGIN</string>
+    <string name="ritual_preserved_margin">PRESERVED MARGIN</string>
+    <string name="ritual_silent_year_month">%1$d y %2$d mo silent</string>
+    <string name="ritual_preserved_year_month">%1$d y %2$d mo preserved</string>
+    <plurals name="entry_gap_hours">
+        <item quantity="one">RETURNED AFTER %1$d HOUR</item>
+        <item quantity="other">RETURNED AFTER %1$d HOURS</item>
+    </plurals>
+    <plurals name="entry_gap_days">
+        <item quantity="one">RETURNED AFTER %1$d DAY</item>
+        <item quantity="other">RETURNED AFTER %1$d DAYS</item>
+    </plurals>
+    <plurals name="entry_gap_months">
+        <item quantity="one">RETURNED AFTER %1$d MONTH</item>
+        <item quantity="other">RETURNED AFTER %1$d MONTHS</item>
+    </plurals>
+    <plurals name="entry_prior_sessions">
+        <item quantity="one">%1$d PRIOR SESSION</item>
+        <item quantity="other">%1$d PRIOR SESSIONS</item>
+    </plurals>
+    <plurals name="ritual_silent_years">
+        <item quantity="one">%1$d YEAR SILENT</item>
+        <item quantity="other">%1$d YEARS SILENT</item>
+    </plurals>
+    <plurals name="ritual_silent_months">
+        <item quantity="one">%1$d MONTH SILENT</item>
+        <item quantity="other">%1$d MONTHS SILENT</item>
+    </plurals>
+    <plurals name="ritual_preserved_years">
+        <item quantity="one">%1$d YEAR PRESERVED</item>
+        <item quantity="other">%1$d YEARS PRESERVED</item>
+    </plurals>
+    <plurals name="ritual_preserved_months">
+        <item quantity="one">%1$d MONTH PRESERVED</item>
+        <item quantity="other">%1$d MONTHS PRESERVED</item>
+    </plurals>
+    <plurals name="ritual_preserved_days">
+        <item quantity="one">%1$d DAY PRESERVED</item>
+        <item quantity="other">%1$d DAYS PRESERVED</item>
+    </plurals>
 </resources>
