@@ -343,4 +343,38 @@ class PaperCurlGeometryTest {
         )
     }
 
+    @Test
+    fun `paper edge pull permits a natural diagonal while body swipe stays horizontal`() {
+        val body = hasDeliberatePaperIntent(
+            offsetX = 30f,
+            offsetY = 36f,
+            width = 1_000f,
+            density = 3f,
+            startsAtEdge = false
+        )
+        val edge = hasDeliberatePaperIntent(
+            offsetX = 30f,
+            offsetY = 36f,
+            width = 1_000f,
+            density = 3f,
+            startsAtEdge = true
+        )
+
+        assertFalse(body)
+        assertTrue(edge)
+    }
+
+    @Test
+    fun `paper edge intent still rejects mostly vertical pulls`() {
+        assertFalse(
+            hasDeliberatePaperIntent(
+                offsetX = 24f,
+                offsetY = 70f,
+                width = 1_000f,
+                density = 3f,
+                startsAtEdge = true
+            )
+        )
+    }
+
 }
