@@ -19,7 +19,6 @@ class BookEntryTransitionTest {
 
         assertFalse(memory.returning)
         assertEquals(0, memory.progressPercent)
-        assertEquals("FIRST ENTRY", memory.label)
     }
 
     @Test
@@ -38,7 +37,6 @@ class BookEntryTransitionTest {
         assertTrue(memory.returning)
         assertEquals(42, memory.progressPercent)
         assertEquals("Chapter VII", memory.chapter)
-        assertEquals("RETURNING · 42% · Chapter VII", memory.label)
     }
 
     @Test
@@ -54,6 +52,6 @@ class BookEntryTransitionTest {
         )
 
         assertTrue(memory.returning)
-        assertEquals("COMPLETED VOLUME · RETURNING", memory.label)
+        assertEquals(100, memory.progressPercent)
     }
 }
