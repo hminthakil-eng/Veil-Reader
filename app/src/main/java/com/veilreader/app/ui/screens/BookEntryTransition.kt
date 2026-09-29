@@ -46,16 +46,10 @@ enum class BookEntryStage {
 data class BookEntryMemory(
     val returning: Boolean,
     val progressPercent: Int,
-    val chapter: String?,
-    val label: String,
-    val returnGapLabel: String? = null,
-    val historyLabel: String? = null
+    val chapter: String?
 )
 
-fun bookEntryMemory(
-    book: Book,
-    continuity: ReadingContinuitySummary? = null
-): BookEntryMemory {
+fun bookEntryMemory(book: Book): BookEntryMemory {
     val progress = book.progress.coerceIn(0f, 1f)
     val percent = (progress * 100f).toInt().coerceIn(0, 100)
     val chapter = book.currentChapter
@@ -67,54 +61,12 @@ fun bookEntryMemory(
             book.lastOpenedAtEpochMs > 0L ||
             !book.locatorJson.isNullOrBlank()
 
-    val label = when {
-        book.finished -> "COMPLETED VOLUME · RETURNING"
-        progress > 0f && chapter != null -> "RETURNING · $percent% · $chapter"
-        progress > 0f -> "RETURNING · $percent%"
-        returning -> "OPENING AGAIN"
-        else -> "FIRST ENTRY"
-    }
-
     return BookEntryMemory(
         returning = returning,
         progressPercent = percent,
-        chapter = chapter,
-        label = label,
-        returnGapLabel = continuity?.let(::readingReturnGapLabel),
-        historyLabel = continuity?.let(::readingHistoryLabel)
+        chapter = chapter
     )
 }
-
-fun readingReturnGapLabel(summary: ReadingContinuitySummary): String? {
-    val gap = summary.returnGapMillis ?: return null
-    if (!summary.hasHistory) return null
-
-    val hour = 60L * 60L * 1000L
-    val day = 24L * hour
-    return when {
-        gap < 2L * hour -> "RETURNING TO THE PAGE"
-        gap < 2L * day -> "RETURNED AFTER ${(gap / hour).coerceAtLeast(2L)} HOURS"
-        gap < 60L * day -> "RETURNED AFTER ${(gap / day).coerceAtLeast(2L)} DAYS"
-        else -> "RETURNED AFTER ${(gap / (30L * day)).coerceAtLeast(2L)} MONTHS"
-    }
-}
-
-fun readingHistoryLabel(summary: ReadingContinuitySummary): String? {
-    if (!summary.hasHistory || summary.priorSessionCount <= 0) return null
-    val totalMinutes = summary.totalActiveMillis / 60_000L
-    val duration = when {
-        totalMinutes >= 60L -> {
-            val hours = totalMinutes / 60L
-            val minutes = totalMinutes % 60L
-            if (minutes == 0L) "${hours}H" else "${hours}H ${minutes}M"
-        }
-        totalMinutes > 0L -> "${totalMinutes}M"
-        else -> "<1M"
-    }
-    val sessionWord = if (summary.priorSessionCount == 1) "SESSION" else "SESSIONS"
-    return "${summary.priorSessionCount} PRIOR $sessionWord · $duration PRESERVED"
-}
-
 /**
  * Continuity bridge between the app shell and the reading surface.
  *
@@ -155,7 +107,7 @@ fun BookThresholdTransitionOverlay(
         )
     ) {
         val artifact = remember(book) { bookArtifactState(book) }
-        val memory = remember(book, continuity) { bookEntryMemory(book, continuity) }
+        val memory = remember(book) { bookEntryMemory(book) }
         val ritual = remember(book.id, returnRitual) {
             returnRitual?.takeIf { it.bookId == book.id }
         }
