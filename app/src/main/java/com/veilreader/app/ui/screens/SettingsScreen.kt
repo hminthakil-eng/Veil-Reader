@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -38,6 +40,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
@@ -462,13 +467,19 @@ private fun <T> ChoiceRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
+            .horizontalScroll(rememberScrollState())
+            .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         entries.forEach { entry ->
             val active = entry == selected
             Surface(
-                onClick = { onSelected(entry) },
+                modifier = Modifier
+                    .heightIn(min = 48.dp)
+                    .selectable(
+                        selected = active,
+                        role = Role.RadioButton
+                    ) { onSelected(entry) },
                 shape = MaterialTheme.shapes.extraSmall,
                 color = if (active) {
                     VeilPalette.DeepBrass.copy(alpha = 0.78f)
@@ -522,7 +533,8 @@ private fun ReaderSlider(
             value = draft,
             onValueChange = { draft = it },
             onValueChangeFinished = { onCommit(draft) },
-            valueRange = valueRange
+            valueRange = valueRange,
+            modifier = Modifier.semantics { contentDescription = label }
         )
     }
 }
@@ -553,6 +565,7 @@ private fun SettingsSwitchRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            modifier = Modifier.semantics { contentDescription = title },
             colors = androidx.compose.material3.SwitchDefaults.colors(
                 checkedThumbColor = VeilPalette.Moon,
                 checkedTrackColor = VeilPalette.DeepBrass,
