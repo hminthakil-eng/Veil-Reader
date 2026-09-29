@@ -523,4 +523,60 @@
         <item quantity="other">%1$d رویداد یادداشت</item>
     </plurals>
     <string name="capsule_event_milestone">نقطهٔ عطف مطالعه</string>
+
+    <string name="entry_stage_return_ritual">آیین بازگشت · قفسهٔ عمیق</string>
+    <string name="entry_stage_old_seal">مهر قدیمی گشوده می‌شود</string>
+    <string name="entry_stage_opening_threshold">گشودن آستانه</string>
+    <string name="entry_stage_entering_sanctuary">ورود به خلوت مطالعه</string>
+    <string name="entry_memory_completed_return">جلد کامل‌شده · بازگشت</string>
+    <string name="entry_memory_progress_chapter">بازگشت · %1$d٪ · %2$s</string>
+    <string name="entry_memory_progress">بازگشت · %1$d٪</string>
+    <string name="entry_memory_opening_again">گشودن دوباره</string>
+    <string name="entry_memory_first_entry">نخستین ورود</string>
+    <string name="entry_gap_returning_page">بازگشت به صفحه</string>
+    <string name="entry_history_preserved">%1$s · %2$s حفظ‌شده</string>
+    <string name="entry_handoff_ritual">مهر قدیمی باز می‌شود؛ صفحهٔ شما باقی می‌ماند.</string>
+    <string name="entry_handoff_returning">آرشیو کنار می‌رود؛ کتاب شما باقی می‌ماند.</string>
+    <string name="entry_handoff_first">آرشیو کنار می‌رود؛ نخستین صفحه باقی می‌ماند.</string>
+    <string name="ritual_forgotten_invocation">جلدی مهرشده از قفسهٔ عمیق بازگشته است.</string>
+    <string name="ritual_annotated_margin">حاشیهٔ یادداشت‌دار</string>
+    <string name="ritual_preserved_margin">حاشیهٔ حفظ‌شده</string>
+    <string name="ritual_silent_year_month">%1$d سال و %2$d ماه سکوت</string>
+    <string name="ritual_preserved_year_month">%1$d سال و %2$d ماه حفظ‌شده</string>
+    <plurals name="entry_gap_hours">
+        <item quantity="one">بازگشت پس از %1$d ساعت</item>
+        <item quantity="other">بازگشت پس از %1$d ساعت</item>
+    </plurals>
+    <plurals name="entry_gap_days">
+        <item quantity="one">بازگشت پس از %1$d روز</item>
+        <item quantity="other">بازگشت پس از %1$d روز</item>
+    </plurals>
+    <plurals name="entry_gap_months">
+        <item quantity="one">بازگشت پس از %1$d ماه</item>
+        <item quantity="other">بازگشت پس از %1$d ماه</item>
+    </plurals>
+    <plurals name="entry_prior_sessions">
+        <item quantity="one">%1$d نشست پیشین</item>
+        <item quantity="other">%1$d نشست پیشین</item>
+    </plurals>
+    <plurals name="ritual_silent_years">
+        <item quantity="one">%1$d سال سکوت</item>
+        <item quantity="other">%1$d سال سکوت</item>
+    </plurals>
+    <plurals name="ritual_silent_months">
+        <item quantity="one">%1$d ماه سکوت</item>
+        <item quantity="other">%1$d ماه سکوت</item>
+    </plurals>
+    <plurals name="ritual_preserved_years">
+        <item quantity="one">%1$d سال حفظ‌شده</item>
+        <item quantity="other">%1$d سال حفظ‌شده</item>
+    </plurals>
+    <plurals name="ritual_preserved_months">
+        <item quantity="one">%1$d ماه حفظ‌شده</item>
+        <item quantity="other">%1$d ماه حفظ‌شده</item>
+    </plurals>
+    <plurals name="ritual_preserved_days">
+        <item quantity="one">%1$d روز حفظ‌شده</item>
+        <item quantity="other">%1$d روز حفظ‌شده</item>
+    </plurals>
 </resources>
