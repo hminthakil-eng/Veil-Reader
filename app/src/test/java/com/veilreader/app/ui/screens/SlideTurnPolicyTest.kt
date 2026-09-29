@@ -191,4 +191,29 @@ class SlideTurnPolicyTest {
         assertTrue(fast < slow)
     }
 
+    @Test
+    fun `terminal slide boundary survives reduced-motion or missing visual capture`() {
+        assertTrue(
+            shouldEmitSlideTerminalBoundary(
+                commitRequested = true,
+                cancellationRequested = false,
+                navigationMoved = false
+            )
+        )
+        assertFalse(
+            shouldEmitSlideTerminalBoundary(
+                commitRequested = true,
+                cancellationRequested = true,
+                navigationMoved = false
+            )
+        )
+        assertFalse(
+            shouldEmitSlideTerminalBoundary(
+                commitRequested = true,
+                cancellationRequested = false,
+                navigationMoved = true
+            )
+        )
+    }
+
 }
