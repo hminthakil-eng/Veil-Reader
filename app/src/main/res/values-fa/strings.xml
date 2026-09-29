@@ -1087,4 +1087,10 @@
     <string name="entry_handoff_returning">آرشیو کنار می‌رود؛ کتابت باقی است.</string>
     <string name="entry_handoff_first">آرشیو کنار می‌رود؛ صفحهٔ نخست باقی است.</string>
     <string name="common_cover_of">جلد %1$s</string>
+    <string name="capsule_session_detail_legacy">جزئیات این نشست توسط نسخهٔ قدیمی‌تری از آرشیو ذخیره شده است.</string>
+    <string name="capsule_paced_turns">%1$s ورق‌زدن با ریتم معتبر</string>
+    <string name="capsule_highlight_event_one">%1$s رویداد هایلایت</string>
+    <string name="capsule_highlight_events_many">%1$s رویداد هایلایت</string>
+    <string name="capsule_note_event_one">%1$s رویداد یادداشت</string>
+    <string name="capsule_note_events_many">%1$s رویداد یادداشت</string>
 </resources>
