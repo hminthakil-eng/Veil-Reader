@@ -68,7 +68,6 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
-import java.util.Locale
 
 @Composable
 fun SettingsScreen(
