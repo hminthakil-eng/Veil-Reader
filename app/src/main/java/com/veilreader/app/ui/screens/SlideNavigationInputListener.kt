@@ -37,8 +37,11 @@ internal class SlideNavigationInputListener(
     private var reserved = false
     private var activeSpec: TurnSpec? = null
     private var navigationJob: Job? = null
+    private var completionJob: Job? = null
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
+    private var cancellationRequested = false
+    private var turnCommitted = false
     private var lastSampleAtMillis = 0L
     private var lastDistance = 0f
     private var releaseVelocityPxPerSec = 0f
@@ -91,6 +94,9 @@ internal class SlideNavigationInputListener(
         activeSpec = null
         previewNavigationSucceeded = false
         dragStartLocator = navigator.currentLocator.value
+        cancellationRequested = false
+        turnCommitted = false
+        completionJob = null
         lastSampleAtMillis = SystemClock.uptimeMillis()
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
@@ -126,10 +132,10 @@ internal class SlideNavigationInputListener(
         val spec = activeSpec ?: resolveDragTurn(event)
 
         if (spec == null) {
-            scope.launch {
+            completionJob = scope.launch {
                 if (state.active && !isReducedMotion()) state.animateCancel()
-                resetDrag()
                 if (state.active) state.clear()
+                resetDrag()
             }
             return true
         }
@@ -148,12 +154,21 @@ internal class SlideNavigationInputListener(
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
 
-        scope.launch {
+        completionJob = scope.launch {
             navigationJob?.join()
+
+            if (cancellationRequested && !turnCommitted) {
+                if (previewNavigationSucceeded) restoreDragStart(spec)
+                if (state.active && !isReducedMotion()) state.animateCancel()
+                if (state.active) state.clear()
+                resetDrag()
+                return@launch
+            }
 
             if (state.active) {
                 when {
-                    commit && previewNavigationSucceeded -> {
+                    commit && previewNavigationSucceeded && !cancellationRequested -> {
+                        turnCommitted = true
                         onCommittedTurn()
                         if (!isReducedMotion()) {
                             state.animateComplete(
@@ -169,9 +184,10 @@ internal class SlideNavigationInputListener(
                         if (!isReducedMotion()) state.animateCancel()
                     }
 
-                    commit -> {
+                    commit && !cancellationRequested -> {
                         val moved = navigate(spec.direction)
                         if (moved) {
+                            turnCommitted = true
                             onCommittedTurn()
                             if (!isReducedMotion()) {
                                 state.animateComplete(
@@ -187,12 +203,44 @@ internal class SlideNavigationInputListener(
 
                     else -> if (!isReducedMotion()) state.animateCancel()
                 }
-            } else if (commit) {
-                if (navigate(spec.direction)) onCommittedTurn()
+            } else if (commit && !cancellationRequested) {
+                if (navigate(spec.direction)) {
+                    turnCommitted = true
+                    onCommittedTurn()
+                }
             }
 
-            resetDrag()
             if (state.active) state.clear()
+            resetDrag()
+        }
+        return true
+    }
+
+    /**
+     * Restores a drag-preview locator when SLIDE loses ownership because the app pauses,
+     * closes, or the user changes navigation mode. A committed turn is never rolled back.
+     */
+    fun cancelPendingTurn(): Boolean {
+        if (!reserved && activeSpec == null) return false
+        if (turnCommitted) return false
+
+        cancellationRequested = true
+        val spec = activeSpec
+        if (spec == null) {
+            completionJob = scope.launch {
+                if (state.active) state.clear()
+                resetDrag()
+            }
+            return true
+        }
+
+        if (completionJob == null) {
+            completionJob = scope.launch {
+                navigationJob?.join()
+                if (previewNavigationSucceeded) restoreDragStart(spec)
+                if (state.active) state.clear()
+                resetDrag()
+            }
         }
         return true
     }
@@ -318,8 +366,11 @@ internal class SlideNavigationInputListener(
         reserved = false
         activeSpec = null
         navigationJob = null
+        completionJob = null
         previewNavigationSucceeded = false
         dragStartLocator = null
+        cancellationRequested = false
+        turnCommitted = false
         lastSampleAtMillis = 0L
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
