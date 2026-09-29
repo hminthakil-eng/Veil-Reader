@@ -2670,6 +2670,7 @@ private fun EpubAppearancePanel(
                             ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
                         },
                         selected = draft.fontFamily == family,
+                        enabled = capabilities.typographyEditable,
                         onClick = { updateDraft(draft.withFontFamily(family)) }
                     )
                 }
@@ -2685,7 +2686,8 @@ private fun EpubAppearancePanel(
                     previewTypography(draft.withFontWeight(it.toDouble()))
                 },
                 onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(fontWeight = null)) }
+                onReset = { updateDraft(draft.copy(fontWeight = null)) },
+                enabled = capabilities.typographyEditable
             )
 
             ReaderAppearanceSlider(
@@ -2694,7 +2696,8 @@ private fun EpubAppearancePanel(
                 valueRange = 1.1f..2.0f,
                 valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewTypography(draft.withLineHeight(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft
+                onValueChangeFinished = ::commitDraft,
+                enabled = capabilities.typographyEditable
             )
 
             ReaderAppearanceSlider(
@@ -2703,7 +2706,8 @@ private fun EpubAppearancePanel(
                 valueRange = 0.5f..2.0f,
                 valueLabel = { formatPercent(it) },
                 onValueChange = { previewTypography(draft.withPageMargins(it.toDouble())) },
-                onValueChangeFinished = ::commitDraft
+                onValueChangeFinished = ::commitDraft,
+                enabled = capabilities.typographyEditable
             )
 
             Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.titleSmall)
@@ -2720,6 +2724,7 @@ private fun EpubAppearancePanel(
                             ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
                         },
                         selected = draft.textAlignment == alignment,
+                        enabled = capabilities.typographyEditable,
                         modifier = Modifier.weight(1f),
                         onClick = { updateDraft(draft.withTextAlignment(alignment)) }
                     )
@@ -2739,6 +2744,7 @@ private fun EpubAppearancePanel(
                             ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
                         },
                         selected = draft.columnMode == mode,
+                        enabled = capabilities.columnsEditable,
                         modifier = Modifier.weight(1f),
                         onClick = {
                             updateDraft(
@@ -2755,6 +2761,13 @@ private fun EpubAppearancePanel(
                     )
                 }
             }
+            if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
+                Text(
+                    stringResource(R.string.reader_columns_paged_only),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+                )
+            }
 
             BrassRule(Modifier.fillMaxWidth())
 
@@ -2763,6 +2776,11 @@ private fun EpubAppearancePanel(
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
+            if (capabilities.rtlPublication && !capabilities.fixedLayout) {
+                ReaderCapabilityNotice(
+                    text = stringResource(R.string.reader_rtl_typography_notice)
+                )
+            }
 
             ReaderAppearanceTriState(
                 title = stringResource(R.string.reader_hyphenation),
@@ -2778,7 +2796,8 @@ private fun EpubAppearancePanel(
                             }
                         )
                     )
-                }
+                },
+                enabled = capabilities.hyphenationEditable
             )
             ReaderAppearanceTriState(
                 title = stringResource(R.string.reader_ligatures),
@@ -2794,7 +2813,8 @@ private fun EpubAppearancePanel(
                             }
                         )
                     )
-                }
+                },
+                enabled = capabilities.typographyEditable
             )
             ReaderAppearanceTriState(
                 title = stringResource(R.string.reader_text_normalization),
@@ -2810,7 +2830,8 @@ private fun EpubAppearancePanel(
                             }
                         )
                     )
-                }
+                },
+                enabled = capabilities.typographyEditable
             )
 
             ReaderAppearanceNullableSlider(
@@ -2821,7 +2842,8 @@ private fun EpubAppearancePanel(
                 valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewDraft(draft.withParagraphSpacing(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(paragraphSpacing = null)) }
+                onReset = { updateDraft(draft.copy(paragraphSpacing = null)) },
+                enabled = capabilities.typographyEditable
             )
             ReaderAppearanceNullableSlider(
                 label = stringResource(R.string.reader_paragraph_indent),
@@ -2831,7 +2853,8 @@ private fun EpubAppearancePanel(
                 valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewDraft(draft.withParagraphIndent(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(paragraphIndent = null)) }
+                onReset = { updateDraft(draft.copy(paragraphIndent = null)) },
+                enabled = capabilities.typographyEditable
             )
             ReaderAppearanceNullableSlider(
                 label = stringResource(R.string.reader_letter_spacing),
@@ -2841,7 +2864,8 @@ private fun EpubAppearancePanel(
                 valueLabel = { formatNumber(it) },
                 onValueChange = { previewDraft(draft.withLetterSpacing(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(letterSpacing = null)) }
+                onReset = { updateDraft(draft.copy(letterSpacing = null)) },
+                enabled = capabilities.letterSpacingEditable
             )
             ReaderAppearanceNullableSlider(
                 label = stringResource(R.string.reader_word_spacing),
@@ -2851,7 +2875,8 @@ private fun EpubAppearancePanel(
                 valueLabel = { formatNumber(it) },
                 onValueChange = { previewDraft(draft.withWordSpacing(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(wordSpacing = null)) }
+                onReset = { updateDraft(draft.copy(wordSpacing = null)) },
+                enabled = capabilities.wordSpacingEditable
             )
             ReaderAppearanceNullableSlider(
                 label = stringResource(R.string.reader_type_scale),
@@ -2861,7 +2886,8 @@ private fun EpubAppearancePanel(
                 valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewDraft(draft.withTypeScale(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
-                onReset = { updateDraft(draft.copy(typeScale = null)) }
+                onReset = { updateDraft(draft.copy(typeScale = null)) },
+                enabled = capabilities.typographyEditable
             )
 
             BrassRule(Modifier.fillMaxWidth())
@@ -2896,7 +2922,7 @@ private fun EpubAppearancePanel(
                             ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
                         },
                         selected = draft.darkImageTreatment == treatment,
-                        enabled = darkTheme,
+                        enabled = darkTheme && !capabilities.fixedLayout,
                         modifier = Modifier.weight(1f),
                         onClick = { updateDraft(draft.withDarkImageTreatment(treatment)) }
                     )
@@ -2931,6 +2957,7 @@ private fun EpubAppearancePanel(
                 }
                 Switch(
                     checked = draft.publisherStyles,
+                    enabled = capabilities.typographyEditable,
                     onCheckedChange = {
                         updateDraft(draft.copy(publisherStyles = it))
                     },
