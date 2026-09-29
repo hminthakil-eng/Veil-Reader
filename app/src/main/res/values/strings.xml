@@ -66,4 +66,35 @@
     <string name="book_metadata_series_number_error">Use a number such as 1 or 2.5.</string>
     <string name="book_metadata_language">Language tag (optional)</string>
     <string name="book_metadata_language_hint">BCP-47, for example en, fa, tr, or en-US.</string>
+
+    <string name="library_search_placeholder">Search the archive…</string>
+    <string name="library_clear">Clear</string>
+    <string name="library_archive_eyebrow">Archive</string>
+    <string name="library_shelves_title">Shelves</string>
+    <string name="library_tap_to_filter">Tap to filter</string>
+    <string name="library_favorites">Favorites</string>
+    <string name="library_favorites_subtitle">Volumes kept close</string>
+    <string name="library_currently_reading">Currently Reading</string>
+    <string name="library_currently_reading_subtitle">Open journeys</string>
+    <string name="library_completed">Completed</string>
+    <string name="library_completed_subtitle">Closed volumes</string>
+    <string name="library_deep_shelf">Deep Shelf</string>
+    <string name="library_deep_shelf_subtitle">Long-unopened volumes</string>
+    <string name="library_plan_to_read">Plan to Read</string>
+    <string name="library_plan_to_read_subtitle">Still unopened</string>
+    <string name="library_collection">Collection</string>
+    <string name="library_all_collections">All collections</string>
+    <string name="library_reset">Reset</string>
+    <string name="library_settings">Settings</string>
+    <string name="library_import">Import</string>
+    <string name="library_importing">Importing…</string>
+    <string name="library_archive_status">ARCHIVE STATUS</string>
+    <string name="library_archive_status_body">Catalogued locally. Private, offline, and ready to reopen.</string>
+    <string name="library_stat_books">Books</string>
+    <string name="library_stat_reading">Reading</string>
+    <string name="library_stat_finished">Finished</string>
+    <string name="library_stat_collections">Collections</string>
+    <string name="library_clear_active_filters">Clear active filters</string>
+    <string name="library_preparing_publication">Preparing publication…</string>
+    <string name="library_import_first_volume">Import your first volume</string>
 </resources>
