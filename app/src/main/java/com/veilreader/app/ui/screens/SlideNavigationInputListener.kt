@@ -218,6 +218,10 @@ internal class SlideNavigationInputListener(
                 if (navigate(spec.direction)) {
                     turnCommitted = true
                     onCommittedTurn()
+                } else {
+                    // Reduced-motion and failed-snapshot paths still owe the same semantic boundary
+                    // response even though there is no visual sheet available to bounce.
+                    onBoundaryHit(spec.side)
                 }
             }
 
@@ -476,6 +480,15 @@ internal fun hasDeliberateSlideIntent(
     val intentDistance = max(10f * safeDensity, width * 0.012f)
     return x >= intentDistance && x >= y * 1.15f
 }
+
+internal fun shouldEmitSlideTerminalBoundary(
+    commitRequested: Boolean,
+    cancellationRequested: Boolean,
+    navigationMoved: Boolean
+): Boolean =
+    commitRequested &&
+        !cancellationRequested &&
+        !navigationMoved
 
 internal fun shouldUseVeilSlideNavigation(
     format: com.veilreader.app.domain.BookFormat,
