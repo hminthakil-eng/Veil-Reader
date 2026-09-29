@@ -182,6 +182,17 @@ fun ReaderScreen(
     }
     val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
     val reducedMotion = LocalVeilReducedMotion.current
+    val highlightedMessage = stringResource(R.string.reader_highlighted)
+    val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
+    val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
+    val previousLocationFailedMessage = stringResource(R.string.reader_previous_location_failed)
+    val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
+    val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
+    val bookmarkDuplicateMessage = stringResource(R.string.reader_bookmark_duplicate)
+    val noteSavedMessage = stringResource(R.string.reader_note_saved)
+    val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
+    val savedLocationFailedMessage = stringResource(R.string.reader_saved_location_failed)
+    val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
@@ -323,7 +334,7 @@ fun ReaderScreen(
         label = "reader-snackbar-offset"
     )
 
-    val selectionActionModeCallback = remember(opened.book.id, library, readerViewModel, scope) {
+    val selectionActionModeCallback = remember(opened.book.id, library, readerViewModel, scope, highlightedMessage, alreadyHighlightedMessage, passageSaveFailedMessage) {
         ReaderSelectionActionModeCallback(
             coroutineScope = scope,
             navigatorProvider = { navigator as? SelectableNavigator },
@@ -353,7 +364,7 @@ fun ReaderScreen(
 
                     when (action) {
                         ReaderSelectionAction.HIGHLIGHT -> {
-                            readerMessage = if (isNew) "Highlighted" else "Already highlighted"
+                            readerMessage = if (isNew) highlightedMessage else alreadyHighlightedMessage
                         }
                         ReaderSelectionAction.NOTE -> {
                             pendingNoteHighlightId = highlight.id
@@ -363,7 +374,7 @@ fun ReaderScreen(
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
-                    readerMessage = error.message ?: "That passage could not be saved."
+                    readerMessage = passageSaveFailedMessage
                 }
             }
         )
@@ -415,7 +426,7 @@ fun ReaderScreen(
             previousLocationJson = currentJson?.takeIf { it != targetJson }
             controlsVisible = false
         } else {
-            readerMessage = "The previous reading location could not be restored."
+            readerMessage = previousLocationFailedMessage
         }
     }
 
@@ -452,7 +463,7 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId(),
                     details = "error=${error::class.java.simpleName}"
                 )
-                readerMessage = "Could not safely close this book because the latest reading position was not confirmed in storage."
+                readerMessage = closeStorageFailedMessage
             }
         }
     }
@@ -670,14 +681,20 @@ fun ReaderScreen(
     }
 
     val readerCanvas = readerCanvasColor(readerAppearance.theme)
+    val readerSurfaceLabel = stringResource(R.string.reader_surface_label)
+    val controlsActionLabel = stringResource(
+        if (controlsVisible) R.string.reader_hide_controls else R.string.reader_show_controls
+    )
+    val progressPercent = (progress.coerceIn(0f, 1f) * 100).toInt()
+    val progressDescription = stringResource(R.string.reader_percent_read, progressPercent)
 
     Box(
         Modifier
             .fillMaxSize()
             .background(readerCanvas)
             .semantics {
-                contentDescription = "Reader surface"
-                onClick(label = "Toggle reader controls") {
+                contentDescription = readerSurfaceLabel
+                onClick(label = controlsActionLabel) {
                     readerViewModel.onUserInteraction()
                     controlsVisible = !controlsVisible
                     true
@@ -759,7 +776,7 @@ fun ReaderScreen(
                     ) {
                         ReaderChromeButton(
                             ReaderAction.BACK,
-                            "Close reader"
+                            stringResource(R.string.reader_close)
                         ) { closeReader() }
 
                         Column(
@@ -785,10 +802,10 @@ fun ReaderScreen(
                         }
 
                         Text(
-                            "${(progress.coerceIn(0f, 1f) * 100).toInt()}%",
+                            "$progressPercent%",
                             modifier = Modifier.semantics {
                                 contentDescription =
-                                    "${(progress.coerceIn(0f, 1f) * 100).toInt()} percent read"
+                                    progressDescription
                             },
                             color = VeilPalette.Brass,
                             style = MaterialTheme.typography.labelMedium
@@ -855,7 +872,7 @@ fun ReaderScreen(
                     ) {
                         ReaderControl(
                             action = ReaderAction.NOTEBOOK,
-                            label = "Notes",
+                            label = stringResource(R.string.reader_notes),
                             modifier = Modifier.weight(1f)
                         ) {
                             readerViewModel.onUserInteraction()
@@ -864,7 +881,7 @@ fun ReaderScreen(
 
                         ReaderControl(
                             action = ReaderAction.BOOKMARK,
-                            label = "Mark",
+                            label = stringResource(R.string.reader_mark),
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
@@ -880,9 +897,9 @@ fun ReaderScreen(
                                     onSensoryEvent(VeilSensoryEvent.MARK)
                                 }
                                 readerMessage = if (added) {
-                                    "Bookmark saved"
+                                    bookmarkSavedMessage
                                 } else {
-                                    "This location is already bookmarked"
+                                    bookmarkDuplicateMessage
                                 }
                             }
                         }
@@ -893,7 +910,7 @@ fun ReaderScreen(
                             } else {
                                 ReaderAction.ZOOM
                             },
-                            label = if (opened.format == BookFormat.EPUB) "Type" else "Zoom",
+                            label = stringResource(if (opened.format == BookFormat.EPUB) R.string.reader_type else R.string.reader_zoom),
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
@@ -944,12 +961,12 @@ fun ReaderScreen(
                     verticalArrangement = Arrangement.spacedBy(1.dp)
                 ) {
                     Text(
-                        "RETURN",
+                        stringResource(R.string.reader_return),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass.copy(alpha = 0.84f)
                     )
                     Text(
-                        "Previous location",
+                        stringResource(R.string.reader_previous_location),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -994,14 +1011,14 @@ fun ReaderScreen(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        "HIDDEN ARCHIVE · PASSAGE NOTE",
+                        stringResource(R.string.reader_note_eyebrow),
                         style = MaterialTheme.typography.labelSmall.copy(
                             letterSpacing = 1.25.sp
                         ),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Note on this passage",
+                        stringResource(R.string.notebook_note_dialog_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = VeilPalette.Moon
                     )
@@ -1029,7 +1046,7 @@ fun ReaderScreen(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        "SELECTED PASSAGE",
+                                        stringResource(R.string.reader_selected_passage),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass.copy(alpha = 0.82f)
                                     )
@@ -1048,7 +1065,7 @@ fun ReaderScreen(
                         value = pendingNoteText,
                         onValueChange = { pendingNoteText = it },
                         enabled = !noteSaving,
-                        placeholder = { Text("Write what you want to remember…") },
+                        placeholder = { Text(stringResource(R.string.reader_note_hint)) },
                         minLines = 4,
                         maxLines = 8,
                         shape = MaterialTheme.shapes.extraSmall,
@@ -1066,7 +1083,7 @@ fun ReaderScreen(
                         horizontalArrangement = Arrangement.End
                     ) {
                         Text(
-                            "${pendingNoteText.length} characters",
+                            stringResource(R.string.reader_characters_count, pendingNoteText.length),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
                         )
@@ -1086,11 +1103,11 @@ fun ReaderScreen(
                                 onSensoryEvent(VeilSensoryEvent.NOTE)
                                 pendingNoteHighlightId = null
                                 pendingNoteText = ""
-                                readerMessage = "Note saved"
+                                readerMessage = noteSavedMessage
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (error: Exception) {
-                                readerMessage = error.message ?: "The note could not be saved."
+                                readerMessage = noteSaveFailedMessage
                             } finally {
                                 noteSaving = false
                             }
@@ -1102,7 +1119,7 @@ fun ReaderScreen(
                         contentColor = Color(0xFF17120A)
                     )
                 ) {
-                    Text(if (noteSaving) "Saving…" else "Save note")
+                    Text(stringResource(if (noteSaving) R.string.reader_saving_note else R.string.reader_save_note))
                 }
             },
             dismissButton = {
@@ -1114,7 +1131,7 @@ fun ReaderScreen(
                     }
                 ) {
                     Text(
-                        "Cancel",
+                        stringResource(R.string.common_cancel),
                         color = VeilPalette.Moon.copy(alpha = 0.72f)
                     )
                 }
@@ -1143,7 +1160,7 @@ fun ReaderScreen(
                     showNotebook = false
                 } else {
                     showNotebook = false
-                    readerMessage = "That saved location could not be opened."
+                    readerMessage = savedLocationFailedMessage
                 }
             },
             onChapter = { link ->
@@ -1155,7 +1172,7 @@ fun ReaderScreen(
                     showNotebook = false
                 } else {
                     showNotebook = false
-                    readerMessage = "This chapter could not be opened."
+                    readerMessage = chapterFailedMessage
                 }
             },
             onSaveNote = { id, note ->
@@ -1163,7 +1180,7 @@ fun ReaderScreen(
                 library.flushWrites()
                 readerViewModel.onNoteSaved(id, note)
                 onSensoryEvent(VeilSensoryEvent.NOTE)
-                readerMessage = "Note saved"
+                readerMessage = noteSavedMessage
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
