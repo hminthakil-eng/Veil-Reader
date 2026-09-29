@@ -1807,6 +1807,53 @@ fun ReaderScreen(
 internal fun shouldAnimateReaderJump(reducedMotion: Boolean): Boolean =
     !reducedMotion
 
+internal data class ReaderAppearanceCapabilities(
+    val fixedLayout: Boolean,
+    val rtlPublication: Boolean,
+    val continuousScroll: Boolean
+) {
+    val typographyEditable: Boolean
+        get() = !fixedLayout
+
+    val continuousScrollEditable: Boolean
+        get() = !fixedLayout
+
+    val columnsEditable: Boolean
+        get() = !fixedLayout && !continuousScroll
+
+    val hyphenationEditable: Boolean
+        get() = !fixedLayout && !rtlPublication
+
+    val letterSpacingEditable: Boolean
+        get() = !fixedLayout && !rtlPublication
+
+    val wordSpacingEditable: Boolean
+        get() = !fixedLayout && !rtlPublication
+}
+
+internal fun readerAppearanceCapabilities(
+    fixedLayout: Boolean,
+    languageTag: String?,
+    continuousScroll: Boolean
+): ReaderAppearanceCapabilities =
+    ReaderAppearanceCapabilities(
+        fixedLayout = fixedLayout,
+        rtlPublication = usesRtlReaderTypography(languageTag),
+        continuousScroll = continuousScroll
+    )
+
+internal fun usesRtlReaderTypography(languageTag: String?): Boolean {
+    val primary = languageTag
+        ?.trim()
+        ?.substringBefore('-')
+        ?.substringBefore('_')
+        ?.lowercase(java.util.Locale.ROOT)
+        .orEmpty()
+    return primary in setOf(
+        "ar", "fa", "ur", "ps", "ckb", "he", "iw", "yi", "dv", "sd"
+    )
+}
+
 internal fun shouldEmitReaderBoundaryFeedback(
     nowMillis: Long,
     lastEmissionMillis: Long,
