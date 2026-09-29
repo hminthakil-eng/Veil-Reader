@@ -47,14 +47,16 @@ internal class SlideNavigationInputListener(
     private var releaseVelocityPxPerSec = 0f
 
     override fun onTap(event: TapEvent): Boolean {
-        if (!slideModeEnabled() || state.active) return false
+        if (!slideModeEnabled()) return cancelPendingTurn()
+        if (completionJob != null || state.active || reserved) return true
         val spec = resolveEdgeTurn(event.point.x) ?: return false
         performDiscreteTurn(spec)
         return true
     }
 
     override fun onKey(event: KeyEvent): Boolean {
-        if (!slideModeEnabled()) return false
+        if (!slideModeEnabled()) return cancelPendingTurn()
+        if (completionJob != null || state.active || reserved) return true
         if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) return false
 
         val progression = navigator.overflow.value.readingProgression
@@ -77,10 +79,11 @@ internal class SlideNavigationInputListener(
 
     override fun onDrag(event: DragEvent): Boolean {
         if (!slideModeEnabled()) {
-            resetDrag()
-            return false
+            // Mode ownership can change after the destination preview has already navigated.
+            // Restore the captured source before allowing another mode to see this gesture.
+            return cancelPendingTurn()
         }
-        if (state.active && !reserved) return true
+        if (completionJob != null || (state.active && !reserved)) return true
 
         return when (event.type) {
             DragEvent.Type.Start -> onDragStart()
@@ -251,21 +254,26 @@ internal class SlideNavigationInputListener(
         val moved = navigate(spec.direction)
         if (!moved) {
             if (visualReady) {
-                scope.launch {
+                completionJob = scope.launch {
                     state.animateBoundaryBounce(visualDirectionSign(spec.side))
                     state.clear()
+                    resetDrag()
                 }
             }
             return
         }
 
+        turnCommitted = true
         onCommittedTurn()
         if (visualReady) {
-            scope.launch {
+            completionJob = scope.launch {
                 delay(com.veilreader.app.ui.theme.VeilMotion.PAGE_REVEAL_MS)
                 state.animateComplete(visualDirectionSign(spec.side))
                 state.clear()
+                resetDrag()
             }
+        } else {
+            resetDrag()
         }
     }
 
