@@ -847,8 +847,8 @@
     <string name="threshold_open_volume">Open the volume</string>
     <string name="threshold_progress_finished_reopen">Finished — open again anytime</string>
     <string name="threshold_progress_ready">Ready to begin</string>
-    <string name="threshold_progress_chapter">%1$s · %2$d%%</string>
-    <string name="threshold_progress_complete">%1$d%% complete</string>
+    <string name="threshold_progress_chapter">%1$s · %2$s</string>
+    <string name="threshold_progress_complete">%1$s complete</string>
     <string name="threshold_recent_eyebrow">RECENT TOMES</string>
     <string name="threshold_recent_title">Return to another world</string>
     <string name="common_view_all">View all</string>
@@ -1055,8 +1055,8 @@
     <string name="entry_opening_threshold">OPENING THRESHOLD</string>
     <string name="entry_entering_sanctuary">ENTERING SANCTUARY</string>
     <string name="entry_status_completed_returning">COMPLETED VOLUME · RETURNING</string>
-    <string name="entry_status_returning_chapter">RETURNING · %1$d%% · %2$s</string>
-    <string name="entry_status_returning_progress">RETURNING · %1$d%%</string>
+    <string name="entry_status_returning_chapter">RETURNING · %1$s · %2$s</string>
+    <string name="entry_status_returning_progress">RETURNING · %1$s</string>
     <string name="entry_status_opening_again">OPENING AGAIN</string>
     <string name="entry_status_first_entry">FIRST ENTRY</string>
     <string name="entry_returning_to_page">RETURNING TO THE PAGE</string>
