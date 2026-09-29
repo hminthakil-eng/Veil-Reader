@@ -27,10 +27,14 @@ internal class VeilDirectionalNavigationInputListener(
         if (!isTapNavigationEnabled()) return false
         if (navigator.overflow.value.scroll) return false
 
-        val width = navigator.publicationView.width.toDouble()
-        if (width <= 0.0) return false
-
-        val edge = maxOf(MIN_EDGE_PX, width * EDGE_FRACTION)
+        val width = navigator.publicationView.width.toFloat()
+        if (width <= 0f) return false
+        val density = navigator.publicationView.resources.displayMetrics.density
+        val edge = pageTurnTapZonePx(
+            width = width,
+            density = density,
+            preferredFraction = EDGE_FRACTION
+        )
         return when {
             event.point.x <= edge -> goLeft()
             event.point.x >= width - edge -> goRight()
@@ -75,7 +79,6 @@ internal class VeilDirectionalNavigationInputListener(
     }
 
     private companion object {
-        const val MIN_EDGE_PX = 80.0
-        const val EDGE_FRACTION = 0.30
+        const val EDGE_FRACTION = 0.22f
     }
 }
