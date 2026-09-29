@@ -81,4 +81,39 @@ class LibraryCompositionTest {
         val series = groups.first { it.eyebrow == "Series" && it.title == "Veil" }
         assertEquals(listOf("first", "reading"), series.books.map { it.id })
     }
+
+    @Test
+    fun `localized shelf labels preserve grouping truth`() {
+        val books = listOf(
+            Book(id = "reading", title = "Current", author = "Author", progress = 0.5f),
+            Book(id = "done", title = "Done", author = "Author", finished = true),
+            Book(id = "waiting", title = "Waiting", author = "Other")
+        )
+        val labels = LibraryShelfLabels(
+            journey = "مسیر",
+            currentlyReading = "در حال مطالعه",
+            author = "نویسنده",
+            record = "رکورد",
+            completedVolumes = "تمام‌شده",
+            unopened = "گشوده‌نشده",
+            waitingOnShelf = "در انتظار"
+        )
+
+        val groups = deriveLibraryShelfGroups(
+            books = books,
+            filtered = books,
+            filterActive = false,
+            labels = labels
+        )
+
+        assertTrue(groups.any { it.eyebrow == "مسیر" && it.title == "در حال مطالعه" })
+        assertTrue(groups.any { it.eyebrow == "نویسنده" && it.title == "Author" })
+        assertTrue(groups.any { it.eyebrow == "رکورد" && it.title == "تمام‌شده" })
+        assertTrue(groups.any { it.eyebrow == "گشوده‌نشده" && it.title == "در انتظار" })
+        assertEquals(
+            setOf("reading", "done", "waiting"),
+            groups.flatMap { it.books }.map { it.id }.toSet()
+        )
+    }
+
 }
