@@ -259,4 +259,39 @@
     <string name="archive_view_years">آخرین بازدید: %1$d سال پیش</string>
     <string name="archive_revisited_once">%1$d بار بازدید دوباره</string>
     <string name="archive_revisited_many">%1$d بار بازدید دوباره</string>
+
+    <!-- تاریخچهٔ مهرشدهٔ مطالعه -->
+    <string name="capsule_sealed_record">رکورد مهرشدهٔ مطالعه</string>
+    <string name="capsule_sealed_cycle">رکورد مهرشدهٔ مطالعه · دور %1$d</string>
+    <string name="capsule_completed_at">پایان یافته · %1$s</string>
+    <string name="capsule_open_history">دیدن تاریخچهٔ نگه‌داشته‌شده</string>
+    <string name="capsule_sheet_title">کپسول زمان · مهرشده</string>
+    <string name="capsule_sheet_cycle">کپسول زمان · دور %1$d · مهرشده</string>
+    <string name="capsule_sessions">نشست‌ها</string>
+    <string name="capsule_active">زمان فعال</string>
+    <string name="capsule_passages">متن‌ها</string>
+    <string name="capsule_notes_marks">یادداشت / نشان</string>
+    <string name="capsule_history">تاریخچهٔ مطالعه</string>
+    <string name="capsule_no_timeline">این کتاب پیش از ثبت تاریخچهٔ دقیق نشست‌ها پایان یافته است. وضعیت پایان حفظ شده، اما خط زمانیِ تاریخ‌دار در دست نیست.</string>
+    <string name="capsule_completion_unknown">پایان کتاب به‌عنوان یک وضعیت حفظ شده است. این نسخهٔ آرشیو زمان دقیق نخستین پایان را ثبت نکرده است؛ بنابراین Veil تاریخی برای آن نمی‌سازد.</string>
+    <string name="capsule_close">بستن رکورد</string>
+    <string name="capsule_date_unknown">تاریخ نامعلوم</string>
+    <string name="capsule_hours">%1$d ساعت</string>
+    <string name="capsule_hours_minutes">%1$d ساعت و %2$d دقیقه</string>
+    <string name="capsule_minutes">%1$d دقیقه</string>
+    <string name="capsule_less_than_minute">کمتر از ۱ دقیقه</string>
+    <string name="capsule_one_session">%1$d نشست</string>
+    <string name="capsule_many_sessions">%1$d نشست</string>
+    <string name="capsule_one_passage">%1$d متن</string>
+    <string name="capsule_many_passages">%1$d متن</string>
+    <string name="capsule_one_note">%1$d یادداشت</string>
+    <string name="capsule_many_notes">%1$d یادداشت</string>
+    <string name="capsule_event_archived">ورود به آرشیو مه‌آلود</string>
+    <string name="capsule_event_session">نشست مطالعه</string>
+    <string name="capsule_event_passage">متن نگه‌داشته شد</string>
+    <string name="capsule_event_annotated">متن همراه یادداشت نگه‌داشته شد</string>
+    <string name="capsule_event_location">مکان مطالعه نشان‌گذاری شد</string>
+    <string name="capsule_event_milestone">نقطهٔ عطف مطالعه</string>
+    <string name="capsule_event_completed">کتاب پایان یافت</string>
+    <string name="capsule_event_latest">آخرین فعالیت ثبت‌شدهٔ کتاب</string>
 </resources>
