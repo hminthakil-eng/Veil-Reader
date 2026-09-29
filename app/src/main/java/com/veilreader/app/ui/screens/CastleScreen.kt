@@ -375,17 +375,15 @@ private fun CastleKeep(
 
 @Composable
 private fun CastleMemoryInscription(memory: CastleMemoryState) {
+    val volumesText = stringResource(R.string.castle_memory_volumes, memory.volumeCount)
+    val passagesText = stringResource(R.string.castle_memory_passages, memory.passageCount)
+    val recordsText = stringResource(R.string.castle_memory_records, memory.sealedCapsuleCount)
+    val linksText = stringResource(R.string.castle_memory_links, memory.atlasLinkCount)
     val facts = buildList {
-        add(stringResource(R.string.castle_memory_volumes, memory.volumeCount))
-        if (memory.passageCount > 0) {
-            add(stringResource(R.string.castle_memory_passages, memory.passageCount))
-        }
-        if (memory.sealedCapsuleCount > 0) {
-            add(stringResource(R.string.castle_memory_records, memory.sealedCapsuleCount))
-        }
-        if (memory.atlasLinkCount > 0) {
-            add(stringResource(R.string.castle_memory_links, memory.atlasLinkCount))
-        }
+        add(volumesText)
+        if (memory.passageCount > 0) add(passagesText)
+        if (memory.sealedCapsuleCount > 0) add(recordsText)
+        if (memory.atlasLinkCount > 0) add(linksText)
     }
 
     Column(
