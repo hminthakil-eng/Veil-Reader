@@ -611,4 +611,5 @@
     <string name="threshold_first_volume_waiting">Your first volume is waiting</string>
     <string name="threshold_first_volume_body">Import an EPUB or PDF. Once you begin, this page becomes the shortest path back into the book.</string>
     <string name="threshold_enter_library">Enter the Library</string>
+    <string name="common_opening_archive">Opening the archive</string>
 </resources>
