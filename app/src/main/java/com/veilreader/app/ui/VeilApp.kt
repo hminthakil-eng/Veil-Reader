@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -27,6 +28,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.core.layout.WindowSizeClass
+import com.veilreader.app.R
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
@@ -222,7 +224,11 @@ fun VeilApp(
     var exporting by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var notice by remember { mutableStateOf<VeilNotice?>(null) }
+
+    fun showNotice(resourceId: Int, kind: VeilNoticeKind = VeilNoticeKind.ERROR, vararg args: Any) {
+        notice = VeilNotice(context.getString(resourceId, *args), kind)
+    }
 
     fun exportData(uri: Uri, backup: Boolean) {
         if (exporting || restoring) return
@@ -231,11 +237,14 @@ fun VeilApp(
             try {
                 val exporter = LibraryExport(context, library)
                 if (backup) exporter.writeBackup(uri) else exporter.writeNotebook(uri)
-                errorMessage = if (backup) "Library backup exported." else "Notebook exported."
+                showNotice(
+                    if (backup) R.string.notice_backup_exported else R.string.notice_notebook_exported,
+                    VeilNoticeKind.SUCCESS
+                )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                errorMessage = "Export failed. The destination may contain an incomplete file. ${error.message.orEmpty()}"
+                showNotice(R.string.notice_export_failed)
             } finally {
                 exporting = false
             }
@@ -251,12 +260,17 @@ fun VeilApp(
                 if (activity != null) {
                     activity.recreate()
                 } else {
-                    errorMessage = "Restored ${result.booksRestored} books and ${result.highlightsRestored} highlights. Reopen Veil Reader to load them."
+                    showNotice(
+                        R.string.notice_restore_success,
+                        VeilNoticeKind.SUCCESS,
+                        result.booksRestored,
+                        result.highlightsRestored
+                    )
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                errorMessage = "Restore failed. Your existing local data was kept. ${error.message.orEmpty()}"
+                showNotice(R.string.notice_restore_failed)
             } finally {
                 restoring = false
             }
@@ -266,7 +280,7 @@ fun VeilApp(
     fun requestOpenBook(book: Book, locatorOverride: String? = null) {
         if (restoring) return
         if (!book.isImported) {
-            errorMessage = "This sample entry has no source file. Import an EPUB or PDF from Android Files."
+            showNotice(R.string.notice_sample_no_file)
             return
         }
         routeViewModel.requestBook(book.id, locatorOverride)
@@ -281,7 +295,7 @@ fun VeilApp(
                 val inspectionError = inspected.exceptionOrNull()
                 if (inspectionError != null) {
                     if (inspectionError is CancellationException) throw inspectionError
-                    errorMessage = inspectionError.message ?: "Could not import this publication."
+                    showNotice(R.string.notice_import_failed)
                     return@launch
                 }
 
@@ -289,12 +303,12 @@ fun VeilApp(
                 routeViewModel.selectTab(VeilTab.LIBRARY)
                 routeViewModel.requestBook(commit.book.id)
                 if (commit.duplicate) {
-                    errorMessage = "${commit.book.title} is already in your Grand Library. I opened the existing copy."
+                    showNotice(R.string.notice_duplicate_book, VeilNoticeKind.SUCCESS, commit.book.title)
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                errorMessage = error.message ?: "Could not import this publication."
+                showNotice(R.string.notice_import_failed)
             } finally {
                 isImporting = false
             }
@@ -326,7 +340,7 @@ fun VeilApp(
         val book = library.getBook(targetId) ?: targetBook ?: return@LaunchedEffect
         if (!book.isImported) {
             routeViewModel.bookOpenFailed(targetId)
-            errorMessage = "This book no longer has a local publication file."
+            showNotice(R.string.notice_book_file_missing)
             return@LaunchedEffect
         }
 
@@ -371,7 +385,7 @@ fun VeilApp(
             onFailure = { error ->
                 if (error is CancellationException) throw error
                 routeViewModel.bookOpenFailed(targetId)
-                errorMessage = error.message ?: "Could not open this book."
+                showNotice(R.string.notice_open_failed)
                 return@LaunchedEffect
             }
         )
@@ -387,7 +401,7 @@ fun VeilApp(
             opened.close()
             throw cancelled
         } catch (error: Exception) {
-            errorMessage = "The book opened, but older PDF reading positions could not be upgraded yet. ${error.message.orEmpty()}"
+            showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING)
         }
 
         val recoveryLocator = locatorOverride ?: readerCheckpoint
@@ -424,7 +438,7 @@ fun VeilApp(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
+                        showNotice(R.string.notice_position_save_failed, VeilNoticeKind.WARNING)
                     }
                 }
             }
@@ -437,7 +451,7 @@ fun VeilApp(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        errorMessage = "Your restored reading position is open, but could not be made durable yet. ${error.message.orEmpty()}"
+                        showNotice(R.string.notice_checkpoint_save_failed, VeilNoticeKind.WARNING)
                     }
                 }
             }
@@ -497,7 +511,7 @@ fun VeilApp(
                 },
                 onAdvanceRank = {
                     if (!game.advanceRank()) {
-                        errorMessage = "Complete the current advancement ritual first."
+                        showNotice(R.string.notice_ritual_required)
                     } else {
                         sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
                     }
@@ -512,14 +526,14 @@ fun VeilApp(
                 profile = requireNotNull(profile),
                 onAdvanceRank = {
                     if (!game.advanceRank()) {
-                        errorMessage = "Complete the current advancement ritual first."
+                        showNotice(R.string.notice_ritual_required)
                     } else {
                         sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
                     }
                 },
                 onChoosePath = { pathId ->
                     if (!game.choosePath(pathId)) {
-                        errorMessage = "Your Path is sealed after the first rank advancement."
+                        showNotice(R.string.notice_path_sealed)
                     }
                 }
             )
@@ -597,7 +611,7 @@ fun VeilApp(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        errorMessage = "Your note changed locally, but storage confirmation failed. " + error.message.orEmpty()
+                        showNotice(R.string.notice_note_save_failed, VeilNoticeKind.WARNING)
                     }
                 }
             },
@@ -611,7 +625,9 @@ fun VeilApp(
     ) {
         VeilWorldBackdrop {
             VeilLoadingState(
-                label = if (restoring) "Restoring the archive" else "Opening the archive"
+                label = stringResource(
+                    if (restoring) R.string.notice_loading_restore else R.string.notice_loading_open
+                )
             )
         }
     } else if (route.activeChamber == "observatory") {
@@ -628,7 +644,7 @@ fun VeilApp(
             equippedSigil = equippedSigil,
             onEquip = { id ->
                 if (!game.equipSigil(id)) {
-                    errorMessage = "That sigil has not awakened yet."
+                    showNotice(R.string.notice_sigil_sealed)
                 } else {
                     sensory.perform(view, VeilSensoryEvent.RELIC)
                 }
@@ -642,7 +658,7 @@ fun VeilApp(
             availableTitles = game.availableCastleTitles(),
             onSelectTitle = { title ->
                 if (!game.selectCastleTitle(title)) {
-                    errorMessage = "That Castle title is still sealed."
+                    showNotice(R.string.notice_title_sealed)
                 } else {
                     sensory.perform(view, VeilSensoryEvent.RELIC)
                 }
@@ -720,36 +736,44 @@ fun VeilApp(
         }
     }
 
-    errorMessage?.let { message ->
+    notice?.let { currentNotice ->
+        val eyebrow = when (currentNotice.kind) {
+            VeilNoticeKind.SUCCESS -> R.string.notice_success_eyebrow
+            VeilNoticeKind.WARNING -> R.string.notice_warning_eyebrow
+            VeilNoticeKind.ERROR -> R.string.notice_error_eyebrow
+        }
+        val heading = when (currentNotice.kind) {
+            VeilNoticeKind.SUCCESS -> R.string.notice_success_title
+            VeilNoticeKind.WARNING -> R.string.notice_warning_title
+            VeilNoticeKind.ERROR -> R.string.notice_error_title
+        }
         AlertDialog(
-            onDismissRequest = { errorMessage = null },
+            onDismissRequest = { notice = null },
             shape = MaterialTheme.shapes.small,
             containerColor = VeilPalette.Archive,
             titleContentColor = VeilPalette.Moon,
             textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             tonalElevation = 0.dp,
             title = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "INTERRUPTION · LOCAL",
+                        stringResource(eyebrow),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "The action could not be completed",
+                        stringResource(heading),
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
             },
-            text = { Text(message) },
+            text = { Text(currentNotice.message) },
             confirmButton = {
                 Button(
-                    onClick = { errorMessage = null },
+                    onClick = { notice = null },
                     shape = MaterialTheme.shapes.extraSmall
                 ) {
-                    Text("Return")
+                    Text(stringResource(R.string.notice_return))
                 }
             }
         )
@@ -776,3 +800,7 @@ private fun sigilDisplayName(id: String): String = when (id) {
     else -> "Unknown Sigil"
 }
 
+
+private enum class VeilNoticeKind { SUCCESS, WARNING, ERROR }
+
+private data class VeilNotice(val message: String, val kind: VeilNoticeKind)
