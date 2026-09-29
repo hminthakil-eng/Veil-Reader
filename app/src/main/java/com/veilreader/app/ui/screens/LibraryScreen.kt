@@ -2707,12 +2707,12 @@ private fun LibraryImportStatus() {
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "PREPARING PUBLICATION",
+                    stringResource(R.string.library_import_status_title),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Inspecting the file and preparing its local archive record.",
+                    stringResource(R.string.library_import_status_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist.copy(alpha = 0.82f)
                 )
@@ -2770,21 +2770,21 @@ private fun LibraryEmptyState(
             }
 
             Text(
-                if (hasBooks) "NO MATCHING VOLUMES" else "YOUR ARCHIVE IS EMPTY",
+                if (hasBooks) stringResource(R.string.library_empty_filtered_eyebrow) else stringResource(R.string.library_empty_archive_eyebrow),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
                 color = VeilPalette.Brass
             )
 
             Text(
-                if (hasBooks) "Nothing in this part of the archive" else "The first volume begins the world",
+                if (hasBooks) stringResource(R.string.library_empty_filtered_title) else stringResource(R.string.library_empty_archive_title),
                 style = MaterialTheme.typography.titleLarge
             )
 
             Text(
                 if (hasBooks) {
-                    "No book matches the current search, shelf, or collection. Clear the filters and the archive will return."
+                    stringResource(R.string.library_empty_filtered_body)
                 } else {
-                    "Import an EPUB or PDF. The first volume establishes your Archive; progress, highlights, and notes remain local on this device."
+                    stringResource(R.string.library_empty_archive_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2840,9 +2840,9 @@ private fun LibraryShelvesView(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibrarySectionHeading(
-                    eyebrow = group.eyebrow,
-                    title = group.title,
-                    trailing = "${group.books.size} volumes"
+                    eyebrow = localizedShelfEyebrow(group.eyebrow),
+                    title = localizedShelfTitle(group.title),
+                    trailing = stringResource(R.string.library_volume_count, group.books.size)
                 )
                 BrassRule(Modifier.fillMaxWidth())
                 Row(
@@ -2896,7 +2896,7 @@ private fun LibraryShelvesView(
                                 modifier = Modifier.heightIn(min = 48.dp),
                                 contentPadding = PaddingValues(horizontal = 0.dp)
                             ) {
-                                Text("Archive record")
+                                Text(stringResource(R.string.library_archive_record))
                             }
                         }
                     }
@@ -2906,6 +2906,28 @@ private fun LibraryShelvesView(
     }
 }
 
+@Composable
+private fun localizedShelfEyebrow(value: String): String =
+    when (value) {
+        "Filtered archive" -> stringResource(R.string.library_group_filtered_archive)
+        "Journey" -> stringResource(R.string.library_group_journey)
+        "Collection" -> stringResource(R.string.library_collection)
+        "Series" -> stringResource(R.string.library_sort_series)
+        "Author" -> stringResource(R.string.library_sort_author)
+        "Record" -> stringResource(R.string.library_group_record)
+        "Unopened" -> stringResource(R.string.library_unopened)
+        else -> value
+    }
+
+@Composable
+private fun localizedShelfTitle(value: String): String =
+    when (value) {
+        "Matching volumes" -> stringResource(R.string.library_group_matching_volumes)
+        "Currently reading" -> stringResource(R.string.library_currently_reading)
+        "Completed volumes" -> stringResource(R.string.library_group_completed_volumes)
+        "Waiting on the shelf" -> stringResource(R.string.library_group_waiting_on_shelf)
+        else -> value
+    }
 @Composable
 private fun librarySortLabel(sort: String): String =
     when (sort) {
