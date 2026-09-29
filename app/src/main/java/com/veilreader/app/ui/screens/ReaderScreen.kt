@@ -780,6 +780,7 @@ fun ReaderScreen(
                     !latestReducedMotion.value &&
                         shouldAnimateDirectionalNavigation(
                             format = opened.format,
+                            scroll = nav.overflow.value.scroll,
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
                         )
                 },
