@@ -14,9 +14,10 @@ enum class SmartShelfKind {
 
 data class SmartShelf(
     val id: String,
-    val title: String,
     val kind: SmartShelfKind,
-    val books: List<Book>
+    val books: List<Book>,
+    /** User-authored collection name; standard shelf labels belong to the UI locale layer. */
+    val collectionName: String? = null
 )
 
 fun buildSmartShelves(
@@ -31,16 +32,15 @@ fun buildSmartShelves(
 
     val shelves = mutableListOf<SmartShelf>()
 
-    fun addShelf(id: String, title: String, kind: SmartShelfKind, candidates: List<Book>) {
+    fun addShelf(id: String, kind: SmartShelfKind, candidates: List<Book>, collectionName: String? = null) {
         val visible = candidates.take(limit)
         if (visible.isNotEmpty()) {
-            shelves += SmartShelf(id = id, title = title, kind = kind, books = visible)
+            shelves += SmartShelf(id = id, kind = kind, books = visible, collectionName = collectionName)
         }
     }
 
     addShelf(
         id = "continue-reading",
-        title = "Continue Reading",
         kind = SmartShelfKind.CONTINUE_READING,
         candidates = imported
             .filter { !it.finished && it.progress > 0f }
@@ -49,7 +49,6 @@ fun buildSmartShelves(
 
     addShelf(
         id = "recently-added",
-        title = "Recently Added",
         kind = SmartShelfKind.RECENTLY_ADDED,
         candidates = imported.sortedWith(
             compareByDescending<Book> { it.addedAtEpochMs }
@@ -59,21 +58,18 @@ fun buildSmartShelves(
 
     addShelf(
         id = "finished",
-        title = "Finished",
         kind = SmartShelfKind.FINISHED,
         candidates = imported.filter { it.finished }.sortedWith(recencyComparator())
     )
 
     addShelf(
         id = "favorites",
-        title = "Favorites",
         kind = SmartShelfKind.FAVORITES,
         candidates = imported.filter { it.favorite }.sortedWith(recencyComparator())
     )
 
     addShelf(
         id = "series",
-        title = "Series",
         kind = SmartShelfKind.SERIES,
         candidates = imported
             .filter { !it.seriesName.isNullOrBlank() }
@@ -101,8 +97,8 @@ fun buildSmartShelves(
     collectionNames.forEach { (normalized, displayName) ->
         addShelf(
             id = "collection:$normalized",
-            title = displayName,
             kind = SmartShelfKind.COLLECTION,
+            collectionName = displayName,
             candidates = imported
                 .filter { book ->
                     book.allCollections.any { collection ->
