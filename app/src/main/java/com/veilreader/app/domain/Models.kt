@@ -120,6 +120,24 @@ enum class PageTurnStyle { PAPER, SLIDE, NONE }
  */
 enum class ReaderNavigationMode { PAPER_CURL, SLIDE, PAGED, SCROLL }
 
+enum class ReaderFontFamily {
+    PUBLISHER,
+    SERIF,
+    SANS_SERIF,
+    MONOSPACE,
+    OPEN_DYSLEXIC,
+    ACCESSIBLE_DFA,
+    IA_WRITER_DUOSPACE
+}
+
+enum class ReaderTextAlignment { PUBLISHER, START, JUSTIFY, CENTER }
+
+enum class ReaderColumnMode { AUTO, ONE, TWO }
+
+enum class ReaderPreferenceToggle { DEFAULT, ON, OFF }
+
+enum class ReaderDarkImageTreatment { NONE, DARKEN, INVERT }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.PAPER,
     val fontScale: Double = 1.0,
@@ -128,7 +146,21 @@ data class ReaderAppearance(
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
-    val screenBrightness: Double? = null
+    val screenBrightness: Double? = null,
+    val fontFamily: ReaderFontFamily = ReaderFontFamily.PUBLISHER,
+    val fontWeight: Double? = null,
+    val textAlignment: ReaderTextAlignment = ReaderTextAlignment.PUBLISHER,
+    val columnMode: ReaderColumnMode = ReaderColumnMode.AUTO,
+    val hyphenation: ReaderPreferenceToggle = ReaderPreferenceToggle.DEFAULT,
+    val ligatures: ReaderPreferenceToggle = ReaderPreferenceToggle.DEFAULT,
+    val textNormalization: ReaderPreferenceToggle = ReaderPreferenceToggle.DEFAULT,
+    val paragraphSpacing: Double? = null,
+    val paragraphIndent: Double? = null,
+    val letterSpacing: Double? = null,
+    val wordSpacing: Double? = null,
+    val typeScale: Double? = null,
+    val darkImageTreatment: ReaderDarkImageTreatment = ReaderDarkImageTreatment.NONE,
+    val paperPatina: Double = 0.72
 ) {
     val navigationMode: ReaderNavigationMode
         get() = when {
@@ -160,6 +192,61 @@ data class ReaderAppearance(
 
     fun withPageMargins(value: Double): ReaderAppearance =
         copy(pageMargins = value, publisherStyles = false)
+
+    fun withFontFamily(value: ReaderFontFamily): ReaderAppearance =
+        copy(
+            fontFamily = value,
+            publisherStyles = if (value == ReaderFontFamily.PUBLISHER) publisherStyles else false
+        )
+
+    fun withFontWeight(value: Double?): ReaderAppearance =
+        copy(
+            fontWeight = value?.takeIf { it.isFinite() }?.coerceIn(0.0, 2.5)
+        )
+
+    fun withTextAlignment(value: ReaderTextAlignment): ReaderAppearance =
+        copy(
+            textAlignment = value,
+            publisherStyles = if (value == ReaderTextAlignment.PUBLISHER) publisherStyles else false
+        )
+
+    fun withParagraphSpacing(value: Double?): ReaderAppearance =
+        copy(
+            paragraphSpacing = value?.takeIf { it.isFinite() }?.coerceIn(0.0, 2.0),
+            publisherStyles = false
+        )
+
+    fun withParagraphIndent(value: Double?): ReaderAppearance =
+        copy(
+            paragraphIndent = value?.takeIf { it.isFinite() }?.coerceIn(0.0, 3.0),
+            publisherStyles = false
+        )
+
+    fun withLetterSpacing(value: Double?): ReaderAppearance =
+        copy(
+            letterSpacing = value?.takeIf { it.isFinite() }?.coerceIn(0.0, 0.2),
+            publisherStyles = false
+        )
+
+    fun withWordSpacing(value: Double?): ReaderAppearance =
+        copy(
+            wordSpacing = value?.takeIf { it.isFinite() }?.coerceIn(0.0, 1.0),
+            publisherStyles = false
+        )
+
+    fun withTypeScale(value: Double?): ReaderAppearance =
+        copy(
+            typeScale = value?.takeIf { it.isFinite() }?.coerceIn(1.0, 2.0),
+            publisherStyles = false
+        )
+
+    fun withDarkImageTreatment(value: ReaderDarkImageTreatment): ReaderAppearance =
+        copy(darkImageTreatment = value)
+
+    fun withPaperPatina(value: Double): ReaderAppearance =
+        copy(
+            paperPatina = value.takeIf { it.isFinite() }?.coerceIn(0.0, 1.0) ?: 0.72
+        )
 
     fun withScreenBrightness(value: Double?): ReaderAppearance =
         copy(
