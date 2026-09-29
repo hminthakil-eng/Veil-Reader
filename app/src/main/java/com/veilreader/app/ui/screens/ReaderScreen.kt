@@ -719,6 +719,9 @@ fun ReaderScreen(
                         val locator = nav.currentLocator.value
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
+                    },
+                    onBoundaryHit = {
+                        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                     }
                 )
             } else {
@@ -750,6 +753,9 @@ fun ReaderScreen(
                                 ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
                             )
                         }
+                    },
+                    onBoundaryHit = {
+                        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                     }
                 )
             } else {
@@ -778,6 +784,9 @@ fun ReaderScreen(
                                 ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
                             )
                         }
+                    },
+                    onBoundaryHit = {
+                        onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                     }
                 )
             } else {
@@ -803,6 +812,9 @@ fun ReaderScreen(
                 },
                 onNavigationCommitted = {
                     onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                },
+                onBoundaryHit = {
+                    onSensoryEvent(VeilSensoryEvent.BOUNDARY)
                 }
             )
 
