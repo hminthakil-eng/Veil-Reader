@@ -522,4 +522,5 @@
         <item quantity="one">%1$d note event</item>
         <item quantity="other">%1$d note events</item>
     </plurals>
+    <string name="capsule_event_milestone">Reading milestone</string>
 </resources>
