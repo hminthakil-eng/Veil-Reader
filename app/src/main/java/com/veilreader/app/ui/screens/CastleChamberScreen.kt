@@ -681,7 +681,7 @@ fun SanctumScreen(
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
+            Text(VeilBackLabel(stringResource(R.string.profile_stat_castle)), style = MaterialTheme.typography.labelMedium)
         }
 
         ScreenHeader(
