@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.draw.rotate
@@ -41,6 +42,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -50,6 +52,7 @@ import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
+import com.veilreader.app.ui.theme.veilContentTextStyle
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -271,14 +274,14 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         BrassRule(Modifier.width(72.dp))
         Text(
             title,
-            style = MaterialTheme.typography.headlineLarge,
+            style = veilContentTextStyle(MaterialTheme.typography.headlineLarge, title),
             color = MaterialTheme.colorScheme.onBackground
         )
         subtitle?.takeIf(String::isNotBlank)?.let {
             Text(
                 it,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
+                style = veilContentTextStyle(MaterialTheme.typography.bodyMedium, it),
                 modifier = Modifier.widthIn(max = VeilMeasure.EditorialText)
             )
         }
@@ -415,6 +418,7 @@ fun BookCover(
     imagePath: String? = null,
     artifact: BookArtifactState? = null
 ) {
+    val coverA11y = stringResource(R.string.common_book_cover_a11y, title)
     val cachedCover by produceState<CachedCoverVisual?>(initialValue = null, key1 = imagePath) {
         value = withContext(Dispatchers.IO) {
             imagePath
@@ -476,7 +480,7 @@ fun BookCover(
         cachedCover?.let { cover ->
             Image(
                 bitmap = cover.bitmap,
-                contentDescription = "Cover of $title",
+                contentDescription = coverA11y,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().alpha(imageAlpha)
             )
@@ -509,6 +513,9 @@ fun BookCover(
 
 @Composable
 private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
+    val archiveLabel = stringResource(R.string.library_grayfog_archive)
+    val displayArchiveLabel =
+        if (usesArabicScript(archiveLabel)) archiveLabel else archiveLabel.uppercase()
     val palettes = listOf(
         listOf(Color(0xFF26313A), Color(0xFF12181E), Color(0xFF090C10)),
         listOf(Color(0xFF372529), Color(0xFF1B1417), Color(0xFF0C0A0B)),
@@ -584,7 +591,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                "GRAYFOG ARCHIVE",
+                displayArchiveLabel,
                 color = VeilPalette.Brass.copy(alpha = 0.82f),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 7.sp,
@@ -599,7 +606,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             Text(
                 title,
                 color = VeilPalette.Moon,
-                style = MaterialTheme.typography.titleMedium,
+                style = veilContentTextStyle(MaterialTheme.typography.titleMedium, title),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -607,7 +614,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
                 Text(
                     it,
                     color = VeilPalette.Mist.copy(alpha = 0.82f),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = veilContentTextStyle(MaterialTheme.typography.labelSmall, it),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
