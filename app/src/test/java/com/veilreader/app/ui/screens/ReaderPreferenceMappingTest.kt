@@ -332,4 +332,13 @@ class ReaderPreferenceMappingTest {
         )
     }
 
+    @Test
+    fun `highlight palette stays distinct across sanctuary themes`() {
+        val tints = ReaderTheme.entries.map(::readerHighlightTint)
+        assertEquals(ReaderTheme.entries.size, tints.distinct().size)
+        tints.forEach { tint ->
+            assertEquals(0xFF, tint ushr 24)
+        }
+    }
+
 }
