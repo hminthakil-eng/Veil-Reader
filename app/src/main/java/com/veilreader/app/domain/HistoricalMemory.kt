@@ -92,7 +92,8 @@ fun buildSealedReadingCycle(
                     timestampEpochMs = highlight.createdAtEpochMs,
                     title = if (highlight.note.isBlank()) "Passage preserved" else "Annotated passage preserved",
                     detail = highlight.quote.replace(Regex("\\s+"), " ").trim().take(120)
-                        .takeIf(String::isNotBlank)
+                        .takeIf(String::isNotBlank),
+                    annotated = highlight.note.isNotBlank()
                 )
             )
         }
