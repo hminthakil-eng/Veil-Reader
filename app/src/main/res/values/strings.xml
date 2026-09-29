@@ -1093,4 +1093,7 @@
     <string name="capsule_highlight_events_many">%1$s highlight events</string>
     <string name="capsule_note_event_one">%1$s note event</string>
     <string name="capsule_note_events_many">%1$s note events</string>
+    <string name="path_generic_invocation">Read with intention; return with evidence.</string>
+    <string name="path_generic_epithet">Uncharted Reader</string>
+    <string name="path_generic_description">A path whose full identity has not yet been catalogued by this version of Veil.</string>
 </resources>
