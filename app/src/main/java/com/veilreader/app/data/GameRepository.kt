@@ -17,8 +17,8 @@ import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-internal fun completionEvidenceFloor(finishedBooks: Int, sealedCycles: Int): Int =
-    maxOf(finishedBooks, sealedCycles, 0)
+internal fun completionEvidenceFloor(finishedBooks: Int, sealedBooks: Int): Int =
+    maxOf(finishedBooks, sealedBooks, 0)
 
 /** Persistent, offline-first reading progression.
  *
@@ -90,8 +90,8 @@ class GameRepository(context: Context) {
      * Treat durable library evidence as a floor; never revoke historical completion credit when
      * a finished volume is later removed from the local shelf.
      */
-    fun syncExistingBookCompletions(finishedBooks: Int, sealedCycles: Int) {
-        val evidence = completionEvidenceFloor(finishedBooks, sealedCycles)
+    fun syncExistingBookCompletions(finishedBooks: Int, sealedBooks: Int) {
+        val evidence = completionEvidenceFloor(finishedBooks, sealedBooks)
         if (evidence > prefs.getInt("booksFinished", 0)) {
             prefs.edit().putInt("booksFinished", evidence).apply()
         }
