@@ -194,6 +194,9 @@ fun ReaderScreen(
     val savedLocationFailedMessage = stringResource(R.string.reader_saved_location_failed)
     val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
+    var paperInputListener by remember(opened.book.id) {
+        mutableStateOf<PaperCurlInputListener?>(null)
+    }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
     val latestAppearance = rememberUpdatedState(readerAppearance)
@@ -285,7 +288,8 @@ fun ReaderScreen(
             readerAppearance.scroll ||
             readerAppearance.pageTurnStyle != PageTurnStyle.PAPER
         ) {
-            if (paperCurlState.active) {
+            val cancelingDrag = paperInputListener?.cancelPendingTurn() == true
+            if (!cancelingDrag && paperCurlState.active) {
                 paperCurlState.clear()
             }
         }
@@ -503,7 +507,8 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
                     // A curl may show the destination underneath the lifted sheet before
-                    // the reader has committed the turn. Never persist that preview on pause.
+                    // the reader has committed the turn. Restore the start before persisting.
+                    paperInputListener?.cancelPendingTurn()
                     if (!paperCurlState.active) {
                         latestNavigator.value?.currentLocator?.value?.let { locator ->
                             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
@@ -630,9 +635,11 @@ fun ReaderScreen(
                 }
             )
 
+            paperInputListener = paperListener
             nav.addInputListener(inputArbiter)
             onDispose {
                 nav.removeInputListener(inputArbiter)
+                if (paperInputListener === paperListener) paperInputListener = null
             }
         }
     }
