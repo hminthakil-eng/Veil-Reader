@@ -2617,18 +2617,6 @@ private fun ReaderAppearancePreview(
     }
 }
 
-internal fun readerNavigationModeDescription(mode: ReaderNavigationMode): String =
-    when (mode) {
-        ReaderNavigationMode.PAPER_CURL ->
-            "Physical page curl with weighted drag, release velocity, and page-stack depth."
-        ReaderNavigationMode.SLIDE ->
-            "Paginated reading with a lightweight horizontal transition and no paper deformation."
-        ReaderNavigationMode.PAGED ->
-            "Static pagination with no decorative page transition."
-        ReaderNavigationMode.SCROLL ->
-            "Continuous vertical reading when the publication format supports it."
-    }
-
 @Composable
 internal fun localizedReaderNavigationModeDescription(mode: ReaderNavigationMode): String =
     stringResource(when (mode) {
