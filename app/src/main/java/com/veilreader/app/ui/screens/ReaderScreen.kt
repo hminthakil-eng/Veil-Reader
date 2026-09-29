@@ -557,7 +557,7 @@ fun ReaderScreen(
         readerViewModel.onUserInteraction()
         game.rebasePagePacing()
 
-        if (locator != null && navigator?.go(locator, animated = true) == true) {
+        if (locator != null && navigator?.go(locator, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
             previousLocationJson = currentJson?.takeIf { it != targetJson }
             controlsVisible = false
         } else {
@@ -1535,7 +1535,7 @@ fun ReaderScreen(
                 game.rebasePagePacing()
                 val origin = currentLocatorJson()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
-                if (locator != null && navigator?.go(locator, animated = true) == true) {
+                if (locator != null && navigator?.go(locator, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
                     library.recordPassageVisitForLocator(
                         bookId = opened.book.id,
                         locatorJson = json
@@ -1551,7 +1551,7 @@ fun ReaderScreen(
                 readerViewModel.onUserInteraction()
                 game.rebasePagePacing()
                 val origin = currentLocatorJson()
-                if (navigator?.go(link, animated = true) == true) {
+                if (navigator?.go(link, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
                     previousLocationJson = origin
                     showNotebook = false
                 } else {
@@ -1648,6 +1648,9 @@ fun ReaderScreen(
         }
     }
 }
+
+internal fun shouldAnimateReaderJump(reducedMotion: Boolean): Boolean =
+    !reducedMotion
 
 internal fun shouldEmitReaderBoundaryFeedback(
     nowMillis: Long,
