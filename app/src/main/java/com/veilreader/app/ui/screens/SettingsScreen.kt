@@ -89,7 +89,7 @@ fun SettingsScreen(
     val appVersion = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
-        }.getOrDefault("").ifBlank { "Unknown" }
+        }.getOrDefault("").ifBlank { context.getString(R.string.settings_unknown) }
     }
     val backupPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
@@ -115,57 +115,66 @@ fun SettingsScreen(
             onClick = onClose,
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel("Back"))
+            Text(VeilBackLabel(stringResource(R.string.common_back)))
         }
 
         Column(
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             Text(
-                "GRAYFOG SETTINGS",
+                stringResource(R.string.settings_eyebrow),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass
             )
             Text(
-                "The Reading Room",
+                stringResource(R.string.settings_heading),
                 style = MaterialTheme.typography.headlineLarge
             )
             BrassRule(Modifier.width(92.dp), strong = true)
             Text(
-                "Reading, appearance, storage, privacy, and backup controls. Everything remains local unless you export it.",
+                stringResource(R.string.settings_intro),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
         SettingsSection(
-            title = "Appearance",
-            description = "Choose how the archive shell follows your device."
+            title = stringResource(R.string.settings_appearance_title),
+            description = stringResource(R.string.settings_appearance_description)
         ) {
             ChoiceRow(
                 entries = AppThemeMode.entries,
                 selected = settings.appThemeMode,
-                label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
+                label = { mode -> when (mode) {
+                    AppThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
+                    AppThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
+                    AppThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
+                } },
                 onSelected = onSetAppThemeMode
             )
         }
 
         SettingsSection(
-            title = "Reading settings",
-            description = "Set default theme, typography, page movement, brightness, and layout."
+            title = stringResource(R.string.settings_reading_title),
+            description = stringResource(R.string.settings_reading_description)
         ) {
-            Text("Publication theme", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_publication_theme), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = ReaderTheme.entries,
                 selected = appearance.theme,
-                label = { it.name.lowercase(Locale.ROOT).replaceFirstChar(Char::titlecase) },
+                label = { theme -> when (theme) {
+                    ReaderTheme.PAPER -> stringResource(R.string.settings_reader_paper)
+                    ReaderTheme.SEPIA -> stringResource(R.string.settings_reader_sepia)
+                    ReaderTheme.DUSK -> stringResource(R.string.settings_reader_dusk)
+                    ReaderTheme.OLED -> stringResource(R.string.settings_reader_oled)
+                } },
                 onSelected = { theme ->
                     commitReaderAppearance { current -> current.withTheme(theme) }
                 }
             )
 
             ReaderSlider(
-                label = "Text size",
+                label = stringResource(R.string.settings_text_size),
                 value = appearance.fontScale.toFloat(),
                 valueRange = 0.75f..1.8f,
                 displayValue = { "${(it * 100).toInt()}%" },
@@ -174,7 +183,7 @@ fun SettingsScreen(
                 }
             )
             ReaderSlider(
-                label = "Line height",
+                label = stringResource(R.string.settings_line_height),
                 value = appearance.lineHeight.toFloat(),
                 valueRange = 1.1f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
@@ -183,7 +192,7 @@ fun SettingsScreen(
                 }
             )
             ReaderSlider(
-                label = "Page margins",
+                label = stringResource(R.string.settings_page_margins),
                 value = appearance.pageMargins.toFloat(),
                 valueRange = 0.5f..2.0f,
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
@@ -192,7 +201,7 @@ fun SettingsScreen(
                 }
             )
 
-            Text("Reading motion", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_reading_motion), style = MaterialTheme.typography.labelLarge)
             ReaderMotionSelector(
                 selected = appearance.navigationMode,
                 onSelect = { mode ->
@@ -200,20 +209,20 @@ fun SettingsScreen(
                 }
             )
             Text(
-                readerNavigationModeDescription(appearance.navigationMode),
+                localizedReaderNavigationModeDescription(appearance.navigationMode),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
             SettingsSwitchRow(
-                title = "Publisher styles",
-                subtitle = "Keep the publication's typography and styling when available. This can override Veil theme colors.",
+                title = stringResource(R.string.settings_publisher_styles),
+                subtitle = stringResource(R.string.settings_publisher_styles_description),
                 checked = appearance.publisherStyles,
                 onCheckedChange = { enabled ->
                     commitReaderAppearance { current -> current.copy(publisherStyles = enabled) }
                 }
             )
 
-            Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_brightness), style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
                 appearance = appearance,
                 onChange = { proposed ->
@@ -225,12 +234,12 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Sound & touch",
-            description = "Keep feedback subtle, optional, and fully local. Haptics never require sound; ambient playback is off by default."
+            title = stringResource(R.string.settings_sound_title),
+            description = stringResource(R.string.settings_sound_description)
         ) {
             SettingsSwitchRow(
-                title = "Haptic feedback",
-                subtitle = "A restrained tactile cue for page turns, saved marks, and major unlocks.",
+                title = stringResource(R.string.settings_haptics),
+                subtitle = stringResource(R.string.settings_haptics_description),
                 checked = settings.sensory.hapticsEnabled,
                 onCheckedChange = { enabled ->
                     onSaveSensorySettings(
@@ -239,8 +248,8 @@ fun SettingsScreen(
                 }
             )
             SettingsSwitchRow(
-                title = "Interaction sounds",
-                subtitle = "Soft paper and archive cues. Disabled by default and never required for reading.",
+                title = stringResource(R.string.settings_interaction_sounds),
+                subtitle = stringResource(R.string.settings_interaction_sounds_description),
                 checked = settings.sensory.interactionSoundsEnabled,
                 onCheckedChange = { enabled ->
                     onSaveSensorySettings(
@@ -249,16 +258,16 @@ fun SettingsScreen(
                 }
             )
 
-            Text("Ambient room", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_ambient_room), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = AmbientSound.entries,
                 selected = settings.sensory.ambientSound,
                 label = { mode ->
                     when (mode) {
-                        AmbientSound.OFF -> "Off"
-                        AmbientSound.LIBRARY -> "Library hush"
-                        AmbientSound.RAIN -> "Rain"
-                        AmbientSound.FIRE -> "Fireplace"
+                        AmbientSound.OFF -> stringResource(R.string.settings_ambient_off)
+                        AmbientSound.LIBRARY -> stringResource(R.string.settings_ambient_library)
+                        AmbientSound.RAIN -> stringResource(R.string.settings_ambient_rain)
+                        AmbientSound.FIRE -> stringResource(R.string.settings_ambient_fire)
                     }
                 },
                 onSelected = { mode ->
@@ -273,7 +282,7 @@ fun SettingsScreen(
                 settings.sensory.ambientSound != AmbientSound.OFF
             ) {
                 ReaderSlider(
-                    label = "Audio level",
+                    label = stringResource(R.string.settings_audio_level),
                     value = settings.sensory.audioVolume.toFloat(),
                     valueRange = 0.05f..0.55f,
                     displayValue = { "${(it * 100).toInt()}%" },
@@ -286,7 +295,7 @@ fun SettingsScreen(
             }
 
             Text(
-                "Set Ambient room to Off and disable Interaction sounds for complete audio silence.",
+                stringResource(R.string.settings_audio_silence_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -319,13 +328,13 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Privacy & about",
-            description = "Your library, progress, and annotations stay on this device unless you explicitly export them."
+            title = stringResource(R.string.settings_privacy_title),
+            description = stringResource(R.string.settings_privacy_description)
         ) {
-            Text("App version · $appVersion", style = MaterialTheme.typography.labelLarge)
-            Text("Reader engine · Readium Kotlin Toolkit 3.4.0", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_app_version, appVersion), style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.settings_reader_engine), style = MaterialTheme.typography.labelLarge)
             Text(
-                "No account or cloud sync is required for core reading.",
+                stringResource(R.string.settings_no_account),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
@@ -447,7 +456,7 @@ private fun SettingsSection(
 private fun <T> ChoiceRow(
     entries: List<T>,
     selected: T,
-    label: (T) -> String,
+    label: @Composable (T) -> String,
     onSelected: (T) -> Unit
 ) {
     Row(
