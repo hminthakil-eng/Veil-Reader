@@ -1033,7 +1033,7 @@ private fun BookDetailSheet(
     val progress = bookArtifactState(book, memory = artifactMemory).progress
     val status = when {
         book.finished -> stringResource(R.string.book_detail_finished)
-        progress > 0f -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
+        progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(progress))
         else -> stringResource(R.string.book_detail_not_started)
     }
     val primaryAction = when {
@@ -2000,6 +2000,7 @@ private fun RecentReadingBook(
     artifactMemory: BookArtifactMemory?,
     onOpen: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     Surface(
         modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
@@ -2044,7 +2045,7 @@ private fun RecentReadingBook(
                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
                 Text(
-                    stringResource(R.string.book_detail_percent_read, (book.progress.coerceIn(0f, 1f) * 100).toInt()),
+                    stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f))),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2567,6 +2568,7 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
     val favoriteLabel = stringResource(
         if (book.favorite) R.string.library_remove_favorite_semantics
@@ -2620,10 +2622,7 @@ private fun BookLibraryTile(
             Text(
                 when {
                     book.finished -> stringResource(R.string.book_detail_finished)
-                    book.progress > 0f -> stringResource(
-                        R.string.book_detail_percent_read,
-                        (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                    )
+                    book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
                     else -> book.format.name
                 },
                 style = MaterialTheme.typography.labelSmall,
@@ -2669,6 +2668,7 @@ private fun BookLibraryRow(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
     val artifact = bookArtifactState(book, memory = artifactMemory)
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
@@ -2757,10 +2757,7 @@ private fun BookLibraryRow(
                     Text(
                         when {
                             book.finished -> stringResource(R.string.library_completed)
-                            book.progress > 0f -> stringResource(
-                                R.string.book_detail_percent_read,
-                                (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                            )
+                            book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
                             else -> stringResource(R.string.library_unopened)
                         },
                         style = MaterialTheme.typography.labelSmall,
@@ -3044,6 +3041,7 @@ private fun LibraryShelvesView(
     onOpen: (Book) -> Unit,
     onDetails: (Book) -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
@@ -3097,10 +3095,7 @@ private fun LibraryShelvesView(
                                 Text(
                                     when {
                                         book.finished -> stringResource(R.string.book_detail_finished)
-                                        book.progress > 0f -> stringResource(
-                                            R.string.book_detail_percent_read,
-                                            (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                                        )
+                                        book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
                                         else -> book.format.name
                                     },
                                     style = MaterialTheme.typography.labelSmall,
