@@ -48,6 +48,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -2026,58 +2027,80 @@ internal fun ReaderMotionSelector(
     selected: ReaderNavigationMode,
     onSelect: (ReaderNavigationMode) -> Unit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxWidth().selectableGroup()
     ) {
-        ReaderNavigationMode.entries.forEach { mode ->
-            val active = selected == mode
-            val label = when (mode) {
-                ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
-                ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
-                ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
-                ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
-            }
-            Surface(
-                modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 52.dp)
-                    .selectable(
-                        selected = active,
-                        role = Role.RadioButton
-                    ) { onSelect(mode) },
-                shape = MaterialTheme.shapes.extraSmall,
-                color = if (active) {
-                    VeilPalette.DeepBrass.copy(alpha = 0.76f)
-                } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
-                },
-                border = BorderStroke(
-                    1.dp,
-                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
+        // The appearance sheet loses width to its own padding. Four equal columns
+        // truncate Persian labels on phones, so give each choice half a row there.
+        val columns = if (maxWidth < 400.dp) 2 else 4
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            ReaderNavigationMode.entries.chunked(columns).forEach { rowModes ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    ReaderMotionPreview(
-                        mode = mode,
-                        active = active,
-                        modifier = Modifier
-                            .width(44.dp)
-                            .height(28.dp)
-                    )
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (active) VeilPalette.Moon
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    rowModes.forEach { mode ->
+                        ReaderMotionChoice(
+                            mode = mode,
+                            active = selected == mode,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelect(mode) }
+                        )
+                    }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ReaderMotionChoice(
+    mode: ReaderNavigationMode,
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    val label = when (mode) {
+        ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
+        ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
+        ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
+        ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
+    }
+    Surface(
+        modifier = modifier
+            .heightIn(min = 64.dp)
+            .selectable(selected = active, role = Role.RadioButton, onClick = onClick),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (active) {
+            VeilPalette.DeepBrass.copy(alpha = 0.76f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (active) VeilPalette.Brass.copy(alpha = 0.82f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            ReaderMotionPreview(
+                mode = mode,
+                active = active,
+                modifier = Modifier.width(44.dp).height(28.dp)
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (active) VeilPalette.Moon
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
