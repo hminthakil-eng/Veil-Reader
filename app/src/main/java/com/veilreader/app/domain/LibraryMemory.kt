@@ -195,7 +195,7 @@ fun deriveLibraryMemoryState(
                     .replace(Regex("\\s+"), " ")
                     .trim()
                     .take(92)
-                    .ifBlank { "A preserved passage" }
+                    .takeIf { it.isNotBlank() }
 
                 add(
                     LibraryMemoryEvent(
