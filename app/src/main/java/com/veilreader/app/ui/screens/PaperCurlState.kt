@@ -53,6 +53,7 @@ internal class PaperCurlState {
     private var width = 0f
     private var height = 0f
     private var snapshotBuffer: Bitmap? = null
+    private var captureGeneration = 0L
 
     fun begin(
         view: View,
@@ -67,6 +68,7 @@ internal class PaperCurlState {
         this.side = side
         this.direction = direction
         snapshot = bitmap
+        captureGeneration += 1L
         edge = rightEdge()
         active = true
         return true
@@ -209,6 +211,7 @@ internal class PaperCurlState {
     }
 
     suspend fun clear() {
+        val generationAtClear = captureGeneration
         snapshot = null
         width = 0f
         height = 0f
@@ -218,12 +221,27 @@ internal class PaperCurlState {
         // before the reusable bitmap can be drawn into again.
         delay(VeilMotion.FRAME_SETTLE_MS)
         active = false
+
+        // Full-resolution snapshots can exceed 15–20 MB on modern phones. Keep the buffer
+        // briefly so rapid page turns stay allocation-free, then recycle it if no newer turn
+        // has claimed the buffer. The generation check prevents an older cleanup coroutine
+        // from recycling a bitmap reused by a newer gesture.
+        delay(VeilMotion.PAPER_SNAPSHOT_BUFFER_RETENTION_MS)
+        if (
+            !active &&
+            snapshot == null &&
+            captureGeneration == generationAtClear
+        ) {
+            snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+            snapshotBuffer = null
+        }
     }
 
     fun dispose() {
         snapshot = null
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
+        captureGeneration += 1L
         active = false
     }
     private suspend fun animateTo(
