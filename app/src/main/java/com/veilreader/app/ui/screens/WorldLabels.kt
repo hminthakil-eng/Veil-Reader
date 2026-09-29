@@ -135,9 +135,9 @@ internal fun localizedPathIdentity(path: ReadingPath): LocalizedPathIdentity {
         )
         else -> return LocalizedPathIdentity(
             aspect = stringResource(R.string.path_generic_aspect),
-            invocation = path.epithet,
-            epithet = path.epithet,
-            description = path.description
+            invocation = stringResource(R.string.path_generic_invocation),
+            epithet = stringResource(R.string.path_generic_epithet),
+            description = stringResource(R.string.path_generic_description)
         )
     }
     return LocalizedPathIdentity(
