@@ -206,4 +206,6 @@
     <string name="reader_preview_chapter">فصل هفتم</string>
     <string name="reader_preview_title">آن‌سوی حجاب</string>
     <string name="reader_preview_body">صفحه باید زیر داستان ناپدید شود؛ متن، فاصله‌گذاری و حرکت فقط وقتی حضور داشته باشند که چشم را رو به جلو هدایت کنند.</string>
+    <string name="reader_close_a11y">بستن مطالعه</string>
+    <string name="reader_percent_read_a11y">%1$d درصد مطالعه‌شده</string>
 </resources>
