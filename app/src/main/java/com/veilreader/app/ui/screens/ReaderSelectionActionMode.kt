@@ -53,17 +53,18 @@ internal class ReaderSelectionActionModeCallback(
         val navigator = navigatorProvider() ?: return false
 
         coroutineScope.launch {
+            // Capture first because finishing ActionMode can clear the WebView selection
+            // immediately on some devices. Once captured, dismiss native selection chrome before
+            // durable annotation work so a storage flush never leaves the toolbar hanging.
+            val selection = navigator.currentSelection()
+            val quote = selection?.locator?.text?.highlight.orEmpty().trim()
             try {
-                // Capture before finishing ActionMode. Finishing can clear the WebView selection
-                // immediately on some devices, making annotation taps intermittently lose text.
-                val selection = navigator.currentSelection() ?: return@launch
-                val quote = selection.locator.text.highlight.orEmpty().trim()
-                if (quote.isBlank()) return@launch
-                onAction(action, selection.locator, quote)
-            } finally {
                 navigator.clearSelection()
+            } finally {
                 mode.finish()
             }
+            if (selection == null || quote.isBlank()) return@launch
+            onAction(action, selection.locator, quote)
         }
 
         return true
