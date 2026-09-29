@@ -31,6 +31,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -59,6 +60,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.veilreader.app.R
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
@@ -1749,7 +1751,7 @@ private fun EpubAppearancePanel(
                 onSelect = { updateDraft(draft.withNavigationMode(it)) }
             )
             Text(
-                readerNavigationModeDescription(draft.navigationMode),
+                localizedReaderNavigationModeDescription(draft.navigationMode),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1978,6 +1980,15 @@ internal fun readerNavigationModeDescription(mode: ReaderNavigationMode): String
     }
 
 @Composable
+internal fun localizedReaderNavigationModeDescription(mode: ReaderNavigationMode): String =
+    stringResource(when (mode) {
+        ReaderNavigationMode.PAPER_CURL -> R.string.settings_mode_curl_description
+        ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide_description
+        ReaderNavigationMode.PAGED -> R.string.settings_mode_paged_description
+        ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll_description
+    })
+
+@Composable
 internal fun ReaderMotionSelector(
     selected: ReaderNavigationMode,
     onSelect: (ReaderNavigationMode) -> Unit
@@ -1989,10 +2000,10 @@ internal fun ReaderMotionSelector(
         ReaderNavigationMode.entries.forEach { mode ->
             val active = selected == mode
             val label = when (mode) {
-                ReaderNavigationMode.PAPER_CURL -> "Curl"
-                ReaderNavigationMode.SLIDE -> "Slide"
-                ReaderNavigationMode.PAGED -> "Paged"
-                ReaderNavigationMode.SCROLL -> "Scroll"
+                ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
+                ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
+                ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
+                ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
             }
             Surface(
                 modifier = Modifier
@@ -2292,4 +2303,3 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
-
