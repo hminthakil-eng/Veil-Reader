@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.domain.BookFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -102,6 +103,42 @@ class ReaderChromePolicyTest {
                 closeInFlight = false,
                 paperPreviewActive = false,
                 slidePreviewActive = false
+            )
+        )
+    }
+
+    @Test
+    fun `any active EPUB page preview suppresses navigator locator commits`() {
+        assertTrue(
+            shouldSuppressNavigatorLocatorDuringPagePreview(
+                format = BookFormat.EPUB,
+                paperPreviewActive = true,
+                slidePreviewActive = false
+            )
+        )
+        assertTrue(
+            shouldSuppressNavigatorLocatorDuringPagePreview(
+                format = BookFormat.EPUB,
+                paperPreviewActive = false,
+                slidePreviewActive = true
+            )
+        )
+    }
+
+    @Test
+    fun `preview suppression is false after both EPUB preview layers settle`() {
+        assertFalse(
+            shouldSuppressNavigatorLocatorDuringPagePreview(
+                format = BookFormat.EPUB,
+                paperPreviewActive = false,
+                slidePreviewActive = false
+            )
+        )
+        assertFalse(
+            shouldSuppressNavigatorLocatorDuringPagePreview(
+                format = BookFormat.PDF,
+                paperPreviewActive = true,
+                slidePreviewActive = true
             )
         )
     }
