@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -41,6 +42,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import java.text.NumberFormat
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
@@ -579,7 +581,7 @@ private fun ArchiveRegisterStat(
         verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
         Text(
-            value.toString().padStart(2, '0'),
+            archiveNumber(value, minimumDigits = 2),
             style = MaterialTheme.typography.titleSmall,
             color = VeilPalette.Moon
         )
@@ -588,6 +590,17 @@ private fun ArchiveRegisterStat(
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
+    }
+}
+
+@Composable
+private fun archiveNumber(value: Int, minimumDigits: Int = 1): String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    return remember(value, minimumDigits, locale) {
+        NumberFormat.getIntegerInstance(locale).apply {
+            minimumIntegerDigits = minimumDigits
+            isGroupingUsed = false
+        }.format(value)
     }
 }
 
@@ -633,7 +646,7 @@ private fun ArchiveSectionTab(
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                count.toString(),
+                archiveNumber(count),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) VeilPalette.Brass
                 else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
@@ -676,7 +689,7 @@ private fun NotebookHighlightCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        stringResource(R.string.archive_folio, recordNumber),
+                        stringResource(R.string.archive_folio, archiveNumber(recordNumber, minimumDigits = 3)),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -907,7 +920,7 @@ private fun NotebookBookmarkCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        stringResource(R.string.archive_folio, recordNumber),
+                        stringResource(R.string.archive_folio, archiveNumber(recordNumber, minimumDigits = 3)),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
