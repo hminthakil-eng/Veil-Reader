@@ -1529,6 +1529,7 @@ private fun BookDetailIdentity(
     artifactMemory: BookArtifactMemory?,
     modifier: Modifier = Modifier
 ) {
+    val formatNumber = rememberVeilNumberFormatter()
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -1557,7 +1558,7 @@ private fun BookDetailIdentity(
             Text(
                 buildString {
                     append(series)
-                    book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                    book.seriesIndex?.let { append(" · #").append(formatNumber(it)) }
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Brass,
@@ -2838,6 +2839,8 @@ private fun BookLibraryRow(
 
 @Composable
 private fun BookProgress(book: Book) {
+    val formatPercent = rememberVeilPercentFormatter()
+    val formatInteger = rememberVeilIntegerFormatter()
     LinearProgressIndicator(
         progress = { book.progress.coerceIn(0f, 1f) },
         modifier = Modifier.fillMaxWidth().height(3.dp),
@@ -2852,8 +2855,8 @@ private fun BookProgress(book: Book) {
             when {
                 book.finished -> stringResource(R.string.book_detail_finished)
                 book.progress > 0f -> stringResource(
-                    R.string.book_detail_percent_read,
-                    (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                    R.string.book_detail_percent_read_text,
+                    formatPercent(book.progress.coerceIn(0f, 1f))
                 )
                 else -> stringResource(R.string.book_detail_not_started)
             },
@@ -2863,7 +2866,7 @@ private fun BookProgress(book: Book) {
         val bookCollections = book.allCollections
         if (bookCollections.isNotEmpty()) {
             val label = if (bookCollections.size == 1) bookCollections.first()
-            else "${bookCollections.first()} +${bookCollections.size - 1}"
+            else stringResource(R.string.library_collection_more, bookCollections.first(), formatInteger(bookCollections.size - 1))
             Text(
                 label,
                 modifier = Modifier.weight(1f).padding(start = VeilSpacing.xs),
@@ -3253,6 +3256,4 @@ private fun parseCollectionNames(value: String): List<String> = value
     .filter(String::isNotEmpty)
     .distinctBy { it.lowercase(Locale.ROOT) }
 
-private fun formatSeriesIndex(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 
