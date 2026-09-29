@@ -7,6 +7,11 @@ import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.RitualAftermathRecord
+import com.veilreader.app.domain.derivePathMastery
+import com.veilreader.app.domain.pathInsightEvidenceTotal
+import com.veilreader.app.domain.pathStabilityEvidenceTotal
+import com.veilreader.app.domain.validateRitualAftermath
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +29,8 @@ class GameRepository(context: Context) {
     private var todayMinutes = prefs.getInt("todayMinutes", 0)
     private var todayPages = prefs.getInt("todayPages", 0)
     private var todayHighlights = prefs.getInt("todayHighlights", 0)
+    private var todayNotes = prefs.getInt("todayNotes", 0)
+    private var todayNightMinutes = prefs.getInt("todayNightMinutes", 0)
     private var dayKey = prefs.getString("dayKey", "") ?: ""
 
     private val _profile = MutableStateFlow(buildProfile())
@@ -46,6 +53,24 @@ class GameRepository(context: Context) {
         if (prefs.getInt("ritualVersion", 1) < 2) {
             val editor = prefs.edit().putInt("ritualVersion", 2)
             if (prefs.getString("pathId", "oracle") != "oracle") editor.putInt("ritualProgress", 0)
+            editor.apply()
+        }
+        if (prefs.getInt("pathMasteryVersion", 0) < 1) {
+            val path = SampleData.paths.firstOrNull {
+                it.id == prefs.getString("pathId", SampleData.currentPath.id)
+            } ?: SampleData.currentPath
+            val rank = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex)
+            val legacyProgress = prefs.getInt("ritualProgress", 0).coerceAtLeast(0)
+            val legacyTarget = ReadingPolicy.ritualTarget(path.id, rank).coerceAtLeast(1)
+            val editor = prefs.edit()
+                .putInt("pathMasteryVersion", 1)
+                .putInt("pathMasteryInsightBaseline", 0)
+                .putInt("pathMasteryStabilityBaseline", 0)
+            if (legacyProgress >= legacyTarget && rank < path.ranks.lastIndex) {
+                editor
+                    .putString("pathMasteryGrandfatherPath", path.id)
+                    .putInt("pathMasteryGrandfatherRank", rank)
+            }
             editor.apply()
         }
         rollDayIfNeeded()
@@ -112,11 +137,14 @@ class GameRepository(context: Context) {
 
     fun recordNote(id: String, note: String) {
         if (!ReadingPolicy.qualifiesNote(note)) return
-        if (!ReadingPolicy.acceptsEvent(buildProfile().path.id, "note")) return
+        rollDayIfNeeded()
         val credited = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().toMutableSet()
         if (!credited.add(id)) return
         prefs.edit().putStringSet("creditedNotes", credited).apply()
+        todayNotes += 1
         recordRitualEvent("note")
+        awardCompletedQuestRewards()
+        persistCounters()
         publish()
     }
 
@@ -125,7 +153,10 @@ class GameRepository(context: Context) {
         totalXp += GamificationEngine.XP_PER_MINUTE
         todayMinutes += 1
         recordRitualEvent("minute")
-        if (ReadingPolicy.isNight(LocalTime.now().hour)) recordRitualEvent("nightMinute")
+        if (ReadingPolicy.isNight(LocalTime.now().hour)) {
+            todayNightMinutes += 1
+            recordRitualEvent("nightMinute")
+        }
         val previousMinutes = prefs.getInt("minutesRead", 0)
         prefs.edit().putInt("minutesRead", previousMinutes + 1).apply()
         touchReadingDay()
@@ -167,12 +198,27 @@ class GameRepository(context: Context) {
         publish()
     }
 
-    fun advanceRank(): Boolean {
+    fun advanceRank(expectedPathId: String? = null, expectedRankIndex: Int? = null): Boolean {
         val current = buildProfile()
-        if (!GamificationEngine.canAdvanceRank(current)) return false
+        if (!GamificationEngine.canAdvanceRank(
+                current,
+                expectedPathId ?: current.path.id,
+                expectedRankIndex ?: current.rankIndex
+            )) return false
+        val nextRankIndex = current.rankIndex + 1
+        val sealedAt = System.currentTimeMillis().coerceAtLeast(1L)
+        val evidenceTotals = currentMasteryEvidenceTotals(current.path.id)
         prefs.edit()
-            .putInt("rankIndex", current.rankIndex + 1)
+            .putInt("rankIndex", nextRankIndex)
             .putInt("ritualProgress", 0)
+            .putString("ritualAftermathPathId", current.path.id)
+            .putInt("ritualAftermathFromRank", current.rankIndex)
+            .putInt("ritualAftermathToRank", nextRankIndex)
+            .putLong("ritualAftermathSealedAt", sealedAt)
+            .putInt("pathMasteryInsightBaseline", evidenceTotals.first)
+            .putInt("pathMasteryStabilityBaseline", evidenceTotals.second)
+            .remove("pathMasteryGrandfatherPath")
+            .remove("pathMasteryGrandfatherRank")
             .apply()
         publish()
         return true
@@ -184,9 +230,14 @@ class GameRepository(context: Context) {
         if (currentRank > 0) return false
         if (prefs.getString("pathId", "oracle") == pathId) return true
         if (SampleData.paths.none { it.id == pathId }) return false
+        val evidenceTotals = currentMasteryEvidenceTotals(pathId)
         prefs.edit()
             .putString("pathId", pathId)
             .putInt("ritualProgress", 0)
+            .putInt("pathMasteryInsightBaseline", evidenceTotals.first)
+            .putInt("pathMasteryStabilityBaseline", 0)
+            .remove("pathMasteryGrandfatherPath")
+            .remove("pathMasteryGrandfatherRank")
             .apply()
         publish()
         return true
@@ -203,7 +254,12 @@ class GameRepository(context: Context) {
             ChronoUnit.DAYS.between(last, today) == 1L -> prefs.getInt("streakDays", 0) + 1
             else -> 1
         }
-        prefs.edit().putString("lastReadDate", todayString).putInt("streakDays", streak).apply()
+        val readingDaysTotal = prefs.getInt("readingDaysTotal", 0).coerceAtLeast(0) + 1
+        prefs.edit()
+            .putString("lastReadDate", todayString)
+            .putInt("streakDays", streak)
+            .putInt("readingDaysTotal", readingDaysTotal)
+            .apply()
     }
 
     private fun rollDayIfNeeded() {
@@ -213,6 +269,8 @@ class GameRepository(context: Context) {
         todayMinutes = 0
         todayPages = 0
         todayHighlights = 0
+        todayNotes = 0
+        todayNightMinutes = 0
         prefs.edit().remove("claimedQuestIds").apply()
         persistCounters()
     }
@@ -235,6 +293,8 @@ class GameRepository(context: Context) {
             .putInt("todayMinutes", todayMinutes)
             .putInt("todayPages", todayPages)
             .putInt("todayHighlights", todayHighlights)
+            .putInt("todayNotes", todayNotes)
+            .putInt("todayNightMinutes", todayNightMinutes)
             .apply()
     }
 
@@ -263,35 +323,135 @@ class GameRepository(context: Context) {
         _equippedSigil.value = prefs.getString("equippedSigil", null)
     }
 
+    private fun currentMasteryEvidenceTotals(pathId: String): Pair<Int, Int> {
+        val pagesRead = prefs.getInt("pagesRead", 0).coerceAtLeast(0)
+        val minutesRead = prefs.getInt("minutesRead", 0).coerceAtLeast(0)
+        val booksFinished = prefs.getInt("booksFinished", 0).coerceAtLeast(0)
+        val insight = pathInsightEvidenceTotal(
+            pathId = pathId,
+            totalHighlights = prefs.getInt("totalHighlights", 0),
+            substantialNotes = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().size,
+            pagesRead = pagesRead,
+            booksFinished = booksFinished
+        )
+        val stability = pathStabilityEvidenceTotal(
+            minutesRead = minutesRead,
+            booksFinished = booksFinished,
+            readingDays = prefs.getInt("readingDaysTotal", 0)
+        )
+        return insight to stability
+    }
+
     private fun buildProfile(): ReaderProfile {
         val (inside, needed) = GamificationEngine.progressInsideLevel(totalXp)
-        val path = SampleData.paths.firstOrNull { it.id == prefs.getString("pathId", SampleData.currentPath.id) }
-            ?: SampleData.currentPath
+        val path = SampleData.paths.firstOrNull {
+            it.id == prefs.getString("pathId", SampleData.currentPath.id)
+        } ?: SampleData.currentPath
+        val rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex)
+        val ritualAftermath = validateRitualAftermath(
+            record = RitualAftermathRecord(
+                pathId = prefs.getString("ritualAftermathPathId", "") ?: "",
+                fromRankIndex = prefs.getInt("ritualAftermathFromRank", -1),
+                toRankIndex = prefs.getInt("ritualAftermathToRank", -1),
+                sealedAtEpochMs = prefs.getLong("ritualAftermathSealedAt", 0L)
+            ),
+            currentPathId = path.id,
+            currentRankIndex = rankIndex,
+            rankCount = path.ranks.size
+        )
+        val ritualProgress = prefs.getInt("ritualProgress", 0).coerceAtLeast(0)
+        val ritualTarget = ReadingPolicy.ritualTarget(path.id, rankIndex).coerceAtLeast(1)
+        val pagesRead = prefs.getInt("pagesRead", 0).coerceAtLeast(0)
+        val minutesRead = prefs.getInt("minutesRead", 0).coerceAtLeast(0)
+        val booksFinished = prefs.getInt("booksFinished", 0).coerceAtLeast(0)
+        val derivedMastery = derivePathMastery(
+            pathId = path.id,
+            rankIndex = rankIndex,
+            embodimentValue = ritualProgress,
+            embodimentTarget = ritualTarget,
+            totalHighlights = prefs.getInt("totalHighlights", 0),
+            substantialNotes = prefs.getStringSet("creditedNotes", emptySet()).orEmpty().size,
+            pagesRead = pagesRead,
+            minutesRead = minutesRead,
+            booksFinished = booksFinished,
+            readingDays = prefs.getInt("readingDaysTotal", 0),
+            insightBaseline = prefs.getInt("pathMasteryInsightBaseline", 0),
+            stabilityBaseline = prefs.getInt("pathMasteryStabilityBaseline", 0)
+        )
+        val grandfathered =
+            prefs.getString("pathMasteryGrandfatherPath", null) == path.id &&
+                prefs.getInt("pathMasteryGrandfatherRank", -1) == rankIndex &&
+                ritualProgress >= ritualTarget
+        val pathMastery = if (grandfathered) {
+            derivedMastery.copy(
+                insight = derivedMastery.insight.copy(
+                    value = maxOf(derivedMastery.insight.value, derivedMastery.insight.target)
+                ),
+                stability = derivedMastery.stability.copy(
+                    value = maxOf(derivedMastery.stability.value, derivedMastery.stability.target)
+                ),
+                dissonance = 0
+            )
+        } else {
+            derivedMastery
+        }
+
         return ReaderProfile(
             level = GamificationEngine.levelFor(totalXp),
             xp = inside,
             xpForNextLevel = needed,
             streakDays = prefs.getString("lastReadDate", null)?.let { raw ->
                 val date = runCatching { LocalDate.parse(raw) }.getOrNull()
-                if (date != null && ChronoUnit.DAYS.between(date, LocalDate.now()) in 0L..1L) prefs.getInt("streakDays", 0) else 0
+                if (
+                    date != null &&
+                    ChronoUnit.DAYS.between(date, LocalDate.now()) in 0L..1L
+                ) {
+                    prefs.getInt("streakDays", 0)
+                } else {
+                    0
+                }
             } ?: 0,
-            pagesRead = prefs.getInt("pagesRead", 0),
-            minutesRead = prefs.getInt("minutesRead", 0),
-            booksFinished = prefs.getInt("booksFinished", 0),
+            pagesRead = pagesRead,
+            minutesRead = minutesRead,
+            booksFinished = booksFinished,
             path = path,
-            rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex),
-            ritualProgress = prefs.getInt("ritualProgress", 0),
-            ritualTarget = ReadingPolicy.ritualTarget(path.id, prefs.getInt("rankIndex", 0)),
-            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet()
+            rankIndex = rankIndex,
+            ritualProgress = ritualProgress,
+            ritualTarget = ritualTarget,
+            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
+            earnedDiscoveries = prefs.getStringSet("earnedDiscoveries", emptySet()).orEmpty().toSet(),
+            ritualAftermath = ritualAftermath,
+            pathMastery = pathMastery
         )
     }
 
     private fun buildQuests(): List<Quest> {
         val goal = readDailyGoal()
+        val pathId = prefs.getString("pathId", SampleData.currentPath.id)
+            ?: SampleData.currentPath.id
         return listOf(
-            Quest("read", "Read for $goal minutes", todayMinutes.coerceAtMost(goal), goal, 90),
-            Quest("pages", "Read 15 paced pages", todayPages.coerceAtMost(15), 15, 120),
-            Quest("mark", "Mark 3 intriguing passages", todayHighlights.coerceAtMost(3), 3, 75)
+            Quest(
+                "read",
+                "Keep a quiet reading session for $goal minutes",
+                todayMinutes.coerceAtLeast(0).coerceAtMost(goal),
+                goal,
+                90
+            ),
+            Quest(
+                "pages",
+                "Turn 15 paced pages without rushing",
+                todayPages.coerceAtLeast(0).coerceAtMost(15),
+                15,
+                120
+            ),
+            GamificationEngine.pathDirective(
+                pathId = pathId,
+                todayMinutes = todayMinutes,
+                todayPages = todayPages,
+                todayHighlights = todayHighlights,
+                todayNotes = todayNotes,
+                todayNightMinutes = todayNightMinutes
+            )
         )
-    }
+    }}
 }
