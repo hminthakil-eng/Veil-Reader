@@ -553,7 +553,7 @@ fun LibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "${filtered.size.toString().padStart(2, '0')} VOLUMES",
+                        stringResource(R.string.library_filtered_volume_count, filtered.size),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass,
                         modifier = Modifier.padding(end = 4.dp)
@@ -572,7 +572,7 @@ fun LibraryScreen(
                                 )
                             ) {
                                 Text(
-                                    if (collection.isBlank()) "Collection" else collection,
+                                    if (collection.isBlank()) stringResource(R.string.library_collection) else collection,
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -583,7 +583,7 @@ fun LibraryScreen(
                                 onDismissRequest = { collectionMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("All collections") },
+                                    text = { Text(stringResource(R.string.library_all_collections)) },
                                     onClick = { collection = ""; collectionMenu = false }
                                 )
                                 collections.forEach { label ->
@@ -597,11 +597,20 @@ fun LibraryScreen(
                     }
 
                     Box {
+                        val sortLabel = when (sort) {
+                            "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
+                            "Title" -> stringResource(R.string.library_sort_title)
+                            "Author" -> stringResource(R.string.library_sort_author)
+                            "Series" -> stringResource(R.string.library_sort_series)
+                            "Progress" -> stringResource(R.string.library_sort_progress)
+                            else -> stringResource(R.string.library_sort_recent)
+                        }
+                        val sortDescription = stringResource(R.string.library_sort_books, sortLabel)
                         OutlinedButton(
                             onClick = { sortMenu = true },
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
-                                .semantics { contentDescription = "Sort books: $sort" },
+                                .semantics { contentDescription = sortDescription },
                             shape = MaterialTheme.shapes.extraSmall,
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             border = BorderStroke(
@@ -610,7 +619,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                sort,
+                                sortLabel,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -621,16 +630,16 @@ fun LibraryScreen(
                             onDismissRequest = { sortMenu = false }
                         ) {
                             listOf(
-                                "Recent",
-                                "Archive Depth",
-                                "Title",
-                                "Author",
-                                "Series",
-                                "Progress"
-                            ).forEach { label ->
+                                "Recent" to R.string.library_sort_recent,
+                                "Archive Depth" to R.string.library_sort_archive_depth,
+                                "Title" to R.string.library_sort_title,
+                                "Author" to R.string.library_sort_author,
+                                "Series" to R.string.library_sort_series,
+                                "Progress" to R.string.library_sort_progress
+                            ).forEach { (key, labelRes) ->
                                 DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = { sort = label; sortMenu = false }
+                                    text = { Text(stringResource(labelRes)) },
+                                    onClick = { sort = key; sortMenu = false }
                                 )
                             }
                         }
@@ -648,7 +657,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                "Series · $seriesFilter ×",
+                                stringResource(R.string.library_series_filter, seriesFilter),
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -677,7 +686,7 @@ fun LibraryScreen(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
                         ) {
-                            Text("Reset", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.common_reset), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -846,7 +855,12 @@ fun LibraryScreen(
             if (books.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth()) {
                     TextButton(onClick = { overviewExpanded = !overviewExpanded }) {
-                        Text(if (overviewExpanded) "Hide archive overview" else "Archive overview")
+                        Text(
+                            stringResource(
+                                if (overviewExpanded) R.string.library_hide_overview
+                                else R.string.library_show_overview
+                            )
+                        )
                     }
                     if (overviewExpanded) {
                         ArchiveOverview(
@@ -900,7 +914,7 @@ fun LibraryScreen(
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "ARCHIVE RECORD",
+                        stringResource(R.string.library_archive_record),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
@@ -1760,8 +1774,8 @@ private fun ArchiveOverview(
                         .background(MaterialTheme.colorScheme.tertiary)
                 )
                 Column(Modifier.weight(1f)) {
-                    Text("ARCHIVE STATUS", style = MaterialTheme.typography.labelMedium, color = VeilPalette.Brass)
-                    Text("Catalogued locally. Private, offline, and ready to reopen.", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.library_archive_status), style = MaterialTheme.typography.labelMedium, color = VeilPalette.Brass)
+                    Text(stringResource(R.string.library_archive_status_body), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -1967,7 +1981,7 @@ private fun RecentReadingBook(
                 modifier = Modifier.width(48.dp).height(70.dp)
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Continue reading", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.library_continue_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
                     book.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -1988,7 +2002,7 @@ private fun RecentReadingBook(
                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
                 Text(
-                    "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read",
+                    stringResource(R.string.book_detail_percent_read, (book.progress.coerceIn(0f, 1f) * 100).toInt()),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2321,7 +2335,7 @@ private fun DeepShelfPortal(
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
                 Text(
-                    "THE DEEP SHELF",
+                    stringResource(R.string.library_deep_shelf),
                     style = MaterialTheme.typography.labelSmall.copy(
                         letterSpacing = 1.32.sp
                     ),
@@ -2334,8 +2348,11 @@ private fun DeepShelfPortal(
                 )
                 if (oldestBook != null && oldestMemory != null) {
                     Text(
-                        "Deepest record · ${oldestBook.title} · " +
-                            formatArchiveSilence(oldestMemory.inactiveMillis),
+                        stringResource(
+                            R.string.library_deepest_record,
+                            oldestBook.title,
+                            formatArchiveSilence(oldestMemory.inactiveMillis)
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.66f),
                         maxLines = 2,
@@ -2343,7 +2360,7 @@ private fun DeepShelfPortal(
                     )
                 }
                 Text(
-                    "DESCEND",
+                    stringResource(R.string.library_descend),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass.copy(alpha = 0.82f)
                 )
@@ -2975,7 +2992,7 @@ private fun LibraryShelvesView(
                                     modifier = Modifier.heightIn(min = 48.dp),
                                     contentPadding = PaddingValues(horizontal = 0.dp)
                                 ) {
-                                    Text("Archive record")
+                                    Text(stringResource(R.string.library_archive_record_button))
                                 }
                             }
                         }
