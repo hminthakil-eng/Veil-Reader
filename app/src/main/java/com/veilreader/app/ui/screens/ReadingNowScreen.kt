@@ -413,6 +413,7 @@ private fun ContinueReadingHero(
     coverHeightDp: Float,
     onOpenBook: (Book) -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     val progress = current.progress.coerceIn(0f, 1f)
     val paper = VeilPalette.ReaderPaper
     val paperLight = Color(0xFFF2E8D2)
@@ -448,7 +449,7 @@ private fun ContinueReadingHero(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${(progress * 100).toInt()}%",
+                    formatPercent(progress),
                     style = MaterialTheme.typography.labelMedium,
                     color = secondaryInk
                 )
