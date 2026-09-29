@@ -206,4 +206,6 @@
     <string name="reader_preview_chapter">CHAPTER VII</string>
     <string name="reader_preview_title">Beyond the Veil</string>
     <string name="reader_preview_body">The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.</string>
+    <string name="reader_close_a11y">Close reader</string>
+    <string name="reader_percent_read_a11y">%1$d percent read</string>
 </resources>
