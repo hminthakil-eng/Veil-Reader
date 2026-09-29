@@ -32,7 +32,7 @@ internal class PaperCurlInputListener(
     private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
     private val onCommittedTurn: () -> Unit,
-    private val onBoundaryHit: () -> Unit = {}
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
@@ -63,7 +63,7 @@ internal class PaperCurlInputListener(
         // Navigation must never depend on the visual layer succeeding.
         val moved = navigate(spec.direction)
         if (!moved) {
-            onBoundaryHit()
+            onBoundaryHit(spec.side)
             if (visualReady) {
                 scope.launch {
                     state.animateBoundaryBounce()
@@ -191,7 +191,7 @@ internal class PaperCurlInputListener(
 
                 commit -> {
                     // End-of-book / navigation refusal should still feel intentional.
-                    onBoundaryHit()
+                    onBoundaryHit(spec.side)
                     if (!isReducedMotion()) state.animateBoundaryBounce()
                 }
 
@@ -472,6 +472,25 @@ internal fun hasDeliberatePaperIntent(
     val horizontalBias = if (startsAtEdge) 0.72f else 1.08f
     return x >= intentDistance && x >= y * horizontalBias
 }
+
+internal fun paperTurnSideFor(
+    direction: PaperTurnDirection,
+    progression: ReadingProgression
+): PaperCurlSide =
+    when (direction) {
+        PaperTurnDirection.FORWARD ->
+            if (progression == ReadingProgression.RTL) {
+                PaperCurlSide.LEFT
+            } else {
+                PaperCurlSide.RIGHT
+            }
+        PaperTurnDirection.BACKWARD ->
+            if (progression == ReadingProgression.RTL) {
+                PaperCurlSide.RIGHT
+            } else {
+                PaperCurlSide.LEFT
+            }
+    }
 
 internal fun paperTurnDirectionFor(
     side: PaperCurlSide,
