@@ -236,7 +236,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             )
 
             Text(
-                profile.rankName,
+                rankName,
                 style = MaterialTheme.typography.headlineMedium,
                 color = VeilPalette.Moon,
                 textAlign = TextAlign.Center
