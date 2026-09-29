@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -183,6 +184,7 @@ fun ReadingNowScreen(
                         ThresholdWhisperCard(
                             whisper = whisper,
                             books = books,
+                            pathId = profile.path.id,
                             onOpenPassage = onOpenPassage
                         )
                     }
@@ -270,7 +272,7 @@ private fun ThresholdHeader(
             )
 
             Text(
-                "VEIL READER",
+                stringResource(R.string.app_name).uppercase(),
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(start = VeilSpacing.md, top = VeilSpacing.md),
@@ -279,7 +281,7 @@ private fun ThresholdHeader(
             )
 
             Text(
-                "GRAYFOG ARCHIVE",
+                stringResource(R.string.threshold_grayfog_archive),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = VeilSpacing.md, top = VeilSpacing.md),
@@ -295,26 +297,26 @@ private fun ThresholdHeader(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    when {
-                        bookCount == 0 -> "The Archive Is Unwritten"
-                        bookCount == 1 -> "The First Volume Has Arrived"
-                        hasCurrentBook -> "The Library Awaits"
-                        else -> "Return to the Archive"
-                    },
+                    stringResource(
+                        when {
+                            bookCount == 0 -> R.string.threshold_title_unwritten
+                            bookCount == 1 -> R.string.threshold_title_first_volume
+                            hasCurrentBook -> R.string.threshold_title_library_awaits
+                            else -> R.string.threshold_title_return_archive
+                        }
+                    ),
                     style = MaterialTheme.typography.headlineLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    when {
-                        bookCount == 0 ->
-                            "A private archive for books, notes, and worlds that stay with you."
-                        bookCount == 1 ->
-                            "The first chamber has awakened. Your reading history begins from this volume."
-                        hasCurrentBook ->
-                            "Every book is a door. The nearest one is already open."
-                        else ->
-                            "Your volumes remain here, quiet and local, until you choose another door."
-                    },
+                    stringResource(
+                        when {
+                            bookCount == 0 -> R.string.threshold_body_unwritten
+                            bookCount == 1 -> R.string.threshold_body_first_volume
+                            hasCurrentBook -> R.string.threshold_body_library_awaits
+                            else -> R.string.threshold_body_return_archive
+                        }
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Moon.copy(alpha = 0.82f),
                     modifier = Modifier.widthIn(max = 540.dp)
@@ -440,7 +442,7 @@ private fun ContinueReadingHero(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "CONTINUE READING",
+                    stringResource(R.string.library_continue_reading).uppercase(),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
                     color = secondaryInk,
                     modifier = Modifier.weight(1f)
@@ -502,11 +504,13 @@ private fun ContinueReadingHero(
                 )
             ) {
                 Text(
-                    if (progress > 0f && !current.finished) {
-                        "Return to the volume"
-                    } else {
-                        "Open the volume"
-                    }
+                    stringResource(
+                        if (progress > 0f && !current.finished) {
+                            R.string.threshold_return_volume
+                        } else {
+                            R.string.threshold_open_volume
+                        }
+                    )
                 )
             }
         }
@@ -550,7 +554,7 @@ private fun HeroDetails(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            current.author.ifBlank { "Unknown author" },
+            current.author.ifBlank { stringResource(R.string.common_unknown_author) },
             style = MaterialTheme.typography.bodyMedium,
             color = secondaryInk,
             maxLines = 2,
@@ -563,11 +567,13 @@ private fun HeroDetails(
     }
 }
 
+@Composable
 private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Float): String = when {
-    current.finished -> "Finished — open again anytime"
-    progress <= 0f -> "Ready to begin"
-    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" -> "${current.currentChapter} · $progressPercent%"
-    else -> "$progressPercent% complete"
+    current.finished -> stringResource(R.string.threshold_progress_finished_reopen)
+    progress <= 0f -> stringResource(R.string.threshold_progress_ready)
+    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" ->
+        stringResource(R.string.threshold_progress_chapter, current.currentChapter, progressPercent)
+    else -> stringResource(R.string.threshold_progress_complete, progressPercent)
 }
 
 @Composable
@@ -588,12 +594,12 @@ private fun RecentBooksShelf(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "RECENT TOMES",
+                    stringResource(R.string.threshold_recent_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Return to another world",
+                    stringResource(R.string.threshold_recent_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -606,7 +612,7 @@ private fun RecentBooksShelf(
                     contentColor = VeilPalette.Brass
                 )
             ) {
-                Text("View all")
+                Text(stringResource(R.string.common_view_all))
             }
         }
 
@@ -680,12 +686,13 @@ private fun RecentBookCard(
     }
 }
 
+@Composable
 private fun recentBookStatus(book: Book): String {
     val progress = book.progress.coerceIn(0f, 1f)
     return when {
-        book.finished -> "Finished"
-        progress <= 0f -> "Not started"
-        else -> "${(progress * 100).toInt()}% read"
+        book.finished -> stringResource(R.string.book_detail_finished)
+        progress <= 0f -> stringResource(R.string.book_detail_not_started)
+        else -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
     }
 }
 
@@ -700,7 +707,10 @@ internal data class ThresholdWhisper(
     val locatorJson: String?,
     val title: String,
     val body: String,
-    val detail: String?
+    val detail: String?,
+    val questId: String? = null,
+    val questProgress: Int? = null,
+    val questTarget: Int? = null
 )
 
 internal fun deriveThresholdWhisper(
@@ -752,9 +762,12 @@ internal fun deriveThresholdWhisper(
                 kind = ThresholdWhisperKind.READING_PROMPT,
                 bookId = null,
                 locatorJson = null,
-                title = "A quiet invitation",
+                title = "",
                 body = quest.title,
-                detail = "${quest.progress.coerceAtLeast(0)}/$target complete"
+                detail = null,
+                questId = quest.id,
+                questProgress = quest.progress.coerceAtLeast(0),
+                questTarget = target
             )
         }
 
@@ -765,8 +778,34 @@ internal fun deriveThresholdWhisper(
 private fun ThresholdWhisperCard(
     whisper: ThresholdWhisper,
     books: List<Book>,
+    pathId: String,
     onOpenPassage: (Book, String) -> Unit
 ) {
+    val promptTarget = whisper.questTarget?.coerceAtLeast(1) ?: 1
+    val displayTitle = if (whisper.kind == ThresholdWhisperKind.READING_PROMPT) {
+        stringResource(R.string.threshold_quiet_invitation)
+    } else {
+        whisper.title
+    }
+    val displayBody = if (whisper.kind == ThresholdWhisperKind.READING_PROMPT) {
+        localizedThresholdQuest(
+            questId = whisper.questId,
+            pathId = pathId,
+            target = promptTarget,
+            fallback = whisper.body
+        )
+    } else {
+        whisper.body
+    }
+    val displayDetail = if (whisper.kind == ThresholdWhisperKind.READING_PROMPT) {
+        stringResource(
+            R.string.threshold_quest_progress,
+            whisper.questProgress?.coerceAtLeast(0) ?: 0,
+            promptTarget
+        )
+    } else {
+        whisper.detail
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
@@ -783,15 +822,17 @@ private fun ThresholdWhisperCard(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                when (whisper.kind) {
-                    ThresholdWhisperKind.PRESERVED_PASSAGE -> "WHISPER · PRESERVED PASSAGE"
-                    ThresholdWhisperKind.READING_PROMPT -> "WHISPER · OPTIONAL"
-                },
+                stringResource(
+                    when (whisper.kind) {
+                        ThresholdWhisperKind.PRESERVED_PASSAGE -> R.string.threshold_whisper_preserved
+                        ThresholdWhisperKind.READING_PROMPT -> R.string.threshold_whisper_optional
+                    }
+                ),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
                 color = VeilPalette.Brass
             )
             Text(
-                whisper.title,
+                displayTitle,
                 style = MaterialTheme.typography.titleMedium,
                 color = VeilPalette.Moon,
                 maxLines = 2,
@@ -799,16 +840,16 @@ private fun ThresholdWhisperCard(
             )
             Text(
                 if (whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE) {
-                    "“${whisper.body}”"
+                    "“$displayBody”"
                 } else {
-                    whisper.body
+                    displayBody
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.86f),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
-            whisper.detail?.let { detail ->
+            displayDetail?.let { detail ->
                 Text(
                     detail,
                     style = MaterialTheme.typography.labelSmall,
@@ -828,7 +869,7 @@ private fun ThresholdWhisperCard(
                         contentColor = VeilPalette.Brass
                     )
                 ) {
-                    Text("Return to passage")
+                    Text(stringResource(R.string.archive_return_to_passage))
                 }
             }
         }
@@ -849,7 +890,7 @@ private fun ReadingPulse(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "READING RECORD",
+                stringResource(R.string.profile_reading_record).uppercase(),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass,
                 modifier = Modifier.weight(1f)
@@ -863,7 +904,7 @@ private fun ReadingPulse(
                 )
             ) {
                 Text(
-                    "Castle",
+                    stringResource(R.string.profile_stat_castle),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -877,18 +918,18 @@ private fun ReadingPulse(
             verticalAlignment = Alignment.Top
         ) {
             ReadingPulseValue(
-                value = "${profile.streakDays}",
-                label = "day streak",
+                value = stringResource(R.string.profile_stat_streak_value, profile.streakDays),
+                label = stringResource(R.string.profile_stat_current_streak),
                 modifier = Modifier.weight(1f)
             )
             ReadingPulseValue(
                 value = formatReadingTime(profile.minutesRead),
-                label = "reading",
+                label = stringResource(R.string.threshold_stat_reading),
                 modifier = Modifier.weight(1f)
             )
             ReadingPulseValue(
                 value = "${profile.booksFinished}",
-                label = "finished",
+                label = stringResource(R.string.profile_stat_finished),
                 modifier = Modifier.weight(1f)
             )
         }
@@ -948,17 +989,17 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 Text(
-                    "THE FIRST THRESHOLD",
+                    stringResource(R.string.threshold_first_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
                     color = mutedInk
                 )
                 Text(
-                    "Your first volume is waiting",
+                    stringResource(R.string.threshold_first_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = ink
                 )
                 Text(
-                    "Import an EPUB or PDF. Once you begin, this page becomes the shortest path back into the book.",
+                    stringResource(R.string.threshold_first_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = mutedInk
                 )
@@ -988,15 +1029,36 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                         contentColor = Color(0xFFF3E9D5)
                     )
                 ) {
-                    Text("Enter the Library")
+                    Text(stringResource(R.string.threshold_enter_library))
                 }
             }
         }
     }
 }
+@Composable
 private fun formatReadingTime(minutes: Int): String = when {
-    minutes >= 6000 -> "${minutes / 60}h"
-    minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
-    else -> "${minutes}m"
+    minutes >= 6000 -> stringResource(R.string.profile_duration_hours, minutes / 60)
+    minutes >= 60 -> stringResource(R.string.profile_duration_hours_minutes, minutes / 60, minutes % 60)
+    else -> stringResource(R.string.profile_duration_minutes, minutes)
+}
+
+@Composable
+private fun localizedThresholdQuest(
+    questId: String?,
+    pathId: String,
+    target: Int,
+    fallback: String
+): String = when (questId) {
+    "read" -> stringResource(R.string.threshold_quest_read, target)
+    "pages" -> stringResource(R.string.threshold_quest_pages, target)
+    "mark" -> when (pathId) {
+        "dreamwalker" -> stringResource(R.string.threshold_quest_dreamwalker, target)
+        "vanguard" -> stringResource(R.string.threshold_quest_vanguard, target)
+        "nocturne" -> stringResource(R.string.threshold_quest_nocturne, target)
+        "archivist" -> stringResource(R.string.threshold_quest_archivist)
+        "artificer" -> stringResource(R.string.threshold_quest_artificer)
+        else -> stringResource(R.string.threshold_quest_oracle, target)
+    }
+    else -> fallback
 }
 
