@@ -83,6 +83,8 @@ data class ReaderProfile(
     val ritualProgress: Int,
     val ritualTarget: Int,
     val earnedSigils: Set<String> = emptySet(),
+    /** Highest earned reading streak; lapses never revoke historical relics. */
+    val longestStreakDays: Int = streakDays,
     val earnedDiscoveries: Set<String> = emptySet(),
     val ritualAftermath: RitualAftermathRecord? = null,
     val pathMastery: PathMasterySnapshot? = null
