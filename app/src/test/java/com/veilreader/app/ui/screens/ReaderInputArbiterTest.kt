@@ -318,4 +318,43 @@ class ReaderInputArbiterTest {
     }
 
 
+
+    @Test
+    fun `touch exploration returns touch ownership to renderer`() {
+        assertEquals(
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = false,
+                controlsVisible = true,
+                touchExplorationEnabled = true
+            )
+        )
+    }
+
+    @Test
+    fun `modal and durable close still outrank touch exploration`() {
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = true,
+                closeInFlight = false,
+                controlsVisible = true,
+                touchExplorationEnabled = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = true,
+                controlsVisible = true,
+                touchExplorationEnabled = true
+            )
+        )
+    }
+
 }
