@@ -19,7 +19,8 @@ internal class VeilDirectionalNavigationInputListener(
     private val navigator: OverflowableNavigator,
     private val isAnimated: () -> Boolean,
     private val isTapNavigationEnabled: () -> Boolean = { true },
-    private val onNavigationCommitted: () -> Unit = {}
+    private val onNavigationCommitted: () -> Unit = {},
+    private val onBoundaryHit: () -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
@@ -73,7 +74,11 @@ internal class VeilDirectionalNavigationInputListener(
 
     private inline fun navigate(block: () -> Boolean): Boolean {
         val committed = block()
-        if (committed) onNavigationCommitted()
+        if (committed) {
+            onNavigationCommitted()
+        } else {
+            onBoundaryHit()
+        }
         return committed
     }
 
