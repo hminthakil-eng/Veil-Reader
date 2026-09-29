@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
 import androidx.compose.ui.unit.dp
@@ -250,6 +251,7 @@ internal fun PdfZoomControls(
                 valueRange = minZoom..maxZoom,
                 modifier = Modifier.semantics {
                     contentDescription = zoomSemantics
+                    stateDescription = formatPercent(displayedZoom)
                 }
             )
 
@@ -293,7 +295,7 @@ internal fun PdfZoomControls(
                         VeilPalette.Brass.copy(alpha = 0.44f)
                     )
                 ) {
-                    Text("100%")
+                    Text(formatPercent(1f))
                 }
 
                 OutlinedButton(
