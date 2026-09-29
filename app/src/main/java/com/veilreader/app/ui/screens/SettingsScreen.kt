@@ -94,6 +94,7 @@ fun SettingsScreen(
     }
 
     val appearance = appearanceDraft
+    val formatPercent = rememberVeilPercentFormatter()
     val context = LocalContext.current
     val appVersion = remember(context) {
         runCatching {
@@ -186,7 +187,7 @@ fun SettingsScreen(
                 label = stringResource(R.string.settings_text_size),
                 value = appearance.fontScale.toFloat(),
                 valueRange = 0.75f..1.8f,
-                displayValue = { "${(it * 100).toInt()}%" },
+                displayValue = { formatPercent(it) },
                 onCommit = { value ->
                     commitReaderAppearance { current -> current.withFontScale(value.toDouble()) }
                 }
@@ -216,7 +217,7 @@ fun SettingsScreen(
                 value = appearance.fontWeight,
                 defaultValue = 1f,
                 valueRange = 0f..2.5f,
-                displayValue = { "${(it * 100).toInt()}%" },
+                displayValue = { formatPercent(it) },
                 onCommit = { value ->
                     commitReaderAppearance { current ->
                         current.withFontWeight(value?.toDouble()).let { updated ->
@@ -317,7 +318,7 @@ fun SettingsScreen(
                     label = stringResource(R.string.settings_paper_age),
                     value = appearance.paperPatina.toFloat(),
                     valueRange = 0f..1f,
-                    displayValue = { value -> "${(value * 100).toInt()}%" },
+                    displayValue = { value -> formatPercent(value) },
                     onCommit = { value ->
                         commitReaderAppearance { current ->
                             current.withPaperPatina(value.toDouble())
@@ -427,7 +428,7 @@ fun SettingsScreen(
                     label = stringResource(R.string.settings_audio_level),
                     value = settings.sensory.audioVolume.toFloat(),
                     valueRange = 0.05f..0.55f,
-                    displayValue = { "${(it * 100).toInt()}%" },
+                    displayValue = { formatPercent(it) },
                     onCommit = { value ->
                         onSaveSensorySettings(
                             settings.sensory.copy(audioVolume = value.toDouble())
