@@ -38,6 +38,8 @@ class MainActivity : FragmentActivity() {
                     appSettings = appSettings,
                     onSetAppThemeMode = settingsViewModel::setAppThemeMode,
                     onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
+                    onSaveBookReaderAppearance = settingsViewModel::saveBookReaderAppearance,
+                    onClearBookReaderAppearance = settingsViewModel::clearBookReaderAppearance,
                     onSaveSensorySettings = settingsViewModel::saveSensorySettings
                 )
             }
