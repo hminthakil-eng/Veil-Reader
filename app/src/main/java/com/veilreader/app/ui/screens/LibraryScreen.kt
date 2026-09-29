@@ -2501,12 +2501,20 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
+    val favoriteLabel = stringResource(
+        if (book.favorite) R.string.library_remove_favorite_semantics
+        else R.string.library_add_favorite_semantics,
+        book.title
+    )
+    val detailsLabel = stringResource(R.string.library_book_details_semantics, book.title)
+
     Column(
         Modifier
             .fillMaxWidth()
             .clickable(
                 role = Role.Button,
-                onClickLabel = "Read ${book.title}",
+                onClickLabel = readLabel,
                 onClick = onOpen
             ),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -2545,8 +2553,11 @@ private fun BookLibraryTile(
         ) {
             Text(
                 when {
-                    book.finished -> "Finished"
-                    book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}%"
+                    book.finished -> stringResource(R.string.book_detail_finished)
+                    book.progress > 0f -> stringResource(
+                        R.string.book_detail_percent_read,
+                        (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                    )
                     else -> book.format.name
                 },
                 style = MaterialTheme.typography.labelSmall,
@@ -2559,11 +2570,7 @@ private fun BookLibraryTile(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = if (book.favorite) {
-                            "Remove ${book.title} from favorites"
-                        } else {
-                            "Add ${book.title} to favorites"
-                        }
+                        contentDescription = favoriteLabel
                     }
             ) {
                 FavoriteIcon(book.favorite, Modifier.size(15.dp))
@@ -2574,7 +2581,7 @@ private fun BookLibraryTile(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = "Book details for ${book.title}"
+                        contentDescription = detailsLabel
                     }
             ) {
                 EllipsisIcon(
