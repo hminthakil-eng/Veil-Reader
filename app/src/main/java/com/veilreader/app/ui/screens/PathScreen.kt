@@ -38,6 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.GamificationEngine
@@ -946,67 +948,179 @@ private fun AdvancementCeremonyDialog(
 ) {
     val identity = localizedPathIdentity(profile.path)
     val pathName = localizedPathName(profile.path)
+    val currentRankLabel = localizedRankName(
+        profile.path.id,
+        profile.rankIndex,
+        profile.rankName
+    )
     val nextRankLabel = localizedRankName(
         profile.path.id,
         profile.rankIndex + 1,
         nextRank
     )
+    val reducedMotion = LocalVeilReducedMotion.current
+    var revealed by remember(
+        profile.path.id,
+        profile.rankIndex,
+        nextRank
+    ) { mutableStateOf(false) }
 
-    AlertDialog(
+    LaunchedEffect(profile.path.id, profile.rankIndex, nextRank) {
+        revealed = true
+    }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.small,
-        containerColor = VeilPalette.Archive,
-        tonalElevation = 0.dp,
-        icon = {
-            PathIcon(
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VeilPalette.Ink)
+                .grayfogAtmosphere(
+                    realm = VeilRealm.RITUAL,
+                    seed = profile.path.id.hashCode() xor nextRank.hashCode(),
+                    intensity = 1f
+                )
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(
+                    horizontal = VeilSpacing.md,
+                    vertical = VeilSpacing.lg
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            PathRitualBackdrop(
                 pathId = profile.path.id,
-                tint = VeilPalette.Brass,
-                modifier = Modifier.size(44.dp)
+                rankIndex = profile.rankIndex + 1,
+                modifier = Modifier.matchParentSize()
             )
-        },
-        title = {
-            Text(
-                stringResource(R.string.path_advance_to, nextRankLabel),
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                Text(
-                    stringResource(R.string.path_advance_body, nextRankLabel, pathName),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    identity.invocation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Brass,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.Brass,
-                    contentColor = Color(0xFF17120A)
-                )
+
+            AnimatedVisibility(
+                visible = revealed,
+                enter = if (reducedMotion) {
+                    fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                } else {
+                    fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                        slideInVertically(
+                            animationSpec = tween(VeilMotion.SPATIAL_MS),
+                            initialOffsetY = { it / 12 }
+                        )
+                }
             ) {
-                Text(stringResource(R.string.path_advance_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    stringResource(R.string.path_not_yet),
-                    color = VeilPalette.Moon.copy(alpha = 0.72f)
-                )
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    VeilPalette.Archive.copy(alpha = 0.96f),
+                                    Color(0xFF100E14).copy(alpha = 0.98f),
+                                    VeilPalette.Ink
+                                )
+                            )
+                        )
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                VeilPalette.Brass.copy(alpha = 0.58f)
+                            ),
+                            MaterialTheme.shapes.medium
+                        )
+                        .padding(
+                            horizontal = VeilSpacing.lg,
+                            vertical = VeilSpacing.xl
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                ) {
+                    Text(
+                        pathName.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            letterSpacing = 1.5.sp
+                        ),
+                        color = VeilPalette.Brass
+                    )
+
+                    PathSigil(
+                        pathId = profile.path.id,
+                        modifier = Modifier.size(148.dp),
+                        active = true
+                    )
+
+                    Text(
+                        stringResource(
+                            R.string.path_advance_to,
+                            nextRankLabel
+                        ),
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = VeilPalette.Moon,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        "$currentRankLabel  →  $nextRankLabel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass.copy(alpha = 0.88f)
+                    )
+
+                    BrassRule(Modifier.fillMaxWidth())
+
+                    Text(
+                        stringResource(
+                            R.string.path_advance_body,
+                            nextRankLabel,
+                            pathName
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon.copy(alpha = 0.88f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        identity.invocation,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Brass,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 50.dp),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(stringResource(R.string.path_not_yet))
+                        }
+                        Button(
+                            onClick = onConfirm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 50.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = VeilPalette.Brass,
+                                contentColor = Color(0xFF17120A)
+                            )
+                        ) {
+                            Text(stringResource(R.string.path_advance_confirm))
+                        }
+                    }
+                }
             }
         }
-    )
+    }
 }
 
 @Composable
