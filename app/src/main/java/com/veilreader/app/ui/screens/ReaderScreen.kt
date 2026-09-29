@@ -374,8 +374,8 @@ fun ReaderScreen(
     )
     var readerMessage by remember { mutableStateOf<String?>(null) }
     var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
-    var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
-    var pendingNoteText by remember { mutableStateOf("") }
+    var pendingNoteHighlightId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
+    var pendingNoteText by rememberSaveable(opened.book.id) { mutableStateOf("") }
     var noteSaving by remember { mutableStateOf(false) }
     var locationTitle by remember(opened.book.id) {
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
