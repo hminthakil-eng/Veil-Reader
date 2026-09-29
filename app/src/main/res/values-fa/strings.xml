@@ -388,6 +388,9 @@
     <string name="settings_dark_images_invert">معکوس</string>
     <string name="settings_dark_images_hint">فقط روی تصاویر EPUB بازچینش‌پذیر در قالب گرگ‌ومیش یا OLED اعمال می‌شود.</string>
     <string name="settings_dark_images_unavailable">پردازش تصویر در قالب گرگ‌ومیش یا OLED فعال می‌شود.</string>
+    <string name="reader_fixed_layout_notice">این EPUB با چیدمان ثابت طراحی صفحهٔ ناشر را حفظ می‌کند. کنترل‌های متن، فاصله‌گذاری، ستون‌ها و اسکرول پیوسته برای این کتاب در دسترس نیستند.</string>
+    <string name="reader_rtl_typography_notice">برای این متن راست‌به‌چپ، فاصلهٔ حروف، فاصلهٔ واژه‌ها و شکستن واژه در انتهای سطر روی تنظیم امن خود رندرر باقی می‌مانند.</string>
+    <string name="reader_columns_paged_only">تعداد ستون فقط در حالت صفحه‌ای اعمال می‌شود.</string>
     <string name="reader_spacing_shaping">فاصله‌گذاری و شکل‌دهی</string>
     <string name="reader_hyphenation">شکستن واژه در انتهای سطر</string>
     <string name="reader_ligatures">لیگچرها</string>
