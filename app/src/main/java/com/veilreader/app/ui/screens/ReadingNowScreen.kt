@@ -46,6 +46,7 @@ import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.veilContentTextStyle
+import com.veilreader.app.ui.theme.usesArabicScript
 
 /**
  * Threshold is the calm front door to reading: resume first, recent books second, world progress last.
@@ -790,6 +791,29 @@ private fun ThresholdWhisperCard(
     books: List<Book>,
     onOpenPassage: (Book, String) -> Unit
 ) {
+    val whisperLabel = when (whisper.kind) {
+        ThresholdWhisperKind.PRESERVED_PASSAGE ->
+            stringResource(R.string.threshold_whisper_preserved)
+        ThresholdWhisperKind.READING_PROMPT ->
+            stringResource(R.string.threshold_whisper_optional)
+    }
+    val displayTitle = whisper.title ?: stringResource(R.string.threshold_quiet_invitation)
+    val displayBody = if (whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE) {
+        "“${whisper.body}”"
+    } else {
+        whisper.body
+    }
+    val displayDetail = if (whisper.kind == ThresholdWhisperKind.READING_PROMPT) {
+        val progress = whisper.progress
+        val target = whisper.target
+        if (progress != null && target != null) {
+            stringResource(R.string.threshold_quest_progress, progress, target)
+        } else {
+            null
+        }
+    } else {
+        whisper.detail
+    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
@@ -806,35 +830,31 @@ private fun ThresholdWhisperCard(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                when (whisper.kind) {
-                    ThresholdWhisperKind.PRESERVED_PASSAGE -> "WHISPER · PRESERVED PASSAGE"
-                    ThresholdWhisperKind.READING_PROMPT -> "WHISPER · OPTIONAL"
-                },
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+                whisperLabel,
+                style = veilContentTextStyle(
+                    MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+                    whisperLabel
+                ),
                 color = VeilPalette.Brass
             )
             Text(
-                whisper.title,
-                style = MaterialTheme.typography.titleMedium,
+                displayTitle,
+                style = veilContentTextStyle(MaterialTheme.typography.titleMedium, displayTitle),
                 color = VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                if (whisper.kind == ThresholdWhisperKind.PRESERVED_PASSAGE) {
-                    "“${whisper.body}”"
-                } else {
-                    whisper.body
-                },
-                style = MaterialTheme.typography.bodyMedium,
+                displayBody,
+                style = veilContentTextStyle(MaterialTheme.typography.bodyMedium, displayBody),
                 color = VeilPalette.Mist.copy(alpha = 0.86f),
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
-            whisper.detail?.let { detail ->
+            displayDetail?.let { detail ->
                 Text(
                     detail,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = veilContentTextStyle(MaterialTheme.typography.labelSmall, detail),
                     color = VeilPalette.Spirit.copy(alpha = 0.70f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -851,7 +871,7 @@ private fun ThresholdWhisperCard(
                         contentColor = VeilPalette.Brass
                     )
                 ) {
-                    Text("Return to passage")
+                    Text(stringResource(R.string.archive_return_to_passage))
                 }
             }
         }
@@ -872,7 +892,7 @@ private fun ReadingPulse(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "READING RECORD",
+                stringResource(R.string.threshold_reading_record),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                 color = VeilPalette.Brass,
                 modifier = Modifier.weight(1f)
@@ -886,7 +906,7 @@ private fun ReadingPulse(
                 )
             ) {
                 Text(
-                    "Castle",
+                    stringResource(R.string.threshold_castle),
                     style = MaterialTheme.typography.labelSmall
                 )
             }
@@ -901,17 +921,17 @@ private fun ReadingPulse(
         ) {
             ReadingPulseValue(
                 value = "${profile.streakDays}",
-                label = "day streak",
+                label = stringResource(R.string.threshold_stat_day_streak),
                 modifier = Modifier.weight(1f)
             )
             ReadingPulseValue(
                 value = formatReadingTime(profile.minutesRead),
-                label = "reading",
+                label = stringResource(R.string.threshold_stat_reading),
                 modifier = Modifier.weight(1f)
             )
             ReadingPulseValue(
                 value = "${profile.booksFinished}",
-                label = "finished",
+                label = stringResource(R.string.threshold_stat_finished),
                 modifier = Modifier.weight(1f)
             )
         }
