@@ -85,9 +85,37 @@ class ReturnRitualTest {
 
         assertEquals("newer-old", ritual.fragment?.highlightId)
         assertTrue(ritual.fragment?.annotated == true)
-        assertEquals("7 MONTHS SILENT", ritual.silenceLabel)
+        assertEquals(220L * day, ritual.silenceMillis)
+        assertEquals(100L, ritual.fragment?.ageDays)
     }
 
+    @Test
+    fun `blank preserved text remains semantic instead of inventing copy`() {
+        val book = Book(id = "b", title = "B", author = "Veil")
+        val memory = BookArchiveMemory(
+            bookId = "b",
+            lastRecordedActivityAtEpochMs = now - 220L * day,
+            inactiveMillis = 220L * day,
+            depth = ArchiveDepth.FORGOTTEN,
+            longestReturnGapMillis = null
+        )
+        val ritual = deriveBookReturnRitual(
+            book = book,
+            archiveMemory = memory,
+            highlights = listOf(
+                Highlight(
+                    id = "blank",
+                    bookId = "b",
+                    quote = "   ",
+                    locatorJson = "{}",
+                    createdAtEpochMs = now - 100L * day
+                )
+            ),
+            nowEpochMs = now
+        )!!
+
+        assertEquals(null, ritual.fragment?.quote)
+    }
     @Test
     fun `ritual never invents a fragment when no old margin exists`() {
         val book = Book(id = "b", title = "B", author = "Veil")
