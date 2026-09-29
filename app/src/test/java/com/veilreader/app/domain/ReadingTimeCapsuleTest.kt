@@ -196,4 +196,36 @@ class ReadingTimeCapsuleTest {
         assertTrue(event.annotated)
     }
 
+    @Test
+    fun `reading session carries structured timeline metrics`() {
+        val book = Book(
+            id = "sessioned",
+            title = "Sessioned",
+            author = "Veil",
+            finished = true
+        )
+        val session = ReadingSessionSnapshot(
+            id = "s",
+            bookId = book.id,
+            startedAtEpochMs = 10L,
+            endedAtEpochMs = 20L,
+            activeMillis = 95_000L,
+            pacedPageTurns = 4,
+            highlightCount = 2,
+            noteCount = 1
+        )
+
+        val event = deriveReadingTimeCapsule(
+            book = book,
+            sessions = listOf(session),
+            highlights = emptyList(),
+            bookmarks = emptyList()
+        ).timeline.single { it.kind == ReadingHistoryEventKind.READING_SESSION }
+
+        assertEquals(95_000L, event.activeMillis)
+        assertEquals(4, event.pacedPageTurns)
+        assertEquals(2, event.highlightEvents)
+        assertEquals(1, event.noteEvents)
+    }
+
 }
