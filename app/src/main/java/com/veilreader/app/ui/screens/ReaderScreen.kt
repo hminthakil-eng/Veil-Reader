@@ -1383,7 +1383,10 @@ private fun createReaderFactory(
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
                 useReadiumCssFontSize = false
-                disablePageTurnsWhileScrolling = false
+                // Hard sanctuary invariant: continuous scroll owns vertical navigation completely.
+                // Native paginated turns must never remain active underneath scroll, otherwise a
+                // diagonal/edge gesture can leak into a page jump and make Scroll/Slide feel mixed.
+                disablePageTurnsWhileScrolling = DISABLE_PAGE_TURNS_WHILE_SCROLLING
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
                     alpha = 1.0,
@@ -1444,6 +1447,8 @@ private fun ReaderFragmentHost(
         }
     }
 }
+
+internal const val DISABLE_PAGE_TURNS_WHILE_SCROLLING: Boolean = true
 
 private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
 
