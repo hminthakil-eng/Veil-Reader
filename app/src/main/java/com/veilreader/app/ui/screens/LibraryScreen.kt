@@ -107,24 +107,24 @@ internal data class LibraryShelfGroup(
 )
 
 internal data class LibraryShelfLabels(
-    val filteredArchive: String = "Filtered archive",
-    val matchingVolumes: String = "Matching volumes",
-    val journey: String = "Journey",
-    val currentlyReading: String = "Currently reading",
-    val collection: String = "Collection",
-    val series: String = "Series",
-    val author: String = "Author",
-    val record: String = "Record",
-    val completedVolumes: String = "Completed volumes",
-    val unopened: String = "Unopened",
-    val waitingOnShelf: String = "Waiting on the shelf"
+    val filteredArchive: String,
+    val matchingVolumes: String,
+    val journey: String,
+    val currentlyReading: String,
+    val collection: String,
+    val series: String,
+    val author: String,
+    val record: String,
+    val completedVolumes: String,
+    val unopened: String,
+    val waitingOnShelf: String
 )
 
 internal fun deriveLibraryShelfGroups(
     books: List<Book>,
     filtered: List<Book>,
     filterActive: Boolean,
-    labels: LibraryShelfLabels = LibraryShelfLabels()
+    labels: LibraryShelfLabels
 ): List<LibraryShelfGroup> {
     if (filterActive) {
         return listOf(
