@@ -251,6 +251,15 @@ fun ReaderScreen(
             fixedLayout = fixedLayoutPublication
         )
     }
+    var presentedReaderAppearance by remember(opened.book.id) {
+        mutableStateOf(effectiveReaderAppearance)
+    }
+    var rendererPreferencesSettling by remember(opened.book.id) {
+        mutableStateOf(false)
+    }
+    val readerModeHandoffState = remember(opened.book.id) {
+        ReaderModeHandoffState()
+    }
     val publicationLanguage = remember(opened.book.id, opened.book.language) {
         opened.book.language
             ?.trim()
@@ -350,9 +359,9 @@ fun ReaderScreen(
             appearanceCloseJob = null
         }
     }
-    val latestAppearance = rememberUpdatedState(effectiveReaderAppearance)
-    val paperCurlConfig = remember(effectiveReaderAppearance.theme) {
-        when (effectiveReaderAppearance.theme) {
+    val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
+    val paperCurlConfig = remember(presentedReaderAppearance.theme) {
+        when (presentedReaderAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFFE3D3B5),
                 backPageContentAlpha = 0.10f,
@@ -829,6 +838,9 @@ fun ReaderScreen(
     DisposableEffect(slidePageState) {
         onDispose { slidePageState.dispose() }
     }
+    DisposableEffect(readerModeHandoffState) {
+        onDispose { readerModeHandoffState.dispose() }
+    }
 
     DisposableEffect(lifecycle, readerViewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -1112,7 +1124,8 @@ fun ReaderScreen(
                     readerInteractionMode(
                         selectionModeActive = selectionModeActive,
                         overlayVisible =
-                            showNotebook ||
+                            rendererPreferencesSettling ||
+                                showNotebook ||
                                 showAppearance ||
                                 showPdfZoom ||
                                 pendingNoteHighlightId != null ||
@@ -1157,13 +1170,43 @@ fun ReaderScreen(
         activeFixedLayoutSpread,
         opened.format
     ) {
+        val nav = navigator
+        if (nav == null) {
+            presentedReaderAppearance = effectiveReaderAppearance
+            rendererPreferencesSettling = false
+            readerModeHandoffState.clearImmediately()
+            return@LaunchedEffect
+        }
+
+        val previousPresented = presentedReaderAppearance
+        val requested = effectiveReaderAppearance
+        val captureModeHandoff = shouldCaptureReaderModeHandoff(
+            format = opened.format,
+            previousMode = previousPresented.navigationMode,
+            requestedMode = requested.navigationMode
+        )
+
+        // Preference changes must never race a half-committed page gesture.
+        paperInputListener?.forceCancelPendingTurn()
+        slideInputListener?.forceCancelPendingTurn()
+        rendererPreferencesSettling = true
+
+        val captured = if (captureModeHandoff) {
+            (nav as? OverflowableNavigator)
+                ?.publicationView
+                ?.let(readerModeHandoffState::capture) == true
+        } else {
+            readerModeHandoffState.clearImmediately()
+            false
+        }
+
         game.rebasePagePacing()
         readerViewModel.onUserInteraction()
         val traceDetails =
-            "format=${opened.format} theme=${effectiveReaderAppearance.theme} " +
-                "publisherStyles=${effectiveReaderAppearance.publisherStyles} " +
-                "scroll=${effectiveReaderAppearance.scroll} " +
-                "pageTurn=${effectiveReaderAppearance.pageTurnStyle} " +
+            "format=${opened.format} theme=${requested.theme} " +
+                "publisherStyles=${requested.publisherStyles} " +
+                "scroll=${requested.scroll} " +
+                "pageTurn=${requested.pageTurnStyle} " +
                 "spread=$activeFixedLayoutSpread"
         ReaderTrace.event(
             "appearance_submit_requested",
@@ -1171,39 +1214,62 @@ fun ReaderScreen(
             sessionId = readerViewModel.traceSessionId(),
             details = traceDetails
         )
-        when (opened.format) {
-            BookFormat.EPUB ->
-                (navigator as? EpubNavigatorFragment)
-                    ?.submitPreferences(
-                        effectiveReaderAppearance.toEpubPreferences(
-                            fixedLayoutSpread = activeFixedLayoutSpread
-                        )
-                    )
 
-            BookFormat.PDF -> {
-                @Suppress("UNCHECKED_CAST")
-                val pdfNavigator = navigator as? PdfiumNavigatorFragment
-                pdfNavigator?.submitPreferences(effectiveReaderAppearance.toPdfiumPreferences())
+        try {
+            when (opened.format) {
+                BookFormat.EPUB ->
+                    (nav as? EpubNavigatorFragment)
+                        ?.submitPreferences(
+                            requested.toEpubPreferences(
+                                fixedLayoutSpread = activeFixedLayoutSpread
+                            )
+                        )
+
+                BookFormat.PDF -> {
+                    @Suppress("UNCHECKED_CAST")
+                    val pdfNavigator = nav as? PdfiumNavigatorFragment
+                    pdfNavigator?.submitPreferences(requested.toPdfiumPreferences())
+                }
+
+                else -> Unit
             }
 
-            else -> Unit
+            val settleFrames = readerPreferenceSettleFrames(
+                previousMode = previousPresented.navigationMode,
+                requestedMode = requested.navigationMode
+            )
+            repeat(settleFrames) {
+                delay(VeilMotion.FRAME_SETTLE_MS)
+            }
+
+            // Switch Veil-owned visuals/input only after the renderer has had time to paint.
+            presentedReaderAppearance = requested
+            if (captured) {
+                readerModeHandoffState.release(reducedMotion)
+            }
+
+            ReaderTrace.event(
+                "appearance_submit_returned",
+                bookId = opened.book.id,
+                sessionId = readerViewModel.traceSessionId(),
+                details = traceDetails
+            )
+        } catch (cancelled: CancellationException) {
+            readerModeHandoffState.clearImmediately()
+            throw cancelled
+        } finally {
+            rendererPreferencesSettling = false
         }
-        ReaderTrace.event(
-            "appearance_submit_returned",
-            bookId = opened.book.id,
-            sessionId = readerViewModel.traceSessionId(),
-            details = traceDetails
-        )
     }
 
     LaunchedEffect(
         navigator,
         opened.book.id,
         bookHighlights,
-        effectiveReaderAppearance.theme
+        presentedReaderAppearance.theme
     ) {
         val decorable = navigator as? DecorableNavigator ?: return@LaunchedEffect
-        val highlightTint = readerHighlightTint(effectiveReaderAppearance.theme)
+        val highlightTint = readerHighlightTint(presentedReaderAppearance.theme)
         val decorations = bookHighlights.mapNotNull { item ->
             val locator = runCatching { Locator.fromJSON(JSONObject(item.locatorJson)) }.getOrNull()
                 ?: return@mapNotNull null
@@ -1216,7 +1282,7 @@ fun ReaderScreen(
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
     }
 
-    val readerCanvas = readerCanvasColor(effectiveReaderAppearance.theme)
+    val readerCanvas = readerCanvasColor(presentedReaderAppearance.theme)
     val readerSurfaceLabel = stringResource(R.string.reader_surface_label)
     val controlsActionLabel = stringResource(
         if (touchExplorationEnabled) {
@@ -1259,8 +1325,8 @@ fun ReaderScreen(
 
         if (
             opened.format == BookFormat.EPUB &&
-            !effectiveReaderAppearance.scroll &&
-            effectiveReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
+            !presentedReaderAppearance.scroll &&
+            presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
         ) {
             PaperCurlOverlay(
                 state = paperCurlState,
@@ -1271,8 +1337,8 @@ fun ReaderScreen(
 
         if (
             opened.format == BookFormat.EPUB &&
-            !effectiveReaderAppearance.scroll &&
-            effectiveReaderAppearance.pageTurnStyle == PageTurnStyle.SLIDE
+            !presentedReaderAppearance.scroll &&
+            presentedReaderAppearance.pageTurnStyle == PageTurnStyle.SLIDE
         ) {
             SlidePageOverlay(
                 state = slidePageState,
@@ -1285,9 +1351,9 @@ fun ReaderScreen(
             !fixedLayoutPublication
         ) {
             ReaderPageAtmosphere(
-                theme = effectiveReaderAppearance.theme,
-                navigationMode = effectiveReaderAppearance.navigationMode,
-                paperPatina = effectiveReaderAppearance.paperPatina.toFloat(),
+                theme = presentedReaderAppearance.theme,
+                navigationMode = presentedReaderAppearance.navigationMode,
+                paperPatina = presentedReaderAppearance.paperPatina.toFloat(),
                 progress = progress,
                 progression = (navigator as? OverflowableNavigator)
                     ?.overflow
@@ -1298,10 +1364,15 @@ fun ReaderScreen(
             )
         }
 
+        ReaderModeHandoffOverlay(
+            state = readerModeHandoffState,
+            modifier = Modifier.fillMaxSize()
+        )
+
         boundaryPulseSide?.let { side ->
             ReaderBoundaryPulse(
                 side = side,
-                theme = effectiveReaderAppearance.theme,
+                theme = presentedReaderAppearance.theme,
                 alpha = boundaryPulseAlpha.value,
                 modifier = Modifier.fillMaxSize()
             )
