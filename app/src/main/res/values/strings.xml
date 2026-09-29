@@ -594,4 +594,11 @@
     <string name="castle_awakens_rank">Awakens at rank %1$d</string>
     <string name="castle_enter">ENTER</string>
     <string name="castle_sealed">SEALED</string>
+
+    <string name="castle_memory_empty">The foundation waits for its first volume.</string>
+    <string name="castle_memory_volumes_only">Volumes stand in the keep, but few traces have entered the stone.</string>
+    <string name="castle_memory_few_rooms">A few rooms remember. The rest of the keep is still listening.</string>
+    <string name="castle_memory_retaining_shape">The keep has begun to retain the shape of your reading.</string>
+    <string name="castle_memory_warm_archive">The archive is warm behind the walls; whole chambers now carry memory.</string>
+    <string name="castle_memory_dense">The keep is dense with memory. Very little inside it is still silent.</string>
 </resources>
