@@ -1086,4 +1086,5 @@
     <string name="entry_handoff_ritual">The old seal opens. Your page remains.</string>
     <string name="entry_handoff_returning">The archive recedes. Your book remains.</string>
     <string name="entry_handoff_first">The archive recedes. The first page remains.</string>
+    <string name="common_cover_of">Cover of %1$s</string>
 </resources>
