@@ -2114,7 +2114,7 @@ private fun readerNavigationModeLabel(mode: ReaderNavigationMode): String =
     }
 
 @Composable
-private fun readerNavigationModeDescriptionLocalized(mode: ReaderNavigationMode): String =
+internal fun readerNavigationModeDescriptionLocalized(mode: ReaderNavigationMode): String =
     when (mode) {
         ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.reader_mode_curl_description)
         ReaderNavigationMode.SLIDE -> stringResource(R.string.reader_mode_slide_description)
