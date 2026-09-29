@@ -36,9 +36,13 @@ internal class PaperCurlInputListener(
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
     private var navigationJob: Job? = null
+    private var completionJob: Job? = null
+    private var cancellationRequested = false
+    private var turnCommitted = false
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
     private var lastDragSampleAtMillis = 0L
+    private var lastMotionAtMillis = 0L
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
 
@@ -85,10 +89,14 @@ internal class PaperCurlInputListener(
     }
 
     override fun onDrag(event: DragEvent): Boolean {
-        if (!paperModeEnabled()) return false
+        if (!paperModeEnabled()) {
+            // The mode may change while a sheet is lifted. Restore its starting
+            // locator before allowing the new navigation mode to own later drags.
+            return cancelPendingTurn()
+        }
 
-        // Lock out overlapping gestures while a tap-turn animation is running.
-        if (state.active && activeDrag == null) return true
+        // Lock out overlapping gestures while a turn finishes or a tap animates.
+        if (completionJob != null || (state.active && activeDrag == null)) return true
 
         return when (event.type) {
             DragEvent.Type.Start -> onDragStart(event)
@@ -128,6 +136,7 @@ internal class PaperCurlInputListener(
     }
 
     private fun onDragEnd(event: DragEvent): Boolean {
+        if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
             // A reserved gesture that never became a horizontal turn is still
@@ -150,12 +159,17 @@ internal class PaperCurlInputListener(
             curlProgress = state.dragProgress(),
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
-        scope.launch {
+        completionJob = scope.launch {
             navigationJob?.join()
 
             when {
+                cancellationRequested -> {
+                    if (previewNavigationSucceeded) restoreDragStart(spec)
+                }
+
                 commit && previewNavigationSucceeded -> {
                     // Persist/count and emit sensory feedback only after a real commit.
+                    turnCommitted = true
                     onCommittedTurn()
                     if (!isReducedMotion()) {
                         state.animateComplete(
@@ -183,8 +197,33 @@ internal class PaperCurlInputListener(
                 }
             }
 
-            resetDrag()
             state.clear()
+            resetDrag()
+        }
+        return true
+    }
+
+    /**
+     * Called when the Reader pauses or exits PAPER mode. The preview navigator may
+     * already be on the next page, so let that navigation finish before restoring
+     * the exact locator captured at drag start. A committed turn stays committed.
+     */
+    fun cancelPendingTurn(): Boolean {
+        if (!dragReserved && activeDrag == null) return false
+        if (turnCommitted) return false
+        cancellationRequested = true
+        val spec = activeDrag
+        if (spec == null) {
+            resetDrag()
+            return true
+        }
+        if (completionJob == null) {
+            completionJob = scope.launch {
+                navigationJob?.join()
+                if (previewNavigationSucceeded) restoreDragStart(spec)
+                state.clear()
+                resetDrag()
+            }
         }
         return true
     }
@@ -204,6 +243,7 @@ internal class PaperCurlInputListener(
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
         lastDragSampleAtMillis = SystemClock.uptimeMillis()
+        lastMotionAtMillis = 0L
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
         state.updateDrag(event.start, event.offset)
@@ -227,12 +267,20 @@ internal class PaperCurlInputListener(
     private fun sampleReleaseVelocity(spec: TurnSpec, event: DragEvent) {
         val now = SystemClock.uptimeMillis()
         val inward = inwardDistance(spec, event)
+        val delta = inward - lastInwardDistance
         val elapsed = now - lastDragSampleAtMillis
-        if (lastDragSampleAtMillis > 0L && elapsed in 1L..120L) {
-            releaseVelocityPxPerSec =
-                ((inward - lastInwardDistance) * 1000f / elapsed.toFloat())
-                    .coerceIn(-12_000f, 12_000f)
+        val sinceMotion = if (lastMotionAtMillis > 0L) {
+            now - lastMotionAtMillis
+        } else {
+            Long.MAX_VALUE
         }
+        releaseVelocityPxPerSec = nextPaperReleaseVelocity(
+            previousVelocityPxPerSec = releaseVelocityPxPerSec,
+            distanceDeltaPx = delta,
+            elapsedMillis = elapsed,
+            sinceLastMotionMillis = sinceMotion
+        )
+        if (abs(delta) >= 1f) lastMotionAtMillis = now
         lastDragSampleAtMillis = now
         lastInwardDistance = inward
     }
@@ -330,9 +378,13 @@ internal class PaperCurlInputListener(
         activeDrag = null
         dragReserved = false
         navigationJob = null
+        completionJob = null
+        cancellationRequested = false
+        turnCommitted = false
         previewNavigationSucceeded = false
         dragStartLocator = null
         lastDragSampleAtMillis = 0L
+        lastMotionAtMillis = 0L
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
     }
@@ -389,4 +441,28 @@ internal fun shouldCommitPaperTurn(
     return inwardDistance >= commitDistance ||
         curlProgress >= 0.36f ||
         fastInwardFlick
+}
+
+/**
+ * A terminal drag event commonly repeats the last Move offset. Keep a fresh flick
+ * through that duplicate sample, but expire it when the finger has actually paused.
+ */
+internal fun nextPaperReleaseVelocity(
+    previousVelocityPxPerSec: Float,
+    distanceDeltaPx: Float,
+    elapsedMillis: Long,
+    sinceLastMotionMillis: Long
+): Float {
+    if (abs(distanceDeltaPx) >= 1f) {
+        if (elapsedMillis in 1L..120L) {
+            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
+                .coerceIn(-12_000f, 12_000f)
+        }
+        return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
+            previousVelocityPxPerSec
+        } else {
+            0f
+        }
+    }
+    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
 }
