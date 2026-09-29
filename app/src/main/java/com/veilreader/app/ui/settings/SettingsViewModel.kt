@@ -36,6 +36,21 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    fun saveBookReaderAppearance(bookId: String, appearance: ReaderAppearance) {
+        val details = "book=$bookId theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
+        ReaderTrace.event("book_appearance_requested", details = details)
+        viewModelScope.launch {
+            store.saveBookReaderAppearance(bookId, appearance)
+            ReaderTrace.event("book_appearance_persisted", details = details)
+        }
+    }
+
+    fun clearBookReaderAppearance(bookId: String) {
+        viewModelScope.launch {
+            store.clearBookReaderAppearance(bookId)
+            ReaderTrace.event("book_appearance_cleared", details = "book=$bookId")
+        }
+    }
     fun saveSensorySettings(settings: SensorySettings) {
         viewModelScope.launch { store.saveSensorySettings(settings) }
     }
