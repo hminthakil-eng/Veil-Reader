@@ -1060,6 +1060,7 @@
     <string name="reader_notebook_activity_after_mark">VOLUME ACTIVITY CONTINUED AFTER THIS MARK</string>
     <string name="reader_notebook_annotate">Annotate</string>
     <string name="reader_notebook_edit_annotation">Edit annotation</string>
+    <string name="reader_notebook_search_limited">Showing the first %1$d matches. Refine the search to narrow the result set.</string>
     <string name="reader_notebook_no_search_matches">No matches found in this book.</string>
     <string name="reader_notebook_match">MATCH</string>
     <string name="reader_notebook_search_match">Search match</string>
