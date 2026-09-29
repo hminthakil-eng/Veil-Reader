@@ -670,9 +670,9 @@ fun LibraryScreen(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
                     LibrarySectionHeading(
-                        eyebrow = "Recovered memory",
-                        title = "The archive remembers",
-                        trailing = "${memoryState.events.size} traces"
+                        eyebrow = stringResource(R.string.library_memory_eyebrow),
+                        title = stringResource(R.string.library_memory_title),
+                        trailing = stringResource(R.string.library_trace_count, memoryState.events.size)
                     )
                     Row(
                         Modifier
@@ -736,9 +736,9 @@ fun LibraryScreen(
                         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
                         LibrarySectionHeading(
-                            eyebrow = "Recently opened",
-                            title = "Volumes in progress",
-                            trailing = "${recentReading.size} active"
+                            eyebrow = stringResource(R.string.library_recent_eyebrow),
+                            title = stringResource(R.string.library_recent_title),
+                            trailing = stringResource(R.string.library_active_count, recentReading.size)
                         )
                         Row(
                             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -1628,25 +1628,25 @@ private fun LibraryHeader(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "VEIL READER",
+                    stringResource(R.string.library_brand_name),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Grayfog Archive",
+                    stringResource(R.string.library_grayfog_archive),
                     style = MaterialTheme.typography.headlineLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    "Fragments · Records · Truths",
+                    stringResource(R.string.library_archive_motto),
                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
                     color = VeilPalette.Moon.copy(alpha = 0.78f)
                 )
                 Text(
                     if (bookCount == 0) {
-                        "The shelves are waiting for their first volume."
+                        stringResource(R.string.library_header_empty)
                     } else {
-                        "$bookCount ${if (bookCount == 1) "volume" else "volumes"} catalogued on this device."
+                        stringResource(R.string.library_header_catalogued_count, bookCount)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Moon.copy(alpha = 0.72f)
@@ -1749,11 +1749,11 @@ private fun LibraryAtmosphereLedger(state: LibraryAtmosphereState) {
     if (state.volumeCount <= 0) return
 
     val phrase = when {
-        state.deepQuiet >= 0.72f -> "The lower stacks are quiet and deep."
-        state.archiveDensity >= 0.72f -> "The Archive has grown into many chambers."
-        state.memoryWarmth >= 0.58f -> "Reading light is active through the stacks."
-        state.archiveDensity >= 0.32f -> "The shelves are beginning to gain depth."
-        else -> "The first shelves are taking shape."
+        state.deepQuiet >= 0.72f -> stringResource(R.string.library_atmosphere_deep_quiet)
+        state.archiveDensity >= 0.72f -> stringResource(R.string.library_atmosphere_many_chambers)
+        state.memoryWarmth >= 0.58f -> stringResource(R.string.library_atmosphere_reading_light)
+        state.archiveDensity >= 0.32f -> stringResource(R.string.library_atmosphere_gaining_depth)
+        else -> stringResource(R.string.library_atmosphere_first_shelves)
     }
 
     Row(
@@ -1955,9 +1955,9 @@ private fun LibraryArchiveWings(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
     ) {
         LibrarySectionHeading(
-            eyebrow = "Spatial index",
-            title = "Archive Wings",
-            trailing = "${visibleWings.size} mapped"
+            eyebrow = stringResource(R.string.library_wings_eyebrow),
+            title = stringResource(R.string.library_wings_title),
+            trailing = stringResource(R.string.library_mapped_count, visibleWings.size)
         )
 
         Row(
@@ -2921,9 +2921,9 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
         verticalAlignment = Alignment.CenterVertically
     ) {
         listOf(
-            LibraryViewMode.GALLERY to "Gallery",
-            LibraryViewMode.SHELVES to "Shelves",
-            LibraryViewMode.INDEX to "Index"
+            LibraryViewMode.GALLERY to stringResource(R.string.library_view_gallery),
+            LibraryViewMode.SHELVES to stringResource(R.string.library_view_shelves),
+            LibraryViewMode.INDEX to stringResource(R.string.library_view_index)
         ).forEach { (candidate, label) ->
             val active = mode == candidate
             TextButton(
@@ -2931,7 +2931,7 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
                 modifier = Modifier
                     .heightIn(min = 48.dp)
                     .semantics {
-                        contentDescription = "$label view"
+                        contentDescription = stringResource(R.string.library_view_mode_a11y, label)
                         selected = active
                     },
                 contentPadding = PaddingValues(horizontal = 9.dp),
