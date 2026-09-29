@@ -24,14 +24,16 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.window.core.layout.WindowHeightSizeClass
-import androidx.window.core.layout.WindowWidthSizeClass
+import androidx.window.core.layout.WindowSizeClass
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.data.settings.AppSettings
+import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
@@ -42,6 +44,7 @@ import com.veilreader.app.ui.screens.ProfileScreen
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
+import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -49,7 +52,10 @@ import kotlinx.coroutines.launch
 @Composable
 fun VeilApp(
     externalOpenUri: Uri? = null,
-    onExternalOpenUriConsumed: () -> Unit = {}
+    onExternalOpenUriConsumed: () -> Unit = {},
+    appSettings: AppSettings = AppSettings(),
+    onSetAppThemeMode: (AppThemeMode) -> Unit = {},
+    onSaveReaderAppearance: (ReaderAppearance) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
     val activity = LocalActivity.current
@@ -246,7 +252,15 @@ fun VeilApp(
         }
 
         val locatorOverride = route.locatorOverrideJson
-        val candidate = if (locatorOverride == null) book else book.copy(locatorJson = locatorOverride)
+        val readerCheckpoint = route.readerLocatorCheckpointJson
+        val initialLocatorJson = com.veilreader.app.ui.navigation.chooseReaderRestoreLocator(
+            explicitOverrideJson = locatorOverride,
+            readerCheckpointJson = readerCheckpoint,
+            durableLocatorJson = book.locatorJson
+        )
+        val candidate =
+            if (initialLocatorJson == book.locatorJson) book
+            else book.copy(locatorJson = initialLocatorJson)
         val opened = readerEngine.openBook(
             book = candidate,
             persistedLocatorJsons = library.locatorJsonsForBook(targetId)
@@ -274,32 +288,50 @@ fun VeilApp(
             errorMessage = "The book opened, but older PDF reading positions could not be upgraded yet. ${error.message.orEmpty()}"
         }
 
-        if (locatorOverride != null) {
-            val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: locatorOverride
-            library.saveProgress(targetId, book.progress.toDouble(), persistedLocator)
+        val recoveryLocator = locatorOverride ?: readerCheckpoint
+        if (recoveryLocator != null) {
+            val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
+            val recoveredProgress =
+                opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
+            library.saveProgress(targetId, recoveredProgress, persistedLocator)
         }
         library.markOpened(targetId)
         openedPublication = opened
 
-        if (locatorOverride == null) {
-            routeViewModel.readerOpened(targetId)
-        } else {
-            scope.launch {
-                try {
-                    library.flushWrites()
-                    val currentRoute = routeViewModel.route.value
-                    if (
-                        currentRoute.activeBookId == targetId &&
-                        currentRoute.locatorOverrideJson == locatorOverride
-                    ) {
-                        routeViewModel.readerOpened(targetId)
+        when {
+            locatorOverride != null -> {
+                scope.launch {
+                    try {
+                        library.flushWrites()
+                        val currentRoute = routeViewModel.route.value
+                        if (
+                            currentRoute.activeBookId == targetId &&
+                            currentRoute.locatorOverrideJson == locatorOverride
+                        ) {
+                            routeViewModel.readerOpened(targetId)
+                        }
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
                     }
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (error: Exception) {
-                    errorMessage = "The requested reading position is open, but could not be saved yet. ${error.message.orEmpty()}"
                 }
             }
+
+            readerCheckpoint != null -> {
+                scope.launch {
+                    try {
+                        library.flushWrites()
+                        routeViewModel.readerCheckpointPersisted(targetId, readerCheckpoint)
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (error: Exception) {
+                        errorMessage = "Your restored reading position is open, but could not be made durable yet. ${error.message.orEmpty()}"
+                    }
+                }
+            }
+
+            else -> routeViewModel.readerOpened(targetId)
         }
     }
 
@@ -326,7 +358,8 @@ fun VeilApp(
                 onImportUri = ::importBook,
                 onOpenBook = { requestOpenBook(it) },
                 onFavorite = library::toggleFavorite,
-                onEditMetadata = library::editMetadata
+                onEditMetadata = library::editMetadata,
+                onOpenSettings = routeViewModel::openSettings
             )
 
             VeilTab.CASTLE -> CastleScreen(
@@ -364,16 +397,12 @@ fun VeilApp(
             VeilTab.PROFILE -> ProfileScreen(
                 profile = requireNotNull(profile),
                 highlightCount = highlights.size,
-                exporting = exporting,
-                restoring = restoring,
                 dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
                 castleTitle = requireNotNull(castleTitle),
                 equippedSigilName = equippedSigil?.let(::sigilDisplayName),
                 onSetDailyGoal = game::setDailyGoal,
-                onExportBackup = { exportData(it, true) },
-                onRestoreBackup = ::restoreData,
-                onExportNotes = { exportData(it, false) },
-                onOpenArchive = routeViewModel::openArchive
+                onOpenArchive = routeViewModel::openArchive,
+                onOpenSettings = routeViewModel::openSettings
             )
         }
     }
@@ -384,11 +413,30 @@ fun VeilApp(
             opened = opened,
             library = library,
             game = game,
+            readerAppearance = appSettings.readerAppearance,
+            onReaderAppearanceChange = onSaveReaderAppearance,
             onClose = {
                 openedPublication = null
                 routeViewModel.closeReader()
+            },
+            onLocatorCheckpoint = { locatorJson ->
+                routeViewModel.checkpointReaderLocator(opened.book.id, locatorJson)
             }
         )
+    } else if (route.showSettings) {
+        VeilWorldBackdrop {
+            SettingsScreen(
+                settings = appSettings,
+                exporting = exporting,
+                restoring = restoring,
+                onSetAppThemeMode = onSetAppThemeMode,
+                onSaveReaderAppearance = onSaveReaderAppearance,
+                onExportBackup = { exportData(it, true) },
+                onRestoreBackup = ::restoreData,
+                onExportNotes = { exportData(it, false) },
+                onClose = routeViewModel::closeSettings
+            )
+        }
     } else if (route.showArchive) {
         ArchiveScreen(
             books,
@@ -416,16 +464,12 @@ fun VeilApp(
             onClose = routeViewModel::closeChamber
         )
     } else {
-        val adaptiveInfo = currentWindowAdaptiveInfoV2()
-        val widthSizeClass = adaptiveInfo.windowSizeClass.windowWidthSizeClass
-        val heightSizeClass = adaptiveInfo.windowSizeClass.windowHeightSizeClass
+        val windowSizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
 
         // Prefer the branded rail once there is enough persistent horizontal space, but keep the
         // compact dock on short landscape windows where a rail would compete with reading content.
-        val useRail = heightSizeClass != WindowHeightSizeClass.COMPACT &&
-            (widthSizeClass == WindowWidthSizeClass.MEDIUM ||
-                widthSizeClass == WindowWidthSizeClass.EXPANDED)
-        val contentMaxWidth = if (widthSizeClass == WindowWidthSizeClass.EXPANDED) 1280.dp else 1040.dp
+        val useRail = shouldUseNavigationRail(windowSizeClass)
+        val contentMaxWidth = contentMaxWidthDp(windowSizeClass).dp
 
         VeilWorldBackdrop {
             if (useRail) {
@@ -488,6 +532,17 @@ fun VeilApp(
         )
     }
 }
+
+internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
+    windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&
+        windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
+
+internal fun contentMaxWidthDp(windowSizeClass: WindowSizeClass): Int =
+    if (windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)) {
+        1280
+    } else {
+        1040
+    }
 
 private fun sigilDisplayName(id: String): String = when (id) {
     "first_hour" -> "Quiet Hour"

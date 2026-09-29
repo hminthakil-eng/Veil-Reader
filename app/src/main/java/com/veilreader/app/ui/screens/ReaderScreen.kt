@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,11 +53,14 @@ import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
+import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
-import com.veilreader.app.domain.ReadingPolicy
+import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -66,6 +70,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
 import org.readium.adapter.pdfium.navigator.PdfiumDefaults
+import org.readium.adapter.pdfium.navigator.PdfiumNavigatorFragment
+import org.readium.adapter.pdfium.navigator.PdfiumPreferences
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
 import org.readium.r2.navigator.Navigator
@@ -75,13 +81,13 @@ import org.readium.r2.navigator.epub.EpubNavigatorFactory
 import org.readium.r2.navigator.epub.EpubNavigatorFragment
 import org.readium.r2.navigator.epub.EpubPreferences
 import org.readium.r2.navigator.html.HtmlDecorationTemplates
-import org.readium.r2.navigator.input.InputListener
-import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.pdf.PdfNavigatorFactory
 import org.readium.r2.navigator.pdf.PdfNavigatorFragment
+import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
+import org.readium.r2.navigator.preferences.Fit
 import org.readium.r2.navigator.preferences.Theme
-import org.readium.r2.navigator.util.DirectionalNavigationAdapter
+import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Locator
 
@@ -91,7 +97,10 @@ fun ReaderScreen(
     opened: OpenedPublication,
     library: LocalLibraryRepository,
     game: GameRepository,
-    onClose: () -> Unit
+    readerAppearance: ReaderAppearance,
+    onReaderAppearanceChange: (ReaderAppearance) -> Unit,
+    onClose: () -> Unit,
+    onLocatorCheckpoint: (String) -> Unit = {}
 ) {
     val activity = requireNotNull(LocalActivity.current as? FragmentActivity) {
         "Veil Reader requires a FragmentActivity host."
@@ -112,10 +121,46 @@ fun ReaderScreen(
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
+    val latestNavigator = rememberUpdatedState(navigator)
     var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
+    val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
-    var appearance by remember { mutableStateOf(library.loadAppearance()) }
+    var showPdfZoom by remember { mutableStateOf(false) }
+    val latestAppearance = rememberUpdatedState(readerAppearance)
+    val paperCurlConfig = remember(readerAppearance.theme) {
+        when (readerAppearance.theme) {
+            ReaderTheme.PAPER -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFFF2E8D8),
+                backPageContentAlpha = 0.13f
+            )
+            ReaderTheme.SEPIA -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFFE7D2AA),
+                backPageContentAlpha = 0.15f
+            )
+            ReaderTheme.DUSK -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFF27222C),
+                backPageContentAlpha = 0.09f,
+                edgeHighlight = Color(0xFFE8DFF0)
+            )
+            ReaderTheme.OLED -> PaperCurlVisualConfig(
+                backPageColor = Color(0xFF111111),
+                backPageContentAlpha = 0.07f,
+                edgeHighlight = Color(0xFFD8D8D8)
+            )
+        }
+    }
     var showNotebook by remember { mutableStateOf(false) }
+
+    LaunchedEffect(readerAppearance, opened.book.id) {
+        ReaderTrace.event(
+            "appearance_observed",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = "theme=${readerAppearance.theme} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle} brightness=${readerAppearance.screenBrightness ?: "system"}"
+        )
+    }
+    ReaderBrightnessEffect(activity, readerAppearance.screenBrightness)
+
     val bookHighlightsFlow = remember(library, opened.book.id) {
         library.highlights
             .map { items -> items.filter { it.bookId == opened.book.id } }
@@ -133,6 +178,7 @@ fun ReaderScreen(
         initialValue = emptyList()
     )
     var readerMessage by remember { mutableStateOf<String?>(null) }
+    var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
     var pendingNoteHighlightId by remember { mutableStateOf<String?>(null) }
     var pendingNoteText by remember { mutableStateOf("") }
     var noteSaving by remember { mutableStateOf(false) }
@@ -202,31 +248,82 @@ fun ReaderScreen(
         if (readerMessage == message) readerMessage = null
     }
 
-    fun closeReader() {
-        navigator?.currentLocator?.value?.let { locator ->
-            val json = locator.toVeilPersistedJson(opened.format)
-            readerViewModel.onLocatorChanged(
-                bookId = opened.book.id,
-                progression = locator.locations.totalProgression ?: readerViewModel.uiState.value.progress.toDouble(),
-                locatorJson = json,
-                locationKey = "${opened.book.id}:$json",
-                countPageTurn = false
-            )
+    fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
+        val json = locator.toVeilPersistedJson(opened.format)
+        readerViewModel.onLocatorUpdate(
+            bookId = opened.book.id,
+            progression = locator.locations.totalProgression
+                ?: readerViewModel.uiState.value.progress.toDouble(),
+            locatorJson = json,
+            locationKey = "${opened.book.id}:$json",
+            event = event
+        )?.let { commit ->
+            onLocatorCheckpoint(commit.locatorJson)
         }
-        readerViewModel.closeBook()
-        onClose()
     }
 
-    BackHandler(enabled = !showNotebook && !showAppearance) { closeReader() }
+    fun closeReader() {
+        if (closeInFlight) return
+        latestNavigator.value?.currentLocator?.value?.let { locator ->
+            recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+        }
+        closeInFlight = true
+        scope.launch {
+            try {
+                ReaderTrace.event(
+                    "reader_close_durability_wait",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId()
+                )
+                awaitDurableReaderClose(
+                    finalizeSession = readerViewModel::closeBook,
+                    awaitDurability = library::flushWrites,
+                    clearRoute = onClose
+                )
+                ReaderTrace.event(
+                    "reader_close_durable",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId()
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                closeInFlight = false
+                ReaderTrace.event(
+                    "reader_close_durability_failed",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId(),
+                    details = "error=${error::class.java.simpleName}"
+                )
+                readerMessage = "Could not safely close this book because the latest reading position was not confirmed in storage."
+            }
+        }
+    }
+
+    BackHandler(
+        enabled = !closeInFlight && !showNotebook && !showAppearance && !showPdfZoom && !paperCurlState.active
+    ) { closeReader() }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
-        createReaderFactory(opened, appearance, selectionActionModeCallback)
+        createReaderFactory(opened, readerAppearance, selectionActionModeCallback)
     }
     val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
-        { ready -> navigator = ready }
+        { ready ->
+            navigator = ready
+            ReaderTrace.event(
+                "navigator_attached",
+                bookId = opened.book.id,
+                sessionId = readerViewModel.traceSessionId(),
+                details = "type=${ready::class.java.simpleName}"
+            )
+        }
     }
     val onDisposePublication = remember(opened.book.id) {
         { opened.close() }
+    }
+
+    DisposableEffect(paperCurlState) {
+        onDispose { paperCurlState.dispose() }
     }
 
     DisposableEffect(lifecycle, readerViewModel) {
@@ -235,7 +332,12 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_RESUME -> readerViewModel.onResume()
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
-                Lifecycle.Event.ON_DESTROY -> readerViewModel.onPause()
+                Lifecycle.Event.ON_DESTROY -> {
+                    latestNavigator.value?.currentLocator?.value?.let { locator ->
+                        recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    }
+                    readerViewModel.onPause()
+                }
                 else -> Unit
             }
         }
@@ -252,41 +354,141 @@ fun ReaderScreen(
             .debounce(500)
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
+
+                val paperPreviewActive =
+                    opened.format == BookFormat.EPUB &&
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER &&
+                        paperCurlState.active
+                if (paperPreviewActive) return@collect
+
                 val json = locator.toVeilPersistedJson(opened.format)
-                readerViewModel.onLocatorChanged(
+                ReaderTrace.event(
+                    "locator_observed",
+                    bookId = opened.book.id,
+                    sessionId = readerViewModel.traceSessionId(),
+                    details = "progress=${locator.locations.totalProgression}"
+                )
+                val continuousScroll =
+                    (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
+                val event = when {
+                    continuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
+                    opened.format != BookFormat.EPUB ||
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.SLIDE ->
+                        ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                    else -> ReaderLocatorEvent.NAVIGATOR_POSITION
+                }
+                readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     progression = locator.locations.totalProgression
                         ?: readerViewModel.uiState.value.progress.toDouble(),
                     locatorJson = json,
-                    locationKey = "${opened.book.id}:$json"
-                )
-            }
-    }
-
-    LaunchedEffect(navigator, opened.book.id) {
-        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        nav.addInputListener(
-            DirectionalNavigationAdapter(
-                navigator = nav,
-                animatedTransition = true
-            )
-        )
-        nav.addInputListener(
-            object : InputListener {
-                override fun onTap(event: TapEvent): Boolean {
-                    readerViewModel.onUserInteraction()
-                    controlsVisible = !controlsVisible
-                    return true
+                    locationKey = "${opened.book.id}:$json",
+                    event = event
+                )?.let { commit ->
+                    onLocatorCheckpoint(commit.locatorJson)
                 }
             }
-        )
     }
 
-    LaunchedEffect(navigator, appearance) {
+    DisposableEffect(navigator, opened.book.id) {
+        val nav = navigator as? OverflowableNavigator
+        if (nav == null) {
+            onDispose { }
+        } else {
+            val paperListener = if (navigator is EpubNavigatorFragment) {
+                PaperCurlInputListener(
+                    navigator = nav,
+                    state = paperCurlState,
+                    isEnabled = {
+                        !latestAppearance.value.scroll &&
+                            latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
+                    },
+                    scope = scope,
+                    onInteraction = {
+                        readerViewModel.onUserInteraction()
+                        controlsVisible = false
+                    },
+                    onCommittedTurn = {
+                        val locator = nav.currentLocator.value
+                        val json = locator.toVeilPersistedJson(opened.format)
+                        recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
+                    }
+                )
+            } else {
+                null
+            }
+
+            val directionalListener = VeilDirectionalNavigationInputListener(
+                navigator = nav,
+                isAnimated = {
+                    shouldAnimateDirectionalNavigation(
+                        format = opened.format,
+                        pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    )
+                },
+                isTapNavigationEnabled = {
+                    shouldUseDirectionalTapNavigation(
+                        format = opened.format,
+                        scroll = nav.overflow.value.scroll,
+                        pageTurnStyle = latestAppearance.value.pageTurnStyle
+                    )
+                }
+            )
+
+            val inputArbiter = ReaderInputArbiter(
+                paper = paperListener,
+                directional = directionalListener,
+                chromeTap = {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = !controlsVisible
+                    true
+                },
+                onTapOwner = { owner ->
+                    ReaderTrace.event(
+                        "gesture_owned",
+                        bookId = opened.book.id,
+                        sessionId = readerViewModel.traceSessionId(),
+                        details = "gesture=tap owner=${owner.name.lowercase()}"
+                    )
+                }
+            )
+
+            nav.addInputListener(inputArbiter)
+            onDispose {
+                nav.removeInputListener(inputArbiter)
+            }
+        }
+    }
+
+    LaunchedEffect(navigator, readerAppearance, opened.format) {
         game.pauseReading()
         readerViewModel.onUserInteraction()
-        val epub = navigator as? EpubNavigatorFragment ?: return@LaunchedEffect
-        epub.submitPreferences(appearance.toEpubPreferences())
+        val traceDetails = "format=${opened.format} theme=${readerAppearance.theme} publisherStyles=${readerAppearance.publisherStyles} scroll=${readerAppearance.scroll} pageTurn=${readerAppearance.pageTurnStyle}"
+        ReaderTrace.event(
+            "appearance_submit_requested",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = traceDetails
+        )
+        when (opened.format) {
+            BookFormat.EPUB ->
+                (navigator as? EpubNavigatorFragment)
+                    ?.submitPreferences(readerAppearance.toEpubPreferences())
+
+            BookFormat.PDF -> {
+                @Suppress("UNCHECKED_CAST")
+                val pdfNavigator = navigator as? PdfiumNavigatorFragment
+                pdfNavigator?.submitPreferences(readerAppearance.toPdfiumPreferences())
+            }
+
+            else -> Unit
+        }
+        ReaderTrace.event(
+            "appearance_submit_returned",
+            bookId = opened.book.id,
+            sessionId = readerViewModel.traceSessionId(),
+            details = traceDetails
+        )
     }
 
     LaunchedEffect(navigator, opened.book.id, bookHighlights) {
@@ -303,7 +505,19 @@ fun ReaderScreen(
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
     }
 
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .semantics {
+                contentDescription = "Reader surface"
+                onClick(label = "Toggle reader controls") {
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = !controlsVisible
+                    true
+                }
+            }
+    ) {
         ReaderFragmentHost(
             activity = activity,
             fragmentFactory = fragmentFactory,
@@ -317,6 +531,14 @@ fun ReaderScreen(
             onDisposePublication = onDisposePublication,
             modifier = Modifier.fillMaxSize()
         )
+
+        if (opened.format == BookFormat.EPUB) {
+            PaperCurlOverlay(
+                state = paperCurlState,
+                config = paperCurlConfig,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
 
         AnimatedVisibility(
             visible = controlsVisible,
@@ -434,13 +656,21 @@ fun ReaderScreen(
                         }
                     }
                     ReaderControl(
-                        action = ReaderAction.APPEARANCE,
-                        label = "Appearance",
+                        action = if (opened.format == BookFormat.EPUB) {
+                            ReaderAction.APPEARANCE
+                        } else {
+                            ReaderAction.ZOOM
+                        },
+                        label = if (opened.format == BookFormat.EPUB) "Appearance" else "Zoom",
                         modifier = Modifier.weight(1f),
-                        enabled = opened.format == BookFormat.EPUB
+                        enabled = navigator != null
                     ) {
                         readerViewModel.onUserInteraction()
-                        showAppearance = true
+                        if (opened.format == BookFormat.EPUB) {
+                            showAppearance = true
+                        } else {
+                            showPdfZoom = true
+                        }
                     }
                 }
             }
@@ -551,20 +781,37 @@ fun ReaderScreen(
 
     if (showAppearance) {
         ModalBottomSheet(onDismissRequest = { showAppearance = false }) {
-            AppearancePanel(
-                appearance = appearance,
+            EpubAppearancePanel(
+                appearance = readerAppearance,
                 onChange = {
                     readerViewModel.onUserInteraction()
-                    appearance = it
-                    library.saveAppearance(it)
+                    onReaderAppearanceChange(it)
                 },
                 onDone = { showAppearance = false }
             )
         }
     }
+
+    if (showPdfZoom) {
+        ModalBottomSheet(onDismissRequest = { showPdfZoom = false }) {
+            PdfZoomControls(
+                navigator = navigator,
+                appearance = readerAppearance,
+                onAppearanceChange = { updated ->
+                    readerViewModel.onUserInteraction()
+                    onReaderAppearanceChange(updated)
+                },
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp)
+                    .padding(bottom = 32.dp),
+                onDone = { showPdfZoom = false }
+            )
+        }
+    }
 }
 
-@OptIn(ExperimentalReadiumApi::class)
+@OptIn(ExperimentalReadiumApi::class, DelicateReadiumApi::class)
 private fun createReaderFactory(
     opened: OpenedPublication,
     appearance: ReaderAppearance,
@@ -575,6 +822,7 @@ private fun createReaderFactory(
             initialLocator = opened.initialLocator,
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
+                useReadiumCssFontSize = false
                 disablePageTurnsWhileScrolling = false
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
@@ -587,9 +835,12 @@ private fun createReaderFactory(
     BookFormat.PDF -> PdfNavigatorFactory(
         publication = opened.publication,
         pdfEngineProvider = PdfiumEngineProvider(
-            defaults = PdfiumDefaults(scroll = true)
+            defaults = PdfiumDefaults()
         )
-    ).createFragmentFactory(initialLocator = opened.initialLocator)
+    ).createFragmentFactory(
+        initialLocator = opened.initialLocator,
+        initialPreferences = appearance.toPdfiumPreferences()
+    )
 
     else -> error("Unsupported reader format")
 }
@@ -634,7 +885,7 @@ private fun ReaderFragmentHost(
     }
 }
 
-private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE }
+private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
 
 @Composable
 private fun ReaderChromeButton(
@@ -728,16 +979,47 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
                 drawPath(path, tint, style = stroke)
             }
             ReaderAction.APPEARANCE -> Unit
+            ReaderAction.ZOOM -> {
+                drawCircle(
+                    color = tint,
+                    radius = w * .22f,
+                    center = Offset(w * .43f, h * .40f),
+                    style = stroke
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .58f, h * .56f),
+                    Offset(w * .80f, h * .80f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun AppearancePanel(
+private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
 ) {
+    var draft by remember { mutableStateOf(appearance) }
+    var hasPendingDraft by remember { mutableStateOf(false) }
+
+    LaunchedEffect(appearance) {
+        when {
+            !hasPendingDraft -> draft = appearance
+            appearance == draft -> hasPendingDraft = false
+        }
+    }
+
+    fun updateDraft(value: ReaderAppearance) {
+        draft = value
+        hasPendingDraft = true
+        onChange(value)
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -747,7 +1029,11 @@ private fun AppearancePanel(
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Reading appearance", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            Text(
+                "Reading appearance",
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
             Text(
                 "Tune the page once, then get back to the book. These choices stay on your device.",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -756,53 +1042,45 @@ private fun AppearancePanel(
         }
 
         Text("Presets", fontWeight = FontWeight.SemiBold)
-        Row(
+            Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            AppearancePreset("Book", appearance.theme == ReaderTheme.PAPER) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.PAPER,
+            AppearancePreset("Book", draft.theme == ReaderTheme.PAPER) {
+                updateDraft(
+                    draft.withTheme(ReaderTheme.PAPER).copy(
                         fontScale = 1.0,
                         lineHeight = 1.45,
                         pageMargins = 1.0,
-                        scroll = false,
-                        publisherStyles = true
+                        scroll = false
                     )
                 )
             }
-            AppearancePreset("Comfort", appearance.theme == ReaderTheme.SEPIA) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.SEPIA,
+            AppearancePreset("Comfort", draft.theme == ReaderTheme.SEPIA) {
+                updateDraft(
+                    draft.withTheme(ReaderTheme.SEPIA).copy(
                         fontScale = 1.08,
                         lineHeight = 1.6,
                         pageMargins = 1.15,
-                        scroll = false,
-                        publisherStyles = false
+                        scroll = false
                     )
                 )
             }
-            AppearancePreset("Night", appearance.theme == ReaderTheme.DUSK) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.DUSK,
+            AppearancePreset("Night", draft.theme == ReaderTheme.DUSK) {
+                updateDraft(
+                    draft.withTheme(ReaderTheme.DUSK).copy(
                         fontScale = 1.05,
                         lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
+                        pageMargins = 1.1
                     )
                 )
             }
-            AppearancePreset("OLED", appearance.theme == ReaderTheme.OLED) {
-                onChange(
-                    appearance.copy(
-                        theme = ReaderTheme.OLED,
+            AppearancePreset("OLED", draft.theme == ReaderTheme.OLED) {
+                updateDraft(
+                    draft.withTheme(ReaderTheme.OLED).copy(
                         fontScale = 1.05,
                         lineHeight = 1.55,
-                        pageMargins = 1.1,
-                        publisherStyles = false
+                        pageMargins = 1.1
                     )
                 )
             }
@@ -810,24 +1088,24 @@ private fun AppearancePanel(
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-        Text("Text size · ${(appearance.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
+        Text("Text size · ${(draft.fontScale * 100).toInt()}%", fontWeight = FontWeight.SemiBold)
         Slider(
-            value = appearance.fontScale.toFloat(),
-            onValueChange = { onChange(appearance.copy(fontScale = it.toDouble(), publisherStyles = false)) },
+            value = draft.fontScale.toFloat(),
+            onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
             valueRange = .75f..1.8f
         )
 
-        Text("Line height · ${"%.2f".format(appearance.lineHeight)}", fontWeight = FontWeight.SemiBold)
+        Text("Line height · ${"%.2f".format(draft.lineHeight)}", fontWeight = FontWeight.SemiBold)
         Slider(
-            value = appearance.lineHeight.toFloat(),
-            onValueChange = { onChange(appearance.copy(lineHeight = it.toDouble(), publisherStyles = false)) },
+            value = draft.lineHeight.toFloat(),
+            onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
             valueRange = 1.1f..2.0f
         )
 
-        Text("Page margins · ${"%.2f".format(appearance.pageMargins)}", fontWeight = FontWeight.SemiBold)
+        Text("Page margins · ${"%.2f".format(draft.pageMargins)}", fontWeight = FontWeight.SemiBold)
         Slider(
-            value = appearance.pageMargins.toFloat(),
-            onValueChange = { onChange(appearance.copy(pageMargins = it.toDouble(), publisherStyles = false)) },
+            value = draft.pageMargins.toFloat(),
+            onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
             valueRange = .5f..2.0f
         )
 
@@ -837,33 +1115,71 @@ private fun AppearancePanel(
             Column(Modifier.weight(1f)) {
                 Text("Continuous scroll", fontWeight = FontWeight.SemiBold)
                 Text(
-                    "Turn this off for paginated reading with animated page turns.",
+                    "Turn this off for paginated reading without the slide-like transition.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             Switch(
-                checked = appearance.scroll,
-                onCheckedChange = { onChange(appearance.copy(scroll = it)) },
+                checked = draft.scroll,
+                onCheckedChange = { updateDraft(draft.copy(scroll = it)) },
                 modifier = Modifier.semantics { contentDescription = "Continuous scroll" }
             )
         }
 
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
-                Text("Publisher styling", fontWeight = FontWeight.SemiBold)
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Page turn", fontWeight = FontWeight.SemiBold)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = draft.pageTurnStyle == PageTurnStyle.PAPER,
+                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.PAPER)) },
+                        enabled = !draft.scroll,
+                        label = { Text("Paper curl") },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    )
+                    FilterChip(
+                        selected = draft.pageTurnStyle == PageTurnStyle.SLIDE,
+                        onClick = { updateDraft(draft.copy(pageTurnStyle = PageTurnStyle.SLIDE)) },
+                        enabled = !draft.scroll,
+                        label = { Text("Simple slide") },
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    )
+                }
                 Text(
-                    "Keep the book's original typography and layout when possible.",
+                    if (draft.scroll) {
+                        "Page-turn effects are paused while continuous scroll is on."
+                    } else {
+                        "Paper curl follows your drag; Simple slide keeps Readium's native animated fallback."
+                    },
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            Switch(
-                checked = appearance.publisherStyles,
-                onCheckedChange = { onChange(appearance.copy(publisherStyles = it)) },
-                modifier = Modifier.semantics { contentDescription = "Publisher styling" }
-            )
-        }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Publisher styling", fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "Keep the book's original typography and layout when possible.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Switch(
+                    checked = draft.publisherStyles,
+                    onCheckedChange = { updateDraft(draft.copy(publisherStyles = it)) },
+                    modifier = Modifier.semantics { contentDescription = "Publisher styling" }
+                )
+            }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+        ReaderBrightnessControls(
+            appearance = draft,
+            onChange = ::updateDraft
+        )
 
         Button(onClick = onDone, modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp)) {
             Text("Back to reading")
@@ -882,22 +1198,40 @@ private fun AppearancePreset(label: String, selected: Boolean, onClick: () -> Un
 }
 
 @OptIn(ExperimentalReadiumApi::class)
-private fun ReaderAppearance.toEpubPreferences(): EpubPreferences = EpubPreferences(
-    theme = when (theme) {
-        ReaderTheme.PAPER -> Theme.LIGHT
-        ReaderTheme.SEPIA -> Theme.SEPIA
-        ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
-    },
-    backgroundColor = when (theme) {
-        ReaderTheme.OLED -> ReadiumColor(AndroidColor.BLACK)
-        ReaderTheme.DUSK -> ReadiumColor(AndroidColor.rgb(24, 21, 29))
-        else -> null
-    },
-    fontSize = ReadingPolicy.fontSizePercent(fontScale),
-    lineHeight = lineHeight,
-    pageMargins = pageMargins,
+internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
+    val colors = if (publisherStyles) null else readiumThemeColors(theme)
+    return EpubPreferences(
+        theme = when (theme) {
+            ReaderTheme.PAPER -> Theme.LIGHT
+            ReaderTheme.SEPIA -> Theme.SEPIA
+            ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
+        },
+        backgroundColor = colors?.first?.let(::ReadiumColor),
+        textColor = colors?.second?.let(::ReadiumColor),
+        fontSize = readiumFontSizeRatio(fontScale),
+        lineHeight = lineHeight.coerceIn(1.1, 2.0),
+        pageMargins = pageMargins.coerceIn(0.5, 2.0),
+        scroll = scroll,
+        publisherStyles = publisherStyles
+    )
+}
+
+internal fun readiumFontSizeRatio(scale: Double): Double =
+    (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
+
+internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
+    ReaderTheme.PAPER -> 0xFFF6F1EA.toInt() to 0xFF252128.toInt()
+    ReaderTheme.SEPIA -> 0xFFF1E5C9.toInt() to 0xFF3D3325.toInt()
+    ReaderTheme.DUSK -> 0xFF18151D.toInt() to 0xFFF5F0F7.toInt()
+    ReaderTheme.OLED -> 0xFF000000.toInt() to 0xFFF5F0F7.toInt()
+}
+
+@OptIn(ExperimentalReadiumApi::class)
+internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumPreferences(
+    fit = if (scroll) Fit.WIDTH else Fit.CONTAIN,
+    pageSpacing = if (scroll) 12.0 else 6.0,
     scroll = scroll,
-    publisherStyles = publisherStyles
+    scrollAxis = if (scroll) Axis.VERTICAL else null
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"

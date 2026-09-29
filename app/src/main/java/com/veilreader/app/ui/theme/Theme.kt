@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.domain.AppThemeMode
 
 /** Veil Reader visual system: quiet reading utility wrapped in a mysterious world. */
 object VeilPalette {
@@ -176,9 +177,18 @@ private val VeilShapes = Shapes(
 )
 
 @Composable
-fun VeilTheme(content: @Composable () -> Unit) {
+fun VeilTheme(
+    themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    content: @Composable () -> Unit
+) {
+    val useDarkTheme = when (themeMode) {
+        AppThemeMode.SYSTEM -> isSystemInDarkTheme()
+        AppThemeMode.LIGHT -> false
+        AppThemeMode.DARK -> true
+    }
+
     MaterialTheme(
-        colorScheme = if (isSystemInDarkTheme()) VeilDarkColors else VeilLightColors,
+        colorScheme = if (useDarkTheme) VeilDarkColors else VeilLightColors,
         typography = VeilTypography,
         shapes = VeilShapes,
         content = content

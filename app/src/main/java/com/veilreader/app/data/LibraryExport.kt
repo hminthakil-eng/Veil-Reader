@@ -365,6 +365,7 @@ private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
     put("scroll", scroll); put("publisherStyles", publisherStyles)
+    put("screenBrightness", screenBrightness ?: JSONObject.NULL)
 }
 
 private fun bookFromJson(o: JSONObject): Book {
@@ -427,7 +428,9 @@ private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearan
     fontScale = (o.optDouble("fontScale", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.75, 1.8),
     lineHeight = (o.optDouble("lineHeight", 1.45).takeIf { it.isFinite() } ?: 1.45).coerceIn(1.1, 2.0),
     pageMargins = (o.optDouble("pageMargins", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.5, 2.0),
-    scroll = o.optBoolean("scroll", false), publisherStyles = o.optBoolean("publisherStyles", true)
+    scroll = o.optBoolean("scroll", false),
+    publisherStyles = o.optBoolean("publisherStyles", true),
+    screenBrightness = o.optFiniteDouble("screenBrightness")?.coerceIn(.05, 1.0)
 )
 
 private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = buildList {

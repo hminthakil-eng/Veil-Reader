@@ -16,10 +16,12 @@ enum class VeilTab(val label: String, val glyph: String) {
 
 data class VeilRouteState(
     val selectedTab: VeilTab = VeilTab.READING,
+    val showSettings: Boolean = false,
     val showArchive: Boolean = false,
     val activeChamber: String? = null,
     val activeBookId: String? = null,
-    val locatorOverrideJson: String? = null
+    val locatorOverrideJson: String? = null,
+    val readerLocatorCheckpointJson: String? = null
 )
 
 /**
@@ -37,29 +39,47 @@ class VeilAppViewModel(
     fun selectTab(tab: VeilTab) = update {
         copy(
             selectedTab = tab,
+            showSettings = false,
             showArchive = false,
             activeChamber = null,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            readerLocatorCheckpointJson = null
         )
     }
 
     fun openArchive() = update {
         copy(
+            showSettings = false,
             showArchive = true,
             activeChamber = null,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            readerLocatorCheckpointJson = null
         )
     }
 
     fun closeArchive() = update { copy(showArchive = false) }
+
+    fun openSettings() = update {
+        copy(
+            showSettings = true,
+            showArchive = false,
+            activeChamber = null,
+            activeBookId = null,
+            locatorOverrideJson = null,
+            readerLocatorCheckpointJson = null
+        )
+    }
+
+    fun closeSettings() = update { copy(showSettings = false) }
 
     fun openChamber(chamberId: String) {
         if (chamberId !in RESTORABLE_CHAMBERS) return
         update {
             copy(
                 activeChamber = chamberId,
+                showSettings = false,
                 showArchive = false,
                 activeBookId = null,
                 locatorOverrideJson = null
@@ -71,30 +91,69 @@ class VeilAppViewModel(
 
     fun requestBook(bookId: String, locatorOverrideJson: String? = null) {
         if (bookId.isBlank()) return
+        val explicitLocator = locatorOverrideJson?.takeIf(String::isNotBlank)
         update {
             copy(
                 activeBookId = bookId,
-                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
+                locatorOverrideJson = explicitLocator,
+                readerLocatorCheckpointJson = explicitLocator,
+                showSettings = false,
                 showArchive = false,
                 activeChamber = null
             )
         }
     }
 
-    /** The explicit locator has been handed to Readium and is now persisted by the library. */
+    /**
+     * The explicit locator has been handed to Readium and durably flushed.
+     *
+     * If the process-death checkpoint still points at that same explicit locator it is safe to clear
+     * both. A newer checkpoint written while the flush was running is preserved.
+     */
     fun readerOpened(bookId: String) {
-        if (_route.value.activeBookId != bookId) return
-        update { copy(locatorOverrideJson = null) }
+        val current = _route.value
+        if (current.activeBookId != bookId) return
+        val explicit = current.locatorOverrideJson
+        update {
+            copy(
+                locatorOverrideJson = null,
+                readerLocatorCheckpointJson =
+                    if (readerLocatorCheckpointJson == explicit) null else readerLocatorCheckpointJson
+            )
+        }
+    }
+
+    fun checkpointReaderLocator(bookId: String, locatorJson: String) {
+        val clean = locatorJson.takeIf(String::isNotBlank) ?: return
+        val current = _route.value
+        if (current.activeBookId != bookId || current.readerLocatorCheckpointJson == clean) return
+        update { copy(readerLocatorCheckpointJson = clean) }
+    }
+
+    fun readerCheckpointPersisted(bookId: String, locatorJson: String) {
+        val current = _route.value
+        if (
+            current.activeBookId != bookId ||
+            current.readerLocatorCheckpointJson != locatorJson
+        ) return
+        update { copy(readerLocatorCheckpointJson = null) }
     }
 
     fun bookOpenFailed(bookId: String) {
         if (_route.value.activeBookId != bookId) return
-        update { copy(activeBookId = null, locatorOverrideJson = null) }
+        update {
+            copy(
+                activeBookId = null,
+                locatorOverrideJson = null,
+                readerLocatorCheckpointJson = null
+            )
+        }
     }
 
     fun closeReader() = update {
         copy(
             selectedTab = VeilTab.LIBRARY,
+            showSettings = false,
             activeBookId = null,
             locatorOverrideJson = null,
             showArchive = false,
@@ -110,6 +169,7 @@ class VeilAppViewModel(
 
     private fun persist(next: VeilRouteState) {
         savedStateHandle[KEY_TAB] = next.selectedTab.name
+        savedStateHandle[KEY_SETTINGS] = next.showSettings
         savedStateHandle[KEY_ARCHIVE] = next.showArchive
         if (next.activeChamber == null) savedStateHandle.remove<String>(KEY_CHAMBER)
         else savedStateHandle[KEY_CHAMBER] = next.activeChamber
@@ -117,6 +177,11 @@ class VeilAppViewModel(
         else savedStateHandle[KEY_BOOK] = next.activeBookId
         if (next.locatorOverrideJson == null) savedStateHandle.remove<String>(KEY_LOCATOR)
         else savedStateHandle[KEY_LOCATOR] = next.locatorOverrideJson
+        if (next.readerLocatorCheckpointJson == null) {
+            savedStateHandle.remove<String>(KEY_READER_CHECKPOINT)
+        } else {
+            savedStateHandle[KEY_READER_CHECKPOINT] = next.readerLocatorCheckpointJson
+        }
     }
 
     private fun readSavedRoute(): VeilRouteState {
@@ -125,10 +190,12 @@ class VeilAppViewModel(
             ?: VeilTab.READING
         return VeilRouteState(
             selectedTab = tab,
+            showSettings = savedStateHandle.get<Boolean>(KEY_SETTINGS) == true,
             showArchive = savedStateHandle.get<Boolean>(KEY_ARCHIVE) == true,
             activeChamber = savedStateHandle.get<String>(KEY_CHAMBER),
             activeBookId = savedStateHandle.get<String>(KEY_BOOK),
-            locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR)
+            locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR),
+            readerLocatorCheckpointJson = savedStateHandle.get<String>(KEY_READER_CHECKPOINT)
         ).normalized()
     }
 
@@ -136,27 +203,34 @@ class VeilAppViewModel(
         val cleanBookId = activeBookId?.takeIf(String::isNotBlank)
         if (cleanBookId != null) {
             return copy(
+                showSettings = false,
                 showArchive = false,
                 activeChamber = null,
                 activeBookId = cleanBookId,
-                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank)
+                locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
+                readerLocatorCheckpointJson = readerLocatorCheckpointJson?.takeIf(String::isNotBlank)
             )
         }
         val cleanChamber = activeChamber?.takeIf { it in RESTORABLE_CHAMBERS }
+        val cleanSettings = showSettings && cleanChamber == null
         return copy(
-            showArchive = showArchive && cleanChamber == null,
+            showSettings = cleanSettings,
+            showArchive = showArchive && cleanChamber == null && !cleanSettings,
             activeChamber = cleanChamber,
             activeBookId = null,
-            locatorOverrideJson = null
+            locatorOverrideJson = null,
+            readerLocatorCheckpointJson = null
         )
     }
 
     companion object {
         private const val KEY_TAB = "veil.route.tab"
+        private const val KEY_SETTINGS = "veil.route.settings"
         private const val KEY_ARCHIVE = "veil.route.archive"
         private const val KEY_CHAMBER = "veil.route.chamber"
         private const val KEY_BOOK = "veil.route.book"
         private const val KEY_LOCATOR = "veil.route.locator"
+        private const val KEY_READER_CHECKPOINT = "veil.route.reader_checkpoint"
         private val RESTORABLE_CHAMBERS = setOf("treasury", "sanctum")
     }
 }

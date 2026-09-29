@@ -328,16 +328,16 @@ private fun VeilTabIcon(
             VeilTab.READING -> {
                 val left = Path().apply {
                     moveTo(w * 0.10f, h * 0.22f)
-                    quadraticBezierTo(w * 0.32f, h * 0.14f, w * 0.50f, h * 0.30f)
+                    quadraticTo(w * 0.32f, h * 0.14f, w * 0.50f, h * 0.30f)
                     lineTo(w * 0.50f, h * 0.82f)
-                    quadraticBezierTo(w * 0.30f, h * 0.66f, w * 0.10f, h * 0.72f)
+                    quadraticTo(w * 0.30f, h * 0.66f, w * 0.10f, h * 0.72f)
                     close()
                 }
                 val right = Path().apply {
                     moveTo(w * 0.90f, h * 0.22f)
-                    quadraticBezierTo(w * 0.68f, h * 0.14f, w * 0.50f, h * 0.30f)
+                    quadraticTo(w * 0.68f, h * 0.14f, w * 0.50f, h * 0.30f)
                     lineTo(w * 0.50f, h * 0.82f)
-                    quadraticBezierTo(w * 0.70f, h * 0.66f, w * 0.90f, h * 0.72f)
+                    quadraticTo(w * 0.70f, h * 0.66f, w * 0.90f, h * 0.72f)
                     close()
                 }
                 drawPath(left, tint, style = stroke)

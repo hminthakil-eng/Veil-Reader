@@ -85,6 +85,8 @@ dependencies {
     implementation("org.readium.kotlin-toolkit:readium-streamer:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-navigator:3.4.0")
     implementation("org.readium.kotlin-toolkit:readium-adapter-pdfium:3.4.0")
+    // Explicit access to the PDFView already used by Readium's Pdfium adapter for manual zoom fallback controls.
+    implementation("com.github.marain87:AndroidPdfViewer:3.2.8")
 
     baselineProfile(project(":benchmark"))
 
@@ -92,6 +94,8 @@ dependencies {
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
     testImplementation("junit:junit:4.13.2")
+    testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
+    testImplementation("org.robolectric:robolectric:4.17")
 
     // Real Room verification runs on an Android emulator for data-layer changes.
     androidTestImplementation("androidx.test:core:1.7.0")

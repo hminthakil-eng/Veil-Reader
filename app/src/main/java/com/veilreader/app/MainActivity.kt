@@ -9,22 +9,35 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.fragment.app.FragmentActivity
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.veilreader.app.ui.VeilApp
+import com.veilreader.app.ui.screens.ReaderFragmentRestoration
+import com.veilreader.app.ui.settings.SettingsViewModel
 import com.veilreader.app.ui.theme.VeilTheme
 
 class MainActivity : FragmentActivity() {
     private var externalOpenUri by mutableStateOf<Uri?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // Readium navigator fragments require a custom factory during FragmentManager restore.
+        supportFragmentManager.fragmentFactory = ReaderFragmentRestoration.fragmentFactory
         super.onCreate(savedInstanceState)
+        ReaderFragmentRestoration.discardRestoredDummies(supportFragmentManager)
+
         enableEdgeToEdge()
         externalOpenUri = if (savedInstanceState == null) viewUriFrom(intent) else null
 
         setContent {
-            VeilTheme {
+            val settingsViewModel: SettingsViewModel = viewModel()
+            val appSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
+            VeilTheme(themeMode = appSettings.appThemeMode) {
                 VeilApp(
                     externalOpenUri = externalOpenUri,
-                    onExternalOpenUriConsumed = { externalOpenUri = null }
+                    onExternalOpenUriConsumed = { externalOpenUri = null },
+                    appSettings = appSettings,
+                    onSetAppThemeMode = settingsViewModel::setAppThemeMode,
+                    onSaveReaderAppearance = settingsViewModel::saveReaderAppearance
                 )
             }
         }

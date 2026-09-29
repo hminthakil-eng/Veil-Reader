@@ -105,7 +105,11 @@ data class Highlight(
     val createdAtEpochMs: Long = System.currentTimeMillis()
 )
 
+enum class AppThemeMode { SYSTEM, LIGHT, DARK }
+
 enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
+
+enum class PageTurnStyle { PAPER, SLIDE }
 
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
@@ -113,8 +117,29 @@ data class ReaderAppearance(
     val lineHeight: Double = 1.45,
     val pageMargins: Double = 1.0,
     val scroll: Boolean = false,
-    val publisherStyles: Boolean = true
-)
+    val publisherStyles: Boolean = true,
+    val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
+    val screenBrightness: Double? = null
+) {
+    fun withTheme(theme: ReaderTheme): ReaderAppearance =
+        copy(theme = theme, publisherStyles = false)
+
+    fun withFontScale(value: Double): ReaderAppearance =
+        copy(fontScale = value, publisherStyles = false)
+
+    fun withLineHeight(value: Double): ReaderAppearance =
+        copy(lineHeight = value, publisherStyles = false)
+
+    fun withPageMargins(value: Double): ReaderAppearance =
+        copy(pageMargins = value, publisherStyles = false)
+
+    fun withScreenBrightness(value: Double?): ReaderAppearance =
+        copy(
+            screenBrightness = value
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.05, 1.0)
+        )
+}
 
 /** A saved reading location, independent of text selection (also supports PDF). */
 data class Bookmark(
