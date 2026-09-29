@@ -45,13 +45,12 @@ enum class BookEntryStage {
 
 data class BookEntryMemory(
     val returning: Boolean,
-    val progressPercent: Int,
+    val progress: Float,
     val chapter: String?
 )
 
 fun bookEntryMemory(book: Book): BookEntryMemory {
     val progress = book.progress.coerceIn(0f, 1f)
-    val percent = (progress * 100f).toInt().coerceIn(0, 100)
     val chapter = book.currentChapter
         .trim()
         .takeIf { it.isNotBlank() && !it.equals("Not started", ignoreCase = true) }
@@ -63,7 +62,7 @@ fun bookEntryMemory(book: Book): BookEntryMemory {
 
     return BookEntryMemory(
         returning = returning,
-        progressPercent = percent,
+        progress = progress,
         chapter = chapter
     )
 }
@@ -397,19 +396,22 @@ fun BookThresholdTransitionOverlay(
 
 
 @Composable
-private fun localizedBookEntryStatus(book: Book, memory: BookEntryMemory): String = when {
-    book.finished -> stringResource(R.string.entry_status_completed_returning)
-    memory.progressPercent > 0 && memory.chapter != null -> stringResource(
-        R.string.entry_status_returning_chapter,
-        memory.progressPercent,
-        memory.chapter
-    )
-    memory.progressPercent > 0 -> stringResource(
-        R.string.entry_status_returning_progress,
-        memory.progressPercent
-    )
-    memory.returning -> stringResource(R.string.entry_status_opening_again)
-    else -> stringResource(R.string.entry_status_first_entry)
+private fun localizedBookEntryStatus(book: Book, memory: BookEntryMemory): String {
+    val percent = rememberVeilPercentFormatter()(memory.progress)
+    return when {
+        book.finished -> stringResource(R.string.entry_status_completed_returning)
+        memory.progress > 0f && memory.chapter != null -> stringResource(
+            R.string.entry_status_returning_chapter,
+            percent,
+            memory.chapter
+        )
+        memory.progress > 0f -> stringResource(
+            R.string.entry_status_returning_progress,
+            percent
+        )
+        memory.returning -> stringResource(R.string.entry_status_opening_again)
+        else -> stringResource(R.string.entry_status_first_entry)
+    }
 }
 
 @Composable
