@@ -29,6 +29,71 @@ internal data class LocalizedPathDoctrine(
     val stabilityDescription: String
 )
 
+internal data class LocalizedDiscoveryCopy(
+    val title: String,
+    val clue: String,
+    val lore: String
+)
+
+@Composable
+internal fun localizedSigilName(id: String): String =
+    stringResource(
+        when (id) {
+            "first_hour" -> R.string.sigil_first_hour
+            "passage_keeper" -> R.string.sigil_passage_keeper
+            "seven_days" -> R.string.sigil_seven_days
+            "ten_tomes" -> R.string.sigil_ten_tomes
+            "first_threshold" -> R.string.sigil_first_threshold
+            else -> R.string.sigil_unknown
+        }
+    )
+
+@Composable
+internal fun localizedDiscoveryCopy(id: String): LocalizedDiscoveryCopy {
+    val ids = when (id) {
+        "patient_flame" -> intArrayOf(
+            R.string.discovery_patient_flame_title,
+            R.string.discovery_patient_flame_clue,
+            R.string.discovery_patient_flame_lore
+        )
+        "marginalia_gate" -> intArrayOf(
+            R.string.discovery_marginalia_gate_title,
+            R.string.discovery_marginalia_gate_clue,
+            R.string.discovery_marginalia_gate_lore
+        )
+        "deep_shelf" -> intArrayOf(
+            R.string.discovery_deep_shelf_title,
+            R.string.discovery_deep_shelf_clue,
+            R.string.discovery_deep_shelf_lore
+        )
+        "long_watch" -> intArrayOf(
+            R.string.discovery_long_watch_title,
+            R.string.discovery_long_watch_clue,
+            R.string.discovery_long_watch_lore
+        )
+        "veil_thins" -> intArrayOf(
+            R.string.discovery_veil_thins_title,
+            R.string.discovery_veil_thins_clue,
+            R.string.discovery_veil_thins_lore
+        )
+        "unnamed_chamber" -> intArrayOf(
+            R.string.discovery_unnamed_chamber_title,
+            R.string.discovery_unnamed_chamber_clue,
+            R.string.discovery_unnamed_chamber_lore
+        )
+        else -> return LocalizedDiscoveryCopy(
+            title = stringResource(R.string.profile_veiled_discoveries),
+            clue = stringResource(R.string.profile_discovery_hint),
+            lore = stringResource(R.string.profile_discovery_durable_note)
+        )
+    }
+    return LocalizedDiscoveryCopy(
+        title = stringResource(ids[0]),
+        clue = stringResource(ids[1]),
+        lore = stringResource(ids[2])
+    )
+}
+
 @Composable
 internal fun localizedPathIdentity(path: ReadingPath): LocalizedPathIdentity {
     val ids = when (path.id) {
