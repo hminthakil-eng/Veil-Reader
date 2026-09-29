@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.max
+import kotlin.math.sqrt
 
 internal data class PaperCurlVisualConfig(
     val backPageColor: Color,
@@ -97,12 +98,23 @@ internal fun Modifier.paperCurl(
     val contactShadow = paperContactShadowIntensity(progress)
     val edgeThickness = paperEdgeThicknessIntensity(progress)
     val backsideInk = paperBacksideInkIntensity(progress)
+    val obliqueness = paperFoldObliqueness(topCurl, bottomCurl)
+    val foldVector = bottomCurl - topCurl
+    val foldLength = sqrt(
+        foldVector.x * foldVector.x + foldVector.y * foldVector.y
+    ).coerceAtLeast(0.001f)
+    // Normal points toward the revealed destination side in canonical coordinates.
+    val foldNormal = Offset(
+        x = foldVector.y / foldLength,
+        y = -foldVector.x / foldLength
+    )
     val drawCurl = prepareCurl(
         config,
         topCurl,
         bottomCurl,
         foldLift,
-        backsideInk
+        backsideInk,
+        obliqueness
     )
     onDrawWithContent {
         drawClippedContent()
@@ -112,27 +124,40 @@ internal fun Modifier.paperCurl(
             val lightAlpha = (config.creaseHighlightAlpha * crease).coerceIn(0f, 0.34f)
             val darkAlpha = (config.creaseShadowAlpha * crease).coerceIn(0f, 0.30f)
 
+            val directionalGain = 0.84f + obliqueness * 0.16f
+            val lit = foldNormal * (-0.85.dp.toPx())
+            val dark = foldNormal * (1.7.dp.toPx())
+
             if (edgeThickness > 0.001f) {
+                val edgeOffset = foldNormal * (0.55.dp.toPx())
                 drawLine(
                     color = config.shadowColor.copy(
-                        alpha = (config.edgeThicknessAlpha * edgeThickness).coerceIn(0f, 0.22f)
+                        alpha = (
+                            config.edgeThicknessAlpha *
+                                edgeThickness *
+                                directionalGain
+                            ).coerceIn(0f, 0.22f)
                     ),
-                    start = topCurl + Offset(0.55.dp.toPx(), 0f),
-                    end = bottomCurl + Offset(0.55.dp.toPx(), 0f),
+                    start = topCurl + edgeOffset,
+                    end = bottomCurl + edgeOffset,
                     strokeWidth = (1.8f + edgeThickness * 1.2f).dp.toPx()
                 )
             }
 
             drawLine(
-                color = config.edgeHighlight.copy(alpha = lightAlpha),
-                start = topCurl - Offset(0.85.dp.toPx(), 0f),
-                end = bottomCurl - Offset(0.85.dp.toPx(), 0f),
+                color = config.edgeHighlight.copy(
+                    alpha = (lightAlpha * directionalGain).coerceIn(0f, 0.34f)
+                ),
+                start = topCurl + lit,
+                end = bottomCurl + lit,
                 strokeWidth = 1.15.dp.toPx()
             )
             drawLine(
-                color = config.shadowColor.copy(alpha = darkAlpha),
-                start = topCurl + Offset(1.7.dp.toPx(), 0f),
-                end = bottomCurl + Offset(1.7.dp.toPx(), 0f),
+                color = config.shadowColor.copy(
+                    alpha = (darkAlpha * directionalGain).coerceIn(0f, 0.30f)
+                ),
+                start = topCurl + dark,
+                end = bottomCurl + dark,
                 strokeWidth = 1.05.dp.toPx()
             )
         }
@@ -145,10 +170,17 @@ internal fun Modifier.paperCurl(
                 Triple(6.5f, 5.2f, 0.52f),
                 Triple(10.0f, 7.0f, 0.22f)
             ).forEach { (offsetDp, widthDp, alphaScale) ->
+                val offset = foldNormal * offsetDp.dp.toPx()
                 drawLine(
-                    color = config.shadowColor.copy(alpha = baseAlpha * alphaScale),
-                    start = topCurl + Offset(offsetDp.dp.toPx(), 0f),
-                    end = bottomCurl + Offset(offsetDp.dp.toPx(), 0f),
+                    color = config.shadowColor.copy(
+                        alpha = (
+                            baseAlpha *
+                                alphaScale *
+                                (0.88f + obliqueness * 0.12f)
+                            ).coerceIn(0f, 0.24f)
+                    ),
+                    start = topCurl + offset,
+                    end = bottomCurl + offset,
                     strokeWidth = widthDp.dp.toPx()
                 )
             }
@@ -185,7 +217,8 @@ private fun CacheDrawScope.prepareCurl(
     topCurl: Offset,
     bottomCurl: Offset,
     foldLift: Float,
-    backsideInk: Float
+    backsideInk: Float,
+    obliqueness: Float
 ): ContentDrawScope.() -> Unit {
     val polygon = PaperCurlPolygon(
         sequence {
@@ -222,7 +255,8 @@ private fun CacheDrawScope.prepareCurl(
         config,
         polygon,
         angle,
-        foldLift
+        foldLift,
+        obliqueness
     )
 
     return result@{
@@ -246,10 +280,16 @@ private fun CacheDrawScope.prepareCurl(
                     brush = Brush.horizontalGradient(
                         colorStops = arrayOf(
                             0.00f to config.edgeHighlight.copy(
-                                alpha = 0.045f + foldLift * 0.085f
+                                alpha = (
+                                    0.040f +
+                                        foldLift * (0.072f + obliqueness * 0.030f)
+                                    ).coerceIn(0f, 0.15f)
                             ),
                             0.20f to config.edgeHighlight.copy(
-                                alpha = 0.018f + foldLift * 0.025f
+                                alpha = (
+                                    0.016f +
+                                        foldLift * (0.020f + obliqueness * 0.010f)
+                                    ).coerceIn(0f, 0.06f)
                             ),
                             0.56f to Color.Transparent,
                             0.82f to config.shadowColor.copy(
@@ -299,7 +339,8 @@ private fun CacheDrawScope.prepareShadow(
     config: PaperCurlVisualConfig,
     polygon: PaperCurlPolygon,
     angle: Float,
-    foldLift: Float
+    foldLift: Float,
+    obliqueness: Float
 ): ContentDrawScope.() -> Unit {
     val lift = foldLift.coerceIn(0f, 1f)
     if (config.shadowAlpha == 0f ||
@@ -309,8 +350,11 @@ private fun CacheDrawScope.prepareShadow(
         return { }
     }
 
-    val radius = config.shadowRadius.toPx() * (0.55f + lift * 0.45f)
-    val dynamicShadowAlpha = config.shadowAlpha * lift
+    val directionalGain = 0.90f + obliqueness.coerceIn(0f, 1f) * 0.10f
+    val radius = config.shadowRadius.toPx() *
+        (0.55f + lift * 0.45f) *
+        directionalGain
+    val dynamicShadowAlpha = config.shadowAlpha * lift * directionalGain
     val shadowColor = config.shadowColor
         .copy(alpha = dynamicShadowAlpha)
         .toArgb()
