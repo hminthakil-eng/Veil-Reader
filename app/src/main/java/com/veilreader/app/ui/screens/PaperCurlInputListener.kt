@@ -356,7 +356,11 @@ internal class PaperCurlInputListener(
         if (width <= 0f) return null
 
         val density = view.resources.displayMetrics.density
-        val edgeSize = max(84f * density, width * EDGE_FRACTION)
+        val edgeSize = pageTurnTapZonePx(
+            width = width,
+            density = density,
+            preferredFraction = EDGE_FRACTION
+        )
         val side = when {
             x <= edgeSize -> PaperCurlSide.LEFT
             x >= width - edgeSize -> PaperCurlSide.RIGHT
