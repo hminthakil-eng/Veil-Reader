@@ -735,9 +735,9 @@ fun LibraryScreen(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
                     LibrarySectionHeading(
-                        eyebrow = "Recovered memory",
-                        title = "The archive remembers",
-                        trailing = "${memoryState.events.size} traces"
+                        eyebrow = stringResource(R.string.library_memory_eyebrow),
+                        title = stringResource(R.string.library_memory_title),
+                        trailing = stringResource(R.string.library_memory_traces, memoryState.events.size)
                     )
                     Row(
                         Modifier
@@ -801,9 +801,9 @@ fun LibraryScreen(
                         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
                         LibrarySectionHeading(
-                            eyebrow = "Recently opened",
-                            title = "Volumes in progress",
-                            trailing = "${recentReading.size} active"
+                            eyebrow = stringResource(R.string.library_recent_eyebrow),
+                            title = stringResource(R.string.library_recent_title),
+                            trailing = stringResource(R.string.library_recent_active, recentReading.size)
                         )
                         Row(
                             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
@@ -1989,7 +1989,7 @@ private fun RecentReadingBook(
     Surface(
         modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
-            onClickLabel = "Continue ${book.title}",
+            onClickLabel = stringResource(R.string.library_continue_book_semantics, book.title),
             onClick = onOpen
         ),
         shape = MaterialTheme.shapes.small,
@@ -2064,9 +2064,9 @@ private fun LibraryArchiveWings(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
     ) {
         LibrarySectionHeading(
-            eyebrow = "Spatial index",
-            title = "Archive Wings",
-            trailing = "${visibleWings.size} mapped"
+            eyebrow = stringResource(R.string.library_wings_eyebrow),
+            title = stringResource(R.string.library_wings_title),
+            trailing = stringResource(R.string.library_wings_mapped, visibleWings.size)
         )
 
         Row(
