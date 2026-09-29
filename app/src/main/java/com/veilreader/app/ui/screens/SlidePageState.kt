@@ -31,6 +31,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.sin
 import kotlin.math.PI
+import kotlin.math.roundToInt
 
 @Stable
 internal class SlidePageState {
@@ -69,12 +70,10 @@ internal class SlidePageState {
     suspend fun animateComplete(directionSign: Float, velocityDpPerSec: Float = 0f) {
         if (!active || width <= 0f) return
         val target = width * directionSign.coerceIn(-1f, 1f)
-        val speed = abs(velocityDpPerSec)
-        val duration = when {
-            speed >= 1800f -> 130
-            speed >= 900f -> 170
-            else -> VeilMotion.FUNCTIONAL_EXIT_MS.coerceAtLeast(190)
-        }
+        val duration = slideCompletionDurationMillis(
+            progress = dragProgress(),
+            velocityDpPerSec = velocityDpPerSec
+        )
         val anim = Animatable(offsetPx)
         anim.animateTo(
             targetValue = target,
@@ -251,3 +250,20 @@ internal fun slideEdgeShadowIntensity(progress: Float): Float =
     sin(progress.coerceIn(0f, 1f).toDouble() * PI)
         .toFloat()
         .coerceIn(0f, 1f)
+
+internal fun slideCompletionDurationMillis(
+    progress: Float,
+    velocityDpPerSec: Float
+): Int {
+    val remaining = 1f - progress.coerceIn(0f, 1f)
+    val speed = abs(velocityDpPerSec)
+    val fullTravelMillis = when {
+        speed >= 1_800f -> 140f
+        speed >= 900f -> 175f
+        else -> 220f
+    }
+    // Even a nearly completed gesture needs a perceptible settle frame, but it must not crawl.
+    return (88f + (fullTravelMillis - 88f) * remaining)
+        .roundToInt()
+        .coerceIn(88, 220)
+}
