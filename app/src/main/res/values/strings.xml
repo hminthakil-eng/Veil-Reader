@@ -420,4 +420,32 @@
     <string name="library_show_overview">Archive overview</string>
     <string name="library_hide_overview">Hide archive overview</string>
     <string name="library_view_semantics">%1$s view</string>
+
+    <string name="library_section_archive">Archive</string>
+    <string name="library_section_shelves">Shelves</string>
+    <string name="library_tap_to_filter">Tap to filter</string>
+    <string name="library_shelf_favorites">Favorites</string>
+    <string name="library_shelf_favorites_subtitle">Volumes kept close</string>
+    <string name="library_shelf_reading">Currently Reading</string>
+    <string name="library_shelf_reading_subtitle">Open journeys</string>
+    <string name="library_shelf_completed">Completed</string>
+    <string name="library_shelf_completed_subtitle">Closed volumes</string>
+    <string name="library_shelf_deep">Deep Shelf</string>
+    <string name="library_shelf_deep_subtitle">Long-unopened volumes</string>
+    <string name="library_shelf_unread">Plan to Read</string>
+    <string name="library_shelf_unread_subtitle">Still unopened</string>
+    <string name="library_group_filtered">Filtered archive</string>
+    <string name="library_group_matching">Matching volumes</string>
+    <string name="library_group_journey">Journey</string>
+    <string name="library_group_currently_reading">Currently reading</string>
+    <string name="library_group_collection">Collection</string>
+    <string name="library_group_series">Series</string>
+    <string name="library_group_author">Author</string>
+    <string name="library_group_record">Record</string>
+    <string name="library_group_completed">Completed volumes</string>
+    <string name="library_group_unopened">Unopened</string>
+    <string name="library_group_waiting">Waiting on the shelf</string>
+    <string name="library_view_gallery">Gallery</string>
+    <string name="library_view_shelves">Shelves</string>
+    <string name="library_view_index">Index</string>
 </resources>
