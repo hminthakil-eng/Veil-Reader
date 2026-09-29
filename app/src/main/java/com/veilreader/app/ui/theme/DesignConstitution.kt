@@ -320,12 +320,16 @@ data class VeilSanctuaryPageMaterial(
 )
 
 /**
- * Paged modes are physical sheets; continuous scroll is a paper field.
- * This prevents the scroll surface from inheriting book-block edges that imply a page turn.
+ * Navigation modes must read differently before the user even moves a finger.
+ *
+ * PAPER_CURL and static PAGED preserve a visible book-block edge. SLIDE stays a flat moving sheet
+ * so it never masquerades as a curl. SCROLL is a continuous paper field without page-stack depth.
  */
 fun sanctuaryPageMaterialFor(mode: ReaderNavigationMode): VeilSanctuaryPageMaterial =
     VeilSanctuaryPageMaterial(
-        showPhysicalPageStack = mode != ReaderNavigationMode.SCROLL,
+        showPhysicalPageStack =
+            mode == ReaderNavigationMode.PAPER_CURL ||
+                mode == ReaderNavigationMode.PAGED,
         showEdgeFalloff = true,
         showMicroFibres = true
     )
