@@ -173,6 +173,10 @@
     <string name="reader_save_note">ذخیرهٔ یادداشت</string>
 
     <!-- Reader feedback and recoverable errors -->
+    <string name="reader_footnote_eyebrow">یادداشت حاشیه</string>
+    <string name="reader_footnote_title">پانویس</string>
+    <string name="reader_footnote_close">بستن</string>
+    <string name="reader_external_link_failed">باز کردن این پیوند خارجی ممکن نشد.</string>
     <string name="reader_selection_highlight">هایلایت</string>
     <string name="reader_selection_note">یادداشت</string>
     <string name="reader_highlighted">بخش انتخاب‌شده نشان‌گذاری شد</string>
