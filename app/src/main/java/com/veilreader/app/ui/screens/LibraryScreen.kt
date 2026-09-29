@@ -398,7 +398,7 @@ fun LibraryScreen(
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 placeholder = {
                     Text(
-                        "Search the archive…",
+                        stringResource(R.string.library_search_hint),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
                     )
                 },
@@ -414,7 +414,7 @@ fun LibraryScreen(
                             onClick = { query = "" },
                             contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
-                            Text("Clear", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.library_search_clear), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 },
@@ -2767,12 +2767,12 @@ private fun LibraryImportStatus() {
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "PREPARING PUBLICATION",
+                    stringResource(R.string.library_import_preparing_label),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Inspecting the file and preparing its local archive record.",
+                    stringResource(R.string.library_import_preparing_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist.copy(alpha = 0.82f)
                 )
@@ -2830,21 +2830,27 @@ private fun LibraryEmptyState(
             }
 
             Text(
-                if (hasBooks) "NO MATCHING VOLUMES" else "YOUR ARCHIVE IS EMPTY",
+                stringResource(
+                    if (hasBooks) R.string.library_empty_no_match_eyebrow
+                    else R.string.library_empty_archive_eyebrow
+                ),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
                 color = VeilPalette.Brass
             )
 
             Text(
-                if (hasBooks) "Nothing in this part of the archive" else "The first volume begins the world",
+                stringResource(
+                    if (hasBooks) R.string.library_empty_no_match_title
+                    else R.string.library_empty_archive_title
+                ),
                 style = MaterialTheme.typography.titleLarge
             )
 
             Text(
                 if (hasBooks) {
-                    "No book matches the current search, shelf, or collection. Clear the filters and the archive will return."
+                    stringResource(R.string.library_empty_no_match_body)
                 } else {
-                    "Import an EPUB or PDF. The first volume establishes your Archive; progress, highlights, and notes remain local on this device."
+                    stringResource(R.string.library_empty_archive_body)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2860,7 +2866,7 @@ private fun LibraryEmptyState(
                         VeilPalette.Brass.copy(alpha = 0.44f)
                     )
                 ) {
-                    Text("Clear active filters")
+                    Text(stringResource(R.string.library_empty_clear_filters))
                 }
             } else {
                 Button(
@@ -2873,7 +2879,10 @@ private fun LibraryEmptyState(
                         contentColor = Color(0xFF17120A)
                     )
                 ) {
-                    Text(if (isImporting) "Preparing publication…" else "Import your first volume")
+                    Text(stringResource(
+                        if (isImporting) R.string.library_empty_preparing
+                        else R.string.library_empty_import_first
+                    ))
                 }
             }
         }
