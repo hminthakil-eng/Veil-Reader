@@ -420,4 +420,32 @@
     <string name="library_show_overview">نمای کلی آرشیو</string>
     <string name="library_hide_overview">بستن نمای کلی آرشیو</string>
     <string name="library_view_semantics">نمای %1$s</string>
+
+    <string name="library_section_archive">آرشیو</string>
+    <string name="library_section_shelves">قفسه‌ها</string>
+    <string name="library_tap_to_filter">برای فیلتر لمس کنید</string>
+    <string name="library_shelf_favorites">علاقه‌مندی‌ها</string>
+    <string name="library_shelf_favorites_subtitle">کتاب‌هایی که نزدیک نگه داشته‌اید</string>
+    <string name="library_shelf_reading">در حال مطالعه</string>
+    <string name="library_shelf_reading_subtitle">مسیرهای باز</string>
+    <string name="library_shelf_completed">تمام‌شده‌ها</string>
+    <string name="library_shelf_completed_subtitle">کتاب‌های بسته‌شده</string>
+    <string name="library_shelf_deep">قفسهٔ ژرف</string>
+    <string name="library_shelf_deep_subtitle">کتاب‌هایی که مدت‌ها باز نشده‌اند</string>
+    <string name="library_shelf_unread">برای مطالعه</string>
+    <string name="library_shelf_unread_subtitle">هنوز گشوده نشده‌اند</string>
+    <string name="library_group_filtered">آرشیو فیلترشده</string>
+    <string name="library_group_matching">کتاب‌های مطابق</string>
+    <string name="library_group_journey">مسیر مطالعه</string>
+    <string name="library_group_currently_reading">در حال مطالعه</string>
+    <string name="library_group_collection">مجموعه</string>
+    <string name="library_group_series">سری</string>
+    <string name="library_group_author">نویسنده</string>
+    <string name="library_group_record">رکورد</string>
+    <string name="library_group_completed">کتاب‌های تمام‌شده</string>
+    <string name="library_group_unopened">گشوده‌نشده</string>
+    <string name="library_group_waiting">در انتظار روی قفسه</string>
+    <string name="library_view_gallery">گالری</string>
+    <string name="library_view_shelves">قفسه‌ها</string>
+    <string name="library_view_index">فهرست</string>
 </resources>
