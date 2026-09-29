@@ -767,7 +767,8 @@ fun ReaderScreen(
                                 showPdfZoom ||
                                 pendingNoteHighlightId != null,
                         closeInFlight = closeInFlight,
-                        controlsVisible = controlsVisible
+                        controlsVisible = controlsVisible,
+                        touchExplorationEnabled = touchExplorationEnabled
                     )
                 },
                 onTapOwner = { owner ->
