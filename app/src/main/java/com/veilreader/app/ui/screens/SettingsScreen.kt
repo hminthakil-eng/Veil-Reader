@@ -50,6 +50,10 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderDarkImageTreatment
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -187,6 +191,45 @@ fun SettingsScreen(
                     commitReaderAppearance { current -> current.withFontScale(value.toDouble()) }
                 }
             )
+
+            Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = ReaderFontFamily.entries,
+                selected = appearance.fontFamily,
+                label = { family ->
+                    when (family) {
+                        ReaderFontFamily.PUBLISHER -> stringResource(R.string.settings_book_default)
+                        ReaderFontFamily.SERIF -> stringResource(R.string.settings_font_serif)
+                        ReaderFontFamily.SANS_SERIF -> stringResource(R.string.settings_font_sans)
+                        ReaderFontFamily.MONOSPACE -> stringResource(R.string.settings_font_mono)
+                        ReaderFontFamily.OPEN_DYSLEXIC -> stringResource(R.string.settings_font_opendyslexic)
+                        ReaderFontFamily.ACCESSIBLE_DFA -> stringResource(R.string.settings_font_accessible)
+                        ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
+                    }
+                },
+                onSelected = { family ->
+                    commitReaderAppearance { current -> current.withFontFamily(family) }
+                }
+            )
+            ReaderOptionalSlider(
+                label = stringResource(R.string.settings_font_weight),
+                value = appearance.fontWeight,
+                defaultValue = 1f,
+                valueRange = 0f..2.5f,
+                displayValue = { "${(it * 100).toInt()}%" },
+                onCommit = { value ->
+                    commitReaderAppearance { current ->
+                        current.withFontWeight(value?.toDouble()).let { updated ->
+                            if (value == null) updated else updated.copy(publisherStyles = false)
+                        }
+                    }
+                }
+            )
+            Text(
+                stringResource(R.string.settings_font_weight_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
             ReaderSlider(
                 label = stringResource(R.string.settings_line_height),
                 value = appearance.lineHeight.toFloat(),
@@ -203,6 +246,48 @@ fun SettingsScreen(
                 displayValue = { String.format(Locale.US, "%.2f×", it) },
                 onCommit = { value ->
                     commitReaderAppearance { current -> current.withPageMargins(value.toDouble()) }
+                }
+            )
+
+            Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = ReaderTextAlignment.entries,
+                selected = appearance.textAlignment,
+                label = { alignment ->
+                    when (alignment) {
+                        ReaderTextAlignment.PUBLISHER -> stringResource(R.string.settings_book_default)
+                        ReaderTextAlignment.START -> stringResource(R.string.settings_align_start)
+                        ReaderTextAlignment.JUSTIFY -> stringResource(R.string.settings_align_justify)
+                        ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
+                    }
+                },
+                onSelected = { alignment ->
+                    commitReaderAppearance { current -> current.withTextAlignment(alignment) }
+                }
+            )
+
+            Text(stringResource(R.string.settings_columns), style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = ReaderColumnMode.entries,
+                selected = appearance.columnMode,
+                label = { mode ->
+                    when (mode) {
+                        ReaderColumnMode.AUTO -> stringResource(R.string.settings_column_auto)
+                        ReaderColumnMode.ONE -> stringResource(R.string.settings_column_one)
+                        ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
+                    }
+                },
+                onSelected = { mode ->
+                    commitReaderAppearance { current ->
+                        current.copy(
+                            columnMode = mode,
+                            publisherStyles = if (mode == ReaderColumnMode.AUTO) {
+                                current.publisherStyles
+                            } else {
+                                false
+                            }
+                        )
+                    }
                 }
             )
 
@@ -226,6 +311,58 @@ fun SettingsScreen(
                     commitReaderAppearance { current -> current.copy(publisherStyles = enabled) }
                 }
             )
+
+            if (appearance.theme == ReaderTheme.PAPER || appearance.theme == ReaderTheme.SEPIA) {
+                ReaderSlider(
+                    label = stringResource(R.string.settings_paper_age),
+                    value = appearance.paperPatina.toFloat(),
+                    valueRange = 0f..1f,
+                    displayValue = { value -> "${(value * 100).toInt()}%" },
+                    onCommit = { value ->
+                        commitReaderAppearance { current ->
+                            current.withPaperPatina(value.toDouble())
+                        }
+                    }
+                )
+                Text(
+                    stringResource(R.string.settings_paper_age_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            val darkReadingTheme =
+                appearance.theme == ReaderTheme.DUSK || appearance.theme == ReaderTheme.OLED
+            Text(stringResource(R.string.settings_dark_images), style = MaterialTheme.typography.labelLarge)
+            if (darkReadingTheme) {
+                ChoiceRow(
+                    entries = ReaderDarkImageTreatment.entries,
+                    selected = appearance.darkImageTreatment,
+                    label = { treatment ->
+                        when (treatment) {
+                            ReaderDarkImageTreatment.NONE -> stringResource(R.string.settings_dark_images_original)
+                            ReaderDarkImageTreatment.DARKEN -> stringResource(R.string.settings_dark_images_darken)
+                            ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
+                        }
+                    },
+                    onSelected = { treatment ->
+                        commitReaderAppearance { current ->
+                            current.withDarkImageTreatment(treatment)
+                        }
+                    }
+                )
+                Text(
+                    stringResource(R.string.settings_dark_images_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            } else {
+                Text(
+                    stringResource(R.string.settings_dark_images_unavailable),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
 
             Text(stringResource(R.string.settings_brightness), style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
@@ -503,6 +640,58 @@ private fun <T> ChoiceRow(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ReaderOptionalSlider(
+    label: String,
+    value: Double?,
+    defaultValue: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    displayValue: (Float) -> String,
+    onCommit: (Double?) -> Unit
+) {
+    var draft by remember(value, defaultValue) {
+        mutableFloatStateOf(
+            (value?.toFloat() ?: defaultValue)
+                .coerceIn(valueRange.start, valueRange.endInclusive)
+        )
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (value == null) stringResource(R.string.settings_book_default)
+                    else displayValue(draft),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelMedium
+                )
+                TextButton(
+                    onClick = {
+                        draft = defaultValue.coerceIn(valueRange.start, valueRange.endInclusive)
+                        onCommit(null)
+                    },
+                    enabled = value != null,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.reader_value_reset))
+                }
+            }
+        }
+        Slider(
+            value = draft,
+            onValueChange = { draft = it },
+            onValueChangeFinished = { onCommit(draft.toDouble()) },
+            valueRange = valueRange,
+            modifier = Modifier.semantics { contentDescription = label }
+        )
     }
 }
 
