@@ -144,11 +144,18 @@ fun ReadingCycleRecord.toEntity(): ReadingCycleEntity = ReadingCycleEntity(
     timelineJson = JSONArray().apply {
         timeline.forEach { event ->
             put(JSONObject().apply {
+                put("schemaVersion", READING_HISTORY_SCHEMA_VERSION)
                 put("id", event.id)
                 put("kind", event.kind.name)
                 put("timestampEpochMs", event.timestampEpochMs)
-                put("title", event.title)
-                put("detail", event.detail ?: JSONObject.NULL)
+                put("activeMillis", event.activeMillis ?: JSONObject.NULL)
+                put("pacedPageTurns", event.pacedPageTurns)
+                put("highlightEventCount", event.highlightEventCount)
+                put("noteEventCount", event.noteEventCount)
+                put("annotated", event.annotated)
+                put("excerpt", event.excerpt ?: JSONObject.NULL)
+                put("locationLabel", event.locationLabel ?: JSONObject.NULL)
+                put("milestoneKind", event.milestoneKind?.name ?: JSONObject.NULL)
             })
         }
     }.toString()
@@ -162,16 +169,7 @@ fun ReadingCycleEntity.toDomain(): ReadingCycleRecord {
             val kind = runCatching {
                 ReadingHistoryEventKind.valueOf(item.optString("kind"))
             }.getOrNull() ?: continue
-            add(
-                ReadingHistoryEvent(
-                    id = item.optString("id"),
-                    kind = kind,
-                    timestampEpochMs = item.optLong("timestampEpochMs", 0L),
-                    title = item.optString("title"),
-                    detail = if (item.isNull("detail")) null
-                    else item.optString("detail").takeIf { it.isNotBlank() }
-                )
-            )
+            readingHistoryEventFromJson(item, kind)?.let(::add)
         }
     }
 
@@ -195,6 +193,141 @@ fun ReadingCycleEntity.toDomain(): ReadingCycleRecord {
     )
 }
 
+private const val READING_HISTORY_SCHEMA_VERSION = 2
+
+private fun readingHistoryEventFromJson(
+    item: JSONObject,
+    kind: ReadingHistoryEventKind
+): ReadingHistoryEvent? {
+    val id = item.optString("id").takeIf { it.isNotBlank() } ?: return null
+    val timestamp = item.optLong("timestampEpochMs", 0L)
+    val semantic =
+        item.optInt("schemaVersion", 1) >= READING_HISTORY_SCHEMA_VERSION ||
+            item.has("activeMillis") ||
+            item.has("excerpt") ||
+            item.has("milestoneKind")
+
+    if (semantic) {
+        return ReadingHistoryEvent(
+            id = id,
+            kind = kind,
+            timestampEpochMs = timestamp,
+            activeMillis = item.optNullableLong("activeMillis"),
+            pacedPageTurns = item.optInt("pacedPageTurns", 0).coerceAtLeast(0),
+            highlightEventCount = item.optInt("highlightEventCount", 0).coerceAtLeast(0),
+            noteEventCount = item.optInt("noteEventCount", 0).coerceAtLeast(0),
+            annotated = item.optBoolean("annotated", false),
+            excerpt = item.optNullableString("excerpt"),
+            locationLabel = item.optNullableString("locationLabel"),
+            milestoneKind = item.optNullableString("milestoneKind")
+                ?.let { raw ->
+                    runCatching { ReadingMilestoneKind.valueOf(raw) }.getOrNull()
+                }
+        )
+    }
+
+    return legacyReadingHistoryEvent(
+        id = id,
+        kind = kind,
+        timestamp = timestamp,
+        title = item.optString("title"),
+        detail = item.optNullableString("detail")
+    )
+}
+
+private fun legacyReadingHistoryEvent(
+    id: String,
+    kind: ReadingHistoryEventKind,
+    timestamp: Long,
+    title: String,
+    detail: String?
+): ReadingHistoryEvent =
+    when (kind) {
+        ReadingHistoryEventKind.READING_SESSION -> ReadingHistoryEvent(
+            id = id,
+            kind = kind,
+            timestampEpochMs = timestamp,
+            activeMillis = parseLegacyActiveMillis(detail),
+            pacedPageTurns = parseLegacyCount(detail, "paced turns"),
+            highlightEventCount = parseLegacyCount(detail, "highlight events"),
+            noteEventCount = parseLegacyCount(detail, "note events")
+        )
+
+        ReadingHistoryEventKind.PASSAGE_PRESERVED -> ReadingHistoryEvent(
+            id = id,
+            kind = kind,
+            timestampEpochMs = timestamp,
+            annotated = title.contains("annotated", ignoreCase = true),
+            excerpt = detail
+        )
+
+        ReadingHistoryEventKind.LOCATION_MARKED -> ReadingHistoryEvent(
+            id = id,
+            kind = kind,
+            timestampEpochMs = timestamp,
+            locationLabel = detail
+        )
+
+        ReadingHistoryEventKind.READING_MILESTONE -> ReadingHistoryEvent(
+            id = id,
+            kind = kind,
+            timestampEpochMs = timestamp,
+            milestoneKind = when {
+                title.equals("First opened", ignoreCase = true) ->
+                    ReadingMilestoneKind.FIRST_OPENED
+                "25%" in title -> ReadingMilestoneKind.PROGRESS_25
+                "50%" in title -> ReadingMilestoneKind.PROGRESS_50
+                "75%" in title -> ReadingMilestoneKind.PROGRESS_75
+                else -> null
+            }
+        )
+
+        else -> ReadingHistoryEvent(
+            id = id,
+            kind = kind,
+            timestampEpochMs = timestamp
+        )
+    }
+
+private fun JSONObject.optNullableLong(name: String): Long? =
+    if (!has(name) || isNull(name)) null else optLong(name)
+
+private fun JSONObject.optNullableString(name: String): String? =
+    if (!has(name) || isNull(name)) null else optString(name).takeIf { it.isNotBlank() }
+
+private fun parseLegacyActiveMillis(detail: String?): Long? {
+    val value = detail?.trim().orEmpty()
+    if (value.isEmpty()) return null
+    if (value.startsWith("<1m active", ignoreCase = true)) return 0L
+
+    Regex("""(\d+)h(?:\s+(\d+)m)?\s+active""", RegexOption.IGNORE_CASE)
+        .find(value)
+        ?.let { match ->
+            val hours = match.groupValues[1].toLongOrNull() ?: 0L
+            val minutes = match.groupValues.getOrNull(2)?.toLongOrNull() ?: 0L
+            return (hours * 60L + minutes) * 60_000L
+        }
+
+    Regex("""(\d+)m\s+active""", RegexOption.IGNORE_CASE)
+        .find(value)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toLongOrNull()
+        ?.let { return it * 60_000L }
+
+    return null
+}
+
+private fun parseLegacyCount(detail: String?, label: String): Int {
+    val value = detail ?: return 0
+    val pattern = Regex("""(\d+)\s+""" + Regex.escape(label), RegexOption.IGNORE_CASE)
+    return pattern.find(value)
+        ?.groupValues
+        ?.getOrNull(1)
+        ?.toIntOrNull()
+        ?.coerceAtLeast(0)
+        ?: 0
+}
 fun PassageVisit.toEntity(): PassageVisitEntity = PassageVisitEntity(
     id = id,
     highlightId = highlightId,
