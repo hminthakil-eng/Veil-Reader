@@ -208,4 +208,9 @@
     <string name="reader_preview_body">The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.</string>
     <string name="reader_close_a11y">Close reader</string>
     <string name="reader_percent_read_a11y">%1$d percent read</string>
+    <string name="reader_apply_to">APPLY TO</string>
+    <string name="reader_scope_this_book">This book</string>
+    <string name="reader_scope_all_books">All books</string>
+    <string name="reader_scope_book_description">Keep these reading settings only for this publication.</string>
+    <string name="reader_scope_global_description">Use the global reading defaults and keep future changes global.</string>
 </resources>
