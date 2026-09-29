@@ -113,4 +113,274 @@ class CastleMemoryStateTest {
         assertEquals(1, state.sealedCapsuleCount)
         assertTrue(state.resonanceFor("treasury") > 0f)
     }
+
+    @Test
+    fun `long silence cools the keep without erasing memory`() {
+        val day = 86_400_000L
+        val state = deriveCastleMemoryState(
+            books = listOf(
+                Book(
+                    id = "quiet",
+                    title = "Quiet Volume",
+                    author = "Veil",
+                    addedAtEpochMs = day,
+                    lastOpenedAtEpochMs = day * 5
+                )
+            ),
+            highlights = emptyList(),
+            bookmarks = emptyList(),
+            sessions = listOf(
+                ReadingSessionSnapshot(
+                    id = "old-session",
+                    bookId = "quiet",
+                    startedAtEpochMs = day * 5,
+                    endedAtEpochMs = day * 5 + 30_000L,
+                    activeMillis = 30_000L,
+                    pacedPageTurns = 1,
+                    highlightCount = 0,
+                    noteCount = 0
+                )
+            ),
+            nowEpochMs = day * 100
+        )
+
+        assertTrue(state.longSilence > 0.70f)
+        assertEquals(0f, state.returnAwakening, 0.0001f)
+        assertTrue(state.mutationInscription.contains("cold"))
+        assertTrue(state.volumeCount == 1)
+    }
+
+    @Test
+    fun `return after a long gap wakes the foundation`() {
+        val day = 86_400_000L
+        val sessions = listOf(
+            ReadingSessionSnapshot(
+                id = "before-silence",
+                bookId = "returning",
+                startedAtEpochMs = day,
+                endedAtEpochMs = day + 60_000L,
+                activeMillis = 60_000L,
+                pacedPageTurns = 2,
+                highlightCount = 0,
+                noteCount = 0
+            ),
+            ReadingSessionSnapshot(
+                id = "return-session",
+                bookId = "returning",
+                startedAtEpochMs = day * 60,
+                endedAtEpochMs = day * 60 + 60_000L,
+                activeMillis = 60_000L,
+                pacedPageTurns = 2,
+                highlightCount = 0,
+                noteCount = 0
+            )
+        )
+
+        val state = deriveCastleMemoryState(
+            books = listOf(
+                Book(
+                    id = "returning",
+                    title = "Returning Volume",
+                    author = "Veil",
+                    addedAtEpochMs = day,
+                    lastOpenedAtEpochMs = day * 60
+                )
+            ),
+            highlights = emptyList(),
+            bookmarks = emptyList(),
+            sessions = sessions,
+            nowEpochMs = day * 61
+        )
+
+        assertTrue(state.returnAwakening > 0.35f)
+        assertTrue(state.mutationInscription.startsWith("After a long quiet"))
+        assertTrue(state.litWindows >= 1)
+    }
+
+    @Test
+    fun `rereads leave patina and visible rings without unlocking rooms`() {
+        val day = 86_400_000L
+        val book = Book(
+            id = "reread",
+            title = "Reread Volume",
+            author = "Veil",
+            progress = 1f,
+            finished = true,
+            addedAtEpochMs = day,
+            lastOpenedAtEpochMs = day * 220
+        )
+        val cycles = listOf(
+            sealedCycle(book, cycleIndex = 1, completedAt = day * 40),
+            sealedCycle(book, cycleIndex = 2, completedAt = day * 100),
+            sealedCycle(book, cycleIndex = 3, completedAt = day * 160),
+            sealedCycle(book, cycleIndex = 4, completedAt = day * 220)
+        )
+
+        val state = deriveCastleMemoryState(
+            books = listOf(book),
+            highlights = emptyList(),
+            bookmarks = emptyList(),
+            sessions = emptyList(),
+            readingCycles = cycles,
+            nowEpochMs = day * 230
+        )
+
+        assertEquals(3, state.rereadCycleCount)
+        assertEquals(3, state.rereadRings)
+        assertTrue(state.patina > 0.20f)
+        assertTrue(state.mutationInscription.contains("Repeated journeys"))
+    }
+
+    @Test
+    fun `annotated reading lights the scriptorium`() {
+        val day = 86_400_000L
+        val book = Book(
+            id = "notes",
+            title = "Marginalia",
+            author = "Veil",
+            addedAtEpochMs = day,
+            lastOpenedAtEpochMs = day * 20
+        )
+        val highlights = (1..16).map { index ->
+            Highlight(
+                id = "note-$index",
+                bookId = book.id,
+                quote = "Preserved passage $index",
+                locatorJson = "{}",
+                note = "Annotation $index",
+                createdAtEpochMs = day * 10 + index
+            )
+        }
+
+        val state = deriveCastleMemoryState(
+            books = listOf(book),
+            highlights = highlights,
+            bookmarks = emptyList(),
+            sessions = emptyList(),
+            nowEpochMs = day * 21
+        )
+
+        assertTrue(state.scriptoriumLamps >= 3)
+        assertTrue(state.mutationInscription.contains("scriptorium"))
+        assertTrue(state.archiveResonance > 0f)
+    }
+
+
+    @Test
+    fun `return awakening survives follow-up sessions inside the recent-return window`() {
+        val day = 86_400_000L
+        val sessions = listOf(
+            ReadingSessionSnapshot(
+                id = "before-gap",
+                bookId = "returning",
+                startedAtEpochMs = day,
+                endedAtEpochMs = day + 60_000L,
+                activeMillis = 60_000L,
+                pacedPageTurns = 1,
+                highlightCount = 0,
+                noteCount = 0
+            ),
+            ReadingSessionSnapshot(
+                id = "first-return",
+                bookId = "returning",
+                startedAtEpochMs = day * 60,
+                endedAtEpochMs = day * 60 + 60_000L,
+                activeMillis = 60_000L,
+                pacedPageTurns = 1,
+                highlightCount = 0,
+                noteCount = 0
+            ),
+            ReadingSessionSnapshot(
+                id = "follow-up",
+                bookId = "returning",
+                startedAtEpochMs = day * 61,
+                endedAtEpochMs = day * 61 + 60_000L,
+                activeMillis = 60_000L,
+                pacedPageTurns = 1,
+                highlightCount = 0,
+                noteCount = 0
+            )
+        )
+
+        val state = deriveCastleMemoryState(
+            books = listOf(
+                Book(
+                    id = "returning",
+                    title = "Returning Volume",
+                    author = "Veil",
+                    addedAtEpochMs = day,
+                    lastOpenedAtEpochMs = day * 61
+                )
+            ),
+            highlights = emptyList(),
+            bookmarks = emptyList(),
+            sessions = sessions,
+            nowEpochMs = day * 62
+        )
+
+        assertTrue(state.returnAwakening > 0f)
+        assertTrue(state.mutationInscription.startsWith("After a long quiet"))
+    }
+
+    @Test
+    fun `future corrupt activity cannot hide the latest valid reading record`() {
+        val day = 86_400_000L
+        val state = deriveCastleMemoryState(
+            books = listOf(
+                Book(
+                    id = "clock-skew",
+                    title = "Clock Skew",
+                    author = "Veil",
+                    addedAtEpochMs = day,
+                    lastOpenedAtEpochMs = day * 500
+                )
+            ),
+            highlights = emptyList(),
+            bookmarks = emptyList(),
+            sessions = listOf(
+                ReadingSessionSnapshot(
+                    id = "valid-session",
+                    bookId = "clock-skew",
+                    startedAtEpochMs = day * 20,
+                    endedAtEpochMs = day * 20 + 60_000L,
+                    activeMillis = 60_000L,
+                    pacedPageTurns = 1,
+                    highlightCount = 0,
+                    noteCount = 0
+                )
+            ),
+            nowEpochMs = day * 21
+        )
+
+        // The valid session ended one minute after day 20 began, so at day 21 fewer than
+        // 24 full hours have elapsed. Future clock-skew data must be ignored without rounding
+        // a partial day up into false silence.
+        assertEquals(0, state.daysSinceLastActivity)
+        assertTrue(state.archiveAgeDays >= 20)
+    }
+
+    private fun sealedCycle(
+        book: Book,
+        cycleIndex: Int,
+        completedAt: Long
+    ): ReadingCycleRecord =
+        ReadingCycleRecord(
+            id = "cycle:${book.id}:$cycleIndex:$completedAt",
+            bookId = book.id,
+            cycleIndex = cycleIndex,
+            titleSnapshot = book.title,
+            authorSnapshot = book.author,
+            startedAtEpochMs = completedAt - 3_600_000L,
+            completedAtEpochMs = completedAt,
+            finalLocatorJson = "{}",
+            sessionCount = 1,
+            totalActiveMillis = 3_600_000L,
+            pacedPageTurns = 20,
+            highlightCount = 0,
+            noteCount = 0,
+            bookmarkCount = 0,
+            sealCode = "VR-TEST-$cycleIndex",
+            timeline = emptyList()
+        )
+
 }
