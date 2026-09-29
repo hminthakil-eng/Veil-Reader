@@ -1025,6 +1025,7 @@
     <string name="reader_notebook_find">پیدا کن</string>
     <string name="reader_notebook_search_unavailable">جست‌وجو برای این کتاب در دسترس نیست.</string>
     <string name="reader_notebook_search_failed">جست‌وجو کامل نشد.</string>
+    <string name="reader_notebook_current_section">بخش فعلی</string>
     <string name="reader_notebook_no_chapters">این کتاب فهرست فصل ندارد.</string>
     <string name="reader_notebook_untitled_section">بخش بدون عنوان</string>
     <string name="reader_notebook_bookmarks_empty">با نشانک‌گذاری در خواننده یک مکان را ذخیره کن؛ نشانک‌هایت اینجا ظاهر می‌شوند.</string>
