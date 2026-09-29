@@ -298,4 +298,38 @@ class ReaderPreferenceMappingTest {
         assertFalse(usesRtlReaderTypography(null))
     }
 
+    @Test
+    fun `fixed-layout runtime disables continuous scroll without destroying retained paged style`() {
+        PageTurnStyle.entries.forEach { retainedStyle ->
+            val requested = ReaderAppearance(
+                scroll = true,
+                pageTurnStyle = retainedStyle,
+                fontScale = 1.25
+            )
+            val effective = effectiveReaderAppearanceForPublication(
+                appearance = requested,
+                fixedLayout = true
+            )
+
+            assertFalse(effective.scroll)
+            assertEquals(retainedStyle, effective.pageTurnStyle)
+            assertEquals(1.25, effective.fontScale, 0.0001)
+        }
+    }
+
+    @Test
+    fun `reflowable runtime preserves requested continuous scroll`() {
+        val requested = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+        assertEquals(
+            requested,
+            effectiveReaderAppearanceForPublication(
+                appearance = requested,
+                fixedLayout = false
+            )
+        )
+    }
+
 }
