@@ -85,6 +85,7 @@ fun ReaderNotebook(
     var bookSearchQuery by rememberSaveable(opened.book.id) { mutableStateOf("") }
     var bookSearchResults by remember { mutableStateOf<List<Locator>>(emptyList()) }
     var bookSearchErrorRes by remember { mutableStateOf<Int?>(null) }
+    var bookSearchLimited by remember { mutableStateOf(false) }
     var searchingBook by remember { mutableStateOf(false) }
 
     val chapters = remember(opened.book.id) {
@@ -102,6 +103,7 @@ fun ReaderNotebook(
         scope.launch {
             searchingBook = true
             bookSearchErrorRes = null
+            bookSearchLimited = false
             bookSearchResults = emptyList()
             try {
                 val iterator = opened.publication.search(term)
@@ -110,10 +112,39 @@ fun ReaderNotebook(
                     return@launch
                 }
                 try {
-                    val found = mutableListOf<Locator>()
-                    iterator.forEach { page -> found += page.locators }
-                        .onFailure { bookSearchErrorRes = R.string.reader_notebook_search_failed }
-                    bookSearchResults = found
+                    val found = ArrayList<Locator>(
+                        READER_SEARCH_RESULT_LIMIT + 1
+                    )
+                    var failed = false
+                    while (
+                        !failed &&
+                        found.size <= READER_SEARCH_RESULT_LIMIT
+                    ) {
+                        var pageLocators: List<Locator>? = null
+                        var reachedEnd = false
+                        iterator.next()
+                            .onSuccess { page ->
+                                if (page == null) {
+                                    reachedEnd = true
+                                } else {
+                                    pageLocators = page.locators
+                                }
+                            }
+                            .onFailure {
+                                failed = true
+                                bookSearchErrorRes =
+                                    R.string.reader_notebook_search_failed
+                            }
+
+                        if (failed || reachedEnd) break
+                        val remaining =
+                            READER_SEARCH_RESULT_LIMIT + 1 - found.size
+                        found += pageLocators.orEmpty().take(remaining)
+                    }
+                    bookSearchLimited =
+                        found.size > READER_SEARCH_RESULT_LIMIT
+                    bookSearchResults =
+                        found.take(READER_SEARCH_RESULT_LIMIT)
                 } finally {
                     iterator.close()
                 }
@@ -466,6 +497,16 @@ fun ReaderNotebook(
                     }
 
                     ReaderNotebookTab.SEARCH -> {
+                        if (bookSearchLimited) {
+                            item {
+                                ReaderCapabilityNotice(
+                                    text = stringResource(
+                                        R.string.reader_notebook_search_limited,
+                                        READER_SEARCH_RESULT_LIMIT
+                                    )
+                                )
+                            }
+                        }
                         bookSearchErrorRes?.let { messageRes ->
                             item { Text(stringResource(messageRes), color = MaterialTheme.colorScheme.error) }
                         }
@@ -816,6 +857,8 @@ private fun localizedLastViewedLabel(memory: com.veilreader.app.domain.Highlight
         )
     }
 }
+
+private const val READER_SEARCH_RESULT_LIMIT = 250
 
 internal fun isCurrentReaderSection(
     linkHref: String,
