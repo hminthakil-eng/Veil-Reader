@@ -78,4 +78,40 @@ class SlideTurnPolicyTest {
             )
         )
     }
+    @Test
+    fun `duplicate terminal sample preserves a fresh slide flick`() {
+        assertTrue(
+            nextSlideReleaseVelocity(
+                previousVelocityPxPerSec = 1_400f,
+                distanceDeltaPx = 0f,
+                elapsedMillis = 14L,
+                sinceLastMotionMillis = 14L
+            ) == 1_400f
+        )
+    }
+
+    @Test
+    fun `stationary pause expires stale slide flick velocity`() {
+        assertTrue(
+            nextSlideReleaseVelocity(
+                previousVelocityPxPerSec = 1_400f,
+                distanceDeltaPx = 0f,
+                elapsedMillis = 160L,
+                sinceLastMotionMillis = 160L
+            ) == 0f
+        )
+    }
+
+    @Test
+    fun `fresh slide movement replaces previous release velocity`() {
+        assertTrue(
+            nextSlideReleaseVelocity(
+                previousVelocityPxPerSec = 200f,
+                distanceDeltaPx = 24f,
+                elapsedMillis = 12L,
+                sinceLastMotionMillis = 12L
+            ) == 2_000f
+        )
+    }
+
 }
