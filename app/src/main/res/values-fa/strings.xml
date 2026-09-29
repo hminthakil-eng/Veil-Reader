@@ -341,4 +341,17 @@
     <string name="library_header_empty">قفسه‌ها در انتظار نخستین کتاب‌اند.</string>
     <string name="library_header_one">%1$d کتاب در این دستگاه ثبت شده است.</string>
     <string name="library_header_many">%1$d کتاب در این دستگاه ثبت شده‌اند.</string>
+    <string name="library_search_hint">جست‌وجو در آرشیو…</string>
+    <string name="library_search_clear">پاک کردن</string>
+    <string name="library_import_preparing_label">آماده‌سازی کتاب</string>
+    <string name="library_import_preparing_body">فایل بررسی و رکورد محلی آن آماده می‌شود.</string>
+    <string name="library_empty_no_match_eyebrow">کتابی پیدا نشد</string>
+    <string name="library_empty_archive_eyebrow">آرشیو شما خالی است</string>
+    <string name="library_empty_no_match_title">در این بخش کتابی نیست</string>
+    <string name="library_empty_archive_title">جهان با نخستین کتاب آغاز می‌شود</string>
+    <string name="library_empty_no_match_body">هیچ کتابی با جست‌وجو، قفسه یا مجموعهٔ فعلی هماهنگ نیست. فیلترها را پاک کنید تا کتاب‌ها بازگردند.</string>
+    <string name="library_empty_archive_body">یک فایل EPUB یا PDF اضافه کنید. پیشرفت مطالعه، هایلایت‌ها و یادداشت‌ها روی همین دستگاه می‌مانند.</string>
+    <string name="library_empty_clear_filters">پاک کردن فیلترها</string>
+    <string name="library_empty_preparing">در حال آماده‌سازی کتاب…</string>
+    <string name="library_empty_import_first">افزودن نخستین کتاب</string>
 </resources>
