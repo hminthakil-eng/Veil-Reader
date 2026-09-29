@@ -43,6 +43,7 @@ internal class SlideNavigationInputListener(
     private var cancellationRequested = false
     private var turnCommitted = false
     private var lastSampleAtMillis = 0L
+    private var lastMotionAtMillis = 0L
     private var lastDistance = 0f
     private var releaseVelocityPxPerSec = 0f
 
@@ -101,6 +102,7 @@ internal class SlideNavigationInputListener(
         turnCommitted = false
         completionJob = null
         lastSampleAtMillis = SystemClock.uptimeMillis()
+        lastMotionAtMillis = 0L
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
         if (!isReducedMotion()) {
@@ -369,12 +371,20 @@ internal class SlideNavigationInputListener(
     private fun sampleVelocity(spec: TurnSpec, event: DragEvent) {
         val now = SystemClock.uptimeMillis()
         val distance = inwardDistance(spec.side, event.offset.x)
+        val delta = distance - lastDistance
         val elapsed = now - lastSampleAtMillis
-        if (lastSampleAtMillis > 0L && elapsed in 1L..120L) {
-            releaseVelocityPxPerSec =
-                ((distance - lastDistance) * 1000f / elapsed.toFloat())
-                    .coerceIn(-12_000f, 12_000f)
+        val sinceMotion = if (lastMotionAtMillis > 0L) {
+            now - lastMotionAtMillis
+        } else {
+            Long.MAX_VALUE
         }
+        releaseVelocityPxPerSec = nextSlideReleaseVelocity(
+            previousVelocityPxPerSec = releaseVelocityPxPerSec,
+            distanceDeltaPx = delta,
+            elapsedMillis = elapsed,
+            sinceLastMotionMillis = sinceMotion
+        )
+        if (abs(delta) >= 1f) lastMotionAtMillis = now
         lastSampleAtMillis = now
         lastDistance = distance
     }
@@ -412,6 +422,7 @@ internal class SlideNavigationInputListener(
         cancellationRequested = false
         turnCommitted = false
         lastSampleAtMillis = 0L
+        lastMotionAtMillis = 0L
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
     }
@@ -439,6 +450,30 @@ internal fun shouldUseVeilSlideNavigation(
     format == com.veilreader.app.domain.BookFormat.EPUB &&
         !scroll &&
         pageTurnStyle == com.veilreader.app.domain.PageTurnStyle.SLIDE
+
+/**
+ * Drag End often repeats the final Move offset. Preserve a genuinely fresh flick through that
+ * duplicate sample, but expire it once the finger has actually paused.
+ */
+internal fun nextSlideReleaseVelocity(
+    previousVelocityPxPerSec: Float,
+    distanceDeltaPx: Float,
+    elapsedMillis: Long,
+    sinceLastMotionMillis: Long
+): Float {
+    if (abs(distanceDeltaPx) >= 1f) {
+        if (elapsedMillis in 1L..120L) {
+            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
+                .coerceIn(-12_000f, 12_000f)
+        }
+        return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
+            previousVelocityPxPerSec
+        } else {
+            0f
+        }
+    }
+    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
+}
 
 internal fun shouldCommitSlideTurn(
     inwardDistance: Float,
