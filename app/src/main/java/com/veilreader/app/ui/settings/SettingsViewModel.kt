@@ -9,6 +9,7 @@ import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -33,6 +34,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             store.saveReaderAppearance(appearance)
             ReaderTrace.event("appearance_persisted", details = details)
+        }
+    }
+
+    fun saveFixedLayoutSpread(
+        bookId: String,
+        mode: ReaderFixedLayoutSpread
+    ) {
+        viewModelScope.launch {
+            store.saveFixedLayoutSpread(bookId, mode)
         }
     }
 
