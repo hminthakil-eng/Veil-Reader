@@ -232,4 +232,70 @@ class ReaderPreferenceMappingTest {
         assertFalse(original.withFontScale(1.1).publisherStyles)
     }
 
+    @Test
+    fun `fixed layout disables renderer-owned typography and continuous scroll`() {
+        val capabilities = readerAppearanceCapabilities(
+            fixedLayout = true,
+            languageTag = "en",
+            continuousScroll = false
+        )
+
+        assertFalse(capabilities.typographyEditable)
+        assertFalse(capabilities.continuousScrollEditable)
+        assertFalse(capabilities.columnsEditable)
+        assertFalse(capabilities.hyphenationEditable)
+        assertFalse(capabilities.letterSpacingEditable)
+        assertFalse(capabilities.wordSpacingEditable)
+    }
+
+    @Test
+    fun `RTL publications keep script-safe spacing and hyphenation defaults`() {
+        listOf("fa", "fa-IR", "ar", "ur-PK", "he").forEach { language ->
+            val capabilities = readerAppearanceCapabilities(
+                fixedLayout = false,
+                languageTag = language,
+                continuousScroll = false
+            )
+            assertTrue(capabilities.typographyEditable)
+            assertFalse(capabilities.hyphenationEditable)
+            assertFalse(capabilities.letterSpacingEditable)
+            assertFalse(capabilities.wordSpacingEditable)
+        }
+
+        val ltr = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en-US",
+            continuousScroll = false
+        )
+        assertTrue(ltr.hyphenationEditable)
+        assertTrue(ltr.letterSpacingEditable)
+        assertTrue(ltr.wordSpacingEditable)
+    }
+
+    @Test
+    fun `continuous scroll alone disables column count`() {
+        val paged = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en",
+            continuousScroll = false
+        )
+        val scrolling = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en",
+            continuousScroll = true
+        )
+
+        assertTrue(paged.columnsEditable)
+        assertFalse(scrolling.columnsEditable)
+        assertTrue(scrolling.typographyEditable)
+    }
+
+    @Test
+    fun `RTL language detection uses primary BCP 47 subtag`() {
+        assertTrue(usesRtlReaderTypography("fa-IR"))
+        assertTrue(usesRtlReaderTypography("CKB_IQ"))
+        assertFalse(usesRtlReaderTypography("en-GB"))
+        assertFalse(usesRtlReaderTypography(null))
+    }
+
 }
