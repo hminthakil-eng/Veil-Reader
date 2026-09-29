@@ -147,7 +147,7 @@ fun ReaderScreen(
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val formatPercent = rememberVeilPercentFormatter()
-    var entryVisible by remember(opened.book.id) { mutableStateOf(true) }
+    var entryVisible by rememberSaveable(opened.book.id) { mutableStateOf(true) }
     var navigatorAttached by remember(opened.book.id) { mutableStateOf(false) }
     var previousLocationJson by rememberSaveable(opened.book.id) {
         mutableStateOf(initialReturnLocatorJson)
@@ -187,13 +187,17 @@ fun ReaderScreen(
 
     var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
-    var controlsVisible by remember(opened.book.id) { mutableStateOf(false) }
+    var controlsVisible by rememberSaveable(opened.book.id) { mutableStateOf(false) }
     var selectionModeActive by remember(opened.book.id) { mutableStateOf(false) }
     val accessibilityManager = remember(activity) {
         activity.getSystemService(AccessibilityManager::class.java)
     }
     val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
     val reducedMotion = LocalVeilReducedMotion.current
+
+    LaunchedEffect(touchExplorationEnabled, opened.book.id) {
+        if (touchExplorationEnabled) controlsVisible = true
+    }
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
@@ -214,8 +218,8 @@ fun ReaderScreen(
     var slideInputListener by remember(opened.book.id) {
         mutableStateOf<SlideNavigationInputListener?>(null)
     }
-    var showAppearance by remember { mutableStateOf(false) }
-    var showPdfZoom by remember { mutableStateOf(false) }
+    var showAppearance by rememberSaveable(opened.book.id) { mutableStateOf(false) }
+    var showPdfZoom by rememberSaveable(opened.book.id) { mutableStateOf(false) }
     val latestAppearance = rememberUpdatedState(readerAppearance)
     val paperCurlConfig = remember(readerAppearance.theme) {
         when (readerAppearance.theme) {
@@ -265,7 +269,7 @@ fun ReaderScreen(
             )
         }
     }
-    var showNotebook by remember { mutableStateOf(false) }
+    var showNotebook by rememberSaveable(opened.book.id) { mutableStateOf(false) }
 
     LaunchedEffect(readerAppearance, opened.book.id) {
         ReaderTrace.event(
@@ -816,8 +820,8 @@ fun ReaderScreen(
     val controlsActionLabel = stringResource(
         if (controlsVisible) R.string.reader_hide_controls else R.string.reader_show_controls
     )
-    val progressPercent = (progress.coerceIn(0f, 1f) * 100).toInt()
-    val progressDescription = stringResource(R.string.reader_percent_read, progressPercent)
+    val progressLabel = formatPercent(progress.coerceIn(0f, 1f))
+    val progressDescription = stringResource(R.string.reader_percent_read_text, progressLabel)
 
     Box(
         Modifier
@@ -945,7 +949,7 @@ fun ReaderScreen(
                         }
 
                         Text(
-                            "$progressPercent%",
+                            progressLabel,
                             modifier = Modifier.semantics {
                                 contentDescription =
                                     progressDescription
