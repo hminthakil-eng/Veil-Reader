@@ -395,6 +395,8 @@ internal fun deriveReaderDossierHistory(
 
 @Composable
 private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    val startDate = formatDossierDate(history.firstRecordedAtEpochMs)
+    val endDate = formatDossierDate(history.latestRecordedAtEpochMs)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
@@ -408,18 +410,18 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "DURABLE LEDGER",
+                    stringResource(R.string.profile_ledger_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Recorded history",
+                    stringResource(R.string.profile_ledger_title),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
             }
             Text(
-                "${history.recordedSessionCount} sessions",
+                stringResource(R.string.profile_sessions_count, history.recordedSessionCount),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -428,32 +430,28 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         BrassRule(Modifier.fillMaxWidth())
 
         DossierLedgerLine(
-            label = "Archive span",
-            value = buildString {
-                append(formatDossierDate(history.firstRecordedAtEpochMs))
-                append(" — ")
-                append(formatDossierDate(history.latestRecordedAtEpochMs))
-            }
+            label = stringResource(R.string.profile_archive_span),
+            value = "$startDate — $endDate"
         )
         DossierLedgerLine(
-            label = "Recorded active time",
+            label = stringResource(R.string.profile_active_time),
             value = formatDossierDuration(history.recordedActiveMillis)
         )
         DossierLedgerLine(
-            label = "Completion records",
-            value = "${history.completionCycleCount}"
+            label = stringResource(R.string.profile_completion_records),
+            value = history.completionCycleCount.toString()
         )
         DossierLedgerLine(
-            label = "Reread cycles",
-            value = "${history.rereadCycleCount}"
+            label = stringResource(R.string.profile_reread_cycles),
+            value = history.rereadCycleCount.toString()
         )
         DossierLedgerLine(
-            label = "Archived volumes",
-            value = "${history.archivedVolumeCount}"
+            label = stringResource(R.string.profile_archived_volumes),
+            value = history.archivedVolumeCount.toString()
         )
 
         Text(
-            "This ledger uses durable local book, session, and completion records; it does not infer missing reading history.",
+            stringResource(R.string.profile_ledger_note),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.58f)
         )
@@ -485,26 +483,31 @@ private fun DossierLedgerLine(
     }
 }
 
+@Composable
 private fun formatDossierDate(epochMs: Long?): String =
     epochMs
         ?.takeIf { it > 0L }
         ?.let {
             DateFormat.getDateInstance(DateFormat.MEDIUM)
                 .format(Date(it))
-                .uppercase()
         }
-        ?: "NO RECORD"
+        ?: stringResource(R.string.profile_no_record)
 
+@Composable
 private fun formatDossierDuration(activeMillis: Long): String {
     val minutes = activeMillis.coerceAtLeast(0L) / 60_000L
     return when {
         minutes >= 60L -> {
             val hours = minutes / 60L
             val rest = minutes % 60L
-            if (rest == 0L) "${hours}h" else "${hours}h ${rest}m"
+            if (rest == 0L) {
+                stringResource(R.string.profile_duration_hours, hours)
+            } else {
+                stringResource(R.string.profile_duration_hours_minutes, hours, rest)
+            }
         }
-        minutes > 0L -> "${minutes}m"
-        else -> "<1m"
+        minutes > 0L -> stringResource(R.string.profile_duration_minutes, minutes)
+        else -> stringResource(R.string.profile_duration_under_minute)
     }
 }
 
@@ -791,14 +794,44 @@ private fun DossierRecordGrid(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("RETURN", "${profile.streakDays}d", "current streak", Modifier.weight(1f))
-            DossierStat("VOLUMES", "${profile.booksFinished}", "finished", Modifier.weight(1f))
-            DossierStat("MARKS", "$highlightCount", "highlights", Modifier.weight(1f))
+            DossierStat(
+                stringResource(R.string.profile_stat_return),
+                stringResource(R.string.profile_stat_streak_value, profile.streakDays),
+                stringResource(R.string.profile_stat_current_streak),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_volumes),
+                profile.booksFinished.toString(),
+                stringResource(R.string.profile_stat_finished),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_marks),
+                highlightCount.toString(),
+                stringResource(R.string.profile_stat_highlights),
+                Modifier.weight(1f)
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("PAGES", "${profile.pagesRead}", "turned", Modifier.weight(1f))
-            DossierStat("TIME", formatMinutes(profile.minutesRead), "inside books", Modifier.weight(1f))
-            DossierStat("TIER", "${profile.rankIndex + 1}", "castle", Modifier.weight(1f))
+            DossierStat(
+                stringResource(R.string.profile_stat_pages),
+                profile.pagesRead.toString(),
+                stringResource(R.string.profile_stat_turned),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_time),
+                formatMinutes(profile.minutesRead),
+                stringResource(R.string.profile_stat_inside_books),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_tier),
+                (profile.rankIndex + 1).toString(),
+                stringResource(R.string.profile_stat_castle),
+                Modifier.weight(1f)
+            )
         }
     }
 }
@@ -899,7 +932,11 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
                     color = VeilPalette.Moon
                 )
                 Text(
-                    if (earned) "AWAKENED" else "${value.coerceAtMost(target)}/$target",
+                    if (earned) {
+                        stringResource(R.string.profile_awakened)
+                    } else {
+                        "${value.coerceAtMost(target)}/$target"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = if (earned) VeilPalette.Brass else VeilPalette.Mist
                 )
@@ -919,6 +956,7 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
 private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Boolean) {
     val shape = MaterialTheme.shapes.extraSmall
     val accent = if (revealed) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.48f)
+    val copy = localizedDiscoveryCopy(discovery.id)
 
     Box(
         Modifier
@@ -954,23 +992,26 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 Text(
-                    if (revealed) discovery.title else "Veiled Fragment ${index + 1}",
+                    if (revealed) copy.title
+                    else stringResource(R.string.profile_veiled_fragment, index + 1),
                     style = MaterialTheme.typography.titleLarge,
                     color = if (revealed) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.62f)
                 )
                 Text(
-                    if (revealed) "REVEALED" else "CLUE",
+                    stringResource(
+                        if (revealed) R.string.profile_revealed else R.string.profile_clue
+                    ),
                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.3.sp),
                     color = accent
                 )
                 Text(
-                    if (revealed) discovery.lore else discovery.clue,
+                    if (revealed) copy.lore else copy.clue,
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist
                 )
                 if (revealed) {
                     Text(
-                        "This discovery emerged from your existing reading history; no action was consumed and nothing expires.",
+                        stringResource(R.string.profile_discovery_durable_note),
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Spirit
                     )
@@ -1002,7 +1043,16 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
     }
 }
 
-private fun formatMinutes(minutes: Int): String = when {
-    minutes < 60 -> "${minutes}m"
-    else -> "${minutes / 60}h ${minutes % 60}m"
-}
+@Composable
+private fun formatMinutes(minutes: Int): String =
+    if (minutes < 60) {
+        stringResource(R.string.profile_duration_minutes, minutes)
+    } else {
+        val hours = minutes / 60
+        val rest = minutes % 60
+        if (rest == 0) {
+            stringResource(R.string.profile_duration_hours, hours)
+        } else {
+            stringResource(R.string.profile_duration_hours_minutes, hours, rest)
+        }
+    }
