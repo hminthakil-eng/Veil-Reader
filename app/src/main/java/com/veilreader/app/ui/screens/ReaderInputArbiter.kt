@@ -47,9 +47,11 @@ internal fun pageTurnTapZonePx(
     if (width <= 0f) return 0f
     val safeDensity = density.coerceAtLeast(0.1f)
     val minComfortableZone = 56f * safeDensity
+    val maxComfortableZone = 112f * safeDensity
     val preferred = width * preferredFraction.coerceIn(0.14f, 0.26f)
+    val upperBound = minOf(maxComfortableZone, width * 0.28f)
     return maxOf(minComfortableZone, preferred)
-        .coerceAtMost(width * 0.28f)
+        .coerceAtMost(upperBound)
 }
 
 internal fun shouldUseDirectionalTapNavigation(
