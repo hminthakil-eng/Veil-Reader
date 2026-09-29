@@ -2,9 +2,10 @@ package com.veilreader.app.ui
 
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.Surface
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
@@ -22,6 +23,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -760,38 +763,90 @@ fun VeilApp(
             VeilNoticeKind.WARNING -> R.string.notice_warning_title
             VeilNoticeKind.ERROR -> R.string.notice_error_title
         }
-        AlertDialog(
-            onDismissRequest = { notice = null },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        VeilNoticeDialog(
+            eyebrow = stringResource(eyebrow),
+            title = stringResource(heading),
+            message = currentNotice.message,
+            actionLabel = stringResource(R.string.notice_return),
+            onDismiss = { notice = null }
+        )
+    }
+}
+}
+
+@Composable
+private fun VeilNoticeDialog(
+    eyebrow: String,
+    title: String,
+    message: String,
+    actionLabel: String,
+    onDismiss: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = true,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = VeilPalette.Archive,
+                border = BorderStroke(
+                    1.dp,
+                    VeilPalette.Brass.copy(alpha = 0.46f)
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Text(
-                        stringResource(eyebrow),
+                        eyebrow,
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        stringResource(heading),
-                        style = MaterialTheme.typography.titleLarge
+                        title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = VeilPalette.Moon
                     )
-                }
-            },
-            text = { Text(currentNotice.message) },
-            confirmButton = {
-                Button(
-                    onClick = { notice = null },
-                    shape = MaterialTheme.shapes.extraSmall
-                ) {
-                    Text(stringResource(R.string.notice_return))
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(1.dp),
+                        color = VeilPalette.Brass.copy(alpha = 0.24f)
+                    ) {}
+                    Text(
+                        message,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Button(
+                        onClick = onDismiss,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 50.dp),
+                        shape = MaterialTheme.shapes.extraSmall
+                    ) {
+                        Text(actionLabel)
+                    }
                 }
             }
-        )
+        }
     }
-}
 }
 
 private enum class VeilNoticeKind { SUCCESS, WARNING, ERROR }
