@@ -7,6 +7,16 @@ private const val RETURN_GAP_DAYS = 21
 private const val RETURN_RECENT_DAYS = 3
 private const val SILENCE_GRACE_DAYS = 14
 
+enum class CastleMutationSignal {
+    NONE,
+    RETURN_AWAKENING,
+    LONG_SILENCE,
+    REREAD_PATINA,
+    SCRIPTORIUM_LIGHT,
+    COMPLETION_ALCOVES,
+    FOUNDATION_WEIGHT
+}
+
 data class CastleMemoryState(
     val volumeCount: Int,
     val completedCount: Int,
@@ -40,7 +50,8 @@ data class CastleMemoryState(
     val scriptoriumLamps: Int = 0,
     val foundationCourses: Int = 2,
     val rereadRings: Int = 0,
-    val mutationInscription: String = "The keep changes only where your reading leaves durable evidence."
+    val mutationInscription: String = "The keep changes only where your reading leaves durable evidence.",
+    val mutationSignal: CastleMutationSignal = CastleMutationSignal.NONE
 ) {
     fun resonanceFor(roomId: String): Float =
         when (roomId) {
@@ -287,20 +298,29 @@ fun deriveCastleMemoryState(
             "The keep is dense with memory. Very little inside it is still silent."
     }
 
-    val mutationInscription = when {
-        returnAwakening >= 0.28f ->
+    val mutationSignal = when {
+        returnAwakening >= 0.28f -> CastleMutationSignal.RETURN_AWAKENING
+        longSilence >= 0.58f -> CastleMutationSignal.LONG_SILENCE
+        rereads >= 3 -> CastleMutationSignal.REREAD_PATINA
+        annotations >= 12 -> CastleMutationSignal.SCRIPTORIUM_LIGHT
+        completed >= 6 -> CastleMutationSignal.COMPLETION_ALCOVES
+        activeHours >= 20f -> CastleMutationSignal.FOUNDATION_WEIGHT
+        else -> CastleMutationSignal.NONE
+    }
+    val mutationInscription = when (mutationSignal) {
+        CastleMutationSignal.RETURN_AWAKENING ->
             "After a long quiet, lamps are waking from the foundation upward."
-        longSilence >= 0.58f ->
+        CastleMutationSignal.LONG_SILENCE ->
             "The halls have gone cold with distance, but none of their records were erased."
-        rereads >= 3 ->
+        CastleMutationSignal.REREAD_PATINA ->
             "Repeated journeys have worn rings into the stone around familiar shelves."
-        annotations >= 12 ->
+        CastleMutationSignal.SCRIPTORIUM_LIGHT ->
             "The scriptorium burns late; the margins have become a second archive."
-        completed >= 6 ->
+        CastleMutationSignal.COMPLETION_ALCOVES ->
             "Finished volumes have opened a line of sealed alcoves beneath the keep."
-        activeHours >= 20f ->
+        CastleMutationSignal.FOUNDATION_WEIGHT ->
             "Long hours have settled into the foundation as weight rather than ornament."
-        else ->
+        CastleMutationSignal.NONE ->
             "The keep changes only where your reading leaves durable evidence."
     }
 
@@ -350,7 +370,8 @@ fun deriveCastleMemoryState(
                 returnAwakening * 0.10f
             ).coerceIn(0.14f, 0.64f),
         inscription = inscription,
-        mutationInscription = mutationInscription
+        mutationInscription = mutationInscription,
+        mutationSignal = mutationSignal
     )
 }
 
