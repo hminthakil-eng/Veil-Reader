@@ -86,11 +86,18 @@ internal class PaperCurlState {
             current = rawCanonicalCurrent,
             pageWidth = width
         )
+        val edgeGrip = paperEdgeGrip(
+            canonicalStartX = canonicalStart.x,
+            pageWidth = width
+        )
         val canonicalCurrent = paperWeightedDragCurrent(
             start = canonicalStart,
             current = rawCanonicalCurrent,
             response = paperHorizontalDragResponse(inwardFraction),
-            verticalResponse = paperVerticalDragResponse(inwardFraction)
+            verticalResponse = (
+                paperVerticalDragResponse(inwardFraction) +
+                    edgeGrip * 0.10f
+                ).coerceAtMost(0.76f)
         ).let {
             Offset(
                 it.x.coerceIn(-width * 0.25f, width * 1.25f),
