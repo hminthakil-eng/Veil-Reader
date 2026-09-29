@@ -9,6 +9,7 @@ import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
+    IMAGE,
     PAPER,
     SLIDE,
     DIRECTIONAL,
@@ -87,6 +88,7 @@ internal fun shouldAnimateDirectionalNavigation(
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
+    private val contentTarget: InputListener?,
     private val paper: InputListener?,
     private val slide: InputListener?,
     private val staticPaged: InputListener?,
@@ -118,6 +120,11 @@ internal class ReaderInputArbiter(
                 return true
             }
             ReaderInteractionMode.NAVIGATION -> Unit
+        }
+
+        if (contentTarget?.onTap(event) == true) {
+            onTapOwner(ReaderTapOwner.IMAGE)
+            return true
         }
 
         if (paper?.onTap(event) == true) {
