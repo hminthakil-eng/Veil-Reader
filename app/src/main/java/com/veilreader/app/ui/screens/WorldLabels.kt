@@ -69,7 +69,7 @@ internal fun localizedPathIdentity(path: ReadingPath): LocalizedPathIdentity {
             R.string.path_artificer_description
         )
         else -> return LocalizedPathIdentity(
-            aspect = "Reading",
+            aspect = stringResource(R.string.path_generic_aspect),
             invocation = path.epithet,
             epithet = path.epithet,
             description = path.description
@@ -141,13 +141,13 @@ internal fun localizedPathDoctrine(pathId: String): LocalizedPathDoctrine {
             R.string.path_artificer_stability_description
         )
         else -> return LocalizedPathDoctrine(
-            maxim = "",
-            embodimentName = "Embodiment",
-            embodimentDescription = "",
-            insightName = "Insight",
-            insightDescription = "",
-            stabilityName = "Stability",
-            stabilityDescription = ""
+            maxim = stringResource(R.string.path_generic_maxim),
+            embodimentName = stringResource(R.string.path_generic_embodiment_name),
+            embodimentDescription = stringResource(R.string.path_generic_embodiment_description),
+            insightName = stringResource(R.string.path_generic_insight_name),
+            insightDescription = stringResource(R.string.path_generic_insight_description),
+            stabilityName = stringResource(R.string.path_generic_stability_name),
+            stabilityDescription = stringResource(R.string.path_generic_stability_description)
         )
     }
     return LocalizedPathDoctrine(
