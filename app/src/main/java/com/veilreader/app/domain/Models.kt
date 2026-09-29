@@ -149,8 +149,21 @@ data class ReaderAppearance(
             ReaderNavigationMode.PAGED ->
                 copy(scroll = false, pageTurnStyle = PageTurnStyle.NONE)
             ReaderNavigationMode.SCROLL ->
-                copy(scroll = true)
+                copy(scroll = true, pageTurnStyle = PageTurnStyle.NONE)
         }
+
+    /**
+     * Repairs legacy or externally-constructed states where continuous scroll still carries a
+     * hidden paginated transition. Keeping one canonical representation prevents Scroll from
+     * resurrecting Curl/Slide when older persistence or UI code toggles the boolean directly.
+     */
+    fun canonicalizedNavigation(): ReaderAppearance =
+        if (scroll && pageTurnStyle != PageTurnStyle.NONE) {
+            copy(pageTurnStyle = PageTurnStyle.NONE)
+        } else {
+            this
+        }
+
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
 
