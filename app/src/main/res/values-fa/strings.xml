@@ -357,7 +357,7 @@
     <string name="notice_success_eyebrow">ثبت در آرشیو</string>
     <string name="notice_success_title">عملیات انجام شد</string>
     <string name="notice_warning_eyebrow">نیازمند توجه</string>
-    <string name="notice_warning_title">جای مطالعه را حفظ کنید</string>
+    <string name="notice_warning_title">یک تغییر نیاز به بررسی دارد</string>
     <string name="notice_error_eyebrow">وقفهٔ محلی</string>
     <string name="notice_error_title">عملیات کامل نشد</string>
     <string name="notice_return">بازگشت</string>
