@@ -293,17 +293,24 @@ fun LibraryScreen(
     }
 
     val trimmedQuery = query.trim()
+    val normalizedQuery = remember(trimmedQuery) {
+        normalizeLibrarySearchText(trimmedQuery)
+    }
+    val searchableByBookId = remember(books) {
+        books.associate { book ->
+            val fields = buildList {
+                add(book.title)
+                add(book.author)
+                book.seriesName?.let(::add)
+                book.language?.let(::add)
+                addAll(book.allCollections)
+            }
+            book.id to fields.map(::normalizeLibrarySearchText)
+        }
+    }
     val filtered = books.filter { book ->
-        val searchable = buildList {
-            add(book.title)
-            add(book.author)
-            book.seriesName?.let(::add)
-            book.language?.let(::add)
-            addAll(book.allCollections)
-        }
-        val matchesQuery = trimmedQuery.isBlank() || searchable.any {
-            it.contains(trimmedQuery, ignoreCase = true)
-        }
+        val matchesQuery = normalizedQuery.isBlank() ||
+            searchableByBookId[book.id].orEmpty().any { it.contains(normalizedQuery) }
         val matchesShelf = when (shelf) {
             "Reading" -> !book.finished && book.progress > 0f
             "Unread" -> !book.finished && book.progress == 0f
