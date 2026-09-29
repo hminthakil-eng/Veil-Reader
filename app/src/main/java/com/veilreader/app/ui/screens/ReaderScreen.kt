@@ -1646,6 +1646,17 @@ private fun EpubAppearancePanel(
         onChange(value)
     }
 
+    // Keep the sheet preview responsive while avoiding a Readium preference submit
+    // and settings write for every pixel of a typography slider drag.
+    fun previewDraft(value: ReaderAppearance) {
+        draft = value
+        hasPendingDraft = true
+    }
+
+    fun commitDraft() {
+        if (hasPendingDraft) onChange(draft)
+    }
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -1764,7 +1775,8 @@ private fun EpubAppearancePanel(
             }
             Slider(
                 value = draft.fontScale.toFloat(),
-                onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 valueRange = .75f..1.8f
             )
 
@@ -1808,7 +1820,8 @@ private fun EpubAppearancePanel(
             }
             Slider(
                 value = draft.lineHeight.toFloat(),
-                onValueChange = { updateDraft(draft.withLineHeight(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withLineHeight(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 valueRange = 1.1f..2.0f
             )
 
@@ -1829,7 +1842,8 @@ private fun EpubAppearancePanel(
             }
             Slider(
                 value = draft.pageMargins.toFloat(),
-                onValueChange = { updateDraft(draft.withPageMargins(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withPageMargins(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 valueRange = .5f..2.0f
             )
 
@@ -1862,7 +1876,15 @@ private fun EpubAppearancePanel(
             }
 
             OutlinedButton(
-                onClick = { updateDraft(ReaderAppearance()) },
+                onClick = {
+                    updateDraft(
+                        ReaderAppearance().copy(
+                            scroll = draft.scroll,
+                            pageTurnStyle = draft.pageTurnStyle,
+                            screenBrightness = draft.screenBrightness
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
@@ -1884,7 +1906,10 @@ private fun EpubAppearancePanel(
         )
 
         Button(
-            onClick = onDone,
+            onClick = {
+                commitDraft()
+                onDone()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 52.dp),
