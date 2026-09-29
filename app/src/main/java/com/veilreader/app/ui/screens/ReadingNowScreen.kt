@@ -693,10 +693,11 @@ private fun RecentBookCard(
 @Composable
 private fun recentBookStatus(book: Book): String {
     val progress = book.progress.coerceIn(0f, 1f)
+    val formatPercent = rememberVeilPercentFormatter()
     return when {
         book.finished -> stringResource(R.string.book_detail_finished)
         progress <= 0f -> stringResource(R.string.book_detail_not_started)
-        else -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
+        else -> stringResource(R.string.book_detail_percent_read_text, formatPercent(progress))
     }
 }
 
