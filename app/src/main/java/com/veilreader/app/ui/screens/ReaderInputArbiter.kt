@@ -10,9 +10,30 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
     PAPER,
+    SLIDE,
     DIRECTIONAL,
     CHROME,
-    RENDERER
+    RENDERER,
+    BLOCKED
+}
+
+internal enum class ReaderInteractionMode {
+    NAVIGATION,
+    CHROME_PRIORITY,
+    RENDERER_SELECTION,
+    BLOCKED
+}
+
+internal fun readerInteractionMode(
+    selectionModeActive: Boolean,
+    overlayVisible: Boolean,
+    closeInFlight: Boolean,
+    controlsVisible: Boolean
+): ReaderInteractionMode = when {
+    selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
+    overlayVisible || closeInFlight -> ReaderInteractionMode.BLOCKED
+    controlsVisible -> ReaderInteractionMode.CHROME_PRIORITY
+    else -> ReaderInteractionMode.NAVIGATION
 }
 
 internal fun shouldUseDirectionalTapNavigation(
@@ -22,7 +43,7 @@ internal fun shouldUseDirectionalTapNavigation(
 ): Boolean =
     format == BookFormat.EPUB &&
         !scroll &&
-        pageTurnStyle != PageTurnStyle.PAPER
+        pageTurnStyle == PageTurnStyle.NONE
 
 /**
  * Page-turn style is an EPUB-only preference.
@@ -42,19 +63,49 @@ internal fun shouldAnimateDirectionalNavigation(
  * One Veil input listener is registered with Readium.
  *
  * Internal delegate order is product policy, not an incidental registration order:
- * paper turn -> directional edge navigation -> Veil chrome -> renderer fallback.
+ * paper curl -> Veil slide -> static paged navigation -> directional keys -> Veil chrome -> renderer fallback.
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
     private val paper: InputListener?,
+    private val slide: InputListener?,
+    private val staticPaged: InputListener?,
     private val directional: InputListener,
     private val chromeTap: (TapEvent) -> Boolean,
+    private val interactionMode: () -> ReaderInteractionMode = {
+        ReaderInteractionMode.NAVIGATION
+    },
     private val onTapOwner: (ReaderTapOwner) -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
+        when (interactionMode()) {
+            ReaderInteractionMode.RENDERER_SELECTION -> {
+                onTapOwner(ReaderTapOwner.RENDERER)
+                return false
+            }
+            ReaderInteractionMode.BLOCKED -> {
+                onTapOwner(ReaderTapOwner.BLOCKED)
+                return true
+            }
+            ReaderInteractionMode.CHROME_PRIORITY -> {
+                if (chromeTap(event)) {
+                    onTapOwner(ReaderTapOwner.CHROME)
+                    return true
+                }
+                onTapOwner(ReaderTapOwner.BLOCKED)
+                return true
+            }
+            ReaderInteractionMode.NAVIGATION -> Unit
+        }
+
         if (paper?.onTap(event) == true) {
             onTapOwner(ReaderTapOwner.PAPER)
+            return true
+        }
+
+        if (slide?.onTap(event) == true) {
+            onTapOwner(ReaderTapOwner.SLIDE)
             return true
         }
 
@@ -72,9 +123,29 @@ internal class ReaderInputArbiter(
         return false
     }
 
-    override fun onDrag(event: DragEvent): Boolean =
-        paper?.onDrag(event) == true
+    override fun onDrag(event: DragEvent): Boolean {
+        when (interactionMode()) {
+            ReaderInteractionMode.RENDERER_SELECTION -> return false
+            ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.NAVIGATION,
+            ReaderInteractionMode.CHROME_PRIORITY -> Unit
+        }
 
-    override fun onKey(event: KeyEvent): Boolean =
-        directional.onKey(event)
+        if (paper?.onDrag(event) == true) return true
+        if (slide?.onDrag(event) == true) return true
+        if (staticPaged?.onDrag(event) == true) return true
+        return false
+    }
+
+    override fun onKey(event: KeyEvent): Boolean {
+        when (interactionMode()) {
+            ReaderInteractionMode.RENDERER_SELECTION -> return false
+            ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.NAVIGATION,
+            ReaderInteractionMode.CHROME_PRIORITY -> Unit
+        }
+
+        if (slide?.onKey(event) == true) return true
+        return directional.onKey(event)
+    }
 }
