@@ -103,16 +103,31 @@ internal data class LibraryShelfGroup(
     val books: List<Book>
 )
 
+internal data class LibraryShelfLabels(
+    val filteredArchive: String = "Filtered archive",
+    val matchingVolumes: String = "Matching volumes",
+    val journey: String = "Journey",
+    val currentlyReading: String = "Currently reading",
+    val collection: String = "Collection",
+    val series: String = "Series",
+    val author: String = "Author",
+    val record: String = "Record",
+    val completedVolumes: String = "Completed volumes",
+    val unopened: String = "Unopened",
+    val waitingOnShelf: String = "Waiting on the shelf"
+)
+
 internal fun deriveLibraryShelfGroups(
     books: List<Book>,
     filtered: List<Book>,
-    filterActive: Boolean
+    filterActive: Boolean,
+    labels: LibraryShelfLabels = LibraryShelfLabels()
 ): List<LibraryShelfGroup> {
     if (filterActive) {
         return listOf(
             LibraryShelfGroup(
-                eyebrow = "Filtered archive",
-                title = "Matching volumes",
+                eyebrow = labels.filteredArchive,
+                title = labels.matchingVolumes,
                 books = filtered
             )
         ).filter { it.books.isNotEmpty() }
@@ -124,7 +139,7 @@ internal fun deriveLibraryShelfGroups(
         .filter { !it.finished && it.progress > 0f }
         .sortedByDescending { it.lastOpenedAtEpochMs }
         .takeIf { it.isNotEmpty() }
-        ?.let { groups += LibraryShelfGroup("Journey", "Currently reading", it) }
+        ?.let { groups += LibraryShelfGroup(labels.journey, labels.currentlyReading, it) }
 
     books
         .flatMap { book -> book.allCollections.map { it to book } }
@@ -133,7 +148,7 @@ internal fun deriveLibraryShelfGroups(
         .sortedByDescending { it.second.size }
         .take(6)
         .forEach { (name, volumes) ->
-            groups += LibraryShelfGroup("Collection", name, volumes)
+            groups += LibraryShelfGroup(labels.collection, name, volumes)
         }
 
     books
@@ -144,7 +159,7 @@ internal fun deriveLibraryShelfGroups(
         .take(6)
         .forEach { (name, volumes) ->
             groups += LibraryShelfGroup(
-                eyebrow = "Series",
+                eyebrow = labels.series,
                 title = name,
                 books = volumes.sortedWith(
                     compareBy<Book> { it.seriesIndex ?: Double.MAX_VALUE }
@@ -161,18 +176,18 @@ internal fun deriveLibraryShelfGroups(
         .sortedByDescending { it.second.size }
         .take(4)
         .forEach { (name, volumes) ->
-            groups += LibraryShelfGroup("Author", name, volumes)
+            groups += LibraryShelfGroup(labels.author, name, volumes)
         }
 
     books
         .filter { it.finished }
         .takeIf { it.isNotEmpty() }
-        ?.let { groups += LibraryShelfGroup("Record", "Completed volumes", it) }
+        ?.let { groups += LibraryShelfGroup(labels.record, labels.completedVolumes, it) }
 
     books
         .filter { !it.finished && it.progress <= 0f }
         .takeIf { it.isNotEmpty() }
-        ?.let { groups += LibraryShelfGroup("Unopened", "Waiting on the shelf", it) }
+        ?.let { groups += LibraryShelfGroup(labels.unopened, labels.waitingOnShelf, it) }
 
     return groups
 }
@@ -360,9 +375,22 @@ fun LibraryScreen(
     val detailBook = detailBookId?.let(booksById::get)
     val filterActive = trimmedQuery.isNotBlank() || shelf != "All" ||
         collection.isNotEmpty() || seriesFilter.isNotEmpty()
-    val shelfGroups = remember(books, filtered, filterActive, viewMode) {
+    val shelfLabels = LibraryShelfLabels(
+        filteredArchive = stringResource(R.string.library_group_filtered),
+        matchingVolumes = stringResource(R.string.library_group_matching),
+        journey = stringResource(R.string.library_group_journey),
+        currentlyReading = stringResource(R.string.library_group_currently_reading),
+        collection = stringResource(R.string.library_group_collection),
+        series = stringResource(R.string.library_group_series),
+        author = stringResource(R.string.library_group_author),
+        record = stringResource(R.string.library_group_record),
+        completedVolumes = stringResource(R.string.library_group_completed),
+        unopened = stringResource(R.string.library_group_unopened),
+        waitingOnShelf = stringResource(R.string.library_group_waiting)
+    )
+    val shelfGroups = remember(books, filtered, filterActive, viewMode, shelfLabels) {
         if (viewMode == LibraryViewMode.SHELVES) {
-            deriveLibraryShelfGroups(books, filtered, filterActive)
+            deriveLibraryShelfGroups(books, filtered, filterActive, shelfLabels)
         } else {
             emptyList()
         }
@@ -463,9 +491,9 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibrarySectionHeading(
-                    eyebrow = "Archive",
-                    title = "Shelves",
-                    trailing = "Tap to filter"
+                    eyebrow = stringResource(R.string.library_section_archive),
+                    title = stringResource(R.string.library_section_shelves),
+                    trailing = stringResource(R.string.library_tap_to_filter)
                 )
 
                 Row(
@@ -475,29 +503,29 @@ fun LibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     LibraryShelfCard(
-                        title = "Favorites",
-                        subtitle = "Volumes kept close",
+                        title = stringResource(R.string.library_shelf_favorites),
+                        subtitle = stringResource(R.string.library_shelf_favorites_subtitle),
                         count = books.count { it.favorite },
                         selected = shelf == "Favorites",
                         onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
                     )
                     LibraryShelfCard(
-                        title = "Currently Reading",
-                        subtitle = "Open journeys",
+                        title = stringResource(R.string.library_shelf_reading),
+                        subtitle = stringResource(R.string.library_shelf_reading_subtitle),
                         count = books.count { !it.finished && it.progress > 0f },
                         selected = shelf == "Reading",
                         onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
                     )
                     LibraryShelfCard(
-                        title = "Completed",
-                        subtitle = "Closed volumes",
+                        title = stringResource(R.string.library_shelf_completed),
+                        subtitle = stringResource(R.string.library_shelf_completed_subtitle),
                         count = books.count { it.finished },
                         selected = shelf == "Finished",
                         onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
                     )
                     LibraryShelfCard(
-                        title = "Deep Shelf",
-                        subtitle = "Long-unopened volumes",
+                        title = stringResource(R.string.library_shelf_deep),
+                        subtitle = stringResource(R.string.library_shelf_deep_subtitle),
                         count = memoryState.deepShelfBookIds.size,
                         selected = shelf == "Deep Shelf",
                         onClick = {
@@ -505,8 +533,8 @@ fun LibraryScreen(
                         }
                     )
                     LibraryShelfCard(
-                        title = "Plan to Read",
-                        subtitle = "Still unopened",
+                        title = stringResource(R.string.library_shelf_unread),
+                        subtitle = stringResource(R.string.library_shelf_unread_subtitle),
                         count = books.count { !it.finished && it.progress <= 0f },
                         selected = shelf == "Unread",
                         onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
