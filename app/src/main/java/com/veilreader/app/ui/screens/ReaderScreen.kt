@@ -502,15 +502,18 @@ fun ReaderScreen(
         // A drag preview can already have moved the live navigator underneath its captured page.
         // Roll it back synchronously before reading currentLocator; otherwise Close can persist the
         // preview destination even though the user never committed that page turn.
-        paperInputListener?.forceCancelPendingTurn()
-        slideInputListener?.forceCancelPendingTurn()
+        val cancelledPaperPreview =
+            paperInputListener?.forceCancelPendingTurn() == true
+        val cancelledSlidePreview =
+            slideInputListener?.forceCancelPendingTurn() == true
+        val cancelledPreview = cancelledPaperPreview || cancelledSlidePreview
 
         val unresolvedPreview = shouldSuppressNavigatorLocatorDuringPagePreview(
             format = opened.format,
             paperPreviewActive = paperCurlState.active,
             slidePreviewActive = slidePageState.active
         )
-        if (!unresolvedPreview) {
+        if (!cancelledPreview && !unresolvedPreview) {
             latestNavigator.value?.currentLocator?.value?.let { locator ->
                 recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
             }
@@ -613,15 +616,19 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_DESTROY -> {
                     // Lifecycle teardown may cancel the composition scope immediately. Restore an
                     // uncommitted preview synchronously before any final locator can be flushed.
-                    paperInputListener?.forceCancelPendingTurn()
-                    slideInputListener?.forceCancelPendingTurn()
+                    val cancelledPaperPreview =
+                        paperInputListener?.forceCancelPendingTurn() == true
+                    val cancelledSlidePreview =
+                        slideInputListener?.forceCancelPendingTurn() == true
+                    val cancelledPreview =
+                        cancelledPaperPreview || cancelledSlidePreview
                     val unresolvedPreview =
                         shouldSuppressNavigatorLocatorDuringPagePreview(
                             format = opened.format,
                             paperPreviewActive = paperCurlState.active,
                             slidePreviewActive = slidePageState.active
                         )
-                    if (!unresolvedPreview) {
+                    if (!cancelledPreview && !unresolvedPreview) {
                         latestNavigator.value?.currentLocator?.value?.let { locator ->
                             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
                         }
