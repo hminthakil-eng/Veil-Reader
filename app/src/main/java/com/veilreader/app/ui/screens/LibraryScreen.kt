@@ -942,78 +942,184 @@ fun LibraryScreen(
     }
 
     editing?.let { book ->
-        val parsedSeriesIndex = seriesIndex.trim().takeIf { it.isNotEmpty() }?.let(::parseLocalizedDecimalInput)
-        val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
-        AlertDialog(
+        val parsedSeriesIndex = seriesIndex
+            .trim()
+            .takeIf { it.isNotEmpty() }
+            ?.let(::parseLocalizedDecimalInput)
+        val seriesIndexInvalid =
+            seriesIndex.isNotBlank() &&
+                (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
+
+        Dialog(
             onDismissRequest = { editing = null },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        stringResource(R.string.library_archive_record),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        stringResource(R.string.book_metadata_dialog_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-            },
-            text = {
-                Column(
-                    Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+                    .padding(VeilSpacing.lg),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 620.dp)
+                        .heightIn(max = 720.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.50f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.book_metadata_title)) }, isError = title.isBlank())
-                    OutlinedTextField(author, { author = it }, label = { Text(stringResource(R.string.book_metadata_author)) })
-                    OutlinedTextField(
-                        collectionNames,
-                        { collectionNames = it },
-                        label = { Text(stringResource(R.string.book_metadata_collections)) },
-                        supportingText = { Text(stringResource(R.string.book_metadata_collections_hint)) }
-                    )
-                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text(stringResource(R.string.book_metadata_series)) })
-                    OutlinedTextField(
-                        seriesIndex,
-                        { seriesIndex = it },
-                        label = { Text(stringResource(R.string.book_metadata_series_number)) },
-                        isError = seriesIndexInvalid,
-                        supportingText = { if (seriesIndexInvalid) Text(stringResource(R.string.book_metadata_series_number_error)) }
-                    )
-                    OutlinedTextField(
-                        language,
-                        { language = it },
-                        label = { Text(stringResource(R.string.book_metadata_language)) },
-                        supportingText = { Text(stringResource(R.string.book_metadata_language_hint)) }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = title.isNotBlank() && !seriesIndexInvalid,
-                    onClick = {
-                        onEditMetadata(
-                            BookMetadataUpdate(
-                                bookId = book.id,
-                                title = title,
-                                author = author,
-                                collections = parseCollectionNames(collectionNames),
-                                seriesName = seriesName.trim().takeIf { it.isNotEmpty() },
-                                seriesIndex = parsedSeriesIndex,
-                                language = language.trim().takeIf { it.isNotEmpty() }
-                            )
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.26f
                         )
-                        editing = null
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(VeilSpacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.library_archive_record),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.25.sp
+                                ),
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.book_metadata_dialog_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f, fill = false)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = title,
+                                    onValueChange = { title = it },
+                                    label = { Text(stringResource(R.string.book_metadata_title)) },
+                                    isError = title.isBlank(),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = author,
+                                    onValueChange = { author = it },
+                                    label = { Text(stringResource(R.string.book_metadata_author)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = collectionNames,
+                                    onValueChange = { collectionNames = it },
+                                    label = { Text(stringResource(R.string.book_metadata_collections)) },
+                                    supportingText = {
+                                        Text(stringResource(R.string.book_metadata_collections_hint))
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = seriesName,
+                                    onValueChange = { seriesName = it },
+                                    label = { Text(stringResource(R.string.book_metadata_series)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = seriesIndex,
+                                    onValueChange = { seriesIndex = it },
+                                    label = {
+                                        Text(stringResource(R.string.book_metadata_series_number))
+                                    },
+                                    isError = seriesIndexInvalid,
+                                    supportingText = {
+                                        if (seriesIndexInvalid) {
+                                            Text(
+                                                stringResource(
+                                                    R.string.book_metadata_series_number_error
+                                                )
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = language,
+                                    onValueChange = { language = it },
+                                    label = { Text(stringResource(R.string.book_metadata_language)) },
+                                    supportingText = {
+                                        Text(stringResource(R.string.book_metadata_language_hint))
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            BrassRule(Modifier.fillMaxWidth())
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { editing = null },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                                Button(
+                                    enabled = title.isNotBlank() && !seriesIndexInvalid,
+                                    onClick = {
+                                        onEditMetadata(
+                                            BookMetadataUpdate(
+                                                bookId = book.id,
+                                                title = title,
+                                                author = author,
+                                                collections = parseCollectionNames(collectionNames),
+                                                seriesName = seriesName
+                                                    .trim()
+                                                    .takeIf { it.isNotEmpty() },
+                                                seriesIndex = parsedSeriesIndex,
+                                                language = language
+                                                    .trim()
+                                                    .takeIf { it.isNotEmpty() }
+                                            )
+                                        )
+                                        editing = null
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = Color(0xFF17120A)
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.common_save))
+                                }
+                            }
+                        }
                     }
-                ) { Text(stringResource(R.string.common_save)) }
-            },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text(stringResource(R.string.common_cancel)) } }
-        )
+                }
+            }
+        }
     }
 }
 
