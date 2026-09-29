@@ -32,7 +32,8 @@ internal class SlideNavigationInputListener(
     private val scope: CoroutineScope,
     private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
-    private val onCommittedTurn: () -> Unit
+    private val onCommittedTurn: () -> Unit,
+    private val onBoundaryHit: () -> Unit = {}
 ) : InputListener {
     private var reserved = false
     private var activeSpec: TurnSpec? = null
@@ -201,8 +202,13 @@ internal class SlideNavigationInputListener(
                                         releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
                                 )
                             }
-                        } else if (!isReducedMotion()) {
-                            state.animateBoundaryBounce(visualDirectionSign(spec.side))
+                        } else {
+                            onBoundaryHit()
+                            if (!isReducedMotion()) {
+                                state.animateBoundaryBounce(
+                                    visualDirectionSign(spec.side)
+                                )
+                            }
                         }
                     }
 
@@ -287,6 +293,7 @@ internal class SlideNavigationInputListener(
         onInteraction()
         val moved = navigate(spec.direction)
         if (!moved) {
+            onBoundaryHit()
             if (visualReady) {
                 completionJob = scope.launch {
                     state.animateBoundaryBounce(visualDirectionSign(spec.side))
