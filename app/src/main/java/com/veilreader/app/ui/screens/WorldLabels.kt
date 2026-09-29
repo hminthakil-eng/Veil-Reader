@@ -11,6 +11,156 @@ import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.CastleMutationSignal
 import com.veilreader.app.domain.CastleMemoryNarrative
 
+
+internal data class LocalizedPathIdentity(
+    val aspect: String,
+    val invocation: String,
+    val epithet: String,
+    val description: String
+)
+
+internal data class LocalizedPathDoctrine(
+    val maxim: String,
+    val embodimentName: String,
+    val embodimentDescription: String,
+    val insightName: String,
+    val insightDescription: String,
+    val stabilityName: String,
+    val stabilityDescription: String
+)
+
+@Composable
+internal fun localizedPathIdentity(path: ReadingPath): LocalizedPathIdentity {
+    val ids = when (path.id) {
+        "oracle" -> intArrayOf(
+            R.string.path_oracle_aspect,
+            R.string.path_oracle_invocation,
+            R.string.path_oracle_epithet,
+            R.string.path_oracle_description
+        )
+        "dreamwalker" -> intArrayOf(
+            R.string.path_dreamwalker_aspect,
+            R.string.path_dreamwalker_invocation,
+            R.string.path_dreamwalker_epithet,
+            R.string.path_dreamwalker_description
+        )
+        "archivist" -> intArrayOf(
+            R.string.path_archivist_aspect,
+            R.string.path_archivist_invocation,
+            R.string.path_archivist_epithet,
+            R.string.path_archivist_description
+        )
+        "vanguard" -> intArrayOf(
+            R.string.path_vanguard_aspect,
+            R.string.path_vanguard_invocation,
+            R.string.path_vanguard_epithet,
+            R.string.path_vanguard_description
+        )
+        "nocturne" -> intArrayOf(
+            R.string.path_nocturne_aspect,
+            R.string.path_nocturne_invocation,
+            R.string.path_nocturne_epithet,
+            R.string.path_nocturne_description
+        )
+        "artificer" -> intArrayOf(
+            R.string.path_artificer_aspect,
+            R.string.path_artificer_invocation,
+            R.string.path_artificer_epithet,
+            R.string.path_artificer_description
+        )
+        else -> return LocalizedPathIdentity(
+            aspect = "Reading",
+            invocation = path.epithet,
+            epithet = path.epithet,
+            description = path.description
+        )
+    }
+    return LocalizedPathIdentity(
+        aspect = stringResource(ids[0]),
+        invocation = stringResource(ids[1]),
+        epithet = stringResource(ids[2]),
+        description = stringResource(ids[3])
+    )
+}
+
+@Composable
+internal fun localizedPathDoctrine(pathId: String): LocalizedPathDoctrine {
+    val ids = when (pathId) {
+        "oracle" -> intArrayOf(
+            R.string.path_oracle_maxim,
+            R.string.path_oracle_embodiment_name,
+            R.string.path_oracle_embodiment_description,
+            R.string.path_oracle_insight_name,
+            R.string.path_oracle_insight_description,
+            R.string.path_oracle_stability_name,
+            R.string.path_oracle_stability_description
+        )
+        "dreamwalker" -> intArrayOf(
+            R.string.path_dreamwalker_maxim,
+            R.string.path_dreamwalker_embodiment_name,
+            R.string.path_dreamwalker_embodiment_description,
+            R.string.path_dreamwalker_insight_name,
+            R.string.path_dreamwalker_insight_description,
+            R.string.path_dreamwalker_stability_name,
+            R.string.path_dreamwalker_stability_description
+        )
+        "archivist" -> intArrayOf(
+            R.string.path_archivist_maxim,
+            R.string.path_archivist_embodiment_name,
+            R.string.path_archivist_embodiment_description,
+            R.string.path_archivist_insight_name,
+            R.string.path_archivist_insight_description,
+            R.string.path_archivist_stability_name,
+            R.string.path_archivist_stability_description
+        )
+        "vanguard" -> intArrayOf(
+            R.string.path_vanguard_maxim,
+            R.string.path_vanguard_embodiment_name,
+            R.string.path_vanguard_embodiment_description,
+            R.string.path_vanguard_insight_name,
+            R.string.path_vanguard_insight_description,
+            R.string.path_vanguard_stability_name,
+            R.string.path_vanguard_stability_description
+        )
+        "nocturne" -> intArrayOf(
+            R.string.path_nocturne_maxim,
+            R.string.path_nocturne_embodiment_name,
+            R.string.path_nocturne_embodiment_description,
+            R.string.path_nocturne_insight_name,
+            R.string.path_nocturne_insight_description,
+            R.string.path_nocturne_stability_name,
+            R.string.path_nocturne_stability_description
+        )
+        "artificer" -> intArrayOf(
+            R.string.path_artificer_maxim,
+            R.string.path_artificer_embodiment_name,
+            R.string.path_artificer_embodiment_description,
+            R.string.path_artificer_insight_name,
+            R.string.path_artificer_insight_description,
+            R.string.path_artificer_stability_name,
+            R.string.path_artificer_stability_description
+        )
+        else -> return LocalizedPathDoctrine(
+            maxim = "",
+            embodimentName = "Embodiment",
+            embodimentDescription = "",
+            insightName = "Insight",
+            insightDescription = "",
+            stabilityName = "Stability",
+            stabilityDescription = ""
+        )
+    }
+    return LocalizedPathDoctrine(
+        maxim = stringResource(ids[0]),
+        embodimentName = stringResource(ids[1]),
+        embodimentDescription = stringResource(ids[2]),
+        insightName = stringResource(ids[3]),
+        insightDescription = stringResource(ids[4]),
+        stabilityName = stringResource(ids[5]),
+        stabilityDescription = stringResource(ids[6])
+    )
+}
+
 @Composable
 internal fun localizedPathName(path: ReadingPath): String =
     pathNameRes(path.id)?.let { stringResource(it) } ?: path.name
