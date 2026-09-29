@@ -141,6 +141,15 @@ fun VeilApp(
     val passageVisits = passageVisitsState?.value.orEmpty()
     val readingMilestones = readingMilestonesState?.value.orEmpty()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
+    val completionEvidence = remember(books, readingCycles) {
+        books.count { it.finished } to readingCycles.size
+    }
+    LaunchedEffect(completionEvidence) {
+        game.syncExistingBookCompletions(
+            finishedBooks = completionEvidence.first,
+            sealedCycles = completionEvidence.second
+        )
+    }
 
     // Existing libraries and restored backups may have no cached covers. Process one book at a time
     // so each Room update naturally advances this effect to the next pending publication.
