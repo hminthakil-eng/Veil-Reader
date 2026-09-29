@@ -82,6 +82,21 @@ internal fun rememberVeilIntegerFormatter(): (Number) -> String {
         { value -> formatter.format(value) }
     }
 }
+@Composable
+internal fun rememberVeilNumberFormatter(maximumFractionDigits: Int = 2): (Number) -> String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale, maximumFractionDigits) {
+        NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 0
+            this.maximumFractionDigits = maximumFractionDigits.coerceAtLeast(0)
+            isGroupingUsed = false
+        }
+    }
+    return remember(formatter) {
+        { value -> formatter.format(value) }
+    }
+}
+
 
 
 @Composable
