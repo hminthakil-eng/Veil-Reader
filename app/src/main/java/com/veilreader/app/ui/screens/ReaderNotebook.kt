@@ -15,13 +15,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveHighlightMemory
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -468,73 +472,264 @@ fun ReaderNotebook(
     }
 
     editing?.let { highlight ->
-        AlertDialog(
-            onDismissRequest = { if (!savingNote) editingId = null },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = VeilPalette.Mist,
-            tonalElevation = 0.dp,
-            title = { Text(stringResource(R.string.reader_notebook_passage_note)) },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = note,
-                        onValueChange = { note = it },
-                        label = { Text(stringResource(R.string.reader_notebook_your_thoughts)) },
-                        minLines = 4,
-                        maxLines = 8,
-                        enabled = !savingNote
-                    )
-                    noteSaveErrorRes?.let { messageRes ->
-                        Text(stringResource(messageRes), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
+        Dialog(
+            onDismissRequest = {
+                if (!savingNote) {
+                    editingId = null
+                    noteSaveErrorRes = null
                 }
             },
-            confirmButton = {
-                TextButton(
-                    enabled = !savingNote,
-                    onClick = {
-                        scope.launch {
-                            savingNote = true
-                            noteSaveErrorRes = null
-                            try {
-                                onSaveNote(highlight.id, note)
-                                editingId = null
-                            } catch (cancelled: CancellationException) {
-                                throw cancelled
-                            } catch (error: Exception) {
-                                noteSaveErrorRes = R.string.reader_notebook_note_save_failed
-                            } finally {
-                                savingNote = false
+            properties = DialogProperties(
+                dismissOnBackPress = !savingNote,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.48f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.24f
+                        )
+                        Column(
+                            modifier = Modifier.padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.reader_notebook_eyebrow),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.reader_notebook_passage_note),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            Surface(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = VeilPalette.Ink.copy(alpha = 0.44f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    VeilPalette.Brass.copy(alpha = 0.22f)
+                                ),
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
+                            ) {
+                                Text(
+                                    "“${highlight.quote}”",
+                                    modifier = Modifier.padding(12.dp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = VeilPalette.Moon.copy(alpha = 0.78f),
+                                    maxLines = 4,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                            OutlinedTextField(
+                                value = note,
+                                onValueChange = { note = it },
+                                label = {
+                                    Text(
+                                        stringResource(
+                                            R.string.reader_notebook_your_thoughts
+                                        )
+                                    )
+                                },
+                                minLines = 4,
+                                maxLines = 8,
+                                enabled = !savingNote,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            noteSaveErrorRes?.let { messageRes ->
+                                Text(
+                                    stringResource(messageRes),
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    enabled = !savingNote,
+                                    onClick = {
+                                        editingId = null
+                                        noteSaveErrorRes = null
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                                Button(
+                                    enabled = !savingNote,
+                                    onClick = {
+                                        scope.launch {
+                                            savingNote = true
+                                            noteSaveErrorRes = null
+                                            try {
+                                                onSaveNote(highlight.id, note)
+                                                editingId = null
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (error: Exception) {
+                                                noteSaveErrorRes =
+                                                    R.string.reader_notebook_note_save_failed
+                                            } finally {
+                                                savingNote = false
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = androidx.compose.ui.graphics.Color(
+                                            0xFF17120A
+                                        )
+                                    )
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            if (savingNote) {
+                                                R.string.reader_notebook_saving
+                                            } else {
+                                                R.string.common_save
+                                            }
+                                        )
+                                    )
+                                }
                             }
                         }
                     }
-                ) { Text(if (savingNote) stringResource(R.string.reader_notebook_saving) else stringResource(R.string.common_save)) }
-            },
-            dismissButton = {
-                TextButton(enabled = !savingNote, onClick = { editingId = null }) { Text(stringResource(R.string.common_cancel)) }
+                }
             }
-        )
+        }
     }
 
     deleting?.let { highlight ->
-        AlertDialog(
+        Dialog(
             onDismissRequest = { deletingId = null },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = VeilPalette.Mist,
-            tonalElevation = 0.dp,
-            title = { Text(stringResource(R.string.reader_notebook_delete_highlight)) },
-            text = { Text(stringResource(R.string.reader_notebook_delete_highlight_body)) },
-            confirmButton = {
-                TextButton(onClick = { onDeleteHighlight(highlight.id); deletingId = null }) { Text(stringResource(R.string.common_delete)) }
-            },
-            dismissButton = { TextButton(onClick = { deletingId = null }) { Text(stringResource(R.string.reader_notebook_keep)) } }
-        )
-    }
-}
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.40f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.reader_notebook_eyebrow),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = VeilPalette.Brass
+                        )
+                        Text(
+                            stringResource(R.string.reader_notebook_delete_highlight),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = VeilPalette.Moon
+                        )
+                        Text(
+                            "“${highlight.quote}”",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = VeilPalette.Moon.copy(alpha = 0.72f),
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            stringResource(
+                                R.string.reader_notebook_delete_highlight_body
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                onClick = { deletingId = null },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp),
+                                shape = MaterialTheme.shapes.extraSmall
+                            ) {
+                                Text(
+                                    stringResource(
+                                        R.string.reader_notebook_keep
+                                    )
+                                )
+                            }
+                            Button(
+                                onClick = {
+                                    onDeleteHighlight(highlight.id)
+                                    deletingId = null
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor =
+                                        MaterialTheme.colorScheme.errorContainer,
+                                    contentColor =
+                                        MaterialTheme.colorScheme.onErrorContainer
+                                )
+                            ) {
+                                Text(stringResource(R.string.common_delete))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }}
 
 @Composable
 private fun localizedHighlightAgeLabel(memory: com.veilreader.app.domain.HighlightMemory): String = when {
