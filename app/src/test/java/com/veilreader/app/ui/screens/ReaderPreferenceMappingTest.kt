@@ -85,6 +85,18 @@ class ReaderPreferenceMappingTest {
     }
 
     @Test
+    fun `legacy scroll state drops hidden paginated transition`() {
+        val legacy = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+
+        val canonical = legacy.canonicalizedNavigation()
+
+        assertEquals(ReaderNavigationMode.SCROLL, canonical.navigationMode)
+        assertEquals(PageTurnStyle.NONE, canonical.pageTurnStyle)
+    }
+    @Test
     fun `explicit typography overrides disable publisher styles`() {
         val original = ReaderAppearance(publisherStyles = true)
 
