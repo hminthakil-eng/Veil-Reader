@@ -210,6 +210,9 @@ fun ReaderScreen(
         mutableStateOf<PaperCurlInputListener?>(null)
     }
     val slidePageState = remember(opened.book.id) { SlidePageState() }
+    var slideInputListener by remember(opened.book.id) {
+        mutableStateOf<SlideNavigationInputListener?>(null)
+    }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
     val latestAppearance = rememberUpdatedState(readerAppearance)
@@ -310,7 +313,8 @@ fun ReaderScreen(
             readerAppearance.scroll ||
             readerAppearance.pageTurnStyle != PageTurnStyle.SLIDE
         ) {
-            if (slidePageState.active) {
+            val cancelingSlide = slideInputListener?.cancelPendingTurn() == true
+            if (!cancelingSlide && slidePageState.active) {
                 slidePageState.clear()
             }
         }
@@ -537,8 +541,14 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_DESTROY -> {
                     // A paper preview may already have navigated underneath the lifted sheet.
                     // Cancel it before any final snapshot is allowed to become durable.
-                    paperInputListener?.cancelPendingTurn()
-                    if (!paperCurlState.active && !slidePageState.active) {
+                    val cancelingPaper = paperInputListener?.cancelPendingTurn() == true
+                    val cancelingSlide = slideInputListener?.cancelPendingTurn() == true
+                    if (
+                        !cancelingPaper &&
+                        !cancelingSlide &&
+                        !paperCurlState.active &&
+                        !slidePageState.active
+                    ) {
                         latestNavigator.value?.currentLocator?.value?.let { locator ->
                             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
                         }
@@ -745,10 +755,12 @@ fun ReaderScreen(
             )
 
             paperInputListener = paperListener
+            slideInputListener = slideListener
             nav.addInputListener(inputArbiter)
             onDispose {
                 nav.removeInputListener(inputArbiter)
                 if (paperInputListener === paperListener) paperInputListener = null
+                if (slideInputListener === slideListener) slideInputListener = null
             }
         }
     }
