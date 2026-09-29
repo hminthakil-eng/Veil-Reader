@@ -81,6 +81,7 @@ import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -205,6 +206,9 @@ fun ReaderScreen(
     val savedLocationFailedMessage = stringResource(R.string.reader_saved_location_failed)
     val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
+    var paperInputListener by remember(opened.book.id) {
+        mutableStateOf<PaperCurlInputListener?>(null)
+    }
     val slidePageState = remember(opened.book.id) { SlidePageState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
@@ -297,7 +301,8 @@ fun ReaderScreen(
             readerAppearance.scroll ||
             readerAppearance.pageTurnStyle != PageTurnStyle.PAPER
         ) {
-            if (paperCurlState.active) {
+            val cancelingDrag = paperInputListener?.cancelPendingTurn() == true
+            if (!cancelingDrag && paperCurlState.active) {
                 paperCurlState.clear()
             }
         }
@@ -530,8 +535,13 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
-                    latestNavigator.value?.currentLocator?.value?.let { locator ->
-                        recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    // A paper preview may already have navigated underneath the lifted sheet.
+                    // Cancel it before any final snapshot is allowed to become durable.
+                    paperInputListener?.cancelPendingTurn()
+                    if (!paperCurlState.active && !slidePageState.active) {
+                        latestNavigator.value?.currentLocator?.value?.let { locator ->
+                            recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                        }
                     }
                     readerViewModel.onPause()
                 }
@@ -547,6 +557,7 @@ fun ReaderScreen(
 
     LaunchedEffect(navigator, opened.book.id) {
         val nav = navigator ?: return@LaunchedEffect
+        var initialLocatorPending = true
         nav.currentLocator
             .debounce(500)
             .collect { locator ->
@@ -571,13 +582,13 @@ fun ReaderScreen(
                 )
                 val continuousScroll =
                     (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
-                val event = when {
-                    continuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
-                    opened.format != BookFormat.EPUB ||
-                        latestAppearance.value.pageTurnStyle != PageTurnStyle.PAPER ->
-                        ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
-                    else -> ReaderLocatorEvent.NAVIGATOR_POSITION
-                }
+                val event = navigatorLocatorEvent(
+                    isInitialEmission = initialLocatorPending,
+                    isContinuousScroll = continuousScroll,
+                    isPaperMode = opened.format == BookFormat.EPUB &&
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
+                )
+                initialLocatorPending = false
                 readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     progression = locator.locations.totalProgression
@@ -733,9 +744,11 @@ fun ReaderScreen(
                 }
             )
 
+            paperInputListener = paperListener
             nav.addInputListener(inputArbiter)
             onDispose {
                 nav.removeInputListener(inputArbiter)
+                if (paperInputListener === paperListener) paperInputListener = null
             }
         }
     }
