@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -62,14 +63,21 @@ fun ReaderNotebook(
             if (searchable) add(ReaderNotebookTab.SEARCH)
         }
     }
-    var tab by remember(opened.book.id, searchable) { mutableStateOf(ReaderNotebookTab.CONTENTS) }
-    var query by remember { mutableStateOf("") }
-    var editing by remember { mutableStateOf<Highlight?>(null) }
-    var note by remember { mutableStateOf("") }
+    var tabName by rememberSaveable(opened.book.id, searchable) {
+        mutableStateOf(ReaderNotebookTab.CONTENTS.name)
+    }
+    val tab = ReaderNotebookTab.entries
+        .firstOrNull { it.name == tabName && it in tabs }
+        ?: ReaderNotebookTab.CONTENTS
+    var query by rememberSaveable(opened.book.id) { mutableStateOf("") }
+    var editingId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
+    val editing = editingId?.let { id -> highlights.firstOrNull { it.id == id } }
+    var note by rememberSaveable(opened.book.id) { mutableStateOf("") }
     var savingNote by remember { mutableStateOf(false) }
     var noteSaveErrorRes by remember { mutableStateOf<Int?>(null) }
-    var deleting by remember { mutableStateOf<Highlight?>(null) }
-    var bookSearchQuery by remember { mutableStateOf("") }
+    var deletingId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
+    val deleting = deletingId?.let { id -> highlights.firstOrNull { it.id == id } }
+    var bookSearchQuery by rememberSaveable(opened.book.id) { mutableStateOf("") }
     var bookSearchResults by remember { mutableStateOf<List<Locator>>(emptyList()) }
     var bookSearchErrorRes by remember { mutableStateOf<Int?>(null) }
     var searchingBook by remember { mutableStateOf(false) }
@@ -164,7 +172,7 @@ fun ReaderNotebook(
                             .selectable(
                                 selected = selected,
                                 role = Role.Tab
-                            ) { tab = item },
+                            ) { tabName = item.name },
                         shape = MaterialTheme.shapes.extraSmall,
                         color = if (selected) {
                             VeilPalette.DeepBrass.copy(alpha = 0.78f)
@@ -378,7 +386,7 @@ fun ReaderNotebook(
                                         ) { Text(stringResource(R.string.archive_return_to_passage)) }
                                         TextButton(
                                             onClick = {
-                                                editing = highlight
+                                                editingId = highlight.id
                                                 note = highlight.note
                                                 noteSaveErrorRes = null
                                             },
@@ -392,7 +400,7 @@ fun ReaderNotebook(
                                             )
                                         }
                                         TextButton(
-                                            onClick = { deleting = highlight },
+                                            onClick = { deletingId = highlight.id },
                                             modifier = Modifier.heightIn(min = 48.dp)
                                         ) { Text(stringResource(R.string.common_delete)) }
                                     }
@@ -461,7 +469,7 @@ fun ReaderNotebook(
 
     editing?.let { highlight ->
         AlertDialog(
-            onDismissRequest = { if (!savingNote) editing = null },
+            onDismissRequest = { if (!savingNote) editingId = null },
             shape = MaterialTheme.shapes.small,
             containerColor = VeilPalette.Archive,
             titleContentColor = VeilPalette.Moon,
@@ -492,7 +500,7 @@ fun ReaderNotebook(
                             noteSaveErrorRes = null
                             try {
                                 onSaveNote(highlight.id, note)
-                                editing = null
+                                editingId = null
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (error: Exception) {
@@ -505,14 +513,14 @@ fun ReaderNotebook(
                 ) { Text(if (savingNote) stringResource(R.string.reader_notebook_saving) else stringResource(R.string.common_save)) }
             },
             dismissButton = {
-                TextButton(enabled = !savingNote, onClick = { editing = null }) { Text(stringResource(R.string.common_cancel)) }
+                TextButton(enabled = !savingNote, onClick = { editingId = null }) { Text(stringResource(R.string.common_cancel)) }
             }
         )
     }
 
     deleting?.let { highlight ->
         AlertDialog(
-            onDismissRequest = { deleting = null },
+            onDismissRequest = { deletingId = null },
             shape = MaterialTheme.shapes.small,
             containerColor = VeilPalette.Archive,
             titleContentColor = VeilPalette.Moon,
@@ -521,9 +529,9 @@ fun ReaderNotebook(
             title = { Text(stringResource(R.string.reader_notebook_delete_highlight)) },
             text = { Text(stringResource(R.string.reader_notebook_delete_highlight_body)) },
             confirmButton = {
-                TextButton(onClick = { onDeleteHighlight(highlight.id); deleting = null }) { Text(stringResource(R.string.common_delete)) }
+                TextButton(onClick = { onDeleteHighlight(highlight.id); deletingId = null }) { Text(stringResource(R.string.common_delete)) }
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text(stringResource(R.string.reader_notebook_keep)) } }
+            dismissButton = { TextButton(onClick = { deletingId = null }) { Text(stringResource(R.string.reader_notebook_keep)) } }
         )
     }
 }
