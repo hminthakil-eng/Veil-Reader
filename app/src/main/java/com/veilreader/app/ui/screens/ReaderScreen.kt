@@ -135,6 +135,7 @@ import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.preferences.TextAlign as ReadiumTextAlign
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.publication.Layout
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.util.AbsoluteUrl
@@ -224,6 +225,15 @@ fun ReaderScreen(
         }
     }
     val reducedMotion = LocalVeilReducedMotion.current
+    val fixedLayoutPublication = remember(opened.book.id) {
+        opened.publication.metadata.layout == Layout.FIXED
+    }
+    val publicationLanguage = remember(opened.book.id, opened.book.language) {
+        opened.book.language
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: opened.publication.metadata.languages.firstOrNull()
+    }
 
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val selectionHighlightLabel =
@@ -1763,6 +1773,8 @@ fun ReaderScreen(
                     )
                     EpubAppearancePanel(
                         appearance = readerAppearance,
+                        fixedLayout = fixedLayoutPublication,
+                        publicationLanguage = publicationLanguage,
                         onChange = {
                             readerViewModel.onUserInteraction()
                             onReaderAppearanceChange(it)
@@ -2389,6 +2401,8 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 @Composable
 private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
+    fixedLayout: Boolean,
+    publicationLanguage: String?,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit,
     modifier: Modifier = Modifier
@@ -2399,6 +2413,11 @@ private fun EpubAppearancePanel(
     var hasPendingDraft by remember { mutableStateOf(false) }
     var sliderPending by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
+    val capabilities = readerAppearanceCapabilities(
+        fixedLayout = fixedLayout,
+        languageTag = publicationLanguage,
+        continuousScroll = draft.navigationMode == ReaderNavigationMode.SCROLL
+    )
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
     val textSizeLabel = stringResource(R.string.settings_text_size)
 
@@ -2473,8 +2492,15 @@ private fun EpubAppearancePanel(
 
         ReaderAppearancePreview(
             appearance = draft,
+            typographyEnabled = capabilities.typographyEditable,
             modifier = Modifier.fillMaxWidth()
         )
+
+        if (capabilities.fixedLayout) {
+            ReaderCapabilityNotice(
+                text = stringResource(R.string.reader_fixed_layout_notice)
+            )
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2574,6 +2600,7 @@ private fun EpubAppearancePanel(
                 onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 valueRange = .75f..1.8f,
+                enabled = capabilities.typographyEditable,
                 modifier = Modifier.semantics {
                     contentDescription = textSizeLabel
                     stateDescription = formatPercent(draft.fontScale.toFloat())
@@ -2589,6 +2616,11 @@ private fun EpubAppearancePanel(
             )
             ReaderMotionSelector(
                 selected = draft.navigationMode,
+                disabledModes = if (capabilities.continuousScrollEditable) {
+                    emptySet()
+                } else {
+                    setOf(ReaderNavigationMode.SCROLL)
+                },
                 onSelect = { updateDraft(draft.withNavigationMode(it)) }
             )
             Text(
