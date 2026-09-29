@@ -29,6 +29,8 @@ import com.veilreader.app.ui.theme.VeilMotion
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.math.max
+import kotlin.math.sin
+import kotlin.math.PI
 
 @Stable
 internal class SlidePageState {
@@ -55,9 +57,9 @@ internal class SlidePageState {
     fun updateDrag(rawOffsetX: Float) {
         if (!active || width <= 0f) return
         val fraction = (abs(rawOffsetX) / width).coerceIn(0f, 1f)
-        val resistance = 0.80f + fraction * 0.16f
-        offsetPx = (rawOffsetX * resistance)
-            .coerceIn(-width * 1.08f, width * 1.08f)
+        val response = slideHorizontalDragResponse(fraction)
+        offsetPx = (rawOffsetX * response)
+            .coerceIn(-width * 1.04f, width * 1.04f)
     }
 
     fun dragProgress(): Float =
@@ -171,6 +173,7 @@ internal fun SlidePageOverlay(
     val bitmap = state.snapshot ?: return
     if (!state.active || bitmap.isRecycled) return
     val progress = state.dragProgress()
+    val shadowIntensity = slideEdgeShadowIntensity(progress)
     val direction = when {
         state.offsetPx < 0f -> -1f
         state.offsetPx > 0f -> 1f
@@ -198,20 +201,21 @@ internal fun SlidePageOverlay(
                     state.offsetPx
                 }.coerceIn(0f, size.width)
 
-                val shadowWidth = (18.dp.toPx() + 34.dp.toPx() * progress)
+                val shadowWidth =
+                    (16.dp.toPx() + 38.dp.toPx() * shadowIntensity)
                 val startX = if (direction < 0f) edgeX else edgeX - shadowWidth
                 val endX = if (direction < 0f) edgeX + shadowWidth else edgeX
                 drawRect(
                     brush = Brush.horizontalGradient(
                         colorStops = if (direction < 0f) {
                             arrayOf(
-                                0f to Color.Black.copy(alpha = 0.24f * progress),
+                                0f to Color.Black.copy(alpha = 0.26f * shadowIntensity),
                                 1f to Color.Transparent
                             )
                         } else {
                             arrayOf(
                                 0f to Color.Transparent,
-                                1f to Color.Black.copy(alpha = 0.24f * progress)
+                                1f to Color.Black.copy(alpha = 0.26f * shadowIntensity)
                             )
                         },
                         startX = startX,
@@ -227,3 +231,23 @@ internal fun SlidePageOverlay(
         }
     }
 }
+
+
+/**
+ * A weighted slide should feel attached to the finger without looking like a native renderer
+ * swipe. It starts with mass, then progressively catches up as the turn becomes intentional.
+ */
+internal fun slideHorizontalDragResponse(progress: Float): Float {
+    val t = progress.coerceIn(0f, 1f)
+    val smooth = t * t * (3f - 2f * t)
+    return 0.76f + smooth * 0.22f
+}
+
+/**
+ * Contact shadow belongs to the lifted/moving edge, so it disappears both at rest and when the
+ * source page has fully left the viewport.
+ */
+internal fun slideEdgeShadowIntensity(progress: Float): Float =
+    sin(progress.coerceIn(0f, 1f).toDouble() * PI)
+        .toFloat()
+        .coerceIn(0f, 1f)
