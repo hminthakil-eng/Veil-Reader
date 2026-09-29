@@ -175,4 +175,36 @@ class ReaderChromePolicyTest {
         )
     }
 
+    @Test
+    fun `boundary feedback throttles key repeat without delaying the first hit`() {
+        assertTrue(
+            shouldEmitReaderBoundaryFeedback(
+                nowMillis = 1_000L,
+                lastEmissionMillis = 0L
+            )
+        )
+        assertFalse(
+            shouldEmitReaderBoundaryFeedback(
+                nowMillis = 1_100L,
+                lastEmissionMillis = 1_000L
+            )
+        )
+        assertTrue(
+            shouldEmitReaderBoundaryFeedback(
+                nowMillis = 1_180L,
+                lastEmissionMillis = 1_000L
+            )
+        )
+    }
+
+    @Test
+    fun `boundary feedback recovers safely if monotonic clock appears to move backward`() {
+        assertTrue(
+            shouldEmitReaderBoundaryFeedback(
+                nowMillis = 900L,
+                lastEmissionMillis = 1_000L
+            )
+        )
+    }
+
 }
