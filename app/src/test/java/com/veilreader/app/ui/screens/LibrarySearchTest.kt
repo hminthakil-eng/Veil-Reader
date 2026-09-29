@@ -33,4 +33,19 @@ class LibrarySearchTest {
             normalizeLibrarySearchText("CAFÉ")
         )
     }
+
+    @Test
+    fun `half space and ordinary space do not hide Persian titles`() {
+        val stored = normalizeLibrarySearchText("می‌روم")
+        assertEquals(stored, normalizeLibrarySearchText("میروم"))
+        assertEquals(stored, normalizeLibrarySearchText("می روم"))
+        assertTrue(normalizeLibrarySearchText("کتاب‌های کهن").contains(normalizeLibrarySearchText("کتابهای")))
+    }
+
+    @Test
+    fun `Persian Arabic and Latin digits match in titles and queries`() {
+        val stored = normalizeLibrarySearchText("جلد ۱۲")
+        assertEquals(stored, normalizeLibrarySearchText("جلد ١٢"))
+        assertEquals(stored, normalizeLibrarySearchText("جلد12"))
+    }
 }
