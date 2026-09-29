@@ -502,8 +502,12 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
-                    latestNavigator.value?.currentLocator?.value?.let { locator ->
-                        recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    // A curl may show the destination underneath the lifted sheet before
+                    // the reader has committed the turn. Never persist that preview on pause.
+                    if (!paperCurlState.active) {
+                        latestNavigator.value?.currentLocator?.value?.let { locator ->
+                            recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                        }
                     }
                     readerViewModel.onPause()
                 }
@@ -524,11 +528,9 @@ fun ReaderScreen(
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
 
-                val paperPreviewActive =
-                    opened.format == BookFormat.EPUB &&
-                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER &&
-                        paperCurlState.active
-                if (paperPreviewActive) return@collect
+                // The captured source page owns progress until a paper turn commits.
+                // This also covers an appearance switch while a preview is still active.
+                if (paperCurlState.active) return@collect
 
                 val json = locator.toVeilPersistedJson(opened.format)
                 ReaderTrace.event(
