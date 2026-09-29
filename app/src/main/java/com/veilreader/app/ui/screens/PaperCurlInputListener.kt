@@ -36,6 +36,9 @@ internal class PaperCurlInputListener(
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
     private var navigationJob: Job? = null
+    private var completionJob: Job? = null
+    private var cancellationRequested = false
+    private var turnCommitted = false
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
     private var lastDragSampleAtMillis = 0L
@@ -85,10 +88,14 @@ internal class PaperCurlInputListener(
     }
 
     override fun onDrag(event: DragEvent): Boolean {
-        if (!paperModeEnabled()) return false
+        if (!paperModeEnabled()) {
+            // The mode may change while a sheet is lifted. Restore its starting
+            // locator before allowing the new navigation mode to own later drags.
+            return cancelPendingTurn()
+        }
 
-        // Lock out overlapping gestures while a tap-turn animation is running.
-        if (state.active && activeDrag == null) return true
+        // Lock out overlapping gestures while a turn finishes or a tap animates.
+        if (completionJob != null || (state.active && activeDrag == null)) return true
 
         return when (event.type) {
             DragEvent.Type.Start -> onDragStart(event)
@@ -128,6 +135,7 @@ internal class PaperCurlInputListener(
     }
 
     private fun onDragEnd(event: DragEvent): Boolean {
+        if (completionJob != null) return true
         val spec = activeDrag
         if (spec == null) {
             // A reserved gesture that never became a horizontal turn is still
@@ -150,12 +158,17 @@ internal class PaperCurlInputListener(
             curlProgress = state.dragProgress(),
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
-        scope.launch {
+        completionJob = scope.launch {
             navigationJob?.join()
 
             when {
+                cancellationRequested -> {
+                    if (previewNavigationSucceeded) restoreDragStart(spec)
+                }
+
                 commit && previewNavigationSucceeded -> {
                     // Persist/count and emit sensory feedback only after a real commit.
+                    turnCommitted = true
                     onCommittedTurn()
                     if (!isReducedMotion()) {
                         state.animateComplete(
@@ -183,8 +196,33 @@ internal class PaperCurlInputListener(
                 }
             }
 
-            resetDrag()
             state.clear()
+            resetDrag()
+        }
+        return true
+    }
+
+    /**
+     * Called when the Reader pauses or exits PAPER mode. The preview navigator may
+     * already be on the next page, so let that navigation finish before restoring
+     * the exact locator captured at drag start. A committed turn stays committed.
+     */
+    fun cancelPendingTurn(): Boolean {
+        if (!dragReserved && activeDrag == null) return false
+        if (turnCommitted) return false
+        cancellationRequested = true
+        val spec = activeDrag
+        if (spec == null) {
+            resetDrag()
+            return true
+        }
+        if (completionJob == null) {
+            completionJob = scope.launch {
+                navigationJob?.join()
+                if (previewNavigationSucceeded) restoreDragStart(spec)
+                state.clear()
+                resetDrag()
+            }
         }
         return true
     }
@@ -330,6 +368,9 @@ internal class PaperCurlInputListener(
         activeDrag = null
         dragReserved = false
         navigationJob = null
+        completionJob = null
+        cancellationRequested = false
+        turnCommitted = false
         previewNavigationSucceeded = false
         dragStartLocator = null
         lastDragSampleAtMillis = 0L
