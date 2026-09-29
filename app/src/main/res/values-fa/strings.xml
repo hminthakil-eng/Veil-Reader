@@ -66,4 +66,20 @@
     <string name="book_metadata_series_number_error">عددی مانند ۱ یا ۲٫۵ وارد کنید.</string>
     <string name="book_metadata_language">برچسب زبان (اختیاری)</string>
     <string name="book_metadata_language_hint">BCP-47، برای نمونه fa، en، tr یا en-US.</string>
+
+    <!-- Backup, restore, and reader reset controls -->
+    <string name="settings_library_backup_title">کتابخانه و پشتیبان‌گیری</string>
+    <string name="settings_library_backup_description">از آرشیو محلی، یادداشت‌ها و وضعیت مطالعه پشتیبان بگیرید یا آن‌ها را بازیابی کنید.</string>
+    <string name="settings_exporting">در حال تهیهٔ پشتیبان…</string>
+    <string name="settings_export_backup">تهیهٔ پشتیبان از کتابخانه</string>
+    <string name="settings_restoring">در حال بازیابی…</string>
+    <string name="settings_restore_backup">بازیابی پشتیبان کتابخانه</string>
+    <string name="settings_export_notebook">خروجی دفتر یادداشت در قالب Markdown</string>
+    <string name="settings_reset_title">بازنشانی تنظیمات مطالعه</string>
+    <string name="settings_reset_description">تنظیمات خواننده بازنشانی می‌شود؛ کتاب‌ها، پیشرفت، یادداشت‌ها، هایلایت‌ها و پشتیبان‌ها دست‌نخورده می‌مانند.</string>
+    <string name="settings_reset_button">بازنشانی تنظیمات خواننده</string>
+    <string name="settings_restore_eyebrow">بازیابی آرشیو</string>
+    <string name="settings_restore_title">داده‌های محلی Veil Reader جایگزین شوند؟</string>
+    <string name="settings_restore_warning">بازیابی، کتابخانهٔ فعلی، یادداشت‌ها، پیشرفت مطالعه، پیشرفت مسیرها و وضعیت قلعه را با داده‌های پشتیبان انتخاب‌شده جایگزین می‌کند. اگر به وضعیت فعلی نیاز دارید، ابتدا یک پشتیبان تازه تهیه کنید.</string>
+    <string name="settings_choose_backup">انتخاب فایل پشتیبان</string>
 </resources>
