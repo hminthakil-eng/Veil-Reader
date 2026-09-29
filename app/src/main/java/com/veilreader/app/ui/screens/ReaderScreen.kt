@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -1892,6 +1893,7 @@ private fun EpubAppearancePanel(
     onDone: () -> Unit
 ) {
     val formatPercent = rememberVeilPercentFormatter()
+    val formatNumber = rememberVeilNumberFormatter()
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
     var sliderPending by remember { mutableStateOf(false) }
@@ -2071,7 +2073,10 @@ private fun EpubAppearancePanel(
                 onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 valueRange = .75f..1.8f,
-                modifier = Modifier.semantics { contentDescription = textSizeLabel }
+                modifier = Modifier.semantics {
+                    contentDescription = textSizeLabel
+                    stateDescription = formatPercent(draft.fontScale.toFloat())
+                }
             )
 
             BrassRule(Modifier.fillMaxWidth())
@@ -2154,7 +2159,7 @@ private fun EpubAppearancePanel(
                 label = stringResource(R.string.settings_line_height),
                 value = draft.lineHeight.toFloat(),
                 valueRange = 1.1f..2.0f,
-                valueLabel = { "%.2f×".format(it) },
+                valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewTypography(draft.withLineHeight(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft
             )
@@ -2280,7 +2285,7 @@ private fun EpubAppearancePanel(
                 value = draft.paragraphSpacing,
                 valueRange = 0f..2f,
                 nullPreviewValue = 0f,
-                valueLabel = { "%.2f×".format(it) },
+                valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewDraft(draft.withParagraphSpacing(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(paragraphSpacing = null)) }
@@ -2290,7 +2295,7 @@ private fun EpubAppearancePanel(
                 value = draft.paragraphIndent,
                 valueRange = 0f..3f,
                 nullPreviewValue = 0f,
-                valueLabel = { "%.2f×".format(it) },
+                valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewDraft(draft.withParagraphIndent(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(paragraphIndent = null)) }
@@ -2300,7 +2305,7 @@ private fun EpubAppearancePanel(
                 value = draft.letterSpacing,
                 valueRange = 0f..0.2f,
                 nullPreviewValue = 0f,
-                valueLabel = { "%.2f".format(it) },
+                valueLabel = { formatNumber(it) },
                 onValueChange = { previewDraft(draft.withLetterSpacing(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(letterSpacing = null)) }
@@ -2310,7 +2315,7 @@ private fun EpubAppearancePanel(
                 value = draft.wordSpacing,
                 valueRange = 0f..1f,
                 nullPreviewValue = 0f,
-                valueLabel = { "%.2f".format(it) },
+                valueLabel = { formatNumber(it) },
                 onValueChange = { previewDraft(draft.withWordSpacing(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(wordSpacing = null)) }
@@ -2320,7 +2325,7 @@ private fun EpubAppearancePanel(
                 value = draft.typeScale,
                 valueRange = 1f..2f,
                 nullPreviewValue = 1f,
-                valueLabel = { "%.2f×".format(it) },
+                valueLabel = { "${formatNumber(it)}×" },
                 onValueChange = { previewDraft(draft.withTypeScale(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(typeScale = null)) }
@@ -2499,6 +2504,9 @@ private fun ReaderAppearanceSlider(
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit = {}
 ) {
+    val safeValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
+    val valueDescription = valueLabel(safeValue)
+
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2506,17 +2514,20 @@ private fun ReaderAppearanceSlider(
         ) {
             Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(
-                valueLabel(value),
+                valueDescription,
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         Slider(
-            value = value.coerceIn(valueRange.start, valueRange.endInclusive),
+            value = safeValue,
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
-            modifier = Modifier.semantics { contentDescription = label }
+            modifier = Modifier.semantics {
+                contentDescription = label
+                stateDescription = valueDescription
+            }
         )
     }
 }
@@ -2532,6 +2543,14 @@ private fun ReaderAppearanceNullableSlider(
     onValueChangeFinished: () -> Unit = {},
     onReset: () -> Unit
 ) {
+    val safeValue = (value?.toFloat() ?: nullPreviewValue)
+        .coerceIn(valueRange.start, valueRange.endInclusive)
+    val valueDescription = if (value == null) {
+        stringResource(R.string.settings_book_default)
+    } else {
+        valueLabel(safeValue)
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -2539,8 +2558,7 @@ private fun ReaderAppearanceNullableSlider(
         ) {
             Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(
-                if (value == null) stringResource(R.string.settings_book_default)
-                else valueLabel(value.toFloat()),
+                valueDescription,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -2553,12 +2571,14 @@ private fun ReaderAppearanceNullableSlider(
             }
         }
         Slider(
-            value = (value?.toFloat() ?: nullPreviewValue)
-                .coerceIn(valueRange.start, valueRange.endInclusive),
+            value = safeValue,
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
-            modifier = Modifier.semantics { contentDescription = label }
+            modifier = Modifier.semantics {
+                contentDescription = label
+                stateDescription = valueDescription
+            }
         )
     }
 }
