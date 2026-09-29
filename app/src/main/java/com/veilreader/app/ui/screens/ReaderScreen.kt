@@ -82,6 +82,7 @@ import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
+import com.veilreader.app.ui.theme.veilContentTextStyle
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
@@ -800,7 +801,10 @@ fun ReaderScreen(
                         ) {
                             Text(
                                 opened.book.title,
-                                style = MaterialTheme.typography.titleSmall,
+                                style = veilContentTextStyle(
+                                    MaterialTheme.typography.titleSmall,
+                                    opened.book.title
+                                ),
                                 color = VeilPalette.Moon,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
