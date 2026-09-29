@@ -940,7 +940,7 @@ fun LibraryScreen(
     }
 
     editing?.let { book ->
-        val parsedSeriesIndex = seriesIndex.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
+        val parsedSeriesIndex = seriesIndex.trim().takeIf { it.isNotEmpty() }?.let(::parseLocalizedDecimalInput)
         val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
         AlertDialog(
             onDismissRequest = { editing = null },
