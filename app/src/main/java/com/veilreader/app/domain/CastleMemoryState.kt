@@ -2,6 +2,8 @@ package com.veilreader.app.domain
 
 import kotlin.math.roundToInt
 
+enum class CastleInscriptionStage { EMPTY, UNTRACED, LISTENING, SHAPING, WARM, DENSE }
+
 data class CastleMemoryState(
     val volumeCount: Int,
     val completedCount: Int,
@@ -24,7 +26,8 @@ data class CastleMemoryState(
     val shelfRibs: Int,
     val starPoints: Int,
     val fogAlpha: Float,
-    val inscription: String
+    val inscription: String,
+    val inscriptionStage: CastleInscriptionStage = CastleInscriptionStage.EMPTY
 ) {
     fun resonanceFor(roomId: String): Float =
         when (roomId) {
@@ -141,17 +144,25 @@ fun deriveCastleMemoryState(
             sanctum * 0.14f
         ).coerceIn(0f, 1f)
 
-    val inscription = when {
-        books.isEmpty() -> "The foundation waits for its first volume."
-        sessions.isEmpty() && highlights.isEmpty() ->
+    val inscriptionStage = when {
+        books.isEmpty() -> CastleInscriptionStage.EMPTY
+        sessions.isEmpty() && highlights.isEmpty() -> CastleInscriptionStage.UNTRACED
+        overall < 0.24f -> CastleInscriptionStage.LISTENING
+        overall < 0.50f -> CastleInscriptionStage.SHAPING
+        overall < 0.76f -> CastleInscriptionStage.WARM
+        else -> CastleInscriptionStage.DENSE
+    }
+    val inscription = when (inscriptionStage) {
+        CastleInscriptionStage.EMPTY -> "The foundation waits for its first volume."
+        CastleInscriptionStage.UNTRACED ->
             "Volumes stand in the keep, but few traces have entered the stone."
-        overall < 0.24f ->
+        CastleInscriptionStage.LISTENING ->
             "A few rooms remember. The rest of the keep is still listening."
-        overall < 0.50f ->
+        CastleInscriptionStage.SHAPING ->
             "The keep has begun to retain the shape of your reading."
-        overall < 0.76f ->
+        CastleInscriptionStage.WARM ->
             "The archive is warm behind the walls; whole chambers now carry memory."
-        else ->
+        CastleInscriptionStage.DENSE ->
             "The keep is dense with memory. Very little inside it is still silent."
     }
 
@@ -177,7 +188,8 @@ fun deriveCastleMemoryState(
         shelfRibs = (3f + library * 9f).roundToInt().coerceIn(3, 12),
         starPoints = (observatory * 18f).roundToInt().coerceIn(0, 18),
         fogAlpha = (0.48f - overall * 0.28f).coerceIn(0.18f, 0.48f),
-        inscription = inscription
+        inscription = inscription,
+        inscriptionStage = inscriptionStage
     )
 }
 

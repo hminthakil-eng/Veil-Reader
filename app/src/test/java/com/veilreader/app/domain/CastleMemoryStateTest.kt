@@ -17,6 +17,7 @@ class CastleMemoryStateTest {
         )
 
         assertEquals(CastleMemoryState.EMPTY, state)
+        assertEquals(CastleInscriptionStage.EMPTY, state.inscriptionStage)
         assertEquals(1, state.litWindows)
         assertEquals(0, state.starPoints)
         assertEquals(0f, state.resonanceFor("observatory"), 0.0001f)
@@ -65,6 +66,7 @@ class CastleMemoryStateTest {
         )
 
         assertTrue(state.overallPresence > 0.25f)
+        assertTrue(state.inscriptionStage != CastleInscriptionStage.EMPTY)
         assertTrue(state.litWindows > 1)
         assertTrue(state.shelfRibs > 3)
         assertTrue(state.starPoints > 0)
@@ -94,6 +96,8 @@ class CastleMemoryStateTest {
             sessions = emptyList()
         )
 
+        assertEquals(CastleInscriptionStage.UNTRACED, isolated.inscriptionStage)
+        assertEquals(CastleInscriptionStage.UNTRACED, connected.inscriptionStage)
         assertTrue(connected.atlasLinkCount > isolated.atlasLinkCount)
         assertTrue(connected.observatoryResonance > isolated.observatoryResonance)
     }
