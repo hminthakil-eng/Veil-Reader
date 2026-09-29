@@ -182,6 +182,47 @@ data class ReaderAppearance(
             else -> ReaderNavigationMode.PAPER_CURL
         }
 
+    fun normalized(): ReaderAppearance =
+        copy(
+            fontScale = fontScale
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.75, 1.8)
+                ?: 1.0,
+            lineHeight = lineHeight
+                .takeIf { it.isFinite() }
+                ?.coerceIn(1.1, 2.0)
+                ?: 1.45,
+            pageMargins = pageMargins
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.5, 2.0)
+                ?: 1.0,
+            screenBrightness = screenBrightness
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.05, 1.0),
+            fontWeight = fontWeight
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 2.5),
+            paragraphSpacing = paragraphSpacing
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 2.0),
+            paragraphIndent = paragraphIndent
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 3.0),
+            letterSpacing = letterSpacing
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 0.2),
+            wordSpacing = wordSpacing
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 1.0),
+            typeScale = typeScale
+                ?.takeIf { it.isFinite() }
+                ?.coerceIn(1.0, 2.0),
+            paperPatina = paperPatina
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.0, 1.0)
+                ?: 0.72
+        )
+
     fun withNavigationMode(mode: ReaderNavigationMode): ReaderAppearance =
         when (mode) {
             ReaderNavigationMode.PAPER_CURL ->
@@ -197,13 +238,31 @@ data class ReaderAppearance(
         copy(theme = theme, publisherStyles = false)
 
     fun withFontScale(value: Double): ReaderAppearance =
-        copy(fontScale = value, publisherStyles = false)
+        copy(
+            fontScale = value
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.75, 1.8)
+                ?: 1.0,
+            publisherStyles = false
+        )
 
     fun withLineHeight(value: Double): ReaderAppearance =
-        copy(lineHeight = value, publisherStyles = false)
+        copy(
+            lineHeight = value
+                .takeIf { it.isFinite() }
+                ?.coerceIn(1.1, 2.0)
+                ?: 1.45,
+            publisherStyles = false
+        )
 
     fun withPageMargins(value: Double): ReaderAppearance =
-        copy(pageMargins = value, publisherStyles = false)
+        copy(
+            pageMargins = value
+                .takeIf { it.isFinite() }
+                ?.coerceIn(0.5, 2.0)
+                ?: 1.0,
+            publisherStyles = false
+        )
 
     fun withFontFamily(value: ReaderFontFamily): ReaderAppearance =
         copy(
