@@ -1025,6 +1025,7 @@
     <string name="reader_notebook_find">Find</string>
     <string name="reader_notebook_search_unavailable">Search is not available for this publication.</string>
     <string name="reader_notebook_search_failed">Search could not be completed.</string>
+    <string name="reader_notebook_current_section">CURRENT</string>
     <string name="reader_notebook_no_chapters">This book has no chapter list.</string>
     <string name="reader_notebook_untitled_section">Untitled section</string>
     <string name="reader_notebook_bookmarks_empty">Save a place using Bookmark in the reader. Your bookmarks will appear here.</string>
