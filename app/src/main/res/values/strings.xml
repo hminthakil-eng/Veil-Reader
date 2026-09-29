@@ -200,7 +200,7 @@
     <string name="pdf_zoom">ZOOM</string>
     <string name="pdf_zoom_out">Zoom out</string>
     <string name="pdf_zoom_in">Zoom in</string>
-    <string name="pdf_zoom_reset">Reset zoom to 100%</string>
+    <string name="pdf_zoom_reset" formatted="false">Reset zoom to 100%</string>
     <string name="pdf_fit_width">Fit page width</string>
 
     <!-- Hidden Archive -->
