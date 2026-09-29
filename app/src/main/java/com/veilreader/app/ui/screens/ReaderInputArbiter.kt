@@ -21,6 +21,7 @@ internal enum class ReaderInteractionMode {
     NAVIGATION,
     CHROME_PRIORITY,
     RENDERER_SELECTION,
+    RENDERER_ACCESSIBILITY,
     BLOCKED
 }
 
@@ -28,10 +29,12 @@ internal fun readerInteractionMode(
     selectionModeActive: Boolean,
     overlayVisible: Boolean,
     closeInFlight: Boolean,
-    controlsVisible: Boolean
+    controlsVisible: Boolean,
+    touchExplorationEnabled: Boolean = false
 ): ReaderInteractionMode = when {
     selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
     overlayVisible || closeInFlight -> ReaderInteractionMode.BLOCKED
+    touchExplorationEnabled -> ReaderInteractionMode.RENDERER_ACCESSIBILITY
     controlsVisible -> ReaderInteractionMode.CHROME_PRIORITY
     else -> ReaderInteractionMode.NAVIGATION
 }
@@ -80,7 +83,8 @@ internal class ReaderInputArbiter(
 
     override fun onTap(event: TapEvent): Boolean {
         when (interactionMode()) {
-            ReaderInteractionMode.RENDERER_SELECTION -> {
+            ReaderInteractionMode.RENDERER_SELECTION,
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY -> {
                 onTapOwner(ReaderTapOwner.RENDERER)
                 return false
             }
@@ -125,7 +129,8 @@ internal class ReaderInputArbiter(
 
     override fun onDrag(event: DragEvent): Boolean {
         when (interactionMode()) {
-            ReaderInteractionMode.RENDERER_SELECTION -> return false
+            ReaderInteractionMode.RENDERER_SELECTION,
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY -> return false
             ReaderInteractionMode.BLOCKED -> return true
             ReaderInteractionMode.NAVIGATION,
             ReaderInteractionMode.CHROME_PRIORITY -> Unit
@@ -141,6 +146,7 @@ internal class ReaderInputArbiter(
         when (interactionMode()) {
             ReaderInteractionMode.RENDERER_SELECTION -> return false
             ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY,
             ReaderInteractionMode.NAVIGATION,
             ReaderInteractionMode.CHROME_PRIORITY -> Unit
         }
