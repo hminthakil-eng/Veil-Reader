@@ -1,6 +1,5 @@
 package com.veilreader.app.ui.screens
 
-import android.view.HapticFeedbackConstants
 import android.os.SystemClock
 import kotlin.math.abs
 import kotlin.math.max
@@ -39,7 +38,6 @@ internal class PaperCurlInputListener(
     private var navigationJob: Job? = null
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
-    private var commitHapticSent = false
     private var lastDragSampleAtMillis = 0L
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
@@ -69,6 +67,7 @@ internal class PaperCurlInputListener(
             return true
         }
 
+        // The Reader's sensory layer gates feedback with the user's settings.
         onCommittedTurn()
 
         if (visualReady) {
@@ -125,7 +124,6 @@ internal class PaperCurlInputListener(
         if (!state.active) return true
         state.updateDrag(event.start, event.offset)
         sampleReleaseVelocity(spec, event)
-        maybeSignalCommitThreshold(spec, event)
         return true
     }
 
@@ -152,14 +150,12 @@ internal class PaperCurlInputListener(
             curlProgress = state.dragProgress(),
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
-        if (commit) signalCommitThreshold()
-
         scope.launch {
             navigationJob?.join()
 
             when {
                 commit && previewNavigationSucceeded -> {
-                    // Persist/count the committed destination before finishing the visual tail.
+                    // Persist/count and emit sensory feedback only after a real commit.
                     onCommittedTurn()
                     if (!isReducedMotion()) {
                         state.animateComplete(
@@ -207,7 +203,6 @@ internal class PaperCurlInputListener(
         activeDrag = spec
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
-        commitHapticSent = false
         lastDragSampleAtMillis = SystemClock.uptimeMillis()
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
@@ -221,25 +216,6 @@ internal class PaperCurlInputListener(
             previewNavigationSucceeded = navigate(spec.direction)
         }
         return true
-    }
-
-    private fun maybeSignalCommitThreshold(
-        spec: TurnSpec,
-        event: DragEvent
-    ) {
-        if (commitHapticSent) return
-        val view = navigator.publicationView
-        val width = view.width.toFloat()
-        if (width <= 0f) return
-        val inward = inwardDistance(spec, event)
-        val crossed = shouldCommitPaperTurn(
-            inwardDistance = inward,
-            width = width,
-            density = view.resources.displayMetrics.density,
-            curlProgress = state.dragProgress(),
-            releaseVelocityPxPerSec = releaseVelocityPxPerSec
-        )
-        if (crossed) signalCommitThreshold()
     }
 
     private fun inwardDistance(spec: TurnSpec, event: DragEvent): Float =
@@ -259,14 +235,6 @@ internal class PaperCurlInputListener(
         }
         lastDragSampleAtMillis = now
         lastInwardDistance = inward
-    }
-
-    private fun signalCommitThreshold() {
-        if (commitHapticSent) return
-        commitHapticSent = true
-        navigator.publicationView.performHapticFeedback(
-            HapticFeedbackConstants.CLOCK_TICK
-        )
     }
 
     private fun restoreDragStart(spec: TurnSpec) {
@@ -364,7 +332,6 @@ internal class PaperCurlInputListener(
         navigationJob = null
         previewNavigationSucceeded = false
         dragStartLocator = null
-        commitHapticSent = false
         lastDragSampleAtMillis = 0L
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
