@@ -6,6 +6,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderDarkImageTreatment
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -47,7 +52,21 @@ class SettingsStoreInstrumentedTest {
             scroll = true,
             publisherStyles = false,
             pageTurnStyle = PageTurnStyle.SLIDE,
-            screenBrightness = 0.42
+            screenBrightness = 0.42,
+            fontFamily = ReaderFontFamily.OPEN_DYSLEXIC,
+            fontWeight = 1.75,
+            textAlignment = ReaderTextAlignment.JUSTIFY,
+            columnMode = ReaderColumnMode.TWO,
+            hyphenation = ReaderPreferenceToggle.ON,
+            ligatures = ReaderPreferenceToggle.OFF,
+            textNormalization = ReaderPreferenceToggle.ON,
+            paragraphSpacing = 0.8,
+            paragraphIndent = 1.2,
+            letterSpacing = 0.08,
+            wordSpacing = 0.24,
+            typeScale = 1.15,
+            darkImageTreatment = ReaderDarkImageTreatment.INVERT,
+            paperPatina = 0.84
         )
 
         try {
