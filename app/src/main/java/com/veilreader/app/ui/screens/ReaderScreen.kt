@@ -77,6 +77,7 @@ import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -529,6 +530,7 @@ fun ReaderScreen(
 
     LaunchedEffect(navigator, opened.book.id) {
         val nav = navigator ?: return@LaunchedEffect
+        var initialLocatorPending = true
         nav.currentLocator
             .debounce(500)
             .collect { locator ->
@@ -547,13 +549,13 @@ fun ReaderScreen(
                 )
                 val continuousScroll =
                     (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
-                val event = when {
-                    continuousScroll -> ReaderLocatorEvent.NAVIGATOR_SCROLL_COMMIT
-                    opened.format != BookFormat.EPUB ||
-                        latestAppearance.value.pageTurnStyle != PageTurnStyle.PAPER ->
-                        ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
-                    else -> ReaderLocatorEvent.NAVIGATOR_POSITION
-                }
+                val event = navigatorLocatorEvent(
+                    isInitialEmission = initialLocatorPending,
+                    isContinuousScroll = continuousScroll,
+                    isPaperMode = opened.format == BookFormat.EPUB &&
+                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
+                )
+                initialLocatorPending = false
                 readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     progression = locator.locations.totalProgression
