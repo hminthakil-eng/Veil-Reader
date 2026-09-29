@@ -43,6 +43,9 @@ internal class PaperCurlInputListener(
     private var lastDragSampleAtMillis = 0L
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
+    private var peakInwardVelocityPxPerSec = 0f
+    private var peakVelocitySampleAtMillis = 0L
+    private var latestInstantaneousVelocityPxPerSec = 0f
 
     override fun onTap(event: TapEvent): Boolean {
         if (!paperModeEnabled()) return false
@@ -145,12 +148,20 @@ internal class PaperCurlInputListener(
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
         val inward = inwardDistance(spec, event)
+        val effectiveReleaseVelocity = paperEffectiveReleaseVelocity(
+            smoothedVelocityPxPerSec = releaseVelocityPxPerSec,
+            peakVelocityPxPerSec = peakInwardVelocityPxPerSec,
+            peakAgeMillis = (
+                SystemClock.uptimeMillis() - peakVelocitySampleAtMillis
+            ).coerceAtLeast(0L),
+            latestInstantaneousVelocityPxPerSec = latestInstantaneousVelocityPxPerSec
+        )
         val commit = shouldCommitPaperTurn(
             inwardDistance = inward,
             width = width,
             density = density,
             curlProgress = state.dragProgress(),
-            releaseVelocityPxPerSec = releaseVelocityPxPerSec
+            releaseVelocityPxPerSec = effectiveReleaseVelocity
         )
         if (commit) signalCommitThreshold()
 
@@ -164,7 +175,7 @@ internal class PaperCurlInputListener(
                     if (!isReducedMotion()) {
                         state.animateComplete(
                             releaseVelocityDpPerSec =
-                                releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                                effectiveReleaseVelocity / density.coerceAtLeast(0.1f)
                         )
                     }
                 }
@@ -211,6 +222,9 @@ internal class PaperCurlInputListener(
         lastDragSampleAtMillis = SystemClock.uptimeMillis()
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
+        peakInwardVelocityPxPerSec = 0f
+        peakVelocitySampleAtMillis = 0L
+        latestInstantaneousVelocityPxPerSec = 0f
         state.updateDrag(event.start, event.offset)
         onInteraction()
 
@@ -253,9 +267,18 @@ internal class PaperCurlInputListener(
         val inward = inwardDistance(spec, event)
         val elapsed = now - lastDragSampleAtMillis
         if (lastDragSampleAtMillis > 0L && elapsed in 1L..120L) {
-            releaseVelocityPxPerSec =
+            val instantaneous =
                 ((inward - lastInwardDistance) * 1000f / elapsed.toFloat())
                     .coerceIn(-12_000f, 12_000f)
+            latestInstantaneousVelocityPxPerSec = instantaneous
+            releaseVelocityPxPerSec = paperSmoothedReleaseVelocity(
+                previousPxPerSec = releaseVelocityPxPerSec,
+                instantaneousPxPerSec = instantaneous
+            )
+            if (instantaneous > peakInwardVelocityPxPerSec) {
+                peakInwardVelocityPxPerSec = instantaneous
+                peakVelocitySampleAtMillis = now
+            }
         }
         lastDragSampleAtMillis = now
         lastInwardDistance = inward
@@ -368,6 +391,9 @@ internal class PaperCurlInputListener(
         lastDragSampleAtMillis = 0L
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
+        peakInwardVelocityPxPerSec = 0f
+        peakVelocitySampleAtMillis = 0L
+        latestInstantaneousVelocityPxPerSec = 0f
     }
 
     private data class TurnSpec(
@@ -382,6 +408,45 @@ internal class PaperCurlInputListener(
         const val FRAME_DELAY_MS = 18L
         const val PAGE_REVEAL_DELAY_MS = 28L
     }
+}
+
+internal fun paperSmoothedReleaseVelocity(
+    previousPxPerSec: Float,
+    instantaneousPxPerSec: Float
+): Float {
+    if (!previousPxPerSec.isFinite() || !instantaneousPxPerSec.isFinite()) return 0f
+    val previous = previousPxPerSec.coerceIn(-12_000f, 12_000f)
+    val instantaneous = instantaneousPxPerSec.coerceIn(-12_000f, 12_000f)
+    return (previous * 0.58f + instantaneous * 0.42f)
+        .coerceIn(-12_000f, 12_000f)
+}
+
+internal fun paperEffectiveReleaseVelocity(
+    smoothedVelocityPxPerSec: Float,
+    peakVelocityPxPerSec: Float,
+    peakAgeMillis: Long,
+    latestInstantaneousVelocityPxPerSec: Float
+): Float {
+    if (
+        !smoothedVelocityPxPerSec.isFinite() ||
+        !peakVelocityPxPerSec.isFinite() ||
+        !latestInstantaneousVelocityPxPerSec.isFinite()
+    ) return 0f
+
+    // A deliberate reversal must cancel stale inward momentum immediately.
+    if (latestInstantaneousVelocityPxPerSec < -120f) {
+        return smoothedVelocityPxPerSec.coerceAtMost(0f)
+    }
+
+    val age = peakAgeMillis.coerceAtLeast(0L)
+    val peakRetention = when {
+        age <= 48L -> 1f
+        age >= 140L -> 0f
+        else -> 1f - (age - 48L) / 92f
+    }
+    val retainedPeak = peakVelocityPxPerSec.coerceAtLeast(0f) * peakRetention
+    return maxOf(smoothedVelocityPxPerSec, retainedPeak)
+        .coerceIn(-12_000f, 12_000f)
 }
 
 internal fun paperTurnDirectionFor(
