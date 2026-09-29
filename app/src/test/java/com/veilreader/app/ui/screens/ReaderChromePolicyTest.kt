@@ -143,4 +143,36 @@ class ReaderChromePolicyTest {
         )
     }
 
+    @Test
+    fun `final snapshot is skipped after a preview rollback even when visual state is already clear`() {
+        assertFalse(
+            shouldTakeFinalNavigatorSnapshot(
+                format = BookFormat.EPUB,
+                paperPreviewActive = false,
+                slidePreviewActive = false,
+                previewCancelled = true
+            )
+        )
+    }
+
+    @Test
+    fun `settled reader can take a final snapshot`() {
+        assertTrue(
+            shouldTakeFinalNavigatorSnapshot(
+                format = BookFormat.EPUB,
+                paperPreviewActive = false,
+                slidePreviewActive = false,
+                previewCancelled = false
+            )
+        )
+        assertFalse(
+            shouldTakeFinalNavigatorSnapshot(
+                format = BookFormat.EPUB,
+                paperPreviewActive = false,
+                slidePreviewActive = true,
+                previewCancelled = false
+            )
+        )
+    }
+
 }
