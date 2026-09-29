@@ -74,6 +74,15 @@ internal fun rememberVeilPercentFormatter(): (Float) -> String {
         { value -> formatter.format(value.toDouble()) }
     }
 }
+@Composable
+internal fun rememberVeilIntegerFormatter(): (Number) -> String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale) { NumberFormat.getIntegerInstance(locale) }
+    return remember(formatter) {
+        { value -> formatter.format(value) }
+    }
+}
+
 
 @Composable
 fun VeilReveal(
