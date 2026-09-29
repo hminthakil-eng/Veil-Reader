@@ -10,6 +10,7 @@ import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -35,6 +36,36 @@ class SettingsStoreInstrumentedTest {
         }
     }
 
+    @Test
+    fun perBookReaderAppearance_survivesRecreationAndClearsBackToGlobal() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val bookId = "settings-test-book"
+        val expected = ReaderAppearance(
+            theme = ReaderTheme.DUSK,
+            fontScale = 1.18,
+            lineHeight = 1.62,
+            pageMargins = 0.88,
+            scroll = false,
+            publisherStyles = false,
+            pageTurnStyle = PageTurnStyle.SLIDE,
+            screenBrightness = 0.36
+        )
+
+        try {
+            store.clearBookReaderAppearance(bookId)
+            store.saveBookReaderAppearance(bookId, expected)
+
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerAppearanceOverrides[bookId])
+
+            SettingsStore(context).clearBookReaderAppearance(bookId)
+            val cleared = SettingsStore(context).settings.first()
+            assertNull(cleared.readerAppearanceOverrides[bookId])
+        } finally {
+            store.clearBookReaderAppearance(bookId)
+        }
+    }
     @Test
     fun themeAndReaderMode_surviveSettingsStoreRecreation() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
