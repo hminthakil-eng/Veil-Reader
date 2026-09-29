@@ -16,6 +16,7 @@ import kotlin.math.sin
 
 enum class VeilSensoryEvent {
     PAGE_TURN,
+    BOUNDARY,
     MARK,
     NOTE,
     RETURN_RITUAL,
@@ -67,6 +68,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         if (snapshot.hapticsEnabled) {
             val feedback = when (event) {
                 VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
+                VeilSensoryEvent.BOUNDARY -> HapticFeedbackConstants.CONTEXT_CLICK
                 VeilSensoryEvent.MARK,
                 VeilSensoryEvent.NOTE -> HapticFeedbackConstants.KEYBOARD_TAP
                 VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
@@ -118,6 +120,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         val sampleRate = 22_050
         val seconds = when (event) {
             VeilSensoryEvent.PAGE_TURN -> 0.085
+            VeilSensoryEvent.BOUNDARY -> 0.055
             VeilSensoryEvent.MARK -> 0.070
             VeilSensoryEvent.NOTE -> 0.095
             VeilSensoryEvent.RETURN_RITUAL -> 0.240
@@ -141,6 +144,13 @@ class VeilSensoryFeedback(context: android.content.Context) {
                     val envelope = sin(PI * unit).coerceAtLeast(0.0)
                     smoothNoise * envelope * 0.58 +
                         sin(2.0 * PI * 92.0 * t) * envelope * 0.035
+                }
+                VeilSensoryEvent.BOUNDARY -> {
+                    val envelope = exp(-t * 48.0)
+                    (
+                        sin(2.0 * PI * 74.0 * t) * 0.22 +
+                            smoothNoise * 0.08
+                        ) * envelope
                 }
                 VeilSensoryEvent.MARK -> {
                     val envelope = exp(-t * 30.0)
