@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Bookmark
@@ -152,9 +154,9 @@ fun CastleScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
     ) {
         ScreenHeader(
-            eyebrow = "CASTLE · LIVING ARCHIVE",
-            title = "The Keep Remembers",
-            subtitle = memoryState.inscription
+            eyebrow = stringResource(R.string.castle_header_eyebrow),
+            title = stringResource(R.string.castle_header_title),
+            subtitle = localizedCastleMemoryNarrative(memoryState.memoryNarrative)
         )
 
         CastleKeep(
@@ -175,17 +177,17 @@ fun CastleScreen(
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
-                "THE INNER KEEP",
+                stringResource(R.string.castle_inner_keep_eyebrow),
                 style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp),
                 color = VeilPalette.Brass
             )
             Text(
-                "Awakened Chambers",
+                stringResource(R.string.castle_awakened_chambers_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = VeilPalette.Moon
             )
             Text(
-                "Follow the central stair. Open rooms are usable now; sealed rooms reveal the rank that awakens them.",
+                stringResource(R.string.castle_inner_keep_body),
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Mist
             )
@@ -202,7 +204,7 @@ fun CastleScreen(
         BrassRule(Modifier.fillMaxWidth())
 
         Text(
-            "Nothing in the Castle is sold or time-gated. It grows from reading progress already stored on this device.",
+            stringResource(R.string.castle_growth_note),
             modifier = Modifier.padding(horizontal = 2.dp),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.82f)
@@ -222,6 +224,14 @@ private fun CastleKeep(
     onAdvanceRank: () -> Unit
 ) {
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
+    val localizedRank = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
+    val localizedPath = localizedPathName(profile.path)
+    val pathSummary = stringResource(
+        if (profile.booksFinished == 1) R.string.castle_path_summary_one
+        else R.string.castle_path_summary_many,
+        localizedPath,
+        profile.booksFinished
+    )
     val targetProgress = (profile.rankIndex.toFloat() / finalRank).coerceIn(0f, 1f)
     val reducedMotion = LocalVeilReducedMotion.current
     val castleProgress by animateFloatAsState(
@@ -290,17 +300,17 @@ private fun CastleKeep(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "KEEP TIER ${profile.rankIndex + 1}",
+                        stringResource(R.string.castle_keep_tier, profile.rankIndex + 1),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.30.sp),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        profile.rankName,
+                        localizedRank,
                         style = MaterialTheme.typography.headlineSmall,
                         color = VeilPalette.Moon
                     )
                     Text(
-                        "${profile.path.name} · ${profile.booksFinished} finished ${if (profile.booksFinished == 1) "volume" else "volumes"}",
+                        pathSummary,
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
@@ -319,7 +329,7 @@ private fun CastleKeep(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "AWAKENED CHAMBERS",
+                    stringResource(R.string.castle_awakened_chambers_eyebrow),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
@@ -354,7 +364,7 @@ private fun CastleKeep(
                     contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        "Perform advancement",
+                        stringResource(R.string.castle_perform_advancement),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -365,6 +375,19 @@ private fun CastleKeep(
 
 @Composable
 private fun CastleMemoryInscription(memory: CastleMemoryState) {
+    val facts = buildList {
+        add(stringResource(R.string.castle_memory_volumes, memory.volumeCount))
+        if (memory.passageCount > 0) {
+            add(stringResource(R.string.castle_memory_passages, memory.passageCount))
+        }
+        if (memory.sealedCapsuleCount > 0) {
+            add(stringResource(R.string.castle_memory_records, memory.sealedCapsuleCount))
+        }
+        if (memory.atlasLinkCount > 0) {
+            add(stringResource(R.string.castle_memory_links, memory.atlasLinkCount))
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -372,23 +395,12 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            "FOUNDATION MEMORY",
+            stringResource(R.string.castle_foundation_memory),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
         Text(
-            buildString {
-                append(memory.volumeCount).append(" volumes")
-                if (memory.passageCount > 0) {
-                    append(" · ").append(memory.passageCount).append(" preserved passages")
-                }
-                if (memory.sealedCapsuleCount > 0) {
-                    append(" · ").append(memory.sealedCapsuleCount).append(" sealed records")
-                }
-                if (memory.atlasLinkCount > 0) {
-                    append(" · ").append(memory.atlasLinkCount).append(" atlas links")
-                }
-            },
+            facts.joinToString(" · "),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
@@ -411,6 +423,7 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
 
 @Composable
 private fun CastleWorldProgressionInscription(world: WorldProgressionProjection) {
+    val stage = localizedWorldStage(world.stage)
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -418,12 +431,12 @@ private fun CastleWorldProgressionInscription(world: WorldProgressionProjection)
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         Text(
-            "WORLD · ${world.stage.label.uppercase()}",
+            stringResource(R.string.castle_world_label, stage),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
             color = VeilPalette.Brass.copy(alpha = 0.82f)
         )
         Text(
-            world.inscription,
+            localizedWorldInscription(world.inscriptionKind),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.76f)
         )
@@ -453,7 +466,7 @@ private fun CastleMutationInscription(memory: CastleMemoryState) {
         shadowElevation = 0.dp
     ) {
         Text(
-            memory.mutationInscription,
+            localizedCastleMutationSignal(memory.mutationSignal),
             modifier = Modifier.padding(12.dp),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.80f)
@@ -467,8 +480,10 @@ private fun CastleRitualAftermath(
     afterglow: Float
 ) {
     val aftermath = profile.ritualAftermath ?: return
-    val fromRank = profile.path.ranks.getOrNull(aftermath.fromRankIndex) ?: return
-    val toRank = profile.path.ranks.getOrNull(aftermath.toRankIndex) ?: return
+    val fromFallback = profile.path.ranks.getOrNull(aftermath.fromRankIndex) ?: return
+    val toFallback = profile.path.ranks.getOrNull(aftermath.toRankIndex) ?: return
+    val fromRank = localizedRankName(profile.path.id, aftermath.fromRankIndex, fromFallback)
+    val toRank = localizedRankName(profile.path.id, aftermath.toRankIndex, toFallback)
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -486,7 +501,7 @@ private fun CastleRitualAftermath(
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
-                "SEALED ADVANCEMENT",
+                stringResource(R.string.castle_sealed_advancement),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
                 color = VeilPalette.Brass
             )
@@ -496,11 +511,10 @@ private fun CastleRitualAftermath(
                 color = VeilPalette.Moon
             )
             Text(
-                if (afterglow > 0f) {
-                    "The ritual seal still carries visible afterglow; the recorded advancement itself is permanent."
-                } else {
-                    "The ceremonial glow has faded; the recorded advancement remains in the keep."
-                },
+                stringResource(
+                    if (afterglow > 0f) R.string.castle_afterglow_active
+                    else R.string.castle_afterglow_faded
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.74f)
             )
@@ -516,23 +530,29 @@ private fun CastleMutationLedgerSummary(ledger: WorldMutationLedger) {
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            "WORLD MUTATIONS · ${ledger.durableCount} DURABLE",
+            stringResource(R.string.castle_world_mutations, ledger.durableCount),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = VeilPalette.Brass.copy(alpha = 0.80f)
         )
         ledger.entries.take(3).forEach { entry ->
+            val durability = stringResource(
+                if (entry.durable) R.string.castle_mutation_durable
+                else R.string.castle_mutation_transient
+            )
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    entry.title,
+                    localizedWorldMutationTitle(entry.kind),
                     style = MaterialTheme.typography.titleSmall,
                     color = VeilPalette.Moon
                 )
                 Text(
-                    entry.inscription,
+                    stringResource(
+                        R.string.castle_mutation_evidence,
+                        entry.evidenceCount,
+                        durability
+                    ),
                     style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.68f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                    color = VeilPalette.Mist.copy(alpha = 0.68f)
                 )
             }
         }
@@ -766,11 +786,13 @@ private fun CastleWorldMap(
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 CastleGateLabel(
-                    title = "CROWN",
-                    subtitle = "The upper halls"
+                    title = stringResource(R.string.castle_crown),
+                    subtitle = stringResource(R.string.castle_upper_halls)
                 )
 
                 rooms.forEachIndexed { index, room ->
+                    val localizedRoomName = localizedCastleRoomName(room.id, room.name)
+                    val localizedRoomPurpose = localizedCastleRoomPurpose(room.id, room.purpose)
                     VeilReveal(
                         delayMillis = 90 + index * 70,
                         distance = 10.dp,
@@ -779,8 +801,8 @@ private fun CastleWorldMap(
                         CastleFloor(
                             floor = rooms.size - index,
                             id = room.id,
-                            name = room.name,
-                            purpose = room.purpose,
+                            name = localizedRoomName,
+                            purpose = localizedRoomPurpose,
                             unlockRank = room.unlockRankIndex,
                             unlocked = rankIndex >= room.unlockRankIndex,
                             resonance = memoryState.resonanceFor(room.id),
@@ -793,8 +815,8 @@ private fun CastleWorldMap(
                 }
 
                 CastleGateLabel(
-                    title = "FOUNDATION",
-                    subtitle = "The first stone remembers"
+                    title = stringResource(R.string.castle_foundation),
+                    subtitle = stringResource(R.string.castle_first_stone)
                 )
             }
         }
@@ -1051,7 +1073,7 @@ private fun FloorInscription(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            "FLOOR ${floor.toString().padStart(2, '0')}",
+            stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
@@ -1060,7 +1082,9 @@ private fun FloorInscription(
             }
         )
         Text(
-            if (unlocked) "AWAKENED" else "SILENT",
+            stringResource(
+                if (unlocked) R.string.castle_awakened else R.string.castle_silent
+            ),
             style = MaterialTheme.typography.labelSmall,
             color = if (unlocked) {
                 VeilPalette.Moon.copy(alpha = 0.62f)
@@ -1084,6 +1108,15 @@ private fun CastleChamberNode(
     modifier: Modifier = Modifier
 ) {
     val safeResonance = resonance.coerceIn(0f, 1f)
+    val chamberDescription = if (unlocked) {
+        stringResource(R.string.castle_chamber_open_semantics, name, purpose)
+    } else {
+        stringResource(R.string.castle_chamber_sealed_semantics, name, unlockRank + 1)
+    }
+    val sealedBody = stringResource(R.string.castle_awakens_rank, unlockRank + 1)
+    val actionLabel = stringResource(
+        if (unlocked) R.string.castle_enter else R.string.castle_sealed
+    )
     val edge = if (unlocked) {
         VeilPalette.Brass.copy(alpha = 0.42f + safeResonance * 0.36f)
     } else {
@@ -1112,11 +1145,7 @@ private fun CastleChamberNode(
             )
             .border(BorderStroke(1.dp, edge), MaterialTheme.shapes.extraSmall)
             .semantics {
-                contentDescription = if (unlocked) {
-                    "$name chamber. $purpose. Enter."
-                } else {
-                    "$name chamber. Sealed until rank ${unlockRank + 1}."
-                }
+                contentDescription = chamberDescription
             }
             .clickable(
                 enabled = unlocked,
@@ -1184,7 +1213,7 @@ private fun CastleChamberNode(
         )
 
         Text(
-            if (unlocked) purpose else "Awakens at rank ${unlockRank + 1}",
+            if (unlocked) purpose else sealedBody,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             maxLines = 2,
@@ -1195,7 +1224,7 @@ private fun CastleChamberNode(
         Spacer(Modifier.height(5.dp))
 
         Text(
-            if (unlocked) "ENTER" else "SEALED",
+            actionLabel,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
             color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.44f)
         )
