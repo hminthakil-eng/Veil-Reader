@@ -250,6 +250,106 @@ fun ProfileScreen(
     }
 }
 
+@Composable
+private fun ProfileMasteryPanel(profile: ReaderProfile) {
+    val mastery = effectivePathMastery(profile)
+    val doctrine = localizedPathDoctrine(profile.path.id)
+    val status = stringResource(
+        if (mastery.ritualReady) R.string.profile_mastery_ready
+        else R.string.profile_mastery_building
+    )
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.64f),
+        border = BorderStroke(
+            1.dp,
+            if (mastery.ritualReady) VeilPalette.Brass.copy(alpha = 0.54f)
+            else VeilPalette.BorderDark.copy(alpha = 0.78f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Bottom
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.profile_mastery_eyebrow),
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        stringResource(R.string.profile_mastery_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = VeilPalette.Moon
+                    )
+                }
+                Text(
+                    status,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (mastery.ritualReady) VeilPalette.Brass else VeilPalette.Mist
+                )
+            }
+
+            Text(
+                doctrine.maxim,
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Spirit.copy(alpha = 0.82f)
+            )
+
+            ProfileMasteryAxisRow(doctrine.embodimentName, mastery.embodiment, VeilPalette.Brass)
+            ProfileMasteryAxisRow(doctrine.insightName, mastery.insight, VeilPalette.Spirit)
+            ProfileMasteryAxisRow(doctrine.stabilityName, mastery.stability, VeilPalette.Moon)
+
+            if (mastery.dissonance > 0 && !mastery.ritualReady) {
+                Text(
+                    stringResource(R.string.profile_mastery_dissonance, mastery.dissonance),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.70f)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileMasteryAxisRow(
+    label: String,
+    axis: PathMasteryAxis,
+    color: Color
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = VeilPalette.Moon)
+            Text(
+                "${axis.value}/${axis.target}",
+                style = MaterialTheme.typography.labelSmall,
+                color = if (axis.ready) color else VeilPalette.Mist
+            )
+        }
+        LinearProgressIndicator(
+            progress = { axis.progress },
+            modifier = Modifier.fillMaxWidth().height(2.dp),
+            color = color,
+            trackColor = VeilPalette.Moon.copy(alpha = 0.07f),
+            drawStopIndicator = {}
+        )
+    }
+}
+
 internal data class ReaderDossierHistory(
     val archivedVolumeCount: Int,
     val recordedSessionCount: Int,
@@ -412,13 +512,17 @@ private fun formatDossierDuration(activeMillis: Long): String {
 private fun ArchivistDossierPanel(
     profile: ReaderProfile,
     highlightCount: Int,
-    equippedSigilName: String?,
+    equippedSigilId: String?,
     revealedDiscoveries: Int,
     totalDiscoveries: Int,
     onOpenSettings: () -> Unit
 ) {
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
+    val identity = localizedPathIdentity(profile.path)
+    val pathName = localizedPathName(profile.path)
+    val rankName = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
+    val equippedSigilName = equippedSigilId?.let { localizedSigilName(it) }
 
     Box(
         modifier = Modifier
@@ -456,17 +560,17 @@ private fun ArchivistDossierPanel(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "PRIVATE READING RECORD",
+                        stringResource(R.string.profile_private_record),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        profile.rankName,
+                        rankName,
                         style = MaterialTheme.typography.headlineMedium,
                         color = VeilPalette.Moon
                     )
                     Text(
-                        profile.path.epithet,
+                        identity.epithet,
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
@@ -478,7 +582,7 @@ private fun ArchivistDossierPanel(
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        "SETTINGS",
+                        stringResource(R.string.profile_settings),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -499,10 +603,15 @@ private fun ArchivistDossierPanel(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    DossierFact("PATH", profile.path.name)
-                    DossierFact("LEVEL", profile.level.toString())
-                    DossierFact("CASTLE TIER", (profile.rankIndex + 1).toString())
-                    equippedSigilName?.let { DossierFact("EQUIPPED SIGIL", it) }
+                    DossierFact(stringResource(R.string.profile_fact_path), pathName)
+                    DossierFact(stringResource(R.string.profile_fact_level), profile.level.toString())
+                    DossierFact(
+                        stringResource(R.string.profile_fact_castle_tier),
+                        (profile.rankIndex + 1).toString()
+                    )
+                    equippedSigilName?.let {
+                        DossierFact(stringResource(R.string.profile_fact_equipped_sigil), it)
+                    }
                 }
             }
 
@@ -513,12 +622,12 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "EXPERIENCE",
+                    stringResource(R.string.profile_experience),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
                     color = VeilPalette.Mist
                 )
                 Text(
-                    "${profile.xp}/$xpTarget XP",
+                    stringResource(R.string.profile_xp, profile.xp, xpTarget),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
@@ -536,17 +645,21 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "${profile.earnedSigils.size} SIGILS",
+                    stringResource(R.string.profile_sigils_count, profile.earnedSigils.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$revealedDiscoveries/$totalDiscoveries DISCOVERIES",
+                    stringResource(
+                        R.string.profile_discoveries_count,
+                        revealedDiscoveries,
+                        totalDiscoveries
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$highlightCount MARKS",
+                    stringResource(R.string.profile_marks_count, highlightCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
