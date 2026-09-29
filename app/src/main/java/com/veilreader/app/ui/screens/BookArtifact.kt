@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.domain.Book
+import com.veilreader.app.ui.books.BookPatina
+import com.veilreader.app.ui.books.bookArtifactState as canonicalBookArtifactState
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlin.math.PI
 import kotlin.math.cos
@@ -43,9 +45,6 @@ data class BookArtifactState(
     val auraIndex: Int
 )
 
-private const val DAY_MS = 86_400_000L
-private const val RECENT_WINDOW_MS = 36L * 60L * 60L * 1000L
-
 /**
  * Builds a visual history only from fields Veil already persists.
  *
@@ -56,34 +55,21 @@ fun bookArtifactState(
     book: Book,
     nowEpochMs: Long = System.currentTimeMillis()
 ): BookArtifactState {
-    val progress = book.progress.coerceIn(0f, 1f)
-    val safeNow = nowEpochMs.coerceAtLeast(0L)
-    val safeAdded = book.addedAtEpochMs.coerceAtLeast(0L)
-    val ageDays = if (safeAdded == 0L || safeNow <= safeAdded) {
-        0L
-    } else {
-        (safeNow - safeAdded) / DAY_MS
+    // Archive age, completion and recent return have one contract across every shelf.
+    val canonical = canonicalBookArtifactState(book, nowEpochMs)
+    val progress = canonical.progress
+    val archiveAge = when (canonical.patina) {
+        BookPatina.FRESH -> BookArchiveAge.NEW
+        BookPatina.SETTLED -> BookArchiveAge.SETTLED
+        BookPatina.AGED -> BookArchiveAge.AGED
+        BookPatina.ARCHIVAL -> BookArchiveAge.ARCHIVAL
     }
-
-    val archiveAge = when {
-        ageDays >= 180L -> BookArchiveAge.ARCHIVAL
-        ageDays >= 60L -> BookArchiveAge.AGED
-        ageDays >= 7L -> BookArchiveAge.SETTLED
-        else -> BookArchiveAge.NEW
-    }
-
     val presence = when {
-        book.finished -> BookPresence.COMPLETED
+        canonical.finished -> BookPresence.COMPLETED
         progress > 0f -> BookPresence.READING
         book.lastOpenedAtEpochMs > 0L -> BookPresence.OPENED
         else -> BookPresence.PRISTINE
     }
-
-    val sinceOpen = safeNow - book.lastOpenedAtEpochMs
-    val recentlyOpened =
-        book.lastOpenedAtEpochMs > 0L &&
-            sinceOpen >= 0L &&
-            sinceOpen <= RECENT_WINDOW_MS
 
     val agePatina = when (archiveAge) {
         BookArchiveAge.NEW -> 0.03f
@@ -91,10 +77,9 @@ fun bookArtifactState(
         BookArchiveAge.AGED -> 0.22f
         BookArchiveAge.ARCHIVAL -> 0.34f
     }
-    val engagementPatina =
-        progress * 0.14f +
-            if (book.finished) 0.12f else 0f +
-            if (book.favorite) 0.04f else 0f
+    val completionPatina = if (canonical.finished) 0.12f else 0f
+    val favoritePatina = if (canonical.favorite) 0.04f else 0f
+    val engagementPatina = progress * 0.14f + completionPatina + favoritePatina
 
     val auraHash = (book.title + "|" + book.author)
         .fold(17) { acc, char -> acc * 31 + char.code }
@@ -103,12 +88,12 @@ fun bookArtifactState(
         presence = presence,
         archiveAge = archiveAge,
         progress = progress,
-        leftStack = if (book.finished) 1f else progress,
-        rightStack = if (book.finished) 0f else (1f - progress),
+        leftStack = progress,
+        rightStack = 1f - progress,
         patina = (agePatina + engagementPatina).coerceIn(0f, 0.56f),
-        recentlyOpened = recentlyOpened,
-        favorite = book.favorite,
-        completed = book.finished,
+        recentlyOpened = canonical.recentlyOpened,
+        favorite = canonical.favorite,
+        completed = canonical.finished,
         auraIndex = (auraHash and Int.MAX_VALUE) % 4
     )
 }
