@@ -173,6 +173,10 @@
     <string name="reader_save_note">Save note</string>
 
     <!-- Reader feedback and recoverable errors -->
+    <string name="reader_footnote_eyebrow">MARGIN NOTE</string>
+    <string name="reader_footnote_title">Footnote</string>
+    <string name="reader_footnote_close">Close</string>
+    <string name="reader_external_link_failed">Could not open this external link.</string>
     <string name="reader_selection_highlight">Highlight</string>
     <string name="reader_selection_note">Note</string>
     <string name="reader_highlighted">Passage highlighted</string>
