@@ -1093,4 +1093,7 @@
     <string name="capsule_highlight_events_many">%1$s رویداد هایلایت</string>
     <string name="capsule_note_event_one">%1$s رویداد یادداشت</string>
     <string name="capsule_note_events_many">%1$s رویداد یادداشت</string>
+    <string name="path_generic_invocation">با نیت بخوان؛ با نشانه بازگرد.</string>
+    <string name="path_generic_epithet">خوانندهٔ ناشناخته</string>
+    <string name="path_generic_description">مسیری که هویت کامل آن هنوز در این نسخه از Veil ثبت نشده است.</string>
 </resources>
