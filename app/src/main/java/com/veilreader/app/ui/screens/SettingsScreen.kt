@@ -2,24 +2,28 @@ package com.veilreader.app.ui.screens
 
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -37,14 +41,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
@@ -56,6 +65,7 @@ import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.util.Locale
@@ -115,14 +125,43 @@ fun SettingsScreen(
     var confirmRestore by remember { mutableStateOf(false) }
     BackHandler(onBack = onClose)
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .systemBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.TopCenter
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            alpha = 0.18f,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(300.dp)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(330.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            VeilPalette.Ink.copy(alpha = 0.16f),
+                            VeilPalette.Ink.copy(alpha = 0.62f),
+                            VeilPalette.Ink
+                        )
+                    )
+                )
+        )
+
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        ) {
         TextButton(
             onClick = onClose,
             modifier = Modifier.heightIn(min = 48.dp)
@@ -500,49 +539,104 @@ fun SettingsScreen(
         }
     }
 
+    }
+
     if (confirmRestore) {
-        AlertDialog(
+        Dialog(
             onDismissRequest = { confirmRestore = false },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        stringResource(R.string.settings_restore_eyebrow),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        stringResource(R.string.settings_restore_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 22.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 520.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.52f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.30f
+                        )
+                        Column(
+                            modifier = Modifier.padding(
+                                horizontal = VeilSpacing.lg,
+                                vertical = VeilSpacing.lg
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.settings_restore_eyebrow),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.settings_restore_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+                            Text(
+                                stringResource(R.string.settings_restore_warning),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { confirmRestore = false },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                                Button(
+                                    onClick = {
+                                        confirmRestore = false
+                                        restorePicker.launch(
+                                            arrayOf(
+                                                "application/zip",
+                                                "application/octet-stream"
+                                            )
+                                        )
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.settings_choose_backup))
+                                }
+                            }
+                        }
+                    }
                 }
-            },
-            text = {
-                Text(
-                    stringResource(R.string.settings_restore_warning)
-                )
-            },
-            dismissButton = {
-                TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.common_cancel)) }
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        confirmRestore = false
-                        restorePicker.launch(arrayOf("application/zip", "application/octet-stream"))
-                    },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
-                    )
-                ) { Text(stringResource(R.string.settings_choose_backup)) }
             }
-        )
+        }
     }
 }
 
