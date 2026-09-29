@@ -481,6 +481,7 @@ fun ReaderScreen(
     }
     var imageLoading by remember(opened.book.id) { mutableStateOf(false) }
     var imageLoadJob by remember(opened.book.id) { mutableStateOf<Job?>(null) }
+    var imageLoadSerial by remember(opened.book.id) { mutableIntStateOf(0) }
     var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
 
     DisposableEffect(imageViewer?.bitmap) {
@@ -678,6 +679,7 @@ fun ReaderScreen(
     }
 
     BackHandler(enabled = imageLoading) {
+        imageLoadSerial += 1
         imageLoadJob?.cancel()
         imageLoadJob = null
         imageLoading = false
@@ -911,6 +913,8 @@ fun ReaderScreen(
         } else {
             val imageTapListener = if (navigator is EpubNavigatorFragment) {
                 ReaderImageTapInputListener { image ->
+                    imageLoadSerial += 1
+                    val requestSerial = imageLoadSerial
                     imageLoadJob?.cancel()
                     imageLoading = true
                     imageLoadJob = scope.launch {
@@ -923,6 +927,10 @@ fun ReaderScreen(
                                 withContext(Dispatchers.Default) {
                                     decodeReaderImage(payload)
                                 }
+                            }
+                            if (requestSerial != imageLoadSerial) {
+                                bitmap?.takeIf { !it.isRecycled }?.recycle()
+                                return@launch
                             }
                             if (bitmap == null) {
                                 readerMessage = imageViewerFailedMessage
@@ -937,10 +945,14 @@ fun ReaderScreen(
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
-                            readerMessage = imageViewerFailedMessage
+                            if (requestSerial == imageLoadSerial) {
+                                readerMessage = imageViewerFailedMessage
+                            }
                         } finally {
-                            imageLoading = false
-                            imageLoadJob = null
+                            if (requestSerial == imageLoadSerial) {
+                                imageLoading = false
+                                imageLoadJob = null
+                            }
                         }
                     }
                 }
@@ -1111,6 +1123,7 @@ fun ReaderScreen(
             slideInputListener = slideListener
             nav.addInputListener(inputArbiter)
             onDispose {
+                imageLoadSerial += 1
                 imageLoadJob?.cancel()
                 imageLoadJob = null
                 imageLoading = false
