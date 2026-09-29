@@ -259,4 +259,39 @@
     <string name="archive_view_years">LAST VIEWED %1$d YEARS AGO</string>
     <string name="archive_revisited_once">REVISITED %1$d TIME</string>
     <string name="archive_revisited_many">REVISITED %1$d TIMES</string>
+
+    <!-- Sealed reading history -->
+    <string name="capsule_sealed_record">SEALED READING RECORD</string>
+    <string name="capsule_sealed_cycle">SEALED READING RECORD · CYCLE %1$d</string>
+    <string name="capsule_completed_at">COMPLETED · %1$s</string>
+    <string name="capsule_open_history">Open preserved history</string>
+    <string name="capsule_sheet_title">TIME CAPSULE · SEALED</string>
+    <string name="capsule_sheet_cycle">TIME CAPSULE · CYCLE %1$d · SEALED</string>
+    <string name="capsule_sessions">SESSIONS</string>
+    <string name="capsule_active">ACTIVE</string>
+    <string name="capsule_passages">PASSAGES</string>
+    <string name="capsule_notes_marks">NOTES / MARKS</string>
+    <string name="capsule_history">READING HISTORY</string>
+    <string name="capsule_no_timeline">This completed volume predates detailed session history. Its completion state is preserved, but no dated timeline survives.</string>
+    <string name="capsule_completion_unknown">Completion is preserved as a state. This archive version does not store the exact instant the book first reached completion, so Veil does not invent one.</string>
+    <string name="capsule_close">Close record</string>
+    <string name="capsule_date_unknown">DATE UNKNOWN</string>
+    <string name="capsule_hours">%1$dH</string>
+    <string name="capsule_hours_minutes">%1$dH %2$dM</string>
+    <string name="capsule_minutes">%1$dM</string>
+    <string name="capsule_less_than_minute">&lt;1M</string>
+    <string name="capsule_one_session">%1$d session</string>
+    <string name="capsule_many_sessions">%1$d sessions</string>
+    <string name="capsule_one_passage">%1$d passage</string>
+    <string name="capsule_many_passages">%1$d passages</string>
+    <string name="capsule_one_note">%1$d note</string>
+    <string name="capsule_many_notes">%1$d notes</string>
+    <string name="capsule_event_archived">Entered the Grayfog Archive</string>
+    <string name="capsule_event_session">Reading session</string>
+    <string name="capsule_event_passage">Passage preserved</string>
+    <string name="capsule_event_annotated">Annotated passage preserved</string>
+    <string name="capsule_event_location">Location marked</string>
+    <string name="capsule_event_milestone">Reading milestone</string>
+    <string name="capsule_event_completed">Volume completed</string>
+    <string name="capsule_event_latest">Latest recorded volume activity</string>
 </resources>
