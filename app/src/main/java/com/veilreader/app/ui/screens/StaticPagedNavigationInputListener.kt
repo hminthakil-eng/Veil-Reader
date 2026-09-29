@@ -21,7 +21,7 @@ internal class StaticPagedNavigationInputListener(
     private val isEnabled: () -> Boolean,
     private val onInteraction: () -> Unit,
     private val onNavigationCommitted: () -> Unit,
-    private val onBoundaryHit: () -> Unit = {}
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
     private var reserved = false
 
@@ -61,7 +61,12 @@ internal class StaticPagedNavigationInputListener(
                 if (moved) {
                     onNavigationCommitted()
                 } else {
-                    onBoundaryHit()
+                    onBoundaryHit(
+                        paperTurnSideFor(
+                            direction = direction,
+                            progression = navigator.overflow.value.readingProgression
+                        )
+                    )
                 }
                 true
             }
