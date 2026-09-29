@@ -1029,6 +1029,7 @@ private fun BookDetailSheet(
     onFavorite: () -> Unit,
     onEditMetadata: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     val progress = bookArtifactState(book, memory = artifactMemory).progress
     val status = when {
         book.finished -> stringResource(R.string.book_detail_finished)
@@ -1179,7 +1180,7 @@ private fun BookDetailSheet(
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            "${(progress * 100).toInt()}%",
+                            formatPercent(progress),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1330,7 +1331,7 @@ private fun BookDetailSheet(
                         BookDetailFact(
                             stringResource(R.string.book_detail_journey_marks),
                             progressMarks.joinToString(" · ") {
-                                "${(it.progression * 100).toInt()}%"
+                                formatPercent(it.progression)
                             }
                         )
                     }
