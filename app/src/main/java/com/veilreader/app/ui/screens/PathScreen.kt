@@ -1,7 +1,9 @@
 package com.veilreader.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -43,6 +45,7 @@ import com.veilreader.app.domain.PathMasteryAxis
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.effectivePathMastery
 import com.veilreader.app.domain.ReadingPath
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -78,6 +81,7 @@ fun PathScreen(
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
     val identity = localizedPathIdentity(profile.path)
+    val reducedMotion = LocalVeilReducedMotion.current
     val currentRank = localizedRankName(
         profile.path.id,
         profile.rankIndex,
@@ -112,7 +116,9 @@ fun PathScreen(
 
         AnimatedVisibility(
             visible = reveal,
-            enter = fadeIn(tween(VeilMotion.SPATIAL_MS)) + slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
+            enter = if (reducedMotion) EnterTransition.None else
+                fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                    slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
         ) {
             PathIdentityPanel(profile)
         }
@@ -175,12 +181,13 @@ fun PathScreen(
 @Composable
 private fun PathIdentityPanel(profile: ReaderProfile) {
     val identity = localizedPathIdentity(profile.path)
-    val rankName = localizedRankName(profile.path.id, profile.rankIndex, rankName)
+    val reducedMotion = LocalVeilReducedMotion.current
+    val rankName = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
         targetValue = xpTargetProgress,
-        animationSpec = tween(VeilMotion.SPATIAL_MS),
+        animationSpec = if (reducedMotion) snap() else tween(VeilMotion.SPATIAL_MS),
         label = "path-xp-progress"
     )
 
@@ -550,12 +557,13 @@ private fun RitualPanel(
 ) {
     val mastery = effectivePathMastery(profile)
     val doctrine = localizedPathDoctrine(profile.path.id)
+    val reducedMotion = LocalVeilReducedMotion.current
     val nextRankLabel = nextRank?.let {
         localizedRankName(profile.path.id, profile.rankIndex + 1, it)
     }
     val overallProgress by animateFloatAsState(
         targetValue = mastery.overallProgress,
-        animationSpec = tween(VeilMotion.SPATIAL_MS),
+        animationSpec = if (reducedMotion) snap() else tween(VeilMotion.SPATIAL_MS),
         label = "path-mastery-overall"
     )
 
