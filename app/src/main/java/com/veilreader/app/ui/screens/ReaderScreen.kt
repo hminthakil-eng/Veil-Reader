@@ -212,15 +212,6 @@ fun ReaderScreen(
     }
     val reducedMotion = LocalVeilReducedMotion.current
 
-    LaunchedEffect(touchExplorationEnabled, opened.book.id) {
-        if (touchExplorationEnabled) {
-            controlsVisible = true
-            val restoredPaper = paperInputListener?.cancelPendingTurn() == true
-            if (!restoredPaper && paperCurlState.active) paperCurlState.clear()
-            val restoredSlide = slideInputListener?.cancelPendingTurn() == true
-            if (!restoredSlide && slidePageState.active) slidePageState.clear()
-        }
-    }
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
@@ -240,6 +231,15 @@ fun ReaderScreen(
     val slidePageState = remember(opened.book.id) { SlidePageState() }
     var slideInputListener by remember(opened.book.id) {
         mutableStateOf<SlideNavigationInputListener?>(null)
+    }
+    LaunchedEffect(touchExplorationEnabled, opened.book.id) {
+        if (touchExplorationEnabled) {
+            controlsVisible = true
+            val restoredPaper = paperInputListener?.cancelPendingTurn() == true
+            if (!restoredPaper && paperCurlState.active) paperCurlState.clear()
+            val restoredSlide = slideInputListener?.cancelPendingTurn() == true
+            if (!restoredSlide && slidePageState.active) slidePageState.clear()
+        }
     }
     var showAppearance by rememberSaveable(opened.book.id) { mutableStateOf(false) }
     var showPdfZoom by rememberSaveable(opened.book.id) { mutableStateOf(false) }
