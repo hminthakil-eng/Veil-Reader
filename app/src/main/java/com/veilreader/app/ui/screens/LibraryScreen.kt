@@ -2288,6 +2288,8 @@ private fun MemoryReturnCard(
             LibraryMemoryEventKind.LONG_SILENCE_RETURN -> R.string.library_memory_event_archive_return
         }
     )
+    val eventTitle = localizedLibraryMemoryEventTitle(event.kind)
+    val eventDetail = localizedLibraryMemoryEventDetail(event, book)
 
     Surface(
         onClick = onInspect,
@@ -2330,7 +2332,7 @@ private fun MemoryReturnCard(
                 )
             }
             Text(
-                event.title,
+                eventTitle,
                 style = MaterialTheme.typography.titleMedium,
                 color = VeilPalette.Moon
             )
@@ -2342,12 +2344,42 @@ private fun MemoryReturnCard(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                event.detail,
+                eventDetail,
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.66f),
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun localizedLibraryMemoryEventTitle(kind: LibraryMemoryEventKind): String =
+    stringResource(
+        when (kind) {
+            LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> R.string.library_memory_title_forgotten
+            LibraryMemoryEventKind.OLD_MARGIN_RETURN -> R.string.library_memory_title_old_margin
+            LibraryMemoryEventKind.LONG_SILENCE_RETURN -> R.string.library_memory_title_long_silence
+        }
+    )
+
+@Composable
+private fun localizedLibraryMemoryEventDetail(
+    event: LibraryMemoryEvent,
+    book: Book
+): String {
+    val gap = formatArchiveSilence(event.gapMillis)
+    return when (event.kind) {
+        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN ->
+            stringResource(R.string.library_memory_detail_forgotten, book.title, gap)
+        LibraryMemoryEventKind.LONG_SILENCE_RETURN ->
+            stringResource(R.string.library_memory_detail_long_silence, book.title, gap)
+        LibraryMemoryEventKind.OLD_MARGIN_RETURN -> {
+            val excerpt = event.passageExcerpt
+                ?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.library_memory_preserved_passage)
+            stringResource(R.string.library_memory_detail_old_margin, book.title, gap, excerpt)
         }
     }
 }
