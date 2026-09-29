@@ -23,19 +23,23 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReadingContinuitySummary
-import com.veilreader.app.domain.returnRitualFragmentAgeLabel
+import com.veilreader.app.domain.ReturnRitualKind
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.veilContentTextStyle
 
 enum class BookEntryStage {
     PREPARING,
@@ -92,6 +96,134 @@ fun bookEntryMemory(
         priorSessionCount = prior?.priorSessionCount?.coerceAtLeast(0) ?: 0,
         totalActiveMillis = prior?.totalActiveMillis?.coerceAtLeast(0L) ?: 0L
     )
+}
+@Composable
+private fun bookEntryMemoryLabel(memory: BookEntryMemory): String =
+    when (memory.kind) {
+        BookEntryMemoryKind.COMPLETED_RETURN ->
+            stringResource(R.string.entry_memory_completed_return)
+        BookEntryMemoryKind.RETURNING_PROGRESS ->
+            memory.chapter?.let { chapter ->
+                stringResource(
+                    R.string.entry_memory_progress_chapter,
+                    memory.progressPercent,
+                    chapter
+                )
+            } ?: stringResource(
+                R.string.entry_memory_progress,
+                memory.progressPercent
+            )
+        BookEntryMemoryKind.OPENING_AGAIN ->
+            stringResource(R.string.entry_memory_opening_again)
+        BookEntryMemoryKind.FIRST_ENTRY ->
+            stringResource(R.string.entry_memory_first_entry)
+    }
+
+@Composable
+private fun bookEntryReturnGapLabel(memory: BookEntryMemory): String? {
+    val gap = memory.returnGapMillis ?: return null
+    val hour = 60L * 60L * 1000L
+    val day = 24L * hour
+    return when {
+        gap < 2L * hour -> stringResource(R.string.entry_gap_returning_page)
+        gap < 2L * day -> {
+            val hours = (gap / hour).coerceAtLeast(2L).toInt()
+            pluralStringResource(R.plurals.entry_gap_hours, hours, hours)
+        }
+        gap < 60L * day -> {
+            val days = (gap / day).coerceAtLeast(2L).toInt()
+            pluralStringResource(R.plurals.entry_gap_days, days, days)
+        }
+        else -> {
+            val months = (gap / (30L * day)).coerceAtLeast(2L).toInt()
+            pluralStringResource(R.plurals.entry_gap_months, months, months)
+        }
+    }
+}
+
+@Composable
+private fun bookEntryHistoryLabel(memory: BookEntryMemory): String? {
+    if (memory.priorSessionCount <= 0) return null
+    val sessions = pluralStringResource(
+        R.plurals.entry_prior_sessions,
+        memory.priorSessionCount,
+        memory.priorSessionCount
+    )
+    return stringResource(
+        R.string.entry_history_preserved,
+        sessions,
+        bookEntryDurationLabel(memory.totalActiveMillis)
+    )
+}
+
+@Composable
+private fun bookEntryDurationLabel(activeMillis: Long): String {
+    val minutes = activeMillis.coerceAtLeast(0L) / 60_000L
+    return when {
+        minutes >= 60L -> {
+            val hours = (minutes / 60L).toInt()
+            val rest = (minutes % 60L).toInt()
+            if (rest == 0) {
+                stringResource(R.string.capsule_duration_hours, hours)
+            } else {
+                stringResource(R.string.capsule_duration_hours_minutes, hours, rest)
+            }
+        }
+        minutes > 0L ->
+            stringResource(R.string.capsule_duration_minutes, minutes.toInt())
+        else -> stringResource(R.string.capsule_duration_less_than_minute)
+    }
+}
+
+@Composable
+private fun returnRitualTitle(ritual: BookReturnRitual): String =
+    when (ritual.kind) {
+        ReturnRitualKind.FORGOTTEN_VOLUME ->
+            stringResource(R.string.library_memory_forgotten_title)
+    }
+
+@Composable
+private fun returnRitualSilenceLabel(silenceMillis: Long): String {
+    val days = silenceMillis.coerceAtLeast(0L) / 86_400_000L
+    return when {
+        days >= 365L -> {
+            val years = (days / 365L).toInt()
+            val months = ((days % 365L) / 30L).toInt()
+            if (months > 0) {
+                stringResource(R.string.ritual_silent_year_month, years, months)
+            } else {
+                pluralStringResource(R.plurals.ritual_silent_years, years, years)
+            }
+        }
+        else -> {
+            val months = (days / 30L).coerceAtLeast(6L).toInt()
+            pluralStringResource(R.plurals.ritual_silent_months, months, months)
+        }
+    }
+}
+
+@Composable
+private fun returnRitualFragmentAgeLabel(ageDays: Long): String {
+    val days = ageDays.coerceAtLeast(0L)
+    return when {
+        days >= 365L -> {
+            val years = (days / 365L).toInt()
+            val months = ((days % 365L) / 30L).toInt()
+            if (months > 0) {
+                stringResource(R.string.ritual_preserved_year_month, years, months)
+            } else {
+                pluralStringResource(R.plurals.ritual_preserved_years, years, years)
+            }
+        }
+        days >= 60L -> {
+            val months = (days / 30L).toInt()
+            pluralStringResource(R.plurals.ritual_preserved_months, months, months)
+        }
+        else -> {
+            val count = days.toInt()
+            pluralStringResource(R.plurals.ritual_preserved_days, count, count)
+        }
+    }
 }
 /**
  * Continuity bridge between the app shell and the reading surface.
