@@ -173,6 +173,8 @@
     <string name="reader_save_note">Save note</string>
 
     <!-- Reader feedback and recoverable errors -->
+    <string name="reader_selection_highlight">Highlight</string>
+    <string name="reader_selection_note">Note</string>
     <string name="reader_highlighted">Passage highlighted</string>
     <string name="reader_already_highlighted">Passage already highlighted</string>
     <string name="reader_passage_save_failed">That passage could not be saved.</string>
