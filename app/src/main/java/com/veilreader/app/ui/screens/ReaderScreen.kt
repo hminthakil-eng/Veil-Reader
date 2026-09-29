@@ -192,11 +192,34 @@ fun ReaderScreen(
     val accessibilityManager = remember(activity) {
         activity.getSystemService(AccessibilityManager::class.java)
     }
-    val touchExplorationEnabled = accessibilityManager?.isTouchExplorationEnabled == true
+    var touchExplorationEnabled by remember(accessibilityManager) {
+        mutableStateOf(accessibilityManager?.isTouchExplorationEnabled == true)
+    }
+    DisposableEffect(accessibilityManager) {
+        val manager = accessibilityManager
+        if (manager == null) {
+            onDispose { }
+        } else {
+            val listener = AccessibilityManager.TouchExplorationStateChangeListener { enabled ->
+                touchExplorationEnabled = enabled
+            }
+            manager.addTouchExplorationStateChangeListener(listener)
+            touchExplorationEnabled = manager.isTouchExplorationEnabled
+            onDispose {
+                manager.removeTouchExplorationStateChangeListener(listener)
+            }
+        }
+    }
     val reducedMotion = LocalVeilReducedMotion.current
 
     LaunchedEffect(touchExplorationEnabled, opened.book.id) {
-        if (touchExplorationEnabled) controlsVisible = true
+        if (touchExplorationEnabled) {
+            controlsVisible = true
+            val restoredPaper = paperInputListener?.cancelPendingTurn() == true
+            if (!restoredPaper && paperCurlState.active) paperCurlState.clear()
+            val restoredSlide = slideInputListener?.cancelPendingTurn() == true
+            if (!restoredSlide && slidePageState.active) slidePageState.clear()
+        }
     }
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
