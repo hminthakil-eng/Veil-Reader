@@ -227,12 +227,14 @@ class ReaderInputArbiterTest {
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.PDF,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.PAPER
             )
         )
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.PDF,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.SLIDE
             )
         )
@@ -243,19 +245,33 @@ class ReaderInputArbiterTest {
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.PAPER
             )
         )
         assertTrue(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.SLIDE
             )
         )
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+    }
+
+    @Test
+    fun `scroll mode never inherits hidden slide directional animation`() {
+        assertFalse(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.SLIDE
             )
         )
     }
