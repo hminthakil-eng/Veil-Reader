@@ -22,9 +22,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.theme.VeilPalette
 
@@ -70,6 +72,8 @@ internal fun ReaderBrightnessControls(
     modifier: Modifier = Modifier
 ) {
     val customBrightness = appearance.screenBrightness
+    val systemBrightnessA11y = stringResource(R.string.reader_brightness_use_system)
+    val readingBrightnessA11y = stringResource(R.string.reader_brightness_reading)
     var draft by remember(customBrightness) {
         mutableFloatStateOf((customBrightness ?: 0.5).toFloat())
     }
@@ -79,7 +83,7 @@ internal fun ReaderBrightnessControls(
         verticalArrangement = Arrangement.spacedBy(9.dp)
     ) {
         Text(
-            "BRIGHTNESS",
+            stringResource(R.string.reader_brightness_title),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = VeilPalette.Brass
         )
@@ -94,14 +98,14 @@ internal fun ReaderBrightnessControls(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "Use system brightness",
+                    stringResource(R.string.reader_brightness_use_system),
                     style = MaterialTheme.typography.titleSmall
                 )
                 Text(
                     if (customBrightness == null) {
-                        "Follows the device and restores naturally."
+                        stringResource(R.string.reader_brightness_system_body)
                     } else {
-                        "Reader brightness is isolated to this reading session."
+                        stringResource(R.string.reader_brightness_custom_body)
                     },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
@@ -126,7 +130,7 @@ internal fun ReaderBrightnessControls(
                     uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant
                 ),
                 modifier = Modifier.semantics {
-                    contentDescription = "Use system brightness"
+                    contentDescription = systemBrightnessA11y
                 }
             )
         }
@@ -137,7 +141,7 @@ internal fun ReaderBrightnessControls(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Reading brightness",
+                    stringResource(R.string.reader_brightness_reading),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -156,7 +160,7 @@ internal fun ReaderBrightnessControls(
                 },
                 valueRange = 0.05f..1f,
                 modifier = Modifier.semantics {
-                    contentDescription = "Reading brightness"
+                    contentDescription = readingBrightnessA11y
                 }
             )
         }
