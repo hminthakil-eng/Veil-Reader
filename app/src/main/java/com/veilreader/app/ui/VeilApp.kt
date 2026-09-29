@@ -558,6 +558,7 @@ fun VeilApp(
             library = library,
             game = game,
             readerAppearance = effectiveReaderAppearance,
+            globalReaderAppearance = appSettings.readerAppearance,
             appearanceScope = readerAppearanceScope,
             onReaderAppearanceChange = { scope, appearance ->
                 when (scope) {
