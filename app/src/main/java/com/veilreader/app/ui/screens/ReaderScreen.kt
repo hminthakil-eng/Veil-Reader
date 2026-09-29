@@ -146,6 +146,7 @@ fun ReaderScreen(
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
+    val formatPercent = rememberVeilPercentFormatter()
     var entryVisible by remember(opened.book.id) { mutableStateOf(true) }
     var navigatorAttached by remember(opened.book.id) { mutableStateOf(false) }
     var previousLocationJson by rememberSaveable(opened.book.id) {
@@ -1032,7 +1033,7 @@ fun ReaderScreen(
                             if (locator != null) {
                                 val added = library.addBookmark(
                                     opened.book.id,
-                                    "${(progress * 100).toInt()}% · ${locator.title ?: opened.book.title}",
+                                    "${formatPercent(progress)} · ${locator.title ?: opened.book.title}",
                                     locator.toVeilPersistedJson(opened.format)
                                 )
                                 if (added) {
@@ -1817,6 +1818,7 @@ private fun EpubAppearancePanel(
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
     var sliderPending by remember { mutableStateOf(false) }
@@ -1985,7 +1987,7 @@ private fun EpubAppearancePanel(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${(draft.fontScale * 100).toInt()}%",
+                    formatPercent(draft.fontScale.toFloat()),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2065,7 +2067,7 @@ private fun EpubAppearancePanel(
                 value = draft.fontWeight,
                 valueRange = 0f..2.5f,
                 nullPreviewValue = 1f,
-                valueLabel = { "${(it * 100).toInt()}%" },
+                valueLabel = { formatPercent(it) },
                 onValueChange = {
                     previewTypography(draft.withFontWeight(it.toDouble()))
                 },
@@ -2086,7 +2088,7 @@ private fun EpubAppearancePanel(
                 label = stringResource(R.string.settings_page_margins),
                 value = draft.pageMargins.toFloat(),
                 valueRange = 0.5f..2.0f,
-                valueLabel = { "${(it * 100).toInt()}%" },
+                valueLabel = { formatPercent(it) },
                 onValueChange = { previewTypography(draft.withPageMargins(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft
             )
@@ -2256,7 +2258,7 @@ private fun EpubAppearancePanel(
                     label = stringResource(R.string.settings_paper_age),
                     value = draft.paperPatina.toFloat(),
                     valueRange = 0f..1f,
-                    valueLabel = { "${(it * 100).toInt()}%" },
+                    valueLabel = { formatPercent(it) },
                     onValueChange = { previewDraft(draft.withPaperPatina(it.toDouble())) },
                     onValueChangeFinished = ::commitDraft
                 )
