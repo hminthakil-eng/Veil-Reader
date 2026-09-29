@@ -2048,7 +2048,7 @@ private fun ArchiveWingPortal(
                 )
                 Text(
                     wing.name,
-                    style = veilContentTextStyle(MaterialTheme.typography.titleSmall, book.title),
+                    style = veilContentTextStyle(MaterialTheme.typography.titleSmall, wing.name),
                     color = VeilPalette.Moon,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
