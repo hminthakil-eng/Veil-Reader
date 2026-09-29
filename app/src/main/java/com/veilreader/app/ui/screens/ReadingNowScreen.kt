@@ -791,8 +791,7 @@ private fun ThresholdWhisperCard(
         localizedThresholdQuest(
             questId = whisper.questId,
             pathId = pathId,
-            target = promptTarget,
-            fallback = whisper.body
+            target = promptTarget
         )
     } else {
         whisper.body
@@ -1046,8 +1045,7 @@ private fun formatReadingTime(minutes: Int): String = when {
 private fun localizedThresholdQuest(
     questId: String?,
     pathId: String,
-    target: Int,
-    fallback: String
+    target: Int
 ): String = when (questId) {
     "read" -> stringResource(R.string.threshold_quest_read, target)
     "pages" -> stringResource(R.string.threshold_quest_pages, target)
@@ -1059,6 +1057,6 @@ private fun localizedThresholdQuest(
         "artificer" -> stringResource(R.string.threshold_quest_artificer)
         else -> stringResource(R.string.threshold_quest_oracle, target)
     }
-    else -> fallback
+    else -> stringResource(R.string.threshold_quest_generic)
 }
 
