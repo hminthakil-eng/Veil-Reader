@@ -409,4 +409,15 @@
     <string name="library_shelf_unread_subtitle">Still unopened</string>
     <string name="library_shelf_count">%1$02d</string>
     <string name="reader_publisher_preview_notice">This sample is approximate while publisher styling is on. The book may use its own fonts and layout.</string>
+    <string name="library_group_filtered_eyebrow">Filtered archive</string>
+    <string name="library_group_matching">Matching volumes</string>
+    <string name="library_group_journey">Journey</string>
+    <string name="library_group_record">Record</string>
+    <string name="library_group_completed">Completed volumes</string>
+    <string name="library_group_unopened">Unopened</string>
+    <string name="library_group_waiting">Waiting on the shelf</string>
+    <string name="library_group_count">%1$d volumes</string>
+    <string name="library_group_read_progress">%1$d%% read</string>
+    <string name="library_group_archive_record">Archive record</string>
+    <string name="library_group_read_book">Read %1$s</string>
 </resources>
