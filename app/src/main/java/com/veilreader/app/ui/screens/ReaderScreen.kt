@@ -351,10 +351,12 @@ fun ReaderScreen(
     fun closeAppearanceAfterRendererSettles() {
         appearanceCloseJob?.cancel()
         appearanceCloseJob = scope.launch {
-            // submitPreferences() returns before every renderer path necessarily paints its first
-            // frame. Keep the instrument chamber for two settle frames so mode changes never reveal
-            // an intermediate overflow/layout state underneath it.
-            delay(VeilMotion.FRAME_SETTLE_MS * 2)
+            // The renderer handoff owns the real settle window. Keep the instrument chamber above
+            // it until the snapshot has faded and navigation ownership has moved to the new mode.
+            while (rendererPreferencesSettling) {
+                delay(VeilMotion.FRAME_SETTLE_MS)
+            }
+            delay(VeilMotion.FRAME_SETTLE_MS)
             showAppearance = false
             appearanceCloseJob = null
         }
