@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.unit.IntSize
 import com.veilreader.app.domain.BookFormat
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -231,6 +233,34 @@ class ReaderChromePolicyTest {
             isCurrentReaderSection(
                 linkHref = "text/chapter-04.xhtml",
                 currentHref = null
+            )
+        )
+    }
+
+    @Test
+    fun `image decode sample size keeps large assets memory bounded`() {
+        assertEquals(1, readerImageSampleSize(3200, 1800, 4096))
+        assertEquals(2, readerImageSampleSize(7000, 3500, 4096))
+        assertEquals(4, readerImageSampleSize(12000, 8000, 4096))
+        assertEquals(1, readerImageSampleSize(0, 8000, 4096))
+    }
+
+    @Test
+    fun `image pan is zero at base scale and clamped while zoomed`() {
+        assertEquals(
+            Offset.Zero,
+            clampReaderImagePan(
+                requested = Offset(400f, -400f),
+                scale = 1f,
+                viewport = IntSize(1000, 800)
+            )
+        )
+        assertEquals(
+            Offset(500f, -400f),
+            clampReaderImagePan(
+                requested = Offset(900f, -900f),
+                scale = 2f,
+                viewport = IntSize(1000, 800)
             )
         )
     }
