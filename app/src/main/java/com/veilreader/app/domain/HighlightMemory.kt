@@ -16,6 +16,7 @@ data class HighlightMemory(
     val bookActivityAfterMark: Boolean,
     val revisitCount: Int,
     val lastViewedAtEpochMs: Long?,
+    val lastViewedDaysAgo: Int? = null,
     val lastViewedLabel: String?,
     val annotated: Boolean,
     val eligibleForEcho: Boolean,
@@ -95,8 +96,10 @@ fun deriveHighlightMemory(
 
     val exactVisits = exactPassageVisits(highlight, passageVisits)
     val lastViewedAt = exactVisits.lastOrNull()?.viewedAtEpochMs
-    val lastViewedLabel = lastViewedAt?.let { viewedAt ->
-        val viewedDaysAgo = ((safeNow - viewedAt).coerceAtLeast(0L) / DAY_MS).toInt()
+    val lastViewedDaysAgo = lastViewedAt?.let { viewedAt ->
+        ((safeNow - viewedAt).coerceAtLeast(0L) / DAY_MS).toInt()
+    }
+    val lastViewedLabel = lastViewedDaysAgo?.let { viewedDaysAgo ->
         when {
             viewedDaysAgo == 0 -> "LAST VIEWED TODAY"
             viewedDaysAgo == 1 -> "LAST VIEWED YESTERDAY"
@@ -139,6 +142,7 @@ fun deriveHighlightMemory(
         bookActivityAfterMark = laterActivity,
         revisitCount = exactVisits.size,
         lastViewedAtEpochMs = lastViewedAt,
+        lastViewedDaysAgo = lastViewedDaysAgo,
         lastViewedLabel = lastViewedLabel,
         annotated = annotated,
         eligibleForEcho = eligible,
