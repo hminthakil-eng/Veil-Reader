@@ -99,7 +99,7 @@ class ReadingTimeCapsuleTest {
         assertFalse(capsule.exactCompletionTimeKnown)
         assertTrue(
             capsule.timeline.none {
-                it.title.contains("completed", ignoreCase = true)
+                it.kind == ReadingHistoryEventKind.COMPLETED
             }
         )
     }
@@ -132,8 +132,7 @@ class ReadingTimeCapsuleTest {
                 ReadingHistoryEvent(
                     id = "completed",
                     kind = ReadingHistoryEventKind.COMPLETED,
-                    timestampEpochMs = 8L * day,
-                    title = "Reading cycle completed"
+                    timestampEpochMs = 8L * day
                 )
             )
         )
