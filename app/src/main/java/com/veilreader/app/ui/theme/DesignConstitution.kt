@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderTheme
 
 /**
  * Executable product rules for Grayfog.
@@ -328,3 +329,44 @@ fun sanctuaryPageMaterialFor(mode: ReaderNavigationMode): VeilSanctuaryPageMater
         showEdgeFalloff = true,
         showMicroFibres = true
     )
+
+
+data class VeilSanctuarySurfaceProfile(
+    val patina: Float,
+    val pageShadeAlpha: Float,
+    val stackEdgeAlpha: Float,
+    val sheetLineAlpha: Float,
+    val mottleAlpha: Float,
+    val edgeOxidationAlpha: Float,
+    val fibreAlpha: Float,
+    val fibreCount: Int,
+    val speckAlpha: Float,
+    val speckCount: Int
+)
+
+/**
+ * Deterministic Sanctuary material policy.
+ *
+ * Paper patina is an actual rendering input, not decorative preference state.
+ * Dark themes deliberately collapse patina to zero so texture never competes with contrast.
+ */
+fun sanctuarySurfaceProfileFor(
+    theme: ReaderTheme,
+    paperPatina: Float
+): VeilSanctuarySurfaceProfile {
+    val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
+    val p = if (dark || !paperPatina.isFinite()) 0f else paperPatina.coerceIn(0f, 1f)
+
+    return VeilSanctuarySurfaceProfile(
+        patina = p,
+        pageShadeAlpha = if (dark) 0.075f else 0.022f + 0.050f * p,
+        stackEdgeAlpha = if (dark) 0.20f else 0.055f + 0.055f * p,
+        sheetLineAlpha = if (dark) 0.018f else 0.025f + 0.022f * p,
+        mottleAlpha = if (dark || p <= 0.04f) 0f else 0.008f + 0.020f * p,
+        edgeOxidationAlpha = if (dark || p <= 0.04f) 0f else 0.012f + 0.040f * p,
+        fibreAlpha = if (dark) 0f else 0.006f + 0.018f * p,
+        fibreCount = if (dark) 0 else 12 + (18f * p).toInt(),
+        speckAlpha = if (dark) 0f else 0.006f + 0.020f * p,
+        speckCount = if (dark) 0 else 14 + (22f * p).toInt()
+    )
+}
