@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -44,11 +45,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.veilContentTextStyle
 
 /**
  * Calm world chrome for everything around the actual publication.
@@ -508,9 +511,11 @@ fun VeilSigilMark(
 
 @Composable
 fun VeilLoadingState(
-    label: String = "Opening the archive",
+    label: String? = null,
     modifier: Modifier = Modifier
 ) {
+    val displayLabel = label ?: stringResource(R.string.common_opening_archive)
+    val brandLabel = stringResource(R.string.library_brand_name)
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -524,14 +529,17 @@ fun VeilLoadingState(
         )
         Spacer(Modifier.height(18.dp))
         Text(
-            "VEIL READER",
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+            brandLabel,
+            style = veilContentTextStyle(
+                MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+                brandLabel
+            ),
             color = VeilPalette.Brass
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            label,
-            style = MaterialTheme.typography.titleMedium,
+            displayLabel,
+            style = veilContentTextStyle(MaterialTheme.typography.titleMedium, displayLabel),
             color = MaterialTheme.colorScheme.onBackground
         )
         Spacer(Modifier.height(18.dp))
