@@ -672,9 +672,10 @@ private fun NotebookHighlightCard(
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
+                    val displayTitle = book?.title ?: stringResource(R.string.common_unknown_book)
                     Text(
-                        book?.title ?: stringResource(R.string.common_unknown_book),
-                        style = MaterialTheme.typography.titleMedium,
+                        displayTitle,
+                        style = veilContentTextStyle(MaterialTheme.typography.titleMedium, displayTitle),
                         color = VeilPalette.Moon,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -682,7 +683,7 @@ private fun NotebookHighlightCard(
                     book?.author?.takeIf { it.isNotBlank() }?.let { author ->
                         Text(
                             author,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = veilContentTextStyle(MaterialTheme.typography.labelSmall, author),
                             color = VeilPalette.Mist.copy(alpha = 0.70f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
@@ -717,7 +718,7 @@ private fun NotebookHighlightCard(
                     )
                     Text(
                         "“${highlight.quote}”",
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = veilContentTextStyle(MaterialTheme.typography.bodyLarge, highlight.quote),
                         color = VeilPalette.Moon.copy(alpha = 0.90f),
                         modifier = Modifier.weight(1f)
                     )
@@ -744,8 +745,11 @@ private fun NotebookHighlightCard(
                         )
                         Text(
                             highlight.note,
-                            style = if (emphasizeNote) MaterialTheme.typography.bodyLarge
-                            else MaterialTheme.typography.bodyMedium,
+                            style = veilContentTextStyle(
+                                if (emphasizeNote) MaterialTheme.typography.bodyLarge
+                                else MaterialTheme.typography.bodyMedium,
+                                highlight.note
+                            ),
                             color = VeilPalette.Moon
                         )
                     }
@@ -789,29 +793,39 @@ private fun LivingMarginMemoryStrip(
     memory: HighlightMemory,
     echoMode: Boolean
 ) {
+    val ageLabel = highlightAgeLabel(memory)
+    val echoLabel = highlightEchoLabel(memory)
+    val lastViewedLabel = highlightLastViewedLabel(memory)
+    val primaryLabel = if (echoMode) echoLabel ?: ageLabel else ageLabel
+    val revisitLabel = if (memory.revisitCount > 0) {
+        pluralStringResource(
+            R.plurals.archive_revisited_times,
+            memory.revisitCount,
+            memory.revisitCount
+        )
+    } else {
+        null
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
-            if (echoMode) memory.echoLabel ?: memory.ageLabel else memory.ageLabel,
+            primaryLabel,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
             color = if (echoMode) VeilPalette.Brass
             else VeilPalette.Mist.copy(alpha = 0.64f)
         )
-        if (memory.revisitCount > 0) {
+        if (revisitLabel != null) {
             Text(
-                buildString {
-                    append("REVISITED ").append(memory.revisitCount)
-                    append(if (memory.revisitCount == 1) " TIME" else " TIMES")
-                    memory.lastViewedLabel?.let { append(" · ").append(it) }
-                },
+                listOfNotNull(revisitLabel, lastViewedLabel).joinToString(" · "),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Spirit.copy(alpha = 0.72f)
             )
         } else if (memory.bookActivityAfterMark) {
             Text(
-                "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
+                stringResource(R.string.archive_volume_activity_continued),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Mist.copy(alpha = 0.46f)
             )
@@ -819,6 +833,59 @@ private fun LivingMarginMemoryStrip(
     }
 }
 
+@Composable
+private fun highlightAgeLabel(memory: HighlightMemory): String {
+    if (!memory.ageKnown) return stringResource(R.string.archive_mark_date_unknown)
+    val days = memory.ageDays.coerceAtLeast(0)
+    return when {
+        days == 0 -> stringResource(R.string.archive_marked_today)
+        days == 1 -> stringResource(R.string.archive_marked_yesterday)
+        days < 60 -> pluralStringResource(R.plurals.archive_marked_days_ago, days, days)
+        days < 730 -> {
+            val months = (days / 30).coerceAtLeast(2)
+            pluralStringResource(R.plurals.archive_marked_months_ago, months, months)
+        }
+        else -> {
+            val years = (days / 365).coerceAtLeast(2)
+            pluralStringResource(R.plurals.archive_marked_years_ago, years, years)
+        }
+    }
+}
+
+@Composable
+private fun highlightEchoLabel(memory: HighlightMemory): String? {
+    if (memory.echoDepth == EchoDepth.FRESH || !memory.ageKnown) return null
+    val days = memory.ageDays.coerceAtLeast(0)
+    return when {
+        days < 60 -> pluralStringResource(R.plurals.archive_echo_days_ago, days, days)
+        days < 730 -> {
+            val months = (days / 30).coerceAtLeast(2)
+            pluralStringResource(R.plurals.archive_echo_months_ago, months, months)
+        }
+        else -> {
+            val years = (days / 365).coerceAtLeast(2)
+            pluralStringResource(R.plurals.archive_echo_years_ago, years, years)
+        }
+    }
+}
+
+@Composable
+private fun highlightLastViewedLabel(memory: HighlightMemory): String? {
+    val days = memory.lastViewedDaysAgo ?: return null
+    return when {
+        days == 0 -> stringResource(R.string.archive_last_viewed_today)
+        days == 1 -> stringResource(R.string.archive_last_viewed_yesterday)
+        days < 60 -> pluralStringResource(R.plurals.archive_last_viewed_days_ago, days, days)
+        days < 730 -> {
+            val months = (days / 30).coerceAtLeast(2)
+            pluralStringResource(R.plurals.archive_last_viewed_months_ago, months, months)
+        }
+        else -> {
+            val years = (days / 365).coerceAtLeast(2)
+            pluralStringResource(R.plurals.archive_last_viewed_years_ago, years, years)
+        }
+    }
+}
 @Composable
 private fun NotebookBookmarkCard(
     bookmark: Bookmark,
@@ -848,13 +915,14 @@ private fun NotebookBookmarkCard(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "FOLIO ${recordNumber.toString().padStart(3, '0')}",
+                        stringResource(R.string.archive_folio, recordNumber.toString().padStart(3, '0')),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
+                    val displayTitle = book?.title ?: stringResource(R.string.common_unknown_book)
                     Text(
-                        book?.title ?: stringResource(R.string.common_unknown_book),
-                        style = MaterialTheme.typography.titleMedium,
+                        displayTitle,
+                        style = veilContentTextStyle(MaterialTheme.typography.titleMedium, displayTitle),
                         color = VeilPalette.Moon,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -867,13 +935,14 @@ private fun NotebookBookmarkCard(
                 )
             }
 
+            val displayLabel = if (bookmark.label.isBlank()) {
+                stringResource(R.string.notebook_saved_location)
+            } else {
+                bookmark.label
+            }
             Text(
-                if (bookmark.label.isBlank()) {
-                    stringResource(R.string.notebook_saved_location)
-                } else {
-                    bookmark.label
-                },
-                style = MaterialTheme.typography.bodyMedium,
+                displayLabel,
+                style = veilContentTextStyle(MaterialTheme.typography.bodyMedium, displayLabel),
                 color = VeilPalette.Mist
             )
 
