@@ -156,6 +156,15 @@ internal fun paperVerticalDragResponse(inwardFraction: Float): Float {
     return 0.46f + smooth * 0.20f
 }
 
+internal fun paperEdgeGrip(
+    canonicalStartX: Float,
+    pageWidth: Float
+): Float {
+    if (pageWidth <= 0f) return 0f
+    val normalized = (canonicalStartX / pageWidth).coerceIn(0f, 1f)
+    return ((normalized - 0.70f) / 0.30f).coerceIn(0f, 1f)
+}
+
 internal fun paperInwardDragFraction(
     start: Offset,
     current: Offset,
