@@ -150,6 +150,8 @@ enum class ReaderPreferenceToggle { DEFAULT, ON, OFF }
 
 enum class ReaderDarkImageTreatment { NONE, DARKEN, INVERT }
 
+enum class ReaderFixedLayoutSpread { AUTO, SINGLE, DUAL }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.PAPER,
     val fontScale: Double = 1.0,
