@@ -381,4 +381,89 @@
         <item quantity="one">%1$d روز</item>
         <item quantity="other">%1$d روز</item>
     </plurals>
+
+    <string name="archive_private_local_offline">خصوصی · محلی · آفلاین</string>
+    <string name="archive_fragments_worth_keeping">قطعه‌هایی که ارزش نگه‌داشتن دارند</string>
+    <string name="archive_search_placeholder">جست‌وجو در آرشیو…</string>
+    <string name="archive_tab_notes">یادداشت‌ها</string>
+    <string name="archive_tab_passages">بخش‌ها</string>
+    <string name="archive_tab_marks">نشانک‌ها</string>
+    <string name="archive_tab_echoes">پژواک‌ها</string>
+    <string name="archive_tab_capsules">کپسول‌ها</string>
+    <string name="archive_no_notes_title">هنوز یادداشتی ندارید</string>
+    <string name="archive_no_matching_notes_title">یادداشت مطابقی پیدا نشد</string>
+    <string name="archive_no_notes_body">به هر بخش هایلایت‌شده یادداشت اضافه کنید تا اینجا ظاهر شود.</string>
+    <string name="archive_search_try_again">واژه، عنوان یا نویسندهٔ دیگری را امتحان کنید.</string>
+    <string name="archive_no_echoes_title">هنوز پژواکی نیست</string>
+    <string name="archive_no_matching_echoes_title">پژواک مطابقی پیدا نشد</string>
+    <string name="archive_no_echoes_body">بخش‌های حفظ‌شده پس از مدتی زندگی در آرشیو، آرام دوباره ظاهر می‌شوند.</string>
+    <string name="archive_no_capsules_title">هنوز کپسول مهرشده‌ای نیست</string>
+    <string name="archive_no_matching_capsules_title">کپسول مطابقی پیدا نشد</string>
+    <string name="archive_no_capsules_body">وقتی یک جلد کامل می‌شود، Veil می‌تواند تاریخچهٔ واقعی و ماندگار مطالعه را بدون ساختن تاریخ‌های خیالی در اینجا نگه دارد.</string>
+    <string name="archive_capsule_search_try_again">عنوان، نویسنده یا کد مهر دیگری را امتحان کنید.</string>
+    <string name="archive_manuscript_note">یادداشت نسخه</string>
+    <string name="archive_margin_placeholder">در حاشیه بنویسید…</string>
+    <string name="archive_stat_notes">یادداشت</string>
+    <string name="archive_stat_passages">بخش‌ها</string>
+    <string name="archive_stat_marks">نشانک‌ها</string>
+    <string name="archive_stat_echoes">پژواک‌ها</string>
+    <string name="archive_stat_sealed">مهرشده</string>
+    <string name="archive_folio">برگ %1$s</string>
+    <string name="archive_record_echo">پژواک</string>
+    <string name="archive_record_annotated">یادداشت‌دار</string>
+    <string name="archive_record_passage">بخش</string>
+    <string name="archive_annotation">یادداشت</string>
+    <string name="archive_return_to_passage">بازگشت به بخش</string>
+    <string name="archive_annotate">افزودن یادداشت</string>
+    <string name="archive_edit_annotation">ویرایش یادداشت</string>
+    <string name="archive_record_bookmark">نشانک</string>
+    <string name="archive_return_here">بازگشت به اینجا</string>
+    <string name="archive_quiet">آرشیو در سکوت است</string>
+    <string name="archive_remove_record">حذف رکورد</string>
+    <string name="archive_mark_date_unknown">تاریخ نشان نامشخص است</string>
+    <string name="archive_marked_today">امروز نشان شد</string>
+    <string name="archive_marked_yesterday">دیروز نشان شد</string>
+    <string name="archive_last_viewed_today">امروز دوباره دیده شد</string>
+    <string name="archive_last_viewed_yesterday">دیروز دوباره دیده شد</string>
+    <string name="archive_volume_activity_continued">پس از این نشان، مطالعهٔ این جلد ادامه داشته است</string>
+    <plurals name="archive_marked_days_ago">
+        <item quantity="one">%1$d روز پیش نشان شد</item>
+        <item quantity="other">%1$d روز پیش نشان شد</item>
+    </plurals>
+    <plurals name="archive_marked_months_ago">
+        <item quantity="one">%1$d ماه پیش نشان شد</item>
+        <item quantity="other">%1$d ماه پیش نشان شد</item>
+    </plurals>
+    <plurals name="archive_marked_years_ago">
+        <item quantity="one">%1$d سال پیش نشان شد</item>
+        <item quantity="other">%1$d سال پیش نشان شد</item>
+    </plurals>
+    <plurals name="archive_echo_days_ago">
+        <item quantity="one">پژواکی از %1$d روز پیش</item>
+        <item quantity="other">پژواکی از %1$d روز پیش</item>
+    </plurals>
+    <plurals name="archive_echo_months_ago">
+        <item quantity="one">پژواکی از %1$d ماه پیش</item>
+        <item quantity="other">پژواکی از %1$d ماه پیش</item>
+    </plurals>
+    <plurals name="archive_echo_years_ago">
+        <item quantity="one">پژواکی از %1$d سال پیش</item>
+        <item quantity="other">پژواکی از %1$d سال پیش</item>
+    </plurals>
+    <plurals name="archive_last_viewed_days_ago">
+        <item quantity="one">%1$d روز پیش دوباره دیده شد</item>
+        <item quantity="other">%1$d روز پیش دوباره دیده شد</item>
+    </plurals>
+    <plurals name="archive_last_viewed_months_ago">
+        <item quantity="one">%1$d ماه پیش دوباره دیده شد</item>
+        <item quantity="other">%1$d ماه پیش دوباره دیده شد</item>
+    </plurals>
+    <plurals name="archive_last_viewed_years_ago">
+        <item quantity="one">%1$d سال پیش دوباره دیده شد</item>
+        <item quantity="other">%1$d سال پیش دوباره دیده شد</item>
+    </plurals>
+    <plurals name="archive_revisited_times">
+        <item quantity="one">%1$d بار بازدید دوباره</item>
+        <item quantity="other">%1$d بار بازدید دوباره</item>
+    </plurals>
 </resources>
