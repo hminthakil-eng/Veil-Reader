@@ -70,6 +70,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderAppearanceScope
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
@@ -121,7 +122,9 @@ fun ReaderScreen(
     library: LocalLibraryRepository,
     game: GameRepository,
     readerAppearance: ReaderAppearance,
-    onReaderAppearanceChange: (ReaderAppearance) -> Unit,
+    appearanceScope: ReaderAppearanceScope = ReaderAppearanceScope.GLOBAL,
+    onReaderAppearanceChange: (ReaderAppearanceScope, ReaderAppearance) -> Unit,
+    onAppearanceScopeChange: (ReaderAppearanceScope) -> Unit = {},
     entryContinuity: ReadingContinuitySummary? = null,
     returnRitual: BookReturnRitual? = null,
     initialReturnLocatorJson: String? = null,
@@ -198,6 +201,12 @@ fun ReaderScreen(
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var showAppearance by remember { mutableStateOf(false) }
     var showPdfZoom by remember { mutableStateOf(false) }
+    var activeAppearanceScope by remember(opened.book.id) {
+        mutableStateOf(appearanceScope)
+    }
+    LaunchedEffect(appearanceScope, opened.book.id) {
+        activeAppearanceScope = appearanceScope
+    }
     val latestAppearance = rememberUpdatedState(readerAppearance)
     val paperCurlConfig = remember(readerAppearance.theme) {
         when (readerAppearance.theme) {
@@ -1200,9 +1209,16 @@ fun ReaderScreen(
         ) {
             EpubAppearancePanel(
                 appearance = readerAppearance,
+                scope = activeAppearanceScope,
+                onScopeChange = { selected ->
+                    if (selected != activeAppearanceScope) {
+                        activeAppearanceScope = selected
+                        onAppearanceScopeChange(selected)
+                    }
+                },
                 onChange = {
                     readerViewModel.onUserInteraction()
-                    onReaderAppearanceChange(it)
+                    onReaderAppearanceChange(activeAppearanceScope, it)
                 },
                 onDone = { showAppearance = false }
             )
@@ -1219,19 +1235,34 @@ fun ReaderScreen(
                 )
             }
         ) {
-            PdfZoomControls(
-                navigator = navigator,
-                appearance = readerAppearance,
-                onAppearanceChange = { updated ->
-                    readerViewModel.onUserInteraction()
-                    onReaderAppearanceChange(updated)
-                },
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 22.dp)
-                    .padding(bottom = 32.dp),
-                onDone = { showPdfZoom = false }
-            )
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                ReaderAppearanceScopeSelector(
+                    scope = activeAppearanceScope,
+                    onSelect = { selected ->
+                        if (selected != activeAppearanceScope) {
+                            activeAppearanceScope = selected
+                            onAppearanceScopeChange(selected)
+                        }
+                    },
+                    modifier = Modifier.padding(horizontal = 22.dp)
+                )
+                PdfZoomControls(
+                    navigator = navigator,
+                    appearance = readerAppearance,
+                    onAppearanceChange = { updated ->
+                        readerViewModel.onUserInteraction()
+                        onReaderAppearanceChange(activeAppearanceScope, updated)
+                    },
+                    modifier = Modifier
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 22.dp)
+                        .padding(bottom = 32.dp),
+                    onDone = { showPdfZoom = false }
+                )
+            }
         }
     }
 }
@@ -1619,20 +1650,90 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 }
 
 @Composable
+private fun ReaderAppearanceScopeSelector(
+    scope: ReaderAppearanceScope,
+    onSelect: (ReaderAppearanceScope) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            stringResource(R.string.reader_apply_to),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+            color = VeilPalette.Brass,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth().selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            listOf(
+                ReaderAppearanceScope.BOOK to stringResource(R.string.reader_scope_this_book),
+                ReaderAppearanceScope.GLOBAL to stringResource(R.string.reader_scope_all_books),
+            ).forEach { (candidate, label) ->
+                val selected = scope == candidate
+                Surface(
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .selectable(
+                            selected = selected,
+                            role = Role.RadioButton,
+                        ) { onSelect(candidate) },
+                    shape = MaterialTheme.shapes.extraSmall,
+                    color = if (selected) {
+                        VeilPalette.DeepBrass.copy(alpha = 0.76f)
+                    } else {
+                        MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+                    },
+                    border = BorderStroke(
+                        1.dp,
+                        if (selected) VeilPalette.Brass.copy(alpha = 0.82f)
+                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f),
+                    ),
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(label, style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+        Text(
+            if (scope == ReaderAppearanceScope.BOOK) {
+                stringResource(R.string.reader_scope_book_description)
+            } else {
+                stringResource(R.string.reader_scope_global_description)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+@Composable
 private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
+    scope: ReaderAppearanceScope,
+    onScopeChange: (ReaderAppearanceScope) -> Unit,
     onChange: (ReaderAppearance) -> Unit,
     onDone: () -> Unit
 ) {
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
+    var lastScope by remember { mutableStateOf(scope) }
     val publisherStylingA11y = stringResource(R.string.reader_publisher_styling)
 
-    LaunchedEffect(appearance) {
-        when {
-            !hasPendingDraft -> draft = appearance
-            appearance == draft -> hasPendingDraft = false
+    LaunchedEffect(appearance, scope) {
+        if (scope != lastScope) {
+            draft = appearance
+            hasPendingDraft = false
+            lastScope = scope
+        } else {
+            when {
+                !hasPendingDraft -> draft = appearance
+                appearance == draft -> hasPendingDraft = false
+            }
         }
     }
 
@@ -1672,6 +1773,11 @@ private fun EpubAppearancePanel(
         ReaderAppearancePreview(
             appearance = draft,
             modifier = Modifier.fillMaxWidth()
+        )
+
+        ReaderAppearanceScopeSelector(
+            scope = scope,
+            onSelect = onScopeChange,
         )
 
         Row(
