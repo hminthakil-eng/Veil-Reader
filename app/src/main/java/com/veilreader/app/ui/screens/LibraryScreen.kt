@@ -76,6 +76,7 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.veilContentTextStyle
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -1906,7 +1907,7 @@ private fun RecentReadingBook(
                 Text(stringResource(R.string.book_detail_continue_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = veilContentTextStyle(MaterialTheme.typography.titleMedium, book.title),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -2047,7 +2048,7 @@ private fun ArchiveWingPortal(
                 )
                 Text(
                     wing.name,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = veilContentTextStyle(MaterialTheme.typography.titleSmall, book.title),
                     color = VeilPalette.Moon,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -2415,7 +2416,7 @@ private fun BookLibraryTile(
 
         Text(
             book.title,
-            style = MaterialTheme.typography.titleMedium,
+            style = veilContentTextStyle(MaterialTheme.typography.titleMedium, book.title),
             color = MaterialTheme.colorScheme.onBackground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
@@ -2882,7 +2883,7 @@ private fun LibraryShelvesView(
                             )
                             Text(
                                 book.title,
-                                style = MaterialTheme.typography.titleSmall,
+                                style = veilContentTextStyle(MaterialTheme.typography.titleSmall, book.title),
                                 color = VeilPalette.Moon,
                                 maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
