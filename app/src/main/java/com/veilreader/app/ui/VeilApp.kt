@@ -43,6 +43,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
@@ -74,6 +75,7 @@ fun VeilApp(
     appSettings: AppSettings = AppSettings(),
     onSetAppThemeMode: (AppThemeMode) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
+    onSaveFixedLayoutSpread: (String, ReaderFixedLayoutSpread) -> Unit = { _, _ -> },
     onSaveSensorySettings: (SensorySettings) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
@@ -578,7 +580,12 @@ fun VeilApp(
             library = library,
             game = game,
             readerAppearance = appSettings.readerAppearance,
+            fixedLayoutSpread = appSettings.fixedLayoutSpreads[opened.book.id]
+                ?: ReaderFixedLayoutSpread.AUTO,
             onReaderAppearanceChange = onSaveReaderAppearance,
+            onFixedLayoutSpreadChange = { mode ->
+                onSaveFixedLayoutSpread(opened.book.id, mode)
+            },
             entryContinuity = activeContinuity,
             returnRitual = activeReturnRitual,
             initialReturnLocatorJson = activeReturnLocatorJson,
