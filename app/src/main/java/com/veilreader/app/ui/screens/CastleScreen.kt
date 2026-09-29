@@ -228,6 +228,7 @@ private fun CastleKeep(
     minHeightDp: Float,
     onAdvanceRank: () -> Unit
 ) {
+    val formatNumber = rememberVeilIntegerFormatter()
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val localizedRank = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
     val localizedPath = localizedPathName(profile.path)
@@ -322,7 +323,7 @@ private fun CastleKeep(
                 }
 
                 Text(
-                    "${profile.rankIndex + 1}/${profile.path.ranks.size}",
+                    "${formatNumber(profile.rankIndex + 1)}/${formatNumber(profile.path.ranks.size)}",
                     style = MaterialTheme.typography.labelLarge,
                     color = VeilPalette.Brass
                 )
@@ -339,7 +340,7 @@ private fun CastleKeep(
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
                 Text(
-                    "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                    "${formatNumber(awakenedRooms)}/${formatNumber(totalRooms.coerceAtLeast(1))}",
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass
                 )
