@@ -20,7 +20,7 @@ internal class VeilDirectionalNavigationInputListener(
     private val isAnimated: () -> Boolean,
     private val isTapNavigationEnabled: () -> Boolean = { true },
     private val onNavigationCommitted: () -> Unit = {},
-    private val onBoundaryHit: () -> Unit = {}
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
@@ -47,9 +47,14 @@ internal class VeilDirectionalNavigationInputListener(
             return false
         }
 
+        val progression = navigator.overflow.value.readingProgression
         return when (event.key) {
-            Key.ArrowUp -> navigate { navigator.goBackward(animated = isAnimated()) }
-            Key.ArrowDown, Key.Space -> navigate { navigator.goForward(animated = isAnimated()) }
+            Key.ArrowUp -> navigate(
+                side = paperTurnSideFor(PaperTurnDirection.BACKWARD, progression)
+            ) { navigator.goBackward(animated = isAnimated()) }
+            Key.ArrowDown, Key.Space -> navigate(
+                side = paperTurnSideFor(PaperTurnDirection.FORWARD, progression)
+            ) { navigator.goForward(animated = isAnimated()) }
             Key.ArrowLeft -> goLeft()
             Key.ArrowRight -> goRight()
             else -> false
@@ -59,25 +64,36 @@ internal class VeilDirectionalNavigationInputListener(
     private fun goLeft(): Boolean =
         when (navigator.overflow.value.readingProgression) {
             ReadingProgression.LTR ->
-                navigate { navigator.goBackward(animated = isAnimated()) }
+                navigate(PaperCurlSide.LEFT) {
+                    navigator.goBackward(animated = isAnimated())
+                }
             ReadingProgression.RTL ->
-                navigate { navigator.goForward(animated = isAnimated()) }
+                navigate(PaperCurlSide.LEFT) {
+                    navigator.goForward(animated = isAnimated())
+                }
         }
 
     private fun goRight(): Boolean =
         when (navigator.overflow.value.readingProgression) {
             ReadingProgression.LTR ->
-                navigate { navigator.goForward(animated = isAnimated()) }
+                navigate(PaperCurlSide.RIGHT) {
+                    navigator.goForward(animated = isAnimated())
+                }
             ReadingProgression.RTL ->
-                navigate { navigator.goBackward(animated = isAnimated()) }
+                navigate(PaperCurlSide.RIGHT) {
+                    navigator.goBackward(animated = isAnimated())
+                }
         }
 
-    private inline fun navigate(block: () -> Boolean): Boolean {
+    private inline fun navigate(
+        side: PaperCurlSide,
+        block: () -> Boolean
+    ): Boolean {
         val committed = block()
         if (committed) {
             onNavigationCommitted()
         } else {
-            onBoundaryHit()
+            onBoundaryHit(side)
         }
         return committed
     }
