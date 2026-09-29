@@ -756,7 +756,8 @@ fun LibraryScreen(
                 recentReading.isNotEmpty() &&
                 trimmedQuery.isBlank() &&
                 shelf == "All" &&
-                collection.isEmpty()
+                collection.isEmpty() &&
+                seriesFilter.isEmpty()
             ) {
                 Box(Modifier.fillMaxWidth()) {
                     Column(
