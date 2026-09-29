@@ -80,7 +80,11 @@ fun buildSealedReadingCycle(
                         if (session.pacedPageTurns > 0) {
                             append(" · ").append(session.pacedPageTurns).append(" paced turns")
                         }
-                    }
+                    },
+                    activeMillis = session.activeMillis.coerceAtLeast(0L),
+                    pacedPageTurns = session.pacedPageTurns.coerceAtLeast(0),
+                    highlightEvents = session.highlightCount.coerceAtLeast(0),
+                    noteEvents = session.noteCount.coerceAtLeast(0)
                 )
             )
         }
