@@ -394,4 +394,30 @@
     <string name="reader_value_off">خاموش</string>
     <string name="reader_value_reset">بازنشانی</string>
     <string name="reader_publisher_override_note">سبک ناشر می‌تواند تنظیمات پیشرفتهٔ قلم را بازنویسی کند. با تغییر یک کنترل، مالکیت همان تنظیم به Veil منتقل می‌شود.</string>
+
+    <string name="common_reset">بازنشانی</string>
+    <string name="library_filtered_volume_count">%1$d کتاب</string>
+    <string name="library_collection">مجموعه</string>
+    <string name="library_all_collections">همهٔ مجموعه‌ها</string>
+    <string name="library_sort_books">مرتب‌سازی کتاب‌ها: %1$s</string>
+    <string name="library_sort_recent">تازه‌ترین</string>
+    <string name="library_sort_archive_depth">عمق آرشیو</string>
+    <string name="library_sort_title">عنوان</string>
+    <string name="library_sort_author">نویسنده</string>
+    <string name="library_sort_series">سری</string>
+    <string name="library_sort_progress">پیشرفت</string>
+    <string name="library_series_filter">سری · %1$s ×</string>
+    <string name="library_archive_record">رکورد آرشیو</string>
+    <string name="library_archive_record_button">رکورد آرشیو</string>
+    <string name="library_archive_status">وضعیت آرشیو</string>
+    <string name="library_archive_status_body">به‌صورت محلی ثبت شده؛ خصوصی، آفلاین و آمادهٔ بازگشت به مطالعه.</string>
+    <string name="library_continue_reading">ادامهٔ مطالعه</string>
+    <string name="library_deep_shelf">قفسهٔ ژرف</string>
+    <string name="library_deepest_record">ژرف‌ترین رکورد · %1$s · %2$s</string>
+    <string name="library_descend">ورود به ژرفا</string>
+    <string name="library_book_details_semantics">جزئیات کتاب %1$s</string>
+    <string name="library_archive_record_semantics">رکورد آرشیو %1$s</string>
+    <string name="library_show_overview">نمای کلی آرشیو</string>
+    <string name="library_hide_overview">بستن نمای کلی آرشیو</string>
+    <string name="library_view_semantics">نمای %1$s</string>
 </resources>
