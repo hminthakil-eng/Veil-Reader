@@ -291,4 +291,94 @@
     <string name="pdf_zoom_reset_a11y">Reset zoom to 100 percent</string>
     <string name="pdf_zoom_in_a11y">Zoom in</string>
     <string name="pdf_fit_width">Fit page width</string>
+
+    <string name="book_detail_artifact_chamber">ARTIFACT CHAMBER · %1$s</string>
+    <string name="book_detail_reading_progress">READING PROGRESS</string>
+    <string name="book_detail_preserved_memory">PRESERVED MEMORY</string>
+    <string name="book_detail_preserved_fragments">Preserved fragments</string>
+    <string name="book_detail_more_preserved">+%1$d more preserved in Hidden Archive</string>
+    <string name="book_detail_archive_history">ARCHIVE HISTORY</string>
+    <string name="book_detail_archived">Archived</string>
+    <string name="book_detail_first_opened">First opened</string>
+    <string name="book_detail_journey_marks">Journey marks</string>
+    <string name="book_detail_latest_completion_cycle">Latest completion · Cycle %1$d</string>
+    <string name="book_detail_reading_cycles">Reading cycles</string>
+    <string name="book_detail_archive_depth">Archive depth</string>
+    <string name="book_detail_material_memory">Material memory</string>
+
+    <string name="book_artifact_presence_catalogued">CATALOGUED</string>
+    <string name="book_artifact_presence_opened">OPENED</string>
+    <string name="book_artifact_presence_in_progress">IN PROGRESS</string>
+    <string name="book_artifact_presence_completed">COMPLETED</string>
+    <string name="book_artifact_age_new_volume">NEW VOLUME</string>
+    <string name="book_artifact_age_settled">SETTLED</string>
+    <string name="book_artifact_age_aged">AGED</string>
+    <string name="book_artifact_age_deep_archive">DEEP ARCHIVE</string>
+    <string name="book_artifact_record">%1$s · %2$s</string>
+
+    <string name="library_memory_return_event">RETURN EVENT</string>
+    <string name="library_memory_margin_echo">MARGIN ECHO</string>
+    <string name="library_memory_archive_return">ARCHIVE RETURN</string>
+    <string name="library_memory_forgotten_title">The Forgotten Volume</string>
+    <string name="library_memory_old_margin_title">The Old Margin</string>
+    <string name="library_memory_long_silence_title">The Long Silence</string>
+    <string name="library_memory_forgotten_detail">%1$s returned after %2$s of silence.</string>
+    <string name="library_memory_old_margin_detail">A passage from %1$s survived %2$s: “%3$s”</string>
+    <string name="library_memory_long_silence_detail">The archive woke with %1$s after %2$s away.</string>
+    <string name="library_memory_preserved_passage">A preserved passage</string>
+    <string name="library_deepest_record">Deepest record · %1$s · %2$s</string>
+    <string name="library_descend">DESCEND</string>
+    <string name="library_archive_depth_surface">Surface shelf</string>
+    <string name="library_archive_depth_settled">Settled · %1$s</string>
+    <string name="library_archive_depth_deep">Deep Shelf · %1$s silent</string>
+    <string name="library_archive_depth_forgotten">Forgotten · %1$s silent</string>
+    <string name="library_wing_collection">COLLECTION WING</string>
+    <string name="library_wing_series">SERIES CORRIDOR</string>
+    <string name="library_duration_today">today</string>
+    <string name="library_duration_year_month">%1$d y %2$d mo</string>
+
+    <plurals name="book_detail_passages_count">
+        <item quantity="one">%1$d passage</item>
+        <item quantity="other">%1$d passages</item>
+    </plurals>
+    <plurals name="book_detail_sessions_count">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <plurals name="book_detail_saved_places_count">
+        <item quantity="one">%1$d saved place</item>
+        <item quantity="other">%1$d saved places</item>
+    </plurals>
+    <plurals name="library_quiet_volumes">
+        <item quantity="one">%1$d volume has gone quiet</item>
+        <item quantity="other">%1$d volumes have gone quiet</item>
+    </plurals>
+    <plurals name="library_wing_volumes">
+        <item quantity="one">%1$d volume</item>
+        <item quantity="other">%1$d volumes</item>
+    </plurals>
+    <plurals name="library_wing_active">
+        <item quantity="one">%1$d active</item>
+        <item quantity="other">%1$d active</item>
+    </plurals>
+    <plurals name="library_wing_sealed">
+        <item quantity="one">%1$d sealed</item>
+        <item quantity="other">%1$d sealed</item>
+    </plurals>
+    <plurals name="library_duration_years">
+        <item quantity="one">%1$d year</item>
+        <item quantity="other">%1$d years</item>
+    </plurals>
+    <plurals name="library_duration_months">
+        <item quantity="one">%1$d month</item>
+        <item quantity="other">%1$d months</item>
+    </plurals>
+    <plurals name="library_duration_weeks">
+        <item quantity="one">%1$d week</item>
+        <item quantity="other">%1$d weeks</item>
+    </plurals>
+    <plurals name="library_duration_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
 </resources>
