@@ -12,6 +12,25 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.domain.LibraryAtmosphereState
 
+/** Slow ambient changes follow local time without changing book content or contrast. */
+enum class ArchiveTimePhase(
+    val lampMultiplier: Float,
+    val fogMultiplier: Float
+) {
+    DAWN(0.95f, 0.90f),
+    DAY(0.72f, 0.78f),
+    DUSK(1.12f, 1.05f),
+    NIGHT(1.24f, 1.10f)
+}
+
+internal fun archiveTimePhaseForHour(hour: Int): ArchiveTimePhase = when (hour) {
+    in 0..5, in 20..23 -> ArchiveTimePhase.NIGHT
+    in 6..8 -> ArchiveTimePhase.DAWN
+    in 9..16 -> ArchiveTimePhase.DAY
+    in 17..19 -> ArchiveTimePhase.DUSK
+    else -> ArchiveTimePhase.DAY
+}
+
 /**
  * A procedural architectural layer for Grayfog Archive.
  *
@@ -20,7 +39,8 @@ import com.veilreader.app.domain.LibraryAtmosphereState
  */
 fun Modifier.libraryArchiveAtmosphere(
     state: LibraryAtmosphereState,
-    seed: Int = 0
+    seed: Int = 0,
+    timePhase: ArchiveTimePhase = ArchiveTimePhase.DAY
 ): Modifier = drawBehind {
     val w = size.width
     val h = size.height
@@ -119,11 +139,12 @@ fun Modifier.libraryArchiveAtmosphere(
         val x = w * (0.16f + (index + 0.5f) / span * 0.68f)
         val y = h * (0.115f + (index % 2) * 0.035f)
         val radius = size.minDimension * (0.12f + state.memoryWarmth * 0.045f)
+        val lampGlow = (state.brassGlow * timePhase.lampMultiplier).coerceIn(0f, 1f)
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
-                    brass.copy(alpha = state.brassGlow),
-                    brass.copy(alpha = state.brassGlow * 0.26f),
+                    brass.copy(alpha = lampGlow),
+                    brass.copy(alpha = lampGlow * 0.26f),
                     Color.Transparent
                 ),
                 center = Offset(x, y),
@@ -133,7 +154,7 @@ fun Modifier.libraryArchiveAtmosphere(
             radius = radius
         )
         drawCircle(
-            color = brass.copy(alpha = 0.18f + state.memoryWarmth * 0.18f),
+            color = brass.copy(alpha = ((0.18f + state.memoryWarmth * 0.18f) * timePhase.lampMultiplier).coerceIn(0f, 1f)),
             center = Offset(x, y),
             radius = 1.25.dp.toPx()
         )
@@ -232,8 +253,8 @@ fun Modifier.libraryArchiveAtmosphere(
         brush = Brush.verticalGradient(
             listOf(
                 Color.Transparent,
-                mist.copy(alpha = state.fogAlpha * 0.055f),
-                ink.copy(alpha = state.fogAlpha * 0.62f)
+                mist.copy(alpha = (state.fogAlpha * 0.055f * timePhase.fogMultiplier).coerceIn(0f, 1f)),
+                ink.copy(alpha = (state.fogAlpha * 0.62f * timePhase.fogMultiplier).coerceIn(0f, 1f))
             ),
             startY = h * 0.58f,
             endY = h
