@@ -3720,10 +3720,10 @@ internal fun readiumFontSizeRatio(scale: Double): Double =
 
 internal fun readerHighlightTint(theme: ReaderTheme): Int =
     when (theme) {
-        ReaderTheme.PAPER -> AndroidColor.rgb(181, 138, 52)
-        ReaderTheme.SEPIA -> AndroidColor.rgb(168, 115, 46)
-        ReaderTheme.DUSK -> AndroidColor.rgb(199, 162, 83)
-        ReaderTheme.OLED -> AndroidColor.rgb(209, 177, 91)
+        ReaderTheme.PAPER -> 0xFFB58A34.toInt()
+        ReaderTheme.SEPIA -> 0xFFA8732E.toInt()
+        ReaderTheme.DUSK -> 0xFFC7A253.toInt()
+        ReaderTheme.OLED -> 0xFFD1B15B.toInt()
     }
 
 internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
