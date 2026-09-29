@@ -612,4 +612,10 @@
     <string name="threshold_first_volume_body">یک EPUB یا PDF اضافه کنید. پس از شروع، این صفحه کوتاه‌ترین مسیر بازگشت به کتاب می‌شود.</string>
     <string name="threshold_enter_library">ورود به کتابخانه</string>
     <string name="common_opening_archive">در حال گشودن آرشیو</string>
+
+    <string name="nav_reading">مطالعه</string>
+    <string name="nav_library">کتابخانه</string>
+    <string name="nav_castle">قلعه</string>
+    <string name="nav_path">مسیر</string>
+    <string name="nav_profile">پروفایل</string>
 </resources>
