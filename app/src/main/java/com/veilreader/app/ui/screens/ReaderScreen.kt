@@ -53,6 +53,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentContainerView
@@ -85,6 +87,7 @@ import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -1387,23 +1390,53 @@ fun ReaderScreen(
     }
 
     if (showAppearance) {
-        ModalBottomSheet(
+        Dialog(
             onDismissRequest = { showAppearance = false },
-            containerColor = VeilPalette.Ink,
-            dragHandle = {
-                BottomSheetDefaults.DragHandle(
-                    color = VeilPalette.Brass.copy(alpha = 0.48f)
-                )
-            }
-        ) {
-            EpubAppearancePanel(
-                appearance = readerAppearance,
-                onChange = {
-                    readerViewModel.onUserInteraction()
-                    onReaderAppearanceChange(it)
-                },
-                onDone = { showAppearance = false }
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
             )
+        ) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = VeilPalette.Ink,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    Color(0xFF141821),
+                                    VeilPalette.Ink,
+                                    Color(0xFF080A0E)
+                                )
+                            )
+                        )
+                        .windowInsetsPadding(WindowInsets.safeDrawing),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    GrayfogOrnamentFrame(
+                        modifier = Modifier.matchParentSize(),
+                        strength = 0.38f
+                    )
+                    EpubAppearancePanel(
+                        appearance = readerAppearance,
+                        onChange = {
+                            readerViewModel.onUserInteraction()
+                            onReaderAppearanceChange(it)
+                        },
+                        onDone = { showAppearance = false },
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .widthIn(max = 720.dp)
+                    )
+                }
+            }
         }
     }
 
@@ -1890,7 +1923,8 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 private fun EpubAppearancePanel(
     appearance: ReaderAppearance,
     onChange: (ReaderAppearance) -> Unit,
-    onDone: () -> Unit
+    onDone: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
@@ -1944,11 +1978,11 @@ private fun EpubAppearancePanel(
     }
 
     Column(
-        Modifier
+        modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 18.dp)
-            .padding(bottom = 28.dp),
+            .padding(top = VeilSpacing.lg, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
