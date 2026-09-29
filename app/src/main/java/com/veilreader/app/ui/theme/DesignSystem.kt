@@ -38,6 +38,23 @@ fun usesArabicScript(text: String): Boolean =
             code in 0xFE70..0xFEFF
     }
 
+/**
+ * Content can use a different script from the app locale (for example a Persian book title
+ * inside an English shell). Arabic-script shaping must never inherit Latin tracking.
+ */
+fun veilContentTextStyle(
+    base: TextStyle,
+    text: String
+): TextStyle =
+    if (usesArabicScript(text)) {
+        base.copy(
+            fontFamily = FontFamily.SansSerif,
+            letterSpacing = 0.sp
+        )
+    } else {
+        base
+    }
+
 /** Stable optical measures shared across phone/tablet layouts. */
 object VeilMeasure {
     val EditorialText = 680.dp
@@ -68,8 +85,9 @@ object VeilShapeLanguage {
 }
 
 /**
- * Latin shell typography. Generic families are intentional temporary stand-ins until the
- * approved bundled editorial font pack is committed; roles and metrics are already locked.
+ * Latin shell typography uses platform-safe generic families deliberately: the app remains
+ * fully offline and avoids shipping an unlicensed or mismatched font pack. Roles and metrics
+ * stay stable if a curated bundled family is introduced later.
  */
 private object LatinFamilies {
     val Editorial = FontFamily.Serif
