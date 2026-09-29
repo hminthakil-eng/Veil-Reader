@@ -17,7 +17,11 @@ data class ReadingHistoryEvent(
     val title: String,
     val detail: String? = null,
     /** Structured presentation fact; avoids inferring annotation state from localized title text. */
-    val annotated: Boolean = false
+    val annotated: Boolean = false,
+    val activeMillis: Long? = null,
+    val pacedPageTurns: Int = 0,
+    val highlightEvents: Int = 0,
+    val noteEvents: Int = 0
 )
 
 data class ReadingTimeCapsule(
@@ -162,7 +166,11 @@ fun deriveReadingTimeCapsule(
                     kind = ReadingHistoryEventKind.READING_SESSION,
                     timestampEpochMs = session.startedAtEpochMs,
                     title = "Reading session",
-                    detail = detail
+                    detail = detail,
+                    activeMillis = session.activeMillis.coerceAtLeast(0L),
+                    pacedPageTurns = session.pacedPageTurns.coerceAtLeast(0),
+                    highlightEvents = session.highlightCount.coerceAtLeast(0),
+                    noteEvents = session.noteCount.coerceAtLeast(0)
                 )
             )
         }
