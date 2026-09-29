@@ -40,7 +40,7 @@ private data class VeiledDiscovery(
     val title: String,
     val clue: String,
     val lore: String,
-    val revealed: (ReaderProfile, Int) -> Boolean
+    val revealed: (ReaderProfile) -> Boolean
 )
 
 private val veiledDiscoveries = listOf(
@@ -50,7 +50,7 @@ private val veiledDiscoveries = listOf(
         title = "The Patient Flame",
         clue = "A flame kept for many returns begins to remember the hand that lit it.",
         lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return.",
-        revealed = { profile, _ -> "seven_days" in profile.earnedSigils && profile.minutesRead >= 600 }
+        revealed = { profile -> "seven_days" in profile.earnedSigils && profile.minutesRead >= 600 }
     ),
     VeiledDiscovery(
         id = "marginalia_gate",
@@ -58,7 +58,7 @@ private val veiledDiscoveries = listOf(
         title = "The Marginalia Gate",
         clue = "Some doors are written in the margins rather than printed on the page.",
         lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves.",
-        revealed = { profile, _ -> "passage_keeper" in profile.earnedSigils && profile.pagesRead >= 1_000 }
+        revealed = { profile -> "passage_keeper" in profile.earnedSigils && profile.pagesRead >= 1_000 }
     ),
     VeiledDiscovery(
         id = "deep_shelf",
@@ -66,7 +66,7 @@ private val veiledDiscoveries = listOf(
         title = "The Deep Shelf",
         clue = "Finished volumes gather weight. Eventually the shelf becomes a foundation.",
         lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list.",
-        revealed = { profile, _ -> profile.booksFinished >= 10 && profile.rankIndex >= 1 }
+        revealed = { profile -> profile.booksFinished >= 10 && profile.rankIndex >= 1 }
     ),
     VeiledDiscovery(
         id = "long_watch",
@@ -74,7 +74,7 @@ private val veiledDiscoveries = listOf(
         title = "The Long Watch",
         clue = "There is a point when time spent reading stops feeling counted.",
         lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes.",
-        revealed = { profile, _ -> profile.minutesRead >= 3_000 }
+        revealed = { profile -> profile.minutesRead >= 3_000 }
     ),
     VeiledDiscovery(
         id = "veil_thins",
@@ -82,7 +82,7 @@ private val veiledDiscoveries = listOf(
         title = "When the Veil Thins",
         clue = "Several marks must awaken before they begin to answer one another.",
         lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil.",
-        revealed = { profile, _ -> profile.earnedSigils.size >= 4 }
+        revealed = { profile -> profile.earnedSigils.size >= 4 }
     ),
     VeiledDiscovery(
         id = "unnamed_chamber",
@@ -90,7 +90,7 @@ private val veiledDiscoveries = listOf(
         title = "The Unnamed Chamber",
         clue = "The deepest chamber does not open to a single achievement.",
         lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name.",
-        revealed = { profile, _ -> profile.rankIndex >= 3 && profile.earnedSigils.size >= 5 }
+        revealed = { profile -> profile.rankIndex >= 3 && profile.earnedSigils.size >= 5 }
     )
 )
 
@@ -109,7 +109,7 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit
 ) {
     val p = profile
-    val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
+    val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p) }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
             books = books,
@@ -251,7 +251,7 @@ fun ProfileScreen(
                 DiscoveryCard(
                     index = index,
                     discovery = discovery,
-                    revealed = discovery.revealed(p, highlightCount)
+                    revealed = discovery.revealed(p)
                 )
             }
         }
