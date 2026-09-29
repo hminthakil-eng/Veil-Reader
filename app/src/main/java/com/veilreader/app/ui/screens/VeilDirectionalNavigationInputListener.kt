@@ -9,11 +9,10 @@ import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 /**
- * Veil-owned directional fallback so animation policy can change at runtime.
+ * Directional fallback for modes that do not own the input earlier in ReaderInputArbiter.
  *
- * Paper mode can be intercepted by Veil's curl layer. Slide mode falls through
- * here and uses Readium's native animated navigation. Keyboard navigation
- * stays consistent with the currently selected page-turn style.
+ * PAPER_CURL and SLIDE normally consume their own page-turn gestures first. This listener keeps
+ * static PAGED and renderer fallbacks deterministic, including RTL/LTR key direction.
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal class VeilDirectionalNavigationInputListener(
