@@ -2,10 +2,16 @@ package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderColumnMode
+import com.veilreader.app.domain.ReaderDarkImageTreatment
+import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderNavigationMode
+import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.readium.r2.navigator.preferences.ImageFilter
 import org.junit.Test
 
 class ReaderPreferenceMappingTest {
@@ -99,6 +105,73 @@ class ReaderPreferenceMappingTest {
         val margins = original.withPageMargins(1.3)
         assertEquals(1.3, margins.pageMargins, 0.0001)
         assertFalse(margins.publisherStyles)
+    }
+
+    @Test
+    fun `advanced typography overrides are deterministic and disable publisher styles`() {
+        val original = ReaderAppearance(publisherStyles = true)
+            .withFontFamily(ReaderFontFamily.OPEN_DYSLEXIC)
+            .withTextAlignment(ReaderTextAlignment.JUSTIFY)
+            .withParagraphSpacing(9.0)
+            .withParagraphIndent(-3.0)
+            .withLetterSpacing(2.0)
+            .withWordSpacing(Double.NaN)
+            .withTypeScale(9.0)
+            .copy(
+                columnMode = ReaderColumnMode.TWO,
+                hyphenation = ReaderPreferenceToggle.ON,
+                ligatures = ReaderPreferenceToggle.OFF,
+                textNormalization = ReaderPreferenceToggle.ON
+            )
+
+        assertFalse(original.publisherStyles)
+        assertEquals(ReaderFontFamily.OPEN_DYSLEXIC, original.fontFamily)
+        assertEquals(ReaderTextAlignment.JUSTIFY, original.textAlignment)
+        assertEquals(2.0, original.paragraphSpacing!!, 0.0001)
+        assertEquals(0.0, original.paragraphIndent!!, 0.0001)
+        assertEquals(0.2, original.letterSpacing!!, 0.0001)
+        assertEquals(null, original.wordSpacing)
+        assertEquals(2.0, original.typeScale!!, 0.0001)
+        assertEquals(ReaderColumnMode.TWO, original.columnMode)
+    }
+
+    @Test
+    fun `paper patina is finite and clamped`() {
+        assertEquals(1.0, ReaderAppearance().withPaperPatina(9.0).paperPatina, 0.0001)
+        assertEquals(0.0, ReaderAppearance().withPaperPatina(-2.0).paperPatina, 0.0001)
+        assertEquals(0.72, ReaderAppearance().withPaperPatina(Double.NaN).paperPatina, 0.0001)
+    }
+
+    @Test
+    fun `font weight is optional finite and clamped to Readium 3_4 range`() {
+        assertEquals(null, ReaderAppearance().withFontWeight(null).fontWeight)
+        assertEquals(null, ReaderAppearance().withFontWeight(Double.NaN).fontWeight)
+        assertEquals(0.0, ReaderAppearance().withFontWeight(-4.0).fontWeight!!, 0.0001)
+        assertEquals(1.25, ReaderAppearance().withFontWeight(1.25).fontWeight!!, 0.0001)
+        assertEquals(2.5, ReaderAppearance().withFontWeight(9.0).fontWeight!!, 0.0001)
+    }
+
+    @Test
+    fun `EPUB preferences map dark image treatment and weight without fake state`() {
+        val original = ReaderAppearance(
+            theme = ReaderTheme.DUSK,
+            fontWeight = 1.5,
+            darkImageTreatment = ReaderDarkImageTreatment.DARKEN
+        ).toEpubPreferences()
+        assertEquals(1.5, original.fontWeight!!, 0.0001)
+        assertEquals(ImageFilter.DARKEN, original.imageFilter)
+
+        val inverted = ReaderAppearance(
+            theme = ReaderTheme.OLED,
+            darkImageTreatment = ReaderDarkImageTreatment.INVERT
+        ).toEpubPreferences()
+        assertEquals(ImageFilter.INVERT, inverted.imageFilter)
+
+        val none = ReaderAppearance(
+            theme = ReaderTheme.DUSK,
+            darkImageTreatment = ReaderDarkImageTreatment.NONE
+        ).toEpubPreferences()
+        assertEquals(null, none.imageFilter)
     }
 
 }
