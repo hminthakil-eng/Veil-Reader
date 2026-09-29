@@ -2990,6 +2990,31 @@ private fun EpubAppearancePanel(
 }
 
 @Composable
+private fun ReaderCapabilityNotice(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.62f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.26f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Text(
+            text,
+            modifier = Modifier.padding(12.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
 private fun ReaderAppearanceChoice(
     label: String,
     selected: Boolean,
@@ -3035,7 +3060,8 @@ private fun ReaderAppearanceSlider(
     valueRange: ClosedFloatingPointRange<Float>,
     valueLabel: (Float) -> String,
     onValueChange: (Float) -> Unit,
-    onValueChangeFinished: () -> Unit = {}
+    onValueChangeFinished: () -> Unit = {},
+    enabled: Boolean = true
 ) {
     val safeValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
     val valueDescription = valueLabel(safeValue)
@@ -3049,7 +3075,9 @@ private fun ReaderAppearanceSlider(
             Text(
                 valueDescription,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                    alpha = if (enabled) 1f else 0.48f
+                )
             )
         }
         Slider(
@@ -3057,6 +3085,7 @@ private fun ReaderAppearanceSlider(
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
+            enabled = enabled,
             modifier = Modifier.semantics {
                 contentDescription = label
                 stateDescription = valueDescription
@@ -3074,7 +3103,8 @@ private fun ReaderAppearanceNullableSlider(
     valueLabel: (Float) -> String,
     onValueChange: (Float) -> Unit,
     onValueChangeFinished: () -> Unit = {},
-    onReset: () -> Unit
+    onReset: () -> Unit,
+    enabled: Boolean = true
 ) {
     val safeValue = (value?.toFloat() ?: nullPreviewValue)
         .coerceIn(valueRange.start, valueRange.endInclusive)
@@ -3097,7 +3127,7 @@ private fun ReaderAppearanceNullableSlider(
             )
             TextButton(
                 onClick = onReset,
-                enabled = value != null,
+                enabled = enabled && value != null,
                 modifier = Modifier.heightIn(min = 48.dp)
             ) {
                 Text(stringResource(R.string.reader_value_reset))
@@ -3108,6 +3138,7 @@ private fun ReaderAppearanceNullableSlider(
             onValueChange = onValueChange,
             onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange,
+            enabled = enabled,
             modifier = Modifier.semantics {
                 contentDescription = label
                 stateDescription = valueDescription
@@ -3120,7 +3151,8 @@ private fun ReaderAppearanceNullableSlider(
 private fun ReaderAppearanceTriState(
     title: String,
     value: ReaderPreferenceToggle,
-    onChange: (ReaderPreferenceToggle) -> Unit
+    onChange: (ReaderPreferenceToggle) -> Unit,
+    enabled: Boolean = true
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title, style = MaterialTheme.typography.titleSmall)
@@ -3136,6 +3168,7 @@ private fun ReaderAppearanceTriState(
                         ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
                     },
                     selected = value == option,
+                    enabled = enabled,
                     modifier = Modifier.weight(1f),
                     onClick = { onChange(option) }
                 )
@@ -3147,15 +3180,19 @@ private fun ReaderAppearanceTriState(
 @Composable
 private fun ReaderAppearancePreview(
     appearance: ReaderAppearance,
+    typographyEnabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val (paperArgb, inkArgb) = readiumThemeColors(appearance.theme)
     val paper = Color(paperArgb)
     val ink = Color(inkArgb)
-    val margin = (14f + 12f * appearance.pageMargins.toFloat()).dp
-    val sampleSize = (15f * appearance.fontScale.toFloat()).coerceIn(11f, 23f).sp
+    val previewMargins = if (typographyEnabled) appearance.pageMargins.toFloat() else 1f
+    val previewScale = if (typographyEnabled) appearance.fontScale.toFloat() else 1f
+    val previewLineHeight = if (typographyEnabled) appearance.lineHeight.toFloat() else 1.45f
+    val margin = (14f + 12f * previewMargins).dp
+    val sampleSize = (15f * previewScale).coerceIn(11f, 23f).sp
     val sampleLineHeight =
-        (sampleSize.value * appearance.lineHeight.toFloat()).coerceIn(15f, 38f).sp
+        (sampleSize.value * previewLineHeight).coerceIn(15f, 38f).sp
     val sampleProgression = if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
         ReadingProgression.RTL
     } else {
@@ -3259,6 +3296,7 @@ internal fun localizedReaderNavigationModeDescription(mode: ReaderNavigationMode
 @Composable
 internal fun ReaderMotionSelector(
     selected: ReaderNavigationMode,
+    disabledModes: Set<ReaderNavigationMode> = emptySet(),
     onSelect: (ReaderNavigationMode) -> Unit
 ) {
     Row(
@@ -3267,6 +3305,7 @@ internal fun ReaderMotionSelector(
     ) {
         ReaderNavigationMode.entries.forEach { mode ->
             val active = selected == mode
+            val enabled = mode !in disabledModes
             val label = when (mode) {
                 ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
                 ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
@@ -3279,6 +3318,7 @@ internal fun ReaderMotionSelector(
                     .heightIn(min = 52.dp)
                     .selectable(
                         selected = active,
+                        enabled = enabled,
                         role = Role.RadioButton
                     ) { onSelect(mode) },
                 shape = MaterialTheme.shapes.extraSmall,
@@ -3308,8 +3348,12 @@ internal fun ReaderMotionSelector(
                     Text(
                         label,
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (active) VeilPalette.Moon
-                        else MaterialTheme.colorScheme.onSurfaceVariant
+                        color = when {
+                            !enabled ->
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                            active -> VeilPalette.Moon
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        }
                     )
                 }
             }
