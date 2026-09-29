@@ -19,7 +19,7 @@ class BookEntryTransitionTest {
 
         assertFalse(memory.returning)
         assertEquals(0, memory.progressPercent)
-        assertEquals("FIRST ENTRY", memory.label)
+        assertEquals(BookEntryMemoryKind.FIRST_ENTRY, memory.kind)
     }
 
     @Test
@@ -38,9 +38,39 @@ class BookEntryTransitionTest {
         assertTrue(memory.returning)
         assertEquals(42, memory.progressPercent)
         assertEquals("Chapter VII", memory.chapter)
-        assertEquals("RETURNING · 42% · Chapter VII", memory.label)
+        assertEquals(BookEntryMemoryKind.RETURNING_PROGRESS, memory.kind)
     }
 
+    @Test
+    fun `continuity stays semantic until the UI formats it`() {
+        val hour = 60L * 60L * 1000L
+        val continuity = com.veilreader.app.domain.ReadingContinuitySummary(
+            priorSessionCount = 3,
+            totalActiveMillis = 95L * 60_000L,
+            pacedPageTurns = 40,
+            recordedHighlightEvents = 2,
+            recordedNoteEvents = 1,
+            firstSessionAtEpochMs = 1L,
+            latestSessionAtEpochMs = 2L,
+            returnGapMillis = 5L * hour,
+            hasHistory = true
+        )
+
+        val memory = bookEntryMemory(
+            Book(
+                id = "returning",
+                title = "Return",
+                author = "Veil",
+                progress = 0.2f
+            ),
+            continuity
+        )
+
+        assertEquals(BookEntryMemoryKind.RETURNING_PROGRESS, memory.kind)
+        assertEquals(5L * hour, memory.returnGapMillis)
+        assertEquals(3, memory.priorSessionCount)
+        assertEquals(95L * 60_000L, memory.totalActiveMillis)
+    }
     @Test
     fun `completed volume has a distinct return state`() {
         val memory = bookEntryMemory(
@@ -54,6 +84,6 @@ class BookEntryTransitionTest {
         )
 
         assertTrue(memory.returning)
-        assertEquals("COMPLETED VOLUME · RETURNING", memory.label)
+        assertEquals(BookEntryMemoryKind.COMPLETED_RETURN, memory.kind)
     }
 }
