@@ -88,6 +88,7 @@ import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
+import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
@@ -1384,8 +1385,9 @@ private fun ReaderPageAtmosphere(
 ) {
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
     val material = sanctuaryPageMaterialFor(navigationMode)
+    val surface = sanctuarySurfaceProfileFor(theme, paperPatina)
     val stack = paperPageStackDepth(progress, progression)
-    val patina = if (dark) 0f else paperPatina.coerceIn(0f, 1f)
+    val patina = surface.patina
 
     Canvas(modifier) {
         val agedTone = when (theme) {
@@ -1397,7 +1399,7 @@ private fun ReaderPageAtmosphere(
         val edge = if (dark) {
             Color.Black.copy(alpha = 0.20f)
         } else {
-            agedTone.copy(alpha = 0.055f + 0.055f * patina)
+            agedTone.copy(alpha = surface.stackEdgeAlpha)
         }
         val highlight = if (dark) {
             Color.White.copy(alpha = 0.020f)
@@ -1429,7 +1431,7 @@ private fun ReaderPageAtmosphere(
             val sheetLine = if (dark) {
                 Color.White.copy(alpha = 0.018f)
             } else {
-                agedTone.copy(alpha = 0.025f + 0.022f * patina)
+                agedTone.copy(alpha = surface.sheetLineAlpha)
             }
             repeat(3) { index ->
                 val fraction = (index + 1) / 4f
@@ -1451,7 +1453,7 @@ private fun ReaderPageAtmosphere(
         val falloff = if (dark) {
             Color.Black.copy(alpha = 0.075f)
         } else {
-            agedTone.copy(alpha = 0.022f + 0.050f * patina)
+            agedTone.copy(alpha = surface.pageShadeAlpha)
         }
         val band = 28.dp.toPx()
         if (material.showEdgeFalloff) {
@@ -1475,7 +1477,7 @@ private fun ReaderPageAtmosphere(
         }
 
         if (!dark && patina > 0.04f) {
-            val mottleAlpha = 0.008f + 0.020f * patina
+            val mottleAlpha = surface.mottleAlpha
             val radius = size.minDimension * 0.46f
             listOf(
                 Offset(size.width * 0.10f, size.height * 0.16f),
@@ -1496,7 +1498,7 @@ private fun ReaderPageAtmosphere(
                 )
             }
 
-            val oxidation = agedTone.copy(alpha = 0.012f + 0.040f * patina)
+            val oxidation = agedTone.copy(alpha = surface.edgeOxidationAlpha)
             val sideBand = 34.dp.toPx()
             drawRect(
                 brush = Brush.horizontalGradient(
@@ -1518,9 +1520,9 @@ private fun ReaderPageAtmosphere(
         }
 
         if (!dark && material.showMicroFibres) {
-            val fibreAlpha = 0.006f + 0.018f * patina
+            val fibreAlpha = surface.fibreAlpha
             val fibre = agedTone.copy(alpha = fibreAlpha)
-            val fibreCount = 12 + (18f * patina).toInt()
+            val fibreCount = surface.fibreCount
             repeat(fibreCount) { index ->
                 val y = ((index * 71f + 29f) % size.height)
                 val x = ((index * 43f + 17f) % (size.width * 0.72f))
@@ -1537,8 +1539,8 @@ private fun ReaderPageAtmosphere(
                 )
             }
 
-            val speckAlpha = 0.006f + 0.020f * patina
-            val speckCount = 14 + (22f * patina).toInt()
+            val speckAlpha = surface.speckAlpha
+            val speckCount = surface.speckCount
             repeat(speckCount) { index ->
                 val x = ((index * 97f + 31f) % size.width)
                 val y = ((index * 137f + 47f) % size.height)
