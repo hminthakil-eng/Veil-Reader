@@ -291,4 +291,94 @@
     <string name="pdf_zoom_reset_a11y">بازنشانی بزرگ‌نمایی به ۱۰۰ درصد</string>
     <string name="pdf_zoom_in_a11y">افزایش بزرگ‌نمایی</string>
     <string name="pdf_fit_width">تطبیق با عرض صفحه</string>
+
+    <string name="book_detail_artifact_chamber">تالار اثر · %1$s</string>
+    <string name="book_detail_reading_progress">پیشرفت مطالعه</string>
+    <string name="book_detail_preserved_memory">حافظهٔ حفظ‌شده</string>
+    <string name="book_detail_preserved_fragments">قطعه‌های حفظ‌شده</string>
+    <string name="book_detail_more_preserved">+%1$d مورد دیگر در آرشیو پنهان نگه‌داری شده</string>
+    <string name="book_detail_archive_history">تاریخچهٔ آرشیو</string>
+    <string name="book_detail_archived">بایگانی‌شده</string>
+    <string name="book_detail_first_opened">نخستین بازشدن</string>
+    <string name="book_detail_journey_marks">نشان‌های مسیر</string>
+    <string name="book_detail_latest_completion_cycle">آخرین تکمیل · چرخه %1$d</string>
+    <string name="book_detail_reading_cycles">چرخه‌های مطالعه</string>
+    <string name="book_detail_archive_depth">عمق آرشیو</string>
+    <string name="book_detail_material_memory">حافظهٔ مادی</string>
+
+    <string name="book_artifact_presence_catalogued">فهرست‌شده</string>
+    <string name="book_artifact_presence_opened">گشوده‌شده</string>
+    <string name="book_artifact_presence_in_progress">در حال مطالعه</string>
+    <string name="book_artifact_presence_completed">تمام‌شده</string>
+    <string name="book_artifact_age_new_volume">جلد تازه</string>
+    <string name="book_artifact_age_settled">جاافتاده</string>
+    <string name="book_artifact_age_aged">کهنه‌شده</string>
+    <string name="book_artifact_age_deep_archive">آرشیو عمیق</string>
+    <string name="book_artifact_record">%1$s · %2$s</string>
+
+    <string name="library_memory_return_event">رویداد بازگشت</string>
+    <string name="library_memory_margin_echo">پژواک حاشیه</string>
+    <string name="library_memory_archive_return">بازگشت آرشیوی</string>
+    <string name="library_memory_forgotten_title">جلد فراموش‌شده</string>
+    <string name="library_memory_old_margin_title">حاشیهٔ قدیمی</string>
+    <string name="library_memory_long_silence_title">سکوت طولانی</string>
+    <string name="library_memory_forgotten_detail">%1$s پس از %2$s سکوت بازگشت.</string>
+    <string name="library_memory_old_margin_detail">بخشی از %1$s پس از %2$s باقی مانده بود: «%3$s»</string>
+    <string name="library_memory_long_silence_detail">آرشیو پس از %2$s با %1$s دوباره بیدار شد.</string>
+    <string name="library_memory_preserved_passage">بخشی حفظ‌شده</string>
+    <string name="library_deepest_record">عمیق‌ترین رکورد · %1$s · %2$s</string>
+    <string name="library_descend">ورود به عمق</string>
+    <string name="library_archive_depth_surface">قفسهٔ سطحی</string>
+    <string name="library_archive_depth_settled">جاافتاده · %1$s</string>
+    <string name="library_archive_depth_deep">قفسهٔ عمیق · %1$s سکوت</string>
+    <string name="library_archive_depth_forgotten">فراموش‌شده · %1$s سکوت</string>
+    <string name="library_wing_collection">بال مجموعه</string>
+    <string name="library_wing_series">راهروی سری</string>
+    <string name="library_duration_today">امروز</string>
+    <string name="library_duration_year_month">%1$d سال و %2$d ماه</string>
+
+    <plurals name="book_detail_passages_count">
+        <item quantity="one">%1$d بخش</item>
+        <item quantity="other">%1$d بخش</item>
+    </plurals>
+    <plurals name="book_detail_sessions_count">
+        <item quantity="one">%1$d نشست</item>
+        <item quantity="other">%1$d نشست</item>
+    </plurals>
+    <plurals name="book_detail_saved_places_count">
+        <item quantity="one">%1$d موقعیت ذخیره‌شده</item>
+        <item quantity="other">%1$d موقعیت ذخیره‌شده</item>
+    </plurals>
+    <plurals name="library_quiet_volumes">
+        <item quantity="one">%1$d جلد به سکوت رفته</item>
+        <item quantity="other">%1$d جلد به سکوت رفته‌اند</item>
+    </plurals>
+    <plurals name="library_wing_volumes">
+        <item quantity="one">%1$d جلد</item>
+        <item quantity="other">%1$d جلد</item>
+    </plurals>
+    <plurals name="library_wing_active">
+        <item quantity="one">%1$d فعال</item>
+        <item quantity="other">%1$d فعال</item>
+    </plurals>
+    <plurals name="library_wing_sealed">
+        <item quantity="one">%1$d بسته‌شده</item>
+        <item quantity="other">%1$d بسته‌شده</item>
+    </plurals>
+    <plurals name="library_duration_years">
+        <item quantity="one">%1$d سال</item>
+        <item quantity="other">%1$d سال</item>
+    </plurals>
+    <plurals name="library_duration_months">
+        <item quantity="one">%1$d ماه</item>
+        <item quantity="other">%1$d ماه</item>
+    </plurals>
+    <plurals name="library_duration_weeks">
+        <item quantity="one">%1$d هفته</item>
+        <item quantity="other">%1$d هفته</item>
+    </plurals>
+    <plurals name="library_duration_days">
+        <item quantity="one">%1$d روز</item>
+        <item quantity="other">%1$d روز</item>
+    </plurals>
 </resources>
