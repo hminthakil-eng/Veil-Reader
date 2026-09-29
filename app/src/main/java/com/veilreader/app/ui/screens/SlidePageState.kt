@@ -202,30 +202,47 @@ internal fun SlidePageOverlay(
 
                 val shadowWidth =
                     (16.dp.toPx() + 38.dp.toPx() * shadowIntensity)
-                val startX = if (direction < 0f) edgeX else edgeX - shadowWidth
-                val endX = if (direction < 0f) edgeX + shadowWidth else edgeX
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colorStops = if (direction < 0f) {
-                            arrayOf(
-                                0f to Color.Black.copy(alpha = 0.26f * shadowIntensity),
-                                1f to Color.Transparent
-                            )
-                        } else {
-                            arrayOf(
-                                0f to Color.Transparent,
-                                1f to Color.Black.copy(alpha = 0.26f * shadowIntensity)
-                            )
-                        },
-                        startX = startX,
-                        endX = endX
-                    ),
-                    topLeft = Offset(startX.coerceAtLeast(0f), 0f),
-                    size = androidx.compose.ui.geometry.Size(
-                        shadowWidth.coerceAtMost(size.width),
-                        size.height
+                val rawStartX = if (direction < 0f) {
+                    edgeX
+                } else {
+                    edgeX - shadowWidth
+                }
+                val rawEndX = if (direction < 0f) {
+                    edgeX + shadowWidth
+                } else {
+                    edgeX
+                }
+                val startX = rawStartX.coerceIn(0f, size.width)
+                val endX = rawEndX.coerceIn(0f, size.width)
+                val visibleWidth = (endX - startX).coerceAtLeast(0f)
+                if (visibleWidth > 0.5f) {
+                    drawRect(
+                        brush = Brush.horizontalGradient(
+                            colorStops = if (direction < 0f) {
+                                arrayOf(
+                                    0f to Color.Black.copy(
+                                        alpha = 0.26f * shadowIntensity
+                                    ),
+                                    1f to Color.Transparent
+                                )
+                            } else {
+                                arrayOf(
+                                    0f to Color.Transparent,
+                                    1f to Color.Black.copy(
+                                        alpha = 0.26f * shadowIntensity
+                                    )
+                                )
+                            },
+                            startX = startX,
+                            endX = endX
+                        ),
+                        topLeft = Offset(startX, 0f),
+                        size = androidx.compose.ui.geometry.Size(
+                            visibleWidth,
+                            size.height
+                        )
                     )
-                )
+                }
             }
         }
     }
