@@ -380,11 +380,22 @@ internal class PaperCurlInputListener(
 
     private fun isMostlyHorizontal(event: DragEvent): Boolean {
         val view = navigator.publicationView
+        val width = view.width.toFloat()
+        val density = view.resources.displayMetrics.density
+        val edgeZone = pageTurnTapZonePx(
+            width = width,
+            density = density,
+            preferredFraction = EDGE_FRACTION
+        )
+        val startsAtEdge =
+            event.start.x <= edgeZone ||
+                event.start.x >= width - edgeZone
         return hasDeliberatePaperIntent(
             offsetX = event.offset.x,
             offsetY = event.offset.y,
-            width = view.width.toFloat(),
-            density = view.resources.displayMetrics.density
+            width = width,
+            density = density,
+            startsAtEdge = startsAtEdge
         )
     }
 
@@ -443,14 +454,20 @@ internal fun hasDeliberatePaperIntent(
     offsetX: Float,
     offsetY: Float,
     width: Float,
-    density: Float
+    density: Float,
+    startsAtEdge: Boolean = false
 ): Boolean {
     if (width <= 0f) return false
     val x = abs(offsetX)
     val y = abs(offsetY)
     val safeDensity = density.coerceAtLeast(0.1f)
-    val intentDistance = max(8f * safeDensity, width * 0.009f)
-    return x >= intentDistance && x >= y * 1.08f
+    val intentDistance = if (startsAtEdge) {
+        max(6f * safeDensity, width * 0.006f)
+    } else {
+        max(8f * safeDensity, width * 0.009f)
+    }
+    val horizontalBias = if (startsAtEdge) 0.72f else 1.08f
+    return x >= intentDistance && x >= y * horizontalBias
 }
 
 internal fun paperTurnDirectionFor(
