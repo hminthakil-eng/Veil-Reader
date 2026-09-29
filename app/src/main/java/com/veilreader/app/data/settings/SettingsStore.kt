@@ -13,11 +13,13 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import org.json.JSONObject
 
 private val Context.veilSettingsDataStore by preferencesDataStore(name = "veil_settings")
 
@@ -38,6 +40,7 @@ data class SensorySettings(
 data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
+    val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
@@ -70,6 +73,7 @@ class SettingsStore(private val context: Context) {
         val typeScale = doublePreferencesKey("reader_type_scale")
         val darkImageTreatment = stringPreferencesKey("reader_dark_image_treatment")
         val paperPatina = doublePreferencesKey("reader_paper_patina")
+        val fixedLayoutSpreads = stringPreferencesKey("reader_fixed_layout_spreads")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
         val sensoryInteractionSounds = booleanPreferencesKey("sensory_interaction_sounds")
@@ -155,6 +159,9 @@ class SettingsStore(private val context: Context) {
                 }.getOrDefault(ReaderDarkImageTreatment.NONE),
                 paperPatina = prefs[Keys.paperPatina] ?: 0.72
             ).normalized(),
+            fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
+                prefs[Keys.fixedLayoutSpreads]
+            ),
             sensory = SensorySettings(
                 hapticsEnabled = prefs[Keys.sensoryHaptics] ?: true,
                 interactionSoundsEnabled = prefs[Keys.sensoryInteractionSounds] ?: false,
@@ -224,6 +231,30 @@ class SettingsStore(private val context: Context) {
         }
     }
 
+    suspend fun saveFixedLayoutSpread(
+        bookId: String,
+        mode: ReaderFixedLayoutSpread
+    ) {
+        val id = bookId.trim()
+        if (id.isEmpty()) return
+        context.veilSettingsDataStore.edit { prefs ->
+            val current = decodeFixedLayoutSpreadOverrides(
+                prefs[Keys.fixedLayoutSpreads]
+            ).toMutableMap()
+            if (mode == ReaderFixedLayoutSpread.AUTO) {
+                current.remove(id)
+            } else {
+                current[id] = mode
+            }
+            if (current.isEmpty()) {
+                prefs.remove(Keys.fixedLayoutSpreads)
+            } else {
+                prefs[Keys.fixedLayoutSpreads] =
+                    encodeFixedLayoutSpreadOverrides(current)
+            }
+        }
+    }
+
     suspend fun saveSensorySettings(value: SensorySettings) {
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.sensoryHaptics] = value.hapticsEnabled
@@ -255,4 +286,40 @@ class SettingsStore(private val context: Context) {
     internal suspend fun clearAllForTest() {
         context.veilSettingsDataStore.edit { it.clear() }
     }
+}
+
+
+internal fun decodeFixedLayoutSpreadOverrides(
+    raw: String?
+): Map<String, ReaderFixedLayoutSpread> {
+    if (raw.isNullOrBlank()) return emptyMap()
+    val json = runCatching { JSONObject(raw) }.getOrNull() ?: return emptyMap()
+    return buildMap {
+        val keys = json.keys()
+        while (keys.hasNext()) {
+            val key = keys.next().trim()
+            if (key.isEmpty()) continue
+            val mode = runCatching {
+                ReaderFixedLayoutSpread.valueOf(json.optString(key))
+            }.getOrNull() ?: continue
+            if (mode != ReaderFixedLayoutSpread.AUTO) {
+                put(key, mode)
+            }
+        }
+    }
+}
+
+internal fun encodeFixedLayoutSpreadOverrides(
+    values: Map<String, ReaderFixedLayoutSpread>
+): String {
+    val json = JSONObject()
+    values
+        .toSortedMap()
+        .forEach { (bookId, mode) ->
+            val id = bookId.trim()
+            if (id.isNotEmpty() && mode != ReaderFixedLayoutSpread.AUTO) {
+                json.put(id, mode.name)
+            }
+        }
+    return json.toString()
 }
