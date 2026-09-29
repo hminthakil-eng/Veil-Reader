@@ -215,10 +215,17 @@ internal class SlideNavigationInputListener(
                     else -> if (!isReducedMotion()) state.animateCancel()
                 }
             } else if (commit && !cancellationRequested) {
-                if (navigate(spec.direction)) {
+                val moved = navigate(spec.direction)
+                if (moved) {
                     turnCommitted = true
                     onCommittedTurn()
-                } else {
+                } else if (
+                    shouldEmitSlideTerminalBoundary(
+                        commitRequested = commit,
+                        cancellationRequested = cancellationRequested,
+                        navigationMoved = moved
+                    )
+                ) {
                     // Reduced-motion and failed-snapshot paths still owe the same semantic boundary
                     // response even though there is no visual sheet available to bounce.
                     onBoundaryHit(spec.side)
