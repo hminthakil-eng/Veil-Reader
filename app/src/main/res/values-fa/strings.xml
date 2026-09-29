@@ -133,4 +133,22 @@
     <string name="settings_mode_slide_description">مطالعهٔ صفحه‌بندی‌شده با جابه‌جایی افقی سبک، بدون خمیدگی کاغذ.</string>
     <string name="settings_mode_paged_description">صفحه‌بندی ثابت، بدون حرکت تزئینی.</string>
     <string name="settings_mode_scroll_description">پیمایش عمودی پیوسته، در صورت پشتیبانی فرمت کتاب.</string>
+
+    <!-- In-reader appearance and brightness controls -->
+    <string name="reader_instruments">ابزارهای مطالعه</string>
+    <string name="reader_changes_live">تغییرها هم‌زمان روی کتاب بازشده اعمال می‌شوند.</string>
+    <string name="reader_quick">سریع</string>
+    <string name="reader_advanced">پیشرفته</string>
+    <string name="reader_typography_layout">قلم و چیدمان</string>
+    <string name="reader_publisher_styling">سبک ناشر</string>
+    <string name="reader_publisher_description">در صورت وجود، قلم و سبک خود کتاب را حفظ می‌کند.</string>
+    <string name="reader_reset_appearance">بازنشانی ظاهر</string>
+    <string name="reader_back_to_reading">بازگشت به مطالعه</string>
+    <string name="reader_sample_preview">پیش‌نمایش زندهٔ نمونه</string>
+    <string name="reader_sample_chapter">فصل هفتم</string>
+    <string name="reader_sample_title">آن‌سوی حجاب</string>
+    <string name="reader_sample_body">صفحه باید زیر داستان ناپدید شود. قلم، فاصله و حرکت تنها زمانی دیده شوند که خواندن را روان‌تر کنند.</string>
+    <string name="reader_system_brightness">استفاده از روشنایی دستگاه</string>
+    <string name="reader_system_brightness_description">روشنایی دستگاه را دنبال می‌کند و پس از خروج به وضعیت قبلی بازمی‌گردد.</string>
+    <string name="reader_custom_brightness_description">روشنایی انتخاب‌شده فقط هنگام مطالعه اعمال می‌شود.</string>
 </resources>
