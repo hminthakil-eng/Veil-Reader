@@ -97,6 +97,7 @@ import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -268,7 +269,20 @@ fun ReaderScreen(
         }
     }
     var showAppearance by rememberSaveable(opened.book.id) { mutableStateOf(false) }
+    var appearanceCloseJob by remember(opened.book.id) { mutableStateOf<Job?>(null) }
     var showPdfZoom by rememberSaveable(opened.book.id) { mutableStateOf(false) }
+
+    fun closeAppearanceAfterRendererSettles() {
+        appearanceCloseJob?.cancel()
+        appearanceCloseJob = scope.launch {
+            // submitPreferences() returns before every renderer path necessarily paints its first
+            // frame. Keep the instrument chamber for two settle frames so mode changes never reveal
+            // an intermediate overflow/layout state underneath it.
+            delay(VeilMotion.FRAME_SETTLE_MS * 2)
+            showAppearance = false
+            appearanceCloseJob = null
+        }
+    }
     val latestAppearance = rememberUpdatedState(readerAppearance)
     val paperCurlConfig = remember(readerAppearance.theme) {
         when (readerAppearance.theme) {
@@ -1214,6 +1228,8 @@ fun ReaderScreen(
                         ) {
                             readerViewModel.onUserInteraction()
                             if (opened.format == BookFormat.EPUB) {
+                                appearanceCloseJob?.cancel()
+                                appearanceCloseJob = null
                                 showAppearance = true
                             } else {
                                 showPdfZoom = true
@@ -1537,7 +1553,7 @@ fun ReaderScreen(
 
     if (showAppearance) {
         Dialog(
-            onDismissRequest = { showAppearance = false },
+            onDismissRequest = ::closeAppearanceAfterRendererSettles,
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = false,
@@ -1576,7 +1592,7 @@ fun ReaderScreen(
                             readerViewModel.onUserInteraction()
                             onReaderAppearanceChange(it)
                         },
-                        onDone = { showAppearance = false },
+                        onDone = ::closeAppearanceAfterRendererSettles,
                         modifier = Modifier
                             .fillMaxSize()
                             .widthIn(max = 720.dp)
