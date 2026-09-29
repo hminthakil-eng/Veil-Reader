@@ -1037,7 +1037,7 @@ private fun BookDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     Text(
-                        "ARTIFACT CHAMBER · ${book.format.name}",
+                        stringResource(R.string.book_detail_artifact_chamber, book.format.name),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
@@ -1100,7 +1100,7 @@ private fun BookDetailSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "READING PROGRESS",
+                            stringResource(R.string.book_detail_reading_progress),
                             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                             color = VeilPalette.Brass,
                             modifier = Modifier.weight(1f)
@@ -1213,7 +1213,7 @@ private fun BookDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
                     Text(
-                        "ARCHIVE HISTORY",
+                        stringResource(R.string.book_detail_archive_history),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = VeilPalette.Brass
                     )
@@ -1240,13 +1240,13 @@ private fun BookDetailSheet(
                         }
                     )
                     book.addedAtEpochMs.takeIf { it > 0L }?.let { archivedAt ->
-                        BookDetailFact("Archived", formatArchiveRecordDate(archivedAt))
+                        BookDetailFact(stringResource(R.string.book_detail_archived), formatArchiveRecordDate(archivedAt))
                     }
                     readingMilestones
                         .firstOrNull { it.kind == ReadingMilestoneKind.FIRST_OPENED }
                         ?.let { firstOpen ->
                             BookDetailFact(
-                                "First opened",
+                                stringResource(R.string.book_detail_first_opened),
                                 formatArchiveRecordDate(firstOpen.reachedAtEpochMs)
                             )
                         }
@@ -1255,7 +1255,7 @@ private fun BookDetailSheet(
                         .sortedBy { it.progression }
                     if (progressMarks.isNotEmpty()) {
                         BookDetailFact(
-                            "Journey marks",
+                            stringResource(R.string.book_detail_journey_marks),
                             progressMarks.joinToString(" · ") {
                                 "${(it.progression * 100).toInt()}%"
                             }
@@ -1264,19 +1264,19 @@ private fun BookDetailSheet(
                     readingCycles.maxByOrNull { it.cycleIndex }?.let { latestCycle ->
                         BookDetailFact(
                             if (latestCycle.cycleIndex > 1) {
-                                "Latest completion · Cycle ${latestCycle.cycleIndex}"
+                                stringResource(R.string.book_detail_latest_cycle, latestCycle.cycleIndex)
                             } else {
-                                "Completed"
+                                stringResource(R.string.book_detail_completed_at)
                             },
                             formatArchiveRecordDate(latestCycle.completedAtEpochMs)
                         )
                     }
                     if (readingCycles.size > 1) {
-                        BookDetailFact("Reading cycles", readingCycles.size.toString())
+                        BookDetailFact(stringResource(R.string.book_detail_reading_cycles), readingCycles.size.toString())
                     }
                     archiveMemory?.let { memory ->
                         BookDetailFact(
-                            "Archive depth",
+                            stringResource(R.string.book_detail_archive_depth),
                             archiveDepthRecord(memory)
                         )
                     }
@@ -1285,24 +1285,31 @@ private fun BookDetailSheet(
                             it.highlightCount > 0 ||
                             it.bookmarkCount > 0
                     }?.let { material ->
+                        val pieces = mutableListOf<String>()
+                        if (material.sessionCount > 0) {
+                            pieces += stringResource(
+                                if (material.sessionCount == 1) R.string.book_detail_session_one
+                                else R.string.book_detail_session_many,
+                                material.sessionCount
+                            )
+                        }
+                        if (material.highlightCount > 0) {
+                            pieces += stringResource(
+                                if (material.highlightCount == 1) R.string.book_detail_passage_one
+                                else R.string.book_detail_passage_many,
+                                material.highlightCount
+                            )
+                        }
+                        if (material.bookmarkCount > 0) {
+                            pieces += stringResource(
+                                if (material.bookmarkCount == 1) R.string.book_detail_place_one
+                                else R.string.book_detail_place_many,
+                                material.bookmarkCount
+                            )
+                        }
                         BookDetailFact(
-                            "Material memory",
-                            buildString {
-                                if (material.sessionCount > 0) {
-                                    append(material.sessionCount)
-                                        .append(if (material.sessionCount == 1) " session" else " sessions")
-                                }
-                                if (material.highlightCount > 0) {
-                                    if (isNotEmpty()) append(" · ")
-                                    append(material.highlightCount)
-                                        .append(if (material.highlightCount == 1) " passage" else " passages")
-                                }
-                                if (material.bookmarkCount > 0) {
-                                    if (isNotEmpty()) append(" · ")
-                                    append(material.bookmarkCount)
-                                        .append(if (material.bookmarkCount == 1) " saved place" else " saved places")
-                                }
-                            }
+                            stringResource(R.string.book_detail_material_memory),
+                            pieces.joinToString(" · ")
                         )
                     }
                 }
@@ -1366,18 +1373,22 @@ private fun BookDetailFragments(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "PRESERVED MEMORY",
+                    stringResource(R.string.book_detail_preserved_memory),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Preserved fragments",
+                    stringResource(R.string.book_detail_preserved_fragments),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
             }
             Text(
-                "${highlights.size} passages",
+                stringResource(
+                    if (highlights.size == 1) R.string.book_detail_passage_one
+                    else R.string.book_detail_passage_many,
+                    highlights.size
+                ),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -1430,7 +1441,7 @@ private fun BookDetailFragments(
 
         if (highlights.size > 3) {
             Text(
-                "+${highlights.size - 3} more preserved in Hidden Archive",
+                stringResource(R.string.book_detail_more_preserved, highlights.size - 3),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Spirit.copy(alpha = 0.72f)
             )
@@ -1510,7 +1521,7 @@ private fun BookDetailIdentity(
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
                 ) {
                     Text(
-                        "FAVORITE",
+                        stringResource(R.string.book_detail_favorite_badge),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
@@ -1532,13 +1543,13 @@ private fun BookDetailFact(label: String, value: String) {
             label,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(78.dp)
+            modifier = Modifier.weight(0.38f)
         )
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(0.62f)
         )
     }
 }
@@ -2349,28 +2360,34 @@ private fun formatArchiveRecordDate(epochMs: Long): String =
         .format(Date(epochMs))
         .uppercase(Locale.getDefault())
 
+@Composable
 private fun archiveDepthRecord(memory: BookArchiveMemory): String {
     val age = formatArchiveSilence(memory.inactiveMillis)
     return when (memory.depth) {
-        ArchiveDepth.SURFACE -> "Surface shelf"
-        ArchiveDepth.SETTLED -> "Settled · $age"
-        ArchiveDepth.DEEP_SHELF -> "Deep Shelf · $age silent"
-        ArchiveDepth.FORGOTTEN -> "Forgotten · $age silent"
+        ArchiveDepth.SURFACE -> stringResource(R.string.book_detail_archive_surface)
+        ArchiveDepth.SETTLED -> stringResource(R.string.book_detail_archive_settled, age)
+        ArchiveDepth.DEEP_SHELF -> stringResource(R.string.book_detail_archive_deep, age)
+        ArchiveDepth.FORGOTTEN -> stringResource(R.string.book_detail_archive_forgotten, age)
     }
 }
 
+@Composable
 private fun formatArchiveSilence(inactiveMillis: Long): String {
     val days = inactiveMillis.coerceAtLeast(0L) / 86_400_000L
     return when {
         days >= 365L -> {
             val years = days / 365L
             val months = (days % 365L) / 30L
-            if (months > 0L) "${years}y ${months}mo" else "${years}y"
+            if (months > 0L) {
+                stringResource(R.string.book_detail_silence_years_months, years, months)
+            } else {
+                stringResource(R.string.book_detail_silence_years, years)
+            }
         }
-        days >= 60L -> "${days / 30L} months"
-        days >= 14L -> "${days / 7L} weeks"
-        days > 0L -> "$days days"
-        else -> "today"
+        days >= 60L -> stringResource(R.string.book_detail_silence_months, days / 30L)
+        days >= 14L -> stringResource(R.string.book_detail_silence_weeks, days / 7L)
+        days > 0L -> stringResource(R.string.book_detail_silence_days, days)
+        else -> stringResource(R.string.book_detail_silence_today)
     }
 }
 
