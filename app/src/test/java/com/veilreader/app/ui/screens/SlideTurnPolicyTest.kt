@@ -161,4 +161,34 @@ class SlideTurnPolicyTest {
         assertTrue(slideEdgeShadowIntensity(0.5f) > 0.99f)
     }
 
+    @Test
+    fun `slide completion settles faster when most travel is already done`() {
+        val earlyRelease = slideCompletionDurationMillis(
+            progress = 0.20f,
+            velocityDpPerSec = 0f
+        )
+        val lateRelease = slideCompletionDurationMillis(
+            progress = 0.85f,
+            velocityDpPerSec = 0f
+        )
+
+        assertTrue(lateRelease < earlyRelease)
+        assertTrue(lateRelease >= 88)
+        assertTrue(earlyRelease <= 220)
+    }
+
+    @Test
+    fun `fast slide release settles faster than slow release at equal progress`() {
+        val slow = slideCompletionDurationMillis(
+            progress = 0.40f,
+            velocityDpPerSec = 250f
+        )
+        val fast = slideCompletionDurationMillis(
+            progress = 0.40f,
+            velocityDpPerSec = 2_200f
+        )
+
+        assertTrue(fast < slow)
+    }
+
 }
