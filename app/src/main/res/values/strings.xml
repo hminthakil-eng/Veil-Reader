@@ -457,4 +457,15 @@
     <string name="library_mark_count">%1$d marks</string>
     <string name="library_saved_count">%1$d saved</string>
     <string name="library_group_volume_count">%1$d volumes</string>
+
+    <string name="library_memory_eyebrow">Recovered memory</string>
+    <string name="library_memory_title">The archive remembers</string>
+    <string name="library_memory_traces">%1$d traces</string>
+    <string name="library_recent_eyebrow">Recently opened</string>
+    <string name="library_recent_title">Volumes in progress</string>
+    <string name="library_recent_active">%1$d active</string>
+    <string name="library_continue_book_semantics">Continue %1$s</string>
+    <string name="library_wings_eyebrow">Spatial index</string>
+    <string name="library_wings_title">Archive Wings</string>
+    <string name="library_wings_mapped">%1$d mapped</string>
 </resources>
