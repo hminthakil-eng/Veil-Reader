@@ -213,4 +213,26 @@ class ReaderChromePolicyTest {
         assertTrue(shouldAnimateReaderJump(reducedMotion = false))
     }
 
+    @Test
+    fun `table of contents current section ignores fragment differences within one resource`() {
+        assertTrue(
+            isCurrentReaderSection(
+                linkHref = "text/chapter-04.xhtml#section-2",
+                currentHref = "text/chapter-04.xhtml#paragraph-19"
+            )
+        )
+        assertFalse(
+            isCurrentReaderSection(
+                linkHref = "text/chapter-05.xhtml",
+                currentHref = "text/chapter-04.xhtml"
+            )
+        )
+        assertFalse(
+            isCurrentReaderSection(
+                linkHref = "text/chapter-04.xhtml",
+                currentHref = null
+            )
+        )
+    }
+
 }
