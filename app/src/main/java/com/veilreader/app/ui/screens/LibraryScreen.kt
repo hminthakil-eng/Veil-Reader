@@ -1041,7 +1041,7 @@ private fun BookDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     Text(
-                        "ARTIFACT CHAMBER · ${book.format.name}",
+                        stringResource(R.string.book_detail_artifact_chamber, book.format.name),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
@@ -1104,7 +1104,7 @@ private fun BookDetailSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "READING PROGRESS",
+                            stringResource(R.string.book_detail_reading_progress),
                             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                             color = VeilPalette.Brass,
                             modifier = Modifier.weight(1f)
@@ -1217,7 +1217,7 @@ private fun BookDetailSheet(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
                     Text(
-                        "ARCHIVE HISTORY",
+                        stringResource(R.string.book_detail_archive_history),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = VeilPalette.Brass
                     )
@@ -1244,13 +1244,13 @@ private fun BookDetailSheet(
                         }
                     )
                     book.addedAtEpochMs.takeIf { it > 0L }?.let { archivedAt ->
-                        BookDetailFact("Archived", formatArchiveRecordDate(archivedAt))
+                        BookDetailFact(stringResource(R.string.book_detail_archived), formatArchiveRecordDate(archivedAt))
                     }
                     readingMilestones
                         .firstOrNull { it.kind == ReadingMilestoneKind.FIRST_OPENED }
                         ?.let { firstOpen ->
                             BookDetailFact(
-                                "First opened",
+                                stringResource(R.string.book_detail_first_opened),
                                 formatArchiveRecordDate(firstOpen.reachedAtEpochMs)
                             )
                         }
@@ -1259,7 +1259,7 @@ private fun BookDetailSheet(
                         .sortedBy { it.progression }
                     if (progressMarks.isNotEmpty()) {
                         BookDetailFact(
-                            "Journey marks",
+                            stringResource(R.string.book_detail_journey_marks),
                             progressMarks.joinToString(" · ") {
                                 "${(it.progression * 100).toInt()}%"
                             }
@@ -1268,7 +1268,7 @@ private fun BookDetailSheet(
                     readingCycles.maxByOrNull { it.cycleIndex }?.let { latestCycle ->
                         BookDetailFact(
                             if (latestCycle.cycleIndex > 1) {
-                                "Latest completion · Cycle ${latestCycle.cycleIndex}"
+                                stringResource(R.string.book_detail_latest_completion_cycle, latestCycle.cycleIndex)
                             } else {
                                 "Completed"
                             },
@@ -1276,11 +1276,11 @@ private fun BookDetailSheet(
                         )
                     }
                     if (readingCycles.size > 1) {
-                        BookDetailFact("Reading cycles", readingCycles.size.toString())
+                        BookDetailFact(stringResource(R.string.book_detail_reading_cycles), readingCycles.size.toString())
                     }
                     archiveMemory?.let { memory ->
                         BookDetailFact(
-                            "Archive depth",
+                            stringResource(R.string.book_detail_archive_depth),
                             archiveDepthRecord(memory)
                         )
                     }
@@ -1290,21 +1290,36 @@ private fun BookDetailSheet(
                             it.bookmarkCount > 0
                     }?.let { material ->
                         BookDetailFact(
-                            "Material memory",
+                            stringResource(R.string.book_detail_material_memory),
                             buildString {
                                 if (material.sessionCount > 0) {
-                                    append(material.sessionCount)
-                                        .append(if (material.sessionCount == 1) " session" else " sessions")
+                                    append(
+                                        pluralStringResource(
+                                            R.plurals.book_detail_sessions_count,
+                                            material.sessionCount,
+                                            material.sessionCount
+                                        )
+                                    )
                                 }
                                 if (material.highlightCount > 0) {
                                     if (isNotEmpty()) append(" · ")
-                                    append(material.highlightCount)
-                                        .append(if (material.highlightCount == 1) " passage" else " passages")
+                                    append(
+                                        pluralStringResource(
+                                            R.plurals.book_detail_passages_count,
+                                            material.highlightCount,
+                                            material.highlightCount
+                                        )
+                                    )
                                 }
                                 if (material.bookmarkCount > 0) {
                                     if (isNotEmpty()) append(" · ")
-                                    append(material.bookmarkCount)
-                                        .append(if (material.bookmarkCount == 1) " saved place" else " saved places")
+                                    append(
+                                        pluralStringResource(
+                                            R.plurals.book_detail_saved_places_count,
+                                            material.bookmarkCount,
+                                            material.bookmarkCount
+                                        )
+                                    )
                                 }
                             }
                         )
