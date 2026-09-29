@@ -539,6 +539,15 @@ fun LibraryScreen(
         }
 
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
+            val sortLabel = when (sort) {
+                "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
+                "Title" -> stringResource(R.string.library_sort_title)
+                "Author" -> stringResource(R.string.library_sort_author)
+                "Series" -> stringResource(R.string.library_sort_series)
+                "Progress" -> stringResource(R.string.library_sort_progress)
+                else -> stringResource(R.string.library_sort_recent)
+            }
+            val sortDescription = stringResource(R.string.library_sort_description, sortLabel)
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -553,7 +562,11 @@ fun LibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "${filtered.size.toString().padStart(2, '0')} VOLUMES",
+                        stringResource(
+                            if (filtered.size == 1) R.string.library_volume_count_one
+                            else R.string.library_volume_count_many,
+                            filtered.size
+                        ),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass,
                         modifier = Modifier.padding(end = 4.dp)
@@ -572,7 +585,7 @@ fun LibraryScreen(
                                 )
                             ) {
                                 Text(
-                                    if (collection.isBlank()) "Collection" else collection,
+                                    if (collection.isBlank()) stringResource(R.string.library_collection) else collection,
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -583,7 +596,7 @@ fun LibraryScreen(
                                 onDismissRequest = { collectionMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("All collections") },
+                                    text = { Text(stringResource(R.string.library_all_collections)) },
                                     onClick = { collection = ""; collectionMenu = false }
                                 )
                                 collections.forEach { label ->
@@ -601,7 +614,7 @@ fun LibraryScreen(
                             onClick = { sortMenu = true },
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
-                                .semantics { contentDescription = "Sort books: $sort" },
+                                .semantics { contentDescription = sortDescription },
                             shape = MaterialTheme.shapes.extraSmall,
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             border = BorderStroke(
@@ -610,7 +623,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                sort,
+                                sortLabel,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -621,16 +634,16 @@ fun LibraryScreen(
                             onDismissRequest = { sortMenu = false }
                         ) {
                             listOf(
-                                "Recent",
-                                "Archive Depth",
-                                "Title",
-                                "Author",
-                                "Series",
-                                "Progress"
-                            ).forEach { label ->
+                                "Recent" to R.string.library_sort_recent,
+                                "Archive Depth" to R.string.library_sort_archive_depth,
+                                "Title" to R.string.library_sort_title,
+                                "Author" to R.string.library_sort_author,
+                                "Series" to R.string.library_sort_series,
+                                "Progress" to R.string.library_sort_progress
+                            ).forEach { (key, labelRes) ->
                                 DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = { sort = label; sortMenu = false }
+                                    text = { Text(stringResource(labelRes)) },
+                                    onClick = { sort = key; sortMenu = false }
                                 )
                             }
                         }
@@ -648,7 +661,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                "Series · $seriesFilter ×",
+                                stringResource(R.string.library_series_filter, seriesFilter),
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -677,7 +690,7 @@ fun LibraryScreen(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
                         ) {
-                            Text("Reset", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.library_reset_filters), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
