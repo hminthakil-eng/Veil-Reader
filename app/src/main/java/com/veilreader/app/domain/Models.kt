@@ -75,7 +75,9 @@ data class ReaderProfile(
     val rankIndex: Int,
     val ritualProgress: Int,
     val ritualTarget: Int,
-    val earnedSigils: Set<String> = emptySet()
+    val earnedSigils: Set<String> = emptySet(),
+    /** Highest earned reading streak; a lapse must not revoke historical relics. */
+    val longestStreakDays: Int = streakDays
 ) {
     val rankName: String get() = path.ranks.getOrElse(rankIndex) { path.ranks.last() }
 }

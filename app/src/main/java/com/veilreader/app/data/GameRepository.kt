@@ -203,7 +203,16 @@ class GameRepository(context: Context) {
             ChronoUnit.DAYS.between(last, today) == 1L -> prefs.getInt("streakDays", 0) + 1
             else -> 1
         }
-        prefs.edit().putString("lastReadDate", todayString).putInt("streakDays", streak).apply()
+        val longest = maxOf(
+            prefs.getInt("longestStreakDays", 0),
+            prefs.getInt("streakDays", 0),
+            streak
+        )
+        prefs.edit()
+            .putString("lastReadDate", todayString)
+            .putInt("streakDays", streak)
+            .putInt("longestStreakDays", longest)
+            .apply()
     }
 
     private fun rollDayIfNeeded() {
@@ -282,7 +291,11 @@ class GameRepository(context: Context) {
             rankIndex = prefs.getInt("rankIndex", 0).coerceIn(0, path.ranks.lastIndex),
             ritualProgress = prefs.getInt("ritualProgress", 0),
             ritualTarget = ReadingPolicy.ritualTarget(path.id, prefs.getInt("rankIndex", 0)),
-            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet()
+            earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
+            longestStreakDays = maxOf(
+                prefs.getInt("longestStreakDays", 0),
+                prefs.getInt("streakDays", 0)
+            )
         )
     }
 
