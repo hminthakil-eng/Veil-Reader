@@ -53,6 +53,7 @@ internal fun PdfZoomControls(
     navigator: Navigator?,
     appearance: ReaderAppearance,
     onAppearanceChange: (ReaderAppearance) -> Unit,
+    reducedMotion: Boolean = false,
     modifier: Modifier = Modifier,
     onDone: () -> Unit
 ) {
@@ -268,7 +269,12 @@ internal fun PdfZoomControls(
                             max = maxZoom,
                             factor = 0.8f
                         )
-                        view.zoomWithAnimation(requested)
+                        if (shouldAnimatePdfZoom(reducedMotion)) {
+                            view.zoomWithAnimation(requested)
+                        } else {
+                            view.zoomTo(requested)
+                            zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                        }
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -284,7 +290,14 @@ internal fun PdfZoomControls(
                 }
 
                 OutlinedButton(
-                    onClick = { view.resetZoomWithAnimation() },
+                    onClick = {
+                        if (shouldAnimatePdfZoom(reducedMotion)) {
+                            view.resetZoomWithAnimation()
+                        } else {
+                            view.zoomTo(normalizedPdfZoom(1f, minZoom, maxZoom))
+                            zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                        }
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
@@ -306,7 +319,12 @@ internal fun PdfZoomControls(
                             max = maxZoom,
                             factor = 1.25f
                         )
-                        view.zoomWithAnimation(requested)
+                        if (shouldAnimatePdfZoom(reducedMotion)) {
+                            view.zoomWithAnimation(requested)
+                        } else {
+                            view.zoomTo(requested)
+                            zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                        }
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -362,6 +380,9 @@ internal fun PdfZoomControls(
         }
     }
 }
+
+internal fun shouldAnimatePdfZoom(reducedMotion: Boolean): Boolean =
+    !reducedMotion
 
 internal fun normalizedPdfZoom(
     current: Float,
