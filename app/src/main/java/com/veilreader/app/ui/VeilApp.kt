@@ -486,6 +486,7 @@ fun VeilApp(
 
             VeilTab.CASTLE -> CastleScreen(
                 profile = requireNotNull(profile),
+                quests = quests,
                 onOpenRoom = { room ->
                     when (room) {
                         "library" -> routeViewModel.selectTab(VeilTab.LIBRARY)
@@ -496,7 +497,8 @@ fun VeilApp(
                     }
                 },
                 onAdvanceRank = {
-                    if (!game.advanceRank()) {
+                    val currentProfile = requireNotNull(profile)
+                    if (!game.advanceRank(currentProfile.path.id, currentProfile.rankIndex)) {
                         errorMessage = "Complete the current advancement ritual first."
                     } else {
                         sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
@@ -505,13 +507,15 @@ fun VeilApp(
                 books = books,
                 highlights = highlights,
                 bookmarks = bookmarks,
-                readingSessions = readingSessions
+                readingSessions = readingSessions,
+                readingCycles = readingCycles
             )
 
             VeilTab.PATH -> PathScreen(
                 profile = requireNotNull(profile),
                 onAdvanceRank = {
-                    if (!game.advanceRank()) {
+                    val currentProfile = requireNotNull(profile)
+                    if (!game.advanceRank(currentProfile.path.id, currentProfile.rankIndex)) {
                         errorMessage = "Complete the current advancement ritual first."
                     } else {
                         sensory.perform(view, VeilSensoryEvent.ADVANCEMENT)
