@@ -325,4 +325,12 @@
     <string name="book_detail_silence_weeks">%1$d weeks</string>
     <string name="book_detail_silence_days">%1$d days</string>
     <string name="book_detail_silence_today">today</string>
+    <string name="book_detail_record_pristine">CATALOGUED</string>
+    <string name="book_detail_record_opened">OPENED</string>
+    <string name="book_detail_record_active">IN PROGRESS</string>
+    <string name="book_detail_record_completed">COMPLETED</string>
+    <string name="book_detail_record_fresh">NEW VOLUME</string>
+    <string name="book_detail_record_settled">SETTLED</string>
+    <string name="book_detail_record_aged">AGED</string>
+    <string name="book_detail_record_archival">DEEP ARCHIVE</string>
 </resources>
