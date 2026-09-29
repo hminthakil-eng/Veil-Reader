@@ -23,13 +23,14 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReadingContinuitySummary
-import com.veilreader.app.domain.returnRitualFragmentAgeLabel
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -158,6 +159,9 @@ fun BookThresholdTransitionOverlay(
         val ritual = remember(book.id, returnRitual) {
             returnRitual?.takeIf { it.bookId == book.id }
         }
+        val entryStatus = localizedBookEntryStatus(book, memory)
+        val returnGap = continuity?.let { localizedReadingReturnGap(it) }
+        val history = continuity?.let { localizedReadingHistory(it) }
         val aura = remember(artifact) { fallbackBookAura(artifact) }
         val scale = remember(book.id, stage, reducedMotion) {
             Animatable(
@@ -266,13 +270,15 @@ fun BookThresholdTransitionOverlay(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    when {
-                        ritual != null && stage == BookEntryStage.PREPARING ->
-                            "RETURN RITUAL · DEEP SHELF"
-                        ritual != null -> "THE OLD SEAL OPENS"
-                        stage == BookEntryStage.PREPARING -> "OPENING THRESHOLD"
-                        else -> "ENTERING SANCTUARY"
-                    },
+                    stringResource(
+                        when {
+                            ritual != null && stage == BookEntryStage.PREPARING ->
+                                R.string.entry_return_ritual_deep_shelf
+                            ritual != null -> R.string.entry_old_seal_opens
+                            stage == BookEntryStage.PREPARING -> R.string.entry_opening_threshold
+                            else -> R.string.entry_entering_sanctuary
+                        }
+                    ),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.65.sp),
                     color = VeilPalette.Brass
                 )
@@ -350,34 +356,39 @@ fun BookThresholdTransitionOverlay(
 
                 if (ritual != null) {
                     Text(
-                        ritual.title.uppercase(),
+                        localizedReturnRitualTitle(ritual).uppercase(),
                         style = MaterialTheme.typography.titleMedium,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        ritual.silenceLabel,
+                        localizedReturnRitualSilence(ritual.silenceMillis),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.05.sp),
                         color = VeilPalette.Moon.copy(alpha = 0.82f)
                     )
                     if (stage == BookEntryStage.PREPARING) {
                         Text(
-                            ritual.invocation,
+                            localizedReturnRitualInvocation(ritual),
                             style = MaterialTheme.typography.bodySmall,
                             color = VeilPalette.Mist.copy(alpha = 0.66f)
                         )
                         ritual.fragment?.let { fragment ->
                             ReturnRitualFragmentPanel(
-                                quote = fragment.quote,
-                                label = buildString {
-                                    append(if (fragment.annotated) "ANNOTATED MARGIN" else "PRESERVED MARGIN")
-                                    append(" · ")
-                                    append(returnRitualFragmentAgeLabel(fragment))
-                                }
+                                quote = fragment.quote.ifBlank {
+                                    stringResource(R.string.library_memory_preserved_passage)
+                                },
+                                label = stringResource(
+                                    R.string.entry_margin_age,
+                                    stringResource(
+                                        if (fragment.annotated) R.string.entry_annotated_margin
+                                        else R.string.entry_preserved_margin
+                                    ),
+                                    localizedReturnRitualFragmentAge(fragment.ageDays)
+                                )
                             )
                         }
                     }
                 } else {
-                    memory.returnGapLabel?.let { returnLabel ->
+                    returnGap?.let { returnLabel ->
                         Text(
                             returnLabel,
                             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
@@ -389,14 +400,14 @@ fun BookThresholdTransitionOverlay(
                 }
 
                 Text(
-                    memory.label,
+                    entryStatus,
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
                     color = aura.copy(alpha = 0.92f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                memory.historyLabel?.let { historyLabel ->
+                history?.let { historyLabel ->
                     Text(
                         historyLabel,
                         style = MaterialTheme.typography.labelSmall,
@@ -416,11 +427,13 @@ fun BookThresholdTransitionOverlay(
                     )
                 } else {
                     Text(
-                        when {
-                            ritual != null -> "The old seal opens. Your page remains."
-                            memory.returning -> "The archive recedes. Your book remains."
-                            else -> "The archive recedes. The first page remains."
-                        },
+                        stringResource(
+                            when {
+                                ritual != null -> R.string.entry_handoff_ritual
+                                memory.returning -> R.string.entry_handoff_returning
+                                else -> R.string.entry_handoff_first
+                            }
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist.copy(alpha = 0.58f)
                     )
@@ -430,6 +443,109 @@ fun BookThresholdTransitionOverlay(
     }
 }
 
+
+@Composable
+private fun localizedBookEntryStatus(book: Book, memory: BookEntryMemory): String = when {
+    book.finished -> stringResource(R.string.entry_status_completed_returning)
+    memory.progressPercent > 0 && memory.chapter != null -> stringResource(
+        R.string.entry_status_returning_chapter,
+        memory.progressPercent,
+        memory.chapter
+    )
+    memory.progressPercent > 0 -> stringResource(
+        R.string.entry_status_returning_progress,
+        memory.progressPercent
+    )
+    memory.returning -> stringResource(R.string.entry_status_opening_again)
+    else -> stringResource(R.string.entry_status_first_entry)
+}
+
+@Composable
+private fun localizedReadingReturnGap(summary: ReadingContinuitySummary): String? {
+    val gap = summary.returnGapMillis ?: return null
+    if (!summary.hasHistory) return null
+    val hour = 60L * 60L * 1000L
+    val day = 24L * hour
+    return when {
+        gap < 2L * hour -> stringResource(R.string.entry_returning_to_page)
+        gap < 2L * day -> stringResource(
+            R.string.entry_returned_hours,
+            (gap / hour).coerceAtLeast(2L)
+        )
+        gap < 60L * day -> stringResource(
+            R.string.entry_returned_days,
+            (gap / day).coerceAtLeast(2L)
+        )
+        else -> stringResource(
+            R.string.entry_returned_months,
+            (gap / (30L * day)).coerceAtLeast(2L)
+        )
+    }
+}
+
+@Composable
+private fun localizedReadingHistory(summary: ReadingContinuitySummary): String? {
+    if (!summary.hasHistory || summary.priorSessionCount <= 0) return null
+    val totalMinutes = summary.totalActiveMillis / 60_000L
+    val duration = when {
+        totalMinutes >= 60L -> {
+            val hours = totalMinutes / 60L
+            val minutes = totalMinutes % 60L
+            if (minutes == 0L) {
+                stringResource(R.string.entry_duration_hours, hours)
+            } else {
+                stringResource(R.string.entry_duration_hours_minutes, hours, minutes)
+            }
+        }
+        totalMinutes > 0L -> stringResource(R.string.entry_duration_minutes, totalMinutes)
+        else -> stringResource(R.string.entry_duration_less_minute)
+    }
+    return stringResource(
+        if (summary.priorSessionCount == 1) R.string.entry_history_one_session
+        else R.string.entry_history_many_sessions,
+        summary.priorSessionCount,
+        duration
+    )
+}
+
+@Composable
+private fun localizedReturnRitualTitle(ritual: BookReturnRitual): String = when (ritual.kind) {
+    com.veilreader.app.domain.ReturnRitualKind.FORGOTTEN_VOLUME ->
+        stringResource(R.string.entry_ritual_forgotten_title)
+}
+
+@Composable
+private fun localizedReturnRitualInvocation(ritual: BookReturnRitual): String = when (ritual.kind) {
+    com.veilreader.app.domain.ReturnRitualKind.FORGOTTEN_VOLUME ->
+        stringResource(R.string.entry_ritual_forgotten_invocation)
+}
+
+@Composable
+private fun localizedReturnRitualSilence(gapMillis: Long): String {
+    val days = gapMillis.coerceAtLeast(0L) / 86_400_000L
+    return when {
+        days >= 730L -> {
+            val years = days / 365L
+            val months = (days % 365L) / 30L
+            if (months > 0L) stringResource(R.string.entry_silent_years_months, years, months)
+            else stringResource(R.string.entry_silent_years, years)
+        }
+        days >= 365L -> {
+            val months = (days % 365L) / 30L
+            if (months > 0L) stringResource(R.string.entry_silent_one_year_months, months)
+            else stringResource(R.string.entry_silent_one_year)
+        }
+        else -> stringResource(R.string.entry_silent_months, (days / 30L).coerceAtLeast(6L))
+    }
+}
+
+@Composable
+private fun localizedReturnRitualFragmentAge(ageDays: Long): String = when {
+    ageDays >= 730L -> stringResource(R.string.entry_preserved_years, ageDays / 365L)
+    ageDays >= 365L -> stringResource(R.string.entry_preserved_one_year)
+    ageDays >= 60L -> stringResource(R.string.entry_preserved_months, ageDays / 30L)
+    else -> stringResource(R.string.entry_preserved_days, ageDays)
+}
 
 @Composable
 private fun ReturnRitualSeal(
