@@ -702,4 +702,13 @@
     <string name="path_artificer_insight_description">سازوکارها را به آثار کامل‌شده و شواهد نگه‌داشته‌شده مرتبط کنید.</string>
     <string name="path_artificer_stability_name">کالیبراسیون</string>
     <string name="path_artificer_stability_description">در چند نشست بازگردید تا فهم، فراتر از یک موج کوتاه کنجکاوی دوام بیاورد.</string>
+
+    <string name="path_generic_aspect">مطالعه</string>
+    <string name="path_generic_maxim">بخوان · بفهم · بازگرد</string>
+    <string name="path_generic_embodiment_name">تجسم مسیر</string>
+    <string name="path_generic_embodiment_description">به شیوه‌ای عمل کنید که با هویت مطالعاتی انتخاب‌شده هماهنگ باشد.</string>
+    <string name="path_generic_insight_name">بینش</string>
+    <string name="path_generic_insight_description">شواهدی نگه دارید که نشان دهد مطالعه فهم شما را تغییر داده است.</string>
+    <string name="path_generic_stability_name">پایداری</string>
+    <string name="path_generic_stability_description">آن‌قدر منظم بازگردید که پیشرفت بازتاب یک عادت پایدار باشد.</string>
 </resources>
