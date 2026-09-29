@@ -409,4 +409,15 @@
     <string name="library_shelf_unread_subtitle">هنوز گشوده نشده‌اند</string>
     <string name="library_shelf_count">%1$02d</string>
     <string name="reader_publisher_preview_notice">با روشن‌بودن استایل ناشر، این نمونه تقریبی است؛ کتاب ممکن است از قلم و چیدمان خودش استفاده کند.</string>
+    <string name="library_group_filtered_eyebrow">آرشیو پالایش‌شده</string>
+    <string name="library_group_matching">کتاب‌های همخوان</string>
+    <string name="library_group_journey">سفر مطالعه</string>
+    <string name="library_group_record">کارنامه</string>
+    <string name="library_group_completed">کتاب‌های تمام‌شده</string>
+    <string name="library_group_unopened">خوانده‌نشده</string>
+    <string name="library_group_waiting">در انتظار روی قفسه</string>
+    <string name="library_group_count">%1$d کتاب</string>
+    <string name="library_group_read_progress">%1$d٪ خوانده‌شده</string>
+    <string name="library_group_archive_record">پروندهٔ کتاب</string>
+    <string name="library_group_read_book">مطالعهٔ %1$s</string>
 </resources>
