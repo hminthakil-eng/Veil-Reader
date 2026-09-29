@@ -254,6 +254,67 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun nearParallelLineIntersectionFailsSafeInsteadOfExploding() {
+        val result = paperLineIntersection(
+            Offset(0f, 0f),
+            Offset(1000f, 0.001f),
+            Offset(0f, 1f),
+            Offset(1000f, 1.001001f)
+        )
+
+        assertEquals(null, result)
+    }
+
+    @Test
+    fun foldObliquenessTracksDiagonalWithoutLeavingUnitRange() {
+        assertEquals(
+            0f,
+            paperFoldObliqueness(Offset(500f, 0f), Offset(500f, 1000f)),
+            0.0001f
+        )
+        val diagonal = paperFoldObliqueness(
+            Offset(800f, 0f),
+            Offset(300f, 1000f)
+        )
+        assertTrue(diagonal > 0.30f)
+        assertTrue(diagonal < 0.40f)
+        assertEquals(
+            0f,
+            paperFoldObliqueness(Offset(10f, 10f), Offset(10f, 10f)),
+            0.0001f
+        )
+    }
+
+    @Test
+    fun releaseVelocityRetainsRecentFlickButRejectsReverseIntent() {
+        val retained = paperEffectiveReleaseVelocity(
+            smoothedVelocityPxPerSec = 520f,
+            peakVelocityPxPerSec = 1800f,
+            peakAgeMillis = 64L,
+            latestInstantaneousVelocityPxPerSec = 120f
+        )
+        assertTrue(retained > 1200f)
+
+        val reversed = paperEffectiveReleaseVelocity(
+            smoothedVelocityPxPerSec = 520f,
+            peakVelocityPxPerSec = 1800f,
+            peakAgeMillis = 24L,
+            latestInstantaneousVelocityPxPerSec = -500f
+        )
+        assertTrue(reversed <= 0f)
+    }
+
+    @Test
+    fun releaseVelocitySmoothingRejectsSingleSampleSpikes() {
+        val first = paperSmoothedReleaseVelocity(0f, 2000f)
+        val second = paperSmoothedReleaseVelocity(first, 0f)
+
+        assertTrue(first > 800f)
+        assertTrue(first < 900f)
+        assertTrue(second > 450f)
+        assertTrue(second < first)
+    }
+    @Test
     fun pageStackMovesFromUnreadSideToReadSideAndMirrorsForRtl() {
         val start = paperPageStackDepth(0f, ReadingProgression.LTR)
         val middle = paperPageStackDepth(0.5f, ReadingProgression.LTR)
