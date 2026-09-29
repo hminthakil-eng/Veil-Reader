@@ -950,4 +950,5 @@
     <string name="castle_title_ten_tomes">Keeper of Ten Tomes</string>
     <string name="castle_title_sovereign">Sovereign of the Living Library</string>
     <string name="castle_title_veilbound">Veilbound %1$s</string>
+    <string name="threshold_quest_generic">Continue the current reading directive.</string>
 </resources>
