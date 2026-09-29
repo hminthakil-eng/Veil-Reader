@@ -31,7 +31,8 @@ internal class PaperCurlInputListener(
     private val scope: CoroutineScope,
     private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
-    private val onCommittedTurn: () -> Unit
+    private val onCommittedTurn: () -> Unit,
+    private val onBoundaryHit: () -> Unit = {}
 ) : InputListener {
     private var activeDrag: TurnSpec? = null
     private var dragReserved = false
@@ -62,6 +63,7 @@ internal class PaperCurlInputListener(
         // Navigation must never depend on the visual layer succeeding.
         val moved = navigate(spec.direction)
         if (!moved) {
+            onBoundaryHit()
             if (visualReady) {
                 scope.launch {
                     state.animateBoundaryBounce()
@@ -189,6 +191,7 @@ internal class PaperCurlInputListener(
 
                 commit -> {
                     // End-of-book / navigation refusal should still feel intentional.
+                    onBoundaryHit()
                     if (!isReducedMotion()) state.animateBoundaryBounce()
                 }
 
