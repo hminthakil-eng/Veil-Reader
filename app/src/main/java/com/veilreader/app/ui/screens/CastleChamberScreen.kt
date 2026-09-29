@@ -107,6 +107,9 @@ private val sigils = linkedMapOf(
     )
 )
 
+internal fun emberBookmarkAwakened(profile: ReaderProfile): Boolean =
+    profile.longestStreakDays >= 3
+
 private val readingRelics = listOf(
     RelicPresentation(
         id = "ember_bookmark",
@@ -114,7 +117,7 @@ private val readingRelics = listOf(
         symbol = "⌇",
         clue = "Return often enough that the page begins to remember you.",
         rarity = relicRarityFor("ember_bookmark"),
-        awakened = { it.streakDays >= 3 }
+        awakened = ::emberBookmarkAwakened
     ),
     RelicPresentation(
         id = "moonlit_lens",
