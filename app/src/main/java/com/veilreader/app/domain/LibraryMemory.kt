@@ -38,8 +38,12 @@ data class LibraryMemoryEvent(
     val bookId: String,
     val atEpochMs: Long,
     val gapMillis: Long,
+    /** Legacy/debug copy. Presentation must localize from [kind] and structured evidence. */
     val title: String,
-    val detail: String
+    /** Legacy/debug copy. Presentation must not expose this raw domain string. */
+    val detail: String,
+    /** Preserved passage evidence for OLD_MARGIN_RETURN, when available. */
+    val passageExcerpt: String? = null
 )
 
 data class LibraryMemoryState(
@@ -210,7 +214,8 @@ fun deriveLibraryMemoryState(
                         atEpochMs = returnSession.startedAtEpochMs,
                         gapMillis = gap,
                         title = "The Old Margin",
-                        detail = "A passage from ${book.title} survived ${memoryGapLabel(gap)}: “$quote”"
+                        detail = "A passage from ${book.title} survived ${memoryGapLabel(gap)}: “$quote”",
+                        passageExcerpt = quote
                     )
                 )
             }
