@@ -543,30 +543,46 @@ private fun HeroDetails(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
             current.title,
-            style = MaterialTheme.typography.titleLarge,
+            style = veilContentTextStyle(MaterialTheme.typography.titleLarge, current.title),
             color = ink,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
+        val displayAuthor = current.author.ifBlank {
+            stringResource(R.string.common_unknown_author)
+        }
         Text(
-            current.author.ifBlank { "Unknown author" },
-            style = MaterialTheme.typography.bodyMedium,
+            displayAuthor,
+            style = veilContentTextStyle(MaterialTheme.typography.bodyMedium, displayAuthor),
             color = secondaryInk,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
         current.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
-            Text(series, style = MaterialTheme.typography.labelMedium, color = secondaryInk,
+            Text(
+                series,
+                style = veilContentTextStyle(MaterialTheme.typography.labelMedium, series),
+                color = secondaryInk,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
 }
 
-private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Float): String = when {
-    current.finished -> "Finished — open again anytime"
-    progress <= 0f -> "Ready to begin"
-    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" -> "${current.currentChapter} · $progressPercent%"
-    else -> "$progressPercent% complete"
+@Composable
+private fun heroProgressLabel(
+    current: Book,
+    progressPercent: Int,
+    progress: Float
+): String = when {
+    current.finished -> stringResource(R.string.threshold_hero_finished)
+    progress <= 0f -> stringResource(R.string.threshold_ready_begin)
+    current.currentChapter.isNotBlank() && current.currentChapter != "Not started" ->
+        stringResource(
+            R.string.threshold_chapter_progress,
+            current.currentChapter,
+            progressPercent
+        )
+    else -> stringResource(R.string.threshold_progress_complete, progressPercent)
 }
 
 @Composable
@@ -587,12 +603,12 @@ private fun RecentBooksShelf(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
-                    "RECENT TOMES",
+                    stringResource(R.string.threshold_recent_tomes),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Return to another world",
+                    stringResource(R.string.threshold_recent_subtitle),
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
@@ -605,7 +621,7 @@ private fun RecentBooksShelf(
                     contentColor = VeilPalette.Brass
                 )
             ) {
-                Text("View all")
+                Text(stringResource(R.string.threshold_view_all))
             }
         }
 
@@ -663,7 +679,7 @@ private fun RecentBookCard(
             )
             Text(
                 book.title,
-                style = MaterialTheme.typography.titleMedium,
+                style = veilContentTextStyle(MaterialTheme.typography.titleMedium, book.title),
                 color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
@@ -679,12 +695,16 @@ private fun RecentBookCard(
     }
 }
 
+@Composable
 private fun recentBookStatus(book: Book): String {
     val progress = book.progress.coerceIn(0f, 1f)
     return when {
-        book.finished -> "Finished"
-        progress <= 0f -> "Not started"
-        else -> "${(progress * 100).toInt()}% read"
+        book.finished -> stringResource(R.string.book_detail_finished)
+        progress <= 0f -> stringResource(R.string.book_detail_not_started)
+        else -> stringResource(
+            R.string.book_detail_percent_read,
+            (progress * 100).toInt()
+        )
     }
 }
 
