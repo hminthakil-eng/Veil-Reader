@@ -863,7 +863,13 @@ fun ReaderScreen(
     val readerCanvas = readerCanvasColor(readerAppearance.theme)
     val readerSurfaceLabel = stringResource(R.string.reader_surface_label)
     val controlsActionLabel = stringResource(
-        if (controlsVisible) R.string.reader_hide_controls else R.string.reader_show_controls
+        if (touchExplorationEnabled) {
+            R.string.reader_show_controls
+        } else if (controlsVisible) {
+            R.string.reader_hide_controls
+        } else {
+            R.string.reader_show_controls
+        }
     )
     val progressLabel = formatPercent(progress.coerceIn(0f, 1f))
     val progressDescription = stringResource(R.string.reader_percent_read_text, progressLabel)
@@ -876,7 +882,7 @@ fun ReaderScreen(
                 contentDescription = readerSurfaceLabel
                 onClick(label = controlsActionLabel) {
                     readerViewModel.onUserInteraction()
-                    controlsVisible = !controlsVisible
+                    controlsVisible = if (touchExplorationEnabled) true else !controlsVisible
                     true
                 }
             }
