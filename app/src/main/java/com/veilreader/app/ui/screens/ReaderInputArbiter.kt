@@ -32,8 +32,8 @@ internal fun readerInteractionMode(
     controlsVisible: Boolean,
     touchExplorationEnabled: Boolean = false
 ): ReaderInteractionMode = when {
-    selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
     overlayVisible || closeInFlight -> ReaderInteractionMode.BLOCKED
+    selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
     touchExplorationEnabled -> ReaderInteractionMode.RENDERER_ACCESSIBILITY
     controlsVisible -> ReaderInteractionMode.CHROME_PRIORITY
     else -> ReaderInteractionMode.NAVIGATION
