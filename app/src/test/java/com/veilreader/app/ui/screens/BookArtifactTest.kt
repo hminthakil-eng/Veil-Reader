@@ -93,4 +93,44 @@ class BookArtifactTest {
         assertEquals(BookArchiveAge.NEW, state.archiveAge)
         assertFalse(state.recentlyOpened)
     }
+    @Test
+    fun `archive age and recent return agree with the library at boundary dates`() {
+        val book = Book(
+            id = "boundary",
+            title = "Return",
+            author = "Archive",
+            addedAtEpochMs = now - 50L * day,
+            lastOpenedAtEpochMs = now - 40L * 60L * 60L * 1000L
+        )
+        val cover = bookArtifactState(book, nowEpochMs = now)
+        val library = com.veilreader.app.ui.books.bookArtifactState(book, nowEpochMs = now)
+
+        assertEquals(BookArchiveAge.AGED, cover.archiveAge)
+        assertEquals(com.veilreader.app.ui.books.BookPatina.AGED, library.patina)
+        assertEquals(BookPresence.OPENED, cover.presence)
+        assertEquals(library.recentlyOpened, cover.recentlyOpened)
+        assertTrue(cover.recentlyOpened)
+    }
+
+    @Test
+    fun `finished favorite gets full progress and additive patina on every cover`() {
+        val book = Book(
+            id = "sealed",
+            title = "Sealed",
+            author = "Archive",
+            progress = 0.64f,
+            finished = true,
+            favorite = true,
+            addedAtEpochMs = now - 2L * day
+        )
+        val cover = bookArtifactState(book, nowEpochMs = now)
+        val library = com.veilreader.app.ui.books.bookArtifactState(book, nowEpochMs = now)
+
+        assertEquals(library.progress, cover.progress, 0f)
+        assertEquals(1f, cover.leftStack, 0f)
+        assertEquals(0f, cover.rightStack, 0f)
+        assertEquals(0.33f, cover.patina, 0.0001f)
+        assertTrue(cover.completed)
+    }
+
 }
