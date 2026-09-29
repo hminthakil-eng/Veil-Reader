@@ -234,6 +234,14 @@ fun ReaderScreen(
         opened.format == BookFormat.EPUB &&
             opened.publication.metadata.layout == Layout.FIXED
     }
+    var activeFixedLayoutSpread by remember(opened.book.id) {
+        mutableStateOf(fixedLayoutSpread)
+    }
+    LaunchedEffect(fixedLayoutSpread, opened.book.id) {
+        if (activeFixedLayoutSpread != fixedLayoutSpread) {
+            activeFixedLayoutSpread = fixedLayoutSpread
+        }
+    }
     val effectiveReaderAppearance = remember(
         readerAppearance,
         fixedLayoutPublication
@@ -788,15 +796,13 @@ fun ReaderScreen(
 
     val fragmentFactory = remember(
         opened.book.id,
-        effectiveReaderAppearance,
-        fixedLayoutSpread,
         selectionActionModeCallback,
         epubNavigatorListener
     ) {
         createReaderFactory(
             opened = opened,
             appearance = effectiveReaderAppearance,
-            fixedLayoutSpread = fixedLayoutSpread,
+            fixedLayoutSpread = activeFixedLayoutSpread,
             selectionActionModeCallback = selectionActionModeCallback,
             epubNavigatorListener = epubNavigatorListener
         )
@@ -1148,7 +1154,7 @@ fun ReaderScreen(
     LaunchedEffect(
         navigator,
         effectiveReaderAppearance,
-        fixedLayoutSpread,
+        activeFixedLayoutSpread,
         opened.format
     ) {
         game.rebasePagePacing()
@@ -1158,7 +1164,7 @@ fun ReaderScreen(
                 "publisherStyles=${effectiveReaderAppearance.publisherStyles} " +
                 "scroll=${effectiveReaderAppearance.scroll} " +
                 "pageTurn=${effectiveReaderAppearance.pageTurnStyle} " +
-                "spread=$fixedLayoutSpread"
+                "spread=$activeFixedLayoutSpread"
         ReaderTrace.event(
             "appearance_submit_requested",
             bookId = opened.book.id,
@@ -1170,7 +1176,7 @@ fun ReaderScreen(
                 (navigator as? EpubNavigatorFragment)
                     ?.submitPreferences(
                         effectiveReaderAppearance.toEpubPreferences(
-                            fixedLayoutSpread = fixedLayoutSpread
+                            fixedLayoutSpread = activeFixedLayoutSpread
                         )
                     )
 
@@ -1945,10 +1951,11 @@ fun ReaderScreen(
                     EpubAppearancePanel(
                         appearance = readerAppearance,
                         fixedLayout = fixedLayoutPublication,
-                        fixedLayoutSpread = fixedLayoutSpread,
+                        fixedLayoutSpread = activeFixedLayoutSpread,
                         publicationLanguage = publicationLanguage,
                         onSpreadChange = { mode ->
                             readerViewModel.onUserInteraction()
+                            activeFixedLayoutSpread = mode
                             onFixedLayoutSpreadChange(mode)
                         },
                         onChange = {
