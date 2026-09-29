@@ -448,4 +448,13 @@
     <string name="library_view_gallery">Gallery</string>
     <string name="library_view_shelves">Shelves</string>
     <string name="library_view_index">Index</string>
+
+    <string name="library_read_book_semantics">Read %1$s</string>
+    <string name="library_add_favorite_semantics">Add %1$s to favorites</string>
+    <string name="library_remove_favorite_semantics">Remove %1$s from favorites</string>
+    <string name="library_unopened">UNOPENED</string>
+    <string name="library_completed">COMPLETED</string>
+    <string name="library_mark_count">%1$d marks</string>
+    <string name="library_saved_count">%1$d saved</string>
+    <string name="library_group_volume_count">%1$d volumes</string>
 </resources>
