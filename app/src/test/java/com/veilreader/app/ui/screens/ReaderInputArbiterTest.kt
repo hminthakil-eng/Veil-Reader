@@ -400,7 +400,8 @@ class ReaderInputArbiterTest {
                 width = 0f,
                 density = 3f,
                 preferredFraction = 0.22f
-            )
+            ),
+            0.0001f
         )
     }
 
