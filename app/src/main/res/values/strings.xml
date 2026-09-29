@@ -390,6 +390,7 @@
     <string name="settings_dark_images_unavailable">Image treatment becomes available in Dusk or OLED themes.</string>
     <string name="reader_fixed_layout_notice">Fixed-layout EPUB preserves the publisher’s page design. Text, spacing, columns, and continuous scroll controls are unavailable for this book.</string>
     <string name="reader_rtl_typography_notice">This right-to-left publication keeps letter spacing, word spacing, and hyphenation under the renderer’s script-safe defaults.</string>
+    <string name="reader_cjk_typography_notice">For this CJK publication, paragraph indent, text alignment, letter spacing, word spacing, hyphenation, and ligature controls stay with the renderer’s language-safe defaults.</string>
     <string name="reader_columns_paged_only">Column count applies only to paginated reading.</string>
     <string name="reader_spacing_shaping">SPACING &amp; SHAPING</string>
     <string name="reader_hyphenation">Hyphenation</string>
