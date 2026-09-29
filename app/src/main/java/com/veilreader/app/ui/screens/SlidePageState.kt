@@ -111,20 +111,32 @@ internal class SlidePageState {
     }
 
     suspend fun clear() {
+        clearVisual(keepInputLock = true)
+    }
+
+    /**
+     * Lifecycle/disposal escape hatch. This intentionally skips the one-frame lock used by normal
+     * animation completion because teardown must leave no stale page snapshot behind.
+     */
+    fun clearImmediately() {
         snapshot = null
         offsetPx = 0f
         width = 0f
-        delay(VeilMotion.FRAME_SETTLE_MS)
+        active = false
+    }
+
+    private suspend fun clearVisual(keepInputLock: Boolean) {
+        snapshot = null
+        offsetPx = 0f
+        width = 0f
+        if (keepInputLock) delay(VeilMotion.FRAME_SETTLE_MS)
         active = false
     }
 
     fun dispose() {
-        snapshot = null
+        clearImmediately()
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
-        offsetPx = 0f
-        width = 0f
-        active = false
     }
 
     private fun capture(view: View): Bitmap? =
