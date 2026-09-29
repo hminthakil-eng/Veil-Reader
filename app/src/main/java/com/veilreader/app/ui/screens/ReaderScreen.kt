@@ -508,12 +508,14 @@ fun ReaderScreen(
             slideInputListener?.forceCancelPendingTurn() == true
         val cancelledPreview = cancelledPaperPreview || cancelledSlidePreview
 
-        val unresolvedPreview = shouldSuppressNavigatorLocatorDuringPagePreview(
-            format = opened.format,
-            paperPreviewActive = paperCurlState.active,
-            slidePreviewActive = slidePageState.active
-        )
-        if (!cancelledPreview && !unresolvedPreview) {
+        if (
+            shouldTakeFinalNavigatorSnapshot(
+                format = opened.format,
+                paperPreviewActive = paperCurlState.active,
+                slidePreviewActive = slidePageState.active,
+                previewCancelled = cancelledPreview
+            )
+        ) {
             latestNavigator.value?.currentLocator?.value?.let { locator ->
                 recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
             }
@@ -622,13 +624,14 @@ fun ReaderScreen(
                         slideInputListener?.forceCancelPendingTurn() == true
                     val cancelledPreview =
                         cancelledPaperPreview || cancelledSlidePreview
-                    val unresolvedPreview =
-                        shouldSuppressNavigatorLocatorDuringPagePreview(
+                    if (
+                        shouldTakeFinalNavigatorSnapshot(
                             format = opened.format,
                             paperPreviewActive = paperCurlState.active,
-                            slidePreviewActive = slidePageState.active
+                            slidePreviewActive = slidePageState.active,
+                            previewCancelled = cancelledPreview
                         )
-                    if (!cancelledPreview && !unresolvedPreview) {
+                    ) {
                         latestNavigator.value?.currentLocator?.value?.let { locator ->
                             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
                         }
@@ -1554,6 +1557,19 @@ internal fun shouldSuppressNavigatorLocatorDuringPagePreview(
 ): Boolean =
     format == BookFormat.EPUB &&
         (paperPreviewActive || slidePreviewActive)
+
+internal fun shouldTakeFinalNavigatorSnapshot(
+    format: BookFormat,
+    paperPreviewActive: Boolean,
+    slidePreviewActive: Boolean,
+    previewCancelled: Boolean
+): Boolean =
+    !previewCancelled &&
+        !shouldSuppressNavigatorLocatorDuringPagePreview(
+            format = format,
+            paperPreviewActive = paperPreviewActive,
+            slidePreviewActive = slidePreviewActive
+        )
 
 internal enum class ReaderBackDisposition {
     SWALLOW,
