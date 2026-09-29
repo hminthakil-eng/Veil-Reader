@@ -1096,4 +1096,6 @@
     <string name="path_generic_invocation">Read with intention; return with evidence.</string>
     <string name="path_generic_epithet">Uncharted Reader</string>
     <string name="path_generic_description">A path whose full identity has not yet been catalogued by this version of Veil.</string>
+    <string name="book_detail_percent_read_text">%1$s read</string>
+    <string name="library_collection_more">%1$s +%2$s</string>
 </resources>
