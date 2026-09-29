@@ -569,11 +569,13 @@ fun LibraryScreen(
                     }
 
                     Box {
+                        val sortLabel = librarySortLabel(sort)
+                        val sortA11y = stringResource(R.string.library_sort_books_a11y, sortLabel)
                         OutlinedButton(
                             onClick = { sortMenu = true },
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
-                                .semantics { contentDescription = stringResource(R.string.library_sort_books_a11y, librarySortLabel(sort)) },
+                                .semantics { contentDescription = sortA11y },
                             shape = MaterialTheme.shapes.extraSmall,
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             border = BorderStroke(
@@ -582,7 +584,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                librarySortLabel(sort),
+                                sortLabel,
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -2914,6 +2916,7 @@ private fun librarySortLabel(sort: String): String =
         "Progress" -> stringResource(R.string.library_sort_progress)
         else -> stringResource(R.string.library_sort_recent)
     }
+
 @Composable
 private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
     Row(
@@ -2926,12 +2929,13 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
             LibraryViewMode.INDEX to stringResource(R.string.library_view_index)
         ).forEach { (candidate, label) ->
             val active = mode == candidate
+            val viewA11y = stringResource(R.string.library_view_mode_a11y, label)
             TextButton(
                 onClick = { onChange(candidate) },
                 modifier = Modifier
                     .heightIn(min = 48.dp)
                     .semantics {
-                        contentDescription = stringResource(R.string.library_view_mode_a11y, label)
+                        contentDescription = viewA11y
                         selected = active
                     },
                 contentPadding = PaddingValues(horizontal = 9.dp),
