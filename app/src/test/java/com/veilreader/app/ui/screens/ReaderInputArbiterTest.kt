@@ -373,4 +373,35 @@ class ReaderInputArbiterTest {
         )
     }
 
+    @Test
+    fun `page turn tap zone stays comfortable without consuming the center`() {
+        val standardPhone = pageTurnTapZonePx(
+            width = 1_080f,
+            density = 3f,
+            preferredFraction = 0.22f
+        )
+        assertTrue(standardPhone >= 56f * 3f)
+        assertTrue(standardPhone <= 1_080f * 0.28f)
+
+        val narrowSurface = pageTurnTapZonePx(
+            width = 480f,
+            density = 3f,
+            preferredFraction = 0.22f
+        )
+        assertTrue(narrowSurface <= 480f * 0.28f)
+        assertTrue(narrowSurface * 2f < 480f)
+    }
+
+    @Test
+    fun `invalid tap-zone width produces no navigation zone`() {
+        assertEquals(
+            0f,
+            pageTurnTapZonePx(
+                width = 0f,
+                density = 3f,
+                preferredFraction = 0.22f
+            )
+        )
+    }
+
 }
