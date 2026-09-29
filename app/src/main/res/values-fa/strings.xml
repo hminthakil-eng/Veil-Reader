@@ -448,4 +448,13 @@
     <string name="library_view_gallery">گالری</string>
     <string name="library_view_shelves">قفسه‌ها</string>
     <string name="library_view_index">فهرست</string>
+
+    <string name="library_read_book_semantics">مطالعهٔ %1$s</string>
+    <string name="library_add_favorite_semantics">افزودن %1$s به علاقه‌مندی‌ها</string>
+    <string name="library_remove_favorite_semantics">حذف %1$s از علاقه‌مندی‌ها</string>
+    <string name="library_unopened">گشوده‌نشده</string>
+    <string name="library_completed">تمام‌شده</string>
+    <string name="library_mark_count">%1$d نشان</string>
+    <string name="library_saved_count">%1$d ذخیره‌شده</string>
+    <string name="library_group_volume_count">%1$d کتاب</string>
 </resources>
