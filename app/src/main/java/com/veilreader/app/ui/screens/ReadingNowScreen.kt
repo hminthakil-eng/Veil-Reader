@@ -16,6 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
 import com.veilreader.app.R
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -43,6 +45,7 @@ import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.veilContentTextStyle
 
 /**
  * Threshold is the calm front door to reading: resume first, recent books second, world progress last.
@@ -698,9 +701,11 @@ internal data class ThresholdWhisper(
     val kind: ThresholdWhisperKind,
     val bookId: String?,
     val locatorJson: String?,
-    val title: String,
+    val title: String?,
     val body: String,
-    val detail: String?
+    val detail: String?,
+    val progress: Int? = null,
+    val target: Int? = null
 )
 
 internal fun deriveThresholdWhisper(
@@ -752,9 +757,11 @@ internal fun deriveThresholdWhisper(
                 kind = ThresholdWhisperKind.READING_PROMPT,
                 bookId = null,
                 locatorJson = null,
-                title = "A quiet invitation",
+                title = null,
                 body = quest.title,
-                detail = "${quest.progress.coerceAtLeast(0)}/$target complete"
+                detail = null,
+                progress = quest.progress.coerceAtLeast(0),
+                target = target
             )
         }
 
