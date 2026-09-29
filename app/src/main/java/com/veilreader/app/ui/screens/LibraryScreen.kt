@@ -388,7 +388,7 @@ fun LibraryScreen(
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 placeholder = {
                     Text(
-                        "Search the archive…",
+                        stringResource(R.string.library_search_placeholder),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.82f)
                     )
                 },
@@ -404,7 +404,7 @@ fun LibraryScreen(
                             onClick = { query = "" },
                             contentPadding = PaddingValues(horizontal = 8.dp)
                         ) {
-                            Text("Clear", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.library_clear), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 },
@@ -435,9 +435,9 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibrarySectionHeading(
-                    eyebrow = "Archive",
-                    title = "Shelves",
-                    trailing = "Tap to filter"
+                    eyebrow = stringResource(R.string.library_archive_eyebrow),
+                    title = stringResource(R.string.library_shelves_title),
+                    trailing = stringResource(R.string.library_tap_to_filter)
                 )
 
                 Row(
@@ -447,29 +447,29 @@ fun LibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     LibraryShelfCard(
-                        title = "Favorites",
-                        subtitle = "Volumes kept close",
+                        title = stringResource(R.string.library_favorites),
+                        subtitle = stringResource(R.string.library_favorites_subtitle),
                         count = books.count { it.favorite },
                         selected = shelf == "Favorites",
                         onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
                     )
                     LibraryShelfCard(
-                        title = "Currently Reading",
-                        subtitle = "Open journeys",
+                        title = stringResource(R.string.library_currently_reading),
+                        subtitle = stringResource(R.string.library_currently_reading_subtitle),
                         count = books.count { !it.finished && it.progress > 0f },
                         selected = shelf == "Reading",
                         onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
                     )
                     LibraryShelfCard(
-                        title = "Completed",
-                        subtitle = "Closed volumes",
+                        title = stringResource(R.string.library_completed),
+                        subtitle = stringResource(R.string.library_completed_subtitle),
                         count = books.count { it.finished },
                         selected = shelf == "Finished",
                         onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
                     )
                     LibraryShelfCard(
-                        title = "Deep Shelf",
-                        subtitle = "Long-unopened volumes",
+                        title = stringResource(R.string.library_deep_shelf),
+                        subtitle = stringResource(R.string.library_deep_shelf_subtitle),
                         count = memoryState.deepShelfBookIds.size,
                         selected = shelf == "Deep Shelf",
                         onClick = {
@@ -477,8 +477,8 @@ fun LibraryScreen(
                         }
                     )
                     LibraryShelfCard(
-                        title = "Plan to Read",
-                        subtitle = "Still unopened",
+                        title = stringResource(R.string.library_plan_to_read),
+                        subtitle = stringResource(R.string.library_plan_to_read_subtitle),
                         count = books.count { !it.finished && it.progress <= 0f },
                         selected = shelf == "Unread",
                         onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
@@ -544,7 +544,7 @@ fun LibraryScreen(
                                 )
                             ) {
                                 Text(
-                                    if (collection.isBlank()) "Collection" else collection,
+                                    if (collection.isBlank()) stringResource(R.string.library_collection) else collection,
                                     style = MaterialTheme.typography.labelMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis
@@ -555,7 +555,7 @@ fun LibraryScreen(
                                 onDismissRequest = { collectionMenu = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("All collections") },
+                                    text = { Text(stringResource(R.string.library_all_collections)) },
                                     onClick = { collection = ""; collectionMenu = false }
                                 )
                                 collections.forEach { label ->
@@ -649,7 +649,7 @@ fun LibraryScreen(
                             contentPadding = PaddingValues(horizontal = 8.dp),
                             colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Brass)
                         ) {
-                            Text("Reset", style = MaterialTheme.typography.labelMedium)
+                            Text(stringResource(R.string.library_reset), style = MaterialTheme.typography.labelMedium)
                         }
                     }
                 }
@@ -1599,7 +1599,7 @@ private fun LibraryHeader(
                     ),
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
-                    Text("Settings", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.library_settings), style = MaterialTheme.typography.labelMedium)
                 }
 
                 Button(
@@ -1614,7 +1614,7 @@ private fun LibraryHeader(
                     modifier = Modifier.heightIn(min = 48.dp)
                 ) {
                     Text(
-                        if (isImporting) "Importing…" else "Import",
+                        if (isImporting) stringResource(R.string.library_importing) else stringResource(R.string.library_import),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
@@ -1693,8 +1693,8 @@ private fun ArchiveOverview(
                         .background(MaterialTheme.colorScheme.tertiary)
                 )
                 Column(Modifier.weight(1f)) {
-                    Text("ARCHIVE STATUS", style = MaterialTheme.typography.labelMedium, color = VeilPalette.Brass)
-                    Text("Catalogued locally. Private, offline, and ready to reopen.", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.library_archive_status), style = MaterialTheme.typography.labelMedium, color = VeilPalette.Brass)
+                    Text(stringResource(R.string.library_archive_status_body), style = MaterialTheme.typography.bodyMedium)
                 }
             }
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -1705,15 +1705,15 @@ private fun ArchiveOverview(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            ArchiveStat("Books", total, Modifier.weight(1f))
-                            ArchiveStat("Reading", reading, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_books), total, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_reading), reading, Modifier.weight(1f))
                         }
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            ArchiveStat("Finished", finished, Modifier.weight(1f))
-                            ArchiveStat("Collections", collections, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_finished), finished, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_collections), collections, Modifier.weight(1f))
                         }
                     }
                 } else {
@@ -1900,7 +1900,7 @@ private fun RecentReadingBook(
                 modifier = Modifier.width(48.dp).height(70.dp)
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("Continue reading", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(R.string.book_detail_continue_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
                     book.title,
                     style = MaterialTheme.typography.titleMedium,
@@ -1921,7 +1921,7 @@ private fun RecentReadingBook(
                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
                 Text(
-                    "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read",
+                    stringResource(R.string.book_detail_percent_read, (book.progress.coerceIn(0f, 1f) * 100).toInt()),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2798,7 +2798,7 @@ private fun LibraryEmptyState(
                         VeilPalette.Brass.copy(alpha = 0.44f)
                     )
                 ) {
-                    Text("Clear active filters")
+                    Text(stringResource(R.string.library_clear_active_filters))
                 }
             } else {
                 Button(
@@ -2811,7 +2811,7 @@ private fun LibraryEmptyState(
                         contentColor = Color(0xFF17120A)
                     )
                 ) {
-                    Text(if (isImporting) "Preparing publication…" else "Import your first volume")
+                    Text(if (isImporting) stringResource(R.string.library_preparing_publication) else stringResource(R.string.library_import_first_volume))
                 }
             }
         }
