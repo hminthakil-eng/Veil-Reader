@@ -386,4 +386,24 @@ class PaperCurlGeometryTest {
         assertEquals(0f, paperEdgeGrip(900f, 0f), 0.0001f)
     }
 
+    @Test
+    fun `physical boundary side mirrors turn direction across reading progression`() {
+        assertEquals(
+            PaperCurlSide.RIGHT,
+            paperTurnSideFor(PaperTurnDirection.FORWARD, ReadingProgression.LTR)
+        )
+        assertEquals(
+            PaperCurlSide.LEFT,
+            paperTurnSideFor(PaperTurnDirection.BACKWARD, ReadingProgression.LTR)
+        )
+        assertEquals(
+            PaperCurlSide.LEFT,
+            paperTurnSideFor(PaperTurnDirection.FORWARD, ReadingProgression.RTL)
+        )
+        assertEquals(
+            PaperCurlSide.RIGHT,
+            paperTurnSideFor(PaperTurnDirection.BACKWARD, ReadingProgression.RTL)
+        )
+    }
+
 }
