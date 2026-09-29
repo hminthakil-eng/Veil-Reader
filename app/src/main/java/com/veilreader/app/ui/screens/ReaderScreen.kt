@@ -913,6 +913,8 @@ fun ReaderScreen(
         } else {
             val imageTapListener = if (navigator is EpubNavigatorFragment) {
                 ReaderImageTapInputListener { image ->
+                    readerViewModel.onUserInteraction()
+                    controlsVisible = false
                     imageLoadSerial += 1
                     val requestSerial = imageLoadSerial
                     imageLoadJob?.cancel()
@@ -1954,6 +1956,7 @@ fun ReaderScreen(
             PdfZoomControls(
                 navigator = navigator,
                 appearance = readerAppearance,
+                reducedMotion = reducedMotion,
                 onAppearanceChange = { updated ->
                     readerViewModel.onUserInteraction()
                     onReaderAppearanceChange(updated)
