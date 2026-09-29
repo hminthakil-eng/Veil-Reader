@@ -74,6 +74,7 @@ internal fun ReaderBrightnessControls(
     val customBrightness = appearance.screenBrightness
     val systemBrightnessLabel = stringResource(R.string.reader_system_brightness)
     val readingBrightnessLabel = stringResource(R.string.settings_brightness)
+    val formatPercent = rememberVeilPercentFormatter()
     var draft by remember(customBrightness) {
         mutableFloatStateOf((customBrightness ?: 0.5).toFloat())
     }
@@ -146,7 +147,7 @@ internal fun ReaderBrightnessControls(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${(draft * 100).toInt()}%",
+                    formatPercent(draft),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass
                 )
