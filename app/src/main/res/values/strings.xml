@@ -394,4 +394,30 @@
     <string name="reader_value_off">Off</string>
     <string name="reader_value_reset">Reset</string>
     <string name="reader_publisher_override_note">Publisher styling can override advanced typography. Change a control to let Veil own that setting.</string>
+
+    <string name="common_reset">Reset</string>
+    <string name="library_filtered_volume_count">%1$d VOLUMES</string>
+    <string name="library_collection">Collection</string>
+    <string name="library_all_collections">All collections</string>
+    <string name="library_sort_books">Sort books: %1$s</string>
+    <string name="library_sort_recent">Recent</string>
+    <string name="library_sort_archive_depth">Archive Depth</string>
+    <string name="library_sort_title">Title</string>
+    <string name="library_sort_author">Author</string>
+    <string name="library_sort_series">Series</string>
+    <string name="library_sort_progress">Progress</string>
+    <string name="library_series_filter">Series · %1$s ×</string>
+    <string name="library_archive_record">ARCHIVE RECORD</string>
+    <string name="library_archive_record_button">Archive record</string>
+    <string name="library_archive_status">ARCHIVE STATUS</string>
+    <string name="library_archive_status_body">Catalogued locally. Private, offline, and ready to reopen.</string>
+    <string name="library_continue_reading">Continue reading</string>
+    <string name="library_deep_shelf">THE DEEP SHELF</string>
+    <string name="library_deepest_record">Deepest record · %1$s · %2$s</string>
+    <string name="library_descend">DESCEND</string>
+    <string name="library_book_details_semantics">Book details for %1$s</string>
+    <string name="library_archive_record_semantics">Archive record for %1$s</string>
+    <string name="library_show_overview">Archive overview</string>
+    <string name="library_hide_overview">Hide archive overview</string>
+    <string name="library_view_semantics">%1$s view</string>
 </resources>
