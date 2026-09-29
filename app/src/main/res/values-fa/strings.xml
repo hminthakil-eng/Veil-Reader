@@ -847,8 +847,8 @@
     <string name="threshold_open_volume">باز کردن جلد</string>
     <string name="threshold_progress_finished_reopen">تمام شده — هر زمان خواستی دوباره بازش کن</string>
     <string name="threshold_progress_ready">آمادهٔ شروع</string>
-    <string name="threshold_progress_chapter">%1$s · %2$d%%</string>
-    <string name="threshold_progress_complete">%1$d%% کامل</string>
+    <string name="threshold_progress_chapter">%1$s · %2$s</string>
+    <string name="threshold_progress_complete">%1$s کامل</string>
     <string name="threshold_recent_eyebrow">جلدهای اخیر</string>
     <string name="threshold_recent_title">بازگشت به جهانی دیگر</string>
     <string name="common_view_all">مشاهدهٔ همه</string>
@@ -1055,8 +1055,8 @@
     <string name="entry_opening_threshold">گشودن آستانه</string>
     <string name="entry_entering_sanctuary">ورود به خلوتگاه</string>
     <string name="entry_status_completed_returning">جلد تمام‌شده · بازگشت</string>
-    <string name="entry_status_returning_chapter">بازگشت · %1$d%% · %2$s</string>
-    <string name="entry_status_returning_progress">بازگشت · %1$d%%</string>
+    <string name="entry_status_returning_chapter">بازگشت · %1$s · %2$s</string>
+    <string name="entry_status_returning_progress">بازگشت · %1$s</string>
     <string name="entry_status_opening_again">گشودن دوباره</string>
     <string name="entry_status_first_entry">ورود نخست</string>
     <string name="entry_returning_to_page">بازگشت به صفحه</string>
