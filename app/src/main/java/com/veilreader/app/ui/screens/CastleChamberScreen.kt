@@ -761,6 +761,7 @@ private fun SanctumSealPanel(
     sigilProgress: Float,
     sovereignReady: Boolean
 ) {
+    val formatNumber = rememberVeilIntegerFormatter()
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -851,12 +852,12 @@ private fun SanctumSealPanel(
             DossierProgressLine(
                 label = stringResource(R.string.sanctum_path_completion),
                 progress = rankProgress,
-                detail = "${profile.rankIndex + 1}/${profile.path.ranks.size}"
+                detail = "${formatNumber(profile.rankIndex + 1)}/${formatNumber(profile.path.ranks.size)}"
             )
             DossierProgressLine(
                 label = stringResource(R.string.sanctum_core_sigils),
                 progress = sigilProgress,
-                detail = "${profile.earnedSigils.size.coerceAtMost(5)}/5"
+                detail = "${formatNumber(profile.earnedSigils.size.coerceAtMost(5))}/${formatNumber(5)}"
             )
 
             Text(
