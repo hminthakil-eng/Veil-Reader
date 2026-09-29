@@ -89,9 +89,9 @@ class SettingsStore(private val context: Context) {
                 theme = runCatching {
                     ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.PAPER.name)
                 }.getOrDefault(ReaderTheme.PAPER),
-                fontScale = (prefs[Keys.fontScale] ?: 1.0).coerceIn(0.75, 1.8),
-                lineHeight = (prefs[Keys.lineHeight] ?: 1.45).coerceIn(1.1, 2.0),
-                pageMargins = (prefs[Keys.pageMargins] ?: 1.0).coerceIn(0.5, 2.0),
+                fontScale = prefs[Keys.fontScale] ?: 1.0,
+                lineHeight = prefs[Keys.lineHeight] ?: 1.45,
+                pageMargins = prefs[Keys.pageMargins] ?: 1.0,
                 scroll = prefs[Keys.scroll] ?: false,
                 publisherStyles = prefs[Keys.publisherStyles] ?: true,
                 pageTurnStyle = runCatching {
@@ -153,11 +153,8 @@ class SettingsStore(private val context: Context) {
                         prefs[Keys.darkImageTreatment] ?: ReaderDarkImageTreatment.NONE.name
                     )
                 }.getOrDefault(ReaderDarkImageTreatment.NONE),
-                paperPatina = (prefs[Keys.paperPatina] ?: 0.72)
-                    .takeIf { it.isFinite() }
-                    ?.coerceIn(0.0, 1.0)
-                    ?: 0.72
-            ),
+                paperPatina = prefs[Keys.paperPatina] ?: 0.72
+            ).normalized(),
             sensory = SensorySettings(
                 hapticsEnabled = prefs[Keys.sensoryHaptics] ?: true,
                 interactionSoundsEnabled = prefs[Keys.sensoryInteractionSounds] ?: false,
@@ -183,43 +180,44 @@ class SettingsStore(private val context: Context) {
     }
 
     suspend fun saveReaderAppearance(value: ReaderAppearance) {
+        val normalized = value.normalized()
         context.veilSettingsDataStore.edit { prefs ->
-            prefs[Keys.theme] = value.theme.name
-            prefs[Keys.fontScale] = value.fontScale
-            prefs[Keys.lineHeight] = value.lineHeight
-            prefs[Keys.pageMargins] = value.pageMargins
-            prefs[Keys.scroll] = value.scroll
-            prefs[Keys.publisherStyles] = value.publisherStyles
-            prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
-            prefs[Keys.fontFamily] = value.fontFamily.name
-            value.fontWeight?.takeIf { it.isFinite() }?.let {
+            prefs[Keys.theme] = normalized.theme.name
+            prefs[Keys.fontScale] = normalized.fontScale
+            prefs[Keys.lineHeight] = normalized.lineHeight
+            prefs[Keys.pageMargins] = normalized.pageMargins
+            prefs[Keys.scroll] = normalized.scroll
+            prefs[Keys.publisherStyles] = normalized.publisherStyles
+            prefs[Keys.pageTurnStyle] = normalized.pageTurnStyle.name
+            prefs[Keys.fontFamily] = normalized.fontFamily.name
+            normalized.fontWeight?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.fontWeight] = it.coerceIn(0.0, 2.5)
             } ?: prefs.remove(Keys.fontWeight)
-            prefs[Keys.textAlignment] = value.textAlignment.name
-            prefs[Keys.columnMode] = value.columnMode.name
-            prefs[Keys.hyphenation] = value.hyphenation.name
-            prefs[Keys.ligatures] = value.ligatures.name
-            prefs[Keys.textNormalization] = value.textNormalization.name
-            value.screenBrightness?.takeIf { it.isFinite() }?.let {
+            prefs[Keys.textAlignment] = normalized.textAlignment.name
+            prefs[Keys.columnMode] = normalized.columnMode.name
+            prefs[Keys.hyphenation] = normalized.hyphenation.name
+            prefs[Keys.ligatures] = normalized.ligatures.name
+            prefs[Keys.textNormalization] = normalized.textNormalization.name
+            normalized.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
-            value.paragraphSpacing?.takeIf { it.isFinite() }?.let {
+            normalized.paragraphSpacing?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.paragraphSpacing] = it.coerceIn(0.0, 2.0)
             } ?: prefs.remove(Keys.paragraphSpacing)
-            value.paragraphIndent?.takeIf { it.isFinite() }?.let {
+            normalized.paragraphIndent?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.paragraphIndent] = it.coerceIn(0.0, 3.0)
             } ?: prefs.remove(Keys.paragraphIndent)
-            value.letterSpacing?.takeIf { it.isFinite() }?.let {
+            normalized.letterSpacing?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.letterSpacing] = it.coerceIn(0.0, 0.2)
             } ?: prefs.remove(Keys.letterSpacing)
-            value.wordSpacing?.takeIf { it.isFinite() }?.let {
+            normalized.wordSpacing?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.wordSpacing] = it.coerceIn(0.0, 1.0)
             } ?: prefs.remove(Keys.wordSpacing)
-            value.typeScale?.takeIf { it.isFinite() }?.let {
+            normalized.typeScale?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.typeScale] = it.coerceIn(1.0, 2.0)
             } ?: prefs.remove(Keys.typeScale)
-            prefs[Keys.darkImageTreatment] = value.darkImageTreatment.name
-            prefs[Keys.paperPatina] = value.paperPatina
+            prefs[Keys.darkImageTreatment] = normalized.darkImageTreatment.name
+            prefs[Keys.paperPatina] = normalized.paperPatina
                 .takeIf { it.isFinite() }
                 ?.coerceIn(0.0, 1.0)
                 ?: 0.72
