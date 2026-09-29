@@ -1348,6 +1348,11 @@ fun ReaderScreen(
             )
         }
 
+        ReaderModeHandoffOverlay(
+            state = readerModeHandoffState,
+            modifier = Modifier.fillMaxSize()
+        )
+
         if (
             opened.format == BookFormat.EPUB &&
             !fixedLayoutPublication
@@ -1365,11 +1370,6 @@ fun ReaderScreen(
                 modifier = Modifier.fillMaxSize()
             )
         }
-
-        ReaderModeHandoffOverlay(
-            state = readerModeHandoffState,
-            modifier = Modifier.fillMaxSize()
-        )
 
         boundaryPulseSide?.let { side ->
             ReaderBoundaryPulse(
