@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
+import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.ui.theme.VeilPalette
@@ -64,6 +66,12 @@ internal fun PdfZoomControls(
     }
 
     val view = pdfView
+    val pdfPageA11y = stringResource(R.string.pdf_layout_paginated_a11y)
+    val pdfScrollA11y = stringResource(R.string.pdf_layout_scroll_a11y)
+    val zoomA11y = stringResource(R.string.pdf_zoom_a11y)
+    val zoomOutA11y = stringResource(R.string.pdf_zoom_out_a11y)
+    val zoomResetA11y = stringResource(R.string.pdf_zoom_reset_a11y)
+    val zoomInA11y = stringResource(R.string.pdf_zoom_in_a11y)
     var zoomMirror by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
 
     LaunchedEffect(view) {
@@ -82,24 +90,24 @@ internal fun PdfZoomControls(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                "PDF READING INSTRUMENTS",
+                stringResource(R.string.pdf_instruments),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass
             )
             BrassRule(Modifier.fillMaxWidth())
             Text(
-                "PDF view",
+                stringResource(R.string.pdf_view_title),
                 style = MaterialTheme.typography.headlineMedium
             )
             Text(
-                "Fit, zoom, layout, and brightness stay close to the page. Pinch and double-tap remain available directly on the document.",
+                stringResource(R.string.pdf_view_body),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
 
         Text(
-            "LAYOUT",
+            stringResource(R.string.pdf_layout_title),
             style = MaterialTheme.typography.labelSmall,
             color = VeilPalette.Brass
         )
@@ -109,8 +117,8 @@ internal fun PdfZoomControls(
             horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             listOf(
-                false to "Page",
-                true to "Scroll"
+                false to stringResource(R.string.pdf_layout_page),
+                true to stringResource(R.string.pdf_layout_scroll)
             ).forEach { (scrollMode, label) ->
                 val selected = appearance.scroll == scrollMode
                 Surface(
@@ -121,11 +129,19 @@ internal fun PdfZoomControls(
                             selected = selected,
                             role = Role.RadioButton
                         ) {
-                            onAppearanceChange(appearance.copy(scroll = scrollMode))
+                            onAppearanceChange(
+                                appearance.withNavigationMode(
+                                    if (scrollMode) {
+                                        ReaderNavigationMode.SCROLL
+                                    } else {
+                                        ReaderNavigationMode.PAGED
+                                    }
+                                )
+                            )
                         }
                         .semantics {
                             contentDescription =
-                                if (scrollMode) "PDF continuous scroll" else "PDF paginated layout"
+                                if (scrollMode) pdfScrollA11y else pdfPageA11y
                         },
                     shape = MaterialTheme.shapes.extraSmall,
                     color = if (selected) {
@@ -170,9 +186,9 @@ internal fun PdfZoomControls(
 
         Text(
             if (appearance.scroll) {
-                "Continuous vertical flow · pages fit the reading width."
+                stringResource(R.string.pdf_layout_scroll_body)
             } else {
-                "Single-page focus · pages remain contained in the viewport."
+                stringResource(R.string.pdf_layout_page_body)
             },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall
@@ -195,12 +211,12 @@ internal fun PdfZoomControls(
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     Text(
-                        "PREPARING DOCUMENT",
+                        stringResource(R.string.pdf_preparing_title),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Connecting to the PDF renderer…",
+                        stringResource(R.string.pdf_preparing_body),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -216,7 +232,7 @@ internal fun PdfZoomControls(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "ZOOM",
+                    stringResource(R.string.pdf_zoom_title),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
@@ -237,7 +253,7 @@ internal fun PdfZoomControls(
                 },
                 valueRange = minZoom..maxZoom,
                 modifier = Modifier.semantics {
-                    contentDescription = "PDF zoom"
+                    contentDescription = zoomA11y
                 }
             )
 
@@ -259,7 +275,7 @@ internal fun PdfZoomControls(
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
-                        .semantics { contentDescription = "Zoom out" },
+                        .semantics { contentDescription = zoomOutA11y },
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(
                         1.dp,
@@ -273,7 +289,8 @@ internal fun PdfZoomControls(
                     onClick = { view.resetZoomWithAnimation() },
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 48.dp),
+                        .heightIn(min = 48.dp)
+                        .semantics { contentDescription = zoomResetA11y },
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(
                         1.dp,
@@ -296,7 +313,7 @@ internal fun PdfZoomControls(
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
-                        .semantics { contentDescription = "Zoom in" },
+                        .semantics { contentDescription = zoomInA11y },
                     shape = MaterialTheme.shapes.extraSmall,
                     border = BorderStroke(
                         1.dp,
@@ -321,7 +338,7 @@ internal fun PdfZoomControls(
                     contentColor = VeilPalette.Moon
                 )
             ) {
-                Text("Fit page width")
+                Text(stringResource(R.string.pdf_fit_width))
             }
         }
 
@@ -343,7 +360,7 @@ internal fun PdfZoomControls(
                 contentColor = Color(0xFF17120A)
             )
         ) {
-            Text("Back to reading")
+            Text(stringResource(R.string.reader_back_to_reading))
         }
     }
 }
