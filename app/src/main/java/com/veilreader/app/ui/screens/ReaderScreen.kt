@@ -1196,149 +1196,199 @@ fun ReaderScreen(
     pendingNoteHighlightId?.let { highlightId ->
         val pendingHighlight = bookHighlights.firstOrNull { it.id == highlightId }
 
-        AlertDialog(
+        Dialog(
             onDismissRequest = {
                 if (!noteSaving) {
                     pendingNoteHighlightId = null
                     pendingNoteText = ""
                 }
             },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+            properties = DialogProperties(
+                dismissOnBackPress = !noteSaving,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+                    .padding(VeilSpacing.lg),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.48f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    Text(
-                        stringResource(R.string.reader_note_eyebrow),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            letterSpacing = 1.25.sp
-                        ),
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        stringResource(R.string.notebook_note_dialog_title),
-                        style = MaterialTheme.typography.titleLarge,
-                        color = VeilPalette.Moon
-                    )
-                }
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    pendingHighlight?.quote
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { quote ->
-                            Surface(
-                                shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilPalette.Ink.copy(alpha = 0.54f),
-                                border = BorderStroke(
-                                    1.dp,
-                                    VeilPalette.Brass.copy(alpha = 0.28f)
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.24f
+                        )
+                        Column(
+                            modifier = Modifier.padding(VeilSpacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.reader_note_eyebrow),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.25.sp
                                 ),
-                                tonalElevation = 0.dp,
-                                shadowElevation = 0.dp
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.notebook_note_dialog_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+
+                            pendingHighlight?.quote
+                                ?.takeIf { it.isNotBlank() }
+                                ?.let { quote ->
+                                    Surface(
+                                        shape = MaterialTheme.shapes.extraSmall,
+                                        color = VeilPalette.Ink.copy(alpha = 0.54f),
+                                        border = BorderStroke(
+                                            1.dp,
+                                            VeilPalette.Brass.copy(alpha = 0.28f)
+                                        ),
+                                        tonalElevation = 0.dp,
+                                        shadowElevation = 0.dp
+                                    ) {
+                                        Column(
+                                            modifier = Modifier.padding(12.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                stringResource(R.string.reader_selected_passage),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = VeilPalette.Brass.copy(alpha = 0.82f)
+                                            )
+                                            Text(
+                                                "“$quote”",
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color = VeilPalette.Moon.copy(alpha = 0.78f),
+                                                maxLines = 4,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                        }
+                                    }
+                                }
+
+                            OutlinedTextField(
+                                value = pendingNoteText,
+                                onValueChange = { pendingNoteText = it },
+                                enabled = !noteSaving,
+                                placeholder = {
+                                    Text(stringResource(R.string.reader_note_hint))
+                                },
+                                minLines = 4,
+                                maxLines = 8,
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.84f),
+                                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(
+                                        alpha = 0.72f
+                                    ),
+                                    focusedContainerColor = VeilPalette.Ink.copy(alpha = 0.36f),
+                                    unfocusedContainerColor = VeilPalette.Ink.copy(alpha = 0.24f)
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Text(
+                                stringResource(
+                                    R.string.reader_characters_count,
+                                    pendingNoteText.length
+                                ),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                    alpha = 0.70f
+                                ),
+                                modifier = Modifier.align(Alignment.End)
+                            )
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                                OutlinedButton(
+                                    enabled = !noteSaving,
+                                    onClick = {
+                                        pendingNoteHighlightId = null
+                                        pendingNoteText = ""
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                                Button(
+                                    enabled = !noteSaving,
+                                    onClick = {
+                                        scope.launch {
+                                            noteSaving = true
+                                            try {
+                                                library.updateHighlightNote(
+                                                    highlightId,
+                                                    pendingNoteText
+                                                )
+                                                library.flushWrites()
+                                                readerViewModel.onNoteSaved(
+                                                    highlightId,
+                                                    pendingNoteText
+                                                )
+                                                onSensoryEvent(VeilSensoryEvent.NOTE)
+                                                pendingNoteHighlightId = null
+                                                pendingNoteText = ""
+                                                readerMessage = noteSavedMessage
+                                            } catch (cancelled: CancellationException) {
+                                                throw cancelled
+                                            } catch (error: Exception) {
+                                                readerMessage = noteSaveFailedMessage
+                                            } finally {
+                                                noteSaving = false
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = Color(0xFF17120A)
+                                    )
                                 ) {
                                     Text(
-                                        stringResource(R.string.reader_selected_passage),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = VeilPalette.Brass.copy(alpha = 0.82f)
-                                    )
-                                    Text(
-                                        "“$quote”",
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        color = VeilPalette.Moon.copy(alpha = 0.78f),
-                                        maxLines = 4,
-                                        overflow = TextOverflow.Ellipsis
+                                        stringResource(
+                                            if (noteSaving) {
+                                                R.string.reader_saving_note
+                                            } else {
+                                                R.string.reader_save_note
+                                            }
+                                        )
                                     )
                                 }
                             }
                         }
-
-                    OutlinedTextField(
-                        value = pendingNoteText,
-                        onValueChange = { pendingNoteText = it },
-                        enabled = !noteSaving,
-                        placeholder = { Text(stringResource(R.string.reader_note_hint)) },
-                        minLines = 4,
-                        maxLines = 8,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.84f),
-                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
-                            focusedContainerColor = VeilPalette.Ink.copy(alpha = 0.36f),
-                            unfocusedContainerColor = VeilPalette.Ink.copy(alpha = 0.24f)
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        Text(
-                            stringResource(R.string.reader_characters_count, pendingNoteText.length),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
-                        )
                     }
-                }
-            },
-            confirmButton = {
-                Button(
-                    enabled = !noteSaving,
-                    onClick = {
-                        scope.launch {
-                            noteSaving = true
-                            try {
-                                library.updateHighlightNote(highlightId, pendingNoteText)
-                                library.flushWrites()
-                                readerViewModel.onNoteSaved(highlightId, pendingNoteText)
-                                onSensoryEvent(VeilSensoryEvent.NOTE)
-                                pendingNoteHighlightId = null
-                                pendingNoteText = ""
-                                readerMessage = noteSavedMessage
-                            } catch (cancelled: CancellationException) {
-                                throw cancelled
-                            } catch (error: Exception) {
-                                readerMessage = noteSaveFailedMessage
-                            } finally {
-                                noteSaving = false
-                            }
-                        }
-                    },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
-                    )
-                ) {
-                    Text(stringResource(if (noteSaving) R.string.reader_saving_note else R.string.reader_save_note))
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    enabled = !noteSaving,
-                    onClick = {
-                        pendingNoteHighlightId = null
-                        pendingNoteText = ""
-                    }
-                ) {
-                    Text(
-                        stringResource(R.string.common_cancel),
-                        color = VeilPalette.Moon.copy(alpha = 0.72f)
-                    )
                 }
             }
-        )
+        }
     }
 
     if (showNotebook) {
