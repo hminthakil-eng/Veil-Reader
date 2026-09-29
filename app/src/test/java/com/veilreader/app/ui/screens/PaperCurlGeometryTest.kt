@@ -377,4 +377,13 @@ class PaperCurlGeometryTest {
         )
     }
 
+    @Test
+    fun `edge grip increases smoothly only near the physical page edge`() {
+        assertEquals(0f, paperEdgeGrip(500f, 1_000f), 0.0001f)
+        assertEquals(0f, paperEdgeGrip(700f, 1_000f), 0.0001f)
+        assertTrue(paperEdgeGrip(850f, 1_000f) > 0f)
+        assertEquals(1f, paperEdgeGrip(1_000f, 1_000f), 0.0001f)
+        assertEquals(0f, paperEdgeGrip(900f, 0f), 0.0001f)
+    }
+
 }
