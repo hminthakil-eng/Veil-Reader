@@ -62,8 +62,7 @@ fun buildSealedReadingCycle(
                 ReadingHistoryEvent(
                     id = "archive:${book.id}",
                     kind = ReadingHistoryEventKind.ARCHIVED,
-                    timestampEpochMs = book.addedAtEpochMs,
-                    title = "Entered the Grayfog Archive"
+                    timestampEpochMs = book.addedAtEpochMs
                 )
             )
         }
@@ -73,14 +72,10 @@ fun buildSealedReadingCycle(
                     id = "session:${session.id}",
                     kind = ReadingHistoryEventKind.READING_SESSION,
                     timestampEpochMs = session.startedAtEpochMs,
-                    title = "Reading session",
-                    detail = buildString {
-                        append(session.activeMillis.coerceAtLeast(0L) / 60_000L)
-                        append("m active")
-                        if (session.pacedPageTurns > 0) {
-                            append(" · ").append(session.pacedPageTurns).append(" paced turns")
-                        }
-                    }
+                    activeMillis = session.activeMillis.coerceAtLeast(0L),
+                    pacedPageTurns = session.pacedPageTurns.coerceAtLeast(0),
+                    highlightEventCount = session.highlightCount.coerceAtLeast(0),
+                    noteEventCount = session.noteCount.coerceAtLeast(0)
                 )
             )
         }
@@ -90,8 +85,8 @@ fun buildSealedReadingCycle(
                     id = "highlight:${highlight.id}",
                     kind = ReadingHistoryEventKind.PASSAGE_PRESERVED,
                     timestampEpochMs = highlight.createdAtEpochMs,
-                    title = if (highlight.note.isBlank()) "Passage preserved" else "Annotated passage preserved",
-                    detail = highlight.quote.replace(Regex("\\s+"), " ").trim().take(120)
+                    annotated = highlight.note.isNotBlank(),
+                    excerpt = highlight.quote.replace(Regex("\\s+"), " ").trim().take(120)
                         .takeIf(String::isNotBlank)
                 )
             )
@@ -102,8 +97,7 @@ fun buildSealedReadingCycle(
                     id = "bookmark:${bookmark.id}",
                     kind = ReadingHistoryEventKind.LOCATION_MARKED,
                     timestampEpochMs = bookmark.createdAtEpochMs,
-                    title = "Location marked",
-                    detail = bookmark.label.trim().takeIf(String::isNotBlank)
+                    locationLabel = bookmark.label.trim().takeIf(String::isNotBlank)
                 )
             )
         }
@@ -117,12 +111,7 @@ fun buildSealedReadingCycle(
                         id = milestone.id,
                         kind = ReadingHistoryEventKind.READING_MILESTONE,
                         timestampEpochMs = milestone.reachedAtEpochMs,
-                        title = when (milestone.kind) {
-                            ReadingMilestoneKind.FIRST_OPENED -> "First opened"
-                            ReadingMilestoneKind.PROGRESS_25 -> "Reached 25%"
-                            ReadingMilestoneKind.PROGRESS_50 -> "Reached 50%"
-                            ReadingMilestoneKind.PROGRESS_75 -> "Reached 75%"
-                        }
+                        milestoneKind = milestone.kind
                     )
                 )
             }
@@ -130,8 +119,7 @@ fun buildSealedReadingCycle(
             ReadingHistoryEvent(
                 id = "completed:${book.id}:$cycleIndex",
                 kind = ReadingHistoryEventKind.COMPLETED,
-                timestampEpochMs = completedAtEpochMs,
-                title = "Reading cycle completed"
+                timestampEpochMs = completedAtEpochMs
             )
         )
     }.sortedWith(compareBy<ReadingHistoryEvent> { it.timestampEpochMs }.thenBy { it.id })
