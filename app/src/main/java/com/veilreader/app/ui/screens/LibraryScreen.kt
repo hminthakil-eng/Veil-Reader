@@ -525,7 +525,7 @@ fun LibraryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "${filtered.size.toString().padStart(2, '0')} VOLUMES",
+                        stringResource(R.string.library_volume_count_compact, filtered.size.toString().padStart(2, '0')),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                         color = VeilPalette.Brass,
                         modifier = Modifier.padding(end = 4.dp)
@@ -573,7 +573,7 @@ fun LibraryScreen(
                             onClick = { sortMenu = true },
                             modifier = Modifier
                                 .heightIn(min = 48.dp)
-                                .semantics { contentDescription = "Sort books: $sort" },
+                                .semantics { contentDescription = stringResource(R.string.library_sort_books_a11y, librarySortLabel(sort)) },
                             shape = MaterialTheme.shapes.extraSmall,
                             contentPadding = PaddingValues(horizontal = 10.dp),
                             border = BorderStroke(
@@ -582,7 +582,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                sort,
+                                librarySortLabel(sort),
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -593,16 +593,16 @@ fun LibraryScreen(
                             onDismissRequest = { sortMenu = false }
                         ) {
                             listOf(
-                                "Recent",
-                                "Archive Depth",
-                                "Title",
-                                "Author",
-                                "Series",
-                                "Progress"
-                            ).forEach { label ->
+                                "Recent" to R.string.library_sort_recent,
+                                "Archive Depth" to R.string.library_sort_archive_depth,
+                                "Title" to R.string.library_sort_title,
+                                "Author" to R.string.library_sort_author,
+                                "Series" to R.string.library_sort_series,
+                                "Progress" to R.string.library_sort_progress
+                            ).forEach { (sortKey, labelRes) ->
                                 DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = { sort = label; sortMenu = false }
+                                    text = { Text(stringResource(labelRes)) },
+                                    onClick = { sort = sortKey; sortMenu = false }
                                 )
                             }
                         }
@@ -620,7 +620,7 @@ fun LibraryScreen(
                             )
                         ) {
                             Text(
-                                "Series · $seriesFilter ×",
+                                stringResource(R.string.library_series_filter_chip, seriesFilter),
                                 style = MaterialTheme.typography.labelMedium,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -2904,6 +2904,16 @@ private fun LibraryShelvesView(
     }
 }
 
+@Composable
+private fun librarySortLabel(sort: String): String =
+    when (sort) {
+        "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
+        "Title" -> stringResource(R.string.library_sort_title)
+        "Author" -> stringResource(R.string.library_sort_author)
+        "Series" -> stringResource(R.string.library_sort_series)
+        "Progress" -> stringResource(R.string.library_sort_progress)
+        else -> stringResource(R.string.library_sort_recent)
+    }
 @Composable
 private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
     Row(
