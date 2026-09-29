@@ -457,4 +457,15 @@
     <string name="library_mark_count">%1$d نشان</string>
     <string name="library_saved_count">%1$d ذخیره‌شده</string>
     <string name="library_group_volume_count">%1$d کتاب</string>
+
+    <string name="library_memory_eyebrow">حافظهٔ بازیافته</string>
+    <string name="library_memory_title">آرشیو به یاد می‌آورد</string>
+    <string name="library_memory_traces">%1$d رد</string>
+    <string name="library_recent_eyebrow">تازه گشوده‌شده</string>
+    <string name="library_recent_title">کتاب‌های در حال مطالعه</string>
+    <string name="library_recent_active">%1$d فعال</string>
+    <string name="library_continue_book_semantics">ادامهٔ %1$s</string>
+    <string name="library_wings_eyebrow">فهرست فضایی</string>
+    <string name="library_wings_title">بخش‌های آرشیو</string>
+    <string name="library_wings_mapped">%1$d بخش</string>
 </resources>
