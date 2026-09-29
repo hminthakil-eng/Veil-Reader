@@ -151,4 +151,36 @@
     <string name="reader_system_brightness">استفاده از روشنایی دستگاه</string>
     <string name="reader_system_brightness_description">روشنایی دستگاه را دنبال می‌کند و پس از خروج به وضعیت قبلی بازمی‌گردد.</string>
     <string name="reader_custom_brightness_description">روشنایی انتخاب‌شده فقط هنگام مطالعه اعمال می‌شود.</string>
+
+    <!-- Reader chrome and passage-note controls -->
+    <string name="reader_surface_label">سطح مطالعه</string>
+    <string name="reader_show_controls">نمایش کنترل‌های مطالعه</string>
+    <string name="reader_hide_controls">پنهان‌کردن کنترل‌های مطالعه</string>
+    <string name="reader_close">بستن کتاب</string>
+    <string name="reader_percent_read">%1$d٪ مطالعه‌شده</string>
+    <string name="reader_notes">یادداشت‌ها</string>
+    <string name="reader_mark">نشانک</string>
+    <string name="reader_type">ظاهر متن</string>
+    <string name="reader_zoom">بزرگ‌نمایی</string>
+    <string name="reader_return">بازگشت</string>
+    <string name="reader_previous_location">موقعیت پیشین</string>
+    <string name="reader_note_eyebrow">آرشیو پنهان · یادداشت متن</string>
+    <string name="reader_selected_passage">بخش انتخاب‌شده</string>
+    <string name="reader_note_hint">آنچه می‌خواهید به یاد بسپارید بنویسید…</string>
+    <string name="reader_characters_count">تعداد نویسه‌ها: %1$d</string>
+    <string name="reader_saving_note">در حال ذخیره…</string>
+    <string name="reader_save_note">ذخیرهٔ یادداشت</string>
+
+    <!-- Reader feedback and recoverable errors -->
+    <string name="reader_highlighted">بخش انتخاب‌شده نشان‌گذاری شد</string>
+    <string name="reader_already_highlighted">این بخش از قبل نشان‌گذاری شده است</string>
+    <string name="reader_passage_save_failed">این بخش ذخیره نشد.</string>
+    <string name="reader_previous_location_failed">بازگشت به موقعیت پیشین ممکن نشد.</string>
+    <string name="reader_close_storage_failed">آخرین موقعیت مطالعه ذخیره نشد. دوباره برای بستن کتاب تلاش کنید.</string>
+    <string name="reader_bookmark_saved">نشانک ذخیره شد</string>
+    <string name="reader_bookmark_duplicate">این موقعیت از قبل نشانک‌گذاری شده است</string>
+    <string name="reader_note_saved">یادداشت ذخیره شد</string>
+    <string name="reader_note_save_failed">یادداشت ذخیره نشد.</string>
+    <string name="reader_saved_location_failed">موقعیت ذخیره‌شده باز نشد.</string>
+    <string name="reader_chapter_failed">این فصل باز نشد.</string>
 </resources>
