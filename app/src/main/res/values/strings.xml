@@ -977,4 +977,24 @@
     <string name="observatory_relation_series">SERIES</string>
     <string name="observatory_relation_collection">COLLECTION</string>
     <string name="observatory_relation_passage_pattern">PRESERVED WORD PATTERN</string>
+    <string name="library_stat_books">Books</string>
+    <string name="library_stat_reading">Reading</string>
+    <string name="library_stat_finished">Finished</string>
+    <string name="library_stat_collections">Collections</string>
+    <string name="library_atmosphere_deep_quiet">The lower stacks are quiet and deep.</string>
+    <string name="library_atmosphere_many_chambers">The Archive has grown into many chambers.</string>
+    <string name="library_atmosphere_reading_light">Reading light is active through the stacks.</string>
+    <string name="library_atmosphere_gaining_depth">The shelves are beginning to gain depth.</string>
+    <string name="library_atmosphere_first_shelves">The first shelves are taking shape.</string>
+    <string name="library_wing_collection">COLLECTION WING</string>
+    <string name="library_wing_series">SERIES CORRIDOR</string>
+    <string name="library_wing_volume_one">%1$d volume</string>
+    <string name="library_wing_volumes_many">%1$d volumes</string>
+    <string name="library_wing_active">%1$d active</string>
+    <string name="library_wing_sealed">%1$d sealed</string>
+    <string name="library_memory_event_return">RETURN EVENT</string>
+    <string name="library_memory_event_margin_echo">MARGIN ECHO</string>
+    <string name="library_memory_event_archive_return">ARCHIVE RETURN</string>
+    <string name="library_quiet_volume_one">%1$d volume has gone quiet</string>
+    <string name="library_quiet_volumes_many">%1$d volumes have gone quiet</string>
 </resources>
