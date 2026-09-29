@@ -273,7 +273,7 @@ private fun ThresholdHeader(
             )
 
             Text(
-                "VEIL READER",
+                stringResource(R.string.library_brand_name),
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(start = VeilSpacing.md, top = VeilSpacing.md),
@@ -282,7 +282,7 @@ private fun ThresholdHeader(
             )
 
             Text(
-                "GRAYFOG ARCHIVE",
+                stringResource(R.string.library_grayfog_archive),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = VeilSpacing.md, top = VeilSpacing.md),
@@ -299,24 +299,20 @@ private fun ThresholdHeader(
             ) {
                 Text(
                     when {
-                        bookCount == 0 -> "The Archive Is Unwritten"
-                        bookCount == 1 -> "The First Volume Has Arrived"
-                        hasCurrentBook -> "The Library Awaits"
-                        else -> "Return to the Archive"
+                        bookCount == 0 -> stringResource(R.string.threshold_archive_unwritten)
+                        bookCount == 1 -> stringResource(R.string.threshold_first_volume_arrived)
+                        hasCurrentBook -> stringResource(R.string.threshold_library_awaits)
+                        else -> stringResource(R.string.threshold_return_archive)
                     },
                     style = MaterialTheme.typography.headlineLarge,
                     color = VeilPalette.Moon
                 )
                 Text(
                     when {
-                        bookCount == 0 ->
-                            "A private archive for books, notes, and worlds that stay with you."
-                        bookCount == 1 ->
-                            "The first chamber has awakened. Your reading history begins from this volume."
-                        hasCurrentBook ->
-                            "Every book is a door. The nearest one is already open."
-                        else ->
-                            "Your volumes remain here, quiet and local, until you choose another door."
+                        bookCount == 0 -> stringResource(R.string.threshold_intro_empty)
+                        bookCount == 1 -> stringResource(R.string.threshold_intro_first)
+                        hasCurrentBook -> stringResource(R.string.threshold_intro_current)
+                        else -> stringResource(R.string.threshold_intro_return)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Moon.copy(alpha = 0.82f),
@@ -443,7 +439,7 @@ private fun ContinueReadingHero(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "CONTINUE READING",
+                    stringResource(R.string.threshold_continue_reading),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
                     color = secondaryInk,
                     modifier = Modifier.weight(1f)
@@ -506,9 +502,9 @@ private fun ContinueReadingHero(
             ) {
                 Text(
                     if (progress > 0f && !current.finished) {
-                        "Return to the volume"
+                        stringResource(R.string.threshold_return_volume)
                     } else {
-                        "Open the volume"
+                        stringResource(R.string.threshold_open_volume)
                     }
                 )
             }
