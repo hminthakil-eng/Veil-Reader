@@ -278,7 +278,10 @@ private fun ThresholdHeader(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(start = VeilSpacing.md, top = VeilSpacing.md),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.9.sp),
+                style = veilContentTextStyle(
+                    MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.9.sp),
+                    stringResource(R.string.library_brand_name)
+                ),
                 color = VeilPalette.Brass
             )
 
@@ -287,7 +290,10 @@ private fun ThresholdHeader(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = VeilSpacing.md, top = VeilSpacing.md),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                style = veilContentTextStyle(
+                    MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+                    stringResource(R.string.library_grayfog_archive)
+                ),
                 color = VeilPalette.Moon.copy(alpha = 0.72f)
             )
 
@@ -441,7 +447,10 @@ private fun ContinueReadingHero(
             ) {
                 Text(
                     stringResource(R.string.threshold_continue_reading),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+                    style = veilContentTextStyle(
+                        MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+                        stringResource(R.string.threshold_continue_reading)
+                    ),
                     color = secondaryInk,
                     modifier = Modifier.weight(1f)
                 )
@@ -605,7 +614,10 @@ private fun RecentBooksShelf(
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     stringResource(R.string.threshold_recent_tomes),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    style = veilContentTextStyle(
+                        MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                        stringResource(R.string.threshold_recent_tomes)
+                    ),
                     color = VeilPalette.Brass
                 )
                 Text(
@@ -893,7 +905,10 @@ private fun ReadingPulse(
         ) {
             Text(
                 stringResource(R.string.threshold_reading_record),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                style = veilContentTextStyle(
+                    MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                    stringResource(R.string.threshold_reading_record)
+                ),
                 color = VeilPalette.Brass,
                 modifier = Modifier.weight(1f)
             )
@@ -940,6 +955,7 @@ private fun ReadingPulse(
 
 @Composable
 private fun ReadingPulseValue(value: String, label: String, modifier: Modifier = Modifier) {
+    val displayLabel = if (usesArabicScript(label)) label else label.uppercase()
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Text(
             value,
@@ -949,8 +965,8 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
+            displayLabel,
+            style = veilContentTextStyle(MaterialTheme.typography.labelSmall, displayLabel),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
@@ -990,19 +1006,25 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
+                val eyebrow = stringResource(R.string.threshold_first_threshold)
+                val title = stringResource(R.string.threshold_first_volume_waiting)
+                val body = stringResource(R.string.threshold_first_volume_body)
                 Text(
-                    "THE FIRST THRESHOLD",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                    eyebrow,
+                    style = veilContentTextStyle(
+                        MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
+                        eyebrow
+                    ),
                     color = mutedInk
                 )
                 Text(
-                    "Your first volume is waiting",
-                    style = MaterialTheme.typography.titleLarge,
+                    title,
+                    style = veilContentTextStyle(MaterialTheme.typography.titleLarge, title),
                     color = ink
                 )
                 Text(
-                    "Import an EPUB or PDF. Once you begin, this page becomes the shortest path back into the book.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    body,
+                    style = veilContentTextStyle(MaterialTheme.typography.bodyMedium, body),
                     color = mutedInk
                 )
                 Box(
@@ -1031,15 +1053,27 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                         contentColor = Color(0xFFF3E9D5)
                     )
                 ) {
-                    Text("Enter the Library")
+                    Text(stringResource(R.string.threshold_enter_library))
                 }
             }
         }
     }
 }
-private fun formatReadingTime(minutes: Int): String = when {
-    minutes >= 6000 -> "${minutes / 60}h"
-    minutes >= 60 -> "${minutes / 60}h ${minutes % 60}m"
-    else -> "${minutes}m"
+@Composable
+private fun formatReadingTime(minutes: Int): String {
+    val safeMinutes = minutes.coerceAtLeast(0)
+    return when {
+        safeMinutes >= 6000 ->
+            stringResource(R.string.capsule_duration_hours, safeMinutes / 60)
+        safeMinutes >= 60 ->
+            stringResource(
+                R.string.capsule_duration_hours_minutes,
+                safeMinutes / 60,
+                safeMinutes % 60
+            )
+        safeMinutes > 0 ->
+            stringResource(R.string.capsule_duration_minutes, safeMinutes)
+        else -> stringResource(R.string.capsule_duration_less_than_minute)
+    }
 }
 
