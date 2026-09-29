@@ -50,7 +50,7 @@ private val veiledDiscoveries = listOf(
         title = "The Patient Flame",
         clue = "A flame kept for many returns begins to remember the hand that lit it.",
         lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return.",
-        revealed = { profile, _ -> profile.streakDays >= 7 && profile.minutesRead >= 600 }
+        revealed = { profile, _ -> "seven_days" in profile.earnedSigils && profile.minutesRead >= 600 }
     ),
     VeiledDiscovery(
         id = "marginalia_gate",
@@ -58,7 +58,7 @@ private val veiledDiscoveries = listOf(
         title = "The Marginalia Gate",
         clue = "Some doors are written in the margins rather than printed on the page.",
         lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves.",
-        revealed = { profile, highlights -> highlights >= 10 && profile.pagesRead >= 1_000 }
+        revealed = { profile, _ -> "passage_keeper" in profile.earnedSigils && profile.pagesRead >= 1_000 }
     ),
     VeiledDiscovery(
         id = "deep_shelf",
