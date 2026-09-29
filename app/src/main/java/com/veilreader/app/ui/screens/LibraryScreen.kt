@@ -17,6 +17,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items as lazyRowItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -227,10 +229,11 @@ fun LibraryScreen(
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let(onImportUri)
     }
-    val collections = books
-        .flatMap { it.allCollections }
-        .distinctBy { it.lowercase(Locale.ROOT) }
-        .sortedWith(String.CASE_INSENSITIVE_ORDER)
+    val collections = remember(books) {
+        books.flatMap { it.allCollections }
+            .distinctBy { it.lowercase(Locale.ROOT) }
+            .sortedWith(String.CASE_INSENSITIVE_ORDER)
+    }
 
     LaunchedEffect(collections) {
         if (collection.isNotEmpty() && collections.none { it.equals(collection, ignoreCase = true) }) {
@@ -293,9 +296,7 @@ fun LibraryScreen(
     }
 
     val trimmedQuery = query.trim()
-    val normalizedQuery = remember(trimmedQuery) {
-        normalizeLibrarySearchText(trimmedQuery)
-    }
+    val normalizedQuery = remember(trimmedQuery) { normalizeLibrarySearchText(trimmedQuery) }
     val searchableByBookId = remember(books) {
         books.associate { book ->
             val fields = buildList {
@@ -308,47 +309,64 @@ fun LibraryScreen(
             book.id to fields.map(::normalizeLibrarySearchText)
         }
     }
-    val filtered = books.filter { book ->
-        val matchesQuery = normalizedQuery.isBlank() ||
-            searchableByBookId[book.id].orEmpty().any { it.contains(normalizedQuery) }
-        val matchesShelf = when (shelf) {
-            "Reading" -> !book.finished && book.progress > 0f
-            "Unread" -> !book.finished && book.progress == 0f
-            "Finished" -> book.finished
-            "Favorites" -> book.favorite
-            "Deep Shelf" -> book.id in deepShelfBookIds
-            else -> true
-        }
-        val matchesCollection = collection.isEmpty() || book.allCollections.any {
-            it.equals(collection, ignoreCase = true)
-        }
-        val matchesSeries = seriesFilter.isEmpty() ||
-            book.seriesName?.equals(seriesFilter, ignoreCase = true) == true
-        matchesQuery && matchesShelf && matchesCollection && matchesSeries
-    }.let { list ->
-        when (sort) {
-            "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
-            "Author" -> list.sortedBy { it.author.lowercase(Locale.ROOT) }
-            "Progress" -> list.sortedByDescending { it.progress }
-            "Archive Depth" -> list.sortedByDescending {
-                memoryState.memoryFor(it.id)?.inactiveMillis ?: 0L
+    val filtered = remember(
+        books, trimmedQuery, shelf, collection, seriesFilter, sort, deepShelfBookIds, memoryState
+    ) {
+        books.filter { book ->
+            val matchesQuery = normalizedQuery.isBlank() ||
+                searchableByBookId[book.id].orEmpty().any { it.contains(normalizedQuery) }
+            val matchesShelf = when (shelf) {
+                "Reading" -> !book.finished && book.progress > 0f
+                "Unread" -> !book.finished && book.progress == 0f
+                "Finished" -> book.finished
+                "Favorites" -> book.favorite
+                "Deep Shelf" -> book.id in deepShelfBookIds
+                else -> true
             }
-            "Series" -> list.sortedWith(
-                compareBy<Book> { it.seriesName?.lowercase(Locale.ROOT) ?: "\uffff" }
-                    .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
-                    .thenBy { it.title.lowercase(Locale.ROOT) }
-            )
-            else -> list.sortedByDescending { maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs) }
+            val matchesCollection = collection.isEmpty() || book.allCollections.any {
+                it.equals(collection, ignoreCase = true)
+            }
+            val matchesSeries = seriesFilter.isEmpty() ||
+                book.seriesName?.equals(seriesFilter, ignoreCase = true) == true
+            matchesQuery && matchesShelf && matchesCollection && matchesSeries
+        }.let { list ->
+            when (sort) {
+                "Title" -> list.sortedBy { it.title.lowercase(Locale.ROOT) }
+                "Author" -> list.sortedBy { it.author.lowercase(Locale.ROOT) }
+                "Progress" -> list.sortedByDescending { it.progress }
+                "Archive Depth" -> list.sortedByDescending {
+                    memoryState.memoryFor(it.id)?.inactiveMillis ?: 0L
+                }
+                "Series" -> list.sortedWith(
+                    compareBy<Book> { it.seriesName?.lowercase(Locale.ROOT) ?: "\uffff" }
+                        .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
+                        .thenBy { it.title.lowercase(Locale.ROOT) }
+                )
+                else -> list.sortedByDescending {
+                    maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
+                }
+            }
         }
     }
 
-    val recentReading = books
-        .asSequence()
-        .filter { !it.finished && it.progress > 0f }
-        .sortedByDescending { it.lastOpenedAtEpochMs }
-        .take(5)
-        .toList()
-    val detailBook = detailBookId?.let { id -> books.firstOrNull { it.id == id } }
+    val recentReading = remember(books) {
+        books.asSequence()
+            .filter { !it.finished && it.progress > 0f }
+            .sortedByDescending { it.lastOpenedAtEpochMs }
+            .take(5)
+            .toList()
+    }
+    val booksById = remember(books) { books.associateBy { it.id } }
+    val detailBook = detailBookId?.let(booksById::get)
+    val filterActive = trimmedQuery.isNotBlank() || shelf != "All" ||
+        collection.isNotEmpty() || seriesFilter.isNotEmpty()
+    val shelfGroups = remember(books, filtered, filterActive, viewMode) {
+        if (viewMode == LibraryViewMode.SHELVES) {
+            deriveLibraryShelfGroups(books, filtered, filterActive)
+        } else {
+            emptyList()
+        }
+    }
 
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
@@ -691,7 +709,7 @@ fun LibraryScreen(
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
                         memoryState.events.take(4).forEach { event ->
-                            val eventBook = books.firstOrNull { it.id == event.bookId }
+                            val eventBook = booksById[event.bookId]
                             if (eventBook != null) {
                                 MemoryReturnCard(
                                     event = event,
@@ -716,7 +734,7 @@ fun LibraryScreen(
             ) {
                 val oldestBook = memoryState.deepShelfBookIds
                     .firstOrNull()
-                    ?.let { id -> books.firstOrNull { it.id == id } }
+                    ?.let(booksById::get)
 
                 DeepShelfPortal(
                     count = memoryState.deepShelfBookIds.size,
@@ -813,14 +831,7 @@ fun LibraryScreen(
                 LibraryViewMode.SHELVES -> {
                     item(key = "library:shelves-mode", span = { GridItemSpan(maxLineSpan) }) {
                         LibraryShelvesView(
-                            groups = deriveLibraryShelfGroups(
-                                books = books,
-                                filtered = filtered,
-                                filterActive = trimmedQuery.isNotBlank() ||
-                                    shelf != "All" ||
-                                    collection.isNotEmpty() ||
-                                    seriesFilter.isNotEmpty()
-                            ),
+                            groups = shelfGroups,
                             artifactMemoryByBookId = artifactMemoryByBookId,
                             itemWidthDp = archiveLayout.shelfItemWidthDp,
                             coverWidthDp = archiveLayout.shelfCoverWidthDp,
@@ -2904,68 +2915,68 @@ private fun LibraryShelvesView(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
     ) {
         groups.forEach { group ->
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-            ) {
-                LibrarySectionHeading(
-                    eyebrow = group.eyebrow,
-                    title = group.title,
-                    trailing = "${group.books.size} volumes"
-                )
-                BrassRule(Modifier.fillMaxWidth())
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            key(group.eyebrow, group.title) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
-                    group.books.forEach { book ->
-                        Column(
-                            modifier = Modifier
-                                .width(itemWidthDp.dp)
-                                .clickable(
-                                    role = Role.Button,
-                                    onClickLabel = "Read ${book.title}"
-                                ) { onOpen(book) },
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            BookCover(
-                                title = book.title,
-                                subtitle = book.author,
-                                imagePath = book.coverCachePath,
-                                artifact = bookArtifactState(
-                                    book,
-                                    memory = artifactMemoryByBookId[book.id]
-                                ),
+                    LibrarySectionHeading(
+                        eyebrow = group.eyebrow,
+                        title = group.title,
+                        trailing = "${group.books.size} volumes"
+                    )
+                    BrassRule(Modifier.fillMaxWidth())
+                    LazyRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                    ) {
+                        lazyRowItems(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
+                            Column(
                                 modifier = Modifier
-                                    .width(coverWidthDp.dp)
-                                    .height(coverHeightDp.dp)
-                            )
-                            Text(
-                                book.title,
-                                style = MaterialTheme.typography.titleSmall,
-                                color = VeilPalette.Moon,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                when {
-                                    book.finished -> "Completed"
-                                    book.progress > 0f ->
-                                        "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
-                                    else -> book.format.name
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                maxLines = 1
-                            )
-                            TextButton(
-                                onClick = { onDetails(book) },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                contentPadding = PaddingValues(horizontal = 0.dp)
+                                    .width(itemWidthDp.dp)
+                                    .clickable(
+                                        role = Role.Button,
+                                        onClickLabel = "Read ${book.title}"
+                                    ) { onOpen(book) },
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Text("Archive record")
+                                BookCover(
+                                    title = book.title,
+                                    subtitle = book.author,
+                                    imagePath = book.coverCachePath,
+                                    artifact = bookArtifactState(
+                                        book,
+                                        memory = artifactMemoryByBookId[book.id]
+                                    ),
+                                    modifier = Modifier
+                                        .width(coverWidthDp.dp)
+                                        .height(coverHeightDp.dp)
+                                )
+                                Text(
+                                    book.title,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = VeilPalette.Moon,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                Text(
+                                    when {
+                                        book.finished -> "Completed"
+                                        book.progress > 0f ->
+                                            "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
+                                        else -> book.format.name
+                                    },
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = VeilPalette.Brass.copy(alpha = 0.82f),
+                                    maxLines = 1
+                                )
+                                TextButton(
+                                    onClick = { onDetails(book) },
+                                    modifier = Modifier.heightIn(min = 48.dp),
+                                    contentPadding = PaddingValues(horizontal = 0.dp)
+                                ) {
+                                    Text("Archive record")
+                                }
                             }
                         }
                     }
