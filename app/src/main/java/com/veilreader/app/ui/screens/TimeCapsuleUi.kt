@@ -396,7 +396,7 @@ private fun capsuleEventTitle(event: ReadingHistoryEvent): String = when (event.
     ReadingHistoryEventKind.ARCHIVED -> stringResource(R.string.capsule_event_archived)
     ReadingHistoryEventKind.READING_SESSION -> stringResource(R.string.capsule_event_session)
     ReadingHistoryEventKind.PASSAGE_PRESERVED -> stringResource(
-        if (event.title == "Annotated passage preserved") R.string.capsule_event_annotated
+        if (event.annotated) R.string.capsule_event_annotated
         else R.string.capsule_event_passage
     )
     ReadingHistoryEventKind.LOCATION_MARKED -> stringResource(R.string.capsule_event_location)
