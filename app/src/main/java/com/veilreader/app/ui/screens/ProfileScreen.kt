@@ -40,30 +40,20 @@ import java.util.Date
 
 private data class VeiledDiscovery(
     val id: String,
-    val symbol: String,
-    val revealed: (ReaderProfile, Int) -> Boolean
+    val symbol: String
 )
 
 private val veiledDiscoveries = listOf(
-    VeiledDiscovery("patient_flame", "◈") { profile, _ ->
-        profile.streakDays >= 7 && profile.minutesRead >= 600
-    },
-    VeiledDiscovery("marginalia_gate", "✧") { profile, highlights ->
-        highlights >= 10 && profile.pagesRead >= 1_000
-    },
-    VeiledDiscovery("deep_shelf", "▥") { profile, _ ->
-        profile.booksFinished >= 10 && profile.rankIndex >= 1
-    },
-    VeiledDiscovery("long_watch", "◐") { profile, _ ->
-        profile.minutesRead >= 3_000
-    },
-    VeiledDiscovery("veil_thins", "⌁") { profile, _ ->
-        profile.earnedSigils.size >= 4
-    },
-    VeiledDiscovery("unnamed_chamber", "⬡") { profile, _ ->
-        profile.rankIndex >= 3 && profile.earnedSigils.size >= 5
-    }
+    VeiledDiscovery("patient_flame", "◈"),
+    VeiledDiscovery("marginalia_gate", "✧"),
+    VeiledDiscovery("deep_shelf", "▥"),
+    VeiledDiscovery("long_watch", "◐"),
+    VeiledDiscovery("veil_thins", "⌁"),
+    VeiledDiscovery("unnamed_chamber", "⬡")
 )
+
+private fun VeiledDiscovery.isRevealed(profile: ReaderProfile): Boolean =
+    id in profile.earnedDiscoveries
 
 @Composable
 fun ProfileScreen(
@@ -82,7 +72,7 @@ fun ProfileScreen(
     val p = profile
     val pathName = localizedPathName(p.path)
     val rankName = localizedRankName(p.path.id, p.rankIndex, p.rankName)
-    val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
+    val revealedDiscoveries = veiledDiscoveries.count { it.isRevealed(p) }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
             books = books,
@@ -187,7 +177,7 @@ fun ProfileScreen(
             listOf(
                 "first_hour" to (p.minutesRead to 60),
                 "passage_keeper" to (highlightCount to 10),
-                "seven_days" to (p.streakDays to 7),
+                "seven_days" to (p.longestStreakDays to 7),
                 "ten_tomes" to (p.booksFinished to 10),
                 "first_threshold" to (p.rankIndex to 1)
             ).forEachIndexed { index, (id, progress) ->
@@ -231,7 +221,7 @@ fun ProfileScreen(
                 DiscoveryCard(
                     index = index,
                     discovery = discovery,
-                    revealed = discovery.revealed(p, highlightCount)
+                    revealed = discovery.isRevealed(p)
                 )
             }
         }
