@@ -381,4 +381,89 @@
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
+
+    <string name="archive_private_local_offline">PRIVATE · LOCAL · OFFLINE</string>
+    <string name="archive_fragments_worth_keeping">Fragments worth keeping</string>
+    <string name="archive_search_placeholder">Search the archive…</string>
+    <string name="archive_tab_notes">Notes</string>
+    <string name="archive_tab_passages">Passages</string>
+    <string name="archive_tab_marks">Marks</string>
+    <string name="archive_tab_echoes">Echoes</string>
+    <string name="archive_tab_capsules">Capsules</string>
+    <string name="archive_no_notes_title">No notes yet</string>
+    <string name="archive_no_matching_notes_title">No matching notes</string>
+    <string name="archive_no_notes_body">Add a note to any highlighted passage and it will appear here.</string>
+    <string name="archive_search_try_again">Try a different word, title, or author.</string>
+    <string name="archive_no_echoes_title">No echoes yet</string>
+    <string name="archive_no_matching_echoes_title">No matching echoes</string>
+    <string name="archive_no_echoes_body">Preserved passages quietly return after they have lived in the archive for a while.</string>
+    <string name="archive_no_capsules_title">No sealed capsules yet</string>
+    <string name="archive_no_matching_capsules_title">No matching capsules</string>
+    <string name="archive_no_capsules_body">When a volume is completed, Veil can preserve its durable reading history here without inventing missing dates.</string>
+    <string name="archive_capsule_search_try_again">Try a different title, author, or seal code.</string>
+    <string name="archive_manuscript_note">MANUSCRIPT NOTE</string>
+    <string name="archive_margin_placeholder">Write in the margin…</string>
+    <string name="archive_stat_notes">NOTES</string>
+    <string name="archive_stat_passages">PASSAGES</string>
+    <string name="archive_stat_marks">MARKS</string>
+    <string name="archive_stat_echoes">ECHOES</string>
+    <string name="archive_stat_sealed">SEALED</string>
+    <string name="archive_folio">FOLIO %1$s</string>
+    <string name="archive_record_echo">ECHO</string>
+    <string name="archive_record_annotated">ANNOTATED</string>
+    <string name="archive_record_passage">PASSAGE</string>
+    <string name="archive_annotation">ANNOTATION</string>
+    <string name="archive_return_to_passage">Return to passage</string>
+    <string name="archive_annotate">Annotate</string>
+    <string name="archive_edit_annotation">Edit annotation</string>
+    <string name="archive_record_bookmark">BOOKMARK</string>
+    <string name="archive_return_here">Return here</string>
+    <string name="archive_quiet">THE ARCHIVE IS QUIET</string>
+    <string name="archive_remove_record">REMOVE RECORD</string>
+    <string name="archive_mark_date_unknown">MARK DATE UNKNOWN</string>
+    <string name="archive_marked_today">MARKED TODAY</string>
+    <string name="archive_marked_yesterday">MARKED YESTERDAY</string>
+    <string name="archive_last_viewed_today">LAST VIEWED TODAY</string>
+    <string name="archive_last_viewed_yesterday">LAST VIEWED YESTERDAY</string>
+    <string name="archive_volume_activity_continued">VOLUME ACTIVITY CONTINUED AFTER THIS MARK</string>
+    <plurals name="archive_marked_days_ago">
+        <item quantity="one">MARKED %1$d DAY AGO</item>
+        <item quantity="other">MARKED %1$d DAYS AGO</item>
+    </plurals>
+    <plurals name="archive_marked_months_ago">
+        <item quantity="one">MARKED %1$d MONTH AGO</item>
+        <item quantity="other">MARKED %1$d MONTHS AGO</item>
+    </plurals>
+    <plurals name="archive_marked_years_ago">
+        <item quantity="one">MARKED %1$d YEAR AGO</item>
+        <item quantity="other">MARKED %1$d YEARS AGO</item>
+    </plurals>
+    <plurals name="archive_echo_days_ago">
+        <item quantity="one">AN ECHO FROM %1$d DAY AGO</item>
+        <item quantity="other">AN ECHO FROM %1$d DAYS AGO</item>
+    </plurals>
+    <plurals name="archive_echo_months_ago">
+        <item quantity="one">AN ECHO FROM %1$d MONTH AGO</item>
+        <item quantity="other">AN ECHO FROM %1$d MONTHS AGO</item>
+    </plurals>
+    <plurals name="archive_echo_years_ago">
+        <item quantity="one">AN ECHO FROM %1$d YEAR AGO</item>
+        <item quantity="other">AN ECHO FROM %1$d YEARS AGO</item>
+    </plurals>
+    <plurals name="archive_last_viewed_days_ago">
+        <item quantity="one">LAST VIEWED %1$d DAY AGO</item>
+        <item quantity="other">LAST VIEWED %1$d DAYS AGO</item>
+    </plurals>
+    <plurals name="archive_last_viewed_months_ago">
+        <item quantity="one">LAST VIEWED %1$d MONTH AGO</item>
+        <item quantity="other">LAST VIEWED %1$d MONTHS AGO</item>
+    </plurals>
+    <plurals name="archive_last_viewed_years_ago">
+        <item quantity="one">LAST VIEWED %1$d YEAR AGO</item>
+        <item quantity="other">LAST VIEWED %1$d YEARS AGO</item>
+    </plurals>
+    <plurals name="archive_revisited_times">
+        <item quantity="one">REVISITED %1$d TIME</item>
+        <item quantity="other">REVISITED %1$d TIMES</item>
+    </plurals>
 </resources>
