@@ -312,10 +312,22 @@ internal class SlideNavigationInputListener(
     }
 
     private fun resolveDragTurn(event: DragEvent): TurnSpec? {
-        val x = abs(event.offset.x)
-        val y = abs(event.offset.y)
-        if (x < DRAG_SLOP_PX || x < y * HORIZONTAL_BIAS) return null
-        val side = if (event.offset.x < 0f) PaperCurlSide.RIGHT else PaperCurlSide.LEFT
+        val view = navigator.publicationView
+        if (
+            !hasDeliberateSlideIntent(
+                offsetX = event.offset.x,
+                offsetY = event.offset.y,
+                width = view.width.toFloat(),
+                density = view.resources.displayMetrics.density
+            )
+        ) {
+            return null
+        }
+        val side = if (event.offset.x < 0f) {
+            PaperCurlSide.RIGHT
+        } else {
+            PaperCurlSide.LEFT
+        }
         return TurnSpec(
             direction = paperTurnDirectionFor(
                 side,
@@ -437,9 +449,21 @@ internal class SlideNavigationInputListener(
 
     private companion object {
         const val EDGE_FRACTION = 0.24f
-        const val HORIZONTAL_BIAS = 1.05f
-        const val DRAG_SLOP_PX = 6f
     }
+}
+
+internal fun hasDeliberateSlideIntent(
+    offsetX: Float,
+    offsetY: Float,
+    width: Float,
+    density: Float
+): Boolean {
+    if (width <= 0f) return false
+    val x = abs(offsetX)
+    val y = abs(offsetY)
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val intentDistance = max(10f * safeDensity, width * 0.012f)
+    return x >= intentDistance && x >= y * 1.15f
 }
 
 internal fun shouldUseVeilSlideNavigation(
