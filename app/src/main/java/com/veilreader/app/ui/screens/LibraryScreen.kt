@@ -249,7 +249,7 @@ fun LibraryScreen(
         author = book.author
         collectionNames = book.allCollections.joinToString(", ")
         seriesName = book.seriesName.orEmpty()
-        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
+        seriesIndex = book.seriesIndex?.let(::formatSeriesIndexInput).orEmpty()
         language = book.language.orEmpty()
     }
 
@@ -2669,6 +2669,7 @@ private fun BookLibraryRow(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val formatNumber = rememberVeilNumberFormatter()
     val artifact = bookArtifactState(book, memory = artifactMemory)
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
     val favoriteLabel = stringResource(
@@ -2738,7 +2739,7 @@ private fun BookLibraryRow(
                         book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                             append(" · ").append(series)
                             book.seriesIndex?.let {
-                                append(" #").append(formatSeriesIndex(it))
+                                append(" #").append(formatNumber(it))
                             }
                         }
                     },
@@ -3249,6 +3250,9 @@ private fun ShelfIcon(modifier: Modifier, tint: Color) {
         }
     }
 }
+
+private fun formatSeriesIndexInput(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
 
 private fun parseCollectionNames(value: String): List<String> = value
     .split(',')
