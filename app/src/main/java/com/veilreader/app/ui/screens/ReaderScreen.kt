@@ -698,8 +698,10 @@ fun ReaderScreen(
                 val event = navigatorLocatorEvent(
                     isInitialEmission = initialLocatorPending,
                     isContinuousScroll = continuousScroll,
-                    isPaperMode = opened.format == BookFormat.EPUB &&
-                        latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
+                    isPaperMode =
+                        opened.format == BookFormat.EPUB &&
+                            latestAppearance.value.navigationMode ==
+                                ReaderNavigationMode.PAPER_CURL
                 )
                 initialLocatorPending = false
                 readerViewModel.onLocatorUpdate(
