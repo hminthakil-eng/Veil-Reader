@@ -594,4 +594,11 @@
     <string name="castle_awakens_rank">در رتبهٔ %1$d بیدار می‌شود</string>
     <string name="castle_enter">ورود</string>
     <string name="castle_sealed">مهرشده</string>
+
+    <string name="castle_memory_empty">بنیاد در انتظار نخستین کتاب است.</string>
+    <string name="castle_memory_volumes_only">کتاب‌ها در دژ ایستاده‌اند، اما هنوز ردهای کمی وارد سنگ شده است.</string>
+    <string name="castle_memory_few_rooms">چند تالار به یاد می‌آورند؛ بقیهٔ دژ هنوز گوش می‌دهد.</string>
+    <string name="castle_memory_retaining_shape">دژ کم‌کم شکل مطالعهٔ شما را در خود نگه می‌دارد.</string>
+    <string name="castle_memory_warm_archive">آرشیو پشت دیوارها گرم شده و تالارهای کامل اکنون حافظه دارند.</string>
+    <string name="castle_memory_dense">دژ از حافظه سنگین شده است؛ درون آن چیز کمی کاملاً خاموش مانده.</string>
 </resources>
