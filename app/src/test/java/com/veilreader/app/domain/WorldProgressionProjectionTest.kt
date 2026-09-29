@@ -42,6 +42,7 @@ class WorldProgressionProjectionTest {
         )
 
         assertEquals(WorldAwakeningStage.DORMANT, projection.stage)
+        assertEquals(WorldInscriptionKind.DORMANT, projection.inscriptionKind)
         assertEquals(0f, projection.rankProgress, 0.0001f)
         assertEquals(0f, projection.ritualCharge, 0.0001f)
         assertEquals(0, projection.streakEmbers)
@@ -133,4 +134,22 @@ class WorldProgressionProjectionTest {
         }
         assertEquals(7, projection.streakEmbers)
     }
+
+    @Test
+    fun `world inscription reasons stay deterministic and presentation-safe`() {
+        val returnWorld = deriveWorldProgressionProjection(
+            profile = profile(),
+            quests = emptyList(),
+            memory = CastleMemoryState.EMPTY.copy(returnAwakening = 0.6f)
+        )
+        val ritualWorld = deriveWorldProgressionProjection(
+            profile = profile(ritualProgress = 4, ritualTarget = 5),
+            quests = emptyList(),
+            memory = CastleMemoryState.EMPTY
+        )
+
+        assertEquals(WorldInscriptionKind.RETURN_AWAKENING, returnWorld.inscriptionKind)
+        assertEquals(WorldInscriptionKind.RITUAL_CHARGED, ritualWorld.inscriptionKind)
+    }
+
 }
