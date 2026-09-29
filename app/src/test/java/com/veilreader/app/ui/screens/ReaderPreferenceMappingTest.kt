@@ -174,4 +174,15 @@ class ReaderPreferenceMappingTest {
         assertEquals(null, none.imageFilter)
     }
 
+    @Test
+    fun `scroll mode dominates retained page-turn style in effective navigation mode`() {
+        PageTurnStyle.entries.forEach { retainedStyle ->
+            val appearance = ReaderAppearance(
+                scroll = true,
+                pageTurnStyle = retainedStyle
+            )
+            assertEquals(ReaderNavigationMode.SCROLL, appearance.navigationMode)
+        }
+    }
+
 }
