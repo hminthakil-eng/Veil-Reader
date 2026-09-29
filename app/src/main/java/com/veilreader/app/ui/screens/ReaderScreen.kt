@@ -720,7 +720,19 @@ fun ReaderScreen(
                         }
                         false
                     }
-                    else -> true
+                    else -> {
+                        val origin = latestNavigator.value
+                            ?.currentLocator
+                            ?.value
+                            ?.toVeilPersistedJson(opened.format)
+                        activity.runOnUiThread {
+                            previousLocationJson = origin
+                            controlsVisible = false
+                        }
+                        readerViewModel.onUserInteraction()
+                        game.rebasePagePacing()
+                        true
+                    }
                 }
 
             override fun onExternalLinkActivated(url: AbsoluteUrl) {
@@ -1074,15 +1086,21 @@ fun ReaderScreen(
         )
     }
 
-    LaunchedEffect(navigator, opened.book.id, bookHighlights) {
+    LaunchedEffect(
+        navigator,
+        opened.book.id,
+        bookHighlights,
+        effectiveReaderAppearance.theme
+    ) {
         val decorable = navigator as? DecorableNavigator ?: return@LaunchedEffect
+        val highlightTint = readerHighlightTint(effectiveReaderAppearance.theme)
         val decorations = bookHighlights.mapNotNull { item ->
             val locator = runCatching { Locator.fromJSON(JSONObject(item.locatorJson)) }.getOrNull()
                 ?: return@mapNotNull null
             Decoration(
                 id = item.id,
                 locator = locator,
-                style = Decoration.Style.Highlight(tint = AndroidColor.rgb(232, 201, 118))
+                style = Decoration.Style.Highlight(tint = highlightTint)
             )
         }
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
@@ -2219,7 +2237,7 @@ private fun createReaderFactory(
                 disablePageTurnsWhileScrolling = false
                 this.selectionActionModeCallback = selectionActionModeCallback
                 decorationTemplates = HtmlDecorationTemplates.defaultTemplates(
-                    alpha = 1.0,
+                    alpha = READER_HIGHLIGHT_ALPHA,
                     experimentalPositioning = true
                 )
             }
@@ -3700,6 +3718,14 @@ private fun ReaderPreferenceToggle.toNullableBoolean(): Boolean? =
 internal fun readiumFontSizeRatio(scale: Double): Double =
     (if (scale.isFinite()) scale else 1.0).coerceIn(0.75, 1.8)
 
+internal fun readerHighlightTint(theme: ReaderTheme): Int =
+    when (theme) {
+        ReaderTheme.PAPER -> AndroidColor.rgb(181, 138, 52)
+        ReaderTheme.SEPIA -> AndroidColor.rgb(168, 115, 46)
+        ReaderTheme.DUSK -> AndroidColor.rgb(199, 162, 83)
+        ReaderTheme.OLED -> AndroidColor.rgb(209, 177, 91)
+    }
+
 internal fun readiumThemeColors(theme: ReaderTheme): Pair<Int, Int> = when (theme) {
     ReaderTheme.PAPER -> 0xFFE9DEC5.toInt() to 0xFF2A251F.toInt()
     ReaderTheme.SEPIA -> 0xFFE2D0AA.toInt() to 0xFF362E24.toInt()
@@ -3716,3 +3742,4 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
+private const val READER_HIGHLIGHT_ALPHA = 0.34
