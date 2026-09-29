@@ -381,4 +381,17 @@
     <string name="notice_title_sealed">That Castle title is still sealed.</string>
     <string name="notice_loading_restore">Restoring the archive</string>
     <string name="notice_loading_open">Opening the archive</string>
+    <string name="library_volume_count_one">%1$02d VOLUME</string>
+    <string name="library_volume_count_many">%1$02d VOLUMES</string>
+    <string name="library_collection">Collection</string>
+    <string name="library_all_collections">All collections</string>
+    <string name="library_sort_description">Sort books: %1$s</string>
+    <string name="library_sort_recent">Recent</string>
+    <string name="library_sort_archive_depth">Archive Depth</string>
+    <string name="library_sort_title">Title</string>
+    <string name="library_sort_author">Author</string>
+    <string name="library_sort_series">Series</string>
+    <string name="library_sort_progress">Progress</string>
+    <string name="library_series_filter">Series · %1$s ×</string>
+    <string name="library_reset_filters">Reset</string>
 </resources>
