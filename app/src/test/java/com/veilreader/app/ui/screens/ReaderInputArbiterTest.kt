@@ -390,6 +390,14 @@ class ReaderInputArbiterTest {
         )
         assertTrue(narrowSurface <= 480f * 0.28f)
         assertTrue(narrowSurface * 2f < 480f)
+
+        val wideTablet = pageTurnTapZonePx(
+            width = 2_560f,
+            density = 2f,
+            preferredFraction = 0.22f
+        )
+        assertTrue(wideTablet <= 112f * 2f)
+        assertTrue(wideTablet * 2f < 2_560f * 0.20f)
     }
 
     @Test
