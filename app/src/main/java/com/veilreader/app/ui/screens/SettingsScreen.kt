@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
@@ -95,6 +96,7 @@ fun SettingsScreen(
 
     val appearance = appearanceDraft
     val formatPercent = rememberVeilPercentFormatter()
+    val formatNumber = rememberVeilNumberFormatter()
     val context = LocalContext.current
     val appVersion = remember(context) {
         runCatching {
@@ -235,7 +237,7 @@ fun SettingsScreen(
                 label = stringResource(R.string.settings_line_height),
                 value = appearance.lineHeight.toFloat(),
                 valueRange = 1.1f..2.0f,
-                displayValue = { String.format(Locale.US, "%.2f×", it) },
+                displayValue = { "${formatNumber(it)}×" },
                 onCommit = { value ->
                     commitReaderAppearance { current -> current.withLineHeight(value.toDouble()) }
                 }
@@ -244,7 +246,7 @@ fun SettingsScreen(
                 label = stringResource(R.string.settings_page_margins),
                 value = appearance.pageMargins.toFloat(),
                 valueRange = 0.5f..2.0f,
-                displayValue = { String.format(Locale.US, "%.2f×", it) },
+                displayValue = { "${formatNumber(it)}×" },
                 onCommit = { value ->
                     commitReaderAppearance { current -> current.withPageMargins(value.toDouble()) }
                 }
@@ -660,6 +662,12 @@ private fun ReaderOptionalSlider(
         )
     }
 
+    val valueDescription = if (value == null) {
+        stringResource(R.string.settings_book_default)
+    } else {
+        displayValue(draft)
+    }
+
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -669,8 +677,7 @@ private fun ReaderOptionalSlider(
             Text(label, style = MaterialTheme.typography.labelLarge)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (value == null) stringResource(R.string.settings_book_default)
-                    else displayValue(draft),
+                    valueDescription,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelMedium
                 )
@@ -691,7 +698,10 @@ private fun ReaderOptionalSlider(
             onValueChange = { draft = it },
             onValueChangeFinished = { onCommit(draft.toDouble()) },
             valueRange = valueRange,
-            modifier = Modifier.semantics { contentDescription = label }
+            modifier = Modifier.semantics {
+                contentDescription = label
+                stateDescription = valueDescription
+            }
         )
     }
 }
@@ -705,6 +715,7 @@ private fun ReaderSlider(
     onCommit: (Float) -> Unit
 ) {
     var draft by remember(value) { mutableFloatStateOf(value) }
+    val valueDescription = displayValue(draft)
 
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Row(
@@ -714,7 +725,7 @@ private fun ReaderSlider(
         ) {
             Text(label, style = MaterialTheme.typography.labelLarge)
             Text(
-                displayValue(draft),
+                valueDescription,
                 color = VeilPalette.Brass,
                 style = MaterialTheme.typography.labelLarge
             )
@@ -724,7 +735,10 @@ private fun ReaderSlider(
             onValueChange = { draft = it },
             onValueChangeFinished = { onCommit(draft) },
             valueRange = valueRange,
-            modifier = Modifier.semantics { contentDescription = label }
+            modifier = Modifier.semantics {
+                contentDescription = label
+                stateDescription = valueDescription
+            }
         )
     }
 }
