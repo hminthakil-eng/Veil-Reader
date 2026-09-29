@@ -508,21 +508,27 @@ fun ReaderScreen(
             !showAppearance &&
             !showPdfZoom
     ) {
-        when {
-            closeInFlight -> Unit
-            paperCurlState.active -> {
+        when (
+            readerBackDisposition(
+                closeInFlight = closeInFlight,
+                paperPreviewActive = paperCurlState.active,
+                slidePreviewActive = slidePageState.active
+            )
+        ) {
+            ReaderBackDisposition.SWALLOW -> Unit
+            ReaderBackDisposition.CANCEL_PAPER -> {
                 val restored = paperInputListener?.cancelPendingTurn() == true
                 if (!restored && paperCurlState.active) {
                     paperCurlState.clear()
                 }
             }
-            slidePageState.active -> {
+            ReaderBackDisposition.CANCEL_SLIDE -> {
                 val restored = slideInputListener?.cancelPendingTurn() == true
                 if (!restored && slidePageState.active) {
                     slidePageState.clear()
                 }
             }
-            else -> closeReader()
+            ReaderBackDisposition.CLOSE -> closeReader()
         }
     }
 
@@ -1395,6 +1401,24 @@ fun ReaderScreen(
             )
         }
     }
+}
+
+internal enum class ReaderBackDisposition {
+    SWALLOW,
+    CANCEL_PAPER,
+    CANCEL_SLIDE,
+    CLOSE
+}
+
+internal fun readerBackDisposition(
+    closeInFlight: Boolean,
+    paperPreviewActive: Boolean,
+    slidePreviewActive: Boolean
+): ReaderBackDisposition = when {
+    closeInFlight -> ReaderBackDisposition.SWALLOW
+    paperPreviewActive -> ReaderBackDisposition.CANCEL_PAPER
+    slidePreviewActive -> ReaderBackDisposition.CANCEL_SLIDE
+    else -> ReaderBackDisposition.CLOSE
 }
 
 internal fun shouldAutoHideReaderChrome(
