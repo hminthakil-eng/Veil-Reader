@@ -67,6 +67,9 @@ import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.domain.deriveLibraryAtmosphereState
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.deriveLibraryWings
+import com.veilreader.app.ui.books.BookArtifactState
+import com.veilreader.app.ui.books.BookPatina
+import com.veilreader.app.ui.books.BookReadingState
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.adaptiveClassFor
@@ -956,7 +959,7 @@ private fun BookDetailSheet(
     onFavorite: () -> Unit,
     onEditMetadata: () -> Unit
 ) {
-    val progress = book.progress.coerceIn(0f, 1f)
+    val progress = bookArtifactState(book, memory = artifactMemory).progress
     val status = when {
         book.finished -> stringResource(R.string.book_detail_finished)
         progress > 0f -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
@@ -1493,7 +1496,7 @@ private fun BookDetailIdentity(
         }
 
         Text(
-            bookArtifactRecordLabel(
+            localizedBookArtifactRecordLabel(
                 bookArtifactState(book, memory = artifactMemory)
             ),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp),
@@ -1530,6 +1533,26 @@ private fun BookDetailIdentity(
             }
         }
     }
+}
+
+@Composable
+private fun localizedBookArtifactRecordLabel(state: BookArtifactState): String {
+    val presence = when (state.readingState) {
+        BookReadingState.UNOPENED -> stringResource(R.string.book_detail_record_pristine)
+        BookReadingState.ACTIVE -> if (state.progress > 0f) {
+            stringResource(R.string.book_detail_record_active)
+        } else {
+            stringResource(R.string.book_detail_record_opened)
+        }
+        BookReadingState.FINISHED -> stringResource(R.string.book_detail_record_completed)
+    }
+    val age = when (state.patina) {
+        BookPatina.FRESH -> stringResource(R.string.book_detail_record_fresh)
+        BookPatina.SETTLED -> stringResource(R.string.book_detail_record_settled)
+        BookPatina.AGED -> stringResource(R.string.book_detail_record_aged)
+        BookPatina.ARCHIVAL -> stringResource(R.string.book_detail_record_archival)
+    }
+    return "$presence · $age"
 }
 
 @Composable
