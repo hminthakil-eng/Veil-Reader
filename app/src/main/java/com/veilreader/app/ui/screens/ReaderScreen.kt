@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -59,6 +60,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.veilreader.app.R
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
@@ -1606,6 +1608,7 @@ private fun EpubAppearancePanel(
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
+    val publisherStylingA11y = stringResource(R.string.reader_publisher_styling)
 
     LaunchedEffect(appearance) {
         when {
@@ -1630,18 +1633,18 @@ private fun EpubAppearancePanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                "READING INSTRUMENTS",
+                stringResource(R.string.reader_instruments),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
                 color = VeilPalette.Brass
             )
             BrassRule(Modifier.width(76.dp))
             Text(
-                "Appearance",
+                stringResource(R.string.reader_appearance),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                "Changes apply live to the open publication.",
+                stringResource(R.string.reader_appearance_live),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -1656,7 +1659,7 @@ private fun EpubAppearancePanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            listOf(false to "QUICK", true to "ADVANCED").forEach { (advanced, label) ->
+            listOf(false to stringResource(R.string.reader_quick), true to stringResource(R.string.reader_advanced)).forEach { (advanced, label) ->
                 val selected = showAdvanced == advanced
                 Surface(
                     modifier = Modifier
@@ -1692,14 +1695,14 @@ private fun EpubAppearancePanel(
 
         if (!showAdvanced) {
             Text(
-                "THEME",
+                stringResource(R.string.reader_theme),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
                 color = VeilPalette.Brass
             )
 
             listOf(
-                listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
-                listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "Night")
+                listOf(ReaderTheme.PAPER to stringResource(R.string.reader_theme_paper), ReaderTheme.SEPIA to stringResource(R.string.reader_theme_sepia)),
+                listOf(ReaderTheme.DUSK to stringResource(R.string.reader_theme_dusk), ReaderTheme.OLED to stringResource(R.string.reader_theme_night))
             ).forEach { presets ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1725,7 +1728,7 @@ private fun EpubAppearancePanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "TEXT SIZE",
+                    stringResource(R.string.reader_text_size),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
@@ -1745,7 +1748,7 @@ private fun EpubAppearancePanel(
             BrassRule(Modifier.fillMaxWidth())
 
             Text(
-                "PAGE MOVEMENT",
+                stringResource(R.string.reader_page_movement),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
@@ -1754,13 +1757,13 @@ private fun EpubAppearancePanel(
                 onSelect = { updateDraft(draft.withNavigationMode(it)) }
             )
             Text(
-                readerNavigationModeDescription(draft.navigationMode),
+                readerNavigationModeDescriptionLocalized(draft.navigationMode),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
             Text(
-                "TYPOGRAPHY & LAYOUT",
+                stringResource(R.string.reader_typography_layout),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
@@ -1770,7 +1773,7 @@ private fun EpubAppearancePanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Line spacing",
+                    stringResource(R.string.reader_line_spacing),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -1791,7 +1794,7 @@ private fun EpubAppearancePanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Page margins",
+                    stringResource(R.string.reader_page_margins),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -1815,11 +1818,11 @@ private fun EpubAppearancePanel(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "Publisher styling",
+                        stringResource(R.string.reader_publisher_styling),
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        "Preserve the book's own typography when available.",
+                        stringResource(R.string.reader_publisher_styling_body),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1830,7 +1833,7 @@ private fun EpubAppearancePanel(
                         updateDraft(draft.copy(publisherStyles = it))
                     },
                     modifier = Modifier.semantics {
-                        contentDescription = "Publisher styling"
+                        contentDescription = publisherStylingA11y
                     }
                 )
             }
@@ -1846,7 +1849,7 @@ private fun EpubAppearancePanel(
                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
                 )
             ) {
-                Text("Reset appearance")
+                Text(stringResource(R.string.reader_reset_appearance))
             }
         }
 
@@ -1868,7 +1871,7 @@ private fun EpubAppearancePanel(
                 contentColor = Color(0xFF17120A)
             )
         ) {
-            Text("Back to reading")
+            Text(stringResource(R.string.reader_back_to_reading))
         }
     }
 }
@@ -1903,18 +1906,13 @@ private fun ReaderAppearancePreview(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "LIVE PAGE PREVIEW",
+                    stringResource(R.string.reader_preview_live),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    when (appearance.navigationMode) {
-                        ReaderNavigationMode.PAPER_CURL -> "CURL"
-                        ReaderNavigationMode.SLIDE -> "SLIDE"
-                        ReaderNavigationMode.PAGED -> "PAGED"
-                        ReaderNavigationMode.SCROLL -> "SCROLL"
-                    },
+                    readerNavigationModeLabel(appearance.navigationMode).uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1949,17 +1947,17 @@ private fun ReaderAppearancePreview(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "CHAPTER VII",
+                        stringResource(R.string.reader_preview_chapter),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = ink.copy(alpha = 0.58f)
                     )
                     Text(
-                        "Beyond the Veil",
+                        stringResource(R.string.reader_preview_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = ink
                     )
                     Text(
-                        "The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.",
+                        stringResource(R.string.reader_preview_body),
                         fontSize = sampleSize,
                         lineHeight = sampleLineHeight,
                         color = ink.copy(alpha = 0.92f)
@@ -1970,6 +1968,23 @@ private fun ReaderAppearancePreview(
     }
 }
 
+@Composable
+private fun readerNavigationModeLabel(mode: ReaderNavigationMode): String =
+    when (mode) {
+        ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.reader_mode_curl)
+        ReaderNavigationMode.SLIDE -> stringResource(R.string.reader_mode_slide)
+        ReaderNavigationMode.PAGED -> stringResource(R.string.reader_mode_paged)
+        ReaderNavigationMode.SCROLL -> stringResource(R.string.reader_mode_scroll)
+    }
+
+@Composable
+private fun readerNavigationModeDescriptionLocalized(mode: ReaderNavigationMode): String =
+    when (mode) {
+        ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.reader_mode_curl_description)
+        ReaderNavigationMode.SLIDE -> stringResource(R.string.reader_mode_slide_description)
+        ReaderNavigationMode.PAGED -> stringResource(R.string.reader_mode_paged_description)
+        ReaderNavigationMode.SCROLL -> stringResource(R.string.reader_mode_scroll_description)
+    }
 internal fun readerNavigationModeDescription(mode: ReaderNavigationMode): String =
     when (mode) {
         ReaderNavigationMode.PAPER_CURL ->
@@ -1993,12 +2008,7 @@ internal fun ReaderMotionSelector(
     ) {
         ReaderNavigationMode.entries.forEach { mode ->
             val active = selected == mode
-            val label = when (mode) {
-                ReaderNavigationMode.PAPER_CURL -> "Curl"
-                ReaderNavigationMode.SLIDE -> "Slide"
-                ReaderNavigationMode.PAGED -> "Paged"
-                ReaderNavigationMode.SCROLL -> "Scroll"
-            }
+            val label = readerNavigationModeLabel(mode)
             Surface(
                 modifier = Modifier
                     .weight(1f)
