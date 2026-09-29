@@ -57,9 +57,11 @@ internal fun shouldUseDirectionalTapNavigation(
  */
 internal fun shouldAnimateDirectionalNavigation(
     format: BookFormat,
+    scroll: Boolean,
     pageTurnStyle: PageTurnStyle
 ): Boolean =
     format == BookFormat.EPUB &&
+        !scroll &&
         pageTurnStyle == PageTurnStyle.SLIDE
 
 /**
