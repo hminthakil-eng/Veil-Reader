@@ -220,6 +220,10 @@ fun ReaderScreen(
     val reducedMotion = LocalVeilReducedMotion.current
 
     val latestReducedMotion = rememberUpdatedState(reducedMotion)
+    val selectionHighlightLabel =
+        stringResource(R.string.reader_selection_highlight)
+    val selectionNoteLabel =
+        stringResource(R.string.reader_selection_note)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
     val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
@@ -453,10 +457,22 @@ fun ReaderScreen(
         label = "reader-snackbar-offset"
     )
 
-    val selectionActionModeCallback = remember(opened.book.id, library, readerViewModel, scope, highlightedMessage, alreadyHighlightedMessage, passageSaveFailedMessage) {
+    val selectionActionModeCallback = remember(
+        opened.book.id,
+        library,
+        readerViewModel,
+        scope,
+        selectionHighlightLabel,
+        selectionNoteLabel,
+        highlightedMessage,
+        alreadyHighlightedMessage,
+        passageSaveFailedMessage
+    ) {
         ReaderSelectionActionModeCallback(
             coroutineScope = scope,
             navigatorProvider = { navigator as? SelectableNavigator },
+            highlightLabel = selectionHighlightLabel,
+            noteLabel = selectionNoteLabel,
             onModeChanged = { active ->
                 selectionModeActive = active
                 if (active) controlsVisible = true
