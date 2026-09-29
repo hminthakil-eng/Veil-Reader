@@ -6,6 +6,19 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class LibraryCompositionTest {
+    private val labels = LibraryShelfLabels(
+        filteredArchive = "Filtered archive",
+        matchingVolumes = "Matching volumes",
+        journey = "Journey",
+        currentlyReading = "Currently reading",
+        collection = "Collection",
+        series = "Series",
+        author = "Author",
+        record = "Record",
+        completedVolumes = "Completed volumes",
+        unopened = "Unopened",
+        waitingOnShelf = "Waiting on the shelf"
+    )
     @Test
     fun `legacy grid and list preferences migrate to canonical archive modes`() {
         assertEquals(LibraryViewMode.GALLERY, libraryViewModeFromStored("GRID"))
@@ -24,7 +37,8 @@ class LibraryCompositionTest {
         val groups = deriveLibraryShelfGroups(
             books = all,
             filtered = listOf(all.first()),
-            filterActive = true
+            filterActive = true,
+            labels = labels
         )
 
         assertEquals(1, groups.size)
@@ -68,7 +82,8 @@ class LibraryCompositionTest {
         val groups = deriveLibraryShelfGroups(
             books = books,
             filtered = books,
-            filterActive = false
+            filterActive = false,
+            labels = labels
         )
 
         assertTrue(groups.any { it.eyebrow == "Journey" })
