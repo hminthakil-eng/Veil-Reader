@@ -1,6 +1,9 @@
 package com.veilreader.app.ui.screens
 
+import android.content.Intent
 import android.graphics.Color as AndroidColor
+import android.net.Uri
+import android.text.Html
 import android.os.SystemClock
 import android.view.ActionMode
 import android.view.accessibility.AccessibilityManager
@@ -111,6 +114,7 @@ import org.readium.adapter.pdfium.navigator.PdfiumNavigatorFragment
 import org.readium.adapter.pdfium.navigator.PdfiumPreferences
 import org.readium.r2.navigator.DecorableNavigator
 import org.readium.r2.navigator.Decoration
+import org.readium.r2.navigator.HyperlinkNavigator
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.SelectableNavigator
@@ -131,7 +135,9 @@ import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.navigator.preferences.TextAlign as ReadiumTextAlign
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
+import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.AbsoluteUrl
 
 @OptIn(ExperimentalReadiumApi::class, ExperimentalMaterial3Api::class, FlowPreview::class)
 @Composable
@@ -235,6 +241,8 @@ fun ReaderScreen(
     val noteSaveFailedMessage = stringResource(R.string.reader_note_save_failed)
     val savedLocationFailedMessage = stringResource(R.string.reader_saved_location_failed)
     val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
+    val externalLinkFailedMessage =
+        stringResource(R.string.reader_external_link_failed)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var paperInputListener by remember(opened.book.id) {
         mutableStateOf<PaperCurlInputListener?>(null)
@@ -439,6 +447,9 @@ fun ReaderScreen(
         initialValue = library.passageVisits.value.filter { it.bookId == opened.book.id }
     )
     var readerMessage by remember { mutableStateOf<String?>(null) }
+    var footnote by remember(opened.book.id) {
+        mutableStateOf<ReaderFootnote?>(null)
+    }
     var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
     var pendingNoteHighlightId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
     var pendingNoteText by rememberSaveable(opened.book.id) { mutableStateOf("") }
@@ -653,8 +664,68 @@ fun ReaderScreen(
         }
     }
 
-    val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
-        createReaderFactory(opened, readerAppearance, selectionActionModeCallback)
+    val epubNavigatorListener = remember(
+        opened.book.id,
+        activity,
+        externalLinkFailedMessage
+    ) {
+        object : EpubNavigatorFragment.Listener {
+            override fun shouldFollowInternalLink(
+                link: Link,
+                context: HyperlinkNavigator.LinkContext?
+            ): Boolean =
+                when (context) {
+                    is HyperlinkNavigator.FootnoteContext -> {
+                        val text = if (link.mediaType?.isHtml == true) {
+                            Html.fromHtml(
+                                context.noteContent,
+                                Html.FROM_HTML_MODE_COMPACT
+                            ).toString()
+                        } else {
+                            context.noteContent
+                        }.trim()
+
+                        activity.runOnUiThread {
+                            footnote = ReaderFootnote(
+                                title = link.title?.trim()
+                                    ?.takeIf { it.isNotEmpty() },
+                                text = text
+                            )
+                        }
+                        false
+                    }
+                    else -> true
+                }
+
+            override fun onExternalLinkActivated(url: AbsoluteUrl) {
+                if (!url.isHttp) return
+                val intent = Intent(
+                    Intent.ACTION_VIEW,
+                    Uri.parse(url.toString())
+                ).addCategory(Intent.CATEGORY_BROWSABLE)
+                val launched = runCatching {
+                    activity.startActivity(intent)
+                }.isSuccess
+                if (!launched) {
+                    activity.runOnUiThread {
+                        readerMessage = externalLinkFailedMessage
+                    }
+                }
+            }
+        }
+    }
+
+    val fragmentFactory = remember(
+        opened.book.id,
+        selectionActionModeCallback,
+        epubNavigatorListener
+    ) {
+        createReaderFactory(
+            opened = opened,
+            appearance = readerAppearance,
+            selectionActionModeCallback = selectionActionModeCallback,
+            epubNavigatorListener = epubNavigatorListener
+        )
     }
     val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
         { ready ->
@@ -911,7 +982,8 @@ fun ReaderScreen(
                             showNotebook ||
                                 showAppearance ||
                                 showPdfZoom ||
-                                pendingNoteHighlightId != null,
+                                pendingNoteHighlightId != null ||
+                                footnote != null,
                         closeInFlight = closeInFlight,
                         controlsVisible = controlsVisible,
                         touchExplorationEnabled = touchExplorationEnabled
@@ -1323,6 +1395,89 @@ fun ReaderScreen(
             returnRitual = returnRitual,
             modifier = Modifier.fillMaxSize()
         )
+    }
+
+    footnote?.let { currentFootnote ->
+        Dialog(
+            onDismissRequest = { footnote = null },
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(20.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 620.dp)
+                        .heightIn(max = 680.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.42f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
+                ) {
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.20f
+                        )
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState())
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.reader_footnote_eyebrow),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                currentFootnote.title
+                                    ?: stringResource(R.string.reader_footnote_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+                            Text(
+                                currentFootnote.text,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = VeilPalette.Moon.copy(alpha = 0.90f)
+                            )
+                            Button(
+                                onClick = { footnote = null },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .heightIn(min = 48.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = VeilPalette.Brass,
+                                    contentColor = Color(0xFF17120A)
+                                )
+                            ) {
+                                Text(
+                                    stringResource(
+                                        R.string.reader_footnote_close
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     pendingNoteHighlightId?.let { highlightId ->
@@ -1960,11 +2115,13 @@ private fun ReaderPageAtmosphere(
 private fun createReaderFactory(
     opened: OpenedPublication,
     appearance: ReaderAppearance,
-    selectionActionModeCallback: ActionMode.Callback
+    selectionActionModeCallback: ActionMode.Callback,
+    epubNavigatorListener: EpubNavigatorFragment.Listener
 ): FragmentFactory = when (opened.format) {
     BookFormat.EPUB -> EpubNavigatorFactory(opened.publication)
         .createFragmentFactory(
             initialLocator = opened.initialLocator,
+            listener = epubNavigatorListener,
             initialPreferences = appearance.toEpubPreferences(),
             configuration = EpubNavigatorFragment.Configuration {
                 useReadiumCssFontSize = false
@@ -2029,6 +2186,11 @@ private fun ReaderFragmentHost(
         }
     }
 }
+
+private data class ReaderFootnote(
+    val title: String?,
+    val text: String
+)
 
 private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
 
