@@ -47,6 +47,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.ArchiveWing
@@ -1042,22 +1044,38 @@ private fun BookDetailSheet(
         else -> stringResource(R.string.book_detail_open_book)
     }
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = VeilPalette.Ink,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = VeilPalette.Brass.copy(alpha = 0.48f)
-            )
-        }
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = VeilSpacing.xxl),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = VeilPalette.Ink,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .grayfogAtmosphere(
+                        realm = VeilRealm.ARCHIVE,
+                        seed = book.id.hashCode(),
+                        intensity = 1f
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.safeDrawing)
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = VeilSpacing.xxl),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+                ) {
             BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
@@ -1110,11 +1128,36 @@ private fun BookDetailSheet(
                         .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
-                    Text(
-                        stringResource(R.string.book_detail_artifact_chamber, book.format.name),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                        color = VeilPalette.Brass
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(
+                                R.string.book_detail_artifact_chamber,
+                                book.format.name
+                            ),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                letterSpacing = 1.45.sp
+                            ),
+                            color = VeilPalette.Brass,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = VeilPalette.Moon
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.book_detail_close),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.1.sp
+                                )
+                            )
+                        }
+                    }
 
                     if (compact) {
                         Column(
@@ -1424,6 +1467,8 @@ private fun BookDetailSheet(
                             }
                         }
                     }
+                }
+            }
                 }
             }
         }
