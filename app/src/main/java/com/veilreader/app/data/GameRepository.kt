@@ -17,6 +17,9 @@ import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+internal fun completionEvidenceFloor(finishedBooks: Int, sealedCycles: Int): Int =
+    maxOf(finishedBooks, sealedCycles, 0)
+
 /** Persistent, offline-first reading progression.
  *
  * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
@@ -79,6 +82,19 @@ class GameRepository(context: Context) {
 
     fun syncExistingHighlights(count: Int) {
         if (count > prefs.getInt("totalHighlights", 0)) prefs.edit().putInt("totalHighlights", count).apply()
+        publish()
+    }
+
+    /**
+     * Restored/legacy libraries can contain completion history that predates game prefs.
+     * Treat durable library evidence as a floor; never revoke historical completion credit when
+     * a finished volume is later removed from the local shelf.
+     */
+    fun syncExistingBookCompletions(finishedBooks: Int, sealedCycles: Int) {
+        val evidence = completionEvidenceFloor(finishedBooks, sealedCycles)
+        if (evidence > prefs.getInt("booksFinished", 0)) {
+            prefs.edit().putInt("booksFinished", evidence).apply()
+        }
         publish()
     }
 
