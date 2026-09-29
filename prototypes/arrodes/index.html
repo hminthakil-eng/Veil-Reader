@@ -47,11 +47,29 @@
 
           <article id="quoteCard" class="quote-card" aria-live="off">
             <blockquote id="quote"></blockquote>
-            <footer>
-              <span id="book"></span>
-              <span class="dot">·</span>
-              <span id="location"></span>
-            </footer>
+
+            <div class="fragment-provenance" aria-label="Reading provenance">
+              <div class="provenance-primary">
+                <span id="book" class="provenance-book"></span>
+                <span class="dot" aria-hidden="true">·</span>
+                <span id="kind" class="provenance-kind"></span>
+              </div>
+
+              <dl class="provenance-grid">
+                <div>
+                  <dt>Page</dt>
+                  <dd id="page"></dd>
+                </div>
+                <div>
+                  <dt>Place</dt>
+                  <dd id="location"></dd>
+                </div>
+                <div>
+                  <dt>Studied</dt>
+                  <dd id="studiedAt"></dd>
+                </div>
+              </dl>
+            </div>
           </article>
         </div>
       </div>
