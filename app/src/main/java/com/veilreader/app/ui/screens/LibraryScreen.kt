@@ -463,9 +463,9 @@ fun LibraryScreen(
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 LibrarySectionHeading(
-                    eyebrow = "Archive",
-                    title = "Shelves",
-                    trailing = "Tap to filter"
+                    eyebrow = stringResource(R.string.library_shelves_eyebrow),
+                    title = stringResource(R.string.library_shelves_title),
+                    trailing = stringResource(R.string.library_shelves_hint)
                 )
 
                 Row(
@@ -475,29 +475,29 @@ fun LibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     LibraryShelfCard(
-                        title = "Favorites",
-                        subtitle = "Volumes kept close",
+                        title = stringResource(R.string.library_shelf_favorites),
+                        subtitle = stringResource(R.string.library_shelf_favorites_subtitle),
                         count = books.count { it.favorite },
                         selected = shelf == "Favorites",
                         onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
                     )
                     LibraryShelfCard(
-                        title = "Currently Reading",
-                        subtitle = "Open journeys",
+                        title = stringResource(R.string.library_shelf_reading),
+                        subtitle = stringResource(R.string.library_shelf_reading_subtitle),
                         count = books.count { !it.finished && it.progress > 0f },
                         selected = shelf == "Reading",
                         onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
                     )
                     LibraryShelfCard(
-                        title = "Completed",
-                        subtitle = "Closed volumes",
+                        title = stringResource(R.string.library_shelf_completed),
+                        subtitle = stringResource(R.string.library_shelf_completed_subtitle),
                         count = books.count { it.finished },
                         selected = shelf == "Finished",
                         onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
                     )
                     LibraryShelfCard(
-                        title = "Deep Shelf",
-                        subtitle = "Long-unopened volumes",
+                        title = stringResource(R.string.library_shelf_deep),
+                        subtitle = stringResource(R.string.library_shelf_deep_subtitle),
                         count = memoryState.deepShelfBookIds.size,
                         selected = shelf == "Deep Shelf",
                         onClick = {
@@ -505,8 +505,8 @@ fun LibraryScreen(
                         }
                     )
                     LibraryShelfCard(
-                        title = "Plan to Read",
-                        subtitle = "Still unopened",
+                        title = stringResource(R.string.library_shelf_unread),
+                        subtitle = stringResource(R.string.library_shelf_unread_subtitle),
                         count = books.count { !it.finished && it.progress <= 0f },
                         selected = shelf == "Unread",
                         onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
@@ -1880,7 +1880,8 @@ private fun LibraryShelfCard(
         onClick = onClick,
         modifier = Modifier
             .width(142.dp)
-            .heightIn(min = 78.dp),
+            .heightIn(min = 78.dp)
+            .semantics { this.selected = selected },
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.62f)
@@ -1913,7 +1914,7 @@ private fun LibraryShelfCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    count.toString().padStart(2, '0'),
+                    stringResource(R.string.library_shelf_count, count),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
