@@ -20,11 +20,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.PathMasteryAxis
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.effectivePathMastery
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.ui.theme.VeilPalette
@@ -37,61 +41,28 @@ import java.util.Date
 private data class VeiledDiscovery(
     val id: String,
     val symbol: String,
-    val title: String,
-    val clue: String,
-    val lore: String,
     val revealed: (ReaderProfile, Int) -> Boolean
 )
 
 private val veiledDiscoveries = listOf(
-    VeiledDiscovery(
-        id = "patient_flame",
-        symbol = "◈",
-        title = "The Patient Flame",
-        clue = "A flame kept for many returns begins to remember the hand that lit it.",
-        lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return.",
-        revealed = { profile, _ -> profile.streakDays >= 7 && profile.minutesRead >= 600 }
-    ),
-    VeiledDiscovery(
-        id = "marginalia_gate",
-        symbol = "✧",
-        title = "The Marginalia Gate",
-        clue = "Some doors are written in the margins rather than printed on the page.",
-        lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves.",
-        revealed = { profile, highlights -> highlights >= 10 && profile.pagesRead >= 1_000 }
-    ),
-    VeiledDiscovery(
-        id = "deep_shelf",
-        symbol = "▥",
-        title = "The Deep Shelf",
-        clue = "Finished volumes gather weight. Eventually the shelf becomes a foundation.",
-        lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list.",
-        revealed = { profile, _ -> profile.booksFinished >= 10 && profile.rankIndex >= 1 }
-    ),
-    VeiledDiscovery(
-        id = "long_watch",
-        symbol = "◐",
-        title = "The Long Watch",
-        clue = "There is a point when time spent reading stops feeling counted.",
-        lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes.",
-        revealed = { profile, _ -> profile.minutesRead >= 3_000 }
-    ),
-    VeiledDiscovery(
-        id = "veil_thins",
-        symbol = "⌁",
-        title = "When the Veil Thins",
-        clue = "Several marks must awaken before they begin to answer one another.",
-        lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil.",
-        revealed = { profile, _ -> profile.earnedSigils.size >= 4 }
-    ),
-    VeiledDiscovery(
-        id = "unnamed_chamber",
-        symbol = "⬡",
-        title = "The Unnamed Chamber",
-        clue = "The deepest chamber does not open to a single achievement.",
-        lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name.",
-        revealed = { profile, _ -> profile.rankIndex >= 3 && profile.earnedSigils.size >= 5 }
-    )
+    VeiledDiscovery("patient_flame", "◈") { profile, _ ->
+        profile.streakDays >= 7 && profile.minutesRead >= 600
+    },
+    VeiledDiscovery("marginalia_gate", "✧") { profile, highlights ->
+        highlights >= 10 && profile.pagesRead >= 1_000
+    },
+    VeiledDiscovery("deep_shelf", "▥") { profile, _ ->
+        profile.booksFinished >= 10 && profile.rankIndex >= 1
+    },
+    VeiledDiscovery("long_watch", "◐") { profile, _ ->
+        profile.minutesRead >= 3_000
+    },
+    VeiledDiscovery("veil_thins", "⌁") { profile, _ ->
+        profile.earnedSigils.size >= 4
+    },
+    VeiledDiscovery("unnamed_chamber", "⬡") { profile, _ ->
+        profile.rankIndex >= 3 && profile.earnedSigils.size >= 5
+    }
 )
 
 @Composable
@@ -100,7 +71,7 @@ fun ProfileScreen(
     highlightCount: Int,
     dailyGoalMinutes: Int,
     castleTitle: String,
-    equippedSigilName: String?,
+    equippedSigilId: String?,
     books: List<Book> = emptyList(),
     readingSessions: List<ReadingSessionSnapshot> = emptyList(),
     readingCycles: List<ReadingCycleRecord> = emptyList(),
@@ -109,6 +80,8 @@ fun ProfileScreen(
     onOpenSettings: () -> Unit
 ) {
     val p = profile
+    val pathName = localizedPathName(p.path)
+    val rankName = localizedRankName(p.path.id, p.rankIndex, p.rankName)
     val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
@@ -135,25 +108,27 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         ScreenHeader(
-            eyebrow = "ARCHIVIST DOSSIER",
+            eyebrow = stringResource(R.string.profile_header_eyebrow),
             title = castleTitle,
-            subtitle = "${p.path.name} · ${p.rankName}"
+            subtitle = "$pathName · $rankName"
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
             ArchivistDossierPanel(
                 profile = p,
                 highlightCount = highlightCount,
-                equippedSigilName = equippedSigilName,
+                equippedSigilId = equippedSigilId,
                 revealedDiscoveries = revealedDiscoveries,
                 totalDiscoveries = veiledDiscoveries.size,
                 onOpenSettings = onOpenSettings
             )
         }
 
+        ProfileMasteryPanel(profile = p)
+
         ProfileSectionHeading(
-            eyebrow = "Recorded history",
-            title = "Reading record"
+            eyebrow = stringResource(R.string.profile_recorded_history),
+            title = stringResource(R.string.profile_reading_record)
         )
         DossierRecordGrid(
             profile = p,
@@ -163,11 +138,11 @@ fun ProfileScreen(
         DossierHistoryLedger(dossierHistory)
 
         ProfileSectionHeading(
-            eyebrow = "Rhythm",
-            title = "Daily reading goal"
+            eyebrow = stringResource(R.string.profile_rhythm),
+            title = stringResource(R.string.profile_daily_goal)
         )
         Text(
-            "Your first daily quest follows this target. Choose a pace that supports reading instead of turning it into a chore.",
+            stringResource(R.string.profile_daily_goal_body),
             color = VeilPalette.Mist,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -187,7 +162,7 @@ fun ProfileScreen(
                         ),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m · current", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.profile_minutes_current, minutes), style = MaterialTheme.typography.labelMedium)
                     }
                 } else {
                     OutlinedButton(
@@ -196,26 +171,27 @@ fun ProfileScreen(
                         border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.profile_minutes, minutes), style = MaterialTheme.typography.labelMedium)
                     }
                 }
             }
         }
 
         ProfileSectionHeading(
-            eyebrow = "Known marks",
-            title = "Sigil registry",
-            trailing = "${p.earnedSigils.size} awakened"
+            eyebrow = stringResource(R.string.profile_known_marks),
+            title = stringResource(R.string.profile_sigil_registry),
+            trailing = stringResource(R.string.profile_awakened_count, p.earnedSigils.size)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
             listOf(
-                Triple("first_hour", "First Hour", p.minutesRead to 60),
-                Triple("passage_keeper", "Passage Keeper", highlightCount to 10),
-                Triple("seven_days", "Seven-Day Journey", p.streakDays to 7),
-                Triple("ten_tomes", "Ten Tomes", p.booksFinished to 10),
-                Triple("first_threshold", "First Threshold", p.rankIndex to 1)
-            ).forEachIndexed { index, (id, name, progress) ->
+                "first_hour" to (p.minutesRead to 60),
+                "passage_keeper" to (highlightCount to 10),
+                "seven_days" to (p.streakDays to 7),
+                "ten_tomes" to (p.booksFinished to 10),
+                "first_threshold" to (p.rankIndex to 1)
+            ).forEachIndexed { index, (id, progress) ->
+                val name = localizedSigilName(id)
                 val (value, target) = progress
                 val earned = id in p.earnedSigils
                 VeilReveal(
@@ -233,12 +209,16 @@ fun ProfileScreen(
         }
 
         ProfileSectionHeading(
-            eyebrow = "Restricted folio",
-            title = "Veiled discoveries",
-            trailing = "$revealedDiscoveries/${veiledDiscoveries.size} revealed"
+            eyebrow = stringResource(R.string.profile_restricted_folio),
+            title = stringResource(R.string.profile_veiled_discoveries),
+            trailing = stringResource(
+                R.string.profile_revealed_count,
+                revealedDiscoveries,
+                veiledDiscoveries.size
+            )
         )
         Text(
-            "Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.",
+            stringResource(R.string.profile_discovery_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
         )
@@ -264,7 +244,7 @@ fun ProfileScreen(
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
         ) {
-            Text("Open Hidden Archive", style = MaterialTheme.typography.labelMedium)
+            Text(stringResource(R.string.profile_open_hidden_archive), style = MaterialTheme.typography.labelMedium)
         }
     }
     }
