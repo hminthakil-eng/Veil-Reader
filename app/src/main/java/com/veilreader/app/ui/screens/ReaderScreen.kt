@@ -99,6 +99,7 @@ import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
@@ -106,6 +107,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
 import org.readium.adapter.pdfium.navigator.PdfiumDefaults
@@ -262,6 +264,8 @@ fun ReaderScreen(
     val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val externalLinkFailedMessage =
         stringResource(R.string.reader_external_link_failed)
+    val imageViewerFailedMessage =
+        stringResource(R.string.reader_image_viewer_failed)
     val paperCurlState = remember(opened.book.id) { PaperCurlState() }
     var paperInputListener by remember(opened.book.id) {
         mutableStateOf<PaperCurlInputListener?>(null)
@@ -472,7 +476,21 @@ fun ReaderScreen(
     var footnote by remember(opened.book.id) {
         mutableStateOf<ReaderFootnote?>(null)
     }
+    var imageViewer by remember(opened.book.id) {
+        mutableStateOf<ReaderImageContent?>(null)
+    }
+    var imageLoading by remember(opened.book.id) { mutableStateOf(false) }
+    var imageLoadJob by remember(opened.book.id) { mutableStateOf<Job?>(null) }
     var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
+
+    DisposableEffect(imageViewer?.bitmap) {
+        val ownedBitmap = imageViewer?.bitmap
+        onDispose {
+            ownedBitmap
+                ?.takeIf { !it.isRecycled }
+                ?.recycle()
+        }
+    }
     var pendingNoteHighlightId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
     var pendingNoteText by rememberSaveable(opened.book.id) { mutableStateOf("") }
     var noteSaving by remember { mutableStateOf(false) }
@@ -659,11 +677,21 @@ fun ReaderScreen(
         }
     }
 
+    BackHandler(enabled = imageLoading) {
+        imageLoadJob?.cancel()
+        imageLoadJob = null
+        imageLoading = false
+    }
+
     BackHandler(
         enabled =
             !showNotebook &&
             !showAppearance &&
-            !showPdfZoom
+            !showPdfZoom &&
+            !imageLoading &&
+            imageViewer == null &&
+            footnote == null &&
+            pendingNoteHighlightId == null
     ) {
         when (
             readerBackDisposition(
@@ -881,6 +909,45 @@ fun ReaderScreen(
         if (nav == null) {
             onDispose { }
         } else {
+            val imageTapListener = if (navigator is EpubNavigatorFragment) {
+                ReaderImageTapInputListener { image ->
+                    imageLoadJob?.cancel()
+                    imageLoading = true
+                    imageLoadJob = scope.launch {
+                        try {
+                            val bytes = opened.publication
+                                .get(image.embeddedLink)
+                                ?.use { resource -> resource.read() }
+                                ?.getOrNull()
+                            val bitmap = bytes?.let { payload ->
+                                withContext(Dispatchers.Default) {
+                                    decodeReaderImage(payload)
+                                }
+                            }
+                            if (bitmap == null) {
+                                readerMessage = imageViewerFailedMessage
+                            } else {
+                                imageViewer = ReaderImageContent(
+                                    bitmap = bitmap,
+                                    caption = image.text
+                                        ?.trim()
+                                        ?.takeIf { it.isNotEmpty() }
+                                )
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            readerMessage = imageViewerFailedMessage
+                        } finally {
+                            imageLoading = false
+                            imageLoadJob = null
+                        }
+                    }
+                }
+            } else {
+                null
+            }
+
             val paperListener = if (navigator is EpubNavigatorFragment) {
                 PaperCurlInputListener(
                     navigator = nav,
@@ -1004,6 +1071,7 @@ fun ReaderScreen(
             )
 
             val inputArbiter = ReaderInputArbiter(
+                contentTarget = imageTapListener,
                 paper = paperListener,
                 slide = slideListener,
                 staticPaged = staticPagedListener,
@@ -1021,7 +1089,9 @@ fun ReaderScreen(
                                 showAppearance ||
                                 showPdfZoom ||
                                 pendingNoteHighlightId != null ||
-                                footnote != null,
+                                footnote != null ||
+                                imageLoading ||
+                                imageViewer != null,
                         closeInFlight = closeInFlight,
                         controlsVisible = controlsVisible,
                         touchExplorationEnabled = touchExplorationEnabled
@@ -1041,6 +1111,9 @@ fun ReaderScreen(
             slideInputListener = slideListener
             nav.addInputListener(inputArbiter)
             onDispose {
+                imageLoadJob?.cancel()
+                imageLoadJob = null
+                imageLoading = false
                 paperListener?.forceCancelPendingTurn()
                 slideListener?.forceCancelPendingTurn()
                 nav.removeInputListener(inputArbiter)
@@ -1194,6 +1267,20 @@ fun ReaderScreen(
                 alpha = boundaryPulseAlpha.value,
                 modifier = Modifier.fillMaxSize()
             )
+        }
+
+        if (imageLoading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(VeilPalette.Ink.copy(alpha = 0.42f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = VeilPalette.Brass,
+                    strokeWidth = 2.dp
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -1445,6 +1532,16 @@ fun ReaderScreen(
             continuity = entryContinuity,
             returnRitual = returnRitual,
             modifier = Modifier.fillMaxSize()
+        )
+    }
+
+    imageViewer?.let { content ->
+        ReaderImageViewer(
+            content = content,
+            title = stringResource(R.string.reader_image_viewer_title),
+            closeLabel = stringResource(R.string.reader_image_viewer_close),
+            zoomHint = stringResource(R.string.reader_image_viewer_hint),
+            onDismiss = { imageViewer = null }
         )
     }
 
