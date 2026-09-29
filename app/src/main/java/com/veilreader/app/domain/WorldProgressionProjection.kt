@@ -14,6 +14,17 @@ enum class WorldAwakeningStage(val label: String) {
     ASCENDANT("Ascendant")
 }
 
+enum class WorldInscriptionKind {
+    ADVANCEMENT_READY,
+    ASCENDANT,
+    RETURN_AWAKENING,
+    RITUAL_CHARGED,
+    STREAK_EMBERS,
+    ARCHIVE_DEEP,
+    KINDLED,
+    DORMANT
+}
+
 data class WorldProgressionProjection(
     val stage: WorldAwakeningStage,
     val rankProgress: Float,
@@ -28,7 +39,8 @@ data class WorldProgressionProjection(
     val sanctumPresence: Float,
     val completedDirectives: Int,
     val directiveCount: Int,
-    val inscription: String
+    val inscription: String,
+    val inscriptionKind: WorldInscriptionKind = WorldInscriptionKind.DORMANT
 )
 
 fun deriveWorldProgressionProjection(
@@ -107,22 +119,32 @@ fun deriveWorldProgressionProjection(
         else -> WorldAwakeningStage.DORMANT
     }
 
-    val inscription = when {
-        GamificationEngine.canAdvanceRank(profile) ->
+    val inscriptionKind = when {
+        GamificationEngine.canAdvanceRank(profile) -> WorldInscriptionKind.ADVANCEMENT_READY
+        stage == WorldAwakeningStage.ASCENDANT -> WorldInscriptionKind.ASCENDANT
+        memory.returnAwakening > 0.28f -> WorldInscriptionKind.RETURN_AWAKENING
+        ritualCharge >= 0.66f -> WorldInscriptionKind.RITUAL_CHARGED
+        streakEmbers >= 5 -> WorldInscriptionKind.STREAK_EMBERS
+        archiveDepth >= 0.45f -> WorldInscriptionKind.ARCHIVE_DEEP
+        stage == WorldAwakeningStage.KINDLED -> WorldInscriptionKind.KINDLED
+        else -> WorldInscriptionKind.DORMANT
+    }
+    val inscription = when (inscriptionKind) {
+        WorldInscriptionKind.ADVANCEMENT_READY ->
             "The seal is complete. The Hall is waiting for your next transformation."
-        stage == WorldAwakeningStage.ASCENDANT ->
+        WorldInscriptionKind.ASCENDANT ->
             "Your reading no longer decorates the keep; it has become part of its architecture."
-        memory.returnAwakening > 0.28f ->
+        WorldInscriptionKind.RETURN_AWAKENING ->
             "The old lamps recognized your return and the lower halls are warming again."
-        ritualCharge >= 0.66f ->
+        WorldInscriptionKind.RITUAL_CHARGED ->
             "The ritual seal is gathering weight. One more deliberate act may change the Path."
-        streakEmbers >= 5 ->
+        WorldInscriptionKind.STREAK_EMBERS ->
             "A chain of reading nights is burning steadily through the brasswork."
-        archiveDepth >= 0.45f ->
+        WorldInscriptionKind.ARCHIVE_DEEP ->
             "The Archive has enough memory to cast a visible shadow into the Hall."
-        stage == WorldAwakeningStage.KINDLED ->
+        WorldInscriptionKind.KINDLED ->
             "The first traces of your reading have begun to wake the stone."
-        else ->
+        WorldInscriptionKind.DORMANT ->
             "The Hall is quiet. It will change only when reading leaves durable evidence."
     }
 
@@ -140,6 +162,7 @@ fun deriveWorldProgressionProjection(
         sanctumPresence = sanctumPresence,
         completedDirectives = completedDirectives,
         directiveCount = directiveCount,
-        inscription = inscription
+        inscription = inscription,
+        inscriptionKind = inscriptionKind
     )
 }
