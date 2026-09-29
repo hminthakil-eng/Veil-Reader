@@ -185,4 +185,51 @@ class ReaderPreferenceMappingTest {
         }
     }
 
+    @Test
+    fun `normalization rejects non finite core typography before renderer submission`() {
+        val unsafe = ReaderAppearance(
+            fontScale = Double.NaN,
+            lineHeight = Double.POSITIVE_INFINITY,
+            pageMargins = Double.NEGATIVE_INFINITY,
+            fontWeight = Double.NaN,
+            paragraphSpacing = Double.POSITIVE_INFINITY,
+            paragraphIndent = Double.NaN,
+            letterSpacing = Double.NaN,
+            wordSpacing = Double.NEGATIVE_INFINITY,
+            typeScale = Double.POSITIVE_INFINITY,
+            paperPatina = Double.NaN
+        )
+
+        val normalized = unsafe.normalized()
+        assertEquals(1.0, normalized.fontScale, 0.0001)
+        assertEquals(1.45, normalized.lineHeight, 0.0001)
+        assertEquals(1.0, normalized.pageMargins, 0.0001)
+        assertEquals(null, normalized.fontWeight)
+        assertEquals(null, normalized.paragraphSpacing)
+        assertEquals(null, normalized.paragraphIndent)
+        assertEquals(null, normalized.letterSpacing)
+        assertEquals(null, normalized.wordSpacing)
+        assertEquals(null, normalized.typeScale)
+        assertEquals(0.72, normalized.paperPatina, 0.0001)
+
+        val prefs = unsafe.toEpubPreferences()
+        assertEquals(1.0, requireNotNull(prefs.fontSize), 0.0001)
+        assertEquals(1.45, requireNotNull(prefs.lineHeight), 0.0001)
+        assertEquals(1.0, requireNotNull(prefs.pageMargins), 0.0001)
+        assertEquals(null, prefs.fontWeight)
+    }
+
+    @Test
+    fun `core typography mutators clamp and fail calm`() {
+        val original = ReaderAppearance(publisherStyles = true)
+
+        assertEquals(1.0, original.withFontScale(Double.NaN).fontScale, 0.0001)
+        assertEquals(1.8, original.withFontScale(9.0).fontScale, 0.0001)
+        assertEquals(1.45, original.withLineHeight(Double.NaN).lineHeight, 0.0001)
+        assertEquals(2.0, original.withLineHeight(9.0).lineHeight, 0.0001)
+        assertEquals(1.0, original.withPageMargins(Double.NaN).pageMargins, 0.0001)
+        assertEquals(0.5, original.withPageMargins(-9.0).pageMargins, 0.0001)
+        assertFalse(original.withFontScale(1.1).publisherStyles)
+    }
+
 }
