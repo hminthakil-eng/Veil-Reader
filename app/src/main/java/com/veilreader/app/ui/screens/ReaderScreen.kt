@@ -846,6 +846,7 @@ fun ReaderScreen(
             ReaderPageAtmosphere(
                 theme = readerAppearance.theme,
                 navigationMode = readerAppearance.navigationMode,
+                paperPatina = readerAppearance.paperPatina.toFloat(),
                 progress = progress,
                 progression = (navigator as? OverflowableNavigator)
                     ?.overflow
@@ -1376,6 +1377,7 @@ private fun readerCanvasColor(theme: ReaderTheme): Color = when (theme) {
 private fun ReaderPageAtmosphere(
     theme: ReaderTheme,
     navigationMode: ReaderNavigationMode,
+    paperPatina: Float,
     progress: Float,
     progression: ReadingProgression,
     modifier: Modifier = Modifier
@@ -1383,23 +1385,28 @@ private fun ReaderPageAtmosphere(
     val dark = theme == ReaderTheme.DUSK || theme == ReaderTheme.OLED
     val material = sanctuaryPageMaterialFor(navigationMode)
     val stack = paperPageStackDepth(progress, progression)
+    val patina = if (dark) 0f else paperPatina.coerceIn(0f, 1f)
 
     Canvas(modifier) {
+        val agedTone = when (theme) {
+            ReaderTheme.PAPER -> Color(0xFF73562F)
+            ReaderTheme.SEPIA -> Color(0xFF65431F)
+            ReaderTheme.DUSK -> Color(0xFF09070B)
+            ReaderTheme.OLED -> Color.Black
+        }
         val edge = if (dark) {
             Color.Black.copy(alpha = 0.20f)
         } else {
-            Color(0xFF4A3923).copy(alpha = 0.085f)
+            agedTone.copy(alpha = 0.055f + 0.055f * patina)
         }
         val highlight = if (dark) {
             Color.White.copy(alpha = 0.020f)
         } else {
-            Color.White.copy(alpha = 0.135f)
+            Color.White.copy(alpha = 0.11f + 0.035f * (1f - patina))
         }
         val leftStackWidth = stack.leftDp.dp.toPx()
         val rightStackWidth = stack.rightDp.dp.toPx()
 
-        // Physical page stack belongs only to paginated modes. Scroll remains a continuous
-        // paper field and must not visually imply a detachable sheet at either edge.
         if (material.showPhysicalPageStack) {
             drawRect(
                 brush = Brush.horizontalGradient(
@@ -1422,7 +1429,7 @@ private fun ReaderPageAtmosphere(
             val sheetLine = if (dark) {
                 Color.White.copy(alpha = 0.018f)
             } else {
-                Color(0xFF4A3923).copy(alpha = 0.035f)
+                agedTone.copy(alpha = 0.025f + 0.022f * patina)
             }
             repeat(3) { index ->
                 val fraction = (index + 1) / 4f
@@ -1441,12 +1448,10 @@ private fun ReaderPageAtmosphere(
             }
         }
 
-        // Very soft top/bottom page falloff. Keep it below the threshold where it
-        // competes with body text.
         val falloff = if (dark) {
             Color.Black.copy(alpha = 0.075f)
         } else {
-            Color(0xFF7C6544).copy(alpha = 0.040f)
+            agedTone.copy(alpha = 0.022f + 0.050f * patina)
         }
         val band = 28.dp.toPx()
         if (material.showEdgeFalloff) {
@@ -1469,29 +1474,81 @@ private fun ReaderPageAtmosphere(
             )
         }
 
-        // Deterministic micro-fibres: deliberately sparse and nearly invisible.
-        // They add material character without turning the page into a texture image.
-        if (!dark && material.showMicroFibres) {
-            val fibre = Color(0xFF6F5A3D).copy(alpha = 0.012f)
-            repeat(18) { index ->
-                val y = ((index * 71f + 29f) % size.height)
-                val x = ((index * 43f + 17f) % (size.width * 0.55f))
-                val length = 24.dp.toPx() + (index % 4) * 9.dp.toPx()
-                drawLine(
-                    color = fibre,
-                    start = Offset(x, y),
-                    end = Offset((x + length).coerceAtMost(size.width), y + (index % 3 - 1) * 0.6f),
-                    strokeWidth = 0.55.dp.toPx()
+        if (!dark && patina > 0.04f) {
+            val mottleAlpha = 0.008f + 0.020f * patina
+            val radius = size.minDimension * 0.46f
+            listOf(
+                Offset(size.width * 0.10f, size.height * 0.16f),
+                Offset(size.width * 0.86f, size.height * 0.34f),
+                Offset(size.width * 0.24f, size.height * 0.80f)
+            ).forEachIndexed { index, center ->
+                drawCircle(
+                    brush = Brush.radialGradient(
+                        colors = listOf(
+                            agedTone.copy(alpha = mottleAlpha * if (index == 1) 0.72f else 1f),
+                            Color.Transparent
+                        ),
+                        center = center,
+                        radius = radius
+                    ),
+                    center = center,
+                    radius = radius
                 )
             }
 
-            val speck = Color(0xFF59462F).copy(alpha = 0.015f)
-            repeat(24) { index ->
+            val oxidation = agedTone.copy(alpha = 0.012f + 0.040f * patina)
+            val sideBand = 34.dp.toPx()
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(oxidation, Color.Transparent),
+                    startX = 0f,
+                    endX = sideBand
+                ),
+                size = Size(sideBand, size.height)
+            )
+            drawRect(
+                brush = Brush.horizontalGradient(
+                    listOf(Color.Transparent, oxidation),
+                    startX = size.width - sideBand,
+                    endX = size.width
+                ),
+                topLeft = Offset(size.width - sideBand, 0f),
+                size = Size(sideBand, size.height)
+            )
+        }
+
+        if (!dark && material.showMicroFibres) {
+            val fibreAlpha = 0.006f + 0.018f * patina
+            val fibre = agedTone.copy(alpha = fibreAlpha)
+            val fibreCount = 12 + (18f * patina).toInt()
+            repeat(fibreCount) { index ->
+                val y = ((index * 71f + 29f) % size.height)
+                val x = ((index * 43f + 17f) % (size.width * 0.72f))
+                val length = 20.dp.toPx() + (index % 5) * 10.dp.toPx()
+                val tilt = ((index % 5) - 2) * 0.42.dp.toPx()
+                drawLine(
+                    color = fibre.copy(alpha = fibreAlpha * (0.62f + (index % 4) * 0.10f)),
+                    start = Offset(x, y),
+                    end = Offset(
+                        (x + length).coerceAtMost(size.width),
+                        (y + tilt).coerceIn(0f, size.height)
+                    ),
+                    strokeWidth = if (index % 7 == 0) 0.72.dp.toPx() else 0.48.dp.toPx()
+                )
+            }
+
+            val speckAlpha = 0.006f + 0.020f * patina
+            val speckCount = 14 + (22f * patina).toInt()
+            repeat(speckCount) { index ->
                 val x = ((index * 97f + 31f) % size.width)
                 val y = ((index * 137f + 47f) % size.height)
                 drawCircle(
-                    color = speck,
-                    radius = if (index % 5 == 0) 0.75.dp.toPx() else 0.45.dp.toPx(),
+                    color = agedTone.copy(alpha = speckAlpha * (0.58f + (index % 3) * 0.14f)),
+                    radius = when {
+                        index % 11 == 0 -> 0.95.dp.toPx()
+                        index % 5 == 0 -> 0.68.dp.toPx()
+                        else -> 0.42.dp.toPx()
+                    },
                     center = Offset(x, y)
                 )
             }
@@ -2074,6 +2131,7 @@ private fun ReaderAppearancePreview(
                 ReaderPageAtmosphere(
                     theme = appearance.theme,
                     navigationMode = appearance.navigationMode,
+                    paperPatina = appearance.paperPatina.toFloat(),
                     progress = 0.42f,
                     progression = sampleProgression,
                     modifier = Modifier.matchParentSize()
