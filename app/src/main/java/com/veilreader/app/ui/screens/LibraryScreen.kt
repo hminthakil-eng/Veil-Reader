@@ -1594,9 +1594,9 @@ private fun LibraryHeader(
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 158.dp else 190.dp
+        val headerHeight = if (compact) 194.dp else 216.dp
 
-        Box(Modifier.fillMaxWidth().height(headerHeight)) {
+        Box(Modifier.fillMaxWidth().heightIn(min = headerHeight)) {
             Image(
                 painter = painterResource(R.drawable.grayfog_threshold_v1),
                 contentDescription = null,
@@ -1616,75 +1616,90 @@ private fun LibraryHeader(
                     )
             )
 
-            Row(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(VeilSpacing.sm),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                OutlinedButton(
-                    onClick = onOpenSettings,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    contentPadding = PaddingValues(horizontal = 12.dp),
-                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = VeilPalette.Moon,
-                        containerColor = VeilPalette.Ink.copy(alpha = 0.48f)
-                    ),
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text("Settings", style = MaterialTheme.typography.labelMedium)
-                }
-
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    contentPadding = PaddingValues(horizontal = 14.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
-                    ),
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text(
-                        if (isImporting) "Importing…" else "Import",
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-
             Column(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
                     .fillMaxWidth()
+                    .heightIn(min = headerHeight)
                     .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    "VEIL READER",
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
-                    color = VeilPalette.Brass
-                )
-                Text(
-                    "Grayfog Archive",
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = VeilPalette.Moon
-                )
-                Text(
-                    "Fragments · Records · Truths",
-                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
-                    color = VeilPalette.Moon.copy(alpha = 0.78f)
-                )
-                Text(
-                    if (bookCount == 0) {
-                        "The shelves are waiting for their first volume."
-                    } else {
-                        "$bookCount ${if (bookCount == 1) "volume" else "volumes"} catalogued on this device."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Moon.copy(alpha = 0.72f)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                ) {
+                    OutlinedButton(
+                        onClick = onOpenSettings,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = VeilPalette.Moon,
+                            containerColor = VeilPalette.Ink.copy(alpha = 0.48f)
+                        ),
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    ) {
+                        Text(
+                            stringResource(R.string.library_header_settings),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Button(
+                        onClick = onImport,
+                        enabled = !isImporting,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = VeilPalette.Brass,
+                            contentColor = Color(0xFF17120A)
+                        ),
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                    ) {
+                        Text(
+                            stringResource(
+                                if (isImporting) R.string.library_header_importing
+                                else R.string.library_header_import
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(VeilSpacing.md))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.app_name).uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        stringResource(R.string.library_header_title),
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        stringResource(R.string.library_header_tagline),
+                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
+                        color = VeilPalette.Moon.copy(alpha = 0.78f)
+                    )
+                    Text(
+                        when (bookCount) {
+                            0 -> stringResource(R.string.library_header_empty)
+                            1 -> stringResource(R.string.library_header_one, bookCount)
+                            else -> stringResource(R.string.library_header_many, bookCount)
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Moon.copy(alpha = 0.72f)
+                    )
+                }
             }
         }
     }
