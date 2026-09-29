@@ -35,10 +35,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.books.BookArtifactLayer
@@ -356,6 +358,45 @@ private data class CachedCoverVisual(
     val aura: Color
 )
 
+/** Decode enough pixels for the displayed cover without retaining a full publication image. */
+internal fun bookCoverSampleSize(
+    sourceWidth: Int,
+    sourceHeight: Int,
+    targetWidth: Int,
+    targetHeight: Int
+): Int {
+    if (sourceWidth <= 0 || sourceHeight <= 0 || targetWidth <= 0 || targetHeight <= 0) return 1
+    var sample = 1
+    val pixelBudget = maxOf(
+        4_000_000L,
+        targetWidth.toLong() * targetHeight.toLong() * 4L
+    ).coerceAtMost(12_000_000L)
+    while (sample < (1 shl 29)) {
+        val next = sample * 2
+        val nextWidth = sourceWidth / next
+        val nextHeight = sourceHeight / next
+        val enoughForCover = nextWidth >= targetWidth && nextHeight >= targetHeight
+        val currentPixels = sourceWidth.toLong() / sample * (sourceHeight.toLong() / sample)
+        if (!enoughForCover && currentPixels <= pixelBudget) break
+        sample = next
+    }
+    return sample
+}
+
+private fun decodeBookCover(file: File, target: IntSize): CachedCoverVisual? {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(file.absolutePath, bounds)
+    if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
+    val options = BitmapFactory.Options().apply {
+        inSampleSize = bookCoverSampleSize(
+            bounds.outWidth, bounds.outHeight, target.width, target.height
+        )
+    }
+    return BitmapFactory.decodeFile(file.absolutePath, options)?.let { bitmap ->
+        CachedCoverVisual(bitmap.asImageBitmap(), sampledBookAura(bitmap))
+    }
+}
+
 private fun sampledBookAura(bitmap: android.graphics.Bitmap): Color {
     if (bitmap.width <= 0 || bitmap.height <= 0) return VeilPalette.Brass
 
@@ -415,20 +456,20 @@ fun BookCover(
     imagePath: String? = null,
     artifact: BookArtifactState? = null
 ) {
-    val cachedCover by produceState<CachedCoverVisual?>(initialValue = null, key1 = imagePath) {
+    var coverSize by remember { mutableStateOf(IntSize.Zero) }
+    val cachedCover by produceState<CachedCoverVisual?>(
+        initialValue = null,
+        key1 = imagePath,
+        key2 = coverSize
+    ) {
+        value = null
+        if (coverSize.width <= 0 || coverSize.height <= 0) return@produceState
         value = withContext(Dispatchers.IO) {
             imagePath
                 ?.takeIf { it.isNotBlank() }
                 ?.let(::File)
                 ?.takeIf { it.isFile && it.length() > 0L }
-                ?.let { file ->
-                    BitmapFactory.decodeFile(file.absolutePath)?.let { bitmap ->
-                        CachedCoverVisual(
-                            bitmap = bitmap.asImageBitmap(),
-                            aura = sampledBookAura(bitmap)
-                        )
-                    }
-                }
+                ?.let { file -> decodeBookCover(file, coverSize) }
         }
     }
     val reducedMotion = LocalVeilReducedMotion.current
@@ -456,6 +497,7 @@ fun BookCover(
     val shape = RoundedCornerShape(4.dp)
     Box(
         modifier = modifier
+            .onSizeChanged { coverSize = it }
             .shadow(
                 elevation = if (artifact?.recentlyOpened == true) 9.dp else 7.dp,
                 shape = shape,
