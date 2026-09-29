@@ -207,4 +207,10 @@ class ReaderChromePolicyTest {
         )
     }
 
+    @Test
+    fun `reader jumps disable navigator animation under reduced motion`() {
+        assertFalse(shouldAnimateReaderJump(reducedMotion = true))
+        assertTrue(shouldAnimateReaderJump(reducedMotion = false))
+    }
+
 }
