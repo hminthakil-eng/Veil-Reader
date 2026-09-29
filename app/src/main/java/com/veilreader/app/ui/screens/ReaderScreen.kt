@@ -1871,6 +1871,7 @@ internal fun effectiveReaderAppearanceForPublication(
 internal data class ReaderAppearanceCapabilities(
     val fixedLayout: Boolean,
     val rtlPublication: Boolean,
+    val cjkPublication: Boolean,
     val continuousScroll: Boolean
 ) {
     val typographyEditable: Boolean
@@ -1882,14 +1883,23 @@ internal data class ReaderAppearanceCapabilities(
     val columnsEditable: Boolean
         get() = !fixedLayout && !continuousScroll
 
+    val textAlignmentEditable: Boolean
+        get() = !fixedLayout && !cjkPublication
+
+    val paragraphIndentEditable: Boolean
+        get() = !fixedLayout && !cjkPublication
+
     val hyphenationEditable: Boolean
-        get() = !fixedLayout && !rtlPublication
+        get() = !fixedLayout && !rtlPublication && !cjkPublication
 
     val letterSpacingEditable: Boolean
-        get() = !fixedLayout && !rtlPublication
+        get() = !fixedLayout && !rtlPublication && !cjkPublication
 
     val wordSpacingEditable: Boolean
-        get() = !fixedLayout && !rtlPublication
+        get() = !fixedLayout && !rtlPublication && !cjkPublication
+
+    val ligaturesEditable: Boolean
+        get() = !fixedLayout && rtlPublication
 }
 
 internal fun readerAppearanceCapabilities(
@@ -1900,6 +1910,7 @@ internal fun readerAppearanceCapabilities(
     ReaderAppearanceCapabilities(
         fixedLayout = fixedLayout,
         rtlPublication = usesRtlReaderTypography(languageTag),
+        cjkPublication = usesCjkReaderTypography(languageTag),
         continuousScroll = continuousScroll
     )
 
@@ -1913,6 +1924,16 @@ internal fun usesRtlReaderTypography(languageTag: String?): Boolean {
     return primary in setOf(
         "ar", "fa", "ur", "ps", "ckb", "he", "iw", "yi", "dv", "sd"
     )
+}
+
+internal fun usesCjkReaderTypography(languageTag: String?): Boolean {
+    val primary = languageTag
+        ?.trim()
+        ?.substringBefore('-')
+        ?.substringBefore('_')
+        ?.lowercase(java.util.Locale.ROOT)
+        .orEmpty()
+    return primary in setOf("zh", "ja", "ko")
 }
 
 internal fun shouldEmitReaderBoundaryFeedback(
@@ -2773,7 +2794,7 @@ private fun EpubAppearancePanel(
                             ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
                         },
                         selected = draft.textAlignment == alignment,
-                        enabled = capabilities.typographyEditable,
+                        enabled = capabilities.textAlignmentEditable,
                         modifier = Modifier.weight(1f),
                         onClick = { updateDraft(draft.withTextAlignment(alignment)) }
                     )
@@ -2829,6 +2850,10 @@ private fun EpubAppearancePanel(
                 ReaderCapabilityNotice(
                     text = stringResource(R.string.reader_rtl_typography_notice)
                 )
+            } else if (capabilities.cjkPublication && !capabilities.fixedLayout) {
+                ReaderCapabilityNotice(
+                    text = stringResource(R.string.reader_cjk_typography_notice)
+                )
             }
 
             ReaderAppearanceTriState(
@@ -2863,7 +2888,7 @@ private fun EpubAppearancePanel(
                         )
                     )
                 },
-                enabled = capabilities.typographyEditable
+                enabled = capabilities.ligaturesEditable
             )
             ReaderAppearanceTriState(
                 title = stringResource(R.string.reader_text_normalization),
@@ -2903,7 +2928,7 @@ private fun EpubAppearancePanel(
                 onValueChange = { previewDraft(draft.withParagraphIndent(it.toDouble())) },
                 onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(paragraphIndent = null)) },
-                enabled = capabilities.typographyEditable
+                enabled = capabilities.paragraphIndentEditable
             )
             ReaderAppearanceNullableSlider(
                 label = stringResource(R.string.reader_letter_spacing),
