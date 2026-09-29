@@ -14,8 +14,14 @@ data class ReadingHistoryEvent(
     val id: String,
     val kind: ReadingHistoryEventKind,
     val timestampEpochMs: Long,
-    val title: String,
-    val detail: String? = null
+    val activeMillis: Long? = null,
+    val pacedPageTurns: Int = 0,
+    val highlightEventCount: Int = 0,
+    val noteEventCount: Int = 0,
+    val annotated: Boolean = false,
+    val excerpt: String? = null,
+    val locationLabel: String? = null,
+    val milestoneKind: ReadingMilestoneKind? = null
 )
 
 data class ReadingTimeCapsule(
@@ -133,34 +139,22 @@ fun deriveReadingTimeCapsule(
                 ReadingHistoryEvent(
                     id = "archive:${book.id}",
                     kind = ReadingHistoryEventKind.ARCHIVED,
-                    timestampEpochMs = book.addedAtEpochMs,
-                    title = "Entered the Grayfog Archive"
+                    timestampEpochMs = book.addedAtEpochMs
                 )
             )
         }
 
         relevantSessions.forEach { session ->
             if (session.startedAtEpochMs <= 0L) return@forEach
-            val duration = compactDurationLabel(session.activeMillis)
-            val detail = buildString {
-                append(duration).append(" active")
-                if (session.pacedPageTurns > 0) {
-                    append(" · ").append(session.pacedPageTurns).append(" paced turns")
-                }
-                if (session.highlightCount > 0) {
-                    append(" · ").append(session.highlightCount).append(" highlight events")
-                }
-                if (session.noteCount > 0) {
-                    append(" · ").append(session.noteCount).append(" note events")
-                }
-            }
             add(
                 ReadingHistoryEvent(
                     id = "session:${session.id}",
                     kind = ReadingHistoryEventKind.READING_SESSION,
                     timestampEpochMs = session.startedAtEpochMs,
-                    title = "Reading session",
-                    detail = detail
+                    activeMillis = session.activeMillis.coerceAtLeast(0L),
+                    pacedPageTurns = session.pacedPageTurns.coerceAtLeast(0),
+                    highlightEventCount = session.highlightCount.coerceAtLeast(0),
+                    noteEventCount = session.noteCount.coerceAtLeast(0)
                 )
             )
         }
@@ -172,12 +166,8 @@ fun deriveReadingTimeCapsule(
                     id = "highlight:${highlight.id}",
                     kind = ReadingHistoryEventKind.PASSAGE_PRESERVED,
                     timestampEpochMs = highlight.createdAtEpochMs,
-                    title = if (highlight.note.isBlank()) {
-                        "Passage preserved"
-                    } else {
-                        "Annotated passage preserved"
-                    },
-                    detail = highlight.quote
+                    annotated = highlight.note.isNotBlank(),
+                    excerpt = highlight.quote
                         .replace(Regex("\\s+"), " ")
                         .trim()
                         .take(120)
@@ -193,8 +183,7 @@ fun deriveReadingTimeCapsule(
                     id = "bookmark:${bookmark.id}",
                     kind = ReadingHistoryEventKind.LOCATION_MARKED,
                     timestampEpochMs = bookmark.createdAtEpochMs,
-                    title = "Location marked",
-                    detail = bookmark.label.trim().takeIf { it.isNotBlank() }
+                    locationLabel = bookmark.label.trim().takeIf { it.isNotBlank() }
                 )
             )
         }
@@ -212,8 +201,7 @@ fun deriveReadingTimeCapsule(
                     ReadingHistoryEvent(
                         id = "latest:${book.id}",
                         kind = ReadingHistoryEventKind.LATEST_VOLUME_ACTIVITY,
-                        timestampEpochMs = book.lastOpenedAtEpochMs,
-                        title = "Latest recorded volume activity"
+                        timestampEpochMs = book.lastOpenedAtEpochMs
                     )
                 )
             }
@@ -257,17 +245,4 @@ fun readingCapsuleSealCode(
     val hash = raw.fold(0x45D9F3B) { acc, char -> (acc * 33) xor char.code }
     val unsigned = hash.toLong() and 0xFFFF_FFFFL
     return "VR-" + unsigned.toString(16).uppercase().padStart(8, '0').takeLast(8)
-}
-
-private fun compactDurationLabel(activeMillis: Long): String {
-    val totalMinutes = activeMillis.coerceAtLeast(0L) / 60_000L
-    return when {
-        totalMinutes >= 60L -> {
-            val hours = totalMinutes / 60L
-            val minutes = totalMinutes % 60L
-            if (minutes == 0L) "${hours}h" else "${hours}h ${minutes}m"
-        }
-        totalMinutes > 0L -> "${totalMinutes}m"
-        else -> "<1m"
-    }
 }
