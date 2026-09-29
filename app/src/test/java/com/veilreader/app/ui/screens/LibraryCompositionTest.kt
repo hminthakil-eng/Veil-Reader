@@ -104,7 +104,7 @@ class LibraryCompositionTest {
             Book(id = "done", title = "Done", author = "Author", finished = true),
             Book(id = "waiting", title = "Waiting", author = "Other")
         )
-        val labels = LibraryShelfLabels(
+        val labels = this.labels.copy(
             journey = "مسیر",
             currentlyReading = "در حال مطالعه",
             author = "نویسنده",
