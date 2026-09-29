@@ -73,6 +73,7 @@ internal fun PdfZoomControls(
     val zoomOutSemantics = stringResource(R.string.pdf_zoom_out)
     val zoomInSemantics = stringResource(R.string.pdf_zoom_in)
     val zoomResetSemantics = stringResource(R.string.pdf_zoom_reset)
+    val formatPercent = rememberVeilPercentFormatter()
 
     val view = pdfView
     var zoomMirror by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
@@ -233,7 +234,7 @@ internal fun PdfZoomControls(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${(displayedZoom * 100).toInt()}%",
+                    formatPercent(displayedZoom),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
