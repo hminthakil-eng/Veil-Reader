@@ -38,8 +38,7 @@ data class LibraryMemoryEvent(
     val bookId: String,
     val atEpochMs: Long,
     val gapMillis: Long,
-    val title: String,
-    val detail: String
+    val quoteExcerpt: String? = null
 )
 
 data class LibraryMemoryState(
@@ -141,9 +140,7 @@ fun deriveLibraryMemoryState(
                             kind = LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN,
                             bookId = book.id,
                             atEpochMs = current.startedAtEpochMs,
-                            gapMillis = gap,
-                            title = "The Forgotten Volume",
-                            detail = "${book.title} returned after ${memoryGapLabel(gap)} of silence."
+                            gapMillis = gap
                         )
                     )
                 }
@@ -172,9 +169,7 @@ fun deriveLibraryMemoryState(
                         kind = LibraryMemoryEventKind.LONG_SILENCE_RETURN,
                         bookId = bookId,
                         atEpochMs = current.startedAtEpochMs,
-                        gapMillis = gap,
-                        title = "The Long Silence",
-                        detail = "The archive woke with ${book.title} after ${memoryGapLabel(gap)} away."
+                        gapMillis = gap
                     )
                 )
             }
@@ -209,8 +204,7 @@ fun deriveLibraryMemoryState(
                         bookId = book.id,
                         atEpochMs = returnSession.startedAtEpochMs,
                         gapMillis = gap,
-                        title = "The Old Margin",
-                        detail = "A passage from ${book.title} survived ${memoryGapLabel(gap)}: “$quote”"
+                        quoteExcerpt = quote
                     )
                 )
             }
@@ -263,19 +257,4 @@ private fun eventPriority(kind: LibraryMemoryEventKind): Int = when (kind) {
     LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> 0
     LibraryMemoryEventKind.OLD_MARGIN_RETURN -> 1
     LibraryMemoryEventKind.LONG_SILENCE_RETURN -> 2
-}
-
-private fun memoryGapLabel(gapMillis: Long): String {
-    val days = gapMillis.coerceAtLeast(0L) / DAY_MS
-    return when {
-        days >= 365L -> {
-            val years = days / 365L
-            val remainderMonths = (days % 365L) / 30L
-            if (remainderMonths > 0L) "${years}y ${remainderMonths}mo" else "${years}y"
-        }
-        days >= 60L -> "${days / 30L} months"
-        days >= 14L -> "${days / 7L} weeks"
-        days > 0L -> "$days days"
-        else -> "less than a day"
-    }
 }
