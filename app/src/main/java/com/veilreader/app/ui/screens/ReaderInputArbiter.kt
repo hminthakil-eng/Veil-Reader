@@ -39,6 +39,19 @@ internal fun readerInteractionMode(
     else -> ReaderInteractionMode.NAVIGATION
 }
 
+internal fun pageTurnTapZonePx(
+    width: Float,
+    density: Float,
+    preferredFraction: Float = 0.22f
+): Float {
+    if (width <= 0f) return 0f
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val minComfortableZone = 56f * safeDensity
+    val preferred = width * preferredFraction.coerceIn(0.14f, 0.26f)
+    return maxOf(minComfortableZone, preferred)
+        .coerceAtMost(width * 0.28f)
+}
+
 internal fun shouldUseDirectionalTapNavigation(
     format: BookFormat,
     scroll: Boolean,
