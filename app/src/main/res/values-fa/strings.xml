@@ -997,4 +997,11 @@
     <string name="library_memory_event_archive_return">بازگشت آرشیو</string>
     <string name="library_quiet_volume_one">%1$d جلد به سکوت رفته است</string>
     <string name="library_quiet_volumes_many">%1$d جلد به سکوت رفته‌اند</string>
+    <string name="library_memory_title_forgotten">جلد فراموش‌شده</string>
+    <string name="library_memory_title_old_margin">حاشیهٔ قدیمی</string>
+    <string name="library_memory_title_long_silence">سکوت طولانی</string>
+    <string name="library_memory_detail_forgotten">%1$s پس از %2$s سکوت بازگشت.</string>
+    <string name="library_memory_detail_long_silence">آرشیو با بازگشت %1$s پس از %2$s دوری بیدار شد.</string>
+    <string name="library_memory_preserved_passage">بخشی محفوظ</string>
+    <string name="library_memory_detail_old_margin">بخشی از %1$s پس از %2$s دوام آورده است: «%3$s»</string>
 </resources>
