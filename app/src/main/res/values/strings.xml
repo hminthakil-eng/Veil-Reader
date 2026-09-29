@@ -333,4 +333,12 @@
     <string name="book_detail_record_settled">SETTLED</string>
     <string name="book_detail_record_aged">AGED</string>
     <string name="book_detail_record_archival">DEEP ARCHIVE</string>
+    <string name="library_header_settings">Settings</string>
+    <string name="library_header_import">Import</string>
+    <string name="library_header_importing">Importing…</string>
+    <string name="library_header_title">Grayfog Archive</string>
+    <string name="library_header_tagline">Fragments · Records · Truths</string>
+    <string name="library_header_empty">The shelves are waiting for their first volume.</string>
+    <string name="library_header_one">%1$d volume catalogued on this device.</string>
+    <string name="library_header_many">%1$d volumes catalogued on this device.</string>
 </resources>
