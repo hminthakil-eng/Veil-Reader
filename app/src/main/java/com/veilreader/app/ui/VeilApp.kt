@@ -38,6 +38,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderAppearanceScope
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
@@ -69,6 +70,8 @@ fun VeilApp(
     appSettings: AppSettings = AppSettings(),
     onSetAppThemeMode: (AppThemeMode) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
+    onSaveBookReaderAppearance: (String, ReaderAppearance) -> Unit = { _, _ -> },
+    onClearBookReaderAppearance: (String) -> Unit = {},
     onSaveSensorySettings: (SensorySettings) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
@@ -543,12 +546,31 @@ fun VeilApp(
     val opened = openedPublication
     Box(Modifier.fillMaxSize()) {
         if (opened != null) {
+        val bookAppearance = appSettings.readerAppearanceOverrides[opened.book.id]
+        val effectiveReaderAppearance = bookAppearance ?: appSettings.readerAppearance
+        val readerAppearanceScope = if (bookAppearance != null) {
+            ReaderAppearanceScope.BOOK
+        } else {
+            ReaderAppearanceScope.GLOBAL
+        }
         ReaderScreen(
             opened = opened,
             library = library,
             game = game,
-            readerAppearance = appSettings.readerAppearance,
-            onReaderAppearanceChange = onSaveReaderAppearance,
+            readerAppearance = effectiveReaderAppearance,
+            appearanceScope = readerAppearanceScope,
+            onReaderAppearanceChange = { scope, appearance ->
+                when (scope) {
+                    ReaderAppearanceScope.GLOBAL -> onSaveReaderAppearance(appearance)
+                    ReaderAppearanceScope.BOOK -> onSaveBookReaderAppearance(opened.book.id, appearance)
+                }
+            },
+            onAppearanceScopeChange = { scope ->
+                when (scope) {
+                    ReaderAppearanceScope.GLOBAL -> onClearBookReaderAppearance(opened.book.id)
+                    ReaderAppearanceScope.BOOK -> onSaveBookReaderAppearance(opened.book.id, effectiveReaderAppearance)
+                }
+            },
             entryContinuity = activeContinuity,
             returnRitual = activeReturnRitual,
             initialReturnLocatorJson = activeReturnLocatorJson,
