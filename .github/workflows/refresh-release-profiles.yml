@@ -1,0 +1,120 @@
+name: Refresh Release Baseline Profiles Hosted
+
+on:
+  push:
+    branches:
+      - "release/reader-hardening-rc"
+    paths:
+      - ".github/workflows/refresh-release-profiles.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reader-profile-refresh-hosted
+  cancel-in-progress: true
+
+jobs:
+  refresh-profiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout hardening branch
+        uses: actions/checkout@v7
+        with:
+          ref: release/reader-hardening-rc
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Enable KVM for Gradle Managed Device
+        run: |
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+            ls -l /dev/kvm
+          else
+            echo "::error::/dev/kvm is unavailable on this hosted runner"
+            exit 1
+          fi
+
+      - name: Set up Gradle 9.6
+        uses: gradle/actions/setup-gradle@v6.3.0
+        with:
+          gradle-version: "9.6.0"
+
+      - name: Hosted runner disk inventory
+        run: |
+          df -h
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+          echo "ANDROID_HOME=$ANDROID_HOME"
+
+      - name: Generate Baseline and Startup Profiles on managed Pixel 6 API 35
+        run: |
+          gradle :app:generateBaselineProfile --stacktrace
+
+      - name: Validate generated profile sources
+        run: |
+          set -euo pipefail
+
+          mapfile -t baseline < <(find app/src -type f -path '*/generated/baselineProfiles/baseline-prof.txt' -print)
+          mapfile -t startup < <(find app/src -type f -path '*/generated/baselineProfiles/startup-prof.txt' -print)
+
+          if [ "${#baseline[@]}" -lt 1 ]; then
+            echo "::error::baseline-prof.txt was not generated"
+            exit 1
+          fi
+          if [ "${#startup[@]}" -lt 1 ]; then
+            echo "::error::startup-prof.txt was not generated"
+            exit 1
+          fi
+
+          for file in "${baseline[@]}" "${startup[@]}"; do
+            if [ ! -s "$file" ]; then
+              echo "::error::Generated profile is empty: $file"
+              exit 1
+            fi
+            echo "Generated: $file bytes=$(wc -c < "$file")"
+          done
+
+      - name: Stage generated profile sources
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            git add -- "$file"
+          done < <(find app/src -type f \( -name 'baseline-prof.txt' -o -name 'startup-prof.txt' \) -path '*/generated/baselineProfiles/*' -print0)
+
+          echo "=== staged profile diff ==="
+          git diff --cached --stat
+          git diff --cached --check
+
+      - name: Build release APK and AAB
+        run: |
+          gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Verify packaged Baseline Profile
+        run: |
+          python3 tools/verify_release_profile.py
+
+      - name: Record release hashes
+        run: |
+          sha256sum app/build/outputs/apk/release/*.apk
+          sha256sum app/build/outputs/bundle/release/*.aab
+
+      - name: Commit verified profile sources
+        run: |
+          set -euo pipefail
+
+          if git diff --cached --quiet; then
+            echo "Profile sources already match the branch."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "perf(release): refresh Baseline and Startup Profiles"
+          git push origin HEAD:release/reader-hardening-rc

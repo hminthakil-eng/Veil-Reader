@@ -16,6 +16,14 @@ android {
     targetProjectPath = ":app"
     experimentalProperties["android.experimental.self-instrumenting"] = true
 
+    testOptions.managedDevices.devices {
+        create<com.android.build.api.dsl.ManagedVirtualDevice>("pixel6Api35") {
+            device = "Pixel 6"
+            apiLevel = 35
+            systemImageSource = "aosp"
+        }
+    }
+
     buildTypes {
         create("benchmark") {
             isDebuggable = true
@@ -25,7 +33,10 @@ android {
 }
 
 baselineProfile {
-    useConnectedDevices = true
+    // Windows CI starts one owned emulator; hosted generation keeps its GMD.
+    val connected = providers.gradleProperty("veil.profile.connected").orNull == "true"
+    if (!connected) managedDevices += "pixel6Api35"
+    useConnectedDevices = connected
 }
 
 dependencies {
@@ -34,3 +45,4 @@ dependencies {
     implementation("androidx.test.ext:junit:1.3.0")
     implementation("androidx.test:runner:1.7.0")
 }
+

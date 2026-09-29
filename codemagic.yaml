@@ -181,3 +181,138 @@ workflows:
       - app/build/outputs/apk/debug/*.apk
       - app/build/outputs/apk/androidTest/**/*.apk
       - emulator-wtf-results/**
+
+  # Manual only: confirm cloud credentials and remaining free quota before starting.
+  veil-reader-release-hardening:
+    name: Veil Reader Release Hardening — Cloud ADB
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      java: 17
+      groups:
+      - emulator_wtf
+    scripts:
+    - name: Cloud access and disk preflight
+      script: |
+        set -euo pipefail
+        cd "$CM_BUILD_DIR"
+        : "${EW_API_TOKEN:?Set the EW_API_TOKEN secret in the emulator_wtf group}"
+        [ "${VEIL_CLOUD_FREE_QUOTA_CONFIRMED:-}" = yes ] || { echo "Confirm unused free quota in Codemagic and emulator.wtf, then set VEIL_CLOUD_FREE_QUOTA_CONFIRMED=yes" >&2; exit 2; }
+        git rev-parse HEAD
+        python3 - <<'PYSPACE'
+        import shutil
+        free = shutil.disk_usage('.').free
+        print(f'Free space: {free / 1024**3:.2f} GiB')
+        if free < 12 * 1024**3:
+            raise SystemExit('At least 12 GiB free is required')
+        PYSPACE
+    - name: Configure Android SDK and Gradle
+      script: |
+        set -euo pipefail
+        cd "$CM_BUILD_DIR"
+        SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
+        echo "sdk.dir=$SDK_ROOT" > local.properties
+        export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
+
+        if [ ! -x "$CM_BUILD_DIR/gradlew" ]; then
+          GRADLE_VERSION="9.6.0"
+          GRADLE_HOME="$CM_BUILD_DIR/.gradle-dist/gradle-$GRADLE_VERSION"
+          if [ ! -x "$GRADLE_HOME/bin/gradle" ]; then
+            mkdir -p "$CM_BUILD_DIR/.gradle-dist"
+            curl --fail --location --retry 3 \
+              "https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-bin.zip" \
+              --output "$CM_BUILD_DIR/.gradle-dist/gradle.zip"
+            unzip -q "$CM_BUILD_DIR/.gradle-dist/gradle.zip" -d "$CM_BUILD_DIR/.gradle-dist"
+          fi
+          cat > "$CM_BUILD_DIR/gradlew" <<'EOF'
+        #!/bin/sh
+        exec "$CM_BUILD_DIR/.gradle-dist/gradle-9.6.0/bin/gradle" "$@"
+        EOF
+          chmod +x "$CM_BUILD_DIR/gradlew"
+        fi
+
+        yes | sdkmanager --licenses >/dev/null 2>&1 || true
+        SDK_LIST="$(sdkmanager --list --channel=3)"
+        PLATFORM_37="$(printf '%s\n' "$SDK_LIST" | awk -F'|' '/^[[:space:]]*platforms;android-37(\.0)?[[:space:]]*\|/ {gsub(/^[[:space:]]+|[[:space:]]+$/, "", $1); print $1; exit}')"
+        [ -n "$PLATFORM_37" ] || { echo 'Android API 37 SDK package is unavailable' >&2; exit 1; }
+        sdkmanager --channel=3 "$PLATFORM_37" "build-tools;37.0.0" "platform-tools"
+
+        ./gradlew --version
+    - name: Policy and performance parser checks
+      script: |
+        set -euo pipefail
+        cd "$CM_BUILD_DIR"
+        sh tools/test-policy.sh
+        python3 tools/test_performance_budget.py
+        python3 tools/test_performance_delta.py
+        python3 tools/test_performance_dashboard.py
+    - name: Profile verifier positive and negative fixtures
+      script: python3 tools/test_release_profile.py
+    - name: Generate and verify committed profiles through cloud ADB
+      script: bash tools/generate_cloud_profile.sh
+    - name: Clean build outputs after profile verification
+      script: ./gradlew clean --stacktrace
+    - name: Unit tests
+      script: ./gradlew :app:testDebugUnitTest --stacktrace
+      test_report: app/build/test-results/**/*.xml
+    - name: Verify committed Room schema
+      script: git diff --exit-code -- app/schemas/
+    - name: Android lint
+      script: ./gradlew :app:lintDebug --stacktrace
+    - name: Build debug APK and performance harness
+      script: ./gradlew :app:assembleDebug :app:assembleBenchmark :benchmark:assembleBenchmarkBenchmark --stacktrace
+    - name: Build release APK and AAB
+      script: ./gradlew :app:assembleRelease :app:bundleRelease --stacktrace
+    - name: Audit release manifest offline contract
+      script: |
+        set -euo pipefail
+        python3 - <<'PYMANIFEST'
+        from pathlib import Path
+        import xml.etree.ElementTree as ET
+        paths = list(Path('app/build/intermediates/merged_manifests/release').rglob('AndroidManifest.xml'))
+        if not paths:
+            raise SystemExit('No merged release manifest found')
+        for path in paths:
+            tree = ET.parse(path)
+            permissions = [e.get('{http://schemas.android.com/apk/res/android}name') for e in tree.iter() if e.tag.startswith('uses-permission')]
+            if 'android.permission.INTERNET' in permissions:
+                raise SystemExit('Offline contract regression: ' + str(path))
+            print('Offline manifest verified:', path)
+        PYMANIFEST
+    - name: Verify release Baseline Profile packaging
+      script: python3 tools/verify_release_profile.py
+    - name: Record release evidence
+      script: |
+        set -euo pipefail
+        cd "$CM_BUILD_DIR"
+        HEAD_SHA="$(git rev-parse HEAD)"
+        printf 'verified_commit=%s\n' "$HEAD_SHA" > release-evidence.txt
+
+        found=0
+        for artifact in \
+          app/build/outputs/apk/release/*.apk \
+          app/build/outputs/bundle/release/*.aab \
+          app/src/*/generated/baselineProfiles/*.txt
+        do
+          [ -f "$artifact" ] || continue
+          found=1
+          hash="$(shasum -a 256 "$artifact" | awk '{print $1}')"
+          bytes="$(stat -f%z "$artifact")"
+          printf '%s sha256=%s bytes=%s\n' "$artifact" "$hash" "$bytes" >> release-evidence.txt
+        done
+
+        if [ "$found" -ne 1 ]; then
+          echo "No release/profile artifacts found for evidence capture" >&2
+          exit 1
+        fi
+
+        cat release-evidence.txt
+    artifacts:
+    - release-evidence.txt
+    - app/src/**/generated/baselineProfiles/*.txt
+    - app/build/outputs/apk/release/*.apk
+    - app/build/outputs/bundle/release/*.aab
+    - benchmark/build/outputs/**/*.apk
+    - app/build/reports/**
+    - app/build/test-results/**
+    - profile-evidence/**
