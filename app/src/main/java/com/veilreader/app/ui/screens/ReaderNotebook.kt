@@ -47,6 +47,7 @@ private enum class ReaderNotebookTab(val labelRes: Int) {
 @Composable
 fun ReaderNotebook(
     opened: OpenedPublication,
+    currentHref: String? = null,
     highlights: List<Highlight>,
     bookmarks: List<Bookmark>,
     passageVisits: List<PassageVisit>,
@@ -248,14 +249,65 @@ fun ReaderNotebook(
                     ReaderNotebookTab.CONTENTS -> {
                         if (chapters.isEmpty()) item { Text(stringResource(R.string.reader_notebook_no_chapters)) }
                         items(chapters) { (link, depth) ->
-                            TextButton(
-                                onClick = { onChapter(link) },
+                            val current = isCurrentReaderSection(
+                                linkHref = link.href.toString(),
+                                currentHref = currentHref
+                            )
+                            Surface(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 48.dp)
-                                    .padding(start = (depth.coerceAtMost(4) * 12).dp)
+                                    .padding(start = (depth.coerceAtMost(4) * 12).dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                color = if (current) {
+                                    VeilPalette.Archive.copy(alpha = 0.72f)
+                                } else {
+                                    androidx.compose.ui.graphics.Color.Transparent
+                                },
+                                border = if (current) {
+                                    BorderStroke(
+                                        1.dp,
+                                        VeilPalette.Brass.copy(alpha = 0.32f)
+                                    )
+                                } else {
+                                    null
+                                },
+                                tonalElevation = 0.dp,
+                                shadowElevation = 0.dp
                             ) {
-                                Text(link.title ?: stringResource(R.string.reader_notebook_untitled_section), modifier = Modifier.fillMaxWidth())
+                                TextButton(
+                                    onClick = { onChapter(link) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = 48.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement =
+                                            Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                            link.title ?: stringResource(
+                                                R.string.reader_notebook_untitled_section
+                                            ),
+                                            modifier = Modifier.weight(1f),
+                                            color = if (current) {
+                                                VeilPalette.Moon
+                                            } else {
+                                                LocalContentColor.current
+                                            }
+                                        )
+                                        if (current) {
+                                            Text(
+                                                stringResource(
+                                                    R.string.reader_notebook_current_section
+                                                ),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = VeilPalette.Brass
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -763,6 +815,23 @@ private fun localizedLastViewedLabel(memory: com.veilreader.app.domain.Highlight
             (days / 365).coerceAtLeast(2)
         )
     }
+}
+
+internal fun isCurrentReaderSection(
+    linkHref: String,
+    currentHref: String?
+): Boolean {
+    val current = currentHref
+        ?.trim()
+        ?.substringBefore('#')
+        ?.takeIf { it.isNotEmpty() }
+        ?: return false
+    val link = linkHref
+        .trim()
+        .substringBefore('#')
+        .takeIf { it.isNotEmpty() }
+        ?: return false
+    return link == current
 }
 
 private fun searchSnippet(locator: Locator, fallback: String): String {
