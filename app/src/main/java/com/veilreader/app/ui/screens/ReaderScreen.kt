@@ -503,13 +503,28 @@ fun ReaderScreen(
     }
 
     BackHandler(
-        enabled = !closeInFlight &&
+        enabled =
             !showNotebook &&
             !showAppearance &&
-            !showPdfZoom &&
-            !paperCurlState.active &&
-            !slidePageState.active
-    ) { closeReader() }
+            !showPdfZoom
+    ) {
+        when {
+            closeInFlight -> Unit
+            paperCurlState.active -> {
+                val restored = paperInputListener?.cancelPendingTurn() == true
+                if (!restored && paperCurlState.active) {
+                    paperCurlState.clear()
+                }
+            }
+            slidePageState.active -> {
+                val restored = slideInputListener?.cancelPendingTurn() == true
+                if (!restored && slidePageState.active) {
+                    slidePageState.clear()
+                }
+            }
+            else -> closeReader()
+        }
+    }
 
     val fragmentFactory = remember(opened.book.id, selectionActionModeCallback) {
         createReaderFactory(opened, readerAppearance, selectionActionModeCallback)
