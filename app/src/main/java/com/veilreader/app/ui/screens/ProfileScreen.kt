@@ -99,7 +99,7 @@ fun ProfileScreen(
     ) {
         ScreenHeader(
             eyebrow = stringResource(R.string.profile_header_eyebrow),
-            title = castleTitle,
+            title = localizedCastleTitle(p, castleTitle),
             subtitle = "$pathName · $rankName"
         )
 
