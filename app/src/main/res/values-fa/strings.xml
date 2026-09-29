@@ -408,4 +408,5 @@
     <string name="library_shelf_unread">برای مطالعه</string>
     <string name="library_shelf_unread_subtitle">هنوز گشوده نشده‌اند</string>
     <string name="library_shelf_count">%1$02d</string>
+    <string name="reader_publisher_preview_notice">با روشن‌بودن استایل ناشر، این نمونه تقریبی است؛ کتاب ممکن است از قلم و چیدمان خودش استفاده کند.</string>
 </resources>
