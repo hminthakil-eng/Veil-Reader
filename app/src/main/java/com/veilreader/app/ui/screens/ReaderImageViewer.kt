@@ -217,14 +217,11 @@ internal fun decodeReaderImage(
     BitmapFactory.decodeByteArray(bytes, 0, bytes.size, bounds)
     if (bounds.outWidth <= 0 || bounds.outHeight <= 0) return null
 
-    val safeMax = max(512, maxDimensionPx)
-    var sample = 1
-    while (
-        bounds.outWidth / sample > safeMax * 2 ||
-        bounds.outHeight / sample > safeMax * 2
-    ) {
-        sample *= 2
-    }
+    val sample = readerImageSampleSize(
+        width = bounds.outWidth,
+        height = bounds.outHeight,
+        maxDimensionPx = maxDimensionPx
+    )
 
     val options = BitmapFactory.Options().apply {
         inSampleSize = sample
@@ -233,4 +230,22 @@ internal fun decodeReaderImage(
     return runCatching {
         BitmapFactory.decodeByteArray(bytes, 0, bytes.size, options)
     }.getOrNull()
+}
+
+
+internal fun readerImageSampleSize(
+    width: Int,
+    height: Int,
+    maxDimensionPx: Int = 4096
+): Int {
+    if (width <= 0 || height <= 0) return 1
+    val safeMax = max(512, maxDimensionPx)
+    var sample = 1
+    while (
+        width / sample > safeMax ||
+        height / sample > safeMax
+    ) {
+        sample *= 2
+    }
+    return sample
 }
