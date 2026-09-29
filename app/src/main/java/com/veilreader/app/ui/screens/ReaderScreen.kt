@@ -1819,6 +1819,7 @@ private fun EpubAppearancePanel(
 ) {
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
+    var sliderPending by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
 
@@ -1832,11 +1833,36 @@ private fun EpubAppearancePanel(
     fun updateDraft(value: ReaderAppearance) {
         draft = value
         hasPendingDraft = true
+        sliderPending = false
         onChange(value)
     }
 
-    fun updateTypography(value: ReaderAppearance) {
-        updateDraft(value.copy(publisherStyles = false))
+    fun previewDraft(value: ReaderAppearance) {
+        draft = value
+        hasPendingDraft = true
+        sliderPending = true
+    }
+
+    fun previewTypography(value: ReaderAppearance) {
+        previewDraft(value.copy(publisherStyles = false))
+    }
+
+    fun commitDraft() {
+        if (sliderPending) {
+            sliderPending = false
+            onChange(draft)
+        }
+    }
+
+    val latestDraftForDispose by rememberUpdatedState(draft)
+    val latestSliderPendingForDispose by rememberUpdatedState(sliderPending)
+    val latestOnChangeForDispose by rememberUpdatedState(onChange)
+    DisposableEffect(Unit) {
+        onDispose {
+            if (latestSliderPendingForDispose) {
+                latestOnChangeForDispose(latestDraftForDispose)
+            }
+        }
     }
 
     Column(
@@ -1966,7 +1992,8 @@ private fun EpubAppearancePanel(
             }
             Slider(
                 value = draft.fontScale.toFloat(),
-                onValueChange = { updateDraft(draft.withFontScale(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withFontScale(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 valueRange = .75f..1.8f
             )
 
@@ -2040,8 +2067,9 @@ private fun EpubAppearancePanel(
                 nullPreviewValue = 1f,
                 valueLabel = { "${(it * 100).toInt()}%" },
                 onValueChange = {
-                    updateTypography(draft.withFontWeight(it.toDouble()))
+                    previewTypography(draft.withFontWeight(it.toDouble()))
                 },
+                onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(fontWeight = null)) }
             )
 
@@ -2050,7 +2078,8 @@ private fun EpubAppearancePanel(
                 value = draft.lineHeight.toFloat(),
                 valueRange = 1.1f..2.0f,
                 valueLabel = { "%.2f×".format(it) },
-                onValueChange = { updateTypography(draft.withLineHeight(it.toDouble())) }
+                onValueChange = { previewTypography(draft.withLineHeight(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft
             )
 
             ReaderAppearanceSlider(
@@ -2058,7 +2087,8 @@ private fun EpubAppearancePanel(
                 value = draft.pageMargins.toFloat(),
                 valueRange = 0.5f..2.0f,
                 valueLabel = { "${(it * 100).toInt()}%" },
-                onValueChange = { updateTypography(draft.withPageMargins(it.toDouble())) }
+                onValueChange = { previewTypography(draft.withPageMargins(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft
             )
 
             Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.titleSmall)
@@ -2174,7 +2204,8 @@ private fun EpubAppearancePanel(
                 valueRange = 0f..2f,
                 nullPreviewValue = 0f,
                 valueLabel = { "%.2f×".format(it) },
-                onValueChange = { updateDraft(draft.withParagraphSpacing(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withParagraphSpacing(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(paragraphSpacing = null)) }
             )
             ReaderAppearanceNullableSlider(
@@ -2183,7 +2214,8 @@ private fun EpubAppearancePanel(
                 valueRange = 0f..3f,
                 nullPreviewValue = 0f,
                 valueLabel = { "%.2f×".format(it) },
-                onValueChange = { updateDraft(draft.withParagraphIndent(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withParagraphIndent(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(paragraphIndent = null)) }
             )
             ReaderAppearanceNullableSlider(
@@ -2192,7 +2224,8 @@ private fun EpubAppearancePanel(
                 valueRange = 0f..0.2f,
                 nullPreviewValue = 0f,
                 valueLabel = { "%.2f".format(it) },
-                onValueChange = { updateDraft(draft.withLetterSpacing(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withLetterSpacing(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(letterSpacing = null)) }
             )
             ReaderAppearanceNullableSlider(
@@ -2201,7 +2234,8 @@ private fun EpubAppearancePanel(
                 valueRange = 0f..1f,
                 nullPreviewValue = 0f,
                 valueLabel = { "%.2f".format(it) },
-                onValueChange = { updateDraft(draft.withWordSpacing(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withWordSpacing(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(wordSpacing = null)) }
             )
             ReaderAppearanceNullableSlider(
@@ -2210,7 +2244,8 @@ private fun EpubAppearancePanel(
                 valueRange = 1f..2f,
                 nullPreviewValue = 1f,
                 valueLabel = { "%.2f×".format(it) },
-                onValueChange = { updateDraft(draft.withTypeScale(it.toDouble())) },
+                onValueChange = { previewDraft(draft.withTypeScale(it.toDouble())) },
+                onValueChangeFinished = ::commitDraft,
                 onReset = { updateDraft(draft.copy(typeScale = null)) }
             )
 
@@ -2222,7 +2257,8 @@ private fun EpubAppearancePanel(
                     value = draft.paperPatina.toFloat(),
                     valueRange = 0f..1f,
                     valueLabel = { "${(it * 100).toInt()}%" },
-                    onValueChange = { updateDraft(draft.withPaperPatina(it.toDouble())) }
+                    onValueChange = { previewDraft(draft.withPaperPatina(it.toDouble())) },
+                    onValueChangeFinished = ::commitDraft
                 )
                 Text(
                     stringResource(R.string.settings_paper_age_hint),
@@ -2290,7 +2326,15 @@ private fun EpubAppearancePanel(
             }
 
             OutlinedButton(
-                onClick = { updateDraft(ReaderAppearance()) },
+                onClick = {
+                    updateDraft(
+                        ReaderAppearance().copy(
+                            scroll = draft.scroll,
+                            pageTurnStyle = draft.pageTurnStyle,
+                            screenBrightness = draft.screenBrightness
+                        )
+                    )
+                },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
@@ -2312,7 +2356,10 @@ private fun EpubAppearancePanel(
         )
 
         Button(
-            onClick = onDone,
+            onClick = {
+                commitDraft()
+                onDone()
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 52.dp),
@@ -2372,7 +2419,8 @@ private fun ReaderAppearanceSlider(
     value: Float,
     valueRange: ClosedFloatingPointRange<Float>,
     valueLabel: (Float) -> String,
-    onValueChange: (Float) -> Unit
+    onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit = {}
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Row(
@@ -2389,6 +2437,7 @@ private fun ReaderAppearanceSlider(
         Slider(
             value = value.coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange
         )
     }
@@ -2402,6 +2451,7 @@ private fun ReaderAppearanceNullableSlider(
     nullPreviewValue: Float,
     valueLabel: (Float) -> String,
     onValueChange: (Float) -> Unit,
+    onValueChangeFinished: () -> Unit = {},
     onReset: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -2428,6 +2478,7 @@ private fun ReaderAppearanceNullableSlider(
             value = (value?.toFloat() ?: nullPreviewValue)
                 .coerceIn(valueRange.start, valueRange.endInclusive),
             onValueChange = onValueChange,
+            onValueChangeFinished = onValueChangeFinished,
             valueRange = valueRange
         )
     }
