@@ -533,7 +533,7 @@ fun VeilApp(
                 highlightCount = highlights.size,
                 dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
                 castleTitle = requireNotNull(castleTitle),
-                equippedSigilName = equippedSigil?.let(::sigilDisplayName),
+                equippedSigilId = equippedSigil,
                 books = books,
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
@@ -772,12 +772,5 @@ internal fun contentMaxWidthDp(windowSizeClass: WindowSizeClass): Int =
         1040
     }
 
-private fun sigilDisplayName(id: String): String = when (id) {
-    "first_hour" -> "Quiet Hour"
-    "passage_keeper" -> "Passage Keeper"
-    "seven_days" -> "Seven-Day Lantern"
-    "ten_tomes" -> "Ten Tomes"
-    "first_threshold" -> "First Threshold"
-    else -> "Unknown Sigil"
-}
+
 
