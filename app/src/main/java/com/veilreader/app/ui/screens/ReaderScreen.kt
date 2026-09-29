@@ -3294,21 +3294,22 @@ private fun AppearancePreset(
 
 @OptIn(ExperimentalReadiumApi::class)
 internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
-    val colors = if (publisherStyles) null else readiumThemeColors(theme)
+    val safe = normalized()
+    val colors = if (safe.publisherStyles) null else readiumThemeColors(safe.theme)
     return EpubPreferences(
-        theme = when (theme) {
+        theme = when (safe.theme) {
             ReaderTheme.PAPER -> Theme.LIGHT
             ReaderTheme.SEPIA -> Theme.SEPIA
             ReaderTheme.DUSK, ReaderTheme.OLED -> Theme.DARK
         },
-        imageFilter = when (darkImageTreatment) {
+        imageFilter = when (safe.darkImageTreatment) {
             ReaderDarkImageTreatment.NONE -> null
             ReaderDarkImageTreatment.DARKEN -> ImageFilter.DARKEN
             ReaderDarkImageTreatment.INVERT -> ImageFilter.INVERT
         },
         backgroundColor = colors?.first?.let(::ReadiumColor),
         textColor = colors?.second?.let(::ReadiumColor),
-        fontFamily = when (fontFamily) {
+        fontFamily = when (safe.fontFamily) {
             ReaderFontFamily.PUBLISHER -> null
             ReaderFontFamily.SERIF -> FontFamily.SERIF
             ReaderFontFamily.SANS_SERIF -> FontFamily.SANS_SERIF
@@ -3317,31 +3318,31 @@ internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
             ReaderFontFamily.ACCESSIBLE_DFA -> FontFamily.ACCESSIBLE_DFA
             ReaderFontFamily.IA_WRITER_DUOSPACE -> FontFamily.IA_WRITER_DUOSPACE
         },
-        fontSize = readiumFontSizeRatio(fontScale),
-        fontWeight = fontWeight?.coerceIn(0.0, 2.5),
-        lineHeight = lineHeight.coerceIn(1.1, 2.0),
-        pageMargins = pageMargins.coerceIn(0.5, 2.0),
-        paragraphSpacing = paragraphSpacing?.coerceIn(0.0, 2.0),
-        paragraphIndent = paragraphIndent?.coerceIn(0.0, 3.0),
-        letterSpacing = letterSpacing?.coerceIn(0.0, 0.2),
-        wordSpacing = wordSpacing?.coerceIn(0.0, 1.0),
-        typeScale = typeScale?.coerceIn(1.0, 2.0),
-        textAlign = when (textAlignment) {
+        fontSize = readiumFontSizeRatio(safe.fontScale),
+        fontWeight = safe.fontWeight,
+        lineHeight = safe.lineHeight,
+        pageMargins = safe.pageMargins,
+        paragraphSpacing = safe.paragraphSpacing,
+        paragraphIndent = safe.paragraphIndent,
+        letterSpacing = safe.letterSpacing,
+        wordSpacing = safe.wordSpacing,
+        typeScale = safe.typeScale,
+        textAlign = when (safe.textAlignment) {
             ReaderTextAlignment.PUBLISHER -> null
             ReaderTextAlignment.START -> ReadiumTextAlign.START
             ReaderTextAlignment.JUSTIFY -> ReadiumTextAlign.JUSTIFY
             ReaderTextAlignment.CENTER -> ReadiumTextAlign.CENTER
         },
-        columnCount = when (columnMode) {
+        columnCount = when (safe.columnMode) {
             ReaderColumnMode.AUTO -> ColumnCount.AUTO
             ReaderColumnMode.ONE -> ColumnCount.ONE
             ReaderColumnMode.TWO -> ColumnCount.TWO
         },
-        hyphens = hyphenation.toNullableBoolean(),
-        ligatures = ligatures.toNullableBoolean(),
-        textNormalization = textNormalization.toNullableBoolean(),
-        scroll = scroll,
-        publisherStyles = publisherStyles
+        hyphens = safe.hyphenation.toNullableBoolean(),
+        ligatures = safe.ligatures.toNullableBoolean(),
+        textNormalization = safe.textNormalization.toNullableBoolean(),
+        scroll = safe.scroll,
+        publisherStyles = safe.publisherStyles
     )
 }
 
