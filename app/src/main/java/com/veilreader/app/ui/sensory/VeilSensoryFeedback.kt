@@ -26,6 +26,19 @@ enum class VeilSensoryEvent {
     RELIC
 }
 
+internal fun hapticFeedbackFor(event: VeilSensoryEvent): Int =
+    when (event) {
+        VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
+        VeilSensoryEvent.SLIDE_TURN -> HapticFeedbackConstants.VIRTUAL_KEY
+        VeilSensoryEvent.PAGED_TURN -> HapticFeedbackConstants.KEYBOARD_TAP
+        VeilSensoryEvent.BOUNDARY -> HapticFeedbackConstants.CONTEXT_CLICK
+        VeilSensoryEvent.MARK,
+        VeilSensoryEvent.NOTE -> HapticFeedbackConstants.KEYBOARD_TAP
+        VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
+        VeilSensoryEvent.ADVANCEMENT -> HapticFeedbackConstants.LONG_PRESS
+        VeilSensoryEvent.RELIC -> HapticFeedbackConstants.CONTEXT_CLICK
+    }
+
 /**
  * Local-only sensory layer for Veil Reader.
  *
@@ -68,18 +81,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
     fun perform(view: View, event: VeilSensoryEvent) {
         val snapshot = settings
         if (snapshot.hapticsEnabled) {
-            val feedback = when (event) {
-                VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
-                VeilSensoryEvent.SLIDE_TURN -> HapticFeedbackConstants.VIRTUAL_KEY
-                VeilSensoryEvent.PAGED_TURN -> HapticFeedbackConstants.KEYBOARD_TAP
-                VeilSensoryEvent.BOUNDARY -> HapticFeedbackConstants.CONTEXT_CLICK
-                VeilSensoryEvent.MARK,
-                VeilSensoryEvent.NOTE -> HapticFeedbackConstants.KEYBOARD_TAP
-                VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
-                VeilSensoryEvent.ADVANCEMENT -> HapticFeedbackConstants.LONG_PRESS
-                VeilSensoryEvent.RELIC -> HapticFeedbackConstants.CONTEXT_CLICK
-            }
-            view.performHapticFeedback(feedback)
+            view.performHapticFeedback(hapticFeedbackFor(event))
         }
 
         if (
