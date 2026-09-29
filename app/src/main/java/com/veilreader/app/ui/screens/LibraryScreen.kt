@@ -1385,18 +1385,18 @@ private fun BookDetailFragments(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "PRESERVED MEMORY",
+                    stringResource(R.string.book_detail_preserved_memory),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Preserved fragments",
+                    stringResource(R.string.book_detail_preserved_fragments),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
             }
             Text(
-                "${highlights.size} passages",
+                pluralStringResource(R.plurals.book_detail_passages_count, highlights.size, highlights.size),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -1449,7 +1449,7 @@ private fun BookDetailFragments(
 
         if (highlights.size > 3) {
             Text(
-                "+${highlights.size - 3} more preserved in Hidden Archive",
+                stringResource(R.string.book_detail_more_preserved, highlights.size - 3),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Spirit.copy(alpha = 0.72f)
             )
@@ -1469,41 +1469,42 @@ private fun BookDetailIdentity(
     ) {
         Text(
             book.title,
-            style = MaterialTheme.typography.headlineMedium,
+            style = veilContentTextStyle(MaterialTheme.typography.headlineMedium, book.title),
             color = VeilPalette.Moon,
             maxLines = 4,
             overflow = TextOverflow.Ellipsis
         )
 
+        val displayAuthor = if (book.author.isBlank()) {
+            stringResource(R.string.common_unknown_author)
+        } else {
+            book.author
+        }
         Text(
-            if (book.author.isBlank()) {
-                stringResource(R.string.common_unknown_author)
-            } else {
-                book.author
-            },
-            style = MaterialTheme.typography.bodyMedium,
+            displayAuthor,
+            style = veilContentTextStyle(MaterialTheme.typography.bodyMedium, displayAuthor),
             color = VeilPalette.Moon.copy(alpha = 0.76f),
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
 
         book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+            val displaySeries = buildString {
+                append(series)
+                book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+            }
             Text(
-                buildString {
-                    append(series)
-                    book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
-                },
-                style = MaterialTheme.typography.labelMedium,
+                displaySeries,
+                style = veilContentTextStyle(MaterialTheme.typography.labelMedium, displaySeries),
                 color = VeilPalette.Brass,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
 
+        val artifactState = bookArtifactState(book, memory = artifactMemory)
         Text(
-            bookArtifactRecordLabel(
-                bookArtifactState(book, memory = artifactMemory)
-            ),
+            localizedBookArtifactRecordLabel(artifactState),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp),
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
@@ -1529,7 +1530,7 @@ private fun BookDetailIdentity(
                     border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
                 ) {
                     Text(
-                        "FAVORITE",
+                        stringResource(R.string.book_detail_favorited),
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
@@ -1540,6 +1541,34 @@ private fun BookDetailIdentity(
     }
 }
 
+@Composable
+private fun localizedBookArtifactRecordLabel(
+    state: com.veilreader.app.ui.books.BookArtifactState
+): String {
+    val presence = when (state.readingState) {
+        com.veilreader.app.ui.books.BookReadingState.UNOPENED ->
+            stringResource(R.string.book_artifact_presence_catalogued)
+        com.veilreader.app.ui.books.BookReadingState.ACTIVE ->
+            if (state.progress > 0f) {
+                stringResource(R.string.book_artifact_presence_in_progress)
+            } else {
+                stringResource(R.string.book_artifact_presence_opened)
+            }
+        com.veilreader.app.ui.books.BookReadingState.FINISHED ->
+            stringResource(R.string.book_artifact_presence_completed)
+    }
+    val age = when (state.patina) {
+        com.veilreader.app.ui.books.BookPatina.FRESH ->
+            stringResource(R.string.book_artifact_age_new_volume)
+        com.veilreader.app.ui.books.BookPatina.SETTLED ->
+            stringResource(R.string.book_artifact_age_settled)
+        com.veilreader.app.ui.books.BookPatina.AGED ->
+            stringResource(R.string.book_artifact_age_aged)
+        com.veilreader.app.ui.books.BookPatina.ARCHIVAL ->
+            stringResource(R.string.book_artifact_age_deep_archive)
+    }
+    return stringResource(R.string.book_artifact_record, presence, age)
+}
 @Composable
 private fun BookDetailFact(label: String, value: String) {
     Row(
