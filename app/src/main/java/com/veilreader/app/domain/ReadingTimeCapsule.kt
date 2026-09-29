@@ -15,7 +15,9 @@ data class ReadingHistoryEvent(
     val kind: ReadingHistoryEventKind,
     val timestampEpochMs: Long,
     val title: String,
-    val detail: String? = null
+    val detail: String? = null,
+    /** Structured presentation fact; avoids inferring annotation state from localized title text. */
+    val annotated: Boolean = false
 )
 
 data class ReadingTimeCapsule(
@@ -181,7 +183,8 @@ fun deriveReadingTimeCapsule(
                         .replace(Regex("\\s+"), " ")
                         .trim()
                         .take(120)
-                        .takeIf { it.isNotBlank() }
+                        .takeIf { it.isNotBlank() },
+                    annotated = highlight.note.isNotBlank()
                 )
             )
         }
