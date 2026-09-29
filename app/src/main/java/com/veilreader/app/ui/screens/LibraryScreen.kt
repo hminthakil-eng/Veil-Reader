@@ -1879,10 +1879,11 @@ private fun RecentReadingBook(
     artifactMemory: BookArtifactMemory?,
     onOpen: () -> Unit
 ) {
+    val continueA11y = stringResource(R.string.library_read_book_a11y, book.title)
     Surface(
         modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
-            onClickLabel = "Continue ${book.title}",
+            onClickLabel = continueA11y,
             onClick = onOpen
         ),
         shape = MaterialTheme.shapes.small,
@@ -2385,12 +2386,19 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val readBookA11y = stringResource(R.string.library_read_book_a11y, book.title)
+    val favoriteA11y = if (book.favorite) {
+        stringResource(R.string.library_remove_favorite_a11y, book.title)
+    } else {
+        stringResource(R.string.library_add_favorite_a11y, book.title)
+    }
+    val detailsA11y = stringResource(R.string.library_book_details_a11y, book.title)
     Column(
         Modifier
             .fillMaxWidth()
             .clickable(
                 role = Role.Button,
-                onClickLabel = "Read ${book.title}",
+                onClickLabel = readBookA11y,
                 onClick = onOpen
             ),
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -2429,7 +2437,7 @@ private fun BookLibraryTile(
         ) {
             Text(
                 when {
-                    book.finished -> "Finished"
+                    book.finished -> stringResource(R.string.book_detail_finished)
                     book.progress > 0f -> "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}%"
                     else -> book.format.name
                 },
@@ -2443,11 +2451,7 @@ private fun BookLibraryTile(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = if (book.favorite) {
-                            "Remove ${book.title} from favorites"
-                        } else {
-                            "Add ${book.title} to favorites"
-                        }
+                        contentDescription = favoriteA11y
                     }
             ) {
                 FavoriteIcon(book.favorite, Modifier.size(15.dp))
@@ -2458,7 +2462,7 @@ private fun BookLibraryTile(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = "Book details for ${book.title}"
+                        contentDescription = detailsA11y
                     }
             ) {
                 EllipsisIcon(
@@ -2480,6 +2484,14 @@ private fun BookLibraryRow(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val readBookA11y = stringResource(R.string.library_read_book_a11y, book.title)
+    val favoriteA11y = if (book.favorite) {
+        stringResource(R.string.library_remove_favorite_a11y, book.title)
+    } else {
+        stringResource(R.string.library_add_favorite_a11y, book.title)
+    }
+    val detailsA11y = stringResource(R.string.library_archive_record_a11y, book.title)
+    val unknownAuthor = stringResource(R.string.common_unknown_author)
     val artifact = bookArtifactState(book, memory = artifactMemory)
     val registrationColor = when {
         book.finished -> VeilPalette.Brass
@@ -2494,7 +2506,7 @@ private fun BookLibraryRow(
             .fillMaxWidth()
             .clickable(
                 role = Role.Button,
-                onClickLabel = "Read ${book.title}",
+                onClickLabel = readBookA11y,
                 onClick = onOpen
             ),
         shape = MaterialTheme.shapes.extraSmall,
@@ -2536,9 +2548,7 @@ private fun BookLibraryRow(
                 Text(
                     buildString {
                         append(
-                            book.author.ifBlank {
-                                "Unknown author"
-                            }
+                            book.author.ifBlank { unknownAuthor }
                         )
                         book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                             append(" · ").append(series)
@@ -2560,10 +2570,10 @@ private fun BookLibraryRow(
                 ) {
                     Text(
                         when {
-                            book.finished -> "COMPLETED"
+                            book.finished -> stringResource(R.string.library_completed)
                             book.progress > 0f ->
                                 "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}%"
-                            else -> "UNOPENED"
+                            else -> stringResource(R.string.library_unopened)
                         },
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass.copy(alpha = 0.84f)
@@ -2611,11 +2621,7 @@ private fun BookLibraryRow(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = if (book.favorite) {
-                            "Remove ${book.title} from favorites"
-                        } else {
-                            "Add ${book.title} to favorites"
-                        }
+                        contentDescription = favoriteA11y
                     }
             ) {
                 FavoriteIcon(book.favorite, Modifier.size(17.dp))
@@ -2626,7 +2632,7 @@ private fun BookLibraryRow(
                 modifier = Modifier
                     .size(48.dp)
                     .semantics {
-                        contentDescription = "Archive record for ${book.title}"
+                        contentDescription = detailsA11y
                     }
             ) {
                 EllipsisIcon(
@@ -2852,12 +2858,13 @@ private fun LibraryShelvesView(
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     group.books.forEach { book ->
+                        val readBookA11y = stringResource(R.string.library_read_book_a11y, book.title)
                         Column(
                             modifier = Modifier
                                 .width(itemWidthDp.dp)
                                 .clickable(
                                     role = Role.Button,
-                                    onClickLabel = "Read ${book.title}"
+                                    onClickLabel = readBookA11y
                                 ) { onOpen(book) },
                             verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
@@ -2882,9 +2889,12 @@ private fun LibraryShelvesView(
                             )
                             Text(
                                 when {
-                                    book.finished -> "Completed"
+                                    book.finished -> stringResource(R.string.library_completed)
                                     book.progress > 0f ->
-                                        "${(book.progress.coerceIn(0f, 1f) * 100).toInt()}% read"
+                                        stringResource(
+                                            R.string.book_detail_percent_read,
+                                            (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                                        )
                                     else -> book.format.name
                                 },
                                 style = MaterialTheme.typography.labelSmall,
