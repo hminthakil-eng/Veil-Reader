@@ -408,4 +408,5 @@
     <string name="library_shelf_unread">Plan to Read</string>
     <string name="library_shelf_unread_subtitle">Still unopened</string>
     <string name="library_shelf_count">%1$02d</string>
+    <string name="reader_publisher_preview_notice">This sample is approximate while publisher styling is on. The book may use its own fonts and layout.</string>
 </resources>
