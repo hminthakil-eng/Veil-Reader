@@ -173,6 +173,8 @@
     <string name="reader_save_note">ذخیرهٔ یادداشت</string>
 
     <!-- Reader feedback and recoverable errors -->
+    <string name="reader_selection_highlight">هایلایت</string>
+    <string name="reader_selection_note">یادداشت</string>
     <string name="reader_highlighted">بخش انتخاب‌شده نشان‌گذاری شد</string>
     <string name="reader_already_highlighted">این بخش از قبل نشان‌گذاری شده است</string>
     <string name="reader_passage_save_failed">این بخش ذخیره نشد.</string>
