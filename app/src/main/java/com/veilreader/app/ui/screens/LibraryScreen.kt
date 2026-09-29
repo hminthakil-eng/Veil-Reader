@@ -18,7 +18,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.items as lazyRowItems
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -2859,7 +2859,7 @@ private fun LibraryShelvesView(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                     ) {
-                        items(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
+                        lazyRowItems(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
                             Column(
                                 modifier = Modifier
                                     .width(itemWidthDp.dp)
