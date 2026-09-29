@@ -45,6 +45,7 @@
     <string name="book_detail_publication_unavailable">Publication file unavailable</string>
     <string name="book_detail_favorited">Favorited</string>
     <string name="book_detail_favorite">Favorite</string>
+    <string name="book_detail_close">Close record</string>
     <string name="book_detail_edit_details">Edit details</string>
     <string name="book_detail_publication_details">Publication details</string>
     <string name="book_detail_format">Format</string>
