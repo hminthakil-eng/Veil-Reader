@@ -950,4 +950,5 @@
     <string name="castle_title_ten_tomes">نگهبان ده مجلد</string>
     <string name="castle_title_sovereign">فرمانروای کتابخانهٔ زنده</string>
     <string name="castle_title_veilbound">پرده‌بسته · %1$s</string>
+    <string name="threshold_quest_generic">دستور مطالعهٔ فعلی را ادامه بده.</string>
 </resources>
