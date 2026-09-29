@@ -341,7 +341,11 @@ internal class SlideNavigationInputListener(
         val width = navigator.publicationView.width.toFloat()
         if (width <= 0f) return null
         val density = navigator.publicationView.resources.displayMetrics.density
-        val edge = max(84f * density, width * EDGE_FRACTION)
+        val edge = pageTurnTapZonePx(
+            width = width,
+            density = density,
+            preferredFraction = EDGE_FRACTION
+        )
         val side = when {
             x <= edge -> PaperCurlSide.LEFT
             x >= width - edge -> PaperCurlSide.RIGHT
@@ -448,7 +452,7 @@ internal class SlideNavigationInputListener(
     )
 
     private companion object {
-        const val EDGE_FRACTION = 0.24f
+        const val EDGE_FRACTION = 0.22f
     }
 }
 
