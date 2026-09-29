@@ -100,6 +100,9 @@ object VeilMotion {
     const val PAPER_BOUNDARY_OUT_MS = 108
     const val FRAME_SETTLE_MS = 18L
     const val PAGE_REVEAL_MS = 28L
+    // Reuse a full-resolution curl snapshot for a short burst of page turns, then release it
+    // so high-density devices do not retain a multi-megabyte ARGB buffer for the whole session.
+    const val PAPER_SNAPSHOT_BUFFER_RETENTION_MS = 1_800L
 
     // Compatibility aliases while existing call sites migrate to semantic motion roles.
     const val QUICK_MS = TAP_MS
