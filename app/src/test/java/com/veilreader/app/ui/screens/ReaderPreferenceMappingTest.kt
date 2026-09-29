@@ -341,4 +341,40 @@ class ReaderPreferenceMappingTest {
         }
     }
 
+    @Test
+    fun `ligatures are exposed only for supported RTL publications`() {
+        val rtl = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "fa-IR",
+            continuousScroll = false
+        )
+        val ltr = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en-US",
+            continuousScroll = false
+        )
+
+        assertTrue(rtl.ligaturesEditable)
+        assertFalse(ltr.ligaturesEditable)
+    }
+
+    @Test
+    fun `CJK publications keep language-sensitive controls renderer-owned`() {
+        listOf("zh-Hans", "ja-JP", "ko-KR").forEach { language ->
+            val capabilities = readerAppearanceCapabilities(
+                fixedLayout = false,
+                languageTag = language,
+                continuousScroll = false
+            )
+            assertTrue(capabilities.typographyEditable)
+            assertTrue(capabilities.cjkPublication)
+            assertFalse(capabilities.textAlignmentEditable)
+            assertFalse(capabilities.paragraphIndentEditable)
+            assertFalse(capabilities.hyphenationEditable)
+            assertFalse(capabilities.letterSpacingEditable)
+            assertFalse(capabilities.wordSpacingEditable)
+            assertFalse(capabilities.ligaturesEditable)
+        }
+    }
+
 }
