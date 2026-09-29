@@ -37,7 +37,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.R
 import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
@@ -291,8 +293,8 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Library & backup",
-            description = "Export or restore your private local archive, annotations, and reading state."
+            title = stringResource(R.string.settings_library_backup_title),
+            description = stringResource(R.string.settings_library_backup_description)
         ) {
             Button(
                 enabled = !exporting && !restoring,
@@ -303,17 +305,17 @@ fun SettingsScreen(
                     containerColor = VeilPalette.Brass,
                     contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
                 )
-            ) { Text(if (exporting) "Exporting…" else "Export library backup") }
+            ) { Text(stringResource(if (exporting) R.string.settings_exporting else R.string.settings_export_backup)) }
             OutlinedButton(
                 enabled = !exporting && !restoring,
                 onClick = { confirmRestore = true },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            ) { Text(if (restoring) "Restoring…" else "Restore library backup") }
+            ) { Text(stringResource(if (restoring) R.string.settings_restoring else R.string.settings_restore_backup)) }
             OutlinedButton(
                 enabled = !exporting && !restoring,
                 onClick = { notesPicker.launch("veil-reader-notebook.md") },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-            ) { Text("Export notebook as Markdown") }
+            ) { Text(stringResource(R.string.settings_export_notebook)) }
         }
 
         SettingsSection(
@@ -330,8 +332,8 @@ fun SettingsScreen(
         }
 
         SettingsSection(
-            title = "Reset reading defaults",
-            description = "Restore reader preferences without touching books, progress, notes, highlights, or backups."
+            title = stringResource(R.string.settings_reset_title),
+            description = stringResource(R.string.settings_reset_description)
         ) {
             OutlinedButton(
                 onClick = { commitReaderAppearance { ReaderAppearance() } },
@@ -339,7 +341,7 @@ fun SettingsScreen(
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
             ) {
-                Text("Reset reader defaults")
+                Text(stringResource(R.string.settings_reset_button))
             }
         }
     }
@@ -355,23 +357,23 @@ fun SettingsScreen(
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "RESTORE ARCHIVE",
+                        stringResource(R.string.settings_restore_eyebrow),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
                     Text(
-                        "Replace local Veil Reader data?",
+                        stringResource(R.string.settings_restore_title),
                         style = MaterialTheme.typography.titleLarge
                     )
                 }
             },
             text = {
                 Text(
-                    "Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state."
+                    stringResource(R.string.settings_restore_warning)
                 )
             },
             dismissButton = {
-                TextButton(onClick = { confirmRestore = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmRestore = false }) { Text(stringResource(R.string.common_cancel)) }
             },
             confirmButton = {
                 Button(
@@ -384,7 +386,7 @@ fun SettingsScreen(
                         containerColor = VeilPalette.Brass,
                         contentColor = androidx.compose.ui.graphics.Color(0xFF17120A)
                     )
-                ) { Text("Choose backup") }
+                ) { Text(stringResource(R.string.settings_choose_backup)) }
             }
         )
     }
