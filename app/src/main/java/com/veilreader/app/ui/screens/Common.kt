@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -518,7 +520,7 @@ fun BookCover(
         cachedCover?.let { cover ->
             Image(
                 bitmap = cover.bitmap,
-                contentDescription = "Cover of $title",
+                contentDescription = stringResource(R.string.common_cover_of, title),
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().alpha(imageAlpha)
             )
@@ -626,7 +628,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                "GRAYFOG ARCHIVE",
+                stringResource(R.string.threshold_grayfog_archive),
                 color = VeilPalette.Brass.copy(alpha = 0.82f),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 7.sp,
