@@ -173,6 +173,10 @@
     <string name="reader_save_note">ذخیرهٔ یادداشت</string>
 
     <!-- Reader feedback and recoverable errors -->
+    <string name="reader_image_viewer_title">تصویر</string>
+    <string name="reader_image_viewer_close">بستن</string>
+    <string name="reader_image_viewer_hint">برای بزرگ‌نمایی نیشگون بگیرید · برای بررسی جابه‌جا کنید</string>
+    <string name="reader_image_viewer_failed">باز کردن این تصویر ممکن نشد.</string>
     <string name="reader_footnote_eyebrow">یادداشت حاشیه</string>
     <string name="reader_footnote_title">پانویس</string>
     <string name="reader_footnote_close">بستن</string>
