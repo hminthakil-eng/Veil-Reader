@@ -1087,4 +1087,10 @@
     <string name="entry_handoff_returning">The archive recedes. Your book remains.</string>
     <string name="entry_handoff_first">The archive recedes. The first page remains.</string>
     <string name="common_cover_of">Cover of %1$s</string>
+    <string name="capsule_session_detail_legacy">Session details were preserved by an older archive version.</string>
+    <string name="capsule_paced_turns">%1$s paced turns</string>
+    <string name="capsule_highlight_event_one">%1$s highlight event</string>
+    <string name="capsule_highlight_events_many">%1$s highlight events</string>
+    <string name="capsule_note_event_one">%1$s note event</string>
+    <string name="capsule_note_events_many">%1$s note events</string>
 </resources>
