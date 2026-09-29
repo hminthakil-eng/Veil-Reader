@@ -453,5 +453,5 @@ class GameRepository(context: Context) {
                 todayNightMinutes = todayNightMinutes
             )
         )
-    }}
+    }
 }
