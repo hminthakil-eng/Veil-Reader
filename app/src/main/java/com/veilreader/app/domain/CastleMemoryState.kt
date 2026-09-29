@@ -7,6 +7,15 @@ private const val RETURN_GAP_DAYS = 21
 private const val RETURN_RECENT_DAYS = 3
 private const val SILENCE_GRACE_DAYS = 14
 
+enum class CastleMemoryNarrative {
+    EMPTY,
+    VOLUMES_ONLY,
+    FEW_ROOMS,
+    RETAINING_SHAPE,
+    WARM_ARCHIVE,
+    DENSE_MEMORY
+}
+
 enum class CastleMutationSignal {
     NONE,
     RETURN_AWAKENING,
@@ -51,7 +60,8 @@ data class CastleMemoryState(
     val foundationCourses: Int = 2,
     val rereadRings: Int = 0,
     val mutationInscription: String = "The keep changes only where your reading leaves durable evidence.",
-    val mutationSignal: CastleMutationSignal = CastleMutationSignal.NONE
+    val mutationSignal: CastleMutationSignal = CastleMutationSignal.NONE,
+    val memoryNarrative: CastleMemoryNarrative = CastleMemoryNarrative.EMPTY
 ) {
     fun resonanceFor(roomId: String): Float =
         when (roomId) {
@@ -284,17 +294,25 @@ fun deriveCastleMemoryState(
             returnAwakening * 0.38f
         ).coerceIn(0.38f, 1.18f)
 
-    val inscription = when {
-        books.isEmpty() -> "The foundation waits for its first volume."
-        sessions.isEmpty() && highlights.isEmpty() ->
+    val memoryNarrative = when {
+        books.isEmpty() -> CastleMemoryNarrative.EMPTY
+        sessions.isEmpty() && highlights.isEmpty() -> CastleMemoryNarrative.VOLUMES_ONLY
+        overall < 0.24f -> CastleMemoryNarrative.FEW_ROOMS
+        overall < 0.50f -> CastleMemoryNarrative.RETAINING_SHAPE
+        overall < 0.76f -> CastleMemoryNarrative.WARM_ARCHIVE
+        else -> CastleMemoryNarrative.DENSE_MEMORY
+    }
+    val inscription = when (memoryNarrative) {
+        CastleMemoryNarrative.EMPTY -> "The foundation waits for its first volume."
+        CastleMemoryNarrative.VOLUMES_ONLY ->
             "Volumes stand in the keep, but few traces have entered the stone."
-        overall < 0.24f ->
+        CastleMemoryNarrative.FEW_ROOMS ->
             "A few rooms remember. The rest of the keep is still listening."
-        overall < 0.50f ->
+        CastleMemoryNarrative.RETAINING_SHAPE ->
             "The keep has begun to retain the shape of your reading."
-        overall < 0.76f ->
+        CastleMemoryNarrative.WARM_ARCHIVE ->
             "The archive is warm behind the walls; whole chambers now carry memory."
-        else ->
+        CastleMemoryNarrative.DENSE_MEMORY ->
             "The keep is dense with memory. Very little inside it is still silent."
     }
 
@@ -371,7 +389,8 @@ fun deriveCastleMemoryState(
             ).coerceIn(0.14f, 0.64f),
         inscription = inscription,
         mutationInscription = mutationInscription,
-        mutationSignal = mutationSignal
+        mutationSignal = mutationSignal,
+        memoryNarrative = memoryNarrative
     )
 }
 
