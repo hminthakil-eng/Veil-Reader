@@ -142,12 +142,12 @@ fun VeilApp(
     val readingMilestones = readingMilestonesState?.value.orEmpty()
     LaunchedEffect(library) { game.syncExistingHighlights(library.highlights.value.size) }
     val completionEvidence = remember(books, readingCycles) {
-        books.count { it.finished } to readingCycles.size
+        books.count { it.finished } to readingCycles.map { it.bookId }.distinct().size
     }
     LaunchedEffect(completionEvidence) {
         game.syncExistingBookCompletions(
             finishedBooks = completionEvidence.first,
-            sealedCycles = completionEvidence.second
+            sealedBooks = completionEvidence.second
         )
     }
 
