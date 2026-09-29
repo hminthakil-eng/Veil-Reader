@@ -405,8 +405,6 @@ internal class PaperCurlInputListener(
         const val EDGE_FRACTION = 0.22f
         const val HORIZONTAL_BIAS = 0.90f
         const val DRAG_DIRECTION_SLOP_PX = 4f
-        const val FRAME_DELAY_MS = 18L
-        const val PAGE_REVEAL_DELAY_MS = 28L
     }
 }
 
