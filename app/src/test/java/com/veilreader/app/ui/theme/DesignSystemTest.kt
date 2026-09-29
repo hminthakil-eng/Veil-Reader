@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.theme
 
+import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -26,6 +27,15 @@ class DesignSystemTest {
         }
     }
 
+    @Test
+    fun `Arabic-script content neutralizes Latin tracking even in Latin shell`() {
+        val latinTracked = VeilLatinTypography.titleLarge.copy(letterSpacing = (-0.4).sp)
+        val protected = veilContentTextStyle(latinTracked, "کتاب اسرار")
+        val untouched = veilContentTextStyle(latinTracked, "Lord of Mysteries")
+
+        assertEquals(0f, protected.letterSpacing.value, 0f)
+        assertEquals(latinTracked.letterSpacing, untouched.letterSpacing)
+    }
     @Test
     fun `Persian body metrics preserve more vertical breathing room`() {
         assertTrue(
