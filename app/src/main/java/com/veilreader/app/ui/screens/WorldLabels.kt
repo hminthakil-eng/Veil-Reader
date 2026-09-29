@@ -9,6 +9,7 @@ import com.veilreader.app.domain.WorldAwakeningStage
 import com.veilreader.app.domain.WorldInscriptionKind
 import com.veilreader.app.domain.WorldMutationKind
 import com.veilreader.app.domain.CastleMutationSignal
+import com.veilreader.app.domain.CastleMemoryNarrative
 
 @Composable
 internal fun localizedPathName(path: ReadingPath): String =
@@ -60,6 +61,19 @@ internal fun localizedWorldInscription(kind: WorldInscriptionKind): String =
             WorldInscriptionKind.ARCHIVE_DEEP -> R.string.castle_world_archive_deep
             WorldInscriptionKind.KINDLED -> R.string.castle_world_kindled
             WorldInscriptionKind.DORMANT -> R.string.castle_world_dormant
+        }
+    )
+
+@Composable
+internal fun localizedCastleMemoryNarrative(kind: CastleMemoryNarrative): String =
+    stringResource(
+        when (kind) {
+            CastleMemoryNarrative.EMPTY -> R.string.castle_memory_empty
+            CastleMemoryNarrative.VOLUMES_ONLY -> R.string.castle_memory_volumes_only
+            CastleMemoryNarrative.FEW_ROOMS -> R.string.castle_memory_few_rooms
+            CastleMemoryNarrative.RETAINING_SHAPE -> R.string.castle_memory_retaining_shape
+            CastleMemoryNarrative.WARM_ARCHIVE -> R.string.castle_memory_warm_archive
+            CastleMemoryNarrative.DENSE_MEMORY -> R.string.castle_memory_dense
         }
     )
 
