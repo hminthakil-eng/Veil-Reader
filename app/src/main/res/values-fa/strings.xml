@@ -333,4 +333,12 @@
     <string name="book_detail_record_settled">جاافتاده</string>
     <string name="book_detail_record_aged">کهنه</string>
     <string name="book_detail_record_archival">آرشیو ژرف</string>
+    <string name="library_header_settings">تنظیمات</string>
+    <string name="library_header_import">افزودن کتاب</string>
+    <string name="library_header_importing">در حال افزودن…</string>
+    <string name="library_header_title">آرشیو گری‌فاگ</string>
+    <string name="library_header_tagline">بریده‌ها · یادگارها · رازها</string>
+    <string name="library_header_empty">قفسه‌ها در انتظار نخستین کتاب‌اند.</string>
+    <string name="library_header_one">%1$d کتاب در این دستگاه ثبت شده است.</string>
+    <string name="library_header_many">%1$d کتاب در این دستگاه ثبت شده‌اند.</string>
 </resources>
