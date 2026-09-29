@@ -32,6 +32,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -1603,6 +1604,7 @@ private fun EpubAppearancePanel(
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
     var showAdvanced by remember { mutableStateOf(false) }
+    val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
 
     LaunchedEffect(appearance) {
         when {
@@ -1627,18 +1629,18 @@ private fun EpubAppearancePanel(
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                "READING INSTRUMENTS",
+                stringResource(R.string.reader_instruments),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
                 color = VeilPalette.Brass
             )
             BrassRule(Modifier.width(76.dp))
             Text(
-                "Appearance",
+                stringResource(R.string.settings_appearance_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground
             )
             Text(
-                "Changes apply live to the open publication.",
+                stringResource(R.string.reader_changes_live),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium
             )
@@ -1653,7 +1655,7 @@ private fun EpubAppearancePanel(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            listOf(false to "QUICK", true to "ADVANCED").forEach { (advanced, label) ->
+            listOf(false to stringResource(R.string.reader_quick), true to stringResource(R.string.reader_advanced)).forEach { (advanced, label) ->
                 val selected = showAdvanced == advanced
                 Surface(
                     modifier = Modifier
@@ -1689,14 +1691,14 @@ private fun EpubAppearancePanel(
 
         if (!showAdvanced) {
             Text(
-                "THEME",
+                stringResource(R.string.settings_publication_theme),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
                 color = VeilPalette.Brass
             )
 
             listOf(
-                listOf(ReaderTheme.PAPER to "Paper", ReaderTheme.SEPIA to "Sepia"),
-                listOf(ReaderTheme.DUSK to "Dusk", ReaderTheme.OLED to "Night")
+                listOf(ReaderTheme.PAPER to stringResource(R.string.settings_reader_paper), ReaderTheme.SEPIA to stringResource(R.string.settings_reader_sepia)),
+                listOf(ReaderTheme.DUSK to stringResource(R.string.settings_reader_dusk), ReaderTheme.OLED to stringResource(R.string.settings_reader_oled))
             ).forEach { presets ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -1722,7 +1724,7 @@ private fun EpubAppearancePanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "TEXT SIZE",
+                    stringResource(R.string.settings_text_size),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
@@ -1742,7 +1744,7 @@ private fun EpubAppearancePanel(
             BrassRule(Modifier.fillMaxWidth())
 
             Text(
-                "PAGE MOVEMENT",
+                stringResource(R.string.settings_reading_motion),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
@@ -1757,7 +1759,7 @@ private fun EpubAppearancePanel(
             )
         } else {
             Text(
-                "TYPOGRAPHY & LAYOUT",
+                stringResource(R.string.reader_typography_layout),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
@@ -1767,7 +1769,7 @@ private fun EpubAppearancePanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Line spacing",
+                    stringResource(R.string.settings_line_height),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -1788,7 +1790,7 @@ private fun EpubAppearancePanel(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Page margins",
+                    stringResource(R.string.settings_page_margins),
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.weight(1f)
                 )
@@ -1812,11 +1814,11 @@ private fun EpubAppearancePanel(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        "Publisher styling",
+                        stringResource(R.string.reader_publisher_styling),
                         style = MaterialTheme.typography.titleSmall
                     )
                     Text(
-                        "Preserve the book's own typography when available.",
+                        stringResource(R.string.reader_publisher_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1827,7 +1829,7 @@ private fun EpubAppearancePanel(
                         updateDraft(draft.copy(publisherStyles = it))
                     },
                     modifier = Modifier.semantics {
-                        contentDescription = "Publisher styling"
+                        contentDescription = publisherStyleLabel
                     }
                 )
             }
@@ -1843,7 +1845,7 @@ private fun EpubAppearancePanel(
                     MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.58f)
                 )
             ) {
-                Text("Reset appearance")
+                Text(stringResource(R.string.reader_reset_appearance))
             }
         }
 
@@ -1865,7 +1867,7 @@ private fun EpubAppearancePanel(
                 contentColor = Color(0xFF17120A)
             )
         ) {
-            Text("Back to reading")
+            Text(stringResource(R.string.reader_back_to_reading))
         }
     }
 }
@@ -1882,6 +1884,11 @@ private fun ReaderAppearancePreview(
     val sampleSize = (15f * appearance.fontScale.toFloat()).coerceIn(11f, 23f).sp
     val sampleLineHeight =
         (sampleSize.value * appearance.lineHeight.toFloat()).coerceIn(15f, 38f).sp
+    val sampleProgression = if (LocalLayoutDirection.current == LayoutDirection.Rtl) {
+        ReadingProgression.RTL
+    } else {
+        ReadingProgression.LTR
+    }
 
     Surface(
         modifier = modifier,
@@ -1900,17 +1907,17 @@ private fun ReaderAppearancePreview(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "LIVE PAGE PREVIEW",
+                    stringResource(R.string.reader_sample_preview),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
                     when (appearance.navigationMode) {
-                        ReaderNavigationMode.PAPER_CURL -> "CURL"
-                        ReaderNavigationMode.SLIDE -> "SLIDE"
-                        ReaderNavigationMode.PAGED -> "PAGED"
-                        ReaderNavigationMode.SCROLL -> "SCROLL"
+                        ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
+                        ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
+                        ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
+                        ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1936,7 +1943,7 @@ private fun ReaderAppearancePreview(
                     theme = appearance.theme,
                     navigationMode = appearance.navigationMode,
                     progress = 0.42f,
-                    progression = ReadingProgression.LTR,
+                    progression = sampleProgression,
                     modifier = Modifier.matchParentSize()
                 )
                 Column(
@@ -1946,17 +1953,17 @@ private fun ReaderAppearancePreview(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        "CHAPTER VII",
+                        stringResource(R.string.reader_sample_chapter),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = ink.copy(alpha = 0.58f)
                     )
                     Text(
-                        "Beyond the Veil",
+                        stringResource(R.string.reader_sample_title),
                         style = MaterialTheme.typography.titleLarge,
                         color = ink
                     )
                     Text(
-                        "The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.",
+                        stringResource(R.string.reader_sample_body),
                         fontSize = sampleSize,
                         lineHeight = sampleLineHeight,
                         color = ink.copy(alpha = 0.92f)
