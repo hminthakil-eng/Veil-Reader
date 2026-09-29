@@ -768,7 +768,7 @@ fun ReaderScreen(
                         controlsVisible = false
                     },
                     onCommittedTurn = {
-                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        onSensoryEvent(VeilSensoryEvent.SLIDE_TURN)
                         nav.currentLocator.value.let { locator ->
                             recordLocator(
                                 locator,
@@ -801,7 +801,7 @@ fun ReaderScreen(
                         controlsVisible = false
                     },
                     onNavigationCommitted = {
-                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
                         nav.currentLocator.value.let { locator ->
                             recordLocator(
                                 locator,
@@ -837,7 +837,19 @@ fun ReaderScreen(
                     )
                 },
                 onNavigationCommitted = {
-                    onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                    val event = when {
+                        opened.format != BookFormat.EPUB ->
+                            VeilSensoryEvent.PAGED_TURN
+                        latestAppearance.value.navigationMode ==
+                            ReaderNavigationMode.SLIDE ->
+                            VeilSensoryEvent.SLIDE_TURN
+                        latestAppearance.value.navigationMode ==
+                            ReaderNavigationMode.PAPER_CURL ->
+                            VeilSensoryEvent.PAGE_TURN
+                        else ->
+                            VeilSensoryEvent.PAGED_TURN
+                    }
+                    onSensoryEvent(event)
                 },
                 onBoundaryHit = { side ->
                     boundaryPulseSide = side
