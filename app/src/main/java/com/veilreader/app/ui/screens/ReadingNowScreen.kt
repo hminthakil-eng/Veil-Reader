@@ -488,7 +488,7 @@ private fun ContinueReadingHero(
             )
 
             Text(
-                heroProgressLabel(current, (progress * 100).toInt(), progress),
+                heroProgressLabel(current, progress),
                 style = MaterialTheme.typography.labelMedium,
                 color = secondaryInk,
                 maxLines = 2,
@@ -569,12 +569,15 @@ private fun HeroDetails(
 }
 
 @Composable
-private fun heroProgressLabel(current: Book, progressPercent: Int, progress: Float): String = when {
+private fun heroProgressLabel(current: Book, progress: Float): String {
+    val percent = rememberVeilPercentFormatter()(progress)
+    return when {
     current.finished -> stringResource(R.string.threshold_progress_finished_reopen)
     progress <= 0f -> stringResource(R.string.threshold_progress_ready)
     current.currentChapter.isNotBlank() && current.currentChapter != "Not started" ->
-        stringResource(R.string.threshold_progress_chapter, current.currentChapter, progressPercent)
-    else -> stringResource(R.string.threshold_progress_complete, progressPercent)
+        stringResource(R.string.threshold_progress_chapter, current.currentChapter, percent)
+    else -> stringResource(R.string.threshold_progress_complete, percent)
+    }
 }
 
 @Composable
