@@ -215,13 +215,14 @@ fun LibraryScreen(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
     val archiveLayout = archiveLayoutPolicyFor(archiveAdaptiveClass)
-    val archiveTimePhase by produceState(
-        initialValue = archiveTimePhaseForHour(LocalTime.now().hour)
-    ) {
+    val libraryNowEpochMs by produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
-            value = archiveTimePhaseForHour(LocalTime.now().hour)
             delay(60_000L)
+            value = System.currentTimeMillis()
         }
+    }
+    val archiveTimePhase = remember(libraryNowEpochMs) {
+        archiveTimePhaseForHour(LocalTime.now().hour)
     }
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
@@ -267,15 +268,12 @@ fun LibraryScreen(
         }
     }
 
-    val libraryMemoryNow = remember(books, highlights, readingSessions) {
-        System.currentTimeMillis()
-    }
-    val memoryState = remember(books, highlights, readingSessions, libraryMemoryNow) {
+    val memoryState = remember(books, highlights, readingSessions, libraryNowEpochMs) {
         deriveLibraryMemoryState(
             books = books,
             highlights = highlights,
             sessions = readingSessions,
-            nowEpochMs = libraryMemoryNow
+            nowEpochMs = libraryNowEpochMs
         )
     }
     val deepShelfBookIds = remember(memoryState.deepShelfBookIds) {
