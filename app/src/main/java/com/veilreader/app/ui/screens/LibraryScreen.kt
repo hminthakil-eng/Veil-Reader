@@ -2043,6 +2043,24 @@ private fun ArchiveWingPortal(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val wingLabel = when (wing.kind) {
+        ArchiveWingKind.COLLECTION -> stringResource(R.string.library_wing_collection)
+        ArchiveWingKind.SERIES -> stringResource(R.string.library_wing_series)
+    }
+    val volumeLabel = pluralStringResource(
+        R.plurals.library_wing_volumes,
+        wing.volumeCount,
+        wing.volumeCount
+    )
+    val activeLabel = wing.activeCount.takeIf { it > 0 }?.let { count ->
+        pluralStringResource(R.plurals.library_wing_active, count, count)
+    }
+    val sealedLabel = wing.completedCount.takeIf { it > 0 }?.let { count ->
+        pluralStringResource(R.plurals.library_wing_sealed, count, count)
+    }
+    val wingStats = listOfNotNull(volumeLabel, activeLabel, sealedLabel)
+        .joinToString(" · ")
+
     Surface(
         onClick = onClick,
         modifier = Modifier
@@ -2084,10 +2102,7 @@ private fun ArchiveWingPortal(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    when (wing.kind) {
-                        ArchiveWingKind.COLLECTION -> "COLLECTION WING"
-                        ArchiveWingKind.SERIES -> "SERIES CORRIDOR"
-                    },
+                    wingLabel,
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
                     color = VeilPalette.Brass.copy(alpha = if (selected) 0.96f else 0.72f)
                 )
@@ -2099,16 +2114,7 @@ private fun ArchiveWingPortal(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    buildString {
-                        append(wing.volumeCount)
-                            .append(if (wing.volumeCount == 1) " volume" else " volumes")
-                        if (wing.activeCount > 0) {
-                            append(" · ").append(wing.activeCount).append(" active")
-                        }
-                        if (wing.completedCount > 0) {
-                            append(" · ").append(wing.completedCount).append(" sealed")
-                        }
-                    },
+                    wingStats,
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.58f),
                     maxLines = 2,
