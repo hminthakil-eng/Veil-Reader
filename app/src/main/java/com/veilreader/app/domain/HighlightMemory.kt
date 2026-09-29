@@ -10,14 +10,11 @@ enum class EchoDepth {
 data class HighlightMemory(
     val ageKnown: Boolean,
     val ageDays: Int,
-    val ageLabel: String,
     val echoDepth: EchoDepth,
-    val echoLabel: String?,
     val bookActivityAfterMark: Boolean,
     val revisitCount: Int,
     val lastViewedAtEpochMs: Long?,
     val lastViewedDaysAgo: Int? = null,
-    val lastViewedLabel: String?,
     val annotated: Boolean,
     val eligibleForEcho: Boolean,
     val resonanceScore: Int
@@ -60,34 +57,6 @@ fun deriveHighlightMemory(
         else -> EchoDepth.DEEP_ECHO
     }
 
-    val ageLabel = when {
-        !ageKnown -> "MARK DATE UNKNOWN"
-        ageDays == 0 -> "MARKED TODAY"
-        ageDays == 1 -> "MARKED YESTERDAY"
-        ageDays < 60 -> "MARKED $ageDays DAYS AGO"
-        ageDays < 730 -> {
-            val months = (ageDays / 30).coerceAtLeast(2)
-            "MARKED $months MONTHS AGO"
-        }
-        else -> {
-            val years = (ageDays / 365).coerceAtLeast(2)
-            "MARKED $years YEARS AGO"
-        }
-    }
-
-    val echoLabel = when {
-        depth == EchoDepth.FRESH -> null
-        ageDays < 60 -> "AN ECHO FROM $ageDays DAYS AGO"
-        ageDays < 730 -> {
-            val months = (ageDays / 30).coerceAtLeast(2)
-            "AN ECHO FROM $months MONTHS AGO"
-        }
-        else -> {
-            val years = (ageDays / 365).coerceAtLeast(2)
-            "AN ECHO FROM $years YEARS AGO"
-        }
-    }
-
     val laterActivity = book?.lastOpenedAtEpochMs?.let { lastOpened ->
         ageKnown &&
             lastOpened > created &&
@@ -99,16 +68,6 @@ fun deriveHighlightMemory(
     val lastViewedDaysAgo = lastViewedAt?.let { viewedAt ->
         ((safeNow - viewedAt).coerceAtLeast(0L) / DAY_MS).toInt()
     }
-    val lastViewedLabel = lastViewedDaysAgo?.let { viewedDaysAgo ->
-        when {
-            viewedDaysAgo == 0 -> "LAST VIEWED TODAY"
-            viewedDaysAgo == 1 -> "LAST VIEWED YESTERDAY"
-            viewedDaysAgo < 60 -> "LAST VIEWED $viewedDaysAgo DAYS AGO"
-            viewedDaysAgo < 730 -> "LAST VIEWED ${(viewedDaysAgo / 30).coerceAtLeast(2)} MONTHS AGO"
-            else -> "LAST VIEWED ${(viewedDaysAgo / 365).coerceAtLeast(2)} YEARS AGO"
-        }
-    }
-
     val annotated = highlight.note.isNotBlank()
     val eligible = depth != EchoDepth.FRESH
 
@@ -136,14 +95,11 @@ fun deriveHighlightMemory(
     return HighlightMemory(
         ageKnown = ageKnown,
         ageDays = ageDays,
-        ageLabel = ageLabel,
         echoDepth = depth,
-        echoLabel = echoLabel,
         bookActivityAfterMark = laterActivity,
         revisitCount = exactVisits.size,
         lastViewedAtEpochMs = lastViewedAt,
         lastViewedDaysAgo = lastViewedDaysAgo,
-        lastViewedLabel = lastViewedLabel,
         annotated = annotated,
         eligibleForEcho = eligible,
         resonanceScore = resonance
