@@ -1169,7 +1169,10 @@ fun ReaderScreen(
             )
         }
 
-        if (opened.format == BookFormat.EPUB) {
+        if (
+            opened.format == BookFormat.EPUB &&
+            !fixedLayoutPublication
+        ) {
             ReaderPageAtmosphere(
                 theme = effectiveReaderAppearance.theme,
                 navigationMode = effectiveReaderAppearance.navigationMode,
@@ -2560,11 +2563,13 @@ private fun EpubAppearancePanel(
             )
         }
 
-        ReaderAppearancePreview(
-            appearance = draft,
-            typographyEnabled = capabilities.typographyEditable,
-            modifier = Modifier.fillMaxWidth()
-        )
+        if (!capabilities.fixedLayout) {
+            ReaderAppearancePreview(
+                appearance = draft,
+                typographyEnabled = true,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         if (capabilities.fixedLayout) {
             ReaderCapabilityNotice(
@@ -2572,14 +2577,15 @@ private fun EpubAppearancePanel(
             )
         }
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            listOf(
-                false to stringResource(R.string.reader_quick),
-                true to stringResource(R.string.reader_advanced)
-            ).forEach { (advanced, label) ->
+        if (!capabilities.fixedLayout) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                listOf(
+                    false to stringResource(R.string.reader_quick),
+                    true to stringResource(R.string.reader_advanced)
+                ).forEach { (advanced, label) ->
                 val selected = showAdvanced == advanced
                 Surface(
                     modifier = Modifier
@@ -2612,8 +2618,10 @@ private fun EpubAppearancePanel(
                 }
             }
         }
+        }
 
         if (!showAdvanced) {
+            if (!capabilities.fixedLayout) {
             Text(
                 stringResource(R.string.settings_publication_theme),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
@@ -2678,6 +2686,7 @@ private fun EpubAppearancePanel(
             )
 
             BrassRule(Modifier.fillMaxWidth())
+            }
 
             Text(
                 stringResource(R.string.settings_reading_motion),
