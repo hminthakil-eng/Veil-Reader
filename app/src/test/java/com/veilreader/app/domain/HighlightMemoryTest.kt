@@ -85,6 +85,7 @@ class HighlightMemoryTest {
         assertTrue(memory.bookActivityAfterMark)
         assertEquals(2, memory.revisitCount)
         assertEquals(now - 30L * day, memory.lastViewedAtEpochMs)
+        assertEquals(30, memory.lastViewedDaysAgo)
         assertEquals(now - 30L * day, memory.lastViewedAtEpochMs)
     }
 
