@@ -522,4 +522,5 @@
         <item quantity="one">%1$d رویداد یادداشت</item>
         <item quantity="other">%1$d رویداد یادداشت</item>
     </plurals>
+    <string name="capsule_event_milestone">نقطهٔ عطف مطالعه</string>
 </resources>
