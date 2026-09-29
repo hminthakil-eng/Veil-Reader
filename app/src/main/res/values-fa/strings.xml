@@ -45,6 +45,7 @@
     <string name="book_detail_publication_unavailable">فایل کتاب در دسترس نیست</string>
     <string name="book_detail_favorited">در علاقه‌مندی‌ها</string>
     <string name="book_detail_favorite">افزودن به علاقه‌مندی‌ها</string>
+    <string name="book_detail_close">بستن رکورد</string>
     <string name="book_detail_edit_details">ویرایش جزئیات</string>
     <string name="book_detail_publication_details">جزئیات کتاب</string>
     <string name="book_detail_format">فرمت</string>
