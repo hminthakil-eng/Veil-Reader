@@ -5,6 +5,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -12,6 +13,7 @@ import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.readium.r2.navigator.preferences.ImageFilter
+import org.readium.r2.navigator.preferences.Spread
 import org.junit.Test
 
 class ReaderPreferenceMappingTest {
@@ -375,6 +377,31 @@ class ReaderPreferenceMappingTest {
             assertFalse(capabilities.wordSpacingEditable)
             assertFalse(capabilities.ligaturesEditable)
         }
+    }
+
+    @Test
+    fun `fixed-layout spread modes map exactly to Readium semantics`() {
+        assertEquals(null, ReaderFixedLayoutSpread.AUTO.toReadiumSpread())
+        assertEquals(Spread.NEVER, ReaderFixedLayoutSpread.SINGLE.toReadiumSpread())
+        assertEquals(Spread.ALWAYS, ReaderFixedLayoutSpread.DUAL.toReadiumSpread())
+    }
+
+    @Test
+    fun `EPUB preferences carry explicit fixed-layout spread override`() {
+        val appearance = ReaderAppearance()
+
+        assertEquals(
+            null,
+            appearance.toEpubPreferences(ReaderFixedLayoutSpread.AUTO).spread
+        )
+        assertEquals(
+            Spread.NEVER,
+            appearance.toEpubPreferences(ReaderFixedLayoutSpread.SINGLE).spread
+        )
+        assertEquals(
+            Spread.ALWAYS,
+            appearance.toEpubPreferences(ReaderFixedLayoutSpread.DUAL).spread
+        )
     }
 
 }
