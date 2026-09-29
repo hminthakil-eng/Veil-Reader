@@ -325,4 +325,12 @@
     <string name="book_detail_silence_weeks">%1$d هفته</string>
     <string name="book_detail_silence_days">%1$d روز</string>
     <string name="book_detail_silence_today">امروز</string>
+    <string name="book_detail_record_pristine">ثبت‌شده</string>
+    <string name="book_detail_record_opened">گشوده‌شده</string>
+    <string name="book_detail_record_active">در حال مطالعه</string>
+    <string name="book_detail_record_completed">تمام‌شده</string>
+    <string name="book_detail_record_fresh">کتاب تازه</string>
+    <string name="book_detail_record_settled">جاافتاده</string>
+    <string name="book_detail_record_aged">کهنه</string>
+    <string name="book_detail_record_archival">آرشیو ژرف</string>
 </resources>
