@@ -133,4 +133,22 @@
     <string name="settings_mode_slide_description">Paginated reading with a lightweight horizontal transition and no paper deformation.</string>
     <string name="settings_mode_paged_description">Static pagination with no decorative page transition.</string>
     <string name="settings_mode_scroll_description">Continuous vertical reading when the publication format supports it.</string>
+
+    <!-- In-reader appearance and brightness controls -->
+    <string name="reader_instruments">READING INSTRUMENTS</string>
+    <string name="reader_changes_live">Changes apply live to the open publication.</string>
+    <string name="reader_quick">QUICK</string>
+    <string name="reader_advanced">ADVANCED</string>
+    <string name="reader_typography_layout">TYPOGRAPHY &amp; LAYOUT</string>
+    <string name="reader_publisher_styling">Publisher styling</string>
+    <string name="reader_publisher_description">Preserve the book typography when available.</string>
+    <string name="reader_reset_appearance">Reset appearance</string>
+    <string name="reader_back_to_reading">Back to reading</string>
+    <string name="reader_sample_preview">LIVE SAMPLE PREVIEW</string>
+    <string name="reader_sample_chapter">CHAPTER VII</string>
+    <string name="reader_sample_title">Beyond the Veil</string>
+    <string name="reader_sample_body">The page should disappear beneath the story. Type, spacing, and motion remain present only when they help the eye move forward.</string>
+    <string name="reader_system_brightness">Use system brightness</string>
+    <string name="reader_system_brightness_description">Follows the device and restores naturally.</string>
+    <string name="reader_custom_brightness_description">Reader brightness is isolated to this reading session.</string>
 </resources>
