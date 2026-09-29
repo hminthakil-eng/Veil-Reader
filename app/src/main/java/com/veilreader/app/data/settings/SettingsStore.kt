@@ -90,7 +90,7 @@ private fun readerAppearanceFromSettingsJson(value: JSONObject): ReaderAppearanc
         } else {
             null
         }
-    )
+    ).canonicalizedNavigation()
 
 private fun decodeReaderAppearanceOverrides(
     raw: String?
@@ -162,7 +162,7 @@ class SettingsStore(private val context: Context) {
                 screenBrightness = prefs[Keys.screenBrightness]
                     ?.takeIf { it.isFinite() }
                     ?.coerceIn(0.05, 1.0)
-            ),
+            ).canonicalizedNavigation(),
             readerAppearanceOverrides = decodeReaderAppearanceOverrides(
                 prefs[Keys.readerAppearanceOverrides]
             ),
@@ -191,15 +191,16 @@ class SettingsStore(private val context: Context) {
     }
 
     suspend fun saveReaderAppearance(value: ReaderAppearance) {
+        val canonical = value.canonicalizedNavigation()
         context.veilSettingsDataStore.edit { prefs ->
-            prefs[Keys.theme] = value.theme.name
-            prefs[Keys.fontScale] = value.fontScale
-            prefs[Keys.lineHeight] = value.lineHeight
-            prefs[Keys.pageMargins] = value.pageMargins
-            prefs[Keys.scroll] = value.scroll
-            prefs[Keys.publisherStyles] = value.publisherStyles
-            prefs[Keys.pageTurnStyle] = value.pageTurnStyle.name
-            value.screenBrightness?.takeIf { it.isFinite() }?.let {
+            prefs[Keys.theme] = canonical.theme.name
+            prefs[Keys.fontScale] = canonical.fontScale
+            prefs[Keys.lineHeight] = canonical.lineHeight
+            prefs[Keys.pageMargins] = canonical.pageMargins
+            prefs[Keys.scroll] = canonical.scroll
+            prefs[Keys.publisherStyles] = canonical.publisherStyles
+            prefs[Keys.pageTurnStyle] = canonical.pageTurnStyle.name
+            canonical.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
         }
@@ -207,11 +208,12 @@ class SettingsStore(private val context: Context) {
 
     suspend fun saveBookReaderAppearance(bookId: String, value: ReaderAppearance) {
         if (bookId.isBlank()) return
+        val canonical = value.canonicalizedNavigation()
         context.veilSettingsDataStore.edit { prefs ->
             val current = decodeReaderAppearanceOverrides(
                 prefs[Keys.readerAppearanceOverrides]
             ).toMutableMap()
-            current[bookId] = value
+            current[bookId] = canonical
             prefs[Keys.readerAppearanceOverrides] = encodeReaderAppearanceOverrides(current)
         }
     }
