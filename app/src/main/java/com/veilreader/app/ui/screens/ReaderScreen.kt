@@ -3283,7 +3283,7 @@ private fun EpubAppearancePanel(
 }
 
 @Composable
-private fun ReaderCapabilityNotice(
+internal fun ReaderCapabilityNotice(
     text: String,
     modifier: Modifier = Modifier
 ) {
