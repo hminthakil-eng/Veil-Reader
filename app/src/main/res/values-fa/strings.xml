@@ -213,4 +213,5 @@
     <string name="reader_scope_all_books">همهٔ کتاب‌ها</string>
     <string name="reader_scope_book_description">این تنظیمات مطالعه فقط برای همین کتاب نگه داشته می‌شوند.</string>
     <string name="reader_scope_global_description">از تنظیمات پیش‌فرض سراسری استفاده شود و تغییرات بعدی هم سراسری بمانند.</string>
+    <string name="common_book_cover_a11y">جلد کتاب %1$s</string>
 </resources>
