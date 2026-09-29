@@ -375,10 +375,13 @@ internal class PaperCurlInputListener(
         !navigator.overflow.value.scroll && isEnabled()
 
     private fun isMostlyHorizontal(event: DragEvent): Boolean {
-        val x = abs(event.offset.x)
-        val y = abs(event.offset.y)
-        if (x < 4f && y < 4f) return true
-        return x >= y * HORIZONTAL_BIAS
+        val view = navigator.publicationView
+        return hasDeliberatePaperIntent(
+            offsetX = event.offset.x,
+            offsetY = event.offset.y,
+            width = view.width.toFloat(),
+            density = view.resources.displayMetrics.density
+        )
     }
 
     private fun isMovingInward(
@@ -428,11 +431,22 @@ internal class PaperCurlInputListener(
 
     private companion object {
         const val EDGE_FRACTION = 0.22f
-        const val HORIZONTAL_BIAS = 0.90f
         const val DRAG_DIRECTION_SLOP_PX = 4f
-        const val FRAME_DELAY_MS = 18L
-        const val PAGE_REVEAL_DELAY_MS = 28L
     }
+}
+
+internal fun hasDeliberatePaperIntent(
+    offsetX: Float,
+    offsetY: Float,
+    width: Float,
+    density: Float
+): Boolean {
+    if (width <= 0f) return false
+    val x = abs(offsetX)
+    val y = abs(offsetY)
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val intentDistance = max(8f * safeDensity, width * 0.009f)
+    return x >= intentDistance && x >= y * 1.08f
 }
 
 internal fun paperTurnDirectionFor(
