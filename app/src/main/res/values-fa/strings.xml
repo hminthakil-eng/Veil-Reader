@@ -1086,4 +1086,5 @@
     <string name="entry_handoff_ritual">مهر کهنه باز می‌شود؛ صفحه‌ات باقی است.</string>
     <string name="entry_handoff_returning">آرشیو کنار می‌رود؛ کتابت باقی است.</string>
     <string name="entry_handoff_first">آرشیو کنار می‌رود؛ صفحهٔ نخست باقی است.</string>
+    <string name="common_cover_of">جلد %1$s</string>
 </resources>
