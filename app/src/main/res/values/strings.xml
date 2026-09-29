@@ -66,4 +66,20 @@
     <string name="book_metadata_series_number_error">Use a number such as 1 or 2.5.</string>
     <string name="book_metadata_language">Language tag (optional)</string>
     <string name="book_metadata_language_hint">BCP-47, for example en, fa, tr, or en-US.</string>
+
+    <!-- Backup, restore, and reader reset controls -->
+    <string name="settings_library_backup_title">Library &amp; backup</string>
+    <string name="settings_library_backup_description">Export or restore your private local archive, annotations, and reading state.</string>
+    <string name="settings_exporting">Exporting…</string>
+    <string name="settings_export_backup">Export library backup</string>
+    <string name="settings_restoring">Restoring…</string>
+    <string name="settings_restore_backup">Restore library backup</string>
+    <string name="settings_export_notebook">Export notebook as Markdown</string>
+    <string name="settings_reset_title">Reset reading defaults</string>
+    <string name="settings_reset_description">Restore reader preferences without touching books, progress, notes, highlights, or backups.</string>
+    <string name="settings_reset_button">Reset reader defaults</string>
+    <string name="settings_restore_eyebrow">RESTORE ARCHIVE</string>
+    <string name="settings_restore_title">Replace local Veil Reader data?</string>
+    <string name="settings_restore_warning">Restore replaces your current library, annotations, reading progress, Path progress and Castle state with the selected backup. Export a fresh backup first if you need the current state.</string>
+    <string name="settings_choose_backup">Choose backup</string>
 </resources>
