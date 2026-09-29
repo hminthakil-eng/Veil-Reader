@@ -42,6 +42,7 @@ internal class PaperCurlInputListener(
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
     private var lastDragSampleAtMillis = 0L
+    private var lastMotionAtMillis = 0L
     private var lastInwardDistance = 0f
     private var releaseVelocityPxPerSec = 0f
 
@@ -242,6 +243,7 @@ internal class PaperCurlInputListener(
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
         lastDragSampleAtMillis = SystemClock.uptimeMillis()
+        lastMotionAtMillis = 0L
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
         state.updateDrag(event.start, event.offset)
@@ -265,12 +267,20 @@ internal class PaperCurlInputListener(
     private fun sampleReleaseVelocity(spec: TurnSpec, event: DragEvent) {
         val now = SystemClock.uptimeMillis()
         val inward = inwardDistance(spec, event)
+        val delta = inward - lastInwardDistance
         val elapsed = now - lastDragSampleAtMillis
-        if (lastDragSampleAtMillis > 0L && elapsed in 1L..120L) {
-            releaseVelocityPxPerSec =
-                ((inward - lastInwardDistance) * 1000f / elapsed.toFloat())
-                    .coerceIn(-12_000f, 12_000f)
+        val sinceMotion = if (lastMotionAtMillis > 0L) {
+            now - lastMotionAtMillis
+        } else {
+            Long.MAX_VALUE
         }
+        releaseVelocityPxPerSec = nextPaperReleaseVelocity(
+            previousVelocityPxPerSec = releaseVelocityPxPerSec,
+            distanceDeltaPx = delta,
+            elapsedMillis = elapsed,
+            sinceLastMotionMillis = sinceMotion
+        )
+        if (abs(delta) >= 1f) lastMotionAtMillis = now
         lastDragSampleAtMillis = now
         lastInwardDistance = inward
     }
@@ -374,6 +384,7 @@ internal class PaperCurlInputListener(
         previewNavigationSucceeded = false
         dragStartLocator = null
         lastDragSampleAtMillis = 0L
+        lastMotionAtMillis = 0L
         lastInwardDistance = 0f
         releaseVelocityPxPerSec = 0f
     }
@@ -430,4 +441,28 @@ internal fun shouldCommitPaperTurn(
     return inwardDistance >= commitDistance ||
         curlProgress >= 0.36f ||
         fastInwardFlick
+}
+
+/**
+ * A terminal drag event commonly repeats the last Move offset. Keep a fresh flick
+ * through that duplicate sample, but expire it when the finger has actually paused.
+ */
+internal fun nextPaperReleaseVelocity(
+    previousVelocityPxPerSec: Float,
+    distanceDeltaPx: Float,
+    elapsedMillis: Long,
+    sinceLastMotionMillis: Long
+): Float {
+    if (abs(distanceDeltaPx) >= 1f) {
+        if (elapsedMillis in 1L..120L) {
+            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
+                .coerceIn(-12_000f, 12_000f)
+        }
+        return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
+            previousVelocityPxPerSec
+        } else {
+            0f
+        }
+    }
+    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
 }
