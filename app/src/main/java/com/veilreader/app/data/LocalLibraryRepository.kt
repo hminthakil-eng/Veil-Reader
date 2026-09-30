@@ -588,6 +588,9 @@ class LocalLibraryRepository internal constructor(
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
 
+    fun passageVisitsFor(bookId: String): List<PassageVisit> =
+        _passageVisits.value.filter { it.bookId == bookId }
+
     /**
      * Records only a verified return to an already-preserved locator.
      *
