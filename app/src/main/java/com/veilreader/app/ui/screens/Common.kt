@@ -198,7 +198,7 @@ fun ArchivePanel(
     content: @Composable ColumnScope.() -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.extraSmall
 
     Box(
         modifier = modifier
@@ -207,14 +207,14 @@ fun ArchivePanel(
             .background(
                 Brush.linearGradient(
                     listOf(
-                        colors.surface.copy(alpha = 0.995f),
-                        colors.surfaceVariant.copy(alpha = 0.76f),
-                        colors.surface.copy(alpha = 0.995f)
+                        VeilPalette.Archive.copy(alpha = 0.995f),
+                        VeilPalette.Iron.copy(alpha = 0.88f),
+                        VeilPalette.Ink.copy(alpha = 0.995f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.56f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
                 shape
             )
     ) {
@@ -253,7 +253,7 @@ fun ArchivePanel(
 
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
-            strength = 0.42f
+            strength = 0.56f
         )
 
         Box(
