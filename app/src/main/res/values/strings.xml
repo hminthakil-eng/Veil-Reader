@@ -94,6 +94,8 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_high_contrast">High contrast</string>
+    <string name="settings_high_contrast_description">Strengthens text, outlines, state colors, and Material surfaces without changing book content. Reader publication themes remain independent.</string>
     <string name="settings_reading_title">Reading settings</string>
     <string name="settings_reading_description">Set default theme, typography, page movement, brightness, and layout.</string>
     <string name="settings_publication_theme">Publication theme</string>
