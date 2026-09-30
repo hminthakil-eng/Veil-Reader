@@ -207,6 +207,79 @@ class LibraryExport(
     private suspend fun captureMangaMergeBackups(): List<MangaMergeBackupSnapshot> =
         database.mangaMerges().listAll().map { receipt ->
             val merge = receipt.merge
+            require(receipt.members.isNotEmpty()) {
+                "Cannot back up a Manga merge receipt with no source Books."
+            }
+            val orderedMembers = receipt.members.sortedBy { it.sourceOrder }
+            orderedMembers.forEachIndexed { expected, member ->
+                require(member.sourceOrder == expected) {
+                    "Cannot back up a Manga merge receipt with non-contiguous source order."
+                }
+            }
+            require(receipt.originals.size == merge.targetOriginalChapterCount) {
+                "Cannot back up a Manga merge receipt missing original target evidence."
+            }
+            receipt.originals.sortedBy { it.readingOrder }.forEachIndexed { expected, original ->
+                require(
+                    original.readingOrder == expected &&
+                        original.targetBookId == merge.targetBookId
+                ) {
+                    "Cannot back up a Manga merge receipt with corrupt original target evidence."
+                }
+                val chapter = database.mangaCatalog().findChapter(original.chapterId)
+                    ?: error("Cannot back up a Manga merge whose original target chapter is missing.")
+                require(chapter.bookId == merge.targetBookId && chapter.readingOrder == expected)
+                val source = database.mangaCatalog()
+                    .listChapterSources(chapter.id)
+                    .singleOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?: error("Cannot back up an original target chapter without a local source.")
+                require(source.chapterKey == original.chapterKey) {
+                    "Cannot back up a Manga merge whose original target identity changed."
+                }
+            }
+            val expectedSourceChapterIds = buildSet {
+                orderedMembers.forEach { member ->
+                    database.mangaCatalog().listChapters(member.sourceBookId)
+                        .forEach { add(it.id) }
+                }
+            }
+            require(receipt.chapters.map { it.sourceChapterId }.toSet() == expectedSourceChapterIds) {
+                "Cannot back up an incomplete Manga merge chapter receipt."
+            }
+            receipt.chapters.forEach { mapping ->
+                require(mapping.targetBookId == merge.targetBookId)
+                val sourceChapter = database.mangaCatalog().findChapter(mapping.sourceChapterId)
+                    ?: error("Cannot back up a Manga merge whose source chapter is missing.")
+                val targetChapter = database.mangaCatalog().findChapter(mapping.targetChapterId)
+                    ?: error("Cannot back up a Manga merge whose target chapter is missing.")
+                require(
+                    sourceChapter.bookId == mapping.sourceBookId &&
+                        sourceChapter.readingOrder == mapping.sourceReadingOrder &&
+                        targetChapter.bookId == merge.targetBookId &&
+                        targetChapter.readingOrder == mapping.targetReadingOrder
+                ) {
+                    "Cannot back up a Manga merge with corrupt chapter ownership."
+                }
+                val sourceKey = database.mangaCatalog()
+                    .listChapterSources(sourceChapter.id)
+                    .singleOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?.chapterKey
+                    ?: error("Cannot back up a Manga merge source without local identity.")
+                val targetKey = database.mangaCatalog()
+                    .listChapterSources(targetChapter.id)
+                    .singleOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?.chapterKey
+                    ?: error("Cannot back up a Manga merge target without local identity.")
+                require(sourceKey == targetKey) {
+                    "Cannot back up a Manga merge linking different source archives."
+                }
+            }
             val targetProgressReadingOrder = merge.targetProgressChapterId?.let { chapterId ->
                 val chapter = database.mangaCatalog().findChapter(chapterId)
                     ?: error("Manga merge receipt points to a missing target progress chapter")
