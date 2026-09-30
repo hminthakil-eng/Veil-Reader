@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -456,7 +457,6 @@ private fun SettingsSection(
     var expanded by rememberSaveable(title) { mutableStateOf(false) }
 
     Surface(
-        onClick = { expanded = !expanded },
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 58.dp),
@@ -485,7 +485,10 @@ private fun SettingsSection(
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clickable { expanded = !expanded },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
