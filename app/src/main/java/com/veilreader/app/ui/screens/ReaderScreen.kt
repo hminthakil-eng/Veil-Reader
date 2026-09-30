@@ -2044,7 +2044,8 @@ fun ReaderScreen(
     }
 
     if (showNotebook) {
-        ReaderNotebook(
+        key(readerSessionInstanceId) {
+            ReaderNotebook(
             opened = opened,
             readerSessionInstanceId = readerSessionInstanceId,
             currentHref = currentLocationHref,
@@ -2099,7 +2100,8 @@ fun ReaderScreen(
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
-        )
+            )
+        }
     }
 
     if (showAppearance) {
