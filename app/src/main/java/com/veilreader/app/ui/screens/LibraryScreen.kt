@@ -490,10 +490,10 @@ fun LibraryScreen(
                 },
                 shape = MaterialTheme.shapes.extraSmall,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.82f),
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f),
-                    focusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.82f),
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.62f)
+                    focusedBorderColor = VeilPalette.Brass.copy(alpha = 0.78f),
+                    unfocusedBorderColor = VeilPalette.Brass.copy(alpha = 0.28f),
+                    focusedContainerColor = VeilPalette.Ink.copy(alpha = 0.88f),
+                    unfocusedContainerColor = VeilPalette.Archive.copy(alpha = 0.78f)
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1945,10 +1945,10 @@ private fun LibraryHeader(
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.extraSmall)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
-                MaterialTheme.shapes.medium
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
+                MaterialTheme.shapes.extraSmall
             )
     ) {
         val compact = maxWidth < 560.dp
@@ -1967,11 +1967,28 @@ private fun LibraryHeader(
                     .matchParentSize()
                     .background(
                         Brush.verticalGradient(
-                            0f to VeilPalette.Ink.copy(alpha = 0.16f),
-                            0.48f to VeilPalette.Ink.copy(alpha = 0.34f),
-                            1f to VeilPalette.Ink.copy(alpha = 0.98f)
+                            0f to VeilPalette.Ink.copy(alpha = 0.18f),
+                            0.42f to VeilPalette.Ink.copy(alpha = 0.38f),
+                            1f to VeilPalette.Ink.copy(alpha = 0.995f)
                         )
                     )
+            )
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                VeilPalette.Ink.copy(alpha = 0.58f),
+                                Color.Transparent,
+                                VeilPalette.Ink.copy(alpha = 0.22f)
+                            )
+                        )
+                    )
+            )
+            GrayfogOrnamentFrame(
+                modifier = Modifier.matchParentSize(),
+                strength = 0.64f
             )
 
             Column(
@@ -1991,8 +2008,8 @@ private fun LibraryHeader(
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                         border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = VeilPalette.Moon,
-                            containerColor = VeilPalette.Ink.copy(alpha = 0.48f)
+                            contentColor = VeilPalette.Moon.copy(alpha = 0.86f),
+                            containerColor = VeilPalette.Ink.copy(alpha = 0.72f)
                         ),
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
@@ -2010,8 +2027,8 @@ private fun LibraryHeader(
                         shape = MaterialTheme.shapes.extraSmall,
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = VeilPalette.Brass,
-                            contentColor = Color(0xFF17120A)
+                            containerColor = VeilPalette.DeepBrass.copy(alpha = 0.94f),
+                            contentColor = VeilPalette.Moon
                         ),
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
@@ -2047,6 +2064,21 @@ private fun LibraryHeader(
                         stringResource(R.string.library_header_tagline),
                         style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
                         color = VeilPalette.Moon.copy(alpha = 0.78f)
+                    )
+                    Box(
+                        Modifier
+                            .padding(vertical = 4.dp)
+                            .width(104.dp)
+                            .height(1.dp)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        VeilPalette.Brass.copy(alpha = 0.92f),
+                                        VeilPalette.Brass.copy(alpha = 0.34f),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
                     )
                     Text(
                         when (bookCount) {
