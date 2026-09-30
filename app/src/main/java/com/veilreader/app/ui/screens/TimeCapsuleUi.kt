@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.ReadingHistoryEvent
 import com.veilreader.app.domain.ReadingHistoryEventKind
 import com.veilreader.app.domain.ReadingTimeCapsule
+import com.veilreader.app.ui.books.bookArtifactState as canonicalBookArtifactState
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
@@ -51,7 +52,7 @@ fun ReadingTimeCapsuleCard(
                 title = capsule.book.title,
                 subtitle = capsule.book.author,
                 imagePath = capsule.book.coverCachePath,
-                artifact = bookArtifactState(capsule.book),
+                artifact = canonicalBookArtifactState(capsule.book),
                 modifier = Modifier
                     .width(66.dp)
                     .height(98.dp)
@@ -158,7 +159,7 @@ fun ReadingTimeCapsuleSheet(
                     title = capsule.book.title,
                     subtitle = capsule.book.author,
                     imagePath = capsule.book.coverCachePath,
-                    artifact = bookArtifactState(capsule.book),
+                    artifact = canonicalBookArtifactState(capsule.book),
                     modifier = Modifier
                         .width(82.dp)
                         .height(122.dp)
