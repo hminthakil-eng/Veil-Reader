@@ -34,8 +34,11 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /** User-initiated local backup/export. No server or account is involved. */
-class LibraryExport(private val context: Context, private val library: LocalLibraryRepository) {
-    private val database = VeilDatabase.get(context.applicationContext)
+class LibraryExport(
+    private val context: Context,
+    private val library: LocalLibraryRepository,
+    private val database: VeilDatabase = VeilDatabase.get(context.applicationContext)
+) {
     private val mangaImporter by lazy {
         MangaLocalImportCoordinator(context.applicationContext, library, database)
     }
