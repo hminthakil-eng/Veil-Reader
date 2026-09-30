@@ -60,7 +60,8 @@ fun ReadingNowScreen(
     onOpenBook: (Book) -> Unit,
     onOpenPassage: (Book, String) -> Unit,
     onOpenLibrary: () -> Unit,
-    onOpenCastle: () -> Unit
+    onOpenCastle: () -> Unit,
+    onOpenMirror: () -> Unit = {}
 ) {
     val snapshot = buildThresholdSnapshot(books)
     val current = snapshot.hero
@@ -191,8 +192,24 @@ fun ReadingNowScreen(
                 }
             }
 
+            if (highlights.isNotEmpty()) {
+                Spacer(Modifier.height(VeilSpacing.xl))
+                VeilReveal(delayMillis = 200, modifier = Modifier.fillMaxWidth()) {
+                    Box(
+                        Modifier.padding(
+                            horizontal = thresholdLayout.horizontalPaddingDp.dp
+                        )
+                    ) {
+                        MirrorPortalCard(
+                            savedTraceCount = highlights.size,
+                            onOpenMirror = onOpenMirror
+                        )
+                    }
+                }
+            }
+
             Spacer(Modifier.height(VeilSpacing.xl))
-            VeilReveal(delayMillis = 210, modifier = Modifier.fillMaxWidth()) {
+            VeilReveal(delayMillis = 230, modifier = Modifier.fillMaxWidth()) {
                 Box(
                     Modifier.padding(
                         horizontal = thresholdLayout.horizontalPaddingDp.dp
@@ -1065,3 +1082,86 @@ private fun localizedThresholdQuest(
     else -> stringResource(R.string.threshold_quest_generic)
 }
 
+
+
+@Composable
+private fun MirrorPortalCard(
+    savedTraceCount: Int,
+    onOpenMirror: () -> Unit
+) {
+    Surface(
+        onClick = onOpenMirror,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 104.dp),
+        shape = MaterialTheme.shapes.small,
+        color = VeilPalette.Archive.copy(alpha = 0.82f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.36f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(VeilSpacing.md),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(width = 54.dp, height = 72.dp)
+                    .clip(RoundedCornerShape(percent = 50))
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color(0xFF050608),
+                                Color(0xFF151A21),
+                                Color(0xFF08090B)
+                            )
+                        )
+                    )
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.58f)),
+                        RoundedCornerShape(percent = 50)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "◌",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = VeilPalette.Brass.copy(alpha = 0.82f)
+                )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    stringResource(R.string.mirror_portal_eyebrow),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    stringResource(R.string.mirror_portal_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    stringResource(R.string.mirror_portal_body, savedTraceCount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.86f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Text(
+                stringResource(R.string.mirror_portal_action),
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Brass
+            )
+        }
+    }
+}
