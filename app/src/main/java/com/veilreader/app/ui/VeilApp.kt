@@ -61,6 +61,7 @@ import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
+import com.veilreader.app.ui.screens.localizedSigilName
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.sensory.VeilSensoryFeedback
 import com.veilreader.app.ui.theme.VeilPalette
@@ -562,7 +563,7 @@ fun VeilApp(
                 highlightCount = highlights.size,
                 dailyGoalMinutes = requireNotNull(dailyGoalMinutes),
                 castleTitle = requireNotNull(castleTitle),
-                equippedSigilName = equippedSigil?.let(::sigilDisplayName),
+                equippedSigilName = equippedSigil?.let { localizedSigilName(it) },
                 books = books,
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
@@ -838,11 +839,3 @@ internal fun contentMaxWidthDp(windowSizeClass: WindowSizeClass): Int =
         1040
     }
 
-private fun sigilDisplayName(id: String): String = when (id) {
-    "first_hour" -> "Quiet Hour"
-    "passage_keeper" -> "Passage Keeper"
-    "seven_days" -> "Seven-Day Lantern"
-    "ten_tomes" -> "Ten Tomes"
-    "first_threshold" -> "First Threshold"
-    else -> "Unknown Sigil"
-}
