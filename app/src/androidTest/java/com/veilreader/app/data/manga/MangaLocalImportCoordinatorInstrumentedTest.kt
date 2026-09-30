@@ -124,7 +124,7 @@ class MangaLocalImportCoordinatorInstrumentedTest {
         )
         assertTrue(requireNotNull(db.books().findEntity(book.id)).finished)
 
-        val secondArchive = testArchive("Series ch 2.cbz") {
+        val secondArchive = testArchive("Series Vol 3 Ch 2.5.cbz") {
             addPng("001.png")
             addPng("002.png")
             addPng("003.png")
@@ -139,8 +139,9 @@ class MangaLocalImportCoordinatorInstrumentedTest {
 
         val chapters = db.mangaCatalog().listChapters(book.id)
         assertEquals(listOf(0, 1), chapters.map { it.readingOrder })
-        assertEquals(2.0, requireNotNull(chapters[1].number), 0.000001)
-        assertEquals("Series ch 2", chapters[1].title)
+        assertEquals(3.0, requireNotNull(chapters[1].volume), 0.000001)
+        assertEquals(2.5, requireNotNull(chapters[1].number), 0.000001)
+        assertEquals("Series Vol 3 Ch 2.5", chapters[1].title)
 
         val sourceKeys = chapters.map { chapter ->
             db.mangaCatalog().listChapterSources(chapter.id).single().mangaKey
