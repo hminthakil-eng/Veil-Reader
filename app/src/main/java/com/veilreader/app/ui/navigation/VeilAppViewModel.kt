@@ -119,12 +119,12 @@ class VeilAppViewModel(
     /**
      * The explicit locator has been handed to Readium and durably flushed.
      *
-     * If the process-death checkpoint still points at that same explicit locator it is safe to clear
-     * both. A newer checkpoint written while the flush was running is preserved.
+     * Every Reader-originated mutation is bound to the app-level open-request identity. A late
+     * callback from an older instance of the same book must never mutate a newer Reader route.
      */
-    fun readerOpened(bookId: String) {
+    fun readerOpened(bookId: String, sessionInstanceId: String) {
         val current = _route.value
-        if (current.activeBookId != bookId) return
+        if (!current.ownsReader(bookId, sessionInstanceId)) return
         val explicit = current.locatorOverrideJson
         update {
             copy(
@@ -135,45 +135,65 @@ class VeilAppViewModel(
         }
     }
 
-    fun checkpointReaderLocator(bookId: String, locatorJson: String) {
+    fun checkpointReaderLocator(
+        bookId: String,
+        sessionInstanceId: String,
+        locatorJson: String
+    ) {
         val clean = locatorJson.takeIf(String::isNotBlank) ?: return
         val current = _route.value
-        if (current.activeBookId != bookId || current.readerLocatorCheckpointJson == clean) return
+        if (
+            !current.ownsReader(bookId, sessionInstanceId) ||
+            current.readerLocatorCheckpointJson == clean
+        ) return
         update { copy(readerLocatorCheckpointJson = clean) }
     }
 
-    fun readerCheckpointPersisted(bookId: String, locatorJson: String) {
+    fun readerCheckpointPersisted(
+        bookId: String,
+        sessionInstanceId: String,
+        locatorJson: String
+    ) {
         val current = _route.value
         if (
-            current.activeBookId != bookId ||
+            !current.ownsReader(bookId, sessionInstanceId) ||
             current.readerLocatorCheckpointJson != locatorJson
         ) return
         update { copy(readerLocatorCheckpointJson = null) }
     }
 
-    fun bookOpenFailed(bookId: String) {
-        if (_route.value.activeBookId != bookId) return
+    fun bookOpenFailed(bookId: String, sessionInstanceId: String) {
+        if (!_route.value.ownsReader(bookId, sessionInstanceId)) return
         update {
             copy(
                 activeBookId = null,
                 readerSessionInstanceId = null,
-            locatorOverrideJson = null,
+                locatorOverrideJson = null,
                 readerLocatorCheckpointJson = null
             )
         }
     }
 
-    fun closeReader() = update {
-        copy(
-            selectedTab = VeilTab.LIBRARY,
-            showSettings = false,
-            activeBookId = null,
-            readerSessionInstanceId = null,
-            locatorOverrideJson = null,
-            showArchive = false,
-            activeChamber = null
-        )
+    fun closeReader(sessionInstanceId: String) {
+        val current = _route.value
+        if (current.readerSessionInstanceId != sessionInstanceId) return
+        update {
+            copy(
+                selectedTab = VeilTab.LIBRARY,
+                showSettings = false,
+                activeBookId = null,
+                readerSessionInstanceId = null,
+                locatorOverrideJson = null,
+                readerLocatorCheckpointJson = null,
+                showArchive = false,
+                activeChamber = null
+            )
+        }
     }
+
+    private fun VeilRouteState.ownsReader(bookId: String, sessionInstanceId: String): Boolean =
+        activeBookId == bookId &&
+            readerSessionInstanceId == sessionInstanceId
 
     private fun update(transform: VeilRouteState.() -> VeilRouteState) {
         val next = _route.value.transform().normalized()
