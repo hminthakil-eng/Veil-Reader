@@ -547,6 +547,38 @@ class LocalLibraryRepository internal constructor(
     }
 
     /**
+     * Restores the latest durable accounting state for an app-level Reader open request.
+     *
+     * The pending session snapshot is forced onto the serialized write queue first, then the read is
+     * placed behind it. This prevents a recreated ReaderViewModel from hydrating an older database
+     * row while a newer snapshot from the previous instance is still waiting in memory.
+     */
+    suspend fun loadReadingSessionForResume(
+        sessionId: String,
+        bookId: String
+    ): ReadingSessionResumeState? {
+        if (sessionId.isBlank() || bookId.isBlank()) return null
+        flushReadingSession(sessionId)
+        return orderedWrite {
+            val snapshot = database.readingSessions()
+                .findById(sessionId)
+                ?.toSnapshot()
+                ?.takeIf { it.bookId == bookId }
+                ?: return@orderedWrite null
+
+            ReadingSessionResumeState(
+                snapshot = snapshot,
+                notedHighlightIds = database.highlights()
+                    .listAll()
+                    .asSequence()
+                    .filter { it.bookId == bookId && it.note.isNotBlank() }
+                    .map { it.id }
+                    .toSet()
+            )
+        }
+    }
+
+    /**
      * Test-only lifecycle hook for instrumented repositories backed by short-lived in-memory DBs.
      * Production repositories live for the app process, but tests must cancel Room observers before
      * closing their database to avoid asynchronous queries against a closed connection.
@@ -906,6 +938,11 @@ class LocalLibraryRepository internal constructor(
 data class BookImportResult(
     val book: Book,
     val duplicate: Boolean
+)
+
+data class ReadingSessionResumeState(
+    val snapshot: ReadingSessionSnapshot,
+    val notedHighlightIds: Set<String>
 )
 
 data class LibrarySnapshot(
