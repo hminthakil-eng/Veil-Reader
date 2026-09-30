@@ -33,6 +33,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,7 +49,9 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderLayoutMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.util.Locale
 
 @Composable
@@ -125,6 +128,11 @@ fun SettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .grayfogAtmosphere(
+                realm = VeilRealm.ARCHIVE,
+                seed = appVersion.hashCode(),
+                intensity = 0.46f
+            )
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.xl),
@@ -445,46 +453,80 @@ private fun SettingsSection(
     description: String,
     content: @Composable () -> Unit
 ) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    var expanded by rememberSaveable(title) { mutableStateOf(false) }
+
+    Surface(
+        onClick = { expanded = !expanded },
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 58.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (expanded) {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.58f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.30f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (expanded) {
+                VeilPalette.Brass.copy(alpha = 0.48f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
+            }
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                title.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        BrassRule(Modifier.fillMaxWidth())
-
-        Text(
-            description,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraSmall,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
+        Column(
+            modifier = Modifier.padding(
+                horizontal = VeilSpacing.md,
+                vertical = 12.dp
             ),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            Column(
-                modifier = Modifier.padding(VeilSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
-                content()
+                Column(
+                    Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (!expanded) {
+                        Text(
+                            description,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1
+                        )
+                    }
+                }
+                Text(
+                    if (expanded) "−" else "+",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Brass
+                )
+            }
+
+            if (expanded) {
+                BrassRule(Modifier.fillMaxWidth())
+                Text(
+                    description,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                ) {
+                    content()
+                }
             }
         }
     }
