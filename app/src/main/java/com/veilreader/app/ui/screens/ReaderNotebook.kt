@@ -141,7 +141,7 @@ fun ReaderNotebook(
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Text(
-                    stringResource(R.string.reader_notebook_eyebrow),
+                    stringResource(R.string.notebook_eyebrow),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
@@ -289,7 +289,7 @@ fun ReaderNotebook(
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
-                                        stringResource(R.string.reader_notebook_saved_place),
+                                        stringResource(R.string.notebook_saved_location),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass
                                     )
@@ -350,7 +350,7 @@ fun ReaderNotebook(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        marginMemory.ageLabel,
+                                        highlightAgeLabel(marginMemory),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass
                                     )
@@ -364,7 +364,7 @@ fun ReaderNotebook(
                                                         marginMemory.revisitCount
                                                     )
                                                 )
-                                                marginMemory.lastViewedLabel?.let {
+                                                highlightLastViewedLabel(marginMemory)?.let {
                                                     append(" · ").append(it)
                                                 }
                                             },
@@ -407,9 +407,9 @@ fun ReaderNotebook(
                                         ) {
                                             Text(
                                                 if (highlight.note.isBlank()) {
-                                                    stringResource(R.string.reader_notebook_annotate)
+                                                    stringResource(R.string.notebook_add_note)
                                                 } else {
-                                                    stringResource(R.string.reader_notebook_edit_annotation)
+                                                    stringResource(R.string.notebook_edit_note)
                                                 }
                                             )
                                         }
@@ -497,13 +497,13 @@ fun ReaderNotebook(
             titleContentColor = VeilPalette.Moon,
             textContentColor = VeilPalette.Mist,
             tonalElevation = 0.dp,
-            title = { Text(stringResource(R.string.reader_notebook_passage_note)) },
+            title = { Text(stringResource(R.string.notebook_note_dialog_title)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = note,
                         onValueChange = { note = it },
-                        label = { Text(stringResource(R.string.reader_notebook_your_thoughts)) },
+                        label = { Text(stringResource(R.string.notebook_note_field_label)) },
                         minLines = 4,
                         maxLines = 8,
                         enabled = !savingNote
@@ -559,8 +559,8 @@ fun ReaderNotebook(
             titleContentColor = VeilPalette.Moon,
             textContentColor = VeilPalette.Mist,
             tonalElevation = 0.dp,
-            title = { Text(stringResource(R.string.reader_notebook_delete_highlight_title)) },
-            text = { Text(stringResource(R.string.reader_notebook_delete_highlight_body)) },
+            title = { Text(stringResource(R.string.notebook_delete_highlight_title)) },
+            text = { Text(stringResource(R.string.notebook_delete_highlight_body)) },
             confirmButton = {
                 TextButton(onClick = { onDeleteHighlight(highlight.id); deleting = null }) {
                     Text(stringResource(R.string.common_delete))
