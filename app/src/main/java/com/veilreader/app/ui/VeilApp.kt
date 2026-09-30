@@ -193,11 +193,17 @@ fun VeilApp(
     } else {
         null
     }
+    val revealedDiscoveriesState = if (openedPublication == null) {
+        game.revealedDiscoveries.collectAsStateWithLifecycle()
+    } else {
+        null
+    }
     val profile = profileState?.value
     val quests = questsState?.value.orEmpty()
     val dailyGoalMinutes = dailyGoalState?.value
     val equippedSigil = equippedSigilState?.value
     val castleTitle = castleTitleState?.value
+    val revealedDiscoveries = revealedDiscoveriesState?.value.orEmpty()
 
     val lifecycle = LocalLifecycleOwner.current.lifecycle
 
@@ -560,6 +566,7 @@ fun VeilApp(
                 books = books,
                 readingSessions = readingSessions,
                 readingCycles = readingCycles,
+                revealedDiscoveryIds = revealedDiscoveries,
                 onSetDailyGoal = game::setDailyGoal,
                 onOpenArchive = routeViewModel::openArchive,
                 onOpenSettings = routeViewModel::openSettings
