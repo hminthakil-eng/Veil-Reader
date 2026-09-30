@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="sigil_first_hour_name">Quiet Hour</string>
+    <string name="sigil_passage_keeper_name">Passage Keeper</string>
+    <string name="sigil_seven_days_name">Seven-Day Lantern</string>
+    <string name="sigil_ten_tomes_name">Ten Tomes</string>
+    <string name="sigil_first_threshold_name">First Threshold</string>
+    <string name="sigil_unknown_name">Unknown Sigil</string>
+
+    <string name="discovery_patient_flame_title">The Patient Flame</string>
+    <string name="discovery_patient_flame_clue">A flame kept for many returns begins to remember the hand that lit it.</string>
+    <string name="discovery_patient_flame_lore">Consistency leaves a different mark than intensity. The Castle has begun to recognize your return.</string>
+    <string name="discovery_marginalia_gate_title">The Marginalia Gate</string>
+    <string name="discovery_marginalia_gate_clue">Some doors are written in the margins rather than printed on the page.</string>
+    <string name="discovery_marginalia_gate_lore">Enough passages have been preserved that your annotations now form a second text beside the books themselves.</string>
+    <string name="discovery_deep_shelf_title">The Deep Shelf</string>
+    <string name="discovery_deep_shelf_clue">Finished volumes gather weight. Eventually the shelf becomes a foundation.</string>
+    <string name="discovery_deep_shelf_lore">Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list.</string>
+    <string name="discovery_long_watch_title">The Long Watch</string>
+    <string name="discovery_long_watch_clue">There is a point when time spent reading stops feeling counted.</string>
+    <string name="discovery_long_watch_lore">Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes.</string>
+    <string name="discovery_veil_thins_title">When the Veil Thins</string>
+    <string name="discovery_veil_thins_clue">Several marks must awaken before they begin to answer one another.</string>
+    <string name="discovery_veil_thins_lore">Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil.</string>
+    <string name="discovery_unnamed_chamber_title">The Unnamed Chamber</string>
+    <string name="discovery_unnamed_chamber_clue">The deepest chamber does not open to a single achievement.</string>
+    <string name="discovery_unnamed_chamber_lore">A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name.</string>
+    <string name="discovery_unknown_title">Veiled Discovery</string>
+    <string name="discovery_unknown_clue">Its condition remains hidden.</string>
+    <string name="discovery_unknown_lore">This discovery belongs to a reading history not yet described here.</string>
+
+    <string name="profile_archivist_dossier">ARCHIVIST DOSSIER</string>
+    <string name="profile_recorded_history">Recorded history</string>
+    <string name="profile_reading_record">Reading record</string>
+    <string name="profile_rhythm">Rhythm</string>
+    <string name="profile_daily_goal">Daily reading goal</string>
+    <string name="profile_daily_goal_body">Your first daily quest follows this target. Choose a pace that supports reading instead of turning it into a chore.</string>
+    <string name="profile_minutes_current">%1$d min · current</string>
+    <string name="profile_minutes">%1$d min</string>
+    <string name="profile_known_marks">Known marks</string>
+    <string name="profile_sigil_registry">Sigil registry</string>
+    <string name="profile_awakened_count">%1$d awakened</string>
+    <string name="profile_restricted_folio">Restricted folio</string>
+    <string name="profile_veiled_discoveries">Veiled discoveries</string>
+    <string name="profile_revealed_count">%1$d/%2$d revealed</string>
+    <string name="profile_discoveries_body">Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.</string>
+    <string name="profile_open_hidden_archive">Open Hidden Archive</string>
+
+    <string name="profile_durable_ledger">DURABLE LEDGER</string>
+    <string name="profile_sessions_count">%1$d sessions</string>
+    <string name="profile_archive_span">Archive span</string>
+    <string name="profile_recorded_active_time">Recorded active time</string>
+    <string name="profile_completion_records">Completion records</string>
+    <string name="profile_reread_cycles">Reread cycles</string>
+    <string name="profile_archived_volumes">Archived volumes</string>
+    <string name="profile_ledger_truth">This ledger uses durable local book, session, and completion records; it does not infer missing reading history.</string>
+    <string name="profile_no_record">NO RECORD</string>
+
+    <string name="profile_private_record">PRIVATE READING RECORD</string>
+    <string name="profile_settings">SETTINGS</string>
+    <string name="profile_fact_path">PATH</string>
+    <string name="profile_fact_level">LEVEL</string>
+    <string name="profile_fact_castle_tier">CASTLE TIER</string>
+    <string name="profile_fact_equipped_sigil">EQUIPPED SIGIL</string>
+    <string name="profile_experience">EXPERIENCE</string>
+    <string name="profile_xp">%1$d/%2$d XP</string>
+    <string name="profile_sigils_count">%1$d SIGILS</string>
+    <string name="profile_discoveries_count">%1$d/%2$d DISCOVERIES</string>
+    <string name="profile_marks_count">%1$d MARKS</string>
+
+    <string name="profile_stat_return">RETURN</string>
+    <string name="profile_stat_volumes">VOLUMES</string>
+    <string name="profile_stat_marks">MARKS</string>
+    <string name="profile_stat_pages">PAGES</string>
+    <string name="profile_stat_time">TIME</string>
+    <string name="profile_stat_tier">TIER</string>
+    <string name="profile_stat_current_streak">current streak</string>
+    <string name="profile_stat_finished">finished</string>
+    <string name="profile_stat_highlights">highlights</string>
+    <string name="profile_stat_turned">turned</string>
+    <string name="profile_stat_inside_books">inside books</string>
+    <string name="profile_stat_castle">castle</string>
+    <string name="profile_days_short">%1$dd</string>
+    <string name="profile_awakened">AWAKENED</string>
+
+    <string name="profile_veiled_fragment">Veiled Fragment %1$d</string>
+    <string name="profile_revealed">REVEALED</string>
+    <string name="profile_clue">CLUE</string>
+    <string name="profile_discovery_persistent">This discovery emerged from your existing reading history; no action was consumed and nothing expires.</string>
+</resources>
