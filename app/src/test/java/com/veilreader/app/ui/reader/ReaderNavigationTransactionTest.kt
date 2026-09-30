@@ -11,34 +11,42 @@ class ReaderNavigationTransactionTest {
     @Test
     fun firstSettledLocator_consumesProgrammaticTransactionOnce() {
         val gate = ReaderNavigationTransactionGate()
-        val started = gate.begin(originLocatorJson = "origin")
+        val started = gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
 
-        val settled = gate.consumeSettled()
+        val settled = gate.consumeSettled(nowElapsedMs = 600L)
 
         assertEquals(started.token, settled?.token)
         assertEquals("origin", settled?.originLocatorJson)
-        assertNull(gate.consumeSettled())
+        assertNull(gate.consumeSettled(nowElapsedMs = 500L))
     }
 
     @Test
     fun staleCancel_cannotCancelNewerJump() {
         val gate = ReaderNavigationTransactionGate()
-        val first = gate.begin("a")
-        val second = gate.begin("b")
+        val first = gate.begin("a", nowElapsedMs = 100L)
+        val second = gate.begin("b", nowElapsedMs = 200L)
 
         gate.cancel(first.token)
 
-        assertEquals(second.token, gate.consumeSettled()?.token)
+        assertEquals(second.token, gate.consumeSettled(nowElapsedMs = 500L)?.token)
     }
 
     @Test
     fun currentCancel_removesPendingJump() {
         val gate = ReaderNavigationTransactionGate()
-        val current = gate.begin("a")
+        val current = gate.begin("a", nowElapsedMs = 100L)
 
         gate.cancel(current.token)
 
         assertNull(gate.consumeSettled())
+    }
+
+    @Test
+    fun expiredTransaction_doesNotCaptureLaterUserTurn() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
+        gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
+
+        assertNull(gate.consumeSettled(nowElapsedMs = 1_101L))
     }
 
     @Test
