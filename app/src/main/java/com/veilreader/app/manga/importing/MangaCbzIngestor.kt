@@ -112,7 +112,7 @@ class MangaCbzIngestor(
 
                 val imageEntries = allEntries
                     .asSequence()
-                    .filterNot(ZipEntry::isDirectory)
+                    .filterNot { it.isDirectory }
                     .filter { entry ->
                         val extension = extensionOf(entry.name)
                         extension != null
