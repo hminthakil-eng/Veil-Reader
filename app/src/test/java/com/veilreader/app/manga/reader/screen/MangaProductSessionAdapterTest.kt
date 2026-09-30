@@ -30,7 +30,7 @@ class MangaProductSessionAdapterTest {
 
         val result = MangaProductSessionAdapter().build(
             mangaId = mangaId,
-            chaptersInReadingOrder = chapters.map(::MangaProductChapter)
+            chaptersInReadingOrder = chapters.map { MangaProductChapter(it) }
         )
 
         assertTrue(result is MangaSessionAdapterResult.Ready)
