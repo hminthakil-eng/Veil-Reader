@@ -63,6 +63,7 @@ import com.veilreader.app.manga.reader.screen.MangaSessionAdapterResult
 import com.veilreader.app.manga.source.SourceExecutionCoordinator
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
+import com.veilreader.app.ui.reader.ReaderOpenResourceGuard
 import com.veilreader.app.ui.screens.ArchiveScreen
 import com.veilreader.app.ui.screens.ArrodesMirrorScreen
 import com.veilreader.app.ui.screens.BookEntryStage
@@ -733,88 +734,113 @@ fun VeilApp(
             }
         )
 
-        val routeAfterOpen = routeViewModel.route.value
-        if (
-            routeAfterOpen.activeBookId != targetId ||
-            routeAfterOpen.readerSessionInstanceId != openRequestId
-        ) {
-            opened.close()
-            return@LaunchedEffect
-        }
-
+        val publicationGuard = ReaderOpenResourceGuard(opened)
         try {
-            library.applyPdfiumLocatorMigrations(targetId, opened.locatorMigrations)
-        } catch (cancelled: CancellationException) {
-            opened.close()
-            throw cancelled
-        } catch (error: Exception) {
-            showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING)
-        }
+            val routeAfterOpen = routeViewModel.route.value
+            if (
+                routeAfterOpen.activeBookId != targetId ||
+                routeAfterOpen.readerSessionInstanceId != openRequestId
+            ) {
+                return@LaunchedEffect
+            }
 
-        val routeBeforeCommit = routeViewModel.route.value
-        if (
-            routeBeforeCommit.activeBookId != targetId ||
-            routeBeforeCommit.readerSessionInstanceId != openRequestId
-        ) {
-            opened.close()
-            return@LaunchedEffect
-        }
+            try {
+                library.applyPdfiumLocatorMigrations(targetId, opened.locatorMigrations)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Exception) {
+                showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING)
+            }
 
-        val recoveryLocator = locatorOverride ?: readerCheckpoint
-        if (recoveryLocator != null) {
-            val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
-            val recoveredProgress =
-                opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
-            library.saveProgress(targetId, recoveredProgress, persistedLocator)
-        }
-        library.markOpened(targetId)
-        if (locatorOverride != null) {
-            library.recordPassageVisitForLocator(
-                bookId = targetId,
-                locatorJson = locatorOverride
-            )
-        }
-        openedPublicationSessionId = openRequestId
-        openedPublication = opened
-        if (activeReturnRitual != null) {
-            sensory.perform(view, VeilSensoryEvent.RETURN_RITUAL)
-        }
+            val routeBeforeCommit = routeViewModel.route.value
+            if (
+                routeBeforeCommit.activeBookId != targetId ||
+                routeBeforeCommit.readerSessionInstanceId != openRequestId
+            ) {
+                return@LaunchedEffect
+            }
 
-        when {
-            locatorOverride != null -> {
-                scope.launch {
-                    try {
-                        library.flushWrites()
-                        val currentRoute = routeViewModel.route.value
-                        if (
-                            currentRoute.activeBookId == targetId &&
-                            currentRoute.readerSessionInstanceId == openRequestId &&
-                            currentRoute.locatorOverrideJson == locatorOverride
-                        ) {
-                            routeViewModel.readerOpened(targetId, openRequestId)
+            val recoveryLocator = locatorOverride ?: readerCheckpoint
+            if (recoveryLocator != null) {
+                val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
+                val recoveredProgress =
+                    opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
+                library.saveProgress(targetId, recoveredProgress, persistedLocator)
+            }
+            library.markOpened(targetId)
+            if (locatorOverride != null) {
+                library.recordPassageVisitForLocator(
+                    bookId = targetId,
+                    locatorJson = locatorOverride
+                )
+            }
+
+            openedPublicationSessionId = openRequestId
+            openedPublication = publicationGuard.transfer()
+            if (activeReturnRitual != null) {
+                sensory.perform(view, VeilSensoryEvent.RETURN_RITUAL)
+            }
+
+            when {
+                locatorOverride != null -> {
+                    scope.launch {
+                        try {
+                            library.flushWrites()
+                            val currentRoute = routeViewModel.route.value
+                            if (
+                                currentRoute.activeBookId == targetId &&
+                                currentRoute.readerSessionInstanceId == openRequestId &&
+                                currentRoute.locatorOverrideJson == locatorOverride
+                            ) {
+                                routeViewModel.readerOpened(targetId, openRequestId)
+                            }
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            val currentRoute = routeViewModel.route.value
+                            if (
+                                currentRoute.activeBookId == targetId &&
+                                currentRoute.readerSessionInstanceId == openRequestId
+                            ) {
+                                showNotice(
+                                    R.string.notice_position_save_failed,
+                                    VeilNoticeKind.WARNING
+                                )
+                            }
                         }
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (error: Exception) {
-                        showNotice(R.string.notice_position_save_failed, VeilNoticeKind.WARNING)
                     }
                 }
-            }
 
-            readerCheckpoint != null -> {
-                scope.launch {
-                    try {
-                        library.flushWrites()
-                        routeViewModel.readerCheckpointPersisted(targetId, openRequestId, readerCheckpoint)
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (error: Exception) {
-                        showNotice(R.string.notice_checkpoint_save_failed, VeilNoticeKind.WARNING)
+                readerCheckpoint != null -> {
+                    scope.launch {
+                        try {
+                            library.flushWrites()
+                            routeViewModel.readerCheckpointPersisted(
+                                targetId,
+                                openRequestId,
+                                readerCheckpoint
+                            )
+                        } catch (cancelled: CancellationException) {
+                            throw cancelled
+                        } catch (error: Exception) {
+                            val currentRoute = routeViewModel.route.value
+                            if (
+                                currentRoute.activeBookId == targetId &&
+                                currentRoute.readerSessionInstanceId == openRequestId
+                            ) {
+                                showNotice(
+                                    R.string.notice_checkpoint_save_failed,
+                                    VeilNoticeKind.WARNING
+                                )
+                            }
+                        }
                     }
                 }
-            }
 
-            else -> routeViewModel.readerOpened(targetId, openRequestId)
+                else -> routeViewModel.readerOpened(targetId, openRequestId)
+            }
+        } finally {
+            publicationGuard.closeIfUntransferred()
         }
     }
 
