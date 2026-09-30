@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import androidx.compose.foundation.BorderStroke
 import android.graphics.Color as AndroidColor
 import android.view.ActionMode
 import android.view.View
@@ -18,7 +19,6 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -552,10 +552,14 @@ fun ReaderScreen(
                     .widthIn(max = 760.dp)
                     .statusBarsPadding()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                shape = RoundedCornerShape(24.dp),
-                tonalElevation = 1.dp,
-                shadowElevation = 10.dp
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+                shape = MaterialTheme.shapes.large,
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp
             ) {
                 Column(
                     Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
@@ -620,10 +624,14 @@ fun ReaderScreen(
                     .widthIn(max = 560.dp)
                     .navigationBarsPadding()
                     .padding(horizontal = 14.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f),
-                tonalElevation = 2.dp,
-                shadowElevation = 12.dp,
-                shape = RoundedCornerShape(28.dp)
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+                tonalElevation = 0.dp,
+                shadowElevation = 8.dp,
+                shape = MaterialTheme.shapes.large,
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                )
             ) {
                 Row(
                     Modifier.padding(horizontal = 8.dp, vertical = 7.dp),
