@@ -478,8 +478,9 @@ fun VeilApp(
         mangaMutationInProgress = true
         scope.launch {
             try {
-                library.editMetadata(update)
-                library.flushWrites()
+                checkNotNull(library.editMetadataDurably(update)) {
+                    "Manga Book disappeared before metadata persistence"
+                }
                 mangaStorageRevision += 1
                 showNotice(
                     R.string.notice_manga_series_metadata_updated,
