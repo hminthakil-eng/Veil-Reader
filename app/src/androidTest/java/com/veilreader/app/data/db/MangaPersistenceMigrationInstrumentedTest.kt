@@ -184,11 +184,23 @@ class MangaPersistenceMigrationInstrumentedTest {
         assertCount(migrated, "manga_merge_original_chapters", 1)
         assertCount(migrated, "manga_merge_chapters", 1)
 
-        runCatching {
+        val sourceDelete = runCatching {
             migrated.execSQL("DELETE FROM books WHERE id = 'source-comic'")
         }
+        val targetDelete = runCatching {
+            migrated.execSQL("DELETE FROM books WHERE id = 'comic'")
+        }
+        assertEquals(true, sourceDelete.isFailure)
+        assertEquals(true, targetDelete.isFailure)
         assertCount(migrated, "books", 2)
         assertCount(migrated, "manga_merge_members", 1)
+        assertCount(migrated, "manga_merge_original_chapters", 1)
+
+        migrated.execSQL("DELETE FROM manga_work_merges WHERE id = 'merge-1'")
+        assertCount(migrated, "manga_work_merges", 0)
+        assertCount(migrated, "manga_merge_members", 0)
+        assertCount(migrated, "manga_merge_original_chapters", 0)
+        assertCount(migrated, "manga_merge_chapters", 0)
 
         migrated.execSQL("DELETE FROM books WHERE id = 'comic'")
 
