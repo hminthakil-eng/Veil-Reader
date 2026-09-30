@@ -6,7 +6,10 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -14,15 +17,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.weight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AlertDialog
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,6 +52,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import com.veilreader.app.R
 import com.veilreader.app.data.manga.MangaLocalChapterMetadata
@@ -53,6 +62,7 @@ import com.veilreader.app.data.manga.MangaLocalStorageSummary
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -516,100 +526,85 @@ fun MangaHubScreen(
         val volumeValid =
             editVolume.isBlank() || (parsedVolume != null && parsedVolume >= 0.0)
 
-        AlertDialog(
-            onDismissRequest = {
+        MangaArchiveDialog(
+            title = stringResource(R.string.manga_chapter_edit_title),
+            confirmLabel = stringResource(R.string.action_save),
+            confirmEnabled =
+                editTitle.isNotBlank() &&
+                    numberValid &&
+                    volumeValid &&
+                    !isImporting,
+            onDismiss = { editTarget = null },
+            onConfirm = {
+                onUpdateChapterMetadata(
+                    book,
+                    chapter,
+                    MangaLocalChapterMetadata(
+                        title = editTitle,
+                        volume = parsedVolume,
+                        number = parsedNumber,
+                        languageTag = editLanguage
+                    )
+                )
                 editTarget = null
-            },
-            title = {
-                Text(stringResource(R.string.manga_chapter_edit_title))
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    OutlinedTextField(
-                        value = editTitle,
-                        onValueChange = { editTitle = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_chapter_title_label))
-                        }
-                    )
-                    OutlinedTextField(
-                        value = editNumber,
-                        onValueChange = { editNumber = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_chapter_number_label))
-                        },
-                        supportingText = if (!numberValid && editNumber.isNotBlank()) {
-                            {
-                                Text(stringResource(R.string.manga_chapter_number_invalid))
-                            }
-                        } else {
-                            null
-                        },
-                        isError = !numberValid && editNumber.isNotBlank()
-                    )
-                    OutlinedTextField(
-                        value = editVolume,
-                        onValueChange = { editVolume = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_chapter_volume_label))
-                        },
-                        supportingText = if (!volumeValid) {
-                            {
-                                Text(stringResource(R.string.manga_chapter_volume_invalid))
-                            }
-                        } else {
-                            null
-                        },
-                        isError = !volumeValid
-                    )
-                    OutlinedTextField(
-                        value = editLanguage,
-                        onValueChange = { editLanguage = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_chapter_language_label))
-                        },
-                        supportingText = {
-                            Text(stringResource(R.string.manga_chapter_language_hint))
-                        }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onUpdateChapterMetadata(
-                            book,
-                            chapter,
-                            MangaLocalChapterMetadata(
-                                title = editTitle,
-                                volume = parsedVolume,
-                                number = parsedNumber,
-                                languageTag = editLanguage
-                            )
-                        )
-                        editTarget = null
-                    },
-                    enabled =
-                        editTitle.isNotBlank() &&
-                            numberValid &&
-                            volumeValid &&
-                            !isImporting
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { editTarget = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
             }
-        )
+        ) {
+            OutlinedTextField(
+                value = editTitle,
+                onValueChange = { editTitle = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_chapter_title_label))
+                }
+            )
+            OutlinedTextField(
+                value = editNumber,
+                onValueChange = { editNumber = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_chapter_number_label))
+                },
+                supportingText = if (!numberValid && editNumber.isNotBlank()) {
+                    {
+                        Text(stringResource(R.string.manga_chapter_number_invalid))
+                    }
+                } else {
+                    null
+                },
+                isError = !numberValid && editNumber.isNotBlank()
+            )
+            OutlinedTextField(
+                value = editVolume,
+                onValueChange = { editVolume = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_chapter_volume_label))
+                },
+                supportingText = if (!volumeValid) {
+                    {
+                        Text(stringResource(R.string.manga_chapter_volume_invalid))
+                    }
+                } else {
+                    null
+                },
+                isError = !volumeValid
+            )
+            OutlinedTextField(
+                value = editLanguage,
+                onValueChange = { editLanguage = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_chapter_language_label))
+                },
+                supportingText = {
+                    Text(stringResource(R.string.manga_chapter_language_hint))
+                }
+            )
+        }
     }
 
     seriesEditTarget?.let { book ->
@@ -619,133 +614,222 @@ fun MangaHubScreen(
         val seriesIndexValid =
             seriesIndex.isBlank() || (parsedSeriesIndex != null && parsedSeriesIndex >= 0.0)
 
-        AlertDialog(
-            onDismissRequest = { seriesEditTargetId = null },
-            title = {
-                Text(stringResource(R.string.manga_series_edit_title))
-            },
-            text = {
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    Text(
-                        stringResource(R.string.manga_series_edit_body),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+        MangaArchiveDialog(
+            title = stringResource(R.string.manga_series_edit_title),
+            confirmLabel = stringResource(R.string.action_save),
+            confirmEnabled =
+                seriesTitle.isNotBlank() &&
+                    seriesIndexValid &&
+                    !isImporting,
+            onDismiss = { seriesEditTargetId = null },
+            onConfirm = {
+                onUpdateSeriesMetadata(
+                    BookMetadataUpdate(
+                        bookId = book.id,
+                        title = seriesTitle,
+                        author = seriesAuthor,
+                        collections = book.allCollections,
+                        seriesName = seriesName,
+                        seriesIndex = parsedSeriesIndex,
+                        language = seriesLanguage
                     )
-                    OutlinedTextField(
-                        value = seriesTitle,
-                        onValueChange = { seriesTitle = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_series_title_label))
-                        }
-                    )
-                    OutlinedTextField(
-                        value = seriesAuthor,
-                        onValueChange = { seriesAuthor = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_series_creator_label))
-                        }
-                    )
-                    OutlinedTextField(
-                        value = seriesName,
-                        onValueChange = { seriesName = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_series_name_label))
-                        }
-                    )
-                    OutlinedTextField(
-                        value = seriesIndex,
-                        onValueChange = { seriesIndex = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_series_index_label))
-                        },
-                        supportingText = if (!seriesIndexValid) {
-                            {
-                                Text(stringResource(R.string.manga_series_index_invalid))
-                            }
-                        } else {
-                            null
-                        },
-                        isError = !seriesIndexValid
-                    )
-                    OutlinedTextField(
-                        value = seriesLanguage,
-                        onValueChange = { seriesLanguage = it },
-                        singleLine = true,
-                        label = {
-                            Text(stringResource(R.string.manga_series_language_label))
-                        }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onUpdateSeriesMetadata(
-                            BookMetadataUpdate(
-                                bookId = book.id,
-                                title = seriesTitle,
-                                author = seriesAuthor,
-                                collections = book.allCollections,
-                                seriesName = seriesName,
-                                seriesIndex = parsedSeriesIndex,
-                                language = seriesLanguage
-                            )
-                        )
-                        seriesEditTargetId = null
-                    },
-                    enabled =
-                        seriesTitle.isNotBlank() &&
-                            seriesIndexValid &&
-                            !isImporting
-                ) {
-                    Text(stringResource(R.string.action_save))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { seriesEditTargetId = null }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
+                )
+                seriesEditTargetId = null
             }
-        )
+        ) {
+            Text(
+                stringResource(R.string.manga_series_edit_body),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            OutlinedTextField(
+                value = seriesTitle,
+                onValueChange = { seriesTitle = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_series_title_label))
+                }
+            )
+            OutlinedTextField(
+                value = seriesAuthor,
+                onValueChange = { seriesAuthor = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_series_creator_label))
+                }
+            )
+            OutlinedTextField(
+                value = seriesName,
+                onValueChange = { seriesName = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_series_name_label))
+                }
+            )
+            OutlinedTextField(
+                value = seriesIndex,
+                onValueChange = { seriesIndex = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_series_index_label))
+                },
+                supportingText = if (!seriesIndexValid) {
+                    {
+                        Text(stringResource(R.string.manga_series_index_invalid))
+                    }
+                } else {
+                    null
+                },
+                isError = !seriesIndexValid
+            )
+            OutlinedTextField(
+                value = seriesLanguage,
+                onValueChange = { seriesLanguage = it },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                label = {
+                    Text(stringResource(R.string.manga_series_language_label))
+                }
+            )
+        }
     }
 
     deleteTarget?.let { (book, chapter) ->
-        AlertDialog(
-            onDismissRequest = { deleteTarget = null },
-            title = {
-                Text(stringResource(R.string.manga_chapter_delete_title))
-            },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.manga_chapter_delete_body,
-                        chapter.title
+        MangaArchiveDialog(
+            title = stringResource(R.string.manga_chapter_delete_title),
+            confirmLabel = stringResource(R.string.action_delete),
+            confirmEnabled = !isImporting,
+            destructive = true,
+            onDismiss = { deleteTarget = null },
+            onConfirm = {
+                onDeleteChapter(book, chapter)
+                deleteTarget = null
+            }
+        ) {
+            Text(
+                stringResource(
+                    R.string.manga_chapter_delete_body,
+                    chapter.title
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun MangaArchiveDialog(
+    title: String,
+    confirmLabel: String,
+    confirmEnabled: Boolean,
+    destructive: Boolean = false,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .imePadding()
+                .padding(VeilSpacing.lg),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 620.dp)
+                    .heightIn(max = 720.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = VeilPalette.Archive,
+                border = BorderStroke(
+                    1.dp,
+                    if (destructive) {
+                        MaterialTheme.colorScheme.error.copy(alpha = 0.46f)
+                    } else {
+                        VeilPalette.Brass.copy(alpha = 0.50f)
+                    }
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Box {
+                    GrayfogOrnamentFrame(
+                        modifier = Modifier.matchParentSize(),
+                        strength = 0.26f
                     )
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onDeleteChapter(book, chapter)
-                        deleteTarget = null
-                    },
-                    enabled = !isImporting
-                ) {
-                    Text(stringResource(R.string.action_delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { deleteTarget = null }) {
-                    Text(stringResource(R.string.action_cancel))
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .padding(VeilSpacing.lg),
+                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        Text(
+                            stringResource(R.string.manga_hub_eyebrow),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (destructive) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                VeilPalette.Brass
+                            }
+                        )
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.titleLarge,
+                            color = VeilPalette.Moon
+                        )
+                        BrassRule(Modifier.fillMaxWidth())
+                        content()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            OutlinedButton(
+                                onClick = onDismiss,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp),
+                                shape = MaterialTheme.shapes.extraSmall
+                            ) {
+                                Text(stringResource(R.string.action_cancel))
+                            }
+                            Button(
+                                onClick = onConfirm,
+                                enabled = confirmEnabled,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .heightIn(min = 48.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = if (destructive) {
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.error,
+                                        contentColor = MaterialTheme.colorScheme.onError
+                                    )
+                                } else {
+                                    ButtonDefaults.buttonColors()
+                                }
+                            ) {
+                                Text(confirmLabel)
+                            }
+                        }
+                    }
                 }
             }
-        )
+        }
     }
 }
 
