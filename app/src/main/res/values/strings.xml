@@ -1123,4 +1123,42 @@
     <string name="book_detail_percent_read_text">%1$s read</string>
     <string name="library_collection_more">%1$s +%2$s</string>
     <string name="reader_percent_read_text">%1$s read</string>
+
+    <!-- W11 · Arrodes Mirror -->
+    <string name="mirror_portal_eyebrow">ARRODES</string>
+    <string name="mirror_portal_title">The Memory Mirror</string>
+    <string name="mirror_portal_body">%1$d saved traces can return through the glass.</string>
+    <string name="mirror_portal_action">Enter the mirror</string>
+    <string name="mirror_eyebrow">ARRODES · MEMORY MIRROR</string>
+    <string name="mirror_title">Echoes behind the glass</string>
+    <string name="mirror_subtitle">Saved notes and highlights surface here, then lead back to their exact place in the book.</string>
+    <string name="mirror_close">Close</string>
+    <string name="mirror_empty_title">The mirror is silent</string>
+    <string name="mirror_empty_body">Create a highlight or note in a book. Arrodes only speaks with memories you actually saved.</string>
+    <string name="mirror_content_description_open">Open the source passage in %1$s</string>
+    <string name="mirror_content_description_awaken">Awaken the mirror</string>
+    <string name="mirror_fragment_note">SAVED NOTE</string>
+    <string name="mirror_fragment_highlight">SAVED HIGHLIGHT</string>
+    <string name="mirror_open_source_hint">Tap the glass again to return to the exact passage.</string>
+    <string name="mirror_idle_hint">Tap to awaken</string>
+    <string name="mirror_next">Another echo</string>
+    <string name="mirror_summon">Summon an echo</string>
+    <string name="mirror_return_to_source">Return to source</string>
+
+    <!-- W11 · Manga Hub -->
+    <string name="manga_portal_eyebrow">MANGA</string>
+    <string name="manga_portal_title">Manga Hub</string>
+    <string name="manga_portal_body">%1$d local comic volumes · dedicated reader foundation</string>
+    <string name="manga_portal_action">Open Manga Hub</string>
+    <string name="manga_hub_eyebrow">ARCHIVE · MANGA</string>
+    <string name="manga_hub_title">Manga Hub</string>
+    <string name="manga_hub_subtitle">A local-first visual reading space with a dedicated manga engine.</string>
+    <string name="manga_hub_close">Close</string>
+    <string name="manga_hub_local_badge">LOCAL / OFFLINE FIRST</string>
+    <string name="manga_hub_engine_ready">The dedicated page engine, cache, recovery, health and chapter presentation stack are integrated.</string>
+    <string name="manga_hub_live_sources_off">Live network sources remain disabled by default. No source is contacted from this hub.</string>
+    <string name="manga_hub_empty_title">No local manga yet</string>
+    <string name="manga_hub_empty_body">Import a supported comic publication into the Library. Manga Hub will keep visual reading separate from the text-reader experience.</string>
+    <string name="manga_hub_open_library">Open Library</string>
+    <string name="manga_hub_progress">%1$d%% read</string>
 </resources>
