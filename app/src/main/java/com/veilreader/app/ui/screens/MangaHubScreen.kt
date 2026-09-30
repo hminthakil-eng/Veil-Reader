@@ -580,12 +580,22 @@ private fun MangaChapterManagementRow(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp)
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 TextButton(onClick = onRename, enabled = enabled) {
                     Text(stringResource(R.string.action_rename))
                 }
                 if (!chapter.isPrimary) {
+                    TextButton(onClick = onDelete, enabled = enabled) {
+                        Text(stringResource(R.string.action_delete))
+                    }
+                }
+            }
+            if (!chapter.isPrimary) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                ) {
                     TextButton(
                         onClick = onMoveUp,
                         enabled = enabled && canMoveUp
@@ -597,9 +607,6 @@ private fun MangaChapterManagementRow(
                         enabled = enabled && canMoveDown
                     ) {
                         Text(stringResource(R.string.manga_chapter_move_down))
-                    }
-                    TextButton(onClick = onDelete, enabled = enabled) {
-                        Text(stringResource(R.string.action_delete))
                     }
                 }
             }
