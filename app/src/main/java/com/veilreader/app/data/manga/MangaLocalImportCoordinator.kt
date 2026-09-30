@@ -779,6 +779,12 @@ class MangaLocalImportCoordinator(
         sourceBookIds: List<String>
     ): Result<MangaMergeExecutionResult> = runCatching {
         val plan = preflightLocalMerge(targetBookId, sourceBookIds).getOrThrow()
+        val rebuiltTargetIds = plan.chapterActions
+            .filter { it.disposition == MangaMergeDisposition.REBUILD_FROM_SOURCE_ARCHIVE }
+            .map { it.plannedTargetChapterId }
+        require(rebuiltTargetIds.distinct().size == rebuiltTargetIds.size) {
+            "Merge plan contains duplicate projected target chapter identities"
+        }
         val targetBook = library.getBook(targetBookId)
             ?: error("Merge target disappeared before execution")
         val originalTargetChapters = database.mangaCatalog().listChapters(targetBookId)
