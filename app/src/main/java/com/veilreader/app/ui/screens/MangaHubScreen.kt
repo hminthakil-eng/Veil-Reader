@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.net.Uri
+import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
@@ -26,9 +27,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -36,11 +39,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.veilreader.app.R
+import com.veilreader.app.data.manga.MangaLocalStorageSummary
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
@@ -61,11 +66,15 @@ fun MangaHubScreen(
     books: List<Book>,
     onOpenBook: (Book) -> Unit,
     onAddChapterUri: (Book, Uri) -> Unit,
+    storageSummaryProvider: suspend (Book) -> MangaLocalStorageSummary,
+    onClearDerivedCache: (Book) -> Unit,
+    storageRevision: Int,
     onOpenLibrary: () -> Unit,
     onClose: () -> Unit,
     isImporting: Boolean = false
 ) {
     val highContrast = LocalVeilHighContrast.current
+    val context = LocalContext.current
     val mangaBooks = remember(books) {
         books
             .filter { it.format == BookFormat.COMIC }
@@ -209,6 +218,13 @@ fun MangaHubScreen(
                 items = mangaBooks,
                 key = Book::id
             ) { book ->
+                val storage by produceState<MangaLocalStorageSummary?>(
+                    initialValue = null,
+                    book.id,
+                    storageRevision
+                ) {
+                    value = runCatching { storageSummaryProvider(book) }.getOrNull()
+                }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -280,6 +296,27 @@ fun MangaHubScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            storage?.let { summary ->
+                                Text(
+                                    stringResource(
+                                        R.string.manga_hub_storage_summary,
+                                        summary.chapterCount,
+                                        Formatter.formatShortFileSize(context, summary.sourceBytes),
+                                        Formatter.formatShortFileSize(context, summary.cacheBytes)
+                                    ),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (summary.cacheBytes > 0L) {
+                                    TextButton(
+                                        onClick = { onClearDerivedCache(book) },
+                                        enabled = !isImporting
+                                    ) {
+                                        Text(stringResource(R.string.manga_hub_clear_cache))
+                                    }
+                                }
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
