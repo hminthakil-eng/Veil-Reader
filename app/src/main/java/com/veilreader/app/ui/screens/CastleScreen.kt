@@ -174,12 +174,6 @@ fun CastleScreen(
             onAdvanceRank = onAdvanceRank
         )
 
-        CastleMemoryInscription(memoryState)
-        CastleWorldProgressionInscription(worldProjection)
-        CastleMutationInscription(memoryState)
-        CastleRitualAftermath(profile, ritualAfterglow)
-        CastleMutationLedgerSummary(mutationLedger)
-
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
                 stringResource(R.string.castle_inner_keep_eyebrow),
@@ -206,7 +200,14 @@ fun CastleScreen(
             onOpenRoom = onOpenRoom
         )
 
+        CastleWorldProgressionInscription(worldProjection)
+
         BrassRule(Modifier.fillMaxWidth())
+
+        CastleMemoryInscription(memoryState)
+        CastleMutationInscription(memoryState)
+        CastleRitualAftermath(profile, ritualAfterglow)
+        CastleMutationLedgerSummary(mutationLedger)
 
         Text(
             stringResource(R.string.castle_growth_note),
@@ -461,17 +462,22 @@ private fun CastleMutationInscription(memory: CastleMemoryState) {
         memory == CastleMemoryState.EMPTY
     ) return
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.46f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.20f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Ink.copy(alpha = 0.16f))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.28f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width * 0.32f, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
         Text(
             localizedCastleMutationSignal(memory.mutationSignal),
-            modifier = Modifier.padding(12.dp),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.80f)
         )
@@ -489,19 +495,22 @@ private fun CastleRitualAftermath(
     val fromRank = localizedRankName(profile.path.id, aftermath.fromRankIndex, fromFallback)
     val toRank = localizedRankName(profile.path.id, aftermath.toRankIndex, toFallback)
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Ink.copy(alpha = 0.56f),
-        border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = 0.24f + afterglow * 0.36f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Ink.copy(alpha = 0.22f))
+            .padding(12.dp)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.24f + afterglow * 0.36f),
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = 1.5.dp.toPx()
+            )
+        }
         Column(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(start = 6.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
             Text(
