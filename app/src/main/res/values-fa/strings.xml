@@ -1216,10 +1216,8 @@
     <string name="action_save">ذخیره</string>
     <string name="action_cancel">لغو</string>
     <string name="action_delete">حذف</string>
-    <string name="action_rename">تغییر نام</string>
     <string name="manga_hub_manage_chapters">مدیریت فصل‌ها (%1$d)</string>
     <string name="manga_hub_hide_chapters">بستن فصل‌ها (%1$d)</string>
-    <string name="manga_chapter_rename_title">تغییر نام فصل</string>
     <string name="manga_chapter_title_label">عنوان فصل</string>
     <string name="manga_chapter_delete_title">فصل حذف شود؟</string>
     <string name="manga_chapter_delete_body">«%1$s» از این مانگا حذف شود؟ فایل اصلی CBZ این فصل اضافه‌شده و کش صفحه‌های ساخته‌شده نیز حذف می‌شوند.</string>
@@ -1228,8 +1226,16 @@
     <string name="manga_chapter_primary_badge">فصل پایه · ثابت</string>
     <string name="manga_chapter_move_up">بالاتر</string>
     <string name="manga_chapter_move_down">پایین‌تر</string>
-    <string name="notice_manga_chapter_renamed">عنوان فصل به‌روزرسانی شد.</string>
     <string name="notice_manga_chapter_reordered">ترتیب فصل‌ها به‌روزرسانی شد.</string>
     <string name="notice_manga_chapter_deleted">فصل حذف شد.</string>
     <string name="notice_manga_chapter_update_failed">ذخیرهٔ تغییر فصل مانگا ممکن نشد.</string>
+    <string name="action_edit">ویرایش</string>
+    <string name="manga_chapter_edit_title">ویرایش جزئیات فصل</string>
+    <string name="manga_chapter_number_label">شماره فصل</string>
+    <string name="manga_chapter_number_invalid">یک شماره فصل معتبر و نامنفی وارد کن.</string>
+    <string name="manga_chapter_volume_label">جلد (اختیاری)</string>
+    <string name="manga_chapter_volume_invalid">یک شماره جلد معتبر و نامنفی وارد کن یا خالی بگذار.</string>
+    <string name="manga_chapter_language_label">زبان (اختیاری)</string>
+    <string name="manga_chapter_language_hint">برچسب BCP-47؛ برای مثال fa، en یا ja.</string>
+    <string name="notice_manga_chapter_metadata_updated">جزئیات فصل به‌روزرسانی شد.</string>
 </resources>
