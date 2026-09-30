@@ -226,6 +226,14 @@
     <string name="settings_grayfog_title">تنظیمات مه‌خاکستری</string>
     <string name="settings_reading_room">اتاق مطالعه</string>
     <string name="settings_intro">کنترل مطالعه، ظاهر، ذخیره‌سازی، حریم خصوصی و پشتیبان. همه‌چیز محلی می‌ماند مگر اینکه خودتان آن را صادر کنید.</string>
+    <string name="settings_quality_title">کیفیت بصری</string>
+    <string name="settings_quality_body">عمق محیط و جزئیات تزئینی را تنظیم می‌کند؛ درستی مطالعه، تایپوگرافی، اندازهٔ لمس و داده‌های ذخیره‌شده تغییر نمی‌کنند.</string>
+    <string name="settings_quality_full">کامل</string>
+    <string name="settings_quality_balanced">متعادل</string>
+    <string name="settings_quality_essential">ضروری</string>
+    <string name="settings_quality_full_body">بیشترین عمق مه‌خاکستری، هندسه، ذرات و جزئیات معماری.</string>
+    <string name="settings_quality_balanced_body">هویت محیط را حفظ می‌کند و بخشی از کار تزئینی را برای اجرای روان‌تر کاهش می‌دهد.</string>
+    <string name="settings_quality_essential_body">مطالعه، باتری و پایداری فریم را در اولویت می‌گذارد و هویت Veil را حفظ می‌کند.</string>
     <string name="settings_appearance_title">ظاهر</string>
     <string name="settings_appearance_body">مشخص کنید پوستهٔ آرشیو چگونه از تنظیمات دستگاه پیروی کند.</string>
     <string name="settings_theme_system">سیستم</string>
