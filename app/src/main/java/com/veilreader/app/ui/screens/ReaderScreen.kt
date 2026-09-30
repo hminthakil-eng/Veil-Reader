@@ -292,6 +292,7 @@ fun ReaderScreen(
     val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
     val previousLocationFailedMessage = stringResource(R.string.reader_previous_location_failed)
     val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
+    val readerOpenFailedMessage = stringResource(R.string.notice_open_failed)
     val bookmarkSavedMessage = stringResource(R.string.reader_bookmark_saved)
     val bookmarkDuplicateMessage = stringResource(R.string.reader_bookmark_duplicate)
     val noteSavedMessage = stringResource(R.string.reader_note_saved)
@@ -670,44 +671,68 @@ fun ReaderScreen(
 
     LaunchedEffect(opened.book.id, readerSessionInstanceId) {
         readerSessionReady = false
+        var handedOff = false
         ReaderTrace.event(
             "reader_startup_handshake_started",
             bookId = opened.book.id,
             sessionId = readerSessionInstanceId
         )
-        readerViewModel.openBook(
-            bookId = opened.book.id,
-            initialProgress = opened.book.progress,
-            openInstanceId = readerSessionInstanceId
-        )
-        if (
-            !readerAsyncResultBelongsToSession(
-                currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                expectedSessionInstanceId = readerSessionInstanceId
+        try {
+            val prepared = readerViewModel.openBook(
+                bookId = opened.book.id,
+                initialProgress = opened.book.progress,
+                openInstanceId = readerSessionInstanceId
             )
-        ) {
-            return@LaunchedEffect
-        }
+            if (!prepared) return@LaunchedEffect
 
-        readerSessionReady = true
-        val lifecycleResumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
-        ReaderTrace.event(
-            "reader_startup_handshake_ready",
-            bookId = opened.book.id,
-            sessionId = readerSessionInstanceId,
-            details = "lifecycleResumed=$lifecycleResumed navigatorAttached=$navigatorAttached"
-        )
-        if (
-            shouldResumeReaderAfterOpen(
-                sessionReady = true,
-                lifecycleResumed = lifecycleResumed
+            if (
+                !readerAsyncResultBelongsToSession(
+                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                    expectedSessionInstanceId = readerSessionInstanceId
+                )
+            ) {
+                return@LaunchedEffect
+            }
+
+            if (!readerViewModel.confirmOpen(readerSessionInstanceId)) {
+                return@LaunchedEffect
+            }
+
+            handedOff = true
+            readerSessionReady = true
+            val lifecycleResumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+            ReaderTrace.event(
+                "reader_startup_handshake_ready",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId,
+                details = "lifecycleResumed=$lifecycleResumed navigatorAttached=$navigatorAttached"
             )
-        ) {
-            readerViewModel.onResume(readerSessionInstanceId)
-        } else {
-            // The app may have backgrounded while Room hydration was suspended. Reconcile the
-            // durable session immediately; the first locator commit performs a second barrier.
-            readerViewModel.onPause(readerSessionInstanceId)
+            if (
+                shouldResumeReaderAfterOpen(
+                    sessionReady = true,
+                    lifecycleResumed = lifecycleResumed
+                )
+            ) {
+                readerViewModel.onResume(readerSessionInstanceId)
+            } else {
+                // The app may have backgrounded while Room hydration was suspended. Reconcile the
+                // durable session immediately; the first locator commit performs a second barrier.
+                readerViewModel.onPause(readerSessionInstanceId)
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            ReaderTrace.event(
+                "reader_startup_handshake_failed",
+                bookId = opened.book.id,
+                sessionId = readerSessionInstanceId,
+                details = "error=${error::class.java.simpleName}"
+            )
+            readerMessage = readerOpenFailedMessage
+        } finally {
+            if (!handedOff) {
+                readerViewModel.cancelOpen(readerSessionInstanceId)
+            }
         }
     }
 
@@ -1044,6 +1069,8 @@ fun ReaderScreen(
             slideInputListener?.forceCancelPendingTurn()
             if (latestReaderSessionReady.value) {
                 readerViewModel.onPause(readerSessionInstanceId)
+            } else {
+                readerViewModel.cancelOpen(readerSessionInstanceId)
             }
             lifecycle.removeObserver(observer)
         }
