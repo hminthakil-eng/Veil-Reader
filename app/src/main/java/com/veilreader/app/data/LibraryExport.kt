@@ -334,6 +334,7 @@ class LibraryExport(
         val mergeIds = mutableSetOf<String>()
         val targetIds = mutableSetOf<String>()
         val sourceIds = mutableSetOf<String>()
+        val participantIds = mutableSetOf<String>()
         return buildList {
             for (index in 0 until records.length()) {
                 val record = records.getJSONObject(index)
@@ -345,6 +346,9 @@ class LibraryExport(
                 require(mergeIds.add(id)) { "Backup contains duplicate Manga merge ids." }
                 require(targetIds.add(targetBookId)) {
                     "Backup contains more than one active Manga merge for a target Book."
+                }
+                require(participantIds.add(targetBookId)) {
+                    "A Manga Book participates in more than one active merge in this backup."
                 }
 
                 val membersJson = record.getJSONArray("members")
@@ -358,6 +362,9 @@ class LibraryExport(
                         require(sourceBookId != targetBookId)
                         require(sourceIds.add(sourceBookId)) {
                             "A source Manga Book belongs to more than one merge in this backup."
+                        }
+                        require(participantIds.add(sourceBookId)) {
+                            "A Manga Book participates in more than one active merge in this backup."
                         }
                         require(orders.add(sourceOrder)) {
                             "Manga merge backup contains duplicate source order."
