@@ -7,10 +7,13 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import coil3.ImageLoader
+import com.veilreader.app.R
 import com.veilreader.app.manga.reader.presentation.MangaPresentationError
+import com.veilreader.app.manga.reader.presentation.MangaPresentationErrorKind
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationState
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationSurface
 import com.veilreader.app.manga.reader.ui.MangaReaderUiIntent
@@ -52,7 +55,7 @@ fun MangaReaderCoilPresentationSurface(
             DefaultChapterError(error, retry)
         },
         partialOfflineContent = {
-            Text("Offline preview · reconnect to load the rest of this chapter")
+            Text(stringResource(R.string.manga_reader_partial_offline_notice))
         },
         pageContent = { asset, pageModifier ->
             MangaCoilPage(
@@ -75,12 +78,26 @@ private fun DefaultChapterError(
         androidx.compose.foundation.layout.Column(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(error.message)
+            Text(stringResource(error.kind.toUiMessageRes()))
             if (error.retryable) {
                 Button(onClick = retry) {
-                    Text("Retry")
+                    Text(stringResource(R.string.manga_reader_retry))
                 }
             }
         }
     }
+}
+
+
+private fun MangaPresentationErrorKind.toUiMessageRes(): Int = when (this) {
+    MangaPresentationErrorKind.OFFLINE_UNAVAILABLE ->
+        R.string.manga_reader_error_offline_unavailable
+    MangaPresentationErrorKind.SOURCE_FAILURE ->
+        R.string.manga_reader_error_source_failure
+    MangaPresentationErrorKind.EMPTY_CHAPTER ->
+        R.string.manga_reader_error_empty_chapter
+    MangaPresentationErrorKind.INVALID_PAGE_SET ->
+        R.string.manga_reader_error_invalid_pages
+    MangaPresentationErrorKind.REQUEST_MISMATCH ->
+        R.string.manga_reader_error_request_mismatch
 }
