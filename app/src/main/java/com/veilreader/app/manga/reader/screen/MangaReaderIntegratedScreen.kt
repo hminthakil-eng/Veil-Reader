@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -32,6 +33,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.ImageLoader
+import com.veilreader.app.R
 import com.veilreader.app.manga.library.MangaProgressStore
 import com.veilreader.app.manga.reader.MangaOrientationPolicy
 import com.veilreader.app.manga.reader.MangaPageDirection
@@ -49,6 +51,7 @@ import com.veilreader.app.manga.reader.image.MangaPageResolveResult
 import com.veilreader.app.manga.reader.presentation.MangaChapterPresentationLoader
 import com.veilreader.app.manga.reader.presentation.MangaPageAsset
 import com.veilreader.app.manga.reader.presentation.MangaPresentationError
+import com.veilreader.app.manga.reader.presentation.MangaPresentationErrorKind
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationState
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationSurface
 import com.veilreader.app.manga.reader.ui.MangaReaderGestureOwner
@@ -232,7 +235,7 @@ private fun MangaAdaptivePage(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(current.message)
                     Button(onClick = { retryKey += 1 }) {
-                        Text("Retry")
+                        Text(stringResource(R.string.manga_reader_retry))
                     }
                 }
             }
@@ -285,7 +288,7 @@ private fun MangaReaderChrome(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Button(onClick = onClose) {
-            Text("Back")
+            Text(stringResource(R.string.manga_reader_back))
         }
         Button(
             onClick = {
@@ -300,7 +303,7 @@ private fun MangaReaderChrome(
                 )
             }
         ) {
-            Text(if (mode == MangaReaderMode.PAGED) "Webtoon" else "Paged")
+            Text(\n                stringResource(\n                    if (mode == MangaReaderMode.PAGED) {\n                        R.string.manga_reader_mode_webtoon\n                    } else {\n                        R.string.manga_reader_mode_paged\n                    }\n                )\n            )
         }
         Button(
             onClick = {
@@ -315,7 +318,7 @@ private fun MangaReaderChrome(
                 )
             }
         ) {
-            Text(if (direction == MangaPageDirection.RIGHT_TO_LEFT) "RTL" else "LTR")
+            Text(\n                stringResource(\n                    if (direction == MangaPageDirection.RIGHT_TO_LEFT) {\n                        R.string.manga_reader_direction_ltr\n                    } else {\n                        R.string.manga_reader_direction_rtl\n                    }\n                )\n            )
         }
     }
 }
@@ -327,7 +330,7 @@ private fun MangaChapterError(
 ) {
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(error.message)
+            Text(stringResource(error.kind.toUiMessageRes()))
             if (error.retryable) {
                 Button(onClick = retry) {
                     Text("Retry")
@@ -383,11 +386,25 @@ private fun MangaReaderLifecyclePersistence(
     }
 }
 
+@Composable
 private fun MangaReaderScreenMessage.toUiText(): String = when (this) {
     MangaReaderScreenMessage.PartialOfflineBoundary ->
-        "Reconnect to load the rest of this chapter before continuing."
+        stringResource(R.string.manga_reader_message_partial_offline_boundary)
     MangaReaderScreenMessage.SeriesBoundary ->
-        "You reached the edge of the available chapter list."
+        stringResource(R.string.manga_reader_message_series_boundary)
     MangaReaderScreenMessage.ChapterRouteUnavailable ->
-        "The next chapter route is unavailable."
+        stringResource(R.string.manga_reader_message_route_unavailable)
+}
+
+private fun MangaPresentationErrorKind.toUiMessageRes(): Int = when (this) {
+    MangaPresentationErrorKind.OFFLINE_UNAVAILABLE ->
+        R.string.manga_reader_error_offline_unavailable
+    MangaPresentationErrorKind.SOURCE_FAILURE ->
+        R.string.manga_reader_error_source_failure
+    MangaPresentationErrorKind.EMPTY_CHAPTER ->
+        R.string.manga_reader_error_empty_chapter
+    MangaPresentationErrorKind.INVALID_PAGE_SET ->
+        R.string.manga_reader_error_invalid_page_set
+    MangaPresentationErrorKind.REQUEST_MISMATCH ->
+        R.string.manga_reader_error_request_mismatch
 }
