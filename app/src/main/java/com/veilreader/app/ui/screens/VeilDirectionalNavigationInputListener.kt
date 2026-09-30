@@ -18,12 +18,14 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 internal class VeilDirectionalNavigationInputListener(
     private val navigator: OverflowableNavigator,
     private val isAnimated: () -> Boolean,
+    private val isEnabled: () -> Boolean = { true },
     private val isTapNavigationEnabled: () -> Boolean = { true },
     private val onNavigationCommitted: () -> Unit = {},
     private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
+        if (!isEnabled()) return false
         if (!isTapNavigationEnabled()) return false
         if (navigator.overflow.value.scroll) return false
 
@@ -43,6 +45,7 @@ internal class VeilDirectionalNavigationInputListener(
     }
 
     override fun onKey(event: KeyEvent): Boolean {
+        if (!isEnabled()) return false
         if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) {
             return false
         }
