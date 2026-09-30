@@ -1202,7 +1202,7 @@
     <string name="manga_hub_continue">ادامهٔ مطالعه</string>
     <string name="manga_hub_start">شروع مطالعه</string>
     <string name="manga_hub_read_again">مطالعهٔ دوباره</string>
-    <string name="manga_hub_add_chapter">افزودن فصل</string>
+    <string name="manga_hub_add_chapter">افزودن فصل‌ها</string>
     <string name="notice_manga_chapter_added">فصل %2$d به %1$s اضافه شد.</string>
     <string name="notice_manga_chapter_duplicate">این فایل CBZ از قبل بخشی از %1$s است.</string>
     <string name="notice_manga_chapter_import_failed">افزودن فصل مانگا ممکن نشد.</string>
@@ -1211,4 +1211,6 @@
     <string name="notice_manga_cache_cleared">کش صفحه‌های مانگا پاک شد و هنگام نیاز از فایل‌های محلی CBZ دوباره ساخته می‌شود.</string>
     <string name="notice_manga_cache_clear_failed">پاک‌کردن کش صفحه‌های مانگا ممکن نشد.</string>
     <string name="notice_manga_cache_repair_failed">بازسازی صفحه‌های مانگا از فایل‌های محلی CBZ ممکن نشد.</string>
+    <string name="notice_manga_chapters_added">%1$d فصل به %2$s اضافه شد.</string>
+    <string name="notice_manga_chapters_added_with_duplicates">%1$d فصل به %3$s اضافه شد؛ %2$d فصل از قبل وجود داشت.</string>
 </resources>
