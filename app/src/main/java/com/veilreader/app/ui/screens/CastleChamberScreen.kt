@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -16,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -271,26 +273,17 @@ fun TreasuryScreen(
             trailing = "$awakenedRelics/${readingRelics.size}"
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            readingRelics.chunked(2).forEachIndexed { rowIndex, row ->
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            readingRelics.forEachIndexed { index, relic ->
+                VeilReveal(
+                    delayMillis = 80 + index * 45,
+                    distance = 7.dp
                 ) {
-                    row.forEachIndexed { itemIndex, relic ->
-                        VeilReveal(
-                            delayMillis = 80 + (rowIndex * 2 + itemIndex) * 45,
-                            distance = 7.dp,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            RelicCabinetCell(
-                                relic = relic,
-                                awakened = relic.awakened(profile),
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                        }
-                    }
-                    if (row.size == 1) Spacer(Modifier.weight(1f))
+                    RelicCabinetCell(
+                        relic = relic,
+                        awakened = relic.awakened(profile),
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
         }
@@ -407,24 +400,33 @@ private fun SigilRelicRow(
     equipped: Boolean,
     onEquip: (String?) -> Unit
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (earned) {
-            VeilPalette.Archive.copy(alpha = 0.78f)
-        } else {
-            VeilPalette.Ink.copy(alpha = 0.34f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (earned) VeilPalette.Brass.copy(alpha = 0.34f)
-            else VeilPalette.BorderDark.copy(alpha = 0.66f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                if (earned) {
+                    VeilPalette.Archive.copy(alpha = 0.24f)
+                } else {
+                    VeilPalette.Ink.copy(alpha = 0.16f)
+                }
+            )
+            .padding(horizontal = 11.dp, vertical = 10.dp)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = if (equipped) {
+                    VeilPalette.Brass.copy(alpha = 0.82f)
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.48f)
+                },
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = if (equipped) 1.5.dp.toPx() else 1.dp.toPx()
+            )
+        }
+
         Row(
-            modifier = Modifier.padding(horizontal = 11.dp, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -468,15 +470,12 @@ private fun SigilRelicRow(
             }
 
             if (earned) {
-                Button(
+                TextButton(
                     onClick = { onEquip(id) },
                     enabled = !equipped,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A),
-                        disabledContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.52f),
-                        disabledContentColor = VeilPalette.Moon.copy(alpha = 0.68f)
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = VeilPalette.Brass,
+                        disabledContentColor = VeilPalette.Mist.copy(alpha = 0.62f)
                     ),
                     contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                     modifier = Modifier.heightIn(min = 48.dp)
@@ -502,70 +501,98 @@ private fun RelicCabinetCell(
 ) {
     Box(
         modifier = modifier
-            .heightIn(min = 132.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
+            .heightIn(min = 92.dp)
             .background(
                 if (awakened) {
-                    Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.DeepBrass.copy(alpha = 0.22f),
-                            VeilPalette.Archive.copy(alpha = 0.88f)
-                        )
-                    )
+                    VeilPalette.DeepBrass.copy(alpha = 0.10f)
                 } else {
-                    Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.Iron.copy(alpha = 0.28f),
-                            VeilPalette.Ink.copy(alpha = 0.72f)
-                        )
-                    )
+                    VeilPalette.Ink.copy(alpha = 0.18f)
                 }
             )
-            .border(
-                BorderStroke(
-                    1.dp,
-                    if (awakened) VeilPalette.Brass.copy(alpha = 0.34f)
-                    else VeilPalette.BorderDark.copy(alpha = 0.70f)
-                ),
-                MaterialTheme.shapes.extraSmall
-            )
-            .padding(10.dp)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
     ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(5.dp),
-            horizontalAlignment = Alignment.Start
-        ) {
-            Text(
-                if (awakened) relic.symbol else "◇",
-                fontSize = 24.sp,
-                color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.30f)
-            )
-            Text(
-                if (awakened) stringResource(relic.nameRes)
-                else stringResource(R.string.treasury_uncatalogued_relic),
-                style = MaterialTheme.typography.titleSmall,
-                color = if (awakened) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
-            )
-            Text(
-                if (awakened) {
-                    stringResource(
-                        R.string.treasury_rarity_awakened,
-                        localizedRelicRarity(relic.rarity)
-                    )
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = if (awakened) {
+                    VeilPalette.Brass.copy(alpha = 0.54f)
                 } else {
-                    stringResource(R.string.treasury_rarity_veiled)
+                    VeilPalette.BorderDark.copy(alpha = 0.44f)
                 },
-                style = MaterialTheme.typography.labelSmall,
-                color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f),
-                maxLines = 1
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = if (awakened) 2.dp.toPx() else 1.dp.toPx()
             )
-            if (!awakened) {
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.42f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier.size(48.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Text(
-                    stringResource(relic.clueRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.58f),
-                    maxLines = 4
+                    if (awakened) relic.symbol else "◇",
+                    fontSize = 25.sp,
+                    color = if (awakened) {
+                        VeilPalette.Brass
+                    } else {
+                        VeilPalette.Mist.copy(alpha = 0.30f)
+                    }
                 )
+            }
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    if (awakened) {
+                        stringResource(relic.nameRes)
+                    } else {
+                        stringResource(R.string.treasury_uncatalogued_relic)
+                    },
+                    style = MaterialTheme.typography.titleSmall,
+                    color = if (awakened) {
+                        VeilPalette.Moon
+                    } else {
+                        VeilPalette.Mist.copy(alpha = 0.48f)
+                    }
+                )
+                Text(
+                    if (awakened) {
+                        stringResource(
+                            R.string.treasury_rarity_awakened,
+                            localizedRelicRarity(relic.rarity)
+                        )
+                    } else {
+                        stringResource(R.string.treasury_rarity_veiled)
+                    },
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                    color = if (awakened) {
+                        VeilPalette.Brass.copy(alpha = 0.84f)
+                    } else {
+                        VeilPalette.Mist.copy(alpha = 0.46f)
+                    }
+                )
+                if (!awakened) {
+                    Text(
+                        stringResource(relic.clueRes),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.58f),
+                        maxLines = 3
+                    )
+                }
             }
         }
     }
@@ -704,37 +731,55 @@ fun SanctumScreen(
         )
 
         availableTitles.forEachIndexed { index, title ->
+            val active = title == castleTitle
             VeilReveal(
                 delayMillis = 50 + index * 35,
                 distance = 6.dp
             ) {
-                OutlinedButton(
-                    onClick = { onSelectTitle(title) },
-                    enabled = title != castleTitle,
-                    shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        if (title == castleTitle) {
-                            VeilPalette.Brass.copy(alpha = 0.56f)
-                        } else {
-                            VeilPalette.BorderDark.copy(alpha = 0.72f)
-                        }
-                    ),
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp)
+                        .heightIn(min = 54.dp)
+                        .clickable(enabled = !active) {
+                            onSelectTitle(title)
+                        }
+                        .background(
+                            if (active) {
+                                VeilPalette.DeepBrass.copy(alpha = 0.12f)
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                        .padding(horizontal = 10.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Canvas(Modifier.matchParentSize()) {
+                        drawLine(
+                            color = if (active) {
+                                VeilPalette.Brass.copy(alpha = 0.72f)
+                            } else {
+                                VeilPalette.BorderDark.copy(alpha = 0.44f)
+                            },
+                            start = Offset(0f, size.height),
+                            end = Offset(size.width, size.height),
+                            strokeWidth = if (active) 1.5.dp.toPx() else 1.dp.toPx()
+                        )
+                    }
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
                             stringResource(
-                                if (title == castleTitle) R.string.sanctum_active_title
-                                else R.string.sanctum_recognized_title
+                                if (active) {
+                                    R.string.sanctum_active_title
+                                } else {
+                                    R.string.sanctum_recognized_title
+                                }
                             ),
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (title == castleTitle) {
+                            color = if (active) {
                                 VeilPalette.Brass
                             } else {
                                 VeilPalette.Mist.copy(alpha = 0.62f)
@@ -742,7 +787,8 @@ fun SanctumScreen(
                         )
                         Text(
                             localizedCastleTitle(profile, title),
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
+                            color = VeilPalette.Moon
                         )
                     }
                 }
