@@ -126,6 +126,7 @@ fun VeilApp(
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
+    var openedPublicationSessionId by remember { mutableStateOf<String?>(null) }
     var activeMangaSession by remember { mutableStateOf<MangaReaderSession?>(null) }
     var activeContinuity by remember { mutableStateOf<ReadingContinuitySummary?>(null) }
     var activeReturnRitual by remember { mutableStateOf<BookReturnRitual?>(null) }
@@ -608,6 +609,7 @@ fun VeilApp(
         route.locatorOverrideJson,
         targetBook?.id,
         openedPublication?.book?.id,
+        openedPublicationSessionId,
         restoring
     ) {
         val targetId = route.activeBookId ?: return@LaunchedEffect
@@ -616,8 +618,16 @@ fun VeilApp(
 
         val currentlyOpened = openedPublication
         if (currentlyOpened != null) {
-            if (currentlyOpened.book.id == targetId) return@LaunchedEffect
+            val ownsCurrentRequest =
+                currentlyOpened.book.id == targetId &&
+                    openedPublicationSessionId == openRequestId
+            if (ownsCurrentRequest) return@LaunchedEffect
+
+            // Reader ownership is one open request, not merely one book id. Tear down the old
+            // publication first so its fragment, publication resources and Reader session cannot
+            // leak into a fresh request for the same title.
             openedPublication = null
+            openedPublicationSessionId = null
             return@LaunchedEffect
         }
 
@@ -755,6 +765,7 @@ fun VeilApp(
                 locatorJson = locatorOverride
             )
         }
+        openedPublicationSessionId = openRequestId
         openedPublication = opened
         if (activeReturnRitual != null) {
             sensory.perform(view, VeilSensoryEvent.RETURN_RITUAL)
@@ -899,6 +910,7 @@ fun VeilApp(
     }
 
     val opened = openedPublication
+    val openedSessionId = openedPublicationSessionId
     val mangaSession = activeMangaSession
     Box(Modifier.fillMaxSize()) {
         if (mangaSession != null) {
@@ -913,9 +925,10 @@ fun VeilApp(
                 },
                 modifier = Modifier.fillMaxSize()
             )
-        } else if (opened != null) {
+        } else if (opened != null && openedSessionId != null) {
         ReaderScreen(
             opened = opened,
+            readerSessionInstanceId = openedSessionId,
             library = library,
             game = game,
             readerAppearance = appSettings.readerAppearance,
@@ -931,6 +944,7 @@ fun VeilApp(
             onSensoryEvent = { event -> sensory.perform(view, event) },
             onClose = {
                 openedPublication = null
+                openedPublicationSessionId = null
                 activeContinuity = null
                 activeReturnRitual = null
                 activeReturnLocatorJson = null
