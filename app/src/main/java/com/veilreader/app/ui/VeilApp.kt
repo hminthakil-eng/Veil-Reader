@@ -50,10 +50,12 @@ import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
+import com.veilreader.app.ui.screens.ArrodesMirrorScreen
 import com.veilreader.app.ui.screens.BookEntryStage
 import com.veilreader.app.ui.screens.BookThresholdTransitionOverlay
 import com.veilreader.app.ui.screens.CastleScreen
 import com.veilreader.app.ui.screens.LibraryScreen
+import com.veilreader.app.ui.screens.MangaHubScreen
 import com.veilreader.app.ui.screens.ObservatoryScreen
 import com.veilreader.app.ui.screens.PathScreen
 import com.veilreader.app.ui.screens.ProfileScreen
@@ -495,7 +497,8 @@ fun VeilApp(
                     requestOpenBook(book, locator)
                 },
                 onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
-                onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) }
+                onOpenCastle = { routeViewModel.selectTab(VeilTab.CASTLE) },
+                onOpenMirror = { routeViewModel.openChamber("mirror") }
             )
 
             VeilTab.LIBRARY -> LibraryScreen(
@@ -510,7 +513,8 @@ fun VeilApp(
                 onOpenBook = { requestOpenBook(it) },
                 onFavorite = library::toggleFavorite,
                 onEditMetadata = library::editMetadata,
-                onOpenSettings = routeViewModel::openSettings
+                onOpenSettings = routeViewModel::openSettings,
+                onOpenManga = { routeViewModel.openChamber("manga") }
             )
 
             VeilTab.CASTLE -> CastleScreen(
@@ -642,6 +646,23 @@ fun VeilApp(
             },
             onDeleteHighlight = library::deleteHighlight,
             onDeleteBookmark = library::deleteBookmark
+        )
+    } else if (route.activeChamber == "mirror") {
+        ArrodesMirrorScreen(
+            books = books,
+            highlights = highlights,
+            passageVisits = passageVisits,
+            onOpenSource = { fragment ->
+                requestOpenBook(fragment.book, fragment.locatorJson)
+            },
+            onClose = routeViewModel::closeChamber
+        )
+    } else if (route.activeChamber == "manga") {
+        MangaHubScreen(
+            books = books,
+            onOpenBook = { book -> requestOpenBook(book) },
+            onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
+            onClose = routeViewModel::closeChamber
         )
     } else if (
         profile == null ||
