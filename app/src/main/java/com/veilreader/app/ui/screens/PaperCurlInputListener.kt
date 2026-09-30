@@ -131,8 +131,9 @@ internal class PaperCurlInputListener(
             return true
         }
 
-        if (!state.active) return true
-        state.updateDrag(event.start, event.offset)
+        if (state.active) {
+            state.updateDrag(event.start, event.offset)
+        }
         sampleReleaseVelocity(spec, event)
         return true
     }
@@ -147,7 +148,9 @@ internal class PaperCurlInputListener(
             return true
         }
 
-        state.updateDrag(event.start, event.offset)
+        if (state.active) {
+            state.updateDrag(event.start, event.offset)
+        }
         sampleReleaseVelocity(spec, event)
 
         val view = navigator.publicationView
@@ -190,17 +193,32 @@ internal class PaperCurlInputListener(
                 }
 
                 commit -> {
-                    // End-of-book / navigation refusal should still feel intentional.
-                    onBoundaryHit(spec.side)
-                    if (!isReducedMotion()) state.animateBoundaryBounce()
+                    // Snapshot capture is a visual enhancement, never a navigation prerequisite.
+                    // If capture/preview failed, commit the real turn now on release.
+                    val moved = navigate(spec.direction)
+                    if (moved) {
+                        turnCommitted = true
+                        onCommittedTurn()
+                        if (state.active && !isReducedMotion()) {
+                            state.animateComplete(
+                                releaseVelocityDpPerSec =
+                                    releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                            )
+                        }
+                    } else {
+                        onBoundaryHit(spec.side)
+                        if (state.active && !isReducedMotion()) {
+                            state.animateBoundaryBounce()
+                        }
+                    }
                 }
 
                 else -> {
-                    if (!isReducedMotion()) state.animateCancel()
+                    if (state.active && !isReducedMotion()) state.animateCancel()
                 }
             }
 
-            state.clear()
+            if (state.active) state.clear()
             resetDrag()
         }
         return true
@@ -268,12 +286,6 @@ internal class PaperCurlInputListener(
         if (!isMostlyHorizontal(event)) return false
 
         val spec = resolveDragTurn(event) ?: return false
-        if (!state.begin(navigator.publicationView, spec.side, spec.direction)) {
-            // Keep the gesture reserved even if the visual snapshot cannot start;
-            // falling through would re-enable native slide in PAPER mode.
-            return false
-        }
-
         activeDrag = spec
         dragStartLocator = navigator.currentLocator.value
         previewNavigationSucceeded = false
@@ -281,14 +293,24 @@ internal class PaperCurlInputListener(
         lastMotionAtMillis = 0L
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
-        state.updateDrag(event.start, event.offset)
+
+        val visualReady = state.begin(
+            navigator.publicationView,
+            spec.side,
+            spec.direction
+        )
+        if (visualReady) {
+            state.updateDrag(event.start, event.offset)
+        }
         onInteraction()
 
-        // Let the captured source page become visible first, then reveal the live
-        // destination underneath it. This stays inside Readium's input pipeline.
-        navigationJob = scope.launch {
-            delay(VeilMotion.FRAME_SETTLE_MS)
-            previewNavigationSucceeded = navigate(spec.direction)
+        // Preview only when the captured sheet exists. Without a snapshot we keep the gesture
+        // reserved and perform the real navigation at release if the turn commits.
+        if (visualReady) {
+            navigationJob = scope.launch {
+                delay(VeilMotion.FRAME_SETTLE_MS)
+                previewNavigationSucceeded = navigate(spec.direction)
+            }
         }
         return true
     }
@@ -522,8 +544,8 @@ internal fun shouldCommitPaperTurn(
     // Returning to the origin or dragging outward must never commit a turn.
     if (inwardDistance <= 0f) return false
     val safeDensity = density.coerceAtLeast(0.1f)
-    val commitDistance = max(96f * safeDensity, width * 0.22f)
-    val flickDistance = max(36f * safeDensity, width * 0.035f)
+    val commitDistance = max(82f * safeDensity, width * 0.18f)
+    val flickDistance = max(32f * safeDensity, width * 0.032f)
     val fastInwardFlick =
         inwardDistance >= flickDistance &&
             releaseVelocityPxPerSec >= 900f * safeDensity
