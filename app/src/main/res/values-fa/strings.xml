@@ -185,6 +185,11 @@
     <string name="reader_advanced">پیشرفته</string>
     <string name="reader_theme">پوسته</string>
     <string name="reader_text_size">اندازه متن</string>
+    <string name="reader_flow_mode">شیوهٔ حرکت مطالعه</string>
+    <string name="reader_page_turn_effect">افکت ورق‌زدن</string>
+    <string name="reader_turn_none">بدون افکت</string>
+    <string name="reader_flow_paged_description">مطالعه به‌صورت صفحه‌ای؛ افکت ورق‌زدن را جداگانه در پایین انتخاب کنید.</string>
+    <string name="reader_turn_inactive_scroll">افکت ورق‌زدن حفظ می‌شود و با بازگشت به حالت صفحه‌ای دوباره اعمال خواهد شد.</string>
     <string name="reader_page_movement">حرکت صفحه</string>
     <string name="reader_typography_layout">تایپوگرافی و چیدمان</string>
     <string name="reader_line_spacing">فاصله خطوط</string>
