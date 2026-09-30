@@ -3,11 +3,23 @@ package com.veilreader.app.manga.reader.screen
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
@@ -24,6 +36,7 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -56,6 +69,10 @@ import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationState
 import com.veilreader.app.manga.reader.presentation.MangaReaderPresentationSurface
 import com.veilreader.app.manga.reader.ui.MangaReaderGestureOwner
 import com.veilreader.app.manga.reader.ui.MangaReaderUiIntent
+import com.veilreader.app.ui.screens.rememberVeilIntegerFormatter
+import com.veilreader.app.ui.theme.LocalVeilHighContrast
+import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilSpacing
 import java.io.File
 
 @Composable
@@ -114,6 +131,7 @@ fun MangaReaderIntegratedScreen(
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = Color.Black,
         modifier = modifier.fillMaxSize()
     ) { padding ->
         Box(
@@ -129,18 +147,13 @@ fun MangaReaderIntegratedScreen(
                 gestureOwner = gestureOwner,
                 modifier = Modifier.fillMaxSize(),
                 loadingContent = {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+                    MangaReaderLoading()
                 },
                 errorContent = { error, retry ->
                     MangaChapterError(error, retry)
                 },
                 partialOfflineContent = {
-                    Text(
-                        stringResource(R.string.manga_reader_partial_offline_notice),
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    MangaPartialOfflineNotice()
                 },
                 pageContent = { asset, pageModifier ->
                     val isCurrent =
@@ -169,6 +182,8 @@ fun MangaReaderIntegratedScreen(
                 MangaReaderChrome(
                     mode = state.readerUi.reader.mode,
                     direction = state.readerUi.reader.direction,
+                    itemIndex = state.readerUi.reader.position.itemIndex,
+                    pageCount = state.readerUi.reader.pageCount,
                     onClose = {
                         readerViewModel.onBackgrounded()
                         onClose()
@@ -204,7 +219,7 @@ private fun MangaAdaptivePage(
     ) {
         value = when (val resolved = resolver.resolve(asset)) {
             is MangaPageResolveResult.Error ->
-                AdaptivePageState.Error(resolved.message)
+                AdaptivePageState.Error
 
             is MangaPageResolveResult.Ready -> {
                 val plan = planner.plan(resolved.page)
@@ -231,15 +246,11 @@ private fun MangaAdaptivePage(
             }
         }
 
-        is AdaptivePageState.Error -> {
-            Box(modifier, contentAlignment = Alignment.Center) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(stringResource(R.string.manga_reader_page_failed))
-                    Button(onClick = { retryKey += 1 }) {
-                        Text(stringResource(R.string.manga_reader_retry))
-                    }
-                }
-            }
+        AdaptivePageState.Error -> {
+            MangaPageError(
+                onRetry = { retryKey += 1 },
+                modifier = modifier
+            )
         }
 
         is AdaptivePageState.Ready -> {
@@ -273,70 +284,243 @@ private fun MangaAdaptivePage(
 private sealed interface AdaptivePageState {
     data object Loading : AdaptivePageState
     data class Ready(val plan: MangaImageDeliveryPlan) : AdaptivePageState
-    data class Error(val message: String) : AdaptivePageState
+    data object Error : AdaptivePageState
 }
 
 @Composable
 private fun MangaReaderChrome(
     mode: MangaReaderMode,
     direction: MangaPageDirection,
+    itemIndex: Int,
+    pageCount: Int?,
     onClose: () -> Unit,
     onIntent: (MangaReaderUiIntent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.padding(12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    val highContrast = LocalVeilHighContrast.current
+    val integer = rememberVeilIntegerFormatter()
+    val progress = pageCount
+        ?.takeIf { it > 0 }
+        ?.let { ((itemIndex + 1).toFloat() / it.toFloat()).coerceIn(0f, 1f) }
+        ?: 0f
+    val positionLabel = pageCount
+        ?.takeIf { it > 0 }
+        ?.let {
+            stringResource(
+                R.string.manga_reader_page_of,
+                integer((itemIndex + 1).coerceAtMost(it)),
+                integer(it)
+            )
+        }
+        ?: stringResource(
+            R.string.manga_reader_page_unknown,
+            integer(itemIndex + 1)
+        )
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+            .widthIn(max = 760.dp),
+        shape = MaterialTheme.shapes.small,
+        color = VeilPalette.Archive.copy(alpha = if (highContrast) 0.98f else 0.94f),
+        border = BorderStroke(
+            1.dp,
+            if (highContrast) {
+                MaterialTheme.colorScheme.outline
+            } else {
+                VeilPalette.Brass.copy(alpha = 0.54f)
+            }
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 8.dp
     ) {
-        Button(onClick = onClose) {
-            Text(stringResource(R.string.manga_reader_back))
-        }
-        Button(
-            onClick = {
-                onIntent(
-                    MangaReaderUiIntent.SetMode(
-                        if (mode == MangaReaderMode.PAGED) {
-                            MangaReaderMode.WEBTOON
+        Column(
+            modifier = Modifier.padding(
+                horizontal = VeilSpacing.md,
+                vertical = VeilSpacing.sm
+            ),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.manga_reader_eyebrow),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (highContrast) {
+                            MaterialTheme.colorScheme.primary
                         } else {
-                            MangaReaderMode.PAGED
+                            VeilPalette.Brass
                         }
                     )
-                )
-            }
-        ) {
-            Text(
-                stringResource(
-                    if (mode == MangaReaderMode.PAGED) {
-                        R.string.manga_reader_mode_webtoon
-                    } else {
-                        R.string.manga_reader_mode_paged
-                    }
-                )
-            )
-        }
-        Button(
-            onClick = {
-                onIntent(
-                    MangaReaderUiIntent.SetDirection(
-                        if (direction == MangaPageDirection.RIGHT_TO_LEFT) {
-                            MangaPageDirection.LEFT_TO_RIGHT
-                        } else {
-                            MangaPageDirection.RIGHT_TO_LEFT
-                        }
+                    Text(
+                        positionLabel,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
-                )
+                }
+                OutlinedButton(
+                    onClick = onClose,
+                    modifier = Modifier.heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
+                    Text(stringResource(R.string.manga_reader_back))
+                }
             }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
+            ) {
+                if (progress > 0f) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(progress)
+                            .height(2.dp)
+                            .background(
+                                if (highContrast) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    VeilPalette.Brass
+                                }
+                            )
+                    )
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+            ) {
+                OutlinedButton(
+                    onClick = {
+                        onIntent(
+                            MangaReaderUiIntent.SetMode(
+                                if (mode == MangaReaderMode.PAGED) {
+                                    MangaReaderMode.WEBTOON
+                                } else {
+                                    MangaReaderMode.PAGED
+                                }
+                            )
+                        )
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
+                    Text(
+                        stringResource(
+                            if (mode == MangaReaderMode.PAGED) {
+                                R.string.manga_reader_mode_webtoon
+                            } else {
+                                R.string.manga_reader_mode_paged
+                            }
+                        )
+                    )
+                }
+                OutlinedButton(
+                    onClick = {
+                        onIntent(
+                            MangaReaderUiIntent.SetDirection(
+                                if (direction == MangaPageDirection.RIGHT_TO_LEFT) {
+                                    MangaPageDirection.LEFT_TO_RIGHT
+                                } else {
+                                    MangaPageDirection.RIGHT_TO_LEFT
+                                }
+                            )
+                        )
+                    },
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
+                    Text(
+                        stringResource(
+                            if (direction == MangaPageDirection.RIGHT_TO_LEFT) {
+                                R.string.manga_reader_direction_ltr
+                            } else {
+                                R.string.manga_reader_direction_rtl
+                            }
+                        )
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MangaReaderLoading() {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
+            CircularProgressIndicator()
             Text(
-                stringResource(
-                    if (direction == MangaPageDirection.RIGHT_TO_LEFT) {
-                        R.string.manga_reader_direction_ltr
-                    } else {
-                        R.string.manga_reader_direction_rtl
-                    }
-                )
+                stringResource(R.string.manga_reader_loading),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+    }
+}
+
+@Composable
+private fun MangaPartialOfflineNotice() {
+    Surface(
+        modifier = Modifier.padding(12.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.94f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.46f)
+        )
+    ) {
+        Text(
+            stringResource(R.string.manga_reader_partial_offline_notice),
+            modifier = Modifier.padding(
+                horizontal = VeilSpacing.md,
+                vertical = VeilSpacing.sm
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+
+@Composable
+private fun MangaPageError(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        MangaReaderErrorPanel(
+            message = stringResource(R.string.manga_reader_page_failed),
+            retry = onRetry
+        )
     }
 }
 
@@ -345,11 +529,57 @@ private fun MangaChapterError(
     error: MangaPresentationError,
     retry: () -> Unit
 ) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(error.kind.toUiMessageRes()))
-            if (error.retryable) {
-                Button(onClick = retry) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        MangaReaderErrorPanel(
+            message = stringResource(error.kind.toUiMessageRes()),
+            retry = retry.takeIf { error.retryable }
+        )
+    }
+}
+
+@Composable
+private fun MangaReaderErrorPanel(
+    message: String,
+    retry: (() -> Unit)?
+) {
+    Surface(
+        modifier = Modifier
+            .padding(VeilSpacing.lg)
+            .widthIn(max = 520.dp),
+        shape = MaterialTheme.shapes.small,
+        color = VeilPalette.Archive,
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.46f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.lg),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+        ) {
+            Text(
+                stringResource(R.string.manga_reader_error_eyebrow),
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Brass
+            )
+            Text(
+                message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            retry?.let {
+                Button(
+                    onClick = it,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 48.dp),
+                    shape = MaterialTheme.shapes.extraSmall
+                ) {
                     Text(stringResource(R.string.manga_reader_retry))
                 }
             }
