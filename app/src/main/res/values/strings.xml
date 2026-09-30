@@ -185,6 +185,11 @@
     <string name="reader_advanced">ADVANCED</string>
     <string name="reader_theme">THEME</string>
     <string name="reader_text_size">TEXT SIZE</string>
+    <string name="reader_flow_mode">READING FLOW</string>
+    <string name="reader_page_turn_effect">PAGE-TURN EFFECT</string>
+    <string name="reader_turn_none">None</string>
+    <string name="reader_flow_paged_description">Discrete pages. Choose the page-turn effect independently below.</string>
+    <string name="reader_turn_inactive_scroll">The page-turn effect is preserved and will apply again when you return to Paged.</string>
     <string name="reader_page_movement">PAGE MOVEMENT</string>
     <string name="reader_typography_layout">TYPOGRAPHY &amp; LAYOUT</string>
     <string name="reader_line_spacing">Line spacing</string>
