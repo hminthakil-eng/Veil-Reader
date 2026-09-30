@@ -1206,4 +1206,9 @@
     <string name="notice_manga_chapter_added">Added chapter %2$d to %1$s.</string>
     <string name="notice_manga_chapter_duplicate">That CBZ is already part of %1$s.</string>
     <string name="notice_manga_chapter_import_failed">The Manga chapter could not be added.</string>
+    <string name="manga_hub_storage_summary">%1$d chapters · %2$s sources · %3$s page cache</string>
+    <string name="manga_hub_clear_cache">Free page cache</string>
+    <string name="notice_manga_cache_cleared">Manga page cache cleared. It will rebuild from your local CBZ files when needed.</string>
+    <string name="notice_manga_cache_clear_failed">The Manga page cache could not be cleared.</string>
+    <string name="notice_manga_cache_repair_failed">Local Manga pages could not be rebuilt from the saved CBZ files.</string>
 </resources>
