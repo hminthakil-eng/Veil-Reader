@@ -1172,6 +1172,7 @@
     <string name="manga_reader_error_offline_unavailable">این فصل هنوز برای مطالعه آفلاین آماده نیست.</string>
     <string name="manga_reader_error_source_failure">دسترسی به منبع فصل ممکن نشد. دوباره تلاش کن.</string>
     <string name="manga_reader_error_empty_chapter">این فصل صفحه قابل‌خواندنی ندارد.</string>
+    <string name="manga_reader_error_invalid_pages">این فصل شامل مجموعه‌ای نامعتبر از صفحه‌هاست.</string>
     <string name="manga_reader_error_invalid_page_set">مجموعه صفحه‌های این فصل معتبر نیست.</string>
     <string name="manga_reader_error_request_mismatch">فصل هنگام بارگیری تغییر کرد. دوباره آن را باز کن.</string>
     <string name="mirror_fragment_quote">«%1$s»</string>
