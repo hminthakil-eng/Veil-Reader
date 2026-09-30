@@ -71,6 +71,16 @@ data class MangaLocalChapterImportResult(
     val duplicate: Boolean
 )
 
+
+data class MangaLocalStorageSummary(
+    val chapterCount: Int,
+    val offlinePageCount: Int,
+    val sourceBytes: Long,
+    val cacheBytes: Long
+) {
+    val totalBytes: Long get() = sourceBytes + cacheBytes
+}
+
 /**
  * Atomic-enough coordinator for local CBZ import across filesystem + Room.
  *
@@ -86,6 +96,132 @@ class MangaLocalImportCoordinator(
 ) {
     private val appContext = context.applicationContext
     val cacheRoot: File = File(appContext.filesDir, "manga-cache")
+
+    suspend fun storageSummary(bookId: String): MangaLocalStorageSummary {
+        val book = library.getBook(bookId)
+            ?: return MangaLocalStorageSummary(0, 0, 0L, 0L)
+        if (book.format != BookFormat.COMIC) {
+            return MangaLocalStorageSummary(0, 0, 0L, 0L)
+        }
+
+        val chapters = database.mangaCatalog().listChapters(bookId)
+        val archiveFiles = chapters.mapNotNull { chapter ->
+            val source = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .firstOrNull { it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value }
+                ?: return@mapNotNull null
+            resolveLocalArchiveFile(book, source.chapterKey, chapter.readingOrder)
+        }.distinctBy { runCatching { it.canonicalPath }.getOrDefault(it.absolutePath) }
+
+        val offline = database.mangaOffline().listForBook(bookId)
+        val sourceBytes = withContext(Dispatchers.IO) {
+            archiveFiles.sumOf { file -> file.takeIf(File::isFile)?.length() ?: 0L }
+        }
+        val cacheBytes = withContext(Dispatchers.IO) {
+            offline.flatMap { it.pages }.sumOf { page ->
+                val file = File(cacheRoot, page.relativePath)
+                file.takeIf(File::isFile)?.length() ?: 0L
+            }
+        }
+
+        return MangaLocalStorageSummary(
+            chapterCount = chapters.size,
+            offlinePageCount = offline.sumOf { it.pages.size },
+            sourceBytes = sourceBytes,
+            cacheBytes = cacheBytes
+        )
+    }
+
+    suspend fun clearDerivedCache(bookId: String): Result<Long> = runCatching {
+        val chapters = database.mangaCatalog().listChapters(bookId)
+        val offline = database.mangaOffline().listForBook(bookId)
+        val bytesBefore = withContext(Dispatchers.IO) {
+            offline.flatMap { it.pages }.sumOf { page ->
+                File(cacheRoot, page.relativePath)
+                    .takeIf(File::isFile)
+                    ?.length()
+                    ?: 0L
+            }
+        }
+
+        database.withTransaction {
+            offline.forEach { bundle ->
+                database.mangaOffline().deleteChapter(bundle.chapter.chapterId)
+            }
+        }
+        withContext(Dispatchers.IO) {
+            val directories = chapters.map { File(cacheRoot, it.cacheKey) }
+            directories.forEach(::deleteGeneratedChapterDirectory)
+            pruneEmptyMangaCacheParents(directories)
+        }
+        bytesBefore
+    }
+
+    suspend fun ensureLocalCache(bookId: String): Result<Int> = runCatching {
+        val book = library.getBook(bookId)
+            ?: error("Manga Book is not present in the Library")
+        require(book.format == BookFormat.COMIC)
+
+        val chapters = database.mangaCatalog().listChapters(bookId)
+        val offlineStore = RoomMangaOfflineCacheIndex(database)
+        var rebuilt = 0
+
+        for (chapter in chapters) {
+            val persisted = database.mangaOffline().findChapter(chapter.id)
+            val usable = persisted != null &&
+                persisted.chapter.completed &&
+                persisted.pages.isNotEmpty() &&
+                withContext(Dispatchers.IO) {
+                    persisted.pages.all { page ->
+                        val file = File(cacheRoot, page.relativePath)
+                        file.isFile &&
+                            file.length() == page.byteSize &&
+                            page.byteSize > 0L
+                    }
+                }
+            if (usable) continue
+
+            val source = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .firstOrNull { it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value }
+                ?: error("Manga chapter has no local CBZ source")
+            val archive = resolveLocalArchiveFile(
+                book = book,
+                chapterKey = source.chapterKey,
+                readingOrder = chapter.readingOrder
+            ) ?: error("Manga chapter source archive is missing")
+            val anchor = MangaChapterAnchor(
+                volume = chapter.volume,
+                number = chapter.number,
+                languageTag = chapter.languageTag,
+                normalizedTitle = chapter.normalizedTitle ?: chapter.title,
+                providerChapterKeyHint = source.chapterKey
+            )
+            val offlineId = requireNotNull(
+                MangaOfflineChapterLocator.idFor(CanonicalMangaId(book.id), anchor)
+            )
+            check(MangaCacheLayout.chapterDirectory(offlineId) == chapter.cacheKey) {
+                "Persisted Manga chapter cache identity changed"
+            }
+
+            val imported = ingestor.ingest(
+                archiveFile = archive,
+                cacheRoot = cacheRoot,
+                chapterId = offlineId,
+                anchor = anchor,
+                originChapterKey = source.chapterKey,
+                originSourceId = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+            )
+            val manifest = when (imported) {
+                is MangaCbzImportResult.Success -> imported.manifest
+                is MangaCbzImportResult.Failure ->
+                    throw MangaLocalImportException(imported.reason)
+            }
+            offlineStore.put(manifest)
+            rebuilt += 1
+        }
+        rebuilt
+    }
 
     suspend fun canImport(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         val name = displayName(uri)?.lowercase(Locale.ROOT)
