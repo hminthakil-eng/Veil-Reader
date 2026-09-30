@@ -125,13 +125,6 @@ fun PathScreen(
             PathIdentityPanel(profile)
         }
 
-        RitualPanel(
-            profile = profile,
-            canAdvance = canAdvance,
-            nextRank = nextRank,
-            onPrepareCeremony = { showCeremony = true }
-        )
-
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
                 eyebrow = stringResource(R.string.path_progression_eyebrow),
@@ -139,6 +132,13 @@ fun PathScreen(
             )
             RankConstellation(profile)
         }
+
+        RitualPanel(
+            profile = profile,
+            canAdvance = canAdvance,
+            nextRank = nextRank,
+            onPrepareCeremony = { showCeremony = true }
+        )
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
@@ -266,12 +266,12 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
                 Text(
                     stringResource(R.string.path_level, profile.level),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                    color = VeilPalette.Brass.copy(alpha = 0.84f)
+                    color = VeilPalette.Moon.copy(alpha = 0.78f)
                 )
                 Text(
                     stringResource(R.string.path_xp, profile.xp, xpTarget),
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist
+                    color = VeilPalette.Mist.copy(alpha = 0.56f)
                 )
             }
             LinearProgressIndicator(
