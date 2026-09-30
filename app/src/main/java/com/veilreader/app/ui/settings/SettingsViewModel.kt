@@ -28,6 +28,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch { store.setAppThemeMode(mode) }
     }
 
+    fun setHighContrastEnabled(enabled: Boolean) {
+        viewModelScope.launch { store.setHighContrastEnabled(enabled) }
+    }
+
     fun saveReaderAppearance(appearance: ReaderAppearance) {
         val details = "theme=${appearance.theme} scroll=${appearance.scroll} pageTurn=${appearance.pageTurnStyle}"
         ReaderTrace.event("appearance_requested", details = details)
