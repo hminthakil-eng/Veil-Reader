@@ -941,5 +941,11 @@ class MangaLocalImportCoordinator(
         const val COVER_DECODE_MAX_WIDTH = 1_200
         const val COVER_DECODE_MAX_HEIGHT = 1_800
         const val COVER_JPEG_QUALITY = 88
+        private val VOLUME_PATTERN =
+            Regex("""(?i)(?:^|[\s._-])(?:vol(?:ume)?|v)[\s._-]*(\d+(?:\.\d+)?)""")
+        private val CHAPTER_PATTERN =
+            Regex("""(?i)(?:^|[\s._-])(?:ch(?:apter)?|c)[\s._-]*(\d+(?:\.\d+)?)""")
+        private val TRAILING_NUMBER_PATTERN =
+            Regex("""(\d+(?:\.\d+)?)(?:[\s._-]*)$""")
     }
 }
