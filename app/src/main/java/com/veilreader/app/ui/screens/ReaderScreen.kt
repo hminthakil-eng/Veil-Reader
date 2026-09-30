@@ -71,6 +71,7 @@ import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderAppearanceScope
+import com.veilreader.app.domain.ReaderLayoutMode
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
@@ -1884,16 +1885,36 @@ private fun EpubAppearancePanel(
             BrassRule(Modifier.fillMaxWidth())
 
             Text(
-                stringResource(R.string.reader_page_movement),
+                stringResource(R.string.reader_flow_mode),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
-            ReaderMotionSelector(
-                selected = draft.navigationMode,
-                onSelect = { updateDraft(draft.withNavigationMode(it)) }
+            ReaderFlowSelector(
+                selected = draft.layoutMode,
+                onSelect = { updateDraft(draft.withLayoutMode(it)) }
             )
             Text(
-                readerNavigationModeDescriptionLocalized(draft.navigationMode),
+                readerLayoutModeDescriptionLocalized(draft.layoutMode),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Text(
+                stringResource(R.string.reader_page_turn_effect),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                color = VeilPalette.Brass
+            )
+            ReaderPageTurnSelector(
+                selected = draft.pageTurnStyle,
+                enabled = draft.layoutMode == ReaderLayoutMode.PAGED,
+                onSelect = { updateDraft(draft.withPageTurnStyle(it)) }
+            )
+            Text(
+                if (draft.layoutMode == ReaderLayoutMode.SCROLL) {
+                    stringResource(R.string.reader_turn_inactive_scroll)
+                } else {
+                    readerPageTurnDescriptionLocalized(draft.pageTurnStyle)
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -2048,7 +2069,7 @@ private fun ReaderAppearancePreview(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    readerNavigationModeLabel(appearance.navigationMode).uppercase(),
+                    readerMovementSummary(appearance).uppercase(),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2132,6 +2153,177 @@ internal fun readerNavigationModeDescription(mode: ReaderNavigationMode): String
         ReaderNavigationMode.SCROLL ->
             "Continuous vertical reading when the publication format supports it."
     }
+
+@Composable
+private fun readerLayoutModeLabel(mode: ReaderLayoutMode): String =
+    when (mode) {
+        ReaderLayoutMode.PAGED -> stringResource(R.string.reader_mode_paged)
+        ReaderLayoutMode.SCROLL -> stringResource(R.string.reader_mode_scroll)
+    }
+
+@Composable
+private fun readerLayoutModeDescriptionLocalized(mode: ReaderLayoutMode): String =
+    when (mode) {
+        ReaderLayoutMode.PAGED -> stringResource(R.string.reader_flow_paged_description)
+        ReaderLayoutMode.SCROLL -> stringResource(R.string.reader_mode_scroll_description)
+    }
+
+@Composable
+private fun readerPageTurnStyleLabel(style: PageTurnStyle): String =
+    when (style) {
+        PageTurnStyle.PAPER -> stringResource(R.string.reader_mode_curl)
+        PageTurnStyle.SLIDE -> stringResource(R.string.reader_mode_slide)
+        PageTurnStyle.NONE -> stringResource(R.string.reader_turn_none)
+    }
+
+@Composable
+private fun readerPageTurnDescriptionLocalized(style: PageTurnStyle): String =
+    when (style) {
+        PageTurnStyle.PAPER -> stringResource(R.string.reader_mode_curl_description)
+        PageTurnStyle.SLIDE -> stringResource(R.string.reader_mode_slide_description)
+        PageTurnStyle.NONE -> stringResource(R.string.reader_mode_paged_description)
+    }
+
+@Composable
+private fun readerMovementSummary(appearance: ReaderAppearance): String =
+    if (appearance.layoutMode == ReaderLayoutMode.SCROLL) {
+        readerLayoutModeLabel(ReaderLayoutMode.SCROLL)
+    } else {
+        readerLayoutModeLabel(ReaderLayoutMode.PAGED) +
+            " · " +
+            readerPageTurnStyleLabel(appearance.pageTurnStyle)
+    }
+
+@Composable
+internal fun ReaderFlowSelector(
+    selected: ReaderLayoutMode,
+    onSelect: (ReaderLayoutMode) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        ReaderLayoutMode.entries.forEach { mode ->
+            val active = selected == mode
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 58.dp)
+                    .selectable(
+                        selected = active,
+                        role = Role.RadioButton
+                    ) { onSelect(mode) },
+                shape = MaterialTheme.shapes.extraSmall,
+                color = if (active) {
+                    VeilPalette.DeepBrass.copy(alpha = 0.76f)
+                } else {
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+                },
+                border = BorderStroke(
+                    1.dp,
+                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
+                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    ReaderMotionPreview(
+                        mode = if (mode == ReaderLayoutMode.SCROLL) {
+                            ReaderNavigationMode.SCROLL
+                        } else {
+                            ReaderNavigationMode.PAGED
+                        },
+                        active = active,
+                        modifier = Modifier.width(48.dp).height(30.dp)
+                    )
+                    Text(
+                        readerLayoutModeLabel(mode),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (active) {
+                            VeilPalette.Moon
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+internal fun ReaderPageTurnSelector(
+    selected: PageTurnStyle,
+    enabled: Boolean,
+    onSelect: (PageTurnStyle) -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        PageTurnStyle.entries.forEach { style ->
+            val active = selected == style
+            val previewMode = when (style) {
+                PageTurnStyle.PAPER -> ReaderNavigationMode.PAPER_CURL
+                PageTurnStyle.SLIDE -> ReaderNavigationMode.SLIDE
+                PageTurnStyle.NONE -> ReaderNavigationMode.PAGED
+            }
+            val activeColor = if (enabled) {
+                VeilPalette.Brass
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.40f)
+            }
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 58.dp)
+                    .selectable(
+                        selected = active,
+                        enabled = enabled,
+                        role = Role.RadioButton
+                    ) { onSelect(style) },
+                shape = MaterialTheme.shapes.extraSmall,
+                color = if (active && enabled) {
+                    VeilPalette.DeepBrass.copy(alpha = 0.76f)
+                } else {
+                    MaterialTheme.colorScheme.surface.copy(alpha = if (enabled) 0.46f else 0.26f)
+                },
+                border = BorderStroke(
+                    1.dp,
+                    if (active && enabled) {
+                        VeilPalette.Brass.copy(alpha = 0.82f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (enabled) 0.46f else 0.24f)
+                    }
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    ReaderMotionPreview(
+                        mode = previewMode,
+                        active = active && enabled,
+                        modifier = Modifier.width(44.dp).height(28.dp)
+                    )
+                    Text(
+                        readerPageTurnStyleLabel(style),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (active && enabled) {
+                            VeilPalette.Moon
+                        } else {
+                            activeColor
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
 
 @Composable
 internal fun ReaderMotionSelector(
