@@ -71,6 +71,7 @@ import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilTracking
 
 @Composable
 fun SettingsScreen(
@@ -672,7 +673,7 @@ private fun SettingsSection(
     ) {
         Text(
             title.uppercase(),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
+            style = MaterialTheme.typography.labelSmall.withVeilTracking(title, 1.10.sp),
             color = VeilPalette.Brass
         )
 
