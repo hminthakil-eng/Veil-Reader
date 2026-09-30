@@ -39,6 +39,7 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.manga.MangaLocalChapterSummary
 import com.veilreader.app.data.manga.MangaLocalImportCoordinator
 import com.veilreader.app.data.manga.RoomMangaOfflineCacheIndex
 import com.veilreader.app.data.manga.RoomMangaProgressStore
@@ -428,6 +429,95 @@ fun VeilApp(
                 throw cancelled
             } catch (_: Exception) {
                 showNotice(R.string.notice_manga_chapter_import_failed)
+            } finally {
+                mangaMutationInProgress = false
+                isImporting = false
+            }
+        }
+    }
+
+    fun renameMangaChapter(
+        book: Book,
+        chapter: MangaLocalChapterSummary,
+        title: String
+    ) {
+        if (isImporting || restoring || book.format != BookFormat.COMIC) return
+        isImporting = true
+        mangaMutationInProgress = true
+        scope.launch {
+            try {
+                mangaImporter.renameChapter(book.id, chapter.id, title).getOrThrow()
+                mangaStorageRevision += 1
+                showNotice(
+                    R.string.notice_manga_chapter_renamed,
+                    VeilNoticeKind.SUCCESS
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                showNotice(R.string.notice_manga_chapter_update_failed)
+            } finally {
+                mangaMutationInProgress = false
+                isImporting = false
+            }
+        }
+    }
+
+    fun moveMangaChapter(
+        book: Book,
+        chapter: MangaLocalChapterSummary,
+        direction: Int
+    ) {
+        if (isImporting || restoring || book.format != BookFormat.COMIC) return
+        isImporting = true
+        mangaMutationInProgress = true
+        scope.launch {
+            try {
+                mangaImporter.moveChapter(
+                    bookId = book.id,
+                    chapterId = chapter.id,
+                    direction = direction
+                ).getOrThrow()
+                mangaStorageRevision += 1
+                showNotice(
+                    R.string.notice_manga_chapter_reordered,
+                    VeilNoticeKind.SUCCESS
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                showNotice(R.string.notice_manga_chapter_update_failed)
+            } finally {
+                mangaMutationInProgress = false
+                isImporting = false
+            }
+        }
+    }
+
+    fun deleteMangaChapter(
+        book: Book,
+        chapter: MangaLocalChapterSummary
+    ) {
+        if (
+            isImporting ||
+            restoring ||
+            book.format != BookFormat.COMIC ||
+            chapter.isPrimary
+        ) return
+        isImporting = true
+        mangaMutationInProgress = true
+        scope.launch {
+            try {
+                mangaImporter.deleteChapter(book.id, chapter.id).getOrThrow()
+                mangaStorageRevision += 1
+                showNotice(
+                    R.string.notice_manga_chapter_deleted,
+                    VeilNoticeKind.SUCCESS
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                showNotice(R.string.notice_manga_chapter_update_failed)
             } finally {
                 mangaMutationInProgress = false
                 isImporting = false
@@ -887,6 +977,10 @@ fun VeilApp(
             onOpenBook = ::requestOpenBook,
             onAddChapterUris = ::appendMangaChapters,
             storageSummaryProvider = { book -> mangaImporter.storageSummary(book.id) },
+            chapterSummaryProvider = { book -> mangaImporter.listChapterSummaries(book.id) },
+            onRenameChapter = ::renameMangaChapter,
+            onMoveChapter = ::moveMangaChapter,
+            onDeleteChapter = ::deleteMangaChapter,
             onClearDerivedCache = ::clearMangaDerivedCache,
             storageRevision = mangaStorageRevision,
             onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
