@@ -137,8 +137,15 @@ class MangaPersistenceMigrationInstrumentedTest {
         migrated.execSQL(
             """
             INSERT INTO manga_work_merges (
-                id, targetBookId, createdAtEpochMs, receiptVersion
-            ) VALUES ('merge-1', 'comic', 500, 1)
+                id, targetBookId, createdAtEpochMs, receiptVersion,
+                targetBookProgress, targetBookFinished, targetBookLastOpenedAtEpochMs,
+                targetProgressChapterId, targetProgressPageIndex, targetProgressPageCount,
+                targetProgressChapterProgression, targetProgressUpdatedAtEpochMs
+            ) VALUES (
+                'merge-1', 'comic', 500, 1,
+                0.25, 0, 2,
+                'chapter-1', 2, 10, 0.2222, 100
+            )
             """.trimIndent()
         )
         migrated.execSQL(
