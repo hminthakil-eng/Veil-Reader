@@ -249,20 +249,33 @@ private fun ProfileMasteryPanel(profile: ReaderProfile) {
         else R.string.profile_mastery_building
     )
 
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.64f),
-        border = BorderStroke(
-            1.dp,
-            if (mastery.ritualReady) VeilPalette.Brass.copy(alpha = 0.54f)
-            else VeilPalette.BorderDark.copy(alpha = 0.78f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Archive.copy(alpha = 0.24f))
+            .padding(VeilSpacing.md)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = if (mastery.ritualReady) {
+                    VeilPalette.Brass.copy(alpha = 0.72f)
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.54f)
+                },
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = if (mastery.ritualReady) 2.dp.toPx() else 1.dp.toPx()
+            )
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.44f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
         Column(
-            modifier = Modifier.padding(VeilSpacing.md),
+            modifier = Modifier.padding(start = 6.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -944,31 +957,45 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
 
 @Composable
 private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Boolean) {
-    val shape = MaterialTheme.shapes.extraSmall
     val accent = if (revealed) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.48f)
     val copy = localizedDiscoveryCopy(discovery.id)
 
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(shape)
             .background(
-                if (revealed) VeilPalette.DeepBrass.copy(alpha = 0.18f)
-                else VeilPalette.Archive.copy(alpha = 0.56f)
+                if (revealed) {
+                    VeilPalette.DeepBrass.copy(alpha = 0.10f)
+                } else {
+                    VeilPalette.Ink.copy(alpha = 0.16f)
+                }
             )
-            .border(BorderStroke(1.dp, accent.copy(alpha = if (revealed) 0.55f else 0.35f)), shape)
             .padding(VeilSpacing.md)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = accent.copy(alpha = if (revealed) 0.64f else 0.30f),
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = if (revealed) 2.dp.toPx() else 1.dp.toPx()
+            )
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.42f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
             verticalAlignment = Alignment.Top
         ) {
             Box(
-                Modifier
-                    .size(42.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(accent.copy(alpha = if (revealed) 0.13f else 0.07f)),
+                Modifier.size(42.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
@@ -977,6 +1004,7 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                     color = accent
                 )
             }
+
             Column(
                 Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
@@ -985,13 +1013,17 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                     if (revealed) copy.title
                     else stringResource(R.string.profile_veiled_fragment, index + 1),
                     style = MaterialTheme.typography.titleLarge,
-                    color = if (revealed) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.62f)
+                    color = if (revealed) {
+                        VeilPalette.Moon
+                    } else {
+                        VeilPalette.Mist.copy(alpha = 0.62f)
+                    }
                 )
                 Text(
                     stringResource(
                         if (revealed) R.string.profile_revealed else R.string.profile_clue
                     ),
-                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.3.sp),
+                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.1.sp),
                     color = accent
                 )
                 Text(
