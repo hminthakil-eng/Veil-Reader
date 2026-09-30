@@ -33,6 +33,37 @@
     <string name="common_unknown_author">نویسنده نامشخص</string>
 
     <string name="notebook_eyebrow">آرشیو پنهان</string>
+    <string name="common_remove">حذف</string>
+    <string name="common_keep">نگه‌داشتن</string>
+    <string name="reader_notebook_title">ابزارهای مطالعه</string>
+    <string name="reader_notebook_tab_contents">فهرست</string>
+    <string name="reader_notebook_tab_bookmarks">نشانک‌ها</string>
+    <string name="reader_notebook_tab_notes">یادداشت‌ها</string>
+    <string name="reader_notebook_tab_search">جست‌وجو</string>
+    <string name="reader_notebook_search_notes">جست‌وجوی هایلایت‌ها و یادداشت‌ها</string>
+    <string name="reader_notebook_search_book">جست‌وجو در این کتاب</string>
+    <string name="reader_notebook_find">پیدا کن</string>
+    <string name="reader_notebook_searching">در حال جست‌وجو…</string>
+    <string name="reader_notebook_search_unavailable">جست‌وجو برای این کتاب در دسترس نیست.</string>
+    <string name="reader_notebook_search_failed">جست‌وجو کامل نشد.</string>
+    <string name="reader_notebook_no_chapters">این کتاب فهرست فصل ندارد.</string>
+    <string name="reader_notebook_untitled_section">بخش بدون عنوان</string>
+    <string name="reader_notebook_bookmarks_empty">با نشانک یک موقعیت را در خواننده ذخیره کنید؛ موقعیت‌های ذخیره‌شده اینجا ظاهر می‌شوند.</string>
+    <string name="reader_notebook_notes_empty">یک بخش را هایلایت کنید تا دفترچه شکل بگیرد. متن EPUB را می‌توان هایلایت کرد و موقعیت‌های PDF را با نشانک ذخیره کرد.</string>
+    <string name="reader_notebook_notes_no_match">هایلایت یا یادداشت مطابقی پیدا نشد.</string>
+    <string name="reader_notebook_volume_activity_continued">مطالعهٔ این جلد پس از این علامت ادامه داشته است</string>
+    <string name="reader_notebook_return_passage">بازگشت به بخش</string>
+    <string name="reader_notebook_no_search_matches">در این کتاب نتیجه‌ای پیدا نشد.</string>
+    <string name="reader_notebook_match">نتیجه</string>
+    <string name="reader_notebook_search_match_fallback">نتیجهٔ جست‌وجو</string>
+    <string name="reader_notebook_return_match">بازگشت به نتیجه</string>
+    <string name="reader_notebook_note_save_failed">این یادداشت هنوز ذخیره نشد.</string>
+    <string name="reader_notebook_saving">در حال ذخیره…</string>
+    <plurals name="reader_notebook_revisited_times">
+        <item quantity="one">%1$d بار بازدید دوباره</item>
+        <item quantity="other">%1$d بار بازدید دوباره</item>
+    </plurals>
+
     <string name="notebook_title">دفتر یادداشت</string>
     <string name="notebook_counts">%1$d هایلایت · %2$d نشانک</string>
     <string name="notebook_search_label">جست‌وجوی کتاب‌ها، بخش‌ها و یادداشت‌ها</string>
