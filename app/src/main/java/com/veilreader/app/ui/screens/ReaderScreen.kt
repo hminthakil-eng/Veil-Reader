@@ -1711,16 +1711,12 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .statusBarsPadding()
-                    .padding(horizontal = 8.dp, top = 4.dp),
-                shape = MaterialTheme.shapes.extraSmall,
+                    .statusBarsPadding(),
+                shape = RoundedCornerShape(0.dp),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
-                border = BorderStroke(
-                    1.dp,
-                    readerChromeAccent.copy(alpha = 0.34f)
-                )
+                border = null
             ) {
                 Column {
                     Row(
@@ -1800,16 +1796,12 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(horizontal = 8.dp, bottom = 6.dp),
-                shape = MaterialTheme.shapes.extraSmall,
+                    .navigationBarsPadding(),
+                shape = RoundedCornerShape(0.dp),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
-                border = BorderStroke(
-                    1.dp,
-                    readerChromeAccent.copy(alpha = 0.30f)
-                )
+                border = null
             ) {
                 Column {
                     Box(
@@ -4058,8 +4050,10 @@ internal fun ReaderMotionSelector(
     onSelect: (ReaderNavigationMode) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         ReaderNavigationMode.entries.forEach { mode ->
             val active = selected == mode
@@ -4070,31 +4064,42 @@ internal fun ReaderMotionSelector(
                 ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
                 ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
             }
-            Surface(
+
+            Box(
                 modifier = Modifier
                     .weight(1f)
-                    .heightIn(min = 52.dp)
+                    .heightIn(min = 58.dp)
                     .selectable(
                         selected = active,
                         enabled = enabled,
                         role = Role.RadioButton
-                    ) { onSelect(mode) },
-                shape = MaterialTheme.shapes.extraSmall,
-                color = if (active) {
-                    VeilPalette.DeepBrass.copy(alpha = 0.76f)
-                } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
-                },
-                border = BorderStroke(
-                    1.dp,
-                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-                )
+                    ) { onSelect(mode) }
+                    .background(
+                        if (active) {
+                            VeilPalette.Archive.copy(alpha = 0.34f)
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                    .padding(horizontal = 4.dp, vertical = 7.dp),
+                contentAlignment = Alignment.Center
             ) {
+                Canvas(Modifier.matchParentSize()) {
+                    drawLine(
+                        color = if (active) {
+                            VeilPalette.Brass
+                        } else {
+                            VeilPalette.BorderDark.copy(alpha = 0.42f)
+                        },
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = if (active) 1.5.dp.toPx() else 1.dp.toPx()
+                    )
+                }
+
                 Column(
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     ReaderMotionPreview(
                         mode = mode,
@@ -4109,9 +4114,11 @@ internal fun ReaderMotionSelector(
                         color = when {
                             !enabled ->
                                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            active -> VeilPalette.Moon
+                            active -> VeilPalette.Brass
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
