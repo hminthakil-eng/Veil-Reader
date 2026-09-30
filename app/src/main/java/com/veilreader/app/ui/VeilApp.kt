@@ -340,25 +340,37 @@ fun VeilApp(
 
     fun deleteBook(book: Book) {
         if (!book.isImported || restoring || isImporting) return
+        val mangaDelete = book.format == BookFormat.COMIC
+        if (mangaDelete) {
+            isImporting = true
+            mangaMutationInProgress = true
+        }
         scope.launch {
-            val result = if (book.format == BookFormat.COMIC) {
-                mangaImporter.deleteImportedManga(book.id)
-            } else {
-                runCatching { library.deleteImportedBook(book.id) }
-            }
+            try {
+                val result = if (mangaDelete) {
+                    mangaImporter.deleteImportedManga(book.id)
+                } else {
+                    runCatching { library.deleteImportedBook(book.id) }
+                }
 
-            val deleted = result.getOrNull()
-            if (deleted != null) {
-                showNotice(
-                    R.string.notice_book_deleted,
-                    VeilNoticeKind.SUCCESS,
-                    deleted.title
-                )
-            } else {
-                showNotice(
-                    R.string.notice_book_delete_failed,
-                    VeilNoticeKind.WARNING
-                )
+                val deleted = result.getOrNull()
+                if (deleted != null) {
+                    showNotice(
+                        R.string.notice_book_deleted,
+                        VeilNoticeKind.SUCCESS,
+                        deleted.title
+                    )
+                } else {
+                    showNotice(
+                        R.string.notice_book_delete_failed,
+                        VeilNoticeKind.WARNING
+                    )
+                }
+            } finally {
+                if (mangaDelete) {
+                    mangaMutationInProgress = false
+                    isImporting = false
+                }
             }
         }
     }
