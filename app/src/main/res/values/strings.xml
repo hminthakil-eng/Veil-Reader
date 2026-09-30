@@ -1178,4 +1178,5 @@
     <string name="manga_reader_error_empty_chapter">This chapter does not contain readable pages.</string>
     <string name="manga_reader_error_invalid_page_set">This chapter returned an invalid page set.</string>
     <string name="manga_reader_error_request_mismatch">The chapter changed while loading. Try opening it again.</string>
+    <string name="mirror_fragment_quote">“%1$s”</string>
 </resources>
