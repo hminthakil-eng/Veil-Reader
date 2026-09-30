@@ -5,6 +5,7 @@ import com.veilreader.app.manga.library.MangaChapterAnchor
 import com.veilreader.app.manga.reader.MangaReaderChapterRef
 import com.veilreader.app.manga.reader.presentation.MangaChapterRoute
 import com.veilreader.app.manga.source.MangaContentType
+import com.veilreader.app.manga.source.MangaSourceCapability
 import com.veilreader.app.manga.source.MangaSourceDescriptor
 import com.veilreader.app.manga.source.MangaSourceProvider
 import com.veilreader.app.manga.source.SourceChapter
@@ -152,6 +153,8 @@ class MangaReaderSessionTest {
 
     private fun provider(id: String): MangaSourceProvider =
         object : MangaSourceProvider {
+            override val capabilities: Set<MangaSourceCapability> = emptySet()
+
             override val descriptor = MangaSourceDescriptor(
                 id = SourceId(id),
                 displayName = id,
