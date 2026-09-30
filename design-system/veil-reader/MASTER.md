@@ -10,16 +10,17 @@ Veil Reader is a quiet, premium reading utility wrapped in a mysterious fantasy 
 - 21st.dev is a pattern/inspiration source only; React/shadcn code must never be copied into runtime code.
 - UI UX Pro Max guidance must use the `jetpack-compose` stack.
 
-## Existing visual identity — preserve
-The current theme is the source of truth unless a deliberate redesign changes it:
-- Ink / Obsidian / Slate surfaces for dark mode.
-- Parchment / Warm Paper surfaces for light mode.
-- Amethyst = primary action / magic / focus.
-- Old Gold = achievement / rarity / progress.
-- Jade = success / growth / calm secondary accent.
-- Serif display/headline typography for story/world atmosphere.
-- Sans-serif body/control typography for clarity.
-- Rounded shapes: 8 / 12 / 16 / 24 / 32 dp family.
+## Rebuild visual identity — source of truth
+This branch is the deliberate redesign. Preserve reader reliability and domain systems, not the generic shell:
+- Deep blue-black / ink surfaces form the Archive, Threshold and Castle architecture.
+- Aged brass / Old Gold is the primary registration, focus and action material.
+- Amethyst is rare: mystical, ritual or exceptional states only; never the default premium paint.
+- Parchment / Warm Paper remain the reading material and light-mode foundation.
+- Serif display/headline typography carries editorial atmosphere; sans-serif remains for dense controls.
+- Architectural radii use a restrained 4 / 7 / 10 / 14 / 18 dp family.
+- Do not wrap every section in a rounded card. Prefer open composition, rules, plates, shelves and material boundaries.
+- Reader chrome is quieter than the shell and must disappear completely when not needed.
+- Decoration density follows realm: Threshold medium, Archive/Castle rich, Reader minimal.
 
 ## Experience hierarchy
 1. Reading clarity.
