@@ -765,7 +765,24 @@ fun VeilApp(
                 val persistedLocator = opened.initialLocator?.toJSON()?.toString() ?: recoveryLocator
                 val recoveredProgress =
                     opened.initialLocator?.locations?.totalProgression ?: book.progress.toDouble()
-                library.saveProgress(targetId, recoveredProgress, persistedLocator)
+                val recoveryOutcome = library.saveReaderOpenRecoveryProgress(
+                    bookId = targetId,
+                    sessionId = openRequestId,
+                    progression = recoveredProgress,
+                    locatorJson = persistedLocator
+                )
+                if (!recoveryOutcome.accepted) {
+                    routeViewModel.bookOpenFailed(targetId, openRequestId)
+                    showNotice(
+                        if (locatorOverride != null) {
+                            R.string.notice_position_save_failed
+                        } else {
+                            R.string.notice_checkpoint_save_failed
+                        },
+                        VeilNoticeKind.WARNING
+                    )
+                    return@LaunchedEffect
+                }
             }
             library.markOpened(targetId)
             if (locatorOverride != null) {
