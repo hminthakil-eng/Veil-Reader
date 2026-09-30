@@ -14,6 +14,12 @@ class ReaderStartupHandshakePolicyTest {
                 navigatorAttached = true
             )
         )
+        assertFalse(
+            shouldCollectReaderLocator(
+                sessionReady = true,
+                navigatorAttached = false
+            )
+        )
         assertTrue(
             shouldCollectReaderLocator(
                 sessionReady = true,
