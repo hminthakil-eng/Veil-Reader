@@ -746,7 +746,8 @@ fun ReaderScreen(
                 format = opened.format,
                 paperPreviewActive = paperCurlState.active,
                 slidePreviewActive = slidePageState.active,
-                previewCancelled = cancelledPreview
+                previewCancelled = cancelledPreview,
+                programmaticNavigationInFlight = cancelledNavigationJump
             )
         ) {
             latestNavigator.value?.currentLocator?.value?.let { locator ->
@@ -974,7 +975,8 @@ fun ReaderScreen(
                             format = opened.format,
                             paperPreviewActive = paperCurlState.active,
                             slidePreviewActive = slidePageState.active,
-                            previewCancelled = cancelledPreview
+                            previewCancelled = cancelledPreview,
+                            programmaticNavigationInFlight = navigationJumpInFlight
                         )
                     ) {
                         latestNavigator.value?.currentLocator?.value?.let { locator ->
@@ -2396,9 +2398,11 @@ internal fun shouldTakeFinalNavigatorSnapshot(
     format: BookFormat,
     paperPreviewActive: Boolean,
     slidePreviewActive: Boolean,
-    previewCancelled: Boolean
+    previewCancelled: Boolean,
+    programmaticNavigationInFlight: Boolean = false
 ): Boolean =
     !previewCancelled &&
+        !programmaticNavigationInFlight &&
         !shouldSuppressNavigatorLocatorDuringPagePreview(
             format = format,
             paperPreviewActive = paperPreviewActive,
