@@ -96,6 +96,28 @@ interface MangaCatalogDao {
         readingOrder: Int
     ): Int
 
+    @Query(
+        """
+        UPDATE manga_chapters
+        SET cacheKey = :cacheKey,
+            title = :title,
+            normalizedTitle = :normalizedTitle,
+            volume = :volume,
+            number = :number,
+            languageTag = :languageTag
+        WHERE id = :chapterId
+        """
+    )
+    suspend fun updateChapterIdentityMetadata(
+        chapterId: String,
+        cacheKey: String,
+        title: String,
+        normalizedTitle: String,
+        volume: Double?,
+        number: Double,
+        languageTag: String?
+    ): Int
+
 }
 
 @Dao
