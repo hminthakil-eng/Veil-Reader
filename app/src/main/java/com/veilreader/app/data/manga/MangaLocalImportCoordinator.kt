@@ -1124,6 +1124,64 @@ class MangaLocalImportCoordinator(
             }
         }
 
+        val members = receipt.members.sortedBy { it.sourceOrder }
+        require(members.isNotEmpty())
+        members.forEachIndexed { index, member ->
+            require(member.sourceOrder == index) {
+                "Merge receipt source order is corrupted"
+            }
+        }
+        val sourceChapterIds = buildSet {
+            members.forEach { member ->
+                val sourceBook = database.books().findEntity(member.sourceBookId)
+                    ?: error("Merged source Book disappeared before split")
+                require(sourceBook.format == BookFormat.COMIC.name)
+                database.mangaCatalog()
+                    .listChapters(member.sourceBookId)
+                    .forEach { chapter -> add(chapter.id) }
+            }
+        }
+        require(receipt.chapters.map { it.sourceChapterId }.toSet() == sourceChapterIds) {
+            "Merge receipt does not map every intact source chapter exactly once"
+        }
+
+        receipt.chapters.forEach { mapping ->
+            require(mapping.sourceBookId in members.map { it.sourceBookId })
+            val sourceChapter = database.mangaCatalog().findChapter(mapping.sourceChapterId)
+                ?: error("Merged source chapter disappeared before split")
+            require(
+                sourceChapter.bookId == mapping.sourceBookId &&
+                    sourceChapter.readingOrder == mapping.sourceReadingOrder
+            ) {
+                "Merge receipt source chapter ownership/order is corrupted"
+            }
+            val targetChapter = database.mangaCatalog().findChapter(mapping.targetChapterId)
+                ?: error("Merge target chapter disappeared before split")
+            require(
+                targetChapter.bookId == targetBook.id &&
+                    targetChapter.readingOrder == mapping.targetReadingOrder
+            ) {
+                "Merge receipt target chapter ownership/order is corrupted"
+            }
+            val sourceKey = database.mangaCatalog()
+                .listChapterSources(sourceChapter.id)
+                .singleOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?.chapterKey
+                ?: error("Merged source chapter lost its local identity")
+            val targetKey = database.mangaCatalog()
+                .listChapterSources(targetChapter.id)
+                .singleOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?.chapterKey
+                ?: error("Merge target chapter lost its local identity")
+            require(sourceKey == targetKey) {
+                "Merge receipt links chapters with different source archive identities"
+            }
+        }
+
         val copyMappings = receipt.chapters
             .filter {
                 it.disposition == MangaMergeChapterEntity.REBUILD_FROM_SOURCE_ARCHIVE
