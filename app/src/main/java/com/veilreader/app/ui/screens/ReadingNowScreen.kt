@@ -438,7 +438,7 @@ private fun ContinueReadingHero(
     val paperDark = Color(0xFFD9C8A6)
     val ink = Color(0xFF29231C)
     val secondaryInk = Color(0xFF6A5A43)
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.extraSmall
     val fontScale = LocalDensity.current.fontScale
 
     BoxWithConstraints(
@@ -446,14 +446,33 @@ private fun ContinueReadingHero(
             .fillMaxWidth()
             .clip(shape)
             .background(
-                Brush.verticalGradient(
-                    listOf(paperLight, paper, paperDark)
+                Brush.linearGradient(
+                    listOf(
+                        paperLight,
+                        paper,
+                        Color(0xFFE1D3B7),
+                        paperDark
+                    )
                 )
             )
-            .border(BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.82f)), shape)
-            .padding(VeilSpacing.md)
+            .border(BorderStroke(1.dp, VeilPalette.DeepBrass.copy(alpha = 0.76f)), shape)
+            .padding(18.dp)
     ) {
         val stacked = maxWidth < 300.dp || fontScale > 1.45f
+
+        GrayfogOrnamentFrame(
+            modifier = Modifier.matchParentSize(),
+            strength = 0.34f
+        )
+
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .padding(9.dp)
+                .size(8.dp)
+                .rotate(45f)
+                .background(VeilPalette.DeepBrass.copy(alpha = 0.62f))
+        )
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             Row(
@@ -513,24 +532,46 @@ private fun ContinueReadingHero(
                 overflow = TextOverflow.Ellipsis
             )
 
-            Button(
+            Surface(
                 onClick = { onOpenBook(current) },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 50.dp),
                 shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = ink,
-                    contentColor = paperLight
+                color = ink,
+                contentColor = paperLight,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp,
+                border = BorderStroke(
+                    1.dp,
+                    VeilPalette.DeepBrass.copy(alpha = 0.92f)
                 )
             ) {
-                Text(
-                    stringResource(
-                        if (progress > 0f && !current.finished) {
-                            R.string.threshold_return_volume
-                        } else {
-                            R.string.threshold_open_volume
-                        }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = VeilSpacing.md, vertical = 13.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        stringResource(
+                            if (progress > 0f && !current.finished) {
+                                R.string.threshold_return_volume
+                            } else {
+                                R.string.threshold_open_volume
+                            }
+                        ),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            letterSpacing = 0.55.sp
+                        )
                     )
-                )
+                    Text(
+                        "›",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = VeilPalette.Brass
+                    )
+                }
             }
         }
     }
@@ -673,11 +714,18 @@ private fun RecentBookCard(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(itemWidthDp.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        color = Color.Transparent,
+        color = VeilPalette.Archive.copy(alpha = 0.78f),
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+        shadowElevation = 0.dp,
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.22f)
+        )
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Column(
+            modifier = Modifier.padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(7.dp)
+        ) {
             BookCover(
                 title = book.title,
                 subtitle = book.author,
@@ -689,18 +737,30 @@ private fun RecentBookCard(
                 modifier = Modifier
                     .width(coverWidthDp.dp)
                     .height(coverHeightDp.dp)
+                    .align(Alignment.CenterHorizontally)
             )
             Text(
                 book.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onBackground,
+                style = MaterialTheme.typography.titleSmall,
+                color = VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+            if (book.progress > 0f && !book.finished) {
+                LinearProgressIndicator(
+                    progress = { book.progress.coerceIn(0f, 1f) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp),
+                    color = VeilPalette.Brass,
+                    trackColor = VeilPalette.Mist.copy(alpha = 0.16f),
+                    drawStopIndicator = {}
+                )
+            }
             Text(
                 recentBookStatus(book),
                 style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass.copy(alpha = 0.82f),
+                color = VeilPalette.Brass.copy(alpha = 0.86f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
