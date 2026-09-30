@@ -1000,34 +1000,40 @@ fun ReaderScreen(
     DisposableEffect(lifecycle, readerViewModel, readerSessionInstanceId) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> readerViewModel.onResume(readerSessionInstanceId)
+                Lifecycle.Event.ON_RESUME -> {
+                    if (latestReaderSessionReady.value) {
+                        readerViewModel.onResume(readerSessionInstanceId)
+                    }
+                }
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
-                    // Lifecycle teardown may cancel the composition scope immediately. Restore an
-                    // uncommitted preview synchronously before any final locator can be flushed.
-                    val cancelledPaperPreview =
-                        paperInputListener?.forceCancelPendingTurn() == true
-                    val cancelledSlidePreview =
-                        slideInputListener?.forceCancelPendingTurn() == true
-                    val cancelledPreview =
-                        cancelledPaperPreview || cancelledSlidePreview
-                    val navigationJumpInFlight =
-                        navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
-                    if (
-                        shouldTakeFinalNavigatorSnapshot(
-                            format = opened.format,
-                            paperPreviewActive = paperCurlState.active,
-                            slidePreviewActive = slidePageState.active,
-                            previewCancelled = cancelledPreview,
-                            programmaticNavigationInFlight = navigationJumpInFlight
-                        )
-                    ) {
-                        latestNavigator.value?.currentLocator?.value?.let { locator ->
-                            recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    if (latestReaderSessionReady.value) {
+                        // Lifecycle teardown may cancel the composition scope immediately. Restore an
+                        // uncommitted preview synchronously before any final locator can be flushed.
+                        val cancelledPaperPreview =
+                            paperInputListener?.forceCancelPendingTurn() == true
+                        val cancelledSlidePreview =
+                            slideInputListener?.forceCancelPendingTurn() == true
+                        val cancelledPreview =
+                            cancelledPaperPreview || cancelledSlidePreview
+                        val navigationJumpInFlight =
+                            navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
+                        if (
+                            shouldTakeFinalNavigatorSnapshot(
+                                format = opened.format,
+                                paperPreviewActive = paperCurlState.active,
+                                slidePreviewActive = slidePageState.active,
+                                previewCancelled = cancelledPreview,
+                                programmaticNavigationInFlight = navigationJumpInFlight
+                            )
+                        ) {
+                            latestNavigator.value?.currentLocator?.value?.let { locator ->
+                                recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                            }
                         }
+                        readerViewModel.onPause(readerSessionInstanceId)
                     }
-                    readerViewModel.onPause(readerSessionInstanceId)
                 }
                 else -> Unit
             }
@@ -1036,7 +1042,9 @@ fun ReaderScreen(
         onDispose {
             paperInputListener?.forceCancelPendingTurn()
             slideInputListener?.forceCancelPendingTurn()
-            readerViewModel.onPause(readerSessionInstanceId)
+            if (latestReaderSessionReady.value) {
+                readerViewModel.onPause(readerSessionInstanceId)
+            }
             lifecycle.removeObserver(observer)
         }
     }
