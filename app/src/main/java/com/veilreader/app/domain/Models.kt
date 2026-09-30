@@ -112,11 +112,17 @@ enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 enum class PageTurnStyle { PAPER, SLIDE, NONE }
 
 /**
- * User-facing reader navigation modes.
+ * Reading flow and page-turn effect are deliberately independent.
  *
- * Persistence stays backward-compatible through [ReaderAppearance.scroll] and
- * [ReaderAppearance.pageTurnStyle]; this enum gives the UI one clear,
- * mutually-exclusive mode selector.
+ * PAGED vs SCROLL answers how content moves through the viewport.
+ * [PageTurnStyle] answers what transition is used when the flow is PAGED.
+ */
+enum class ReaderLayoutMode { PAGED, SCROLL }
+
+/**
+ * Compatibility projection used by older rendering helpers.
+ *
+ * New UI must not use this enum as a single selector because it collapses two independent axes.
  */
 enum class ReaderNavigationMode { PAPER_CURL, SLIDE, PAGED, SCROLL }
 
@@ -132,6 +138,13 @@ data class ReaderAppearance(
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
     val screenBrightness: Double? = null
 ) {
+    val layoutMode: ReaderLayoutMode
+        get() = if (scroll) ReaderLayoutMode.SCROLL else ReaderLayoutMode.PAGED
+
+    /**
+     * Legacy rendering projection. It is intentionally derived and must never be persisted as the
+     * user's only movement preference.
+     */
     val navigationMode: ReaderNavigationMode
         get() = when {
             scroll -> ReaderNavigationMode.SCROLL
@@ -140,6 +153,16 @@ data class ReaderAppearance(
             else -> ReaderNavigationMode.PAPER_CURL
         }
 
+    fun withLayoutMode(mode: ReaderLayoutMode): ReaderAppearance =
+        copy(scroll = mode == ReaderLayoutMode.SCROLL)
+
+    fun withPageTurnStyle(style: PageTurnStyle): ReaderAppearance =
+        copy(pageTurnStyle = style)
+
+    /**
+     * Compatibility helper for older call sites. Prefer [withLayoutMode] and [withPageTurnStyle]
+     * so changing the reading flow does not erase the chosen paginated transition.
+     */
     fun withNavigationMode(mode: ReaderNavigationMode): ReaderAppearance =
         when (mode) {
             ReaderNavigationMode.PAPER_CURL ->
@@ -149,20 +172,15 @@ data class ReaderAppearance(
             ReaderNavigationMode.PAGED ->
                 copy(scroll = false, pageTurnStyle = PageTurnStyle.NONE)
             ReaderNavigationMode.SCROLL ->
-                copy(scroll = true, pageTurnStyle = PageTurnStyle.NONE)
+                copy(scroll = true)
         }
 
     /**
-     * Repairs legacy or externally-constructed states where continuous scroll still carries a
-     * hidden paginated transition. Keeping one canonical representation prevents Scroll from
-     * resurrecting Curl/Slide when older persistence or UI code toggles the boolean directly.
+     * Historical callers still invoke this before persistence. Layout mode and transition style
+     * are now intentionally independent, so a valid appearance no longer needs destructive
+     * canonicalization.
      */
-    fun canonicalizedNavigation(): ReaderAppearance =
-        if (scroll && pageTurnStyle != PageTurnStyle.NONE) {
-            copy(pageTurnStyle = PageTurnStyle.NONE)
-        } else {
-            this
-        }
+    fun canonicalizedNavigation(): ReaderAppearance = this
 
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
