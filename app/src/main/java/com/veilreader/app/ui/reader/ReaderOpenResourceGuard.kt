@@ -14,6 +14,7 @@ internal class ReaderOpenResourceGuard<T : AutoCloseable>(
     @Synchronized
     fun transfer(): T {
         check(!closed) { "Cannot transfer a closed Reader resource." }
+        check(!transferred) { "Reader resource ownership was already transferred." }
         transferred = true
         return resource
     }
