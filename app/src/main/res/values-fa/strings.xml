@@ -613,6 +613,9 @@
     <string name="threshold_enter_library">ورود به کتابخانه</string>
     <string name="common_opening_archive">در حال گشودن آرشیو</string>
 
+    <string name="nav_home">خانه</string>
+    <string name="nav_notebook">دفترچه</string>
+    <string name="nav_more">بیشتر</string>
     <string name="nav_reading">مطالعه</string>
     <string name="nav_library">کتابخانه</string>
     <string name="nav_castle">قلعه</string>
