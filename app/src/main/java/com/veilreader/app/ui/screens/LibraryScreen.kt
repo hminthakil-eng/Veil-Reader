@@ -210,7 +210,8 @@ fun LibraryScreen(
     onOpenBook: (Book) -> Unit,
     onFavorite: (String) -> Unit,
     onEditMetadata: (BookMetadataUpdate) -> Unit,
-    onOpenSettings: () -> Unit
+    onOpenSettings: () -> Unit,
+    onOpenManga: () -> Unit = {}
 ) {
     val focusManager = LocalFocusManager.current
     val archiveAdaptiveClass = adaptiveClassFor(
@@ -445,6 +446,15 @@ fun LibraryScreen(
                 )
                 LibraryAtmosphereLedger(atmosphereState)
             }
+        }
+
+        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
+            MangaLibraryPortal(
+                localComicCount = books.count {
+                    it.format == com.veilreader.app.domain.BookFormat.COMIC
+                },
+                onOpenManga = onOpenManga
+            )
         }
 
         item(key = "library:search", span = { GridItemSpan(maxLineSpan) }) {
@@ -3407,3 +3417,79 @@ private fun parseCollectionNames(value: String): List<String> = value
     .distinctBy { it.lowercase(Locale.ROOT) }
 
 
+
+
+@Composable
+private fun MangaLibraryPortal(
+    localComicCount: Int,
+    onOpenManga: () -> Unit
+) {
+    Surface(
+        onClick = onOpenManga,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = VeilSpacing.xs),
+        shape = MaterialTheme.shapes.small,
+        color = VeilPalette.Archive.copy(alpha = 0.78f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = 0.30f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Row(
+            modifier = Modifier.padding(
+                horizontal = VeilSpacing.md,
+                vertical = VeilSpacing.sm
+            ),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(VeilPalette.Ink.copy(alpha = 0.72f))
+                    .border(
+                        BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
+                        MaterialTheme.shapes.extraSmall
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "漫",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = VeilPalette.Brass
+                )
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    stringResource(R.string.manga_portal_eyebrow),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass
+                )
+                Text(
+                    stringResource(R.string.manga_portal_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.Moon
+                )
+                Text(
+                    stringResource(R.string.manga_portal_body, localComicCount),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.84f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Text(
+                stringResource(R.string.manga_portal_action),
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Brass
+            )
+        }
+    }
+}
