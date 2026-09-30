@@ -101,6 +101,7 @@ import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
+import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import kotlinx.coroutines.CancellationException
@@ -108,6 +109,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
+import org.readium.r2.shared.util.use
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.delay
@@ -387,10 +389,10 @@ fun ReaderScreen(
             controlsVisible = true
             val restoredPaper =
                 paperInputListener?.cancelPendingTurnAndAwait() == true
-            if (!restoredPaper && paperCurlState.active) paperCurlState.clear()
+            if (!restoredPaper && paperCurlState.active) paperCurlState.clearImmediately()
             val restoredSlide =
                 slideInputListener?.cancelPendingTurnAndAwait() == true
-            if (!restoredSlide && slidePageState.active) slidePageState.clear()
+            if (!restoredSlide && slidePageState.active) slidePageState.clearImmediately()
         }
     }
     var showAppearance by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
