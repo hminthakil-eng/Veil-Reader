@@ -65,7 +65,7 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 fun MangaHubScreen(
     books: List<Book>,
     onOpenBook: (Book) -> Unit,
-    onAddChapterUri: (Book, Uri) -> Unit,
+    onAddChapterUris: (Book, List<Uri>) -> Unit,
     storageSummaryProvider: suspend (Book) -> MangaLocalStorageSummary,
     onClearDerivedCache: (Book) -> Unit,
     storageRevision: Int,
@@ -83,13 +83,13 @@ fun MangaHubScreen(
 
     var chapterTargetId by rememberSaveable { mutableStateOf<String?>(null) }
     val chapterLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
+        ActivityResultContracts.OpenMultipleDocuments()
+    ) { uris ->
         val target = chapterTargetId
             ?.let { targetId -> mangaBooks.firstOrNull { it.id == targetId } }
         chapterTargetId = null
-        if (uri != null && target != null) {
-            onAddChapterUri(target, uri)
+        if (uris.isNotEmpty() && target != null) {
+            onAddChapterUris(target, uris)
         }
     }
 
