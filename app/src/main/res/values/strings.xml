@@ -1216,10 +1216,8 @@
     <string name="action_save">Save</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_delete">Delete</string>
-    <string name="action_rename">Rename</string>
     <string name="manga_hub_manage_chapters">Manage chapters (%1$d)</string>
     <string name="manga_hub_hide_chapters">Hide chapters (%1$d)</string>
-    <string name="manga_chapter_rename_title">Rename chapter</string>
     <string name="manga_chapter_title_label">Chapter title</string>
     <string name="manga_chapter_delete_title">Delete chapter?</string>
     <string name="manga_chapter_delete_body">Delete “%1$s” from this Manga? The original CBZ for this added chapter and its generated page cache will be removed.</string>
@@ -1228,8 +1226,16 @@
     <string name="manga_chapter_primary_badge">Primary chapter · pinned</string>
     <string name="manga_chapter_move_up">Up</string>
     <string name="manga_chapter_move_down">Down</string>
-    <string name="notice_manga_chapter_renamed">Chapter title updated.</string>
     <string name="notice_manga_chapter_reordered">Chapter order updated.</string>
     <string name="notice_manga_chapter_deleted">Chapter removed.</string>
     <string name="notice_manga_chapter_update_failed">The Manga chapter change could not be saved.</string>
+    <string name="action_edit">Edit</string>
+    <string name="manga_chapter_edit_title">Edit chapter details</string>
+    <string name="manga_chapter_number_label">Chapter number</string>
+    <string name="manga_chapter_number_invalid">Enter a valid non-negative chapter number.</string>
+    <string name="manga_chapter_volume_label">Volume (optional)</string>
+    <string name="manga_chapter_volume_invalid">Enter a valid non-negative volume or leave it empty.</string>
+    <string name="manga_chapter_language_label">Language (optional)</string>
+    <string name="manga_chapter_language_hint">BCP-47 tag, for example en, fa, ja.</string>
+    <string name="notice_manga_chapter_metadata_updated">Chapter details updated.</string>
 </resources>
