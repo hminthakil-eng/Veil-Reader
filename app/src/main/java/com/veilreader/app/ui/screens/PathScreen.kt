@@ -53,6 +53,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.withVeilTracking
 
 internal enum class PathGeometryKind {
     RADIAL_EYE,
@@ -227,7 +228,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
         ) {
             Text(
                 identity.aspect,
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.75.sp),
+                style = MaterialTheme.typography.labelSmall.withVeilTracking(identity.aspect, 1.75.sp),
                 color = VeilPalette.Brass
             )
 
@@ -1198,7 +1199,7 @@ private fun SectionHeading(eyebrow: String, title: String) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
             eyebrow.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
+            style = MaterialTheme.typography.labelMedium.withVeilTracking(eyebrow, 1.35.sp),
             color = VeilPalette.Brass
         )
         Text(title, style = MaterialTheme.typography.titleLarge)
