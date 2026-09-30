@@ -123,6 +123,51 @@ data class MangaMergeMemberEntity(
 }
 
 /**
+ * Exact identity evidence for every target chapter that existed before the merge.
+ *
+ * Split validates these rows before removing any merged copy. The chapter key is the durable local
+ * CBZ fingerprint-backed identity, so a stale/corrupt receipt cannot silently redefine the
+ * original-target boundary by reading order alone.
+ */
+@Entity(
+    tableName = "manga_merge_original_chapters",
+    primaryKeys = ["mergeId", "readingOrder"],
+    foreignKeys = [
+        ForeignKey(
+            entity = MangaWorkMergeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["mergeId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = MangaChapterEntity::class,
+            parentColumns = ["id", "bookId"],
+            childColumns = ["chapterId", "targetBookId"],
+            onDelete = ForeignKey.RESTRICT
+        )
+    ],
+    indices = [
+        Index("mergeId"),
+        Index(value = ["chapterId", "targetBookId"], unique = true)
+    ]
+)
+data class MangaMergeOriginalChapterEntity(
+    val mergeId: String,
+    val readingOrder: Int,
+    val chapterId: String,
+    val targetBookId: String,
+    val chapterKey: String
+) {
+    init {
+        require(mergeId.isNotBlank())
+        require(readingOrder >= 0)
+        require(chapterId.isNotBlank())
+        require(targetBookId.isNotBlank())
+        require(chapterKey.isNotBlank())
+    }
+}
+
+/**
  * Durable chapter-level split receipt.
  *
  * REBUILD_FROM_SOURCE_ARCHIVE rows own a target copy created by the merge and removed on split.
