@@ -118,8 +118,8 @@ class ReaderViewModel(
         persistSession(immediate = true)
     }
 
-    fun onResume() {
-        val current = tracker ?: return
+    fun onResume(expectedOpenInstanceId: String) {
+        val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         if (resumed) return
         resumed = true
         creditActive(current.onResume(SystemClock.elapsedRealtime()))
@@ -128,8 +128,8 @@ class ReaderViewModel(
         persistSession()
     }
 
-    fun onPause() {
-        val current = tracker ?: return
+    fun onPause(expectedOpenInstanceId: String) {
+        val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         ReaderTrace.event("reader_pause", bookId = current.bookId, sessionId = current.sessionId)
         library.flushProgress(current.bookId)
         ReaderTrace.event("locator_flush_enqueued", bookId = current.bookId, sessionId = current.sessionId)
@@ -153,20 +153,21 @@ class ReaderViewModel(
         )
     }
 
-    fun onUserInteraction() {
-        val current = tracker ?: return
+    fun onUserInteraction(expectedOpenInstanceId: String) {
+        val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
         publishActiveMillis()
     }
 
     internal fun onLocatorUpdate(
         bookId: String,
+        expectedOpenInstanceId: String,
         progression: Double,
         locatorJson: String,
         locationKey: String,
         event: ReaderLocatorEvent
     ): ReaderLocatorCommit? {
-        val current = tracker?.takeIf { it.bookId == bookId } ?: return null
+        val current = currentTrackerFor(expectedOpenInstanceId, bookId) ?: return null
 
         if (!event.commitsLocator) {
             ReaderTrace.event(
@@ -229,8 +230,8 @@ class ReaderViewModel(
         return ReaderLocatorCommit(sequence, locatorJson, safe)
     }
 
-    fun onHighlightAdded() {
-        val current = tracker ?: return
+    fun onHighlightAdded(expectedOpenInstanceId: String) {
+        val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
         current.recordHighlight()
         game.recordHighlight()
@@ -238,8 +239,8 @@ class ReaderViewModel(
         persistSession()
     }
 
-    fun onNoteSaved(highlightId: String, note: String) {
-        val current = tracker ?: return
+    fun onNoteSaved(expectedOpenInstanceId: String, highlightId: String, note: String) {
+        val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
         current.recordNote(highlightId, note)
         game.recordNote(highlightId, note)
@@ -247,14 +248,27 @@ class ReaderViewModel(
         persistSession()
     }
 
-    fun closeBook() {
-        tracker?.let { current ->
-            ReaderTrace.event("reader_close_requested", bookId = current.bookId, sessionId = current.sessionId)
-        }
+    fun closeBook(expectedOpenInstanceId: String) {
+        val current = currentTrackerFor(expectedOpenInstanceId) ?: return
+        ReaderTrace.event(
+            "reader_close_requested",
+            bookId = current.bookId,
+            sessionId = current.sessionId
+        )
         finishCurrentSession()
     }
 
     fun traceSessionId(): String? = tracker?.sessionId
+
+    private fun currentTrackerFor(
+        expectedOpenInstanceId: String,
+        bookId: String? = null
+    ): ReadingSessionTracker? {
+        if (openInstanceId != expectedOpenInstanceId) return null
+        val current = tracker ?: return null
+        if (bookId != null && current.bookId != bookId) return null
+        return current
+    }
 
     private fun heartbeat() {
         val current = tracker ?: return
