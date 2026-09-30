@@ -242,7 +242,7 @@ Manga now has its own Room-backed persistence, local CBZ ingestion, Hub and Read
    - multi-document selection is naturally filename-sorted so chapter 2 precedes chapter 10 independent of Android picker return order;
    - filename hints infer volume/chapter numbers while explicit metadata can override inferred values;
    - the primary chapter remains pinned at reading order 0 as the Book publication authority; added chapters can be safely reordered around one another;
-   - chapter title rename is narrow and permitted only where it cannot change source-neutral offline identity;
+   - chapter title/volume/number/language editing is supported; identity-bearing edits atomically migrate the derived cache to the new source-neutral OfflineChapterId and reject collisions;
    - added chapter deletion removes its source archive and generated cache, closes reading-order gaps and deterministically remaps current progress when needed;
    - safe CBZ ingestion generates the explicit offline cache + first-page cover;
    - failures compensate database rows, staged source files and generated cache;
@@ -256,7 +256,7 @@ Manga now has its own Room-backed persistence, local CBZ ingestion, Hub and Read
    - restored local chapter source identity is verified against the manifest fingerprint before restore commit;
    - schemas 1/2/3/4 remain accepted;
    - failed restore attempts rebuild the previous Manga state before returning failure;
-   - instrumentation coverage now includes CBZ import, natural-order batch ingestion, duplicate prevention, unsafe-archive rollback, chapter rename/reorder/delete invariants, cache cleanup/self-heal, Room persistence/migration and multi-chapter Manga backup round-trip; execution remains pending the Android verification gate.
+   - instrumentation coverage now includes CBZ import, natural-order batch ingestion, duplicate prevention, unsafe-archive rollback, chapter metadata-migration/reorder/delete invariants, cache cleanup/self-heal, Room persistence/migration and multi-chapter Manga backup round-trip; execution remains pending the Android verification gate.
 
 18. **Derived-cache storage policy**
    - original local CBZ archives are user-owned durable sources inside app-private publications storage;
@@ -268,10 +268,10 @@ Manga now has its own Room-backed persistence, local CBZ ingestion, Hub and Read
 
 ## Next vertical slices
 
-1. **Richer local Manga metadata**
-   - atomic volume/chapter-number edits with safe cache-identity migration;
+1. **Reversible Manga work grouping**
    - optional work grouping/merge UI for independently imported CBZ titles;
-   - explicit split/unmerge path so grouping remains reversible.
+   - explicit split/unmerge path so grouping remains reversible;
+   - ambiguity-safe candidate suggestions only; never auto-merge by filename alone.
 
 2. **Android challenge UI driver**
    - lifecycle-safe WebView host behind `ChallengeUiDriver`;
