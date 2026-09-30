@@ -1,7 +1,9 @@
 package com.veilreader.app.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
@@ -36,6 +38,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.data.SampleData
 import com.veilreader.app.domain.GamificationEngine
@@ -43,6 +47,7 @@ import com.veilreader.app.domain.PathMasteryAxis
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.effectivePathMastery
 import com.veilreader.app.domain.ReadingPath
+import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -78,12 +83,18 @@ fun PathScreen(
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val nextRank = profile.path.ranks.getOrNull(profile.rankIndex + 1)
     val identity = localizedPathIdentity(profile.path)
+    val reducedMotion = LocalVeilReducedMotion.current
     val currentRank = localizedRankName(
         profile.path.id,
         profile.rankIndex,
         profile.rankName
     )
-    var showCeremony by rememberSaveable { mutableStateOf(false) }
+    var showCeremony by rememberSaveable(profile.path.id, profile.rankIndex) {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(canAdvance) {
+        if (!canAdvance) showCeremony = false
+    }
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { reveal = true }
 
@@ -98,8 +109,8 @@ fun PathScreen(
     ) {
     Column(
         Modifier
-            .fillMaxSize()
             .widthIn(max = 920.dp)
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
@@ -112,7 +123,9 @@ fun PathScreen(
 
         AnimatedVisibility(
             visible = reveal,
-            enter = fadeIn(tween(VeilMotion.SPATIAL_MS)) + slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
+            enter = if (reducedMotion) EnterTransition.None else
+                fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                    slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
         ) {
             PathIdentityPanel(profile)
         }
@@ -159,7 +172,7 @@ fun PathScreen(
     }
     }
 
-    if (showCeremony && nextRank != null) {
+    if (showCeremony && canAdvance && nextRank != null) {
         AdvancementCeremonyDialog(
             profile = profile,
             nextRank = nextRank,
@@ -175,12 +188,13 @@ fun PathScreen(
 @Composable
 private fun PathIdentityPanel(profile: ReaderProfile) {
     val identity = localizedPathIdentity(profile.path)
-    val rankName = localizedRankName(profile.path.id, profile.rankIndex, rankName)
+    val reducedMotion = LocalVeilReducedMotion.current
+    val rankName = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpTargetProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val xpProgress by animateFloatAsState(
         targetValue = xpTargetProgress,
-        animationSpec = tween(VeilMotion.SPATIAL_MS),
+        animationSpec = if (reducedMotion) snap() else tween(VeilMotion.SPATIAL_MS),
         label = "path-xp-progress"
     )
 
@@ -229,7 +243,7 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             )
 
             Text(
-                profile.rankName,
+                rankName,
                 style = MaterialTheme.typography.headlineMedium,
                 color = VeilPalette.Moon,
                 textAlign = TextAlign.Center
@@ -550,12 +564,13 @@ private fun RitualPanel(
 ) {
     val mastery = effectivePathMastery(profile)
     val doctrine = localizedPathDoctrine(profile.path.id)
+    val reducedMotion = LocalVeilReducedMotion.current
     val nextRankLabel = nextRank?.let {
         localizedRankName(profile.path.id, profile.rankIndex + 1, it)
     }
     val overallProgress by animateFloatAsState(
         targetValue = mastery.overallProgress,
-        animationSpec = tween(VeilMotion.SPATIAL_MS),
+        animationSpec = if (reducedMotion) snap() else tween(VeilMotion.SPATIAL_MS),
         label = "path-mastery-overall"
     )
 
@@ -736,6 +751,7 @@ private fun PathMasteryRow(
 
 @Composable
 private fun RankConstellation(profile: ReaderProfile) {
+    val formatInteger = rememberVeilIntegerFormatter(minimumDigits = 2)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -817,7 +833,7 @@ private fun RankConstellation(profile: ReaderProfile) {
                             Text(
                                 stringResource(
                                     R.string.path_rank_number,
-                                    (index + 1).toString().padStart(2, '0')
+                                    formatInteger(index + 1)
                                 ),
                                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
                                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f)
@@ -938,67 +954,180 @@ private fun AdvancementCeremonyDialog(
 ) {
     val identity = localizedPathIdentity(profile.path)
     val pathName = localizedPathName(profile.path)
+    val currentRankLabel = localizedRankName(
+        profile.path.id,
+        profile.rankIndex,
+        profile.rankName
+    )
     val nextRankLabel = localizedRankName(
         profile.path.id,
         profile.rankIndex + 1,
         nextRank
     )
+    val reducedMotion = LocalVeilReducedMotion.current
+    var revealed by remember(
+        profile.path.id,
+        profile.rankIndex,
+        nextRank
+    ) { mutableStateOf(false) }
 
-    AlertDialog(
+    LaunchedEffect(profile.path.id, profile.rankIndex, nextRank) {
+        revealed = true
+    }
+
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.small,
-        containerColor = VeilPalette.Archive,
-        tonalElevation = 0.dp,
-        icon = {
-            PathIcon(
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(VeilPalette.Ink)
+                .grayfogAtmosphere(
+                    realm = VeilRealm.RITUAL,
+                    seed = profile.path.id.hashCode() xor nextRank.hashCode(),
+                    intensity = 1f
+                )
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(
+                    horizontal = VeilSpacing.md,
+                    vertical = VeilSpacing.lg
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            PathRitualBackdrop(
                 pathId = profile.path.id,
-                tint = VeilPalette.Brass,
-                modifier = Modifier.size(44.dp)
+                rankIndex = profile.rankIndex + 1,
+                modifier = Modifier.matchParentSize()
             )
-        },
-        title = {
-            Text(
-                stringResource(R.string.path_advance_to, nextRankLabel),
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center
-            )
-        },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                Text(
-                    stringResource(R.string.path_advance_body, nextRankLabel, pathName),
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center
-                )
-                Text(
-                    identity.invocation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Brass,
-                    textAlign = TextAlign.Center
-                )
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = onConfirm,
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.Brass,
-                    contentColor = Color(0xFF17120A)
-                )
+
+            AnimatedVisibility(
+                visible = revealed,
+                enter = if (reducedMotion) {
+                    fadeIn(tween(VeilMotion.REDUCED_MOTION_FADE_MS))
+                } else {
+                    fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                        slideInVertically(
+                            animationSpec = tween(VeilMotion.SPATIAL_MS),
+                            initialOffsetY = { it / 12 }
+                        )
+                }
             ) {
-                Text(stringResource(R.string.path_advance_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(
-                    stringResource(R.string.path_not_yet),
-                    color = VeilPalette.Moon.copy(alpha = 0.72f)
-                )
+                Column(
+                    modifier = Modifier
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.medium)
+                        .background(
+                            Brush.verticalGradient(
+                                listOf(
+                                    VeilPalette.Archive.copy(alpha = 0.96f),
+                                    Color(0xFF100E14).copy(alpha = 0.98f),
+                                    VeilPalette.Ink
+                                )
+                            )
+                        )
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                VeilPalette.Brass.copy(alpha = 0.58f)
+                            ),
+                            MaterialTheme.shapes.medium
+                        )
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            horizontal = VeilSpacing.lg,
+                            vertical = VeilSpacing.xl
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                ) {
+                    Text(
+                        pathName.uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            letterSpacing = 1.5.sp
+                        ),
+                        color = VeilPalette.Brass
+                    )
+
+                    PathSigil(
+                        pathId = profile.path.id,
+                        modifier = Modifier.size(148.dp),
+                        active = true
+                    )
+
+                    Text(
+                        stringResource(
+                            R.string.path_advance_to,
+                            nextRankLabel
+                        ),
+                        style = MaterialTheme.typography.headlineLarge,
+                        color = VeilPalette.Moon,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        "$currentRankLabel  →  $nextRankLabel",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass.copy(alpha = 0.88f)
+                    )
+
+                    BrassRule(Modifier.fillMaxWidth())
+
+                    Text(
+                        stringResource(
+                            R.string.path_advance_body,
+                            nextRankLabel,
+                            pathName
+                        ),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon.copy(alpha = 0.88f),
+                        textAlign = TextAlign.Center
+                    )
+
+                    Text(
+                        identity.invocation,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Brass,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 50.dp),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(stringResource(R.string.path_not_yet))
+                        }
+                        Button(
+                            onClick = onConfirm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 50.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = VeilPalette.Brass,
+                                contentColor = Color(0xFF17120A)
+                            )
+                        ) {
+                            Text(stringResource(R.string.path_advance_confirm))
+                        }
+                    }
+                }
             }
         }
-    )
+    }
 }
 
 @Composable
@@ -1082,3 +1211,4 @@ private fun SectionHeading(eyebrow: String, title: String) {
         Text(title, style = MaterialTheme.typography.titleLarge)
     }
 }
+

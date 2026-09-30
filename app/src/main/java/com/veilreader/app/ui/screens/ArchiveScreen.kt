@@ -26,6 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.domain.ArchiveEcho
 import com.veilreader.app.domain.Book
@@ -38,11 +40,13 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
+import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.NumberFormat
+import kotlinx.coroutines.delay
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
@@ -71,7 +75,12 @@ fun ArchiveScreen(
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
         .getOrDefault(NotebookSection.HIGHLIGHTS)
     val booksById = remember(books) { books.associateBy { it.id } }
-    val archiveNow = remember { System.currentTimeMillis() }
+    val archiveNow by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(60_000L)
+            value = System.currentTimeMillis()
+        }
+    }
     val echoes = remember(highlights, booksById, archiveNow, passageVisits) {
         deriveArchiveEchoes(
             highlights = highlights,
@@ -462,56 +471,112 @@ fun ArchiveScreen(
     }
 
     editingHighlightId?.let { highlightId ->
-        AlertDialog(
-            onDismissRequest = { editingHighlightId = null; noteDraft = "" },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        stringResource(R.string.archive_manuscript_note),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        stringResource(R.string.notebook_note_dialog_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
+        Dialog(
+            onDismissRequest = {
+                editingHighlightId = null
+                noteDraft = ""
             },
-            text = {
-                OutlinedTextField(
-                    value = noteDraft,
-                    onValueChange = { noteDraft = it },
-                    placeholder = { Text(stringResource(R.string.archive_note_hint)) },
-                    minLines = 4,
-                    maxLines = 8,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        onSaveNote(highlightId, noteDraft)
-                        editingHighlightId = null
-                        noteDraft = ""
-                    },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
-                    )
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+                    .padding(VeilSpacing.lg),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .widthIn(max = 560.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.48f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    Text(stringResource(R.string.common_save))
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.28f
+                        )
+                        Column(
+                            modifier = Modifier.padding(
+                                horizontal = VeilSpacing.lg,
+                                vertical = VeilSpacing.md
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.archive_manuscript_note),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.25.sp
+                                ),
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.notebook_note_dialog_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+                            OutlinedTextField(
+                                value = noteDraft,
+                                onValueChange = { noteDraft = it },
+                                placeholder = {
+                                    Text(stringResource(R.string.archive_note_hint))
+                                },
+                                minLines = 4,
+                                maxLines = 8,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        editingHighlightId = null
+                                        noteDraft = ""
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                                Button(
+                                    onClick = {
+                                        onSaveNote(highlightId, noteDraft)
+                                        editingHighlightId = null
+                                        noteDraft = ""
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = Color(0xFF17120A)
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.common_save))
+                                }
+                            }
+                        }
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { editingHighlightId = null; noteDraft = "" }) { Text(stringResource(R.string.common_cancel)) }
             }
-        )
+        }
     }
 
     selectedCapsuleSealCode
@@ -1017,29 +1082,88 @@ private fun DeleteNotebookItemDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    AlertDialog(
+    Dialog(
         onDismissRequest = onDismiss,
-        shape = MaterialTheme.shapes.small,
-        containerColor = VeilPalette.Archive,
-        titleContentColor = VeilPalette.Moon,
-        textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-        tonalElevation = 0.dp,
-        title = {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    stringResource(R.string.archive_remove_record),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Brass
-                )
-                Text(title, style = MaterialTheme.typography.titleLarge)
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(VeilSpacing.lg),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp),
+                shape = MaterialTheme.shapes.medium,
+                color = VeilPalette.Archive,
+                border = BorderStroke(
+                    1.dp,
+                    VeilPalette.Brass.copy(alpha = 0.40f)
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(
+                        horizontal = VeilSpacing.lg,
+                        vertical = VeilSpacing.md
+                    ),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    Text(
+                        stringResource(R.string.archive_remove_record),
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            letterSpacing = 1.20.sp
+                        ),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = VeilPalette.Moon
+                    )
+                    BrassRule(Modifier.fillMaxWidth())
+                    Text(
+                        body,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(stringResource(R.string.common_cancel))
+                        }
+                        Button(
+                            onClick = onConfirm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer,
+                                contentColor = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        ) {
+                            Text(stringResource(R.string.common_delete))
+                        }
+                    }
+                }
             }
-        },
-        text = { Text(body) },
-        confirmButton = {
-            TextButton(onClick = onConfirm) { Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         }
-    )
+    }
 }

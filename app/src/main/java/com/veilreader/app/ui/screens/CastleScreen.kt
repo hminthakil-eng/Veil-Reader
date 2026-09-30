@@ -22,6 +22,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,6 +70,7 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.castleLayoutPolicyFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import kotlinx.coroutines.delay
 
 /**
  * The Castle is a living map, not a dashboard.
@@ -88,8 +90,11 @@ fun CastleScreen(
 ) {
     val canAdvance = GamificationEngine.canAdvanceRank(profile)
     val awakenedRooms = SampleData.rooms.count { profile.rankIndex >= it.unlockRankIndex }
-    val castleNowEpochMs = remember(books, highlights, bookmarks, readingSessions, readingCycles) {
-        System.currentTimeMillis()
+    val castleNowEpochMs by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(60_000L)
+            value = System.currentTimeMillis()
+        }
     }
     val memoryState = remember(
         books,
@@ -144,8 +149,8 @@ fun CastleScreen(
     ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .widthIn(max = castleLayout.contentMaxWidthDp.dp)
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(
                 horizontal = castleLayout.horizontalPaddingDp.dp,
@@ -223,6 +228,7 @@ private fun CastleKeep(
     minHeightDp: Float,
     onAdvanceRank: () -> Unit
 ) {
+    val formatNumber = rememberVeilIntegerFormatter()
     val finalRank = profile.path.ranks.lastIndex.coerceAtLeast(1)
     val localizedRank = localizedRankName(profile.path.id, profile.rankIndex, profile.rankName)
     val localizedPath = localizedPathName(profile.path)
@@ -317,7 +323,7 @@ private fun CastleKeep(
                 }
 
                 Text(
-                    "${profile.rankIndex + 1}/${profile.path.ranks.size}",
+                    "${formatNumber(profile.rankIndex + 1)}/${formatNumber(profile.path.ranks.size)}",
                     style = MaterialTheme.typography.labelLarge,
                     color = VeilPalette.Brass
                 )
@@ -334,7 +340,7 @@ private fun CastleKeep(
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
                 Text(
-                    "$awakenedRooms/${totalRooms.coerceAtLeast(1)}",
+                    "${formatNumber(awakenedRooms)}/${formatNumber(totalRooms.coerceAtLeast(1))}",
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass
                 )
@@ -1065,13 +1071,14 @@ private fun FloorInscription(
     unlocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val formatInteger = rememberVeilIntegerFormatter(minimumDigits = 2)
     Column(
         modifier = modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
+            stringResource(R.string.castle_floor, formatInteger(floor)),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
@@ -1407,3 +1414,4 @@ private fun CastleRoomIcon(
         }
     }
 }
+

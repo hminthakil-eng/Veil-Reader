@@ -37,6 +37,39 @@ class ReaderLocatorPolicyTest {
     }
 
     @Test
+    fun firstNavigatorPositionIsCheckpointWithoutPageReward() {
+        val opening = navigatorLocatorEvent(
+            isInitialEmission = true,
+            isContinuousScroll = false,
+            isPaperMode = false
+        )
+        assertTrue(opening.commitsLocator)
+        assertFalse(opening.countsPageTurn)
+
+        val turn = navigatorLocatorEvent(
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false
+        )
+        assertTrue(turn.countsPageTurn)
+
+        val scroll = navigatorLocatorEvent(
+            isInitialEmission = true,
+            isContinuousScroll = true,
+            isPaperMode = false
+        )
+        assertTrue(scroll.commitsLocator)
+        assertFalse(scroll.countsPageTurn)
+
+        val paperObservation = navigatorLocatorEvent(
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = true
+        )
+        assertFalse(paperObservation.commitsLocator)
+    }
+
+    @Test
     fun locatorCommitAndPageTurnSemantics_areIndependent() {
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.countsPageTurn)

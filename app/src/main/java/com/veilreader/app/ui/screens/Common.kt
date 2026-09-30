@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -43,6 +46,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -53,9 +57,52 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
 import java.io.File
+import java.text.NumberFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+@Composable
+internal fun rememberVeilPercentFormatter(): (Float) -> String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale) {
+        NumberFormat.getPercentInstance(locale).apply {
+            minimumFractionDigits = 0
+            maximumFractionDigits = 0
+        }
+    }
+    return remember(formatter) {
+        { value -> formatter.format(value.toDouble()) }
+    }
+}
+@Composable
+internal fun rememberVeilIntegerFormatter(minimumDigits: Int = 1): (Number) -> String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale, minimumDigits) {
+        NumberFormat.getIntegerInstance(locale).apply {
+            minimumIntegerDigits = minimumDigits.coerceIn(1, 4)
+        }
+    }
+    return remember(formatter) {
+        { value -> formatter.format(value) }
+    }
+}
+@Composable
+internal fun rememberVeilNumberFormatter(maximumFractionDigits: Int = 2): (Number) -> String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale, maximumFractionDigits) {
+        NumberFormat.getNumberInstance(locale).apply {
+            minimumFractionDigits = 0
+            this.maximumFractionDigits = maximumFractionDigits.coerceAtLeast(0)
+            isGroupingUsed = false
+        }
+    }
+    return remember(formatter) {
+        { value -> formatter.format(value) }
+    }
+}
+
+
 
 @Composable
 fun VeilReveal(
@@ -513,12 +560,15 @@ fun BookCover(
                 ),
                 shape
             )
+            // Every current cover placement already presents the book title beside the artwork.
+            // Keep the image layers decorative so TalkBack does not announce the same title twice.
+            .clearAndSetSemantics { }
     ) {
         GeneratedBookCover(title = title, subtitle = subtitle)
         cachedCover?.let { cover ->
             Image(
                 bitmap = cover.bitmap,
-                contentDescription = "Cover of $title",
+                contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize().alpha(imageAlpha)
             )
@@ -626,7 +676,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
-                "GRAYFOG ARCHIVE",
+                stringResource(R.string.threshold_grayfog_archive),
                 color = VeilPalette.Brass.copy(alpha = 0.82f),
                 style = MaterialTheme.typography.labelSmall.copy(
                     fontSize = 7.sp,
@@ -657,3 +707,4 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
         }
     }
 }
+

@@ -9,6 +9,7 @@ import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
+    IMAGE,
     PAPER,
     SLIDE,
     DIRECTIONAL,
@@ -21,6 +22,7 @@ internal enum class ReaderInteractionMode {
     NAVIGATION,
     CHROME_PRIORITY,
     RENDERER_SELECTION,
+    RENDERER_ACCESSIBILITY,
     BLOCKED
 }
 
@@ -28,12 +30,29 @@ internal fun readerInteractionMode(
     selectionModeActive: Boolean,
     overlayVisible: Boolean,
     closeInFlight: Boolean,
-    controlsVisible: Boolean
+    controlsVisible: Boolean,
+    touchExplorationEnabled: Boolean = false
 ): ReaderInteractionMode = when {
-    selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
     overlayVisible || closeInFlight -> ReaderInteractionMode.BLOCKED
+    selectionModeActive -> ReaderInteractionMode.RENDERER_SELECTION
+    touchExplorationEnabled -> ReaderInteractionMode.RENDERER_ACCESSIBILITY
     controlsVisible -> ReaderInteractionMode.CHROME_PRIORITY
     else -> ReaderInteractionMode.NAVIGATION
+}
+
+internal fun pageTurnTapZonePx(
+    width: Float,
+    density: Float,
+    preferredFraction: Float = 0.22f
+): Float {
+    if (width <= 0f) return 0f
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val minComfortableZone = 56f * safeDensity
+    val maxComfortableZone = 112f * safeDensity
+    val preferred = width * preferredFraction.coerceIn(0.14f, 0.26f)
+    val upperBound = minOf(maxComfortableZone, width * 0.28f)
+    return maxOf(minComfortableZone, preferred)
+        .coerceAtMost(upperBound)
 }
 
 internal fun shouldUseDirectionalTapNavigation(
@@ -54,9 +73,11 @@ internal fun shouldUseDirectionalTapNavigation(
  */
 internal fun shouldAnimateDirectionalNavigation(
     format: BookFormat,
+    scroll: Boolean,
     pageTurnStyle: PageTurnStyle
 ): Boolean =
     format == BookFormat.EPUB &&
+        !scroll &&
         pageTurnStyle == PageTurnStyle.SLIDE
 
 /**
@@ -67,6 +88,7 @@ internal fun shouldAnimateDirectionalNavigation(
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
+    private val contentTarget: InputListener?,
     private val paper: InputListener?,
     private val slide: InputListener?,
     private val staticPaged: InputListener?,
@@ -80,7 +102,8 @@ internal class ReaderInputArbiter(
 
     override fun onTap(event: TapEvent): Boolean {
         when (interactionMode()) {
-            ReaderInteractionMode.RENDERER_SELECTION -> {
+            ReaderInteractionMode.RENDERER_SELECTION,
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY -> {
                 onTapOwner(ReaderTapOwner.RENDERER)
                 return false
             }
@@ -97,6 +120,11 @@ internal class ReaderInputArbiter(
                 return true
             }
             ReaderInteractionMode.NAVIGATION -> Unit
+        }
+
+        if (contentTarget?.onTap(event) == true) {
+            onTapOwner(ReaderTapOwner.IMAGE)
+            return true
         }
 
         if (paper?.onTap(event) == true) {
@@ -125,7 +153,8 @@ internal class ReaderInputArbiter(
 
     override fun onDrag(event: DragEvent): Boolean {
         when (interactionMode()) {
-            ReaderInteractionMode.RENDERER_SELECTION -> return false
+            ReaderInteractionMode.RENDERER_SELECTION,
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY -> return false
             ReaderInteractionMode.BLOCKED -> return true
             ReaderInteractionMode.NAVIGATION,
             ReaderInteractionMode.CHROME_PRIORITY -> Unit
@@ -141,6 +170,7 @@ internal class ReaderInputArbiter(
         when (interactionMode()) {
             ReaderInteractionMode.RENDERER_SELECTION -> return false
             ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY,
             ReaderInteractionMode.NAVIGATION,
             ReaderInteractionMode.CHROME_PRIORITY -> Unit
         }

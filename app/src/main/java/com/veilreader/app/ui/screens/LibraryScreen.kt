@@ -47,6 +47,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.ArchiveWing
@@ -76,6 +78,7 @@ import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
+import com.veilreader.app.ui.theme.archiveTimePhaseForHour
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
@@ -84,6 +87,8 @@ import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
+import java.time.LocalTime
+import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -104,24 +109,24 @@ internal data class LibraryShelfGroup(
 )
 
 internal data class LibraryShelfLabels(
-    val filteredArchive: String = "Filtered archive",
-    val matchingVolumes: String = "Matching volumes",
-    val journey: String = "Journey",
-    val currentlyReading: String = "Currently reading",
-    val collection: String = "Collection",
-    val series: String = "Series",
-    val author: String = "Author",
-    val record: String = "Record",
-    val completedVolumes: String = "Completed volumes",
-    val unopened: String = "Unopened",
-    val waitingOnShelf: String = "Waiting on the shelf"
+    val filteredArchive: String,
+    val matchingVolumes: String,
+    val journey: String,
+    val currentlyReading: String,
+    val collection: String,
+    val series: String,
+    val author: String,
+    val record: String,
+    val completedVolumes: String,
+    val unopened: String,
+    val waitingOnShelf: String
 )
 
 internal fun deriveLibraryShelfGroups(
     books: List<Book>,
     filtered: List<Book>,
     filterActive: Boolean,
-    labels: LibraryShelfLabels = LibraryShelfLabels()
+    labels: LibraryShelfLabels
 ): List<LibraryShelfGroup> {
     if (filterActive) {
         return listOf(
@@ -212,6 +217,15 @@ fun LibraryScreen(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
     val archiveLayout = archiveLayoutPolicyFor(archiveAdaptiveClass)
+    val libraryNowEpochMs by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(60_000L)
+            value = System.currentTimeMillis()
+        }
+    }
+    val archiveTimePhase = remember(libraryNowEpochMs) {
+        archiveTimePhaseForHour(LocalTime.now().hour)
+    }
     var query by rememberSaveable { mutableStateOf("") }
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
@@ -237,7 +251,7 @@ fun LibraryScreen(
         author = book.author
         collectionNames = book.allCollections.joinToString(", ")
         seriesName = book.seriesName.orEmpty()
-        seriesIndex = book.seriesIndex?.let(::formatSeriesIndex).orEmpty()
+        seriesIndex = book.seriesIndex?.let(::formatSeriesIndexInput).orEmpty()
         language = book.language.orEmpty()
     }
 
@@ -256,15 +270,12 @@ fun LibraryScreen(
         }
     }
 
-    val libraryMemoryNow = remember(books, highlights, readingSessions) {
-        System.currentTimeMillis()
-    }
-    val memoryState = remember(books, highlights, readingSessions, libraryMemoryNow) {
+    val memoryState = remember(books, highlights, readingSessions, libraryNowEpochMs) {
         deriveLibraryMemoryState(
             books = books,
             highlights = highlights,
             sessions = readingSessions,
-            nowEpochMs = libraryMemoryNow
+            nowEpochMs = libraryNowEpochMs
         )
     }
     val deepShelfBookIds = remember(memoryState.deepShelfBookIds) {
@@ -412,7 +423,8 @@ fun LibraryScreen(
             )
             .libraryArchiveAtmosphere(
                 state = atmosphereState,
-                seed = books.size * 31 + collections.size * 7
+                seed = books.size * 31 + collections.size * 7,
+                timePhase = archiveTimePhase
             ),
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
@@ -930,78 +942,184 @@ fun LibraryScreen(
     }
 
     editing?.let { book ->
-        val parsedSeriesIndex = seriesIndex.trim().takeIf { it.isNotEmpty() }?.toDoubleOrNull()
-        val seriesIndexInvalid = seriesIndex.isNotBlank() && (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
-        AlertDialog(
+        val parsedSeriesIndex = seriesIndex
+            .trim()
+            .takeIf { it.isNotEmpty() }
+            ?.let(::parseLocalizedDecimalInput)
+        val seriesIndexInvalid =
+            seriesIndex.isNotBlank() &&
+                (parsedSeriesIndex == null || !parsedSeriesIndex.isFinite())
+
+        Dialog(
             onDismissRequest = { editing = null },
-            shape = MaterialTheme.shapes.small,
-            containerColor = VeilPalette.Archive,
-            titleContentColor = VeilPalette.Moon,
-            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-            tonalElevation = 0.dp,
-            title = {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                        stringResource(R.string.library_archive_record),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                    Text(
-                        stringResource(R.string.book_metadata_dialog_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-            },
-            text = {
-                Column(
-                    Modifier.verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            properties = DialogProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false,
+                usePlatformDefaultWidth = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .imePadding()
+                    .padding(VeilSpacing.lg),
+                contentAlignment = Alignment.Center
+            ) {
+                Surface(
+                    modifier = Modifier
+                        .widthIn(max = 620.dp)
+                        .fillMaxWidth()
+                        .heightIn(max = 720.dp),
+                    shape = MaterialTheme.shapes.medium,
+                    color = VeilPalette.Archive,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.50f)
+                    ),
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp
                 ) {
-                    OutlinedTextField(title, { title = it }, label = { Text(stringResource(R.string.book_metadata_title)) }, isError = title.isBlank())
-                    OutlinedTextField(author, { author = it }, label = { Text(stringResource(R.string.book_metadata_author)) })
-                    OutlinedTextField(
-                        collectionNames,
-                        { collectionNames = it },
-                        label = { Text(stringResource(R.string.book_metadata_collections)) },
-                        supportingText = { Text(stringResource(R.string.book_metadata_collections_hint)) }
-                    )
-                    OutlinedTextField(seriesName, { seriesName = it }, label = { Text(stringResource(R.string.book_metadata_series)) })
-                    OutlinedTextField(
-                        seriesIndex,
-                        { seriesIndex = it },
-                        label = { Text(stringResource(R.string.book_metadata_series_number)) },
-                        isError = seriesIndexInvalid,
-                        supportingText = { if (seriesIndexInvalid) Text(stringResource(R.string.book_metadata_series_number_error)) }
-                    )
-                    OutlinedTextField(
-                        language,
-                        { language = it },
-                        label = { Text(stringResource(R.string.book_metadata_language)) },
-                        supportingText = { Text(stringResource(R.string.book_metadata_language_hint)) }
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = title.isNotBlank() && !seriesIndexInvalid,
-                    onClick = {
-                        onEditMetadata(
-                            BookMetadataUpdate(
-                                bookId = book.id,
-                                title = title,
-                                author = author,
-                                collections = parseCollectionNames(collectionNames),
-                                seriesName = seriesName.trim().takeIf { it.isNotEmpty() },
-                                seriesIndex = parsedSeriesIndex,
-                                language = language.trim().takeIf { it.isNotEmpty() }
-                            )
+                    Box {
+                        GrayfogOrnamentFrame(
+                            modifier = Modifier.matchParentSize(),
+                            strength = 0.26f
                         )
-                        editing = null
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(VeilSpacing.lg),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                stringResource(R.string.library_archive_record),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.25.sp
+                                ),
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.book_metadata_dialog_title),
+                                style = MaterialTheme.typography.titleLarge,
+                                color = VeilPalette.Moon
+                            )
+                            BrassRule(Modifier.fillMaxWidth())
+
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f, fill = false)
+                                    .verticalScroll(rememberScrollState()),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = title,
+                                    onValueChange = { title = it },
+                                    label = { Text(stringResource(R.string.book_metadata_title)) },
+                                    isError = title.isBlank(),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = author,
+                                    onValueChange = { author = it },
+                                    label = { Text(stringResource(R.string.book_metadata_author)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = collectionNames,
+                                    onValueChange = { collectionNames = it },
+                                    label = { Text(stringResource(R.string.book_metadata_collections)) },
+                                    supportingText = {
+                                        Text(stringResource(R.string.book_metadata_collections_hint))
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = seriesName,
+                                    onValueChange = { seriesName = it },
+                                    label = { Text(stringResource(R.string.book_metadata_series)) },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = seriesIndex,
+                                    onValueChange = { seriesIndex = it },
+                                    label = {
+                                        Text(stringResource(R.string.book_metadata_series_number))
+                                    },
+                                    isError = seriesIndexInvalid,
+                                    supportingText = {
+                                        if (seriesIndexInvalid) {
+                                            Text(
+                                                stringResource(
+                                                    R.string.book_metadata_series_number_error
+                                                )
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                OutlinedTextField(
+                                    value = language,
+                                    onValueChange = { language = it },
+                                    label = { Text(stringResource(R.string.book_metadata_language)) },
+                                    supportingText = {
+                                        Text(stringResource(R.string.book_metadata_language_hint))
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                            }
+
+                            BrassRule(Modifier.fillMaxWidth())
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { editing = null },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(stringResource(R.string.common_cancel))
+                                }
+                                Button(
+                                    enabled = title.isNotBlank() && !seriesIndexInvalid,
+                                    onClick = {
+                                        onEditMetadata(
+                                            BookMetadataUpdate(
+                                                bookId = book.id,
+                                                title = title,
+                                                author = author,
+                                                collections = parseCollectionNames(collectionNames),
+                                                seriesName = seriesName
+                                                    .trim()
+                                                    .takeIf { it.isNotEmpty() },
+                                                seriesIndex = parsedSeriesIndex,
+                                                language = language
+                                                    .trim()
+                                                    .takeIf { it.isNotEmpty() }
+                                            )
+                                        )
+                                        editing = null
+                                    },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = VeilPalette.Brass,
+                                        contentColor = Color(0xFF17120A)
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.common_save))
+                                }
+                            }
+                        }
                     }
-                ) { Text(stringResource(R.string.common_save)) }
-            },
-            dismissButton = { TextButton(onClick = { editing = null }) { Text(stringResource(R.string.common_cancel)) } }
-        )
+                }
+            }
+        }
     }
 }
 
@@ -1019,10 +1137,11 @@ private fun BookDetailSheet(
     onFavorite: () -> Unit,
     onEditMetadata: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     val progress = bookArtifactState(book, memory = artifactMemory).progress
     val status = when {
         book.finished -> stringResource(R.string.book_detail_finished)
-        progress > 0f -> stringResource(R.string.book_detail_percent_read, (progress * 100).toInt())
+        progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(progress))
         else -> stringResource(R.string.book_detail_not_started)
     }
     val primaryAction = when {
@@ -1031,22 +1150,38 @@ private fun BookDetailSheet(
         else -> stringResource(R.string.book_detail_open_book)
     }
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = VeilPalette.Ink,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = VeilPalette.Brass.copy(alpha = 0.48f)
-            )
-        }
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = VeilSpacing.xxl),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = VeilPalette.Ink,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
         ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .grayfogAtmosphere(
+                        realm = VeilRealm.ARCHIVE,
+                        seed = book.id.hashCode(),
+                        intensity = 1f
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .windowInsetsPadding(WindowInsets.safeDrawing)
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = VeilSpacing.xxl),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+                ) {
             BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
@@ -1099,11 +1234,36 @@ private fun BookDetailSheet(
                         .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
-                    Text(
-                        stringResource(R.string.book_detail_artifact_chamber, book.format.name),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                        color = VeilPalette.Brass
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(
+                                R.string.book_detail_artifact_chamber,
+                                book.format.name
+                            ),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                letterSpacing = 1.45.sp
+                            ),
+                            color = VeilPalette.Brass,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TextButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = VeilPalette.Moon
+                            )
+                        ) {
+                            Text(
+                                stringResource(R.string.book_detail_close),
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    letterSpacing = 1.1.sp
+                                )
+                            )
+                        }
+                    }
 
                     if (compact) {
                         Column(
@@ -1169,7 +1329,7 @@ private fun BookDetailSheet(
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            "${(progress * 100).toInt()}%",
+                            formatPercent(progress),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1320,7 +1480,7 @@ private fun BookDetailSheet(
                         BookDetailFact(
                             stringResource(R.string.book_detail_journey_marks),
                             progressMarks.joinToString(" · ") {
-                                "${(it.progression * 100).toInt()}%"
+                                formatPercent(it.progression)
                             }
                         )
                     }
@@ -1413,6 +1573,8 @@ private fun BookDetailSheet(
                             }
                         }
                     }
+                }
+            }
                 }
             }
         }
@@ -1518,6 +1680,7 @@ private fun BookDetailIdentity(
     artifactMemory: BookArtifactMemory?,
     modifier: Modifier = Modifier
 ) {
+    val formatNumber = rememberVeilNumberFormatter()
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -1546,7 +1709,7 @@ private fun BookDetailIdentity(
             Text(
                 buildString {
                     append(series)
-                    book.seriesIndex?.let { append(" · #${formatSeriesIndex(it)}") }
+                    book.seriesIndex?.let { append(" · #").append(formatNumber(it)) }
                 },
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Brass,
@@ -1814,15 +1977,15 @@ private fun ArchiveOverview(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            ArchiveStat("Books", total, Modifier.weight(1f))
-                            ArchiveStat("Reading", reading, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_books), total, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_reading), reading, Modifier.weight(1f))
                         }
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            ArchiveStat("Finished", finished, Modifier.weight(1f))
-                            ArchiveStat("Collections", collections, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_finished), finished, Modifier.weight(1f))
+                            ArchiveStat(stringResource(R.string.library_stat_collections), collections, Modifier.weight(1f))
                         }
                     }
                 } else {
@@ -1830,10 +1993,10 @@ private fun ArchiveOverview(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                     ) {
-                        ArchiveStat("Books", total, Modifier.weight(1f))
-                        ArchiveStat("Reading", reading, Modifier.weight(1f))
-                        ArchiveStat("Finished", finished, Modifier.weight(1f))
-                        ArchiveStat("Collections", collections, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_books), total, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_reading), reading, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_finished), finished, Modifier.weight(1f))
+                        ArchiveStat(stringResource(R.string.library_stat_collections), collections, Modifier.weight(1f))
                     }
                 }
             }
@@ -1857,13 +2020,15 @@ private fun ArchiveStat(label: String, count: Int, modifier: Modifier = Modifier
 private fun LibraryAtmosphereLedger(state: LibraryAtmosphereState) {
     if (state.volumeCount <= 0) return
 
-    val phrase = when {
-        state.deepQuiet >= 0.72f -> "The lower stacks are quiet and deep."
-        state.archiveDensity >= 0.72f -> "The Archive has grown into many chambers."
-        state.memoryWarmth >= 0.58f -> "Reading light is active through the stacks."
-        state.archiveDensity >= 0.32f -> "The shelves are beginning to gain depth."
-        else -> "The first shelves are taking shape."
-    }
+    val phrase = stringResource(
+        when {
+            state.deepQuiet >= 0.72f -> R.string.library_atmosphere_deep_quiet
+            state.archiveDensity >= 0.72f -> R.string.library_atmosphere_many_chambers
+            state.memoryWarmth >= 0.58f -> R.string.library_atmosphere_reading_light
+            state.archiveDensity >= 0.32f -> R.string.library_atmosphere_gaining_depth
+            else -> R.string.library_atmosphere_first_shelves
+        }
+    )
 
     Row(
         modifier = Modifier
@@ -1986,6 +2151,7 @@ private fun RecentReadingBook(
     artifactMemory: BookArtifactMemory?,
     onOpen: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     Surface(
         modifier = Modifier.width(224.dp).clickable(
             role = Role.Button,
@@ -2030,7 +2196,7 @@ private fun RecentReadingBook(
                     trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
                 Text(
-                    stringResource(R.string.book_detail_percent_read, (book.progress.coerceIn(0f, 1f) * 100).toInt()),
+                    stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f))),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -2098,6 +2264,23 @@ private fun LibraryArchiveWings(
 }
 
 @Composable
+private fun libraryWingSummary(
+    volumeCount: Int,
+    activeCount: Int,
+    completedCount: Int
+): String {
+    val parts = mutableListOf<String>()
+    parts += stringResource(
+        if (volumeCount == 1) R.string.library_wing_volume_one
+        else R.string.library_wing_volumes_many,
+        volumeCount
+    )
+    if (activeCount > 0) parts += stringResource(R.string.library_wing_active, activeCount)
+    if (completedCount > 0) parts += stringResource(R.string.library_wing_sealed, completedCount)
+    return parts.joinToString(" · ")
+}
+
+@Composable
 private fun ArchiveWingPortal(
     wing: ArchiveWing,
     selected: Boolean,
@@ -2144,10 +2327,12 @@ private fun ArchiveWingPortal(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    when (wing.kind) {
-                        ArchiveWingKind.COLLECTION -> "COLLECTION WING"
-                        ArchiveWingKind.SERIES -> "SERIES CORRIDOR"
-                    },
+                    stringResource(
+                        when (wing.kind) {
+                            ArchiveWingKind.COLLECTION -> R.string.library_wing_collection
+                            ArchiveWingKind.SERIES -> R.string.library_wing_series
+                        }
+                    ),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
                     color = VeilPalette.Brass.copy(alpha = if (selected) 0.96f else 0.72f)
                 )
@@ -2159,16 +2344,11 @@ private fun ArchiveWingPortal(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    buildString {
-                        append(wing.volumeCount)
-                            .append(if (wing.volumeCount == 1) " volume" else " volumes")
-                        if (wing.activeCount > 0) {
-                            append(" · ").append(wing.activeCount).append(" active")
-                        }
-                        if (wing.completedCount > 0) {
-                            append(" · ").append(wing.completedCount).append(" sealed")
-                        }
-                    },
+                    libraryWingSummary(
+                        volumeCount = wing.volumeCount,
+                        activeCount = wing.activeCount,
+                        completedCount = wing.completedCount
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.58f),
                     maxLines = 2,
@@ -2255,11 +2435,15 @@ private fun MemoryReturnCard(
     book: Book,
     onInspect: () -> Unit
 ) {
-    val eyebrow = when (event.kind) {
-        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> "RETURN EVENT"
-        LibraryMemoryEventKind.OLD_MARGIN_RETURN -> "MARGIN ECHO"
-        LibraryMemoryEventKind.LONG_SILENCE_RETURN -> "ARCHIVE RETURN"
-    }
+    val eyebrow = stringResource(
+        when (event.kind) {
+            LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> R.string.library_memory_event_return
+            LibraryMemoryEventKind.OLD_MARGIN_RETURN -> R.string.library_memory_event_margin_echo
+            LibraryMemoryEventKind.LONG_SILENCE_RETURN -> R.string.library_memory_event_archive_return
+        }
+    )
+    val eventTitle = localizedLibraryMemoryEventTitle(event.kind)
+    val eventDetail = localizedLibraryMemoryEventDetail(event, book)
 
     Surface(
         onClick = onInspect,
@@ -2302,7 +2486,7 @@ private fun MemoryReturnCard(
                 )
             }
             Text(
-                event.title,
+                eventTitle,
                 style = MaterialTheme.typography.titleMedium,
                 color = VeilPalette.Moon
             )
@@ -2314,12 +2498,42 @@ private fun MemoryReturnCard(
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                event.detail,
+                eventDetail,
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.66f),
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun localizedLibraryMemoryEventTitle(kind: LibraryMemoryEventKind): String =
+    stringResource(
+        when (kind) {
+            LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN -> R.string.library_memory_title_forgotten
+            LibraryMemoryEventKind.OLD_MARGIN_RETURN -> R.string.library_memory_title_old_margin
+            LibraryMemoryEventKind.LONG_SILENCE_RETURN -> R.string.library_memory_title_long_silence
+        }
+    )
+
+@Composable
+private fun localizedLibraryMemoryEventDetail(
+    event: LibraryMemoryEvent,
+    book: Book
+): String {
+    val gap = formatArchiveSilence(event.gapMillis)
+    return when (event.kind) {
+        LibraryMemoryEventKind.FORGOTTEN_VOLUME_RETURN ->
+            stringResource(R.string.library_memory_detail_forgotten, book.title, gap)
+        LibraryMemoryEventKind.LONG_SILENCE_RETURN ->
+            stringResource(R.string.library_memory_detail_long_silence, book.title, gap)
+        LibraryMemoryEventKind.OLD_MARGIN_RETURN -> {
+            val excerpt = event.passageExcerpt
+                ?.takeIf { it.isNotBlank() }
+                ?: stringResource(R.string.library_memory_preserved_passage)
+            stringResource(R.string.library_memory_detail_old_margin, book.title, gap, excerpt)
         }
     }
 }
@@ -2370,7 +2584,11 @@ private fun DeepShelfPortal(
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "$count ${if (count == 1) "volume has" else "volumes have"} gone quiet",
+                    stringResource(
+                        if (count == 1) R.string.library_quiet_volume_one
+                        else R.string.library_quiet_volumes_many,
+                        count
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     color = VeilPalette.Moon
                 )
@@ -2501,6 +2719,7 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
     val favoriteLabel = stringResource(
         if (book.favorite) R.string.library_remove_favorite_semantics
@@ -2554,10 +2773,7 @@ private fun BookLibraryTile(
             Text(
                 when {
                     book.finished -> stringResource(R.string.book_detail_finished)
-                    book.progress > 0f -> stringResource(
-                        R.string.book_detail_percent_read,
-                        (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                    )
+                    book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
                     else -> book.format.name
                 },
                 style = MaterialTheme.typography.labelSmall,
@@ -2603,6 +2819,8 @@ private fun BookLibraryRow(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
+    val formatNumber = rememberVeilNumberFormatter()
     val artifact = bookArtifactState(book, memory = artifactMemory)
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
     val favoriteLabel = stringResource(
@@ -2672,7 +2890,7 @@ private fun BookLibraryRow(
                         book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                             append(" · ").append(series)
                             book.seriesIndex?.let {
-                                append(" #").append(formatSeriesIndex(it))
+                                append(" #").append(formatNumber(it))
                             }
                         }
                     },
@@ -2690,10 +2908,7 @@ private fun BookLibraryRow(
                     Text(
                         when {
                             book.finished -> stringResource(R.string.library_completed)
-                            book.progress > 0f -> stringResource(
-                                R.string.book_detail_percent_read,
-                                (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                            )
+                            book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
                             else -> stringResource(R.string.library_unopened)
                         },
                         style = MaterialTheme.typography.labelSmall,
@@ -2773,6 +2988,8 @@ private fun BookLibraryRow(
 
 @Composable
 private fun BookProgress(book: Book) {
+    val formatPercent = rememberVeilPercentFormatter()
+    val formatInteger = rememberVeilIntegerFormatter()
     LinearProgressIndicator(
         progress = { book.progress.coerceIn(0f, 1f) },
         modifier = Modifier.fillMaxWidth().height(3.dp),
@@ -2787,8 +3004,8 @@ private fun BookProgress(book: Book) {
             when {
                 book.finished -> stringResource(R.string.book_detail_finished)
                 book.progress > 0f -> stringResource(
-                    R.string.book_detail_percent_read,
-                    (book.progress.coerceIn(0f, 1f) * 100).toInt()
+                    R.string.book_detail_percent_read_text,
+                    formatPercent(book.progress.coerceIn(0f, 1f))
                 )
                 else -> stringResource(R.string.book_detail_not_started)
             },
@@ -2798,7 +3015,7 @@ private fun BookProgress(book: Book) {
         val bookCollections = book.allCollections
         if (bookCollections.isNotEmpty()) {
             val label = if (bookCollections.size == 1) bookCollections.first()
-            else "${bookCollections.first()} +${bookCollections.size - 1}"
+            else stringResource(R.string.library_collection_more, bookCollections.first(), formatInteger(bookCollections.size - 1))
             Text(
                 label,
                 modifier = Modifier.weight(1f).padding(start = VeilSpacing.xs),
@@ -2975,6 +3192,7 @@ private fun LibraryShelvesView(
     onOpen: (Book) -> Unit,
     onDetails: (Book) -> Unit
 ) {
+    val formatPercent = rememberVeilPercentFormatter()
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
@@ -3028,10 +3246,7 @@ private fun LibraryShelvesView(
                                 Text(
                                     when {
                                         book.finished -> stringResource(R.string.book_detail_finished)
-                                        book.progress > 0f -> stringResource(
-                                            R.string.book_detail_percent_read,
-                                            (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                                        )
+                                        book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
                                         else -> book.format.name
                                     },
                                     style = MaterialTheme.typography.labelSmall,
@@ -3182,12 +3397,14 @@ private fun ShelfIcon(modifier: Modifier, tint: Color) {
     }
 }
 
+private fun formatSeriesIndexInput(value: Double): String =
+    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+
 private fun parseCollectionNames(value: String): List<String> = value
     .split(',')
     .map(String::trim)
     .filter(String::isNotEmpty)
     .distinctBy { it.lowercase(Locale.ROOT) }
 
-private fun formatSeriesIndex(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
+
 

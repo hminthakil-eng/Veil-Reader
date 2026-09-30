@@ -106,22 +106,6 @@ fun fallbackBookAura(state: BookArtifactState): Color =
         else -> Color(0xFF9A6F76)
     }
 
-fun bookArtifactRecordLabel(state: BookArtifactState): String {
-    val presence = when (state.presence) {
-        BookPresence.PRISTINE -> "CATALOGUED"
-        BookPresence.OPENED -> "OPENED"
-        BookPresence.READING -> "IN PROGRESS"
-        BookPresence.COMPLETED -> "COMPLETED"
-    }
-    val age = when (state.archiveAge) {
-        BookArchiveAge.NEW -> "NEW VOLUME"
-        BookArchiveAge.SETTLED -> "SETTLED"
-        BookArchiveAge.AGED -> "AGED"
-        BookArchiveAge.ARCHIVAL -> "DEEP ARCHIVE"
-    }
-    return "$presence · $age"
-}
-
 /**
  * Veil-owned artifact layers. The publication cover itself is never modified.
  *

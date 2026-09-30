@@ -78,7 +78,9 @@ class ThresholdCompositionTest {
         requireNotNull(whisper)
         assertEquals(ThresholdWhisperKind.READING_PROMPT, whisper.kind)
         assertNull(whisper.bookId)
-        assertTrue(whisper.detail.orEmpty().contains("2/10"))
+        assertNull(whisper.detail)
+        assertEquals(2, whisper.questProgress)
+        assertEquals(10, whisper.questTarget)
     }
 
     @Test

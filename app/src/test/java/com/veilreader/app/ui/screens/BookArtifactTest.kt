@@ -74,7 +74,6 @@ class BookArtifactTest {
         assertTrue(state.favorite)
         assertEquals(1f, state.leftStack, 0.0001f)
         assertEquals(0f, state.rightStack, 0.0001f)
-        assertTrue(bookArtifactRecordLabel(state).contains("DEEP ARCHIVE"))
     }
 
     @Test

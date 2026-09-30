@@ -5,6 +5,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -12,6 +13,7 @@ import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.readium.r2.navigator.preferences.ImageFilter
+import org.readium.r2.navigator.preferences.Spread
 import org.junit.Test
 
 class ReaderPreferenceMappingTest {
@@ -172,6 +174,234 @@ class ReaderPreferenceMappingTest {
             darkImageTreatment = ReaderDarkImageTreatment.NONE
         ).toEpubPreferences()
         assertEquals(null, none.imageFilter)
+    }
+
+    @Test
+    fun `scroll mode dominates retained page-turn style in effective navigation mode`() {
+        PageTurnStyle.entries.forEach { retainedStyle ->
+            val appearance = ReaderAppearance(
+                scroll = true,
+                pageTurnStyle = retainedStyle
+            )
+            assertEquals(ReaderNavigationMode.SCROLL, appearance.navigationMode)
+        }
+    }
+
+    @Test
+    fun `normalization rejects non finite core typography before renderer submission`() {
+        val unsafe = ReaderAppearance(
+            fontScale = Double.NaN,
+            lineHeight = Double.POSITIVE_INFINITY,
+            pageMargins = Double.NEGATIVE_INFINITY,
+            fontWeight = Double.NaN,
+            paragraphSpacing = Double.POSITIVE_INFINITY,
+            paragraphIndent = Double.NaN,
+            letterSpacing = Double.NaN,
+            wordSpacing = Double.NEGATIVE_INFINITY,
+            typeScale = Double.POSITIVE_INFINITY,
+            paperPatina = Double.NaN
+        )
+
+        val normalized = unsafe.normalized()
+        assertEquals(1.0, normalized.fontScale, 0.0001)
+        assertEquals(1.45, normalized.lineHeight, 0.0001)
+        assertEquals(1.0, normalized.pageMargins, 0.0001)
+        assertEquals(null, normalized.fontWeight)
+        assertEquals(null, normalized.paragraphSpacing)
+        assertEquals(null, normalized.paragraphIndent)
+        assertEquals(null, normalized.letterSpacing)
+        assertEquals(null, normalized.wordSpacing)
+        assertEquals(null, normalized.typeScale)
+        assertEquals(0.72, normalized.paperPatina, 0.0001)
+
+        val prefs = unsafe.toEpubPreferences()
+        assertEquals(1.0, requireNotNull(prefs.fontSize), 0.0001)
+        assertEquals(1.45, requireNotNull(prefs.lineHeight), 0.0001)
+        assertEquals(1.0, requireNotNull(prefs.pageMargins), 0.0001)
+        assertEquals(null, prefs.fontWeight)
+    }
+
+    @Test
+    fun `core typography mutators clamp and fail calm`() {
+        val original = ReaderAppearance(publisherStyles = true)
+
+        assertEquals(1.0, original.withFontScale(Double.NaN).fontScale, 0.0001)
+        assertEquals(1.8, original.withFontScale(9.0).fontScale, 0.0001)
+        assertEquals(1.45, original.withLineHeight(Double.NaN).lineHeight, 0.0001)
+        assertEquals(2.0, original.withLineHeight(9.0).lineHeight, 0.0001)
+        assertEquals(1.0, original.withPageMargins(Double.NaN).pageMargins, 0.0001)
+        assertEquals(0.5, original.withPageMargins(-9.0).pageMargins, 0.0001)
+        assertFalse(original.withFontScale(1.1).publisherStyles)
+    }
+
+    @Test
+    fun `fixed layout disables renderer-owned typography and continuous scroll`() {
+        val capabilities = readerAppearanceCapabilities(
+            fixedLayout = true,
+            languageTag = "en",
+            continuousScroll = false
+        )
+
+        assertFalse(capabilities.typographyEditable)
+        assertFalse(capabilities.continuousScrollEditable)
+        assertFalse(capabilities.columnsEditable)
+        assertFalse(capabilities.hyphenationEditable)
+        assertFalse(capabilities.letterSpacingEditable)
+        assertFalse(capabilities.wordSpacingEditable)
+    }
+
+    @Test
+    fun `RTL publications keep script-safe spacing and hyphenation defaults`() {
+        listOf("fa", "fa-IR", "ar", "ur-PK", "he").forEach { language ->
+            val capabilities = readerAppearanceCapabilities(
+                fixedLayout = false,
+                languageTag = language,
+                continuousScroll = false
+            )
+            assertTrue(capabilities.typographyEditable)
+            assertFalse(capabilities.hyphenationEditable)
+            assertFalse(capabilities.letterSpacingEditable)
+            assertFalse(capabilities.wordSpacingEditable)
+        }
+
+        val ltr = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en-US",
+            continuousScroll = false
+        )
+        assertTrue(ltr.hyphenationEditable)
+        assertTrue(ltr.letterSpacingEditable)
+        assertTrue(ltr.wordSpacingEditable)
+    }
+
+    @Test
+    fun `continuous scroll alone disables column count`() {
+        val paged = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en",
+            continuousScroll = false
+        )
+        val scrolling = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en",
+            continuousScroll = true
+        )
+
+        assertTrue(paged.columnsEditable)
+        assertFalse(scrolling.columnsEditable)
+        assertTrue(scrolling.typographyEditable)
+    }
+
+    @Test
+    fun `RTL language detection uses primary BCP 47 subtag`() {
+        assertTrue(usesRtlReaderTypography("fa-IR"))
+        assertTrue(usesRtlReaderTypography("CKB_IQ"))
+        assertFalse(usesRtlReaderTypography("en-GB"))
+        assertFalse(usesRtlReaderTypography(null))
+    }
+
+    @Test
+    fun `fixed-layout runtime disables continuous scroll without destroying retained paged style`() {
+        PageTurnStyle.entries.forEach { retainedStyle ->
+            val requested = ReaderAppearance(
+                scroll = true,
+                pageTurnStyle = retainedStyle,
+                fontScale = 1.25
+            )
+            val effective = effectiveReaderAppearanceForPublication(
+                appearance = requested,
+                fixedLayout = true
+            )
+
+            assertFalse(effective.scroll)
+            assertEquals(retainedStyle, effective.pageTurnStyle)
+            assertEquals(1.25, effective.fontScale, 0.0001)
+        }
+    }
+
+    @Test
+    fun `reflowable runtime preserves requested continuous scroll`() {
+        val requested = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+        assertEquals(
+            requested,
+            effectiveReaderAppearanceForPublication(
+                appearance = requested,
+                fixedLayout = false
+            )
+        )
+    }
+
+    @Test
+    fun `highlight palette stays distinct across sanctuary themes`() {
+        val tints = ReaderTheme.entries.map(::readerHighlightTint)
+        assertEquals(ReaderTheme.entries.size, tints.distinct().size)
+        tints.forEach { tint ->
+            assertEquals(0xFF, tint ushr 24)
+        }
+    }
+
+    @Test
+    fun `ligatures are exposed only for supported RTL publications`() {
+        val rtl = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "fa-IR",
+            continuousScroll = false
+        )
+        val ltr = readerAppearanceCapabilities(
+            fixedLayout = false,
+            languageTag = "en-US",
+            continuousScroll = false
+        )
+
+        assertTrue(rtl.ligaturesEditable)
+        assertFalse(ltr.ligaturesEditable)
+    }
+
+    @Test
+    fun `CJK publications keep language-sensitive controls renderer-owned`() {
+        listOf("zh-Hans", "ja-JP", "ko-KR").forEach { language ->
+            val capabilities = readerAppearanceCapabilities(
+                fixedLayout = false,
+                languageTag = language,
+                continuousScroll = false
+            )
+            assertTrue(capabilities.typographyEditable)
+            assertTrue(capabilities.cjkPublication)
+            assertFalse(capabilities.textAlignmentEditable)
+            assertFalse(capabilities.paragraphIndentEditable)
+            assertFalse(capabilities.hyphenationEditable)
+            assertFalse(capabilities.letterSpacingEditable)
+            assertFalse(capabilities.wordSpacingEditable)
+            assertFalse(capabilities.ligaturesEditable)
+        }
+    }
+
+    @Test
+    fun `fixed-layout spread modes map exactly to Readium semantics`() {
+        assertEquals(null, ReaderFixedLayoutSpread.AUTO.toReadiumSpread())
+        assertEquals(Spread.NEVER, ReaderFixedLayoutSpread.SINGLE.toReadiumSpread())
+        assertEquals(Spread.ALWAYS, ReaderFixedLayoutSpread.DUAL.toReadiumSpread())
+    }
+
+    @Test
+    fun `EPUB preferences carry explicit fixed-layout spread override`() {
+        val appearance = ReaderAppearance()
+
+        assertEquals(
+            null,
+            appearance.toEpubPreferences(ReaderFixedLayoutSpread.AUTO).spread
+        )
+        assertEquals(
+            Spread.NEVER,
+            appearance.toEpubPreferences(ReaderFixedLayoutSpread.SINGLE).spread
+        )
+        assertEquals(
+            Spread.ALWAYS,
+            appearance.toEpubPreferences(ReaderFixedLayoutSpread.DUAL).spread
+        )
     }
 
 }

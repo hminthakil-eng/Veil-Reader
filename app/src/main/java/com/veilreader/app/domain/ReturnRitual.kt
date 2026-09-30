@@ -19,9 +19,6 @@ data class BookReturnRitual(
     val bookId: String,
     val kind: ReturnRitualKind,
     val silenceMillis: Long,
-    val silenceLabel: String,
-    val title: String,
-    val invocation: String,
     val fragment: ReturnRitualFragment?
 )
 
@@ -76,32 +73,6 @@ fun deriveBookReturnRitual(
         bookId = book.id,
         kind = ReturnRitualKind.FORGOTTEN_VOLUME,
         silenceMillis = memory.inactiveMillis,
-        silenceLabel = returnRitualGapLabel(memory.inactiveMillis),
-        title = "The Forgotten Volume",
-        invocation = "A sealed volume has returned from the Deep Shelf.",
         fragment = fragment
     )
-}
-
-fun returnRitualGapLabel(gapMillis: Long): String {
-    val days = gapMillis.coerceAtLeast(0L) / RITUAL_DAY_MS
-    return when {
-        days >= 730L -> {
-            val years = days / 365L
-            val months = (days % 365L) / 30L
-            if (months > 0L) "${years}Y ${months}MO SILENT" else "${years}Y SILENT"
-        }
-        days >= 365L -> {
-            val months = (days % 365L) / 30L
-            if (months > 0L) "1Y ${months}MO SILENT" else "1Y SILENT"
-        }
-        else -> "${(days / 30L).coerceAtLeast(6L)} MONTHS SILENT"
-    }
-}
-
-fun returnRitualFragmentAgeLabel(fragment: ReturnRitualFragment): String = when {
-    fragment.ageDays >= 730L -> "${fragment.ageDays / 365L} YEARS PRESERVED"
-    fragment.ageDays >= 365L -> "1 YEAR PRESERVED"
-    fragment.ageDays >= 60L -> "${fragment.ageDays / 30L} MONTHS PRESERVED"
-    else -> "${fragment.ageDays} DAYS PRESERVED"
 }

@@ -118,11 +118,10 @@ class LibraryMemoryTest {
             ),
             nowEpochMs = 122L * day
         )
-        assertTrue(
-            returned.events.any {
-                it.kind == LibraryMemoryEventKind.OLD_MARGIN_RETURN
-            }
-        )
+        val marginEvent = returned.events.single {
+            it.kind == LibraryMemoryEventKind.OLD_MARGIN_RETURN
+        }
+        assertEquals("A line kept in the archive", marginEvent.passageExcerpt)
     }
 
     @Test

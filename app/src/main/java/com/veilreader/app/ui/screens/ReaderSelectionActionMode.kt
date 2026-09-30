@@ -25,6 +25,8 @@ internal enum class ReaderSelectionAction {
 internal class ReaderSelectionActionModeCallback(
     private val coroutineScope: CoroutineScope,
     private val navigatorProvider: () -> SelectableNavigator?,
+    private val highlightLabel: String,
+    private val noteLabel: String,
     private val onModeChanged: (Boolean) -> Unit = {},
     private val onAction: suspend (ReaderSelectionAction, Locator, String) -> Unit
 ) : BaseActionModeCallback() {
@@ -32,11 +34,11 @@ internal class ReaderSelectionActionModeCallback(
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
         onModeChanged(true)
         if (menu.findItem(ACTION_HIGHLIGHT) == null) {
-            menu.add(Menu.NONE, ACTION_HIGHLIGHT, 0, "Highlight")
+            menu.add(Menu.NONE, ACTION_HIGHLIGHT, 0, highlightLabel)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
         if (menu.findItem(ACTION_NOTE) == null) {
-            menu.add(Menu.NONE, ACTION_NOTE, 1, "Note")
+            menu.add(Menu.NONE, ACTION_NOTE, 1, noteLabel)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
         return true
@@ -51,14 +53,20 @@ internal class ReaderSelectionActionModeCallback(
         val navigator = navigatorProvider() ?: return false
 
         coroutineScope.launch {
-            val selection = navigator.currentSelection() ?: return@launch
-            val quote = selection.locator.text.highlight.orEmpty().trim()
-            if (quote.isBlank()) return@launch
+            // Capture first because finishing ActionMode can clear the WebView selection
+            // immediately on some devices. Once captured, dismiss native selection chrome before
+            // durable annotation work so a storage flush never leaves the toolbar hanging.
+            val selection = navigator.currentSelection()
+            val quote = selection?.locator?.text?.highlight.orEmpty().trim()
+            try {
+                navigator.clearSelection()
+            } finally {
+                mode.finish()
+            }
+            if (selection == null || quote.isBlank()) return@launch
             onAction(action, selection.locator, quote)
-            navigator.clearSelection()
         }
 
-        mode.finish()
         return true
     }
 

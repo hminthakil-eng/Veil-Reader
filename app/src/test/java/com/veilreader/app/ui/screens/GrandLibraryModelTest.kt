@@ -52,7 +52,7 @@ class GrandLibraryModelTest {
         val shelves = buildSmartShelves(books)
         val collectionShelves = shelves.filter { it.kind == SmartShelfKind.COLLECTION }
 
-        assertEquals(listOf("Fantasy", "Favorites", "Science"), collectionShelves.map { it.title })
+        assertEquals(listOf("Fantasy", "Favorites", "Science"), collectionShelves.map { it.collectionName })
         assertEquals(listOf("two", "one"), shelves.byId("collection:fantasy").books.map { it.id })
     }
 
@@ -81,8 +81,8 @@ class GrandLibraryModelTest {
         val first = buildSmartShelves(books)
         val second = buildSmartShelves(books.reversed())
 
-        assertEquals(listOf("FANTASY"), first.filter { it.kind == SmartShelfKind.COLLECTION }.map { it.title })
-        assertEquals(listOf("FANTASY"), second.filter { it.kind == SmartShelfKind.COLLECTION }.map { it.title })
+        assertEquals(listOf("FANTASY"), first.filter { it.kind == SmartShelfKind.COLLECTION }.map { it.collectionName })
+        assertEquals(listOf("FANTASY"), second.filter { it.kind == SmartShelfKind.COLLECTION }.map { it.collectionName })
         assertEquals(listOf("three", "two", "one"), first.byId("collection:fantasy").books.map { it.id })
         assertEquals(listOf("three", "two", "one"), second.byId("collection:fantasy").books.map { it.id })
     }

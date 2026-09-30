@@ -86,11 +86,18 @@ internal class PaperCurlState {
             current = rawCanonicalCurrent,
             pageWidth = width
         )
+        val edgeGrip = paperEdgeGrip(
+            canonicalStartX = canonicalStart.x,
+            pageWidth = width
+        )
         val canonicalCurrent = paperWeightedDragCurrent(
             start = canonicalStart,
             current = rawCanonicalCurrent,
             response = paperHorizontalDragResponse(inwardFraction),
-            verticalResponse = paperVerticalDragResponse(inwardFraction)
+            verticalResponse = (
+                paperVerticalDragResponse(inwardFraction) +
+                    edgeGrip * 0.10f
+                ).coerceAtMost(0.76f)
         ).let {
             Offset(
                 it.x.coerceIn(-width * 0.25f, width * 1.25f),
@@ -209,22 +216,33 @@ internal class PaperCurlState {
     }
 
     suspend fun clear() {
-        snapshot = null
-        width = 0f
-        height = 0f
-        edge = PaperCurlEdge(Offset.Zero, Offset.Zero)
-
+        resetVisual()
         // Keep one frame of input lock so Compose fully drops the overlay
         // before the reusable bitmap can be drawn into again.
         delay(VeilMotion.FRAME_SETTLE_MS)
         active = false
     }
 
-    fun dispose() {
+    /**
+     * Lifecycle/disposal escape hatch. Unlike [clear], this drops the visual lock immediately so
+     * a cancelled preview cannot survive a configuration change or a reader teardown.
+     */
+    fun clearImmediately() {
+        resetVisual()
+        active = false
+    }
+
+    private fun resetVisual() {
         snapshot = null
+        width = 0f
+        height = 0f
+        edge = PaperCurlEdge(Offset.Zero, Offset.Zero)
+    }
+
+    fun dispose() {
+        clearImmediately()
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
-        active = false
     }
     private suspend fun animateTo(
         target: PaperCurlEdge,

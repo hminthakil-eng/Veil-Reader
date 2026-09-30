@@ -169,4 +169,63 @@ class ReadingTimeCapsuleTest {
         assertTrue(first.startsWith("VR-"))
         assertTrue(first != changed)
     }
+    @Test
+    fun `annotated preserved passage carries structured presentation evidence`() {
+        val book = Book(
+            id = "annotated",
+            title = "Annotated",
+            author = "Veil",
+            finished = true
+        )
+        val highlight = Highlight(
+            id = "h",
+            bookId = book.id,
+            quote = "A preserved sentence",
+            locatorJson = "{}",
+            note = "A note",
+            createdAtEpochMs = 10L
+        )
+
+        val event = deriveReadingTimeCapsule(
+            book = book,
+            sessions = emptyList(),
+            highlights = listOf(highlight),
+            bookmarks = emptyList()
+        ).timeline.single { it.kind == ReadingHistoryEventKind.PASSAGE_PRESERVED }
+
+        assertTrue(event.annotated)
+    }
+
+    @Test
+    fun `reading session carries structured timeline metrics`() {
+        val book = Book(
+            id = "sessioned",
+            title = "Sessioned",
+            author = "Veil",
+            finished = true
+        )
+        val session = ReadingSessionSnapshot(
+            id = "s",
+            bookId = book.id,
+            startedAtEpochMs = 10L,
+            endedAtEpochMs = 20L,
+            activeMillis = 95_000L,
+            pacedPageTurns = 4,
+            highlightCount = 2,
+            noteCount = 1
+        )
+
+        val event = deriveReadingTimeCapsule(
+            book = book,
+            sessions = listOf(session),
+            highlights = emptyList(),
+            bookmarks = emptyList()
+        ).timeline.single { it.kind == ReadingHistoryEventKind.READING_SESSION }
+
+        assertEquals(95_000L, event.activeMillis)
+        assertEquals(4, event.pacedPageTurns)
+        assertEquals(2, event.highlightEvents)
+        assertEquals(1, event.noteEvents)
+    }
+
 }

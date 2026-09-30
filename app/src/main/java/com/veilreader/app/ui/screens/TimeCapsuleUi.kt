@@ -362,7 +362,7 @@ private fun CapsuleTimelineEvent(event: ReadingHistoryEvent) {
                 style = MaterialTheme.typography.titleSmall,
                 color = VeilPalette.Moon
             )
-            event.detail?.takeIf { it.isNotBlank() }?.let { detail ->
+            capsuleEventDetail(event)?.takeIf { it.isNotBlank() }?.let { detail ->
                 Text(
                     detail,
                     style = MaterialTheme.typography.bodySmall,
@@ -392,11 +392,47 @@ private fun capsuleNumber(value: Number): String {
 }
 
 @Composable
+private fun capsuleEventDetail(event: ReadingHistoryEvent): String? = when (event.kind) {
+    ReadingHistoryEventKind.READING_SESSION -> {
+        val active = event.activeMillis
+        if (active == null) {
+            stringResource(R.string.capsule_session_detail_legacy)
+        } else {
+            val parts = mutableListOf(formatCapsuleDuration(active))
+            if (event.pacedPageTurns > 0) {
+                parts += stringResource(
+                    R.string.capsule_paced_turns,
+                    capsuleNumber(event.pacedPageTurns)
+                )
+            }
+            if (event.highlightEvents > 0) {
+                parts += stringResource(
+                    if (event.highlightEvents == 1) R.string.capsule_highlight_event_one
+                    else R.string.capsule_highlight_events_many,
+                    capsuleNumber(event.highlightEvents)
+                )
+            }
+            if (event.noteEvents > 0) {
+                parts += stringResource(
+                    if (event.noteEvents == 1) R.string.capsule_note_event_one
+                    else R.string.capsule_note_events_many,
+                    capsuleNumber(event.noteEvents)
+                )
+            }
+            parts.joinToString(" · ")
+        }
+    }
+    ReadingHistoryEventKind.PASSAGE_PRESERVED,
+    ReadingHistoryEventKind.LOCATION_MARKED -> event.detail
+    else -> null
+}
+
+@Composable
 private fun capsuleEventTitle(event: ReadingHistoryEvent): String = when (event.kind) {
     ReadingHistoryEventKind.ARCHIVED -> stringResource(R.string.capsule_event_archived)
     ReadingHistoryEventKind.READING_SESSION -> stringResource(R.string.capsule_event_session)
     ReadingHistoryEventKind.PASSAGE_PRESERVED -> stringResource(
-        if (event.title == "Annotated passage preserved") R.string.capsule_event_annotated
+        if (event.annotated) R.string.capsule_event_annotated
         else R.string.capsule_event_passage
     )
     ReadingHistoryEventKind.LOCATION_MARKED -> stringResource(R.string.capsule_event_location)

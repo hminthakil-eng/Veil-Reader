@@ -100,13 +100,19 @@ class DesignConstitutionTest {
     }
 
     @Test
-    fun `scroll keeps paper material without physical page stack`() {
+    fun `navigation modes expose distinct sanctuary material language`() {
+        val curl = sanctuaryPageMaterialFor(ReaderNavigationMode.PAPER_CURL)
+        val slide = sanctuaryPageMaterialFor(ReaderNavigationMode.SLIDE)
+        val paged = sanctuaryPageMaterialFor(ReaderNavigationMode.PAGED)
+        val scroll = sanctuaryPageMaterialFor(ReaderNavigationMode.SCROLL)
+
+        assertTrue(curl.showPhysicalPageStack)
+        assertFalse(slide.showPhysicalPageStack)
+        assertTrue(paged.showPhysicalPageStack)
+        assertFalse(scroll.showPhysicalPageStack)
+
         ReaderNavigationMode.entries.forEach { mode ->
             val material = sanctuaryPageMaterialFor(mode)
-            assertEquals(
-                mode != ReaderNavigationMode.SCROLL,
-                material.showPhysicalPageStack
-            )
             assertTrue(material.showEdgeFalloff)
             assertTrue(material.showMicroFibres)
         }

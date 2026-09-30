@@ -57,6 +57,7 @@ fun bookArtifactState(
 ): BookArtifactState {
     val normalizedProgress = when {
         book.finished -> 1f
+        !book.progress.isFinite() -> 0f
         else -> book.progress.coerceIn(0f, 1f)
     }
     val readingState = when {
@@ -102,7 +103,7 @@ fun bookArtifactState(
 }
 
 fun bookPageStackBalance(progress: Float): Pair<Float, Float> {
-    val p = progress.coerceIn(0f, 1f)
+    val p = (if (progress.isFinite()) progress else 0f).coerceIn(0f, 1f)
     val minimum = 0.14f
     val range = 1f - minimum
     return (minimum + range * p) to (minimum + range * (1f - p))
@@ -349,3 +350,4 @@ fun BookArtifactLayer(
         }
     }
 }
+

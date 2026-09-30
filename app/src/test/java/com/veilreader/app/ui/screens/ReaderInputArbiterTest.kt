@@ -227,12 +227,14 @@ class ReaderInputArbiterTest {
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.PDF,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.PAPER
             )
         )
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.PDF,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.SLIDE
             )
         )
@@ -243,30 +245,62 @@ class ReaderInputArbiterTest {
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.PAPER
             )
         )
         assertTrue(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.SLIDE
             )
         )
         assertFalse(
             shouldAnimateDirectionalNavigation(
                 format = BookFormat.EPUB,
+                scroll = false,
                 pageTurnStyle = PageTurnStyle.NONE
             )
         )
     }
 
     @Test
-    fun `selection always returns gesture ownership to the renderer`() {
+    fun `scroll mode never inherits hidden slide directional animation`() {
+        assertFalse(
+            shouldAnimateDirectionalNavigation(
+                format = BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            )
+        )
+    }
+
+    @Test
+    fun `selection owns renderer only while no modal or durable close blocks input`() {
         assertEquals(
             ReaderInteractionMode.RENDERER_SELECTION,
             readerInteractionMode(
                 selectionModeActive = true,
+                overlayVisible = false,
+                closeInFlight = false,
+                controlsVisible = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = true,
                 overlayVisible = true,
+                closeInFlight = false,
+                controlsVisible = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = true,
+                overlayVisible = false,
                 closeInFlight = true,
                 controlsVisible = true
             )
@@ -317,5 +351,84 @@ class ReaderInputArbiterTest {
         )
     }
 
+
+
+    @Test
+    fun `touch exploration returns touch ownership to renderer`() {
+        assertEquals(
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = false,
+                controlsVisible = true,
+                touchExplorationEnabled = true
+            )
+        )
+    }
+
+    @Test
+    fun `modal and durable close still outrank touch exploration`() {
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = true,
+                closeInFlight = false,
+                controlsVisible = true,
+                touchExplorationEnabled = true
+            )
+        )
+        assertEquals(
+            ReaderInteractionMode.BLOCKED,
+            readerInteractionMode(
+                selectionModeActive = false,
+                overlayVisible = false,
+                closeInFlight = true,
+                controlsVisible = true,
+                touchExplorationEnabled = true
+            )
+        )
+    }
+
+    @Test
+    fun `page turn tap zone stays comfortable without consuming the center`() {
+        val standardPhone = pageTurnTapZonePx(
+            width = 1_080f,
+            density = 3f,
+            preferredFraction = 0.22f
+        )
+        assertTrue(standardPhone >= 56f * 3f)
+        assertTrue(standardPhone <= 1_080f * 0.28f)
+
+        val narrowSurface = pageTurnTapZonePx(
+            width = 480f,
+            density = 3f,
+            preferredFraction = 0.22f
+        )
+        assertTrue(narrowSurface <= 480f * 0.28f)
+        assertTrue(narrowSurface * 2f < 480f)
+
+        val wideTablet = pageTurnTapZonePx(
+            width = 2_560f,
+            density = 2f,
+            preferredFraction = 0.22f
+        )
+        assertTrue(wideTablet <= 112f * 2f)
+        assertTrue(wideTablet * 2f < 2_560f * 0.20f)
+    }
+
+    @Test
+    fun `invalid tap-zone width produces no navigation zone`() {
+        assertEquals(
+            0f,
+            pageTurnTapZonePx(
+                width = 0f,
+                density = 3f,
+                preferredFraction = 0.22f
+            ),
+            0.0001f
+        )
+    }
 
 }

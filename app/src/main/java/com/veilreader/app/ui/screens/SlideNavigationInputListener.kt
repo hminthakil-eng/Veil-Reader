@@ -32,26 +32,33 @@ internal class SlideNavigationInputListener(
     private val scope: CoroutineScope,
     private val isReducedMotion: () -> Boolean = { false },
     private val onInteraction: () -> Unit,
-    private val onCommittedTurn: () -> Unit
+    private val onCommittedTurn: () -> Unit,
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
     private var reserved = false
     private var activeSpec: TurnSpec? = null
     private var navigationJob: Job? = null
+    private var completionJob: Job? = null
     private var previewNavigationSucceeded = false
     private var dragStartLocator: Locator? = null
+    private var cancellationRequested = false
+    private var turnCommitted = false
     private var lastSampleAtMillis = 0L
+    private var lastMotionAtMillis = 0L
     private var lastDistance = 0f
     private var releaseVelocityPxPerSec = 0f
 
     override fun onTap(event: TapEvent): Boolean {
-        if (!slideModeEnabled() || state.active) return false
+        if (!slideModeEnabled()) return cancelPendingTurn()
+        if (completionJob != null || state.active || reserved) return true
         val spec = resolveEdgeTurn(event.point.x) ?: return false
         performDiscreteTurn(spec)
         return true
     }
 
     override fun onKey(event: KeyEvent): Boolean {
-        if (!slideModeEnabled()) return false
+        if (!slideModeEnabled()) return cancelPendingTurn()
+        if (completionJob != null || state.active || reserved) return true
         if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) return false
 
         val progression = navigator.overflow.value.readingProgression
@@ -74,10 +81,11 @@ internal class SlideNavigationInputListener(
 
     override fun onDrag(event: DragEvent): Boolean {
         if (!slideModeEnabled()) {
-            resetDrag()
-            return false
+            // Mode ownership can change after the destination preview has already navigated.
+            // Restore the captured source before allowing another mode to see this gesture.
+            return cancelPendingTurn()
         }
-        if (state.active && !reserved) return true
+        if (completionJob != null || (state.active && !reserved)) return true
 
         return when (event.type) {
             DragEvent.Type.Start -> onDragStart()
@@ -91,7 +99,11 @@ internal class SlideNavigationInputListener(
         activeSpec = null
         previewNavigationSucceeded = false
         dragStartLocator = navigator.currentLocator.value
+        cancellationRequested = false
+        turnCommitted = false
+        completionJob = null
         lastSampleAtMillis = SystemClock.uptimeMillis()
+        lastMotionAtMillis = 0L
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
         if (!isReducedMotion()) {
@@ -126,10 +138,10 @@ internal class SlideNavigationInputListener(
         val spec = activeSpec ?: resolveDragTurn(event)
 
         if (spec == null) {
-            scope.launch {
+            completionJob = scope.launch {
                 if (state.active && !isReducedMotion()) state.animateCancel()
-                resetDrag()
                 if (state.active) state.clear()
+                resetDrag()
             }
             return true
         }
@@ -148,12 +160,21 @@ internal class SlideNavigationInputListener(
             releaseVelocityPxPerSec = releaseVelocityPxPerSec
         )
 
-        scope.launch {
+        completionJob = scope.launch {
             navigationJob?.join()
+
+            if (cancellationRequested && !turnCommitted) {
+                if (previewNavigationSucceeded) restoreDragStart(spec)
+                if (state.active && !isReducedMotion()) state.animateCancel()
+                if (state.active) state.clear()
+                resetDrag()
+                return@launch
+            }
 
             if (state.active) {
                 when {
-                    commit && previewNavigationSucceeded -> {
+                    commit && previewNavigationSucceeded && !cancellationRequested -> {
+                        turnCommitted = true
                         onCommittedTurn()
                         if (!isReducedMotion()) {
                             state.animateComplete(
@@ -169,9 +190,10 @@ internal class SlideNavigationInputListener(
                         if (!isReducedMotion()) state.animateCancel()
                     }
 
-                    commit -> {
+                    commit && !cancellationRequested -> {
                         val moved = navigate(spec.direction)
                         if (moved) {
+                            turnCommitted = true
                             onCommittedTurn()
                             if (!isReducedMotion()) {
                                 state.animateComplete(
@@ -180,20 +202,100 @@ internal class SlideNavigationInputListener(
                                         releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
                                 )
                             }
-                        } else if (!isReducedMotion()) {
-                            state.animateBoundaryBounce(visualDirectionSign(spec.side))
+                        } else {
+                            onBoundaryHit(spec.side)
+                            if (!isReducedMotion()) {
+                                state.animateBoundaryBounce(
+                                    visualDirectionSign(spec.side)
+                                )
+                            }
                         }
                     }
 
                     else -> if (!isReducedMotion()) state.animateCancel()
                 }
-            } else if (commit) {
-                if (navigate(spec.direction)) onCommittedTurn()
+            } else if (commit && !cancellationRequested) {
+                val moved = navigate(spec.direction)
+                if (moved) {
+                    turnCommitted = true
+                    onCommittedTurn()
+                } else if (
+                    shouldEmitSlideTerminalBoundary(
+                        commitRequested = commit,
+                        cancellationRequested = cancellationRequested,
+                        navigationMoved = moved
+                    )
+                ) {
+                    // Reduced-motion and failed-snapshot paths still owe the same semantic boundary
+                    // response even though there is no visual sheet available to bounce.
+                    onBoundaryHit(spec.side)
+                }
             }
 
-            resetDrag()
             if (state.active) state.clear()
+            resetDrag()
         }
+        return true
+    }
+
+    /**
+     * Restores a drag-preview locator when SLIDE loses ownership because the app pauses,
+     * closes, or the user changes navigation mode. A committed turn is never rolled back.
+     */
+    fun cancelPendingTurn(): Boolean {
+        if (!reserved && activeSpec == null) return false
+        if (turnCommitted) return false
+
+        cancellationRequested = true
+        val spec = activeSpec
+        if (spec == null) {
+            completionJob = scope.launch {
+                if (state.active) state.clear()
+                resetDrag()
+            }
+            return true
+        }
+
+        if (completionJob == null) {
+            completionJob = scope.launch {
+                navigationJob?.join()
+                if (previewNavigationSucceeded) restoreDragStart(spec)
+                if (state.active) state.clear()
+                resetDrag()
+            }
+        }
+        return true
+    }
+
+    /**
+     * Cancels an uncommitted preview and waits until any preview navigation has been restored.
+     * This is the only safe path before taking a durable close snapshot.
+     */
+    suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val requested = cancelPendingTurn()
+        if (!requested) return false
+        completionJob?.join()
+        return true
+    }
+
+    /**
+     * Synchronous teardown for configuration changes and composition disposal. The reader's
+     * composition scope can disappear immediately, so locator restoration cannot depend on it.
+     */
+    fun forceCancelPendingTurn(): Boolean {
+        if (!reserved && activeSpec == null) return false
+        if (turnCommitted) return false
+
+        cancellationRequested = true
+        navigationJob?.cancel()
+        completionJob?.cancel()
+
+        val spec = activeSpec
+        if (spec != null && previewNavigationSucceeded) {
+            restoreDragStart(spec)
+        }
+        state.clearImmediately()
+        resetDrag()
         return true
     }
 
@@ -202,30 +304,48 @@ internal class SlideNavigationInputListener(
         onInteraction()
         val moved = navigate(spec.direction)
         if (!moved) {
+            onBoundaryHit(spec.side)
             if (visualReady) {
-                scope.launch {
+                completionJob = scope.launch {
                     state.animateBoundaryBounce(visualDirectionSign(spec.side))
                     state.clear()
+                    resetDrag()
                 }
             }
             return
         }
 
+        turnCommitted = true
         onCommittedTurn()
         if (visualReady) {
-            scope.launch {
+            completionJob = scope.launch {
                 delay(com.veilreader.app.ui.theme.VeilMotion.PAGE_REVEAL_MS)
                 state.animateComplete(visualDirectionSign(spec.side))
                 state.clear()
+                resetDrag()
             }
+        } else {
+            resetDrag()
         }
     }
 
     private fun resolveDragTurn(event: DragEvent): TurnSpec? {
-        val x = abs(event.offset.x)
-        val y = abs(event.offset.y)
-        if (x < DRAG_SLOP_PX || x < y * HORIZONTAL_BIAS) return null
-        val side = if (event.offset.x < 0f) PaperCurlSide.RIGHT else PaperCurlSide.LEFT
+        val view = navigator.publicationView
+        if (
+            !hasDeliberateSlideIntent(
+                offsetX = event.offset.x,
+                offsetY = event.offset.y,
+                width = view.width.toFloat(),
+                density = view.resources.displayMetrics.density
+            )
+        ) {
+            return null
+        }
+        val side = if (event.offset.x < 0f) {
+            PaperCurlSide.RIGHT
+        } else {
+            PaperCurlSide.LEFT
+        }
         return TurnSpec(
             direction = paperTurnDirectionFor(
                 side,
@@ -239,7 +359,11 @@ internal class SlideNavigationInputListener(
         val width = navigator.publicationView.width.toFloat()
         if (width <= 0f) return null
         val density = navigator.publicationView.resources.displayMetrics.density
-        val edge = max(84f * density, width * EDGE_FRACTION)
+        val edge = pageTurnTapZonePx(
+            width = width,
+            density = density,
+            preferredFraction = EDGE_FRACTION
+        )
         val side = when {
             x <= edge -> PaperCurlSide.LEFT
             x >= width - edge -> PaperCurlSide.RIGHT
@@ -281,12 +405,20 @@ internal class SlideNavigationInputListener(
     private fun sampleVelocity(spec: TurnSpec, event: DragEvent) {
         val now = SystemClock.uptimeMillis()
         val distance = inwardDistance(spec.side, event.offset.x)
+        val delta = distance - lastDistance
         val elapsed = now - lastSampleAtMillis
-        if (lastSampleAtMillis > 0L && elapsed in 1L..120L) {
-            releaseVelocityPxPerSec =
-                ((distance - lastDistance) * 1000f / elapsed.toFloat())
-                    .coerceIn(-12_000f, 12_000f)
+        val sinceMotion = if (lastMotionAtMillis > 0L) {
+            now - lastMotionAtMillis
+        } else {
+            Long.MAX_VALUE
         }
+        releaseVelocityPxPerSec = nextSlideReleaseVelocity(
+            previousVelocityPxPerSec = releaseVelocityPxPerSec,
+            distanceDeltaPx = delta,
+            elapsedMillis = elapsed,
+            sinceLastMotionMillis = sinceMotion
+        )
+        if (abs(delta) >= 1f) lastMotionAtMillis = now
         lastSampleAtMillis = now
         lastDistance = distance
     }
@@ -318,9 +450,13 @@ internal class SlideNavigationInputListener(
         reserved = false
         activeSpec = null
         navigationJob = null
+        completionJob = null
         previewNavigationSucceeded = false
         dragStartLocator = null
+        cancellationRequested = false
+        turnCommitted = false
         lastSampleAtMillis = 0L
+        lastMotionAtMillis = 0L
         lastDistance = 0f
         releaseVelocityPxPerSec = 0f
     }
@@ -334,11 +470,32 @@ internal class SlideNavigationInputListener(
     )
 
     private companion object {
-        const val EDGE_FRACTION = 0.24f
-        const val HORIZONTAL_BIAS = 1.05f
-        const val DRAG_SLOP_PX = 6f
+        const val EDGE_FRACTION = 0.22f
     }
 }
+
+internal fun hasDeliberateSlideIntent(
+    offsetX: Float,
+    offsetY: Float,
+    width: Float,
+    density: Float
+): Boolean {
+    if (width <= 0f) return false
+    val x = abs(offsetX)
+    val y = abs(offsetY)
+    val safeDensity = density.coerceAtLeast(0.1f)
+    val intentDistance = max(10f * safeDensity, width * 0.012f)
+    return x >= intentDistance && x >= y * 1.15f
+}
+
+internal fun shouldEmitSlideTerminalBoundary(
+    commitRequested: Boolean,
+    cancellationRequested: Boolean,
+    navigationMoved: Boolean
+): Boolean =
+    commitRequested &&
+        !cancellationRequested &&
+        !navigationMoved
 
 internal fun shouldUseVeilSlideNavigation(
     format: com.veilreader.app.domain.BookFormat,
@@ -348,6 +505,30 @@ internal fun shouldUseVeilSlideNavigation(
     format == com.veilreader.app.domain.BookFormat.EPUB &&
         !scroll &&
         pageTurnStyle == com.veilreader.app.domain.PageTurnStyle.SLIDE
+
+/**
+ * Drag End often repeats the final Move offset. Preserve a genuinely fresh flick through that
+ * duplicate sample, but expire it once the finger has actually paused.
+ */
+internal fun nextSlideReleaseVelocity(
+    previousVelocityPxPerSec: Float,
+    distanceDeltaPx: Float,
+    elapsedMillis: Long,
+    sinceLastMotionMillis: Long
+): Float {
+    if (abs(distanceDeltaPx) >= 1f) {
+        if (elapsedMillis in 1L..120L) {
+            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
+                .coerceIn(-12_000f, 12_000f)
+        }
+        return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
+            previousVelocityPxPerSec
+        } else {
+            0f
+        }
+    }
+    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
+}
 
 internal fun shouldCommitSlideTurn(
     inwardDistance: Float,

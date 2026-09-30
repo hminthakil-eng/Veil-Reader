@@ -25,6 +25,13 @@ public final class ReadingPolicyTest {
         check(!ReadingPolicy.qualifiesNote(" ".repeat(100)), "blank padding rejected");
         check(!ReadingPolicy.qualifiesNote("a".repeat(39)), "short note rejected");
         check(ReadingPolicy.qualifiesNote("a".repeat(40)), "40 character note accepted");
+        check(!ReadingPolicy.qualifiesNote("\u200c".repeat(80)), "invisible half-spaces earn nothing");
+        check(!ReadingPolicy.qualifiesNote("\u00a0".repeat(80)), "Unicode space padding earns nothing");
+        check(!ReadingPolicy.qualifiesNote("a".repeat(39) + "\u200c".repeat(80)), "format marks cannot complete a short note");
+        check(!ReadingPolicy.qualifiesNote("a".repeat(20) + " ".repeat(80) + "a".repeat(19)), "interior spacing cannot complete a short note");
+        check(!ReadingPolicy.qualifiesNote("\u0301".repeat(80)), "combining marks alone earn nothing");
+        check(!ReadingPolicy.qualifiesNote("\ud83d\ude00".repeat(20)), "surrogate pairs count as one visible character");
+        check(ReadingPolicy.qualifiesNote("\u0628".repeat(40)), "Persian letters qualify");
         check(ReadingPolicy.fontSizePercent(1.0) == 100.0, "default font is 100 percent");
         check(ReadingPolicy.fontSizePercent(.1) == 75.0, "small font clamps");
         check(ReadingPolicy.fontSizePercent(3.0) == 180.0, "large font clamps");

@@ -16,12 +16,28 @@ import kotlin.math.sin
 
 enum class VeilSensoryEvent {
     PAGE_TURN,
+    SLIDE_TURN,
+    PAGED_TURN,
+    BOUNDARY,
     MARK,
     NOTE,
     RETURN_RITUAL,
     ADVANCEMENT,
     RELIC
 }
+
+internal fun hapticFeedbackFor(event: VeilSensoryEvent): Int =
+    when (event) {
+        VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
+        VeilSensoryEvent.SLIDE_TURN -> HapticFeedbackConstants.VIRTUAL_KEY
+        VeilSensoryEvent.PAGED_TURN -> HapticFeedbackConstants.KEYBOARD_TAP
+        VeilSensoryEvent.BOUNDARY -> HapticFeedbackConstants.CONTEXT_CLICK
+        VeilSensoryEvent.MARK,
+        VeilSensoryEvent.NOTE -> HapticFeedbackConstants.KEYBOARD_TAP
+        VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
+        VeilSensoryEvent.ADVANCEMENT -> HapticFeedbackConstants.LONG_PRESS
+        VeilSensoryEvent.RELIC -> HapticFeedbackConstants.CONTEXT_CLICK
+    }
 
 /**
  * Local-only sensory layer for Veil Reader.
@@ -65,15 +81,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
     fun perform(view: View, event: VeilSensoryEvent) {
         val snapshot = settings
         if (snapshot.hapticsEnabled) {
-            val feedback = when (event) {
-                VeilSensoryEvent.PAGE_TURN -> HapticFeedbackConstants.CLOCK_TICK
-                VeilSensoryEvent.MARK,
-                VeilSensoryEvent.NOTE -> HapticFeedbackConstants.KEYBOARD_TAP
-                VeilSensoryEvent.RETURN_RITUAL -> HapticFeedbackConstants.CONTEXT_CLICK
-                VeilSensoryEvent.ADVANCEMENT -> HapticFeedbackConstants.LONG_PRESS
-                VeilSensoryEvent.RELIC -> HapticFeedbackConstants.CONTEXT_CLICK
-            }
-            view.performHapticFeedback(feedback)
+            view.performHapticFeedback(hapticFeedbackFor(event))
         }
 
         if (
@@ -118,6 +126,9 @@ class VeilSensoryFeedback(context: android.content.Context) {
         val sampleRate = 22_050
         val seconds = when (event) {
             VeilSensoryEvent.PAGE_TURN -> 0.085
+            VeilSensoryEvent.SLIDE_TURN -> 0.065
+            VeilSensoryEvent.PAGED_TURN -> 0.045
+            VeilSensoryEvent.BOUNDARY -> 0.055
             VeilSensoryEvent.MARK -> 0.070
             VeilSensoryEvent.NOTE -> 0.095
             VeilSensoryEvent.RETURN_RITUAL -> 0.240
@@ -141,6 +152,25 @@ class VeilSensoryFeedback(context: android.content.Context) {
                     val envelope = sin(PI * unit).coerceAtLeast(0.0)
                     smoothNoise * envelope * 0.58 +
                         sin(2.0 * PI * 92.0 * t) * envelope * 0.035
+                }
+                VeilSensoryEvent.SLIDE_TURN -> {
+                    val envelope = sin(PI * unit).coerceAtLeast(0.0)
+                    smoothNoise * envelope * 0.18 +
+                        sin(2.0 * PI * 128.0 * t) * envelope * 0.050
+                }
+                VeilSensoryEvent.PAGED_TURN -> {
+                    val envelope = exp(-t * 44.0)
+                    (
+                        sin(2.0 * PI * 178.0 * t) * 0.22 +
+                            sin(2.0 * PI * 356.0 * t) * 0.06
+                        ) * envelope
+                }
+                VeilSensoryEvent.BOUNDARY -> {
+                    val envelope = exp(-t * 48.0)
+                    (
+                        sin(2.0 * PI * 74.0 * t) * 0.22 +
+                            smoothNoise * 0.08
+                        ) * envelope
                 }
                 VeilSensoryEvent.MARK -> {
                     val envelope = exp(-t * 30.0)

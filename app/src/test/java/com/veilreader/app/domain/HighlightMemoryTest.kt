@@ -2,7 +2,6 @@ package com.veilreader.app.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,7 +23,7 @@ class HighlightMemoryTest {
 
         assertEquals(EchoDepth.FRESH, memory.echoDepth)
         assertFalse(memory.eligibleForEcho)
-        assertNull(memory.echoLabel)
+        assertEquals(5, memory.ageDays)
     }
 
     @Test
@@ -52,7 +51,7 @@ class HighlightMemoryTest {
         assertTrue(memory.eligibleForEcho)
         assertTrue(memory.annotated)
         assertTrue(memory.bookActivityAfterMark)
-        assertEquals("AN ECHO FROM 4 MONTHS AGO", memory.echoLabel)
+        assertEquals(120, memory.ageDays)
         assertEquals(290, memory.resonanceScore)
     }
 
@@ -86,7 +85,7 @@ class HighlightMemoryTest {
         assertTrue(memory.bookActivityAfterMark)
         assertEquals(2, memory.revisitCount)
         assertEquals(now - 30L * day, memory.lastViewedAtEpochMs)
-        assertEquals("LAST VIEWED 30 DAYS AGO", memory.lastViewedLabel)
+        assertEquals(30, memory.lastViewedDaysAgo)
     }
 
     @Test

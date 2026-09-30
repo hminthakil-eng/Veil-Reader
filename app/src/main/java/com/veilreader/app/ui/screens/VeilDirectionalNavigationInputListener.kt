@@ -9,28 +9,32 @@ import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 /**
- * Veil-owned directional fallback so animation policy can change at runtime.
+ * Directional fallback for modes that do not own the input earlier in ReaderInputArbiter.
  *
- * Paper mode can be intercepted by Veil's curl layer. Slide mode falls through
- * here and uses Readium's native animated navigation. Keyboard navigation
- * stays consistent with the currently selected page-turn style.
+ * PAPER_CURL and SLIDE normally consume their own page-turn gestures first. This listener keeps
+ * static PAGED and renderer fallbacks deterministic, including RTL/LTR key direction.
  */
 @OptIn(ExperimentalReadiumApi::class)
 internal class VeilDirectionalNavigationInputListener(
     private val navigator: OverflowableNavigator,
     private val isAnimated: () -> Boolean,
     private val isTapNavigationEnabled: () -> Boolean = { true },
-    private val onNavigationCommitted: () -> Unit = {}
+    private val onNavigationCommitted: () -> Unit = {},
+    private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
 
     override fun onTap(event: TapEvent): Boolean {
         if (!isTapNavigationEnabled()) return false
         if (navigator.overflow.value.scroll) return false
 
-        val width = navigator.publicationView.width.toDouble()
-        if (width <= 0.0) return false
-
-        val edge = maxOf(MIN_EDGE_PX, width * EDGE_FRACTION)
+        val width = navigator.publicationView.width.toFloat()
+        if (width <= 0f) return false
+        val density = navigator.publicationView.resources.displayMetrics.density
+        val edge = pageTurnTapZonePx(
+            width = width,
+            density = density,
+            preferredFraction = EDGE_FRACTION
+        )
         return when {
             event.point.x <= edge -> goLeft()
             event.point.x >= width - edge -> goRight()
@@ -43,9 +47,14 @@ internal class VeilDirectionalNavigationInputListener(
             return false
         }
 
+        val progression = navigator.overflow.value.readingProgression
         return when (event.key) {
-            Key.ArrowUp -> navigate { navigator.goBackward(animated = isAnimated()) }
-            Key.ArrowDown, Key.Space -> navigate { navigator.goForward(animated = isAnimated()) }
+            Key.ArrowUp -> navigate(
+                side = paperTurnSideFor(PaperTurnDirection.BACKWARD, progression)
+            ) { navigator.goBackward(animated = isAnimated()) }
+            Key.ArrowDown, Key.Space -> navigate(
+                side = paperTurnSideFor(PaperTurnDirection.FORWARD, progression)
+            ) { navigator.goForward(animated = isAnimated()) }
             Key.ArrowLeft -> goLeft()
             Key.ArrowRight -> goRight()
             else -> false
@@ -55,27 +64,41 @@ internal class VeilDirectionalNavigationInputListener(
     private fun goLeft(): Boolean =
         when (navigator.overflow.value.readingProgression) {
             ReadingProgression.LTR ->
-                navigate { navigator.goBackward(animated = isAnimated()) }
+                navigate(PaperCurlSide.LEFT) {
+                    navigator.goBackward(animated = isAnimated())
+                }
             ReadingProgression.RTL ->
-                navigate { navigator.goForward(animated = isAnimated()) }
+                navigate(PaperCurlSide.LEFT) {
+                    navigator.goForward(animated = isAnimated())
+                }
         }
 
     private fun goRight(): Boolean =
         when (navigator.overflow.value.readingProgression) {
             ReadingProgression.LTR ->
-                navigate { navigator.goForward(animated = isAnimated()) }
+                navigate(PaperCurlSide.RIGHT) {
+                    navigator.goForward(animated = isAnimated())
+                }
             ReadingProgression.RTL ->
-                navigate { navigator.goBackward(animated = isAnimated()) }
+                navigate(PaperCurlSide.RIGHT) {
+                    navigator.goBackward(animated = isAnimated())
+                }
         }
 
-    private inline fun navigate(block: () -> Boolean): Boolean {
+    private inline fun navigate(
+        side: PaperCurlSide,
+        block: () -> Boolean
+    ): Boolean {
         val committed = block()
-        if (committed) onNavigationCommitted()
+        if (committed) {
+            onNavigationCommitted()
+        } else {
+            onBoundaryHit(side)
+        }
         return committed
     }
 
     private companion object {
-        const val MIN_EDGE_PX = 80.0
-        const val EDGE_FRACTION = 0.30
+        const val EDGE_FRACTION = 0.22f
     }
 }

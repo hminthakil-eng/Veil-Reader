@@ -24,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -74,6 +75,7 @@ internal fun ReaderBrightnessControls(
     val customBrightness = appearance.screenBrightness
     val systemBrightnessLabel = stringResource(R.string.reader_system_brightness)
     val readingBrightnessLabel = stringResource(R.string.settings_brightness)
+    val formatPercent = rememberVeilPercentFormatter()
     var draft by remember(customBrightness) {
         mutableFloatStateOf((customBrightness ?: 0.5).toFloat())
     }
@@ -146,7 +148,7 @@ internal fun ReaderBrightnessControls(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${(draft * 100).toInt()}%",
+                    formatPercent(draft),
                     style = MaterialTheme.typography.labelMedium,
                     color = VeilPalette.Brass
                 )
@@ -161,6 +163,7 @@ internal fun ReaderBrightnessControls(
                 valueRange = 0.05f..1f,
                 modifier = Modifier.semantics {
                     contentDescription = readingBrightnessLabel
+                    stateDescription = formatPercent(draft)
                 }
             )
         }

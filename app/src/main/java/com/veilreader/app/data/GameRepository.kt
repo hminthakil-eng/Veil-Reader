@@ -17,6 +17,9 @@ import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
+internal fun completionEvidenceFloor(finishedBooks: Int, sealedBooks: Int): Int =
+    maxOf(finishedBooks, sealedBooks, 0)
+
 /** Persistent, offline-first reading progression.
  *
  * XP is supportive feedback only. Path rank advancement still requires ritual progress, preserving
@@ -79,6 +82,19 @@ class GameRepository(context: Context) {
 
     fun syncExistingHighlights(count: Int) {
         if (count > prefs.getInt("totalHighlights", 0)) prefs.edit().putInt("totalHighlights", count).apply()
+        publish()
+    }
+
+    /**
+     * Restored/legacy libraries can contain completion history that predates game prefs.
+     * Treat durable library evidence as a floor; never revoke historical completion credit when
+     * a finished volume is later removed from the local shelf.
+     */
+    fun syncExistingBookCompletions(finishedBooks: Int, sealedBooks: Int) {
+        val evidence = completionEvidenceFloor(finishedBooks, sealedBooks)
+        if (evidence > prefs.getInt("booksFinished", 0)) {
+            prefs.edit().putInt("booksFinished", evidence).apply()
+        }
         publish()
     }
 
@@ -255,9 +271,15 @@ class GameRepository(context: Context) {
             else -> 1
         }
         val readingDaysTotal = prefs.getInt("readingDaysTotal", 0).coerceAtLeast(0) + 1
+        val longestStreak = maxOf(
+            prefs.getInt("longestStreakDays", 0),
+            prefs.getInt("streakDays", 0),
+            streak
+        )
         prefs.edit()
             .putString("lastReadDate", todayString)
             .putInt("streakDays", streak)
+            .putInt("longestStreakDays", longestStreak)
             .putInt("readingDaysTotal", readingDaysTotal)
             .apply()
     }
@@ -306,7 +328,19 @@ class GameRepository(context: Context) {
         if (prefs.getInt("streakDays", 0) >= 7) earned.add("seven_days")
         if (p.booksFinished >= 10) earned.add("ten_tomes")
         if (p.rankIndex >= 1) earned.add("first_threshold")
-        prefs.edit().putStringSet("earnedSigils", earned).apply()
+
+        val discoveries = prefs.getStringSet("earnedDiscoveries", emptySet()).orEmpty().toMutableSet()
+        if ("seven_days" in earned && p.minutesRead >= 600) discoveries.add("patient_flame")
+        if ("passage_keeper" in earned && p.pagesRead >= 1_000) discoveries.add("marginalia_gate")
+        if (p.booksFinished >= 10 && p.rankIndex >= 1) discoveries.add("deep_shelf")
+        if (p.minutesRead >= 3_000) discoveries.add("long_watch")
+        if (earned.size >= 4) discoveries.add("veil_thins")
+        if (p.rankIndex >= 3 && earned.size >= 5) discoveries.add("unnamed_chamber")
+
+        prefs.edit()
+            .putStringSet("earnedSigils", earned)
+            .putStringSet("earnedDiscoveries", discoveries)
+            .apply()
         _profile.value = buildProfile()
         _quests.value = buildQuests()
         _dailyGoalMinutes.value = readDailyGoal()
@@ -419,6 +453,10 @@ class GameRepository(context: Context) {
             ritualProgress = ritualProgress,
             ritualTarget = ritualTarget,
             earnedSigils = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toSet(),
+            longestStreakDays = maxOf(
+                prefs.getInt("longestStreakDays", 0),
+                prefs.getInt("streakDays", 0)
+            ),
             earnedDiscoveries = prefs.getStringSet("earnedDiscoveries", emptySet()).orEmpty().toSet(),
             ritualAftermath = ritualAftermath,
             pathMastery = pathMastery

@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -40,30 +41,20 @@ import java.util.Date
 
 private data class VeiledDiscovery(
     val id: String,
-    val symbol: String,
-    val revealed: (ReaderProfile, Int) -> Boolean
+    val symbol: String
 )
 
 private val veiledDiscoveries = listOf(
-    VeiledDiscovery("patient_flame", "◈") { profile, _ ->
-        profile.streakDays >= 7 && profile.minutesRead >= 600
-    },
-    VeiledDiscovery("marginalia_gate", "✧") { profile, highlights ->
-        highlights >= 10 && profile.pagesRead >= 1_000
-    },
-    VeiledDiscovery("deep_shelf", "▥") { profile, _ ->
-        profile.booksFinished >= 10 && profile.rankIndex >= 1
-    },
-    VeiledDiscovery("long_watch", "◐") { profile, _ ->
-        profile.minutesRead >= 3_000
-    },
-    VeiledDiscovery("veil_thins", "⌁") { profile, _ ->
-        profile.earnedSigils.size >= 4
-    },
-    VeiledDiscovery("unnamed_chamber", "⬡") { profile, _ ->
-        profile.rankIndex >= 3 && profile.earnedSigils.size >= 5
-    }
+    VeiledDiscovery("patient_flame", "◈"),
+    VeiledDiscovery("marginalia_gate", "✧"),
+    VeiledDiscovery("deep_shelf", "▥"),
+    VeiledDiscovery("long_watch", "◐"),
+    VeiledDiscovery("veil_thins", "⌁"),
+    VeiledDiscovery("unnamed_chamber", "⬡")
 )
+
+private fun VeiledDiscovery.isRevealed(profile: ReaderProfile): Boolean =
+    id in profile.earnedDiscoveries
 
 @Composable
 fun ProfileScreen(
@@ -82,7 +73,7 @@ fun ProfileScreen(
     val p = profile
     val pathName = localizedPathName(p.path)
     val rankName = localizedRankName(p.path.id, p.rankIndex, p.rankName)
-    val revealedDiscoveries = veiledDiscoveries.count { it.revealed(p, highlightCount) }
+    val revealedDiscoveries = veiledDiscoveries.count { it.isRevealed(p) }
     val dossierHistory = remember(books, readingSessions, readingCycles) {
         deriveReaderDossierHistory(
             books = books,
@@ -102,6 +93,7 @@ fun ProfileScreen(
     ) {
     Column(
         Modifier
+            .widthIn(max = 920.dp)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
@@ -109,7 +101,7 @@ fun ProfileScreen(
     ) {
         ScreenHeader(
             eyebrow = stringResource(R.string.profile_header_eyebrow),
-            title = castleTitle,
+            title = localizedCastleTitle(p, castleTitle),
             subtitle = "$pathName · $rankName"
         )
 
@@ -187,7 +179,7 @@ fun ProfileScreen(
             listOf(
                 "first_hour" to (p.minutesRead to 60),
                 "passage_keeper" to (highlightCount to 10),
-                "seven_days" to (p.streakDays to 7),
+                "seven_days" to (p.longestStreakDays to 7),
                 "ten_tomes" to (p.booksFinished to 10),
                 "first_threshold" to (p.rankIndex to 1)
             ).forEachIndexed { index, (id, progress) ->
@@ -231,7 +223,7 @@ fun ProfileScreen(
                 DiscoveryCard(
                     index = index,
                     discovery = discovery,
-                    revealed = discovery.revealed(p, highlightCount)
+                    revealed = discovery.isRevealed(p)
                 )
             }
         }
@@ -395,6 +387,7 @@ internal fun deriveReaderDossierHistory(
 
 @Composable
 private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    val formatInteger = rememberVeilIntegerFormatter()
     val startDate = formatDossierDate(history.firstRecordedAtEpochMs)
     val endDate = formatDossierDate(history.latestRecordedAtEpochMs)
     Column(
@@ -439,15 +432,15 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         )
         DossierLedgerLine(
             label = stringResource(R.string.profile_completion_records),
-            value = history.completionCycleCount.toString()
+            value = formatInteger(history.completionCycleCount)
         )
         DossierLedgerLine(
             label = stringResource(R.string.profile_reread_cycles),
-            value = history.rereadCycleCount.toString()
+            value = formatInteger(history.rereadCycleCount)
         )
         DossierLedgerLine(
             label = stringResource(R.string.profile_archived_volumes),
-            value = history.archivedVolumeCount.toString()
+            value = formatInteger(history.archivedVolumeCount)
         )
 
         Text(
@@ -484,14 +477,16 @@ private fun DossierLedgerLine(
 }
 
 @Composable
-private fun formatDossierDate(epochMs: Long?): String =
-    epochMs
+private fun formatDossierDate(epochMs: Long?): String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale) { DateFormat.getDateInstance(DateFormat.MEDIUM, locale) }
+    return epochMs
         ?.takeIf { it > 0L }
         ?.let {
-            DateFormat.getDateInstance(DateFormat.MEDIUM)
-                .format(Date(it))
+            formatter.format(Date(it))
         }
         ?: stringResource(R.string.profile_no_record)
+}
 
 @Composable
 private fun formatDossierDuration(activeMillis: Long): String {
@@ -520,6 +515,7 @@ private fun ArchivistDossierPanel(
     totalDiscoveries: Int,
     onOpenSettings: () -> Unit
 ) {
+    val formatInteger = rememberVeilIntegerFormatter()
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val identity = localizedPathIdentity(profile.path)
@@ -607,10 +603,10 @@ private fun ArchivistDossierPanel(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     DossierFact(stringResource(R.string.profile_fact_path), pathName)
-                    DossierFact(stringResource(R.string.profile_fact_level), profile.level.toString())
+                    DossierFact(stringResource(R.string.profile_fact_level), formatInteger(profile.level))
                     DossierFact(
                         stringResource(R.string.profile_fact_castle_tier),
-                        (profile.rankIndex + 1).toString()
+                        formatInteger(profile.rankIndex + 1)
                     )
                     equippedSigilName?.let {
                         DossierFact(stringResource(R.string.profile_fact_equipped_sigil), it)
@@ -728,6 +724,7 @@ private fun DossierBackdrop(
 
 @Composable
 private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
+    val formatInteger = rememberVeilIntegerFormatter(minimumDigits = 2)
     Box(modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -758,7 +755,7 @@ private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
         }
 
         Text(
-            rank.toString().padStart(2, '0'),
+            formatInteger(rank),
             style = MaterialTheme.typography.titleLarge,
             color = VeilPalette.Brass
         )
@@ -775,14 +772,13 @@ private fun DossierFact(label: String, value: String) {
             label,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
             color = VeilPalette.Mist.copy(alpha = 0.66f),
-            modifier = Modifier.width(82.dp)
+            modifier = Modifier.weight(0.34f)
         )
         Text(
             value,
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Moon,
-            modifier = Modifier.weight(1f),
-            maxLines = 1
+            modifier = Modifier.weight(0.66f)
         )
     }
 }
@@ -792,6 +788,7 @@ private fun DossierRecordGrid(
     profile: ReaderProfile,
     highlightCount: Int
 ) {
+    val formatInteger = rememberVeilIntegerFormatter()
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             DossierStat(
@@ -802,13 +799,13 @@ private fun DossierRecordGrid(
             )
             DossierStat(
                 stringResource(R.string.profile_stat_volumes),
-                profile.booksFinished.toString(),
+                formatInteger(profile.booksFinished),
                 stringResource(R.string.profile_stat_finished),
                 Modifier.weight(1f)
             )
             DossierStat(
                 stringResource(R.string.profile_stat_marks),
-                highlightCount.toString(),
+                formatInteger(highlightCount),
                 stringResource(R.string.profile_stat_highlights),
                 Modifier.weight(1f)
             )
@@ -816,7 +813,7 @@ private fun DossierRecordGrid(
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             DossierStat(
                 stringResource(R.string.profile_stat_pages),
-                profile.pagesRead.toString(),
+                formatInteger(profile.pagesRead),
                 stringResource(R.string.profile_stat_turned),
                 Modifier.weight(1f)
             )
@@ -828,7 +825,7 @@ private fun DossierRecordGrid(
             )
             DossierStat(
                 stringResource(R.string.profile_stat_tier),
-                (profile.rankIndex + 1).toString(),
+                formatInteger(profile.rankIndex + 1),
                 stringResource(R.string.profile_stat_castle),
                 Modifier.weight(1f)
             )
@@ -1056,3 +1053,4 @@ private fun formatMinutes(minutes: Int): String =
             stringResource(R.string.profile_duration_hours_minutes, hours, rest)
         }
     }
+

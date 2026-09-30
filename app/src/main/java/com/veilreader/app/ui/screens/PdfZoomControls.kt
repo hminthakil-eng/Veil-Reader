@@ -34,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ internal fun PdfZoomControls(
     navigator: Navigator?,
     appearance: ReaderAppearance,
     onAppearanceChange: (ReaderAppearance) -> Unit,
+    reducedMotion: Boolean = false,
     modifier: Modifier = Modifier,
     onDone: () -> Unit
 ) {
@@ -73,6 +75,7 @@ internal fun PdfZoomControls(
     val zoomOutSemantics = stringResource(R.string.pdf_zoom_out)
     val zoomInSemantics = stringResource(R.string.pdf_zoom_in)
     val zoomResetSemantics = stringResource(R.string.pdf_zoom_reset)
+    val formatPercent = rememberVeilPercentFormatter()
 
     val view = pdfView
     var zoomMirror by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
@@ -233,7 +236,7 @@ internal fun PdfZoomControls(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    "${(displayedZoom * 100).toInt()}%",
+                    formatPercent(displayedZoom),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface
                 )
@@ -249,6 +252,7 @@ internal fun PdfZoomControls(
                 valueRange = minZoom..maxZoom,
                 modifier = Modifier.semantics {
                     contentDescription = zoomSemantics
+                    stateDescription = formatPercent(displayedZoom)
                 }
             )
 
@@ -265,7 +269,12 @@ internal fun PdfZoomControls(
                             max = maxZoom,
                             factor = 0.8f
                         )
-                        view.zoomWithAnimation(requested)
+                        if (shouldAnimatePdfZoom(reducedMotion)) {
+                            view.zoomWithAnimation(requested)
+                        } else {
+                            view.zoomTo(requested)
+                            zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                        }
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -281,7 +290,14 @@ internal fun PdfZoomControls(
                 }
 
                 OutlinedButton(
-                    onClick = { view.resetZoomWithAnimation() },
+                    onClick = {
+                        if (shouldAnimatePdfZoom(reducedMotion)) {
+                            view.resetZoomWithAnimation()
+                        } else {
+                            view.zoomTo(normalizedPdfZoom(1f, minZoom, maxZoom))
+                            zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                        }
+                    },
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
@@ -292,7 +308,7 @@ internal fun PdfZoomControls(
                         VeilPalette.Brass.copy(alpha = 0.44f)
                     )
                 ) {
-                    Text("100%")
+                    Text(formatPercent(1f))
                 }
 
                 OutlinedButton(
@@ -303,7 +319,12 @@ internal fun PdfZoomControls(
                             max = maxZoom,
                             factor = 1.25f
                         )
-                        view.zoomWithAnimation(requested)
+                        if (shouldAnimatePdfZoom(reducedMotion)) {
+                            view.zoomWithAnimation(requested)
+                        } else {
+                            view.zoomTo(requested)
+                            zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
+                        }
                     },
                     modifier = Modifier
                         .weight(1f)
@@ -359,6 +380,9 @@ internal fun PdfZoomControls(
         }
     }
 }
+
+internal fun shouldAnimatePdfZoom(reducedMotion: Boolean): Boolean =
+    !reducedMotion
 
 internal fun normalizedPdfZoom(
     current: Float,

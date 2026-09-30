@@ -293,4 +293,117 @@ class PaperCurlGeometryTest {
         assertTrue(deepCenter < shallowCenter)
         assertTrue(deep.top != deep.bottom)
     }
+    @Test
+    fun `paper curl waits for deliberate movement before lifting the sheet`() {
+        assertFalse(
+            hasDeliberatePaperIntent(
+                offsetX = 12f,
+                offsetY = 1f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertFalse(
+            hasDeliberatePaperIntent(
+                offsetX = 34f,
+                offsetY = 33f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertTrue(
+            hasDeliberatePaperIntent(
+                offsetX = 34f,
+                offsetY = 12f,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+    }
+
+    @Test
+    fun `paper and slide intent remain distinct rather than sharing accidental thresholds`() {
+        val x = 28f
+        val y = 4f
+        assertTrue(
+            hasDeliberatePaperIntent(
+                offsetX = x,
+                offsetY = y,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+        assertFalse(
+            hasDeliberateSlideIntent(
+                offsetX = x,
+                offsetY = y,
+                width = 1_000f,
+                density = 3f
+            )
+        )
+    }
+
+    @Test
+    fun `paper edge pull permits a natural diagonal while body swipe stays horizontal`() {
+        val body = hasDeliberatePaperIntent(
+            offsetX = 30f,
+            offsetY = 36f,
+            width = 1_000f,
+            density = 3f,
+            startsAtEdge = false
+        )
+        val edge = hasDeliberatePaperIntent(
+            offsetX = 30f,
+            offsetY = 36f,
+            width = 1_000f,
+            density = 3f,
+            startsAtEdge = true
+        )
+
+        assertFalse(body)
+        assertTrue(edge)
+    }
+
+    @Test
+    fun `paper edge intent still rejects mostly vertical pulls`() {
+        assertFalse(
+            hasDeliberatePaperIntent(
+                offsetX = 24f,
+                offsetY = 70f,
+                width = 1_000f,
+                density = 3f,
+                startsAtEdge = true
+            )
+        )
+    }
+
+    @Test
+    fun `edge grip increases smoothly only near the physical page edge`() {
+        assertEquals(0f, paperEdgeGrip(500f, 1_000f), 0.0001f)
+        assertEquals(0f, paperEdgeGrip(700f, 1_000f), 0.0001f)
+        assertTrue(paperEdgeGrip(850f, 1_000f) > 0f)
+        assertEquals(1f, paperEdgeGrip(1_000f, 1_000f), 0.0001f)
+        assertEquals(0f, paperEdgeGrip(900f, 0f), 0.0001f)
+    }
+
+    @Test
+    fun `physical boundary side mirrors turn direction across reading progression`() {
+        assertEquals(
+            PaperCurlSide.RIGHT,
+            paperTurnSideFor(PaperTurnDirection.FORWARD, ReadingProgression.LTR)
+        )
+        assertEquals(
+            PaperCurlSide.LEFT,
+            paperTurnSideFor(PaperTurnDirection.BACKWARD, ReadingProgression.LTR)
+        )
+        assertEquals(
+            PaperCurlSide.LEFT,
+            paperTurnSideFor(PaperTurnDirection.FORWARD, ReadingProgression.RTL)
+        )
+        assertEquals(
+            PaperCurlSide.RIGHT,
+            paperTurnSideFor(PaperTurnDirection.BACKWARD, ReadingProgression.RTL)
+        )
+    }
+
 }

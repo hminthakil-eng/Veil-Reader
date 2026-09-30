@@ -9,6 +9,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
@@ -85,4 +86,51 @@ class SettingsStoreInstrumentedTest {
             store.saveReaderAppearance(ReaderAppearance())
         }
     }
+    @Test
+    fun fixedLayoutSpreadOverride_isPublicationSpecific_andAutoRemovesOverride() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val firstBook = "spread-test-a"
+        val secondBook = "spread-test-b"
+
+        try {
+            store.saveFixedLayoutSpread(firstBook, ReaderFixedLayoutSpread.DUAL)
+            store.saveFixedLayoutSpread(secondBook, ReaderFixedLayoutSpread.SINGLE)
+
+            val saved = SettingsStore(context).settings.first()
+            assertEquals(
+                ReaderFixedLayoutSpread.DUAL,
+                saved.fixedLayoutSpreads[firstBook]
+            )
+            assertEquals(
+                ReaderFixedLayoutSpread.SINGLE,
+                saved.fixedLayoutSpreads[secondBook]
+            )
+
+            store.saveFixedLayoutSpread(firstBook, ReaderFixedLayoutSpread.AUTO)
+            val afterAuto = SettingsStore(context).settings.first()
+            assertEquals(null, afterAuto.fixedLayoutSpreads[firstBook])
+            assertEquals(
+                ReaderFixedLayoutSpread.SINGLE,
+                afterAuto.fixedLayoutSpreads[secondBook]
+            )
+        } finally {
+            store.saveFixedLayoutSpread(firstBook, ReaderFixedLayoutSpread.AUTO)
+            store.saveFixedLayoutSpread(secondBook, ReaderFixedLayoutSpread.AUTO)
+        }
+    }
+
+    @Test
+    fun malformedSpreadPreferencePayload_failsCalm() {
+        assertEquals(emptyMap<String, ReaderFixedLayoutSpread>(), decodeFixedLayoutSpreadOverrides(null))
+        assertEquals(emptyMap<String, ReaderFixedLayoutSpread>(), decodeFixedLayoutSpreadOverrides("{bad"))
+
+        val decoded = decodeFixedLayoutSpreadOverrides(
+            """{"book-a":"DUAL","book-b":"SINGLE","book-c":"AUTO","bad":"UNKNOWN"}"""
+        )
+        assertEquals(2, decoded.size)
+        assertEquals(ReaderFixedLayoutSpread.DUAL, decoded["book-a"])
+        assertEquals(ReaderFixedLayoutSpread.SINGLE, decoded["book-b"])
+    }
+
 }
