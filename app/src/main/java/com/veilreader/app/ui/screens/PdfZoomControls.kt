@@ -3,8 +3,10 @@ package com.veilreader.app.ui.screens
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +23,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -119,44 +123,64 @@ internal fun PdfZoomControls(
         )
 
         Row(
-            Modifier.fillMaxWidth().selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            Modifier
+                .fillMaxWidth()
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             listOf(
                 false to pageLabel,
                 true to scrollLabel
             ).forEach { (scrollMode, label) ->
                 val selected = appearance.scroll == scrollMode
-                Surface(
+
+                Box(
                     modifier = Modifier
                         .weight(1f)
-                        .heightIn(min = 72.dp)
+                        .heightIn(min = 68.dp)
                         .selectable(
                             selected = selected,
                             role = Role.RadioButton
                         ) {
-                            onAppearanceChange(appearance.copy(scroll = scrollMode))
+                            onAppearanceChange(
+                                appearance
+                                    .withNavigationMode(
+                                        if (scrollMode) {
+                                            ReaderNavigationMode.SCROLL
+                                        } else {
+                                            ReaderNavigationMode.PAGED
+                                        }
+                                    )
+                            )
                         }
                         .semantics {
                             contentDescription =
                                 if (scrollMode) scrollSemantics else pageSemantics
-                        },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilPalette.DeepBrass.copy(alpha = 0.76f)
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.82f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                    ),
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
+                        }
+                        .background(
+                            if (selected) {
+                                VeilPalette.Archive.copy(alpha = 0.30f)
+                            } else {
+                                Color.Transparent
+                            }
+                        )
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
+                    Canvas(Modifier.matchParentSize()) {
+                        drawLine(
+                            color = if (selected) {
+                                VeilPalette.Brass
+                            } else {
+                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
+                            },
+                            start = Offset(0f, size.height - 1.dp.toPx()),
+                            end = Offset(size.width, size.height - 1.dp.toPx()),
+                            strokeWidth = if (selected) 1.5.dp.toPx() else 1.dp.toPx()
+                        )
+                    }
+
                     Column(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
@@ -174,8 +198,11 @@ internal fun PdfZoomControls(
                         Text(
                             label.uppercase(),
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (selected) VeilPalette.Moon
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                            color = if (selected) {
+                                VeilPalette.Brass
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                     }
                 }
@@ -195,17 +222,29 @@ internal fun PdfZoomControls(
         BrassRule(Modifier.fillMaxWidth())
 
         if (view == null) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraSmall,
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-                )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(VeilPalette.Ink.copy(alpha = 0.18f))
+                    .padding(VeilSpacing.md)
             ) {
+                Canvas(Modifier.matchParentSize()) {
+                    drawLine(
+                        color = VeilPalette.Brass.copy(alpha = 0.70f),
+                        start = Offset(0f, 0f),
+                        end = Offset(0f, size.height),
+                        strokeWidth = 2.dp.toPx()
+                    )
+                    drawLine(
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+
                 Column(
-                    modifier = Modifier.padding(VeilSpacing.md),
+                    modifier = Modifier.padding(start = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     Text(
@@ -261,7 +300,7 @@ internal fun PdfZoomControls(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                OutlinedButton(
+                TextButton(
                     onClick = {
                         val requested = nextPdfZoom(
                             current = normalizedPdfZoom(view.zoom, minZoom, maxZoom),
@@ -280,16 +319,14 @@ internal fun PdfZoomControls(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                         .semantics { contentDescription = zoomOutSemantics },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f)
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     )
                 ) {
                     Text("−", style = MaterialTheme.typography.titleLarge)
                 }
 
-                OutlinedButton(
+                TextButton(
                     onClick = {
                         if (shouldAnimatePdfZoom(reducedMotion)) {
                             view.resetZoomWithAnimation()
@@ -302,16 +339,14 @@ internal fun PdfZoomControls(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                         .semantics { contentDescription = zoomResetSemantics },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        VeilPalette.Brass.copy(alpha = 0.44f)
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = VeilPalette.Brass
                     )
                 ) {
                     Text(formatPercent(1f))
                 }
 
-                OutlinedButton(
+                TextButton(
                     onClick = {
                         val requested = nextPdfZoom(
                             current = normalizedPdfZoom(view.zoom, minZoom, maxZoom),
@@ -330,17 +365,15 @@ internal fun PdfZoomControls(
                         .weight(1f)
                         .heightIn(min = 48.dp)
                         .semantics { contentDescription = zoomInSemantics },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f)
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurface
                     )
                 ) {
                     Text("+", style = MaterialTheme.typography.titleLarge)
                 }
             }
 
-            Button(
+            TextButton(
                 onClick = {
                     view.fitToWidth(view.currentPage)
                     zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
@@ -348,10 +381,8 @@ internal fun PdfZoomControls(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.DeepBrass.copy(alpha = 0.78f),
-                    contentColor = VeilPalette.Moon
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = VeilPalette.Brass
                 )
             ) {
                 Text(stringResource(R.string.pdf_fit_width))
@@ -365,18 +396,32 @@ internal fun PdfZoomControls(
             onChange = onAppearanceChange
         )
 
-        Button(
+        Surface(
             onClick = onDone,
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 52.dp),
             shape = MaterialTheme.shapes.extraSmall,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VeilPalette.Brass,
-                contentColor = Color(0xFF17120A)
+            color = VeilPalette.ReaderPaper,
+            contentColor = VeilPalette.InkOnPaper,
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp,
+            border = BorderStroke(
+                1.dp,
+                VeilPalette.Brass.copy(alpha = 0.78f)
             )
         ) {
-            Text(stringResource(R.string.reader_back_to_reading))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = VeilSpacing.md, vertical = 13.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    stringResource(R.string.reader_back_to_reading),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
         }
     }
 }
