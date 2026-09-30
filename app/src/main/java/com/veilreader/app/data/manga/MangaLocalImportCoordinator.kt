@@ -1203,6 +1203,15 @@ class MangaLocalImportCoordinator(
      */
     suspend fun deleteImportedManga(bookId: String): Result<Book?> = runCatching {
         require(bookId.isNotBlank())
+        database.mangaMerges().findForTarget(bookId)?.let { activeMerge ->
+            // Deleting a merged target first performs the same reversible split used by the UI.
+            // Source Books become visible again and remain untouched; only then is the target
+            // publication itself eligible for permanent removal.
+            splitCommittedMerge(activeMerge.merge.id)
+        }
+        require(database.mangaMerges().findForSource(bookId) == null) {
+            "A hidden Manga merge source must be split before permanent deletion"
+        }
         val book = library.getBook(bookId)
             ?: return@runCatching null
         val chapters = database.mangaCatalog().listChapters(bookId)
