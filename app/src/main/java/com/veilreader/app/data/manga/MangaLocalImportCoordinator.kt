@@ -405,6 +405,7 @@ class MangaLocalImportCoordinator(
         direction: Int
     ): Result<Int> = runCatching {
         require(direction == -1 || direction == 1)
+        requireMangaStructureMutable(bookId)
         val chapters = database.mangaCatalog().listChapters(bookId)
         val current = chapters.firstOrNull { it.id == chapterId }
             ?: error("Manga chapter is not present")
@@ -448,6 +449,7 @@ class MangaLocalImportCoordinator(
         bookId: String,
         chapterId: String
     ): Result<Unit> = runCatching {
+        requireMangaStructureMutable(bookId)
         val book = library.getBook(bookId)
             ?: error("Manga Book is not present in the Library")
         require(book.format == BookFormat.COMIC)
@@ -1395,6 +1397,7 @@ class MangaLocalImportCoordinator(
         metadata: MangaLocalChapterMetadata? = null
     ): Result<MangaLocalChapterImportResult> = runCatching {
         require(bookId.isNotBlank())
+        requireMangaStructureMutable(bookId)
         require(canImport(uri)) { "The selected document is not a CBZ publication" }
 
         val book = library.getBook(bookId)
@@ -1755,6 +1758,77 @@ class MangaLocalImportCoordinator(
                 it.toPath().startsWith(root.toPath()) && it.isFile
             }
         }.getOrNull()
+    }
+
+    private suspend fun copyVerifiedArchiveToTarget(
+        targetBook: Book,
+        sourceArchive: File,
+        fingerprint: String
+    ): CopiedMergeArchive = withContext(Dispatchers.IO) {
+        require(sourceArchive.isFile) { "Merge source archive is missing" }
+        require(sha256(sourceArchive).equals(fingerprint, ignoreCase = true)) {
+            "Merge source archive fingerprint changed before copy"
+        }
+
+        val primary = requireAppPrivatePublication(targetBook)
+        val root = File(appContext.filesDir, "publications").canonicalFile
+        val directory = File(primary.parentFile, "manga/" + targetBook.id).canonicalFile
+        require(directory.toPath().startsWith(root.toPath())) {
+            "Derived Manga merge archive directory escaped app-private publications"
+        }
+        check(directory.mkdirs() || directory.isDirectory) {
+            "Could not create target Manga merge archive directory"
+        }
+
+        val target = File(directory, fingerprint + ".cbz").canonicalFile
+        require(target.toPath().startsWith(root.toPath())) {
+            "Derived Manga merge archive path escaped app-private publications"
+        }
+        val temporary = File(
+            directory,
+            fingerprint + ".merge-" + UUID.randomUUID() + ".partial"
+        ).canonicalFile
+        require(temporary.toPath().startsWith(root.toPath()))
+
+        try {
+            sourceArchive.inputStream().buffered().use { input ->
+                temporary.outputStream().buffered().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            check(temporary.length() == sourceArchive.length() && temporary.length() > 0L) {
+                "Merged Manga archive copy length mismatch"
+            }
+            check(sha256(temporary).equals(fingerprint, ignoreCase = true)) {
+                "Merged Manga archive copy failed SHA-256 verification"
+            }
+            if (target.exists()) {
+                check(target.delete()) {
+                    "Could not replace stale target Manga merge archive"
+                }
+            }
+            if (!temporary.renameTo(target)) {
+                temporary.inputStream().use { input ->
+                    target.outputStream().use { output -> input.copyTo(output) }
+                }
+                check(
+                    target.length() == sourceArchive.length() &&
+                        sha256(target).equals(fingerprint, ignoreCase = true)
+                ) {
+                    target.delete()
+                    "Could not verify committed Manga merge archive"
+                }
+                temporary.delete()
+            }
+            CopiedMergeArchive(
+                file = target,
+                createdByMerge = true
+            )
+        } catch (error: Throwable) {
+            temporary.delete()
+            target.takeIf(File::exists)?.let(::deleteConfinedPublicationFile)
+            throw error
+        }
     }
 
     private suspend fun commitAdditionalArchive(
