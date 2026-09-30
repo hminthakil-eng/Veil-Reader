@@ -39,6 +39,7 @@ data class SensorySettings(
 
 data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    val highContrastEnabled: Boolean = false,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
@@ -51,6 +52,7 @@ data class AppSettings(
 class SettingsStore(private val context: Context) {
     private object Keys {
         val appThemeMode = stringPreferencesKey("app_theme_mode")
+        val highContrastEnabled = booleanPreferencesKey("accessibility_high_contrast")
         val theme = stringPreferencesKey("reader_theme")
         val fontScale = doublePreferencesKey("reader_font_scale")
         val lineHeight = doublePreferencesKey("reader_line_height")
@@ -89,6 +91,7 @@ class SettingsStore(private val context: Context) {
             appThemeMode = runCatching {
                 AppThemeMode.valueOf(prefs[Keys.appThemeMode] ?: AppThemeMode.SYSTEM.name)
             }.getOrDefault(AppThemeMode.SYSTEM),
+            highContrastEnabled = prefs[Keys.highContrastEnabled] ?: false,
             readerAppearance = ReaderAppearance(
                 theme = runCatching {
                     ReaderTheme.valueOf(prefs[Keys.theme] ?: ReaderTheme.PAPER.name)
@@ -184,6 +187,10 @@ class SettingsStore(private val context: Context) {
 
     suspend fun setAppThemeMode(mode: AppThemeMode) {
         context.veilSettingsDataStore.edit { it[Keys.appThemeMode] = mode.name }
+    }
+
+    suspend fun setHighContrastEnabled(enabled: Boolean) {
+        context.veilSettingsDataStore.edit { it[Keys.highContrastEnabled] = enabled }
     }
 
     suspend fun saveReaderAppearance(value: ReaderAppearance) {
