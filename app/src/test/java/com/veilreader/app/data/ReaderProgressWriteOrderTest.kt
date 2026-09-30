@@ -47,9 +47,9 @@ class ReaderProgressWriteOrderTest {
     }
 
     @Test
-    fun sameLogicalOrderIsIdempotentlyReplaceable() {
+    fun duplicateLogicalOrderCannotReplaceCanonicalAcceptedWrite() {
         val order = ReaderProgressWriteOrder(epoch = 8L, sequence = 5L)
-        assertTrue(shouldReplacePendingProgress(current = order, incoming = order))
+        assertFalse(shouldReplacePendingProgress(current = order, incoming = order))
     }
 
     @Test
