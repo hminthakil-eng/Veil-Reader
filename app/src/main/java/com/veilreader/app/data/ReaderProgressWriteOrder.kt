@@ -12,6 +12,10 @@ internal data class ReaderProgressWriterLease(
     val epoch: Long
 )
 
+/**
+ * Monotonicity applies to write ownership/order, never to the numeric reading progression itself.
+ * Moving backward in a book is a valid newer state and must remain persistable.
+ */
 internal data class ReaderProgressWriteOrder(
     val epoch: Long,
     val sequence: Long
