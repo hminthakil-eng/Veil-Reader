@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -18,6 +19,7 @@ class VeilAppViewModelTest {
         first.requestBook("book-42", "{\"href\":\"chapter.xhtml\"}")
 
         assertEquals("book-42", first.route.value.activeBookId)
+        val readerSessionId = requireNotNull(first.route.value.readerSessionInstanceId)
         assertEquals("{\"href\":\"chapter.xhtml\"}", first.route.value.locatorOverrideJson)
         assertEquals("{\"href\":\"chapter.xhtml\"}", first.route.value.readerLocatorCheckpointJson)
         assertFalse(first.route.value.showArchive)
@@ -25,6 +27,7 @@ class VeilAppViewModelTest {
         val recreated = VeilAppViewModel(handle)
         assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
         assertEquals("book-42", recreated.route.value.activeBookId)
+        assertEquals(readerSessionId, recreated.route.value.readerSessionInstanceId)
         assertEquals("{\"href\":\"chapter.xhtml\"}", recreated.route.value.locatorOverrideJson)
         assertEquals(
             "{\"href\":\"chapter.xhtml\"}",
@@ -39,8 +42,25 @@ class VeilAppViewModelTest {
         recreated.closeReader()
         assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
         assertNull(recreated.route.value.activeBookId)
+        assertNull(recreated.route.value.readerSessionInstanceId)
         assertNull(recreated.route.value.activeChamber)
         assertFalse(recreated.route.value.showArchive)
+    }
+
+    @Test
+    fun readerSessionIdentity_isStableForRecreation_butFreshForANewOpenRequest() {
+        val handle = SavedStateHandle()
+        val first = VeilAppViewModel(handle)
+
+        first.requestBook("book-session")
+        val firstSessionId = requireNotNull(first.route.value.readerSessionInstanceId)
+
+        val recreated = VeilAppViewModel(handle)
+        assertEquals(firstSessionId, recreated.route.value.readerSessionInstanceId)
+
+        recreated.requestBook("book-session")
+        val secondSessionId = requireNotNull(recreated.route.value.readerSessionInstanceId)
+        assertNotEquals(firstSessionId, secondSessionId)
     }
 
     @Test
