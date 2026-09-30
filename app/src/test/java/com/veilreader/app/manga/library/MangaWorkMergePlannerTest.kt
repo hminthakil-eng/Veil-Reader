@@ -41,6 +41,7 @@ class MangaWorkMergePlannerTest {
             listOf("s0", "s1"),
             plan.splitReceiptSeed.sourceSnapshots.single().chapters.map { it.chapterId }
         )
+        assertEquals("Work source", plan.splitReceiptSeed.sourceSnapshots.single().title)
     }
 
     @Test
@@ -115,6 +116,44 @@ class MangaWorkMergePlannerTest {
 
         assertEquals(
             MangaMergeRejection.DUPLICATE_BOOK_ID,
+            (result as MangaMergePlanResult.Rejected).reason
+        )
+    }
+
+    @Test
+    fun plan_rejectsChapterOwnedByDifferentBook() {
+        val target = member(
+            "target",
+            chapter("target", "t0", 0, "a".repeat(64), number = 1.0)
+        )
+        val source = member(
+            "source",
+            chapter("wrong-owner", "s0", 0, "b".repeat(64), number = 2.0)
+        )
+
+        val result = planner.plan(target, listOf(source))
+
+        assertEquals(
+            MangaMergeRejection.CHAPTER_OWNER_MISMATCH,
+            (result as MangaMergePlanResult.Rejected).reason
+        )
+    }
+
+    @Test
+    fun plan_rejectsDuplicateChapterIdAcrossBooks() {
+        val target = member(
+            "target",
+            chapter("target", "same-chapter", 0, "c".repeat(64), number = 1.0)
+        )
+        val source = member(
+            "source",
+            chapter("source", "same-chapter", 0, "d".repeat(64), number = 2.0)
+        )
+
+        val result = planner.plan(target, listOf(source))
+
+        assertEquals(
+            MangaMergeRejection.DUPLICATE_CHAPTER_ID,
             (result as MangaMergePlanResult.Rejected).reason
         )
     }
