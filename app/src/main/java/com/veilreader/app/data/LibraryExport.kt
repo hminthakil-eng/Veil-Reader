@@ -819,7 +819,7 @@ class LibraryExport(
         library.flushWrites()
     }
 
-    /** Restores current schema-5 backups and older schema-1/2/3/4 local backups. */
+    /** Restores current schema-6 backups and older schema-1/2/3/4/5 local backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-" + UUID.randomUUID()).apply {
             mkdirs()
@@ -840,12 +840,13 @@ class LibraryExport(
 
             val incoming = when (schema) {
                 1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
-                2, 3, 4, CURRENT_BACKUP_SCHEMA ->
+                2, 3, 4, 5, CURRENT_BACKUP_SCHEMA ->
                     LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
                 else -> error("Unsupported backup schema.")
             }
             val incomingMangaProgress = parseMangaRestorePoints(manifest)
             val incomingMangaChapters = parseMangaLocalChapters(manifest, stagingRoot)
+            val incomingMangaMerges = parseMangaMergeBackups(manifest)
             val incomingComicIds = incoming.books
                 .filter { it.format == BookFormat.COMIC }
                 .mapTo(mutableSetOf()) { it.id }
@@ -854,6 +855,17 @@ class LibraryExport(
             }
             require(incomingMangaChapters.keys.all(incomingComicIds::contains)) {
                 "Manga chapter archives reference a book that is not a comic in this backup."
+            }
+            incomingMangaMerges.forEach { merge ->
+                require(merge.targetBookId in incomingComicIds) {
+                    "Manga merge target is not a comic in this backup."
+                }
+                require(merge.members.all { it.sourceBookId in incomingComicIds }) {
+                    "Manga merge source is not a comic in this backup."
+                }
+                require(merge.members.none { it.sourceBookId == merge.targetBookId }) {
+                    "Manga merge backup cannot merge a Book into itself."
+                }
             }
             if (schema >= 5) {
                 incoming.books
@@ -915,9 +927,11 @@ class LibraryExport(
             val oldMangaChapters = captureMangaLocalChapters(oldLibrary.books)
                 .groupBy { it.bookId }
                 .mapValues { (_, chapters) -> chapters.sortedBy { it.readingOrder } }
+            val oldMangaMerges = captureMangaMergeBackups()
             val oldGame = gamePrefs.all.toMap()
 
             try {
+                database.mangaMerges().deleteAll()
                 library.replaceAll(restoredSnapshot)
                 resetMangaDerivedCache()
                 rebuildMangaBooks(
@@ -925,11 +939,13 @@ class LibraryExport(
                     incomingMangaProgress,
                     incomingMangaChapters
                 )
+                restoreMangaMergeBackups(incomingMangaMerges)
                 if (!replacePreferences(gamePrefs, gamePreferences)) {
                     error("Could not commit restored progression data.")
                 }
             } catch (error: Throwable) {
                 val rollbackError = runCatching {
+                    database.mangaMerges().deleteAll()
                     library.replaceAll(oldLibrary)
                     resetMangaDerivedCache()
                     rebuildMangaBooks(
@@ -937,6 +953,7 @@ class LibraryExport(
                         oldMangaProgress,
                         oldMangaChapters
                     )
+                    restoreMangaMergeBackups(oldMangaMerges)
                 }.exceptionOrNull()
                 restorePreferencesSnapshot(gamePrefs, oldGame)
 
@@ -1085,8 +1102,9 @@ class LibraryExport(
 
     companion object {
         private const val GAME_PREFS = "veil_game_v1"
-        private const val CURRENT_BACKUP_SCHEMA = 5
-        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, 3, 4, CURRENT_BACKUP_SCHEMA)
+        private const val CURRENT_BACKUP_SCHEMA = 6
+        private val SUPPORTED_BACKUP_SCHEMAS =
+            setOf(1, 2, 3, 4, 5, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
