@@ -3723,8 +3723,8 @@ private fun EpubAppearancePanel(
                 .heightIn(min = 52.dp),
             shape = MaterialTheme.shapes.extraSmall,
             colors = ButtonDefaults.buttonColors(
-                containerColor = VeilPalette.Brass,
-                contentColor = Color(0xFF17120A)
+                containerColor = VeilPalette.DeepBrass,
+                contentColor = VeilPalette.Moon
             )
         ) {
             Text(stringResource(R.string.reader_back_to_reading))
@@ -3765,33 +3765,48 @@ private fun ReaderAppearanceChoice(
     enabled: Boolean = true,
     onClick: () -> Unit
 ) {
-    if (selected) {
-        Button(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = modifier.heightIn(min = 48.dp),
-            shape = MaterialTheme.shapes.extraSmall,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = VeilPalette.DeepBrass.copy(alpha = 0.76f),
-                contentColor = VeilPalette.Moon
-            ),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
+    val foreground = when {
+        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+        selected -> VeilPalette.Moon
+        else -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.heightIn(min = 48.dp),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (selected) {
+            VeilPalette.DeepBrass.copy(alpha = 0.82f)
+        } else {
+            VeilPalette.Archive.copy(alpha = 0.66f)
+        },
+        contentColor = foreground,
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp,
+        border = BorderStroke(
+            if (selected) 1.5.dp else 1.dp,
+            if (selected) {
+                VeilPalette.Brass.copy(alpha = 0.76f)
+            } else {
+                VeilPalette.Brass.copy(alpha = 0.22f)
+            }
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 10.dp, vertical = 10.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Text(label, maxLines = 1)
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            enabled = enabled,
-            modifier = modifier.heightIn(min = 48.dp),
-            shape = MaterialTheme.shapes.extraSmall,
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)
-            ),
-            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp)
-        ) {
-            Text(label, maxLines = 1)
+            Text(
+                label,
+                style = MaterialTheme.typography.labelLarge.copy(
+                    letterSpacing = if (selected) 0.34.sp else 0.18.sp
+                ),
+                color = foreground,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
