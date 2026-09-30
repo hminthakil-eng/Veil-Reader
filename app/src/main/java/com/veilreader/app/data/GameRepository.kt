@@ -7,6 +7,7 @@ import com.veilreader.app.domain.ReadingPolicy
 import com.veilreader.app.domain.GamificationEngine
 import com.veilreader.app.domain.Quest
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.domain.VeiledDiscoveryPolicy
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +41,13 @@ class GameRepository(context: Context) {
 
     private val _castleTitle = MutableStateFlow(prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil")
     val castleTitle: StateFlow<String> = _castleTitle
+
+    private val _revealedDiscoveries = MutableStateFlow(
+        prefs.getStringSet("revealedDiscoveries", emptySet())
+            .orEmpty()
+            .filterTo(linkedSetOf()) { it in VeiledDiscoveryPolicy.allIds }
+    )
+    val revealedDiscoveries: StateFlow<Set<String>> = _revealedDiscoveries
 
     init {
         // Old builds counted every highlight for every Path. Preserve Oracle progress only.
@@ -247,9 +255,29 @@ class GameRepository(context: Context) {
         if (p.booksFinished >= 10) earned.add("ten_tomes")
         if (p.rankIndex >= 1) earned.add("first_threshold")
         prefs.edit().putStringSet("earnedSigils", earned).apply()
-        _profile.value = buildProfile()
+        val publishedProfile = buildProfile()
+        _profile.value = publishedProfile
         _quests.value = buildQuests()
         _dailyGoalMinutes.value = readDailyGoal()
+
+        val persistedDiscoveries = prefs
+            .getStringSet("revealedDiscoveries", emptySet())
+            .orEmpty()
+            .toSet()
+        val qualifiedDiscoveries = VeiledDiscoveryPolicy.currentlyQualified(
+            profile = publishedProfile,
+            highlightCount = prefs.getInt("totalHighlights", 0)
+        )
+        val mergedDiscoveries = VeiledDiscoveryPolicy.mergeHistorical(
+            persisted = persistedDiscoveries,
+            currentlyQualified = qualifiedDiscoveries
+        )
+        if (mergedDiscoveries != persistedDiscoveries) {
+            prefs.edit()
+                .putStringSet("revealedDiscoveries", mergedDiscoveries.toSet())
+                .apply()
+        }
+        _revealedDiscoveries.value = mergedDiscoveries
 
         // A title is never allowed to point at a milestone the current profile cannot own.
         val allowedTitles = availableCastleTitles()
