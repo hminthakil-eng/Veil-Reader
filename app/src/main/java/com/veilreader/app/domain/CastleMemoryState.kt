@@ -2,6 +2,15 @@ package com.veilreader.app.domain
 
 import kotlin.math.roundToInt
 
+enum class CastleMemoryPhase {
+    EMPTY,
+    UNMARKED,
+    LISTENING,
+    RETAINING,
+    WARM,
+    DENSE
+}
+
 data class CastleMemoryState(
     val volumeCount: Int,
     val completedCount: Int,
@@ -24,7 +33,7 @@ data class CastleMemoryState(
     val shelfRibs: Int,
     val starPoints: Int,
     val fogAlpha: Float,
-    val inscription: String
+    val memoryPhase: CastleMemoryPhase
 ) {
     fun resonanceFor(roomId: String): Float =
         when (roomId) {
@@ -60,7 +69,7 @@ data class CastleMemoryState(
             shelfRibs = 3,
             starPoints = 0,
             fogAlpha = 0.48f,
-            inscription = "The foundation waits for its first volume."
+            memoryPhase = CastleMemoryPhase.EMPTY
         )
     }
 }
@@ -141,18 +150,13 @@ fun deriveCastleMemoryState(
             sanctum * 0.14f
         ).coerceIn(0f, 1f)
 
-    val inscription = when {
-        books.isEmpty() -> "The foundation waits for its first volume."
-        sessions.isEmpty() && highlights.isEmpty() ->
-            "Volumes stand in the keep, but few traces have entered the stone."
-        overall < 0.24f ->
-            "A few rooms remember. The rest of the keep is still listening."
-        overall < 0.50f ->
-            "The keep has begun to retain the shape of your reading."
-        overall < 0.76f ->
-            "The archive is warm behind the walls; whole chambers now carry memory."
-        else ->
-            "The keep is dense with memory. Very little inside it is still silent."
+    val memoryPhase = when {
+        books.isEmpty() -> CastleMemoryPhase.EMPTY
+        sessions.isEmpty() && highlights.isEmpty() -> CastleMemoryPhase.UNMARKED
+        overall < 0.24f -> CastleMemoryPhase.LISTENING
+        overall < 0.50f -> CastleMemoryPhase.RETAINING
+        overall < 0.76f -> CastleMemoryPhase.WARM
+        else -> CastleMemoryPhase.DENSE
     }
 
     return CastleMemoryState(
@@ -177,7 +181,7 @@ fun deriveCastleMemoryState(
         shelfRibs = (3f + library * 9f).roundToInt().coerceIn(3, 12),
         starPoints = (observatory * 18f).roundToInt().coerceIn(0, 18),
         fogAlpha = (0.48f - overall * 0.28f).coerceIn(0.18f, 0.48f),
-        inscription = inscription
+        memoryPhase = memoryPhase
     )
 }
 
