@@ -56,7 +56,7 @@ class GameRepository(context: Context) {
         if (prefs.getInt("ritualVersion", 1) < 2) {
             val editor = prefs.edit().putInt("ritualVersion", 2)
             if (prefs.getString("pathId", "oracle") != "oracle") editor.putInt("ritualProgress", 0)
-            editor.apply()
+            editor.commit()
         }
         if (prefs.getInt("pathMasteryVersion", 0) < 1) {
             val path = SampleData.paths.firstOrNull {
@@ -74,7 +74,7 @@ class GameRepository(context: Context) {
                     .putString("pathMasteryGrandfatherPath", path.id)
                     .putInt("pathMasteryGrandfatherRank", rank)
             }
-            editor.apply()
+            editor.commit()
         }
         rollDayIfNeeded()
         publish()
@@ -117,8 +117,8 @@ class GameRepository(context: Context) {
     /** Equip an already-earned sigil in the Treasury. Pass null to clear the display slot. */
     fun equipSigil(sigilId: String?): Boolean {
         if (sigilId != null && sigilId !in buildProfile().earnedSigils) return false
-        if (sigilId == null) prefs.edit().remove("equippedSigil").apply()
-        else prefs.edit().putString("equippedSigil", sigilId).apply()
+        if (sigilId == null) prefs.edit().remove("equippedSigil").commit()
+        else prefs.edit().putString("equippedSigil", sigilId).commit()
         _equippedSigil.value = sigilId
         return true
     }
@@ -140,7 +140,7 @@ class GameRepository(context: Context) {
 
     fun selectCastleTitle(title: String): Boolean {
         if (title !in availableCastleTitles()) return false
-        prefs.edit().putString("castleTitle", title).apply()
+        prefs.edit().putString("castleTitle", title).commit()
         _castleTitle.value = title
         return true
     }
@@ -209,8 +209,8 @@ class GameRepository(context: Context) {
 
     fun recordBookFinished() {
         totalXp += GamificationEngine.BOOK_FINISH_BONUS
-        prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).apply()
-        persistCounters()
+        prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).commit()
+        persistCounters(durable = true)
         publish()
     }
 
@@ -235,7 +235,7 @@ class GameRepository(context: Context) {
             .putInt("pathMasteryStabilityBaseline", evidenceTotals.second)
             .remove("pathMasteryGrandfatherPath")
             .remove("pathMasteryGrandfatherRank")
-            .apply()
+            .commit()
         publish()
         return true
     }
@@ -254,7 +254,7 @@ class GameRepository(context: Context) {
             .putInt("pathMasteryStabilityBaseline", 0)
             .remove("pathMasteryGrandfatherPath")
             .remove("pathMasteryGrandfatherRank")
-            .apply()
+            .commit()
         publish()
         return true
     }
@@ -305,11 +305,19 @@ class GameRepository(context: Context) {
         if (newlyCompleted.isEmpty()) return
         totalXp += newlyCompleted.sumOf { it.xpReward }
         claimed += newlyCompleted.map { it.id }
-        prefs.edit().putStringSet("claimedQuestIds", claimed).apply()
+        prefs.edit()
+            .putStringSet("claimedQuestIds", claimed)
+            .putInt("totalXp", totalXp)
+            .commit()
     }
 
-    private fun persistCounters() {
-        prefs.edit()
+    /**
+     * Persist the fast-moving session counters. Normal reading events stay asynchronous to avoid
+     * injecting filesystem latency into page turns. Lifecycle stop and rare milestone transitions
+     * use the durable path, which also acts as a fence for earlier SharedPreferences.apply() writes.
+     */
+    private fun persistCounters(durable: Boolean = false): Boolean {
+        val editor = prefs.edit()
             .putInt("totalXp", totalXp)
             .putString("dayKey", dayKey)
             .putInt("todayMinutes", todayMinutes)
@@ -317,11 +325,26 @@ class GameRepository(context: Context) {
             .putInt("todayHighlights", todayHighlights)
             .putInt("todayNotes", todayNotes)
             .putInt("todayNightMinutes", todayNightMinutes)
-            .apply()
+        return if (durable) {
+            editor.commit()
+        } else {
+            editor.apply()
+            true
+        }
     }
 
+    /**
+     * Durability barrier for app backgrounding.
+     *
+     * SharedPreferences apply() updates the in-memory map immediately. A synchronous commit of the
+     * current counters therefore writes the current complete preference snapshot and waits for the
+     * disk write, without forcing every page turn onto the main-thread filesystem path.
+     */
+    fun flushDurably(): Boolean = persistCounters(durable = true)
+
     private fun publish() {
-        val earned = prefs.getStringSet("earnedSigils", emptySet()).orEmpty().toMutableSet()
+        val storedEarned = prefs.getStringSet("earnedSigils", emptySet()).orEmpty()
+        val earned = storedEarned.toMutableSet()
         val p = buildProfile()
         if (p.minutesRead >= 60) earned.add("first_hour")
         if (prefs.getInt("totalHighlights", 0) >= 10) earned.add("passage_keeper")
@@ -329,7 +352,8 @@ class GameRepository(context: Context) {
         if (p.booksFinished >= 10) earned.add("ten_tomes")
         if (p.rankIndex >= 1) earned.add("first_threshold")
 
-        val discoveries = prefs.getStringSet("earnedDiscoveries", emptySet()).orEmpty().toMutableSet()
+        val storedDiscoveries = prefs.getStringSet("earnedDiscoveries", emptySet()).orEmpty()
+        val discoveries = storedDiscoveries.toMutableSet()
         if ("seven_days" in earned && p.minutesRead >= 600) discoveries.add("patient_flame")
         if ("passage_keeper" in earned && p.pagesRead >= 1_000) discoveries.add("marginalia_gate")
         if (p.booksFinished >= 10 && p.rankIndex >= 1) discoveries.add("deep_shelf")
@@ -337,10 +361,12 @@ class GameRepository(context: Context) {
         if (earned.size >= 4) discoveries.add("veil_thins")
         if (p.rankIndex >= 3 && earned.size >= 5) discoveries.add("unnamed_chamber")
 
-        prefs.edit()
-            .putStringSet("earnedSigils", earned)
-            .putStringSet("earnedDiscoveries", discoveries)
-            .apply()
+        if (earned != storedEarned || discoveries != storedDiscoveries) {
+            prefs.edit()
+                .putStringSet("earnedSigils", earned)
+                .putStringSet("earnedDiscoveries", discoveries)
+                .commit()
+        }
         _profile.value = buildProfile()
         _quests.value = buildQuests()
         _dailyGoalMinutes.value = readDailyGoal()
@@ -349,7 +375,7 @@ class GameRepository(context: Context) {
         val allowedTitles = availableCastleTitles()
         val selectedTitle = prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil"
         if (selectedTitle !in allowedTitles) {
-            prefs.edit().putString("castleTitle", "Reader of the Veil").apply()
+            prefs.edit().putString("castleTitle", "Reader of the Veil").commit()
             _castleTitle.value = "Reader of the Veil"
         } else {
             _castleTitle.value = selectedTitle
