@@ -1051,6 +1051,7 @@ fun ReaderScreen(
 
     LaunchedEffect(
         navigator,
+        navigatorAttached,
         readerSessionReady,
         opened.book.id,
         readerSessionInstanceId
