@@ -1181,4 +1181,9 @@
     <string name="mirror_fragment_quote">«%1$s»</string>
     <string name="manga_hub_read">مطالعهٔ مانگا</string>
     <string name="notice_manga_open_failed">این مانگا هنوز آمادهٔ باز شدن نیست. ممکن است دادهٔ فصل محلی آن ناقص باشد.</string>
+    <string name="manga_reader_eyebrow">آرشیو · خوانندهٔ تصویری</string>
+    <string name="manga_reader_page_of">صفحهٔ %1$s از %2$s</string>
+    <string name="manga_reader_page_unknown">صفحهٔ %1$s</string>
+    <string name="manga_reader_loading">در حال آماده‌سازی صفحه…</string>
+    <string name="manga_reader_error_eyebrow">خوانندهٔ تصویری · وقفه</string>
 </resources>
