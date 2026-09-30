@@ -454,11 +454,10 @@ fun MangaHubScreen(
         }
     }
     editTarget?.let { (book, chapter) ->
-        val parsedNumber = editNumber.trim().toDoubleOrNull()
+        val parsedNumber = parseLocalizedChapterDecimal(editNumber)
         val parsedVolume = editVolume
-            .trim()
-            .takeIf { it.isNotEmpty() }
-            ?.toDoubleOrNull()
+            .takeIf { it.isNotBlank() }
+            ?.let(::parseLocalizedChapterDecimal)
         val numberValid = parsedNumber != null && parsedNumber >= 0.0
         val volumeValid =
             editVolume.isBlank() || (parsedVolume != null && parsedVolume >= 0.0)
@@ -689,6 +688,23 @@ private fun MangaChapterManagementRow(
             }
         }
     }
+}
+
+private fun parseLocalizedChapterDecimal(value: String): Double? {
+    val normalized = buildString(value.length) {
+        value.trim().forEach { char ->
+            append(
+                when (char) {
+                    in '۰'..'۹' -> '0' + (char - '۰')
+                    in '٠'..'٩' -> '0' + (char - '٠')
+                    '٫', ',' -> '.'
+                    '٬', ' ', '\u00A0' -> return@forEach
+                    else -> char
+                }
+            )
+        }
+    }
+    return normalized.toDoubleOrNull()
 }
 
 private fun formatChapterNumber(value: Double): String =
