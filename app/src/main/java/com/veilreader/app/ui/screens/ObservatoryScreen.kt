@@ -29,9 +29,12 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.MemoryAtlas
@@ -112,13 +115,16 @@ fun ObservatoryScreen(
             border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.80f)),
             modifier = Modifier.heightIn(min = 48.dp)
         ) {
-            Text(VeilBackLabel("Castle"), style = MaterialTheme.typography.labelMedium)
+            Text(
+                VeilBackLabel(stringResource(R.string.observatory_castle)),
+                style = MaterialTheme.typography.labelMedium
+            )
         }
 
         ScreenHeader(
-            eyebrow = "OBSERVATORY · MEMORY ATLAS",
-            title = "Constellations of what you read",
-            subtitle = "A private offline map built only from book metadata, durable reading sessions, and passages you chose to preserve."
+            eyebrow = stringResource(R.string.observatory_eyebrow),
+            title = stringResource(R.string.observatory_title),
+            subtitle = stringResource(R.string.observatory_subtitle)
         )
 
         ObservatoryAtlasPanel(
@@ -128,14 +134,34 @@ fun ObservatoryScreen(
             onSelectBook = { selectedBookId = it }
         )
 
+        val atlasSummary = buildList {
+            add(
+                pluralStringResource(
+                    R.plurals.observatory_volumes,
+                    atlas.nodes.size,
+                    atlas.nodes.size
+                )
+            )
+            add(
+                pluralStringResource(
+                    R.plurals.observatory_recorded_links,
+                    atlas.edges.size,
+                    atlas.edges.size
+                )
+            )
+            if (atlas.isolatedCount > 0) {
+                add(
+                    pluralStringResource(
+                        R.plurals.observatory_solitary,
+                        atlas.isolatedCount,
+                        atlas.isolatedCount
+                    )
+                )
+            }
+        }.joinToString(" · ")
+
         Text(
-            buildString {
-                append(atlas.nodes.size).append(" volumes")
-                append(" · ").append(atlas.edges.size).append(" recorded links")
-                if (atlas.isolatedCount > 0) {
-                    append(" · ").append(atlas.isolatedCount).append(" solitary")
-                }
-            },
+            atlasSummary,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
             color = VeilPalette.Mist.copy(alpha = 0.66f)
         )
@@ -151,8 +177,8 @@ fun ObservatoryScreen(
 
         if (atlas.nodes.isNotEmpty()) {
             ArchiveChamberHeading(
-                eyebrow = "Constellation index",
-                title = "Volumes in the atlas",
+                eyebrow = stringResource(R.string.observatory_index_eyebrow),
+                title = stringResource(R.string.observatory_index_title),
                 trailing = "${atlas.nodes.size.coerceAtMost(24)}/24"
             )
 
@@ -168,7 +194,7 @@ fun ObservatoryScreen(
         }
 
         Text(
-            "Atlas links are recorded relations, not AI claims: shared author, series, collection, or repeated vocabulary inside passages you explicitly preserved.",
+            stringResource(R.string.observatory_truth),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.64f)
         )
@@ -183,6 +209,11 @@ private fun ObservatoryAtlasPanel(
     panelHeightDp: Float,
     onSelectBook: (String) -> Unit
 ) {
+    val atlasA11y = stringResource(
+        R.string.observatory_atlas_a11y,
+        atlas.nodes.size,
+        atlas.edges.size
+    )
     val relatedBookIds = remember(atlas.edges, selectedBookId) {
         if (selectedBookId == null) {
             emptySet()
@@ -221,8 +252,7 @@ private fun ObservatoryAtlasPanel(
             modifier = Modifier
                 .matchParentSize()
                 .semantics {
-                    contentDescription =
-                        "Memory Atlas with ${atlas.nodes.size} volumes and ${atlas.edges.size} recorded links"
+                    contentDescription = atlasA11y
                 }
                 .pointerInput(atlas.nodes, selectedBookId) {
                     detectTapGestures { tap ->
@@ -353,12 +383,12 @@ private fun ObservatoryAtlasPanel(
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    "THE SKY IS EMPTY",
+                    stringResource(R.string.observatory_empty_sky),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Import volumes and preserve passages; the Observatory will map only relations your archive can support.",
+                    stringResource(R.string.observatory_empty_sky_body),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist
                 )
@@ -406,7 +436,7 @@ private fun ObservatorySelection(
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
-                        "SELECTED CONSTELLATION",
+                        stringResource(R.string.observatory_selected),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
                         color = VeilPalette.Brass
                     )
@@ -418,7 +448,11 @@ private fun ObservatorySelection(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        "${node.connectionCount} recorded ${if (node.connectionCount == 1) "link" else "links"}",
+                        pluralStringResource(
+                            R.plurals.observatory_selected_links,
+                            node.connectionCount,
+                            node.connectionCount
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
@@ -427,7 +461,7 @@ private fun ObservatorySelection(
 
             if (connections.isEmpty()) {
                 Text(
-                    "This volume currently stands alone. Veil will not fabricate a relation merely to make the constellation denser.",
+                    stringResource(R.string.observatory_stands_alone),
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
@@ -452,7 +486,13 @@ private fun ObservatorySelection(
                     .align(Alignment.End)
                     .heightIn(min = 48.dp)
             ) {
-                Text(if (node.book.isImported) "Enter volume" else "Source unavailable")
+                Text(
+                    if (node.book.isImported) {
+                        stringResource(R.string.observatory_enter_volume)
+                    } else {
+                        stringResource(R.string.observatory_source_unavailable)
+                    }
+                )
             }
         }
     }
@@ -460,6 +500,11 @@ private fun ObservatorySelection(
 
 @Composable
 private fun ObservatoryConnectionRow(edge: MemoryAtlasEdge, other: Book) {
+    val reasonLabels = mutableListOf<String>()
+    for (reason in edge.reasons.sortedBy { it.ordinal }) {
+        reasonLabels += relationLabel(reason)
+    }
+    val sharedTerms = edge.sharedPassageTerms.joinToString(" · ")
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -483,21 +528,19 @@ private fun ObservatoryConnectionRow(edge: MemoryAtlasEdge, other: Book) {
                 modifier = Modifier.weight(1f)
             )
             Text(
-                "LINK ${edge.strength}/10",
+                stringResource(R.string.observatory_link_strength, edge.strength),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass
             )
         }
         Text(
-            edge.reasons
-                .sortedBy { it.ordinal }
-                .joinToString(" · ") { relationLabel(it) },
+            reasonLabels.joinToString(" · "),
             style = MaterialTheme.typography.labelSmall,
             color = VeilPalette.Mist.copy(alpha = 0.66f)
         )
         if (MemoryRelationKind.PASSAGE_PATTERN in edge.reasons && edge.sharedPassageTerms.isNotEmpty()) {
             Text(
-                "Shared preserved terms · " + edge.sharedPassageTerms.joinToString(" · "),
+                stringResource(R.string.observatory_shared_terms, sharedTerms),
                 style = MaterialTheme.typography.bodySmall,
                 color = VeilPalette.Mist.copy(alpha = 0.52f),
                 maxLines = 2,
@@ -545,7 +588,11 @@ private fun ObservatoryBookRow(
                 modifier = Modifier.weight(1f)
             )
             Text(
-                "${node.connectionCount} ${if (node.connectionCount == 1) "LINK" else "LINKS"}",
+                pluralStringResource(
+                    R.plurals.observatory_row_links,
+                    node.connectionCount,
+                    node.connectionCount
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.58f)
             )
@@ -563,7 +610,7 @@ private fun ObservatoryEmptyState() {
         tonalElevation = 0.dp
     ) {
         Text(
-            "The Observatory needs at least one volume before it can draw a private atlas.",
+            stringResource(R.string.observatory_empty_state),
             modifier = Modifier.padding(VeilSpacing.lg),
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
@@ -571,11 +618,13 @@ private fun ObservatoryEmptyState() {
     }
 }
 
+@Composable
 private fun relationLabel(kind: MemoryRelationKind): String = when (kind) {
-    MemoryRelationKind.AUTHOR -> "AUTHOR"
-    MemoryRelationKind.SERIES -> "SERIES"
-    MemoryRelationKind.COLLECTION -> "COLLECTION"
-    MemoryRelationKind.PASSAGE_PATTERN -> "PRESERVED WORD PATTERN"
+    MemoryRelationKind.AUTHOR -> stringResource(R.string.observatory_relation_author)
+    MemoryRelationKind.SERIES -> stringResource(R.string.observatory_relation_series)
+    MemoryRelationKind.COLLECTION -> stringResource(R.string.observatory_relation_collection)
+    MemoryRelationKind.PASSAGE_PATTERN ->
+        stringResource(R.string.observatory_relation_passage_pattern)
 }
 
 private fun atlasNodeOffset(
