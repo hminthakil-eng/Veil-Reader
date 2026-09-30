@@ -130,6 +130,67 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun durableMetadataEdit_doesNotPublishRejectedIdentityToMemory() = runBlocking<Unit> {
+        val repository = repository()
+        val original = Book(
+            id = "durable-metadata-book",
+            title = "Original Identity",
+            author = "Original Creator",
+            format = BookFormat.COMIC,
+            sourceUri = "file:///durable.cbz",
+            contentFingerprint = "durable-metadata-fingerprint",
+            seriesName = "Original Series",
+            seriesIndex = 1.0,
+            language = "en",
+            collections = listOf("Visual Archive")
+        )
+        repository.addImportedBook(original)
+        repository.flushWrites()
+
+        db.openHelper.writableDatabase.execSQL(
+            """
+            CREATE TRIGGER reject_durable_metadata_update
+            BEFORE UPDATE ON books
+            WHEN NEW.title = 'Rejected Identity'
+            BEGIN
+                SELECT RAISE(ABORT, 'reject metadata');
+            END
+            """.trimIndent()
+        )
+
+        val result = runCatching {
+            repository.editMetadataDurably(
+                BookMetadataUpdate(
+                    bookId = original.id,
+                    title = "Rejected Identity",
+                    author = "Changed Creator",
+                    collections = original.allCollections,
+                    seriesName = "Changed Series",
+                    seriesIndex = 2.0,
+                    language = "fa"
+                )
+            )
+        }
+
+        assertTrue(result.isFailure)
+        assertEquals(
+            "Original Identity",
+            repository.books.value.single { it.id == original.id }.title
+        )
+        val stored = db.books().findWithCollections(original.id)
+            ?: error("durable metadata book missing")
+        assertEquals("Original Identity", stored.book.title)
+        assertEquals("Original Creator", stored.book.author)
+        assertEquals("Original Series", stored.book.seriesName)
+        assertEquals(1.0, stored.book.seriesIndex)
+        assertEquals("en", stored.book.language)
+        assertEquals(
+            listOf("Visual Archive"),
+            stored.collections.map { it.name }
+        )
+    }
+
+    @Test
     fun duplicateFingerprint_returnsExistingBook_andDeletesTransientImportArtifacts() = runBlocking<Unit> {
         val repository = repository()
         val publications = File(context.filesDir, "publications").apply { mkdirs() }
