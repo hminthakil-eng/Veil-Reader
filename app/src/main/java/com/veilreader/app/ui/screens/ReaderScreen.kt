@@ -570,10 +570,10 @@ fun ReaderScreen(
                     val isNew = existing == null
                     if (isNew) {
                         library.flushWrites()
-                        readerViewModel.onHighlightAdded()
+                        readerViewModel.onHighlightAdded(readerSessionInstanceId)
                         onSensoryEvent(VeilSensoryEvent.MARK)
                     } else {
-                        readerViewModel.onUserInteraction()
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
                     }
 
                     when (action) {
@@ -600,7 +600,7 @@ fun ReaderScreen(
             initialProgress = opened.book.progress,
             openInstanceId = readerSessionInstanceId
         )
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume()
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume(readerSessionInstanceId)
     }
 
     LaunchedEffect(readerMessage, readerSessionInstanceId) {
@@ -617,6 +617,7 @@ fun ReaderScreen(
         val json = locator.toVeilPersistedJson(opened.format)
         readerViewModel.onLocatorUpdate(
             bookId = opened.book.id,
+            expectedOpenInstanceId = readerSessionInstanceId,
             progression = locator.locations.totalProgression
                 ?: readerViewModel.uiState.value.progress.toDouble(),
             locatorJson = json,
@@ -637,7 +638,7 @@ fun ReaderScreen(
         }.getOrNull()
         val currentJson = currentLocatorJson()
 
-        readerViewModel.onUserInteraction()
+        readerViewModel.onUserInteraction(readerSessionInstanceId)
         game.rebasePagePacing()
 
         if (locator != null && navigator?.go(locator, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
@@ -682,7 +683,7 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId()
                 )
                 awaitDurableReaderClose(
-                    finalizeSession = readerViewModel::closeBook,
+                    finalizeSession = { readerViewModel.closeBook(readerSessionInstanceId) },
                     awaitDurability = library::flushWrites,
                     clearRoute = onClose
                 )
@@ -786,7 +787,7 @@ fun ReaderScreen(
                             previousLocationJson = origin
                             controlsVisible = false
                         }
-                        readerViewModel.onUserInteraction()
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
                         game.rebasePagePacing()
                         true
                     }
@@ -852,7 +853,7 @@ fun ReaderScreen(
     DisposableEffect(lifecycle, readerViewModel, readerSessionInstanceId) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
-                Lifecycle.Event.ON_RESUME -> readerViewModel.onResume()
+                Lifecycle.Event.ON_RESUME -> readerViewModel.onResume(readerSessionInstanceId)
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
@@ -876,7 +877,7 @@ fun ReaderScreen(
                             recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
                         }
                     }
-                    readerViewModel.onPause()
+                    readerViewModel.onPause(readerSessionInstanceId)
                 }
                 else -> Unit
             }
@@ -885,7 +886,7 @@ fun ReaderScreen(
         onDispose {
             paperInputListener?.forceCancelPendingTurn()
             slideInputListener?.forceCancelPendingTurn()
-            readerViewModel.onPause()
+            readerViewModel.onPause(readerSessionInstanceId)
             lifecycle.removeObserver(observer)
         }
     }
@@ -927,6 +928,7 @@ fun ReaderScreen(
                 initialLocatorPending = false
                 readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
+                    expectedOpenInstanceId = readerSessionInstanceId,
                     progression = locator.locations.totalProgression
                         ?: readerViewModel.uiState.value.progress.toDouble(),
                     locatorJson = json,
@@ -945,7 +947,7 @@ fun ReaderScreen(
         } else {
             val imageTapListener = if (navigator is EpubNavigatorFragment) {
                 ReaderImageTapInputListener { image ->
-                    readerViewModel.onUserInteraction()
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
                     controlsVisible = false
                     imageLoadSerial += 1
                     val requestSerial = imageLoadSerial
@@ -1005,7 +1007,7 @@ fun ReaderScreen(
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
-                        readerViewModel.onUserInteraction()
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
                         controlsVisible = false
                     },
                     onCommittedTurn = {
@@ -1034,7 +1036,7 @@ fun ReaderScreen(
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
-                        readerViewModel.onUserInteraction()
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
                         controlsVisible = false
                     },
                     onCommittedTurn = {
@@ -1063,7 +1065,7 @@ fun ReaderScreen(
                         )
                     },
                     onInteraction = {
-                        readerViewModel.onUserInteraction()
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
                         controlsVisible = false
                     },
                     onNavigationCommitted = {
@@ -1123,7 +1125,7 @@ fun ReaderScreen(
                 staticPaged = staticPagedListener,
                 directional = directionalListener,
                 chromeTap = {
-                    readerViewModel.onUserInteraction()
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
                     controlsVisible = !controlsVisible
                     true
                 },
@@ -1208,7 +1210,7 @@ fun ReaderScreen(
         }
 
         game.rebasePagePacing()
-        readerViewModel.onUserInteraction()
+        readerViewModel.onUserInteraction(readerSessionInstanceId)
         val traceDetails =
             "format=${opened.format} theme=${requested.theme} " +
                 "publisherStyles=${requested.publisherStyles} " +
@@ -1310,7 +1312,7 @@ fun ReaderScreen(
             .semantics {
                 contentDescription = readerSurfaceLabel
                 onClick(label = controlsActionLabel) {
-                    readerViewModel.onUserInteraction()
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
                     controlsVisible = if (touchExplorationEnabled) true else !controlsVisible
                     true
                 }
@@ -1533,7 +1535,7 @@ fun ReaderScreen(
                             label = stringResource(R.string.reader_notes),
                             modifier = Modifier.weight(1f)
                         ) {
-                            readerViewModel.onUserInteraction()
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
                             showNotebook = true
                         }
 
@@ -1543,7 +1545,7 @@ fun ReaderScreen(
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
-                            readerViewModel.onUserInteraction()
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
                             val locator = navigator?.currentLocator?.value
                             if (locator != null) {
                                 val added = library.addBookmark(
@@ -1572,7 +1574,7 @@ fun ReaderScreen(
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null
                         ) {
-                            readerViewModel.onUserInteraction()
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
                             if (opened.format == BookFormat.EPUB) {
                                 appearanceCloseJob?.cancel()
                                 appearanceCloseJob = null
@@ -1899,6 +1901,7 @@ fun ReaderScreen(
                                                 )
                                                 library.flushWrites()
                                                 readerViewModel.onNoteSaved(
+                                                    readerSessionInstanceId,
                                                     highlightId,
                                                     pendingNoteText
                                                 )
@@ -1951,7 +1954,7 @@ fun ReaderScreen(
             passageVisits = bookPassageVisits,
             onDismiss = { showNotebook = false },
             onGo = { json ->
-                readerViewModel.onUserInteraction()
+                readerViewModel.onUserInteraction(readerSessionInstanceId)
                 game.rebasePagePacing()
                 val origin = currentLocatorJson()
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
@@ -1968,7 +1971,7 @@ fun ReaderScreen(
                 }
             },
             onChapter = { link ->
-                readerViewModel.onUserInteraction()
+                readerViewModel.onUserInteraction(readerSessionInstanceId)
                 game.rebasePagePacing()
                 val origin = currentLocatorJson()
                 if (navigator?.go(link, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
@@ -1982,7 +1985,7 @@ fun ReaderScreen(
             onSaveNote = { id, note ->
                 library.updateHighlightNote(id, note)
                 library.flushWrites()
-                readerViewModel.onNoteSaved(id, note)
+                readerViewModel.onNoteSaved(readerSessionInstanceId, id, note)
                 onSensoryEvent(VeilSensoryEvent.NOTE)
                 readerMessage = noteSavedMessage
             },
@@ -2032,12 +2035,12 @@ fun ReaderScreen(
                         fixedLayoutSpread = activeFixedLayoutSpread,
                         publicationLanguage = publicationLanguage,
                         onSpreadChange = { mode ->
-                            readerViewModel.onUserInteraction()
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
                             activeFixedLayoutSpread = mode
                             onFixedLayoutSpreadChange(mode)
                         },
                         onChange = {
-                            readerViewModel.onUserInteraction()
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
                             onReaderAppearanceChange(it)
                         },
                         onDone = ::closeAppearanceAfterRendererSettles,
@@ -2065,7 +2068,7 @@ fun ReaderScreen(
                 appearance = readerAppearance,
                 reducedMotion = reducedMotion,
                 onAppearanceChange = { updated ->
-                    readerViewModel.onUserInteraction()
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
                     onReaderAppearanceChange(updated)
                 },
                 modifier = Modifier
