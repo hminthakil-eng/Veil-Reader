@@ -124,7 +124,7 @@ fun ReadingNowScreen(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
-                Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
+                Box(Modifier.padding(vertical = VeilSpacing.xs)) {
                     ThresholdHeader(
                         bookCount = books.size,
                         hasCurrentBook = current != null,
@@ -137,9 +137,9 @@ fun ReadingNowScreen(
 
             VeilReveal(delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
                 Box(
-                    Modifier.padding(
-                        horizontal = thresholdLayout.horizontalPaddingDp.dp
-                    )
+                    Modifier
+                        .padding(horizontal = thresholdLayout.horizontalPaddingDp.dp)
+                        .offset(y = (-18).dp)
                 ) {
                     if (current == null) {
                         EmptyReadingState(onOpenLibrary)
@@ -156,7 +156,7 @@ fun ReadingNowScreen(
             }
 
             if (snapshot.recent.isNotEmpty()) {
-                Spacer(Modifier.height(VeilSpacing.xl))
+                Spacer(Modifier.height(VeilSpacing.sm))
                 VeilReveal(delayMillis = 130, modifier = Modifier.fillMaxWidth()) {
                     Box(
                         Modifier.padding(
@@ -219,11 +219,7 @@ private fun ThresholdHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
-                MaterialTheme.shapes.medium
-            )
+            .background(VeilPalette.Ink)
     ) {
         Box(
             Modifier
@@ -269,8 +265,26 @@ private fun ThresholdHeader(
             )
 
             GrayfogOrnamentFrame(
-                modifier = Modifier.matchParentSize(),
-                strength = 0.74f
+                modifier = Modifier
+                    .matchParentSize()
+                    .padding(horizontal = 6.dp, vertical = 4.dp),
+                strength = 0.54f
+            )
+
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                VeilPalette.Ink.copy(alpha = 0.68f),
+                                VeilPalette.Ink
+                            )
+                        )
+                    )
             )
 
             Text(
@@ -1076,4 +1090,3 @@ private fun formatReadingTime(minutes: Int): String {
         else -> stringResource(R.string.capsule_duration_less_than_minute)
     }
 }
-
