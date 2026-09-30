@@ -114,7 +114,7 @@ interface MangaCatalogDao {
         title: String,
         normalizedTitle: String,
         volume: Double?,
-        number: Double,
+        number: Double?,
         languageTag: String?
     ): Int
 
