@@ -1161,4 +1161,21 @@
     <string name="manga_hub_empty_body">هنوز نشست مانگایی ثبت نشده است. مسیر ورود مانگای محلی و آداپتورهای منبع به همین بخش وصل می‌شوند و مطالعه‌ی تصویری از Reader متنی جدا می‌ماند.</string>
     <string name="manga_hub_open_library">بازگشت به Library</string>
     <string name="manga_hub_progress">%1$d٪ خوانده‌شده</string>\n    <string name="manga_hub_adapter_pending">آداپتور نشست اختصاصی مانگا در حال توسعه است؛ این رکورد به Reader مربوط به EPUB/PDF فرستاده نمی‌شود.</string>
+
+    <string name="manga_reader_partial_offline_notice">پیش‌نمایش آفلاین · برای بارگیری ادامه دوباره متصل شو</string>
+    <string name="manga_reader_retry">تلاش دوباره</string>
+    <string name="manga_reader_back">بازگشت</string>
+    <string name="manga_reader_mode_webtoon">وب‌تون</string>
+    <string name="manga_reader_mode_paged">صفحه‌ای</string>
+    <string name="manga_reader_direction_rtl">راست‌به‌چپ</string>
+    <string name="manga_reader_direction_ltr">چپ‌به‌راست</string>
+    <string name="manga_reader_page_failed">باز کردن این صفحه ممکن نشد.</string>
+    <string name="manga_reader_message_partial_offline_boundary">برای ادامه این فصل دوباره متصل شو تا باقی صفحه‌ها بارگیری شوند.</string>
+    <string name="manga_reader_message_series_boundary">به انتهای فهرست فصل‌های موجود رسیدی.</string>
+    <string name="manga_reader_message_route_unavailable">مسیر فصل بعدی در دسترس نیست.</string>
+    <string name="manga_reader_error_offline_unavailable">این فصل هنوز برای مطالعه آفلاین آماده نیست.</string>
+    <string name="manga_reader_error_source_failure">دسترسی به منبع فصل ممکن نشد. دوباره تلاش کن.</string>
+    <string name="manga_reader_error_empty_chapter">این فصل صفحه قابل‌خواندنی ندارد.</string>
+    <string name="manga_reader_error_invalid_page_set">مجموعه صفحه‌های این فصل معتبر نیست.</string>
+    <string name="manga_reader_error_request_mismatch">فصل هنگام بارگیری تغییر کرد. دوباره آن را باز کن.</string>
 </resources>
