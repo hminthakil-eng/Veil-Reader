@@ -223,6 +223,122 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     }
 
     @Test
+    fun metadataMigrationMovesCachePreservesProgressAndRejectsIdentityCollision() = runBlocking {
+        val firstArchive = testArchive("Meta ch 1.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val book = coordinator.import(Uri.fromFile(firstArchive))
+            .getOrThrow()
+            .book
+        val secondArchive = testArchive("Meta ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+            addPng("003.png")
+        }
+        coordinator.appendChapter(
+            bookId = book.id,
+            uri = Uri.fromFile(secondArchive)
+        ).getOrThrow()
+
+        val second = db.mangaCatalog()
+            .listChapters(book.id)
+            .single { it.readingOrder == 1 }
+        val source = db.mangaCatalog().listChapterSources(second.id).single()
+        val sourceArchive = requireNotNull(
+            coordinator.resolveLocalArchiveFile(
+                book = book,
+                chapterKey = source.chapterKey,
+                readingOrder = second.readingOrder
+            )
+        )
+        val oldCacheDirectory = File(coordinator.cacheRoot, second.cacheKey)
+        assertTrue(sourceArchive.isFile)
+        assertTrue(oldCacheDirectory.isDirectory)
+
+        val progressStore = RoomMangaProgressStore(db)
+        progressStore.save(
+            MangaReadingProgress(
+                mangaId = CanonicalMangaId(book.id),
+                chapter = MangaChapterAnchor(
+                    volume = second.volume,
+                    number = second.number,
+                    languageTag = second.languageTag,
+                    normalizedTitle = second.normalizedTitle,
+                    providerChapterKeyHint = source.chapterKey
+                ),
+                pageIndex = 1,
+                pageCount = 3,
+                chapterProgression = 0.5,
+                updatedAtEpochMs = 2_222L
+            )
+        )
+
+        coordinator.updateChapterMetadata(
+            bookId = book.id,
+            chapterId = second.id,
+            metadata = MangaLocalChapterMetadata(
+                title = "The Twelfth Bell",
+                volume = 4.0,
+                number = 12.5,
+                languageTag = "fa"
+            )
+        ).getOrThrow()
+
+        val migrated = requireNotNull(db.mangaCatalog().findChapter(second.id))
+        assertEquals(second.id, migrated.id)
+        assertEquals("The Twelfth Bell", migrated.title)
+        assertEquals(4.0, requireNotNull(migrated.volume), 0.000001)
+        assertEquals(12.5, requireNotNull(migrated.number), 0.000001)
+        assertEquals("fa", migrated.languageTag)
+        assertTrue(migrated.cacheKey != second.cacheKey)
+        assertFalse(oldCacheDirectory.exists())
+        assertTrue(File(coordinator.cacheRoot, migrated.cacheKey).isDirectory)
+        assertTrue(sourceArchive.isFile)
+
+        val offline = requireNotNull(db.mangaOffline().findChapter(migrated.id))
+        assertEquals(3, offline.pages.size)
+        assertTrue(
+            offline.pages.all { page ->
+                File(coordinator.cacheRoot, page.relativePath).isFile
+            }
+        )
+
+        val restoredProgress = requireNotNull(
+            progressStore.load(CanonicalMangaId(book.id))
+        )
+        assertEquals(4.0, requireNotNull(restoredProgress.chapter.volume), 0.000001)
+        assertEquals(12.5, requireNotNull(restoredProgress.chapter.number), 0.000001)
+        assertEquals("fa", restoredProgress.chapter.languageTag)
+        assertEquals("The Twelfth Bell", restoredProgress.chapter.normalizedTitle)
+        assertEquals(1, restoredProgress.pageIndex)
+        assertEquals(0.5, restoredProgress.chapterProgression, 0.000001)
+        assertEquals(0.75f, requireNotNull(db.books().findEntity(book.id)).progress, 0.000001f)
+
+        val beforeCollision = requireNotNull(db.mangaCatalog().findChapter(second.id))
+        val collision = coordinator.updateChapterMetadata(
+            bookId = book.id,
+            chapterId = second.id,
+            metadata = MangaLocalChapterMetadata(
+                title = "Collision",
+                volume = null,
+                number = 1.0,
+                languageTag = null
+            )
+        )
+        assertTrue(collision.isFailure)
+
+        val afterCollision = requireNotNull(db.mangaCatalog().findChapter(second.id))
+        assertEquals(beforeCollision.cacheKey, afterCollision.cacheKey)
+        assertEquals(beforeCollision.title, afterCollision.title)
+        assertEquals(beforeCollision.volume, afterCollision.volume)
+        assertEquals(beforeCollision.number, afterCollision.number)
+        assertEquals(beforeCollision.languageTag, afterCollision.languageTag)
+        assertTrue(File(coordinator.cacheRoot, afterCollision.cacheKey).isDirectory)
+        assertTrue(sourceArchive.isFile)
+    }
+
+    @Test
     fun chapterManagementPreservesIdentityReordersProgressAndDeletesSafely() = runBlocking {
         val firstArchive = testArchive("Manage ch 1.cbz") {
             addPng("001.png")
