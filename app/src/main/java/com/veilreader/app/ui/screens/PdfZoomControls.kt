@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderLayoutMode
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -130,11 +131,11 @@ internal fun PdfZoomControls(
                             role = Role.RadioButton
                         ) {
                             onAppearanceChange(
-                                appearance.withNavigationMode(
+                                appearance.withLayoutMode(
                                     if (scrollMode) {
-                                        ReaderNavigationMode.SCROLL
+                                        ReaderLayoutMode.SCROLL
                                     } else {
-                                        ReaderNavigationMode.PAGED
+                                        ReaderLayoutMode.PAGED
                                     }
                                 )
                             )
