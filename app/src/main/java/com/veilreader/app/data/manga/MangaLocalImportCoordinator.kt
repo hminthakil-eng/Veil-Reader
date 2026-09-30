@@ -216,14 +216,13 @@ class MangaLocalImportCoordinator(
         require(number.isFinite() && number >= 0.0) {
             "Chapter number must be a finite non-negative value"
         }
-        val volume = metadata.volume ?: current.volume
+        val volume = metadata.volume
         require(volume == null || (volume.isFinite() && volume >= 0.0)) {
             "Volume must be a finite non-negative value"
         }
         val languageTag = metadata.languageTag
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
-            ?: current.languageTag
 
         val newAnchor = MangaChapterAnchor(
             volume = volume,
