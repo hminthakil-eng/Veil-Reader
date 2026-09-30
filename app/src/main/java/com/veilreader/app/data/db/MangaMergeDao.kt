@@ -73,4 +73,7 @@ interface MangaMergeDao {
 
     @Query("DELETE FROM manga_work_merges WHERE id = :mergeId")
     suspend fun deleteMerge(mergeId: String)
+
+    @Query("DELETE FROM manga_work_merges")
+    suspend fun deleteAll()
 }
