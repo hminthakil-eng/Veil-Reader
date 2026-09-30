@@ -12,6 +12,7 @@ import com.veilreader.app.data.db.MangaChapterEntity
 import com.veilreader.app.data.db.MangaChapterSourceEntity
 import com.veilreader.app.data.db.MangaMergeChapterEntity
 import com.veilreader.app.data.db.MangaMergeMemberEntity
+import com.veilreader.app.data.db.MangaMergeOriginalChapterEntity
 import com.veilreader.app.data.db.MangaOfflineChapterEntity
 import com.veilreader.app.data.db.MangaOfflinePageEntity
 import com.veilreader.app.data.db.MangaProgressEntity
@@ -796,6 +797,21 @@ class MangaLocalImportCoordinator(
         }
         val originalTargetProgress = database.mangaProgress().find(targetBookId)
         val mergeId = UUID.randomUUID().toString()
+        val originalTargetEvidence = originalTargetChapters.map { chapter ->
+            val localSource = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .singleOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?: error("Merge target chapter lost its local CBZ identity")
+            MangaMergeOriginalChapterEntity(
+                mergeId = mergeId,
+                readingOrder = chapter.readingOrder,
+                chapterId = chapter.id,
+                targetBookId = targetBook.id,
+                chapterKey = localSource.chapterKey
+            )
+        }
         val prepared = mutableListOf<PreparedMergeCopy>()
         var committed = false
 
@@ -978,6 +994,7 @@ class MangaLocalImportCoordinator(
                             originalTargetProgress?.updatedAtEpochMs
                     )
                 )
+                database.mangaMerges().upsertOriginals(originalTargetEvidence)
                 database.mangaMerges().upsertMembers(
                     sourceBookIds.mapIndexed { index, sourceBookId ->
                         MangaMergeMemberEntity(
@@ -1009,6 +1026,7 @@ class MangaLocalImportCoordinator(
             val receipt = database.mangaMerges().find(mergeId)
                 ?: error("Merge receipt disappeared after commit")
             require(receipt.members.size == sourceBookIds.size)
+            require(receipt.originals.size == originalTargetChapters.size)
             require(receipt.chapters.size == plan.chapterActions.size)
             prepared.forEach { copy ->
                 require(copy.targetArchive.file.isFile)
@@ -1070,9 +1088,32 @@ class MangaLocalImportCoordinator(
             "Merged target lost an original chapter before split"
         }
         val originalOrders = (0 until merge.targetOriginalChapterCount).toSet()
-        require(allTargetChapters.take(merge.targetOriginalChapterCount).map { it.readingOrder } ==
-            originalOrders.toList()) {
+        require(
+            allTargetChapters
+                .take(merge.targetOriginalChapterCount)
+                .map { it.readingOrder } == originalOrders.toList()
+        ) {
             "Merged target original chapter boundary is corrupted"
+        }
+        val originals = receipt.originals.sortedBy { it.readingOrder }
+        require(originals.size == merge.targetOriginalChapterCount) {
+            "Merge receipt lost original target chapter identity evidence"
+        }
+        originals.forEachIndexed { expectedOrder, original ->
+            require(original.readingOrder == expectedOrder)
+            require(original.targetBookId == targetBook.id)
+            val chapter = database.mangaCatalog().findChapter(original.chapterId)
+                ?: error("Original target Manga chapter disappeared before split")
+            require(chapter.bookId == targetBook.id && chapter.readingOrder == expectedOrder)
+            val source = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .singleOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?: error("Original target Manga chapter lost its local source")
+            require(source.chapterKey == original.chapterKey) {
+                "Original target Manga chapter identity changed while merged"
+            }
         }
         merge.targetProgressChapterId?.let { progressChapterId ->
             val progressChapter = database.mangaCatalog().findChapter(progressChapterId)
