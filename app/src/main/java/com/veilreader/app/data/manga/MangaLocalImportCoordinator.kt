@@ -373,11 +373,9 @@ class MangaLocalImportCoordinator(
             }
         }
 
-        database.withTransaction {
-            offline.forEach { bundle ->
-                database.mangaOffline().deleteChapter(bundle.chapter.chapterId)
-            }
-        }
+        // Keep the small verified manifest rows. They preserve page counts and hashes while
+        // the disposable image bytes are removed, and ensureLocalCache() will detect/rebuild the
+        // missing files before the reader session is opened.
         withContext(Dispatchers.IO) {
             val directories = chapters.map { File(cacheRoot, it.cacheKey) }
             directories.forEach(::deleteGeneratedChapterDirectory)
