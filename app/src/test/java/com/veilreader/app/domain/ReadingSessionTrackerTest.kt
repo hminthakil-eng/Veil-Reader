@@ -39,6 +39,60 @@ class ReadingSessionTrackerTest {
     }
 
     @Test
+    fun restore_preservesDurableCounters_andDoesNotRecountKnownNotes() {
+        val restored = requireNotNull(
+            ReadingSessionTracker.restore(
+                snapshot = ReadingSessionSnapshot(
+                    id = "session-restored",
+                    bookId = "book",
+                    startedAtEpochMs = 1_000L,
+                    endedAtEpochMs = 9_000L,
+                    activeMillis = 95_000L,
+                    pacedPageTurns = 7,
+                    highlightCount = 3,
+                    noteCount = 2
+                ),
+                bookId = "book",
+                startedAtElapsedMs = 50_000L,
+                notedHighlightIds = setOf("note-existing")
+            )
+        )
+
+        restored.recordPacedPageTurn()
+        restored.recordHighlight()
+        restored.recordNote("note-existing", "edited after recreation")
+        restored.recordNote("note-new", "new note")
+
+        val snapshot = restored.snapshot(10_000L)
+        assertEquals("session-restored", snapshot.id)
+        assertEquals(1_000L, snapshot.startedAtEpochMs)
+        assertEquals(95_000L, snapshot.activeMillis)
+        assertEquals(8, snapshot.pacedPageTurns)
+        assertEquals(4, snapshot.highlightCount)
+        assertEquals(3, snapshot.noteCount)
+    }
+
+    @Test
+    fun restore_rejectsSnapshotOwnedByAnotherBook() {
+        val restored = ReadingSessionTracker.restore(
+            snapshot = ReadingSessionSnapshot(
+                id = "session",
+                bookId = "other-book",
+                startedAtEpochMs = 1L,
+                endedAtEpochMs = 2L,
+                activeMillis = 0L,
+                pacedPageTurns = 0,
+                highlightCount = 0,
+                noteCount = 0
+            ),
+            bookId = "book",
+            startedAtElapsedMs = 0L
+        )
+
+        assertEquals(null, restored)
+    }
+
+    @Test
     fun snapshot_countsPacedPagesHighlightsAndUniqueNotes() {
         val tracker = ReadingSessionTracker("s", "b", 10L, 0L)
         tracker.recordPacedPageTurn()
