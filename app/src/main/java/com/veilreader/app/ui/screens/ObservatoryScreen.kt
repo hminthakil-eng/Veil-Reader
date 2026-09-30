@@ -41,6 +41,7 @@ import com.veilreader.app.domain.MemoryAtlasEdge
 import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
+import com.veilreader.app.ui.books.bookArtifactState as canonicalBookArtifactState
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -162,7 +163,7 @@ fun ObservatoryScreen(
         } ?: ObservatoryEmptyState()
 
         if (atlas.nodes.isNotEmpty()) {
-            ArchiveChamberHeading(
+            ObservatorySectionHeading(
                 eyebrow = stringResource(R.string.observatory_index_eyebrow),
                 title = stringResource(R.string.observatory_index_title),
                 trailing = "${atlas.nodes.size.coerceAtMost(24)}/24"
@@ -412,7 +413,7 @@ private fun ObservatorySelection(
                     title = node.book.title,
                     subtitle = node.book.author,
                     imagePath = node.book.coverCachePath,
-                    artifact = bookArtifactState(node.book),
+                    artifact = canonicalBookArtifactState(node.book),
                     modifier = Modifier
                         .width(62.dp)
                         .height(92.dp)
@@ -579,6 +580,42 @@ private fun ObservatoryBookRow(
                 style = MaterialTheme.typography.labelSmall,
                 color = if (selected) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.58f)
             )
+        }
+    }
+}
+
+@Composable
+private fun ObservatorySectionHeading(
+    eyebrow: String,
+    title: String,
+    trailing: String? = null
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        Text(
+            eyebrow,
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
+            color = VeilPalette.Brass
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleLarge,
+                color = VeilPalette.Moon
+            )
+            trailing?.let { value ->
+                Text(
+                    value,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.62f)
+                )
+            }
         }
     }
 }
