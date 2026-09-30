@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_generic_aspect">مطالعه</string>
+    <string name="path_generic_invocation">هر مسیر با بازگشت دوباره به صفحه شکل می‌گیرد.</string>
+
+    <string name="path_oracle_name">مسیر پیشگو</string>
+    <string name="path_oracle_epithet">آنچه میان سطرها پنهان است بجوی</string>
+    <string name="path_oracle_description">برای راز، استنتاج، جهان‌های چندلایه و خوانندگانی که برای سرنخ‌ها زندگی می‌کنند.</string>
+    <string name="path_oracle_aspect">بینش</string>
+    <string name="path_oracle_invocation">آنچه پنهان است، هنوز می‌توان فهمید.</string>
+    <string name="path_oracle_rank_0">ناظر</string>
+    <string name="path_oracle_rank_1">رمز</string>
+    <string name="path_oracle_rank_2">کاوشگر</string>
+    <string name="path_oracle_rank_3">فال‌بین</string>
+    <string name="path_oracle_rank_4">پیشگو</string>
+    <string name="path_oracle_rank_5">پرده‌بین</string>
+
+    <string name="path_dreamwalker_name">مسیر رؤیاگرد</string>
+    <string name="path_dreamwalker_epithet">از جهان‌هایی عبور کن که هیچ نقشه‌ای در خود نمی‌گنجاند</string>
+    <string name="path_dreamwalker_description">برای فانتزی، اسطوره، شگفتی و سفرهای ناممکن.</string>
+    <string name="path_dreamwalker_aspect">شگفتی</string>
+    <string name="path_dreamwalker_invocation">هر صفحه دری است که پیش از این وجود نداشت.</string>
+    <string name="path_dreamwalker_rank_0">سرگردان</string>
+    <string name="path_dreamwalker_rank_1">رهرو</string>
+    <string name="path_dreamwalker_rank_2">داستان‌باف</string>
+    <string name="path_dreamwalker_rank_3">رؤیاگرد</string>
+    <string name="path_dreamwalker_rank_4">جهان‌باف</string>
+    <string name="path_dreamwalker_rank_5">اسطوره‌زاد</string>
+
+    <string name="path_archivist_name">مسیر بایگان</string>
+    <string name="path_archivist_epithet">هیچ آموخته‌ای نباید گم شود</string>
+    <string name="path_archivist_description">برای تاریخ، علم، فلسفه و مطالعه‌های دانش‌محور.</string>
+    <string name="path_archivist_aspect">حافظه</string>
+    <string name="path_archivist_invocation">آنچه آموخته می‌شود، شایستهٔ جایی برای ماندن است.</string>
+    <string name="path_archivist_rank_0">تازه‌کار</string>
+    <string name="path_archivist_rank_1">کاتب</string>
+    <string name="path_archivist_rank_2">دانشور</string>
+    <string name="path_archivist_rank_3">متولی</string>
+    <string name="path_archivist_rank_4">بایگان</string>
+    <string name="path_archivist_rank_5">نگهبان</string>
+
+    <string name="path_vanguard_name">مسیر پیشتاز</string>
+    <string name="path_vanguard_epithet">هر صفحه را مثل میدان نبرد ورق بزن</string>
+    <string name="path_vanguard_description">برای اکشن، ماجراجویی، فانتزی پیشرفت‌محور و حرکت بی‌وقفه.</string>
+    <string name="path_vanguard_aspect">شتاب</string>
+    <string name="path_vanguard_invocation">رو به جلو رفتن یک انضباط است، نه یک سرعت.</string>
+    <string name="path_vanguard_rank_0">نوآموز</string>
+    <string name="path_vanguard_rank_1">رهسپار</string>
+    <string name="path_vanguard_rank_2">پیشتاز</string>
+    <string name="path_vanguard_rank_3">قهرمان</string>
+    <string name="path_vanguard_rank_4">سرآمد</string>
+    <string name="path_vanguard_rank_5">افسانه</string>
+
+    <string name="path_nocturne_name">مسیر شبانه</string>
+    <string name="path_nocturne_epithet">آنجا بخوان که نور فانوس محو می‌شود</string>
+    <string name="path_nocturne_description">برای وحشت، داستان گوتیک، فانتزی تاریک و رازهای ناآرام.</string>
+    <string name="path_nocturne_aspect">سایه</string>
+    <string name="path_nocturne_invocation">بعضی حقیقت‌ها تنها پس از کم‌نور شدن فانوس دیده می‌شوند.</string>
+    <string name="path_nocturne_rank_0">شنونده</string>
+    <string name="path_nocturne_rank_1">دیده‌بان</string>
+    <string name="path_nocturne_rank_2">سایه</string>
+    <string name="path_nocturne_rank_3">شبانه</string>
+    <string name="path_nocturne_rank_4">نگهبان شب</string>
+    <string name="path_nocturne_rank_5">کسوف</string>
+
+    <string name="path_artificer_name">مسیر صنعتگر</string>
+    <string name="path_artificer_epithet">سازوکار زیر معجزه را بفهم</string>
+    <string name="path_artificer_description">برای فناوری، مهندسی، علمی‌تخیلی سخت و ذهن‌های سیستم‌گرا.</string>
+    <string name="path_artificer_aspect">ساختن</string>
+    <string name="path_artificer_invocation">سازوکار را بفهم؛ آن‌وقت شکل معجزه تغییر می‌کند.</string>
+    <string name="path_artificer_rank_0">دست‌ورز</string>
+    <string name="path_artificer_rank_1">تحلیلگر</string>
+    <string name="path_artificer_rank_2">سازنده</string>
+    <string name="path_artificer_rank_3">صنعتگر</string>
+    <string name="path_artificer_rank_4">معمار</string>
+    <string name="path_artificer_rank_5">استاد سازوکار</string>
+
+    <string name="path_ritual_oracle">%1$d بخش تازه را که سرنخ، مضمون یا ساختار پنهانی را آشکار می‌کنند هایلایت کنید.</string>
+    <string name="path_ritual_dreamwalker">%1$d دقیقهٔ فعال در جهان‌های کتاب‌هایتان مطالعه کنید.</string>
+    <string name="path_ritual_vanguard">%1$d صفحهٔ سنجیده بخوانید. ورق‌زدن سریع حساب نمی‌شود.</string>
+    <string name="path_ritual_nocturne">%1$d دقیقه بین ساعت ۸ شب تا ۶ صبح بر اساس زمان محلی دستگاه مطالعه کنید.</string>
+    <string name="path_ritual_archivist">%1$d یادداشت تازه با حداقل ۴۰ نویسه برای بخش‌های کتاب بنویسید.</string>
+    <string name="path_ritual_artificer">%1$d یادداشت مفهومی تازه با حداقل ۴۰ نویسه ثبت کنید.</string>
+
+    <string name="path_progression">پیشرفت</string>
+    <string name="path_your_ascent">صعود شما</string>
+    <string name="path_other_paths">مسیرهای دیگر</string>
+    <string name="path_choose_fits">مسیر مناسب خود را انتخاب کنید</string>
+    <string name="path_choice_rooted">انتخاب شما ریشه دوانده است</string>
+    <string name="path_change_before_advancement">تا پیش از نخستین ارتقا می‌توانید مسیر را عوض کنید. مسیر فقط سبک پیشرفت را تغییر می‌دهد و هرگز دسترسی به کتاب‌ها را محدود نمی‌کند.</string>
+    <string name="path_lore_after_advancement">مسیرهای دیگر به‌عنوان بخشی از جهان باقی می‌مانند؛ مسیر فعلی برای این سفر ثابت است.</string>
+    <string name="path_level">سطح %1$d</string>
+    <string name="path_ritual_complete">آیین کامل شد</string>
+    <string name="path_next_threshold">آستانهٔ بعدی</string>
+    <string name="path_remains_open">مسیر همچنان باز است</string>
+    <string name="path_no_higher_rank">رتبهٔ بالاتری باقی نمانده است.</string>
+    <string name="path_perform_advancement">اجرای ارتقا</string>
+    <string name="path_keep_reading">ادامهٔ مطالعه · %1$d/%2$d</string>
+    <string name="path_rank">رتبه %1$s</string>
+    <string name="path_mastered">تسلط‌یافته</string>
+    <string name="path_current_seal">مهر فعلی</string>
+    <string name="path_sealed">مهرشده</string>
+    <string name="path_choose_this">انتخاب این مسیر</string>
+    <string name="path_locked_after_advancement">پس از نخستین ارتقا قفل می‌شود</string>
+    <string name="path_advance_to">ارتقا به %1$s</string>
+    <string name="path_advance_body">آیین شما کامل شده است. این ارتقا یک رتبهٔ دائمی در %1$s ثبت می‌کند.</string>
+    <string name="path_advance">ارتقا</string>
+    <string name="path_not_yet">فعلاً نه</string>
+</resources>
