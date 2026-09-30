@@ -537,60 +537,196 @@ fun BookCover(
         else -> 0.20f
     }
 
+    /*
+     * Native Grayfog adaptation of the strongest ideas in modern animated UI libraries:
+     * layered 3D book depth, a restrained perspective settle, and progressive edge sheen.
+     * This deliberately copies no web dependency or source implementation.
+     */
+    val shouldStageArtifact = artifact?.recentlyOpened == true && !reducedMotion
+    var artifactSettled by remember(title, imagePath, shouldStageArtifact) {
+        mutableStateOf(!shouldStageArtifact)
+    }
+    LaunchedEffect(title, imagePath, shouldStageArtifact) {
+        artifactSettled = true
+    }
+    val stageTilt by animateFloatAsState(
+        targetValue = if (artifactSettled) 0f else -2.6f,
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(VeilMotion.SPATIAL_MS, easing = FastOutSlowInEasing)
+        },
+        label = "book-artifact-tilt"
+    )
+    val stageScale by animateFloatAsState(
+        targetValue = if (artifactSettled) 1f else 0.985f,
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(VeilMotion.SPATIAL_MS, easing = FastOutSlowInEasing)
+        },
+        label = "book-artifact-scale"
+    )
+    val liftDistancePx = with(LocalDensity.current) { 2.dp.toPx() }
+    val stageLift by animateFloatAsState(
+        targetValue = if (artifactSettled) 0f else liftDistancePx,
+        animationSpec = if (reducedMotion) {
+            snap()
+        } else {
+            tween(VeilMotion.SPATIAL_MS, easing = FastOutSlowInEasing)
+        },
+        label = "book-artifact-lift"
+    )
+    val cameraDensity = LocalDensity.current.density
+
     val shape = RoundedCornerShape(4.dp)
+    val pageEdge = Color(0xFFD8C9AA)
+
     Box(
         modifier = modifier
             .onSizeChanged { coverSize = it }
-            .shadow(
-                elevation = if (artifact?.recentlyOpened == true) 9.dp else 7.dp,
-                shape = shape,
-                ambientColor = aura.copy(alpha = auraStrength),
-                spotColor = Color.Black.copy(alpha = 0.32f)
-            )
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(
-                BorderStroke(
-                    1.dp,
-                    aura.copy(alpha = if (artifact == null) 0.48f else 0.56f)
-                ),
-                shape
-            )
             // Every current cover placement already presents the book title beside the artwork.
             // Keep the image layers decorative so TalkBack does not announce the same title twice.
             .clearAndSetSemantics { }
     ) {
-        GeneratedBookCover(title = title, subtitle = subtitle)
-        cachedCover?.let { cover ->
-            Image(
-                bitmap = cover.bitmap,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize().alpha(imageAlpha)
-            )
-        }
-
+        // A quiet physical book-block layer. It is intentionally static: depth should read even
+        // with Reduced Motion enabled and must not become an ambient loop.
         Box(
             Modifier
-                .fillMaxHeight()
-                .width(3.dp)
-                .background(Color.Black.copy(alpha = 0.16f))
-                .align(Alignment.CenterStart)
-        )
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(Color.White.copy(alpha = 0.12f))
-                .align(Alignment.TopCenter)
+                .matchParentSize()
+                .offset(x = 2.dp, y = 2.dp)
+                .shadow(
+                    elevation = 4.dp,
+                    shape = shape,
+                    ambientColor = Color.Black.copy(alpha = 0.18f),
+                    spotColor = Color.Black.copy(alpha = 0.30f)
+                )
+                .clip(shape)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color(0xFF8B795E).copy(alpha = 0.68f),
+                            pageEdge.copy(alpha = 0.92f),
+                            Color(0xFFB9A784).copy(alpha = 0.76f)
+                        )
+                    )
+                )
+                .border(
+                    BorderStroke(1.dp, Color.Black.copy(alpha = 0.18f)),
+                    shape
+                )
         )
 
-        artifact?.let {
-            BookArtifactOverlay(
-                state = it,
-                aura = aura,
-                modifier = Modifier.matchParentSize()
+        Box(
+            modifier = Modifier
+                .matchParentSize()
+                .graphicsLayer {
+                    rotationY = stageTilt
+                    scaleX = stageScale
+                    scaleY = stageScale
+                    translationX = stageLift
+                    cameraDistance = 24f * cameraDensity
+                }
+                .shadow(
+                    elevation = if (artifact?.recentlyOpened == true) 9.dp else 7.dp,
+                    shape = shape,
+                    ambientColor = aura.copy(alpha = auraStrength),
+                    spotColor = Color.Black.copy(alpha = 0.32f)
+                )
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(
+                    BorderStroke(
+                        1.dp,
+                        aura.copy(alpha = if (artifact == null) 0.48f else 0.56f)
+                    ),
+                    shape
+                )
+        ) {
+            GeneratedBookCover(title = title, subtitle = subtitle)
+            cachedCover?.let { cover ->
+                Image(
+                    bitmap = cover.bitmap,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().alpha(imageAlpha)
+                )
+            }
+
+            // Progressive sheen gives the front board material depth without an expensive blur.
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                Color.White.copy(alpha = 0.085f),
+                                Color.Transparent,
+                                aura.copy(alpha = 0.035f),
+                                Color.Black.copy(alpha = 0.075f)
+                            )
+                        )
+                    )
             )
+
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .width(3.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Black.copy(alpha = 0.26f),
+                                Color.Black.copy(alpha = 0.10f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+                    .align(Alignment.CenterStart)
+            )
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .width(2.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                pageEdge.copy(alpha = 0.24f)
+                            )
+                        )
+                    )
+                    .align(Alignment.CenterEnd)
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.12f)
+                            )
+                        )
+                    )
+                    .align(Alignment.BottomCenter)
+            )
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(Color.White.copy(alpha = 0.13f))
+                    .align(Alignment.TopCenter)
+            )
+
+            artifact?.let {
+                BookArtifactOverlay(
+                    state = it,
+                    aura = aura,
+                    modifier = Modifier.matchParentSize()
+                )
+            }
         }
     }
 }
