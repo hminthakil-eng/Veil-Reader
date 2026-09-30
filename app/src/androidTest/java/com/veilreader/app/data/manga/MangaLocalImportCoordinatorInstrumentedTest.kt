@@ -286,6 +286,89 @@ class MangaLocalImportCoordinatorInstrumentedTest {
         }
 
     @Test
+    fun schema6Backup_restoresActiveMerge_andRemainsSplittable() = runBlocking {
+        val targetArchive = testArchive("Backup merge target ch 1.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val sourceArchive = testArchive("Backup merge source ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val target = coordinator.import(Uri.fromFile(targetArchive)).getOrThrow().book
+        val source = coordinator.import(Uri.fromFile(sourceArchive)).getOrThrow().book
+        val sourcePrimary = db.mangaCatalog().listChapters(source.id).single()
+        coordinator.updateChapterMetadata(
+            bookId = source.id,
+            chapterId = sourcePrimary.id,
+            metadata = MangaLocalChapterMetadata(
+                title = "Backup merge source ch 2",
+                number = 2.0
+            )
+        ).getOrThrow()
+
+        val targetPrimary = db.mangaCatalog().listChapters(target.id).single()
+        val targetLink = db.mangaCatalog().listChapterSources(targetPrimary.id).single()
+        RoomMangaProgressStore(db).save(
+            MangaReadingProgress(
+                mangaId = CanonicalMangaId(target.id),
+                chapter = MangaChapterAnchor(
+                    volume = targetPrimary.volume,
+                    number = targetPrimary.number,
+                    languageTag = targetPrimary.languageTag,
+                    normalizedTitle = targetPrimary.normalizedTitle,
+                    providerChapterKeyHint = targetLink.chapterKey
+                ),
+                pageIndex = 0,
+                pageCount = 2,
+                chapterProgression = 0.5,
+                updatedAtEpochMs = 9_000L
+            )
+        )
+
+        val merged = coordinator.executeLocalMerge(
+            targetBookId = target.id,
+            sourceBookIds = listOf(source.id)
+        ).getOrThrow()
+        val backup = File(
+            context.cacheDir,
+            "manga-merge-schema6-" + java.util.UUID.randomUUID() + ".zip"
+        )
+        LibraryExport(context, repository, db).writeBackup(Uri.fromFile(backup))
+        assertTrue(backup.isFile && backup.length() > 0L)
+
+        coordinator.splitLocalMerge(target.id).getOrThrow()
+        assertTrue(db.mangaMerges().findForTarget(target.id) == null)
+        assertEquals(2, db.books().observeVisible().first().size)
+
+        LibraryExport(context, repository, db).restoreBackup(Uri.fromFile(backup))
+
+        val restoredReceipt = requireNotNull(db.mangaMerges().findForTarget(target.id))
+        assertEquals(merged.mergeId, restoredReceipt.merge.id)
+        assertEquals(listOf(source.id), restoredReceipt.members.map { it.sourceBookId })
+        assertEquals(2, db.books().count())
+        assertEquals(
+            listOf(target.id),
+            db.books().observeVisible().first().map { it.book.id }
+        )
+        assertEquals(2, db.mangaCatalog().listChapters(target.id).size)
+        assertEquals(1, db.mangaCatalog().listChapters(source.id).size)
+
+        coordinator.splitLocalMerge(target.id).getOrThrow()
+
+        assertTrue(db.mangaMerges().findForTarget(target.id) == null)
+        assertEquals(
+            setOf(target.id, source.id),
+            db.books().observeVisible().first().map { it.book.id }.toSet()
+        )
+        assertEquals(1, db.mangaCatalog().listChapters(target.id).size)
+        val restoredProgress = requireNotNull(db.mangaProgress().find(target.id))
+        assertEquals(0.5, restoredProgress.chapterProgression, 0.000001)
+        assertEquals(9_000L, restoredProgress.updatedAtEpochMs)
+        backup.delete()
+    }
+
+    @Test
     fun mergePreflight_rejectsCorruptedSourceArchiveBeforeAnyMutation() = runBlocking {
         val targetArchive = testArchive("Integrity target ch 1.cbz") {
             addPng("001.png")
