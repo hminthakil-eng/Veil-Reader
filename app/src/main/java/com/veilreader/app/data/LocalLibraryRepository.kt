@@ -343,10 +343,6 @@ class LocalLibraryRepository internal constructor(
         require(bookId.isNotBlank())
         require(sessionId.isNotBlank())
         return synchronized(coalescingLock) {
-            activeReaderProgressWriters[bookId]
-                ?.takeIf { it.sessionId == sessionId }
-                ?.let { return@synchronized it }
-
             progressFlushJobs.remove(bookId)?.cancel()
             pendingProgress.remove(bookId)?.let(::enqueueProgressWrite)
 
@@ -452,6 +448,14 @@ class LocalLibraryRepository internal constructor(
         nowEpochMs: Long = System.currentTimeMillis()
     ): Boolean =
         synchronized(coalescingLock) {
+            if (activeReaderProgressWriters.containsKey(id)) {
+                ReaderTrace.event(
+                    "legacy_progress_write_rejected_active_reader",
+                    bookId = id,
+                    details = "ordered Reader writer owns progress"
+                )
+                return@synchronized false
+            }
             saveProgressLocked(
                 id = id,
                 progression = progression,
