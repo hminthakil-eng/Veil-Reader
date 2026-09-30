@@ -829,7 +829,13 @@ fun LibraryScreen(
             if (books.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth()) {
                     TextButton(onClick = { overviewExpanded = !overviewExpanded }) {
-                        Text(if (overviewExpanded) "Hide archive overview" else "Archive overview")
+                        Text(
+                            if (overviewExpanded) {
+                                stringResource(R.string.library_hide_archive_overview)
+                            } else {
+                                stringResource(R.string.library_archive_overview)
+                            }
+                        )
                     }
                     if (overviewExpanded) {
                         ArchiveOverview(
@@ -883,7 +889,7 @@ fun LibraryScreen(
             title = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "ARCHIVE RECORD",
+                        stringResource(R.string.book_metadata_archive_record),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass
                     )
@@ -1270,7 +1276,7 @@ private fun BookDetailSheet(
                             if (latestCycle.cycleIndex > 1) {
                                 stringResource(R.string.book_detail_latest_completion_cycle, latestCycle.cycleIndex)
                             } else {
-                                "Completed"
+                                stringResource(R.string.book_detail_finished)
                             },
                             formatArchiveRecordDate(latestCycle.completedAtEpochMs)
                         )
