@@ -31,12 +31,16 @@ class MainActivity : FragmentActivity() {
         setContent {
             val settingsViewModel: SettingsViewModel = viewModel()
             val appSettings by settingsViewModel.settings.collectAsStateWithLifecycle()
-            VeilTheme(themeMode = appSettings.appThemeMode) {
+            VeilTheme(
+                themeMode = appSettings.appThemeMode,
+                performanceTier = appSettings.performanceTier
+            ) {
                 VeilApp(
                     externalOpenUri = externalOpenUri,
                     onExternalOpenUriConsumed = { externalOpenUri = null },
                     appSettings = appSettings,
                     onSetAppThemeMode = settingsViewModel::setAppThemeMode,
+                    onSetPerformanceTier = settingsViewModel::setPerformanceTier,
                     onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
                     onSaveBookReaderAppearance = settingsViewModel::saveBookReaderAppearance,
                     onClearBookReaderAppearance = settingsViewModel::clearBookReaderAppearance,
