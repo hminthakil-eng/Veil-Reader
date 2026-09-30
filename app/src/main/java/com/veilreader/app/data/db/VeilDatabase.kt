@@ -298,6 +298,10 @@ abstract class VeilDatabase : RoomDatabase() {
                         "ON manga_work_merges(targetBookId)"
                 )
                 db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_work_merges_id_targetBookId " +
+                        "ON manga_work_merges(id, targetBookId)"
+                )
+                db.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_manga_work_merges_createdAtEpochMs " +
                         "ON manga_work_merges(createdAtEpochMs)"
                 )
@@ -343,7 +347,8 @@ abstract class VeilDatabase : RoomDatabase() {
                         targetBookId TEXT NOT NULL,
                         chapterKey TEXT NOT NULL,
                         PRIMARY KEY(mergeId, readingOrder),
-                        FOREIGN KEY(mergeId) REFERENCES manga_work_merges(id)
+                        FOREIGN KEY(mergeId, targetBookId)
+                            REFERENCES manga_work_merges(id, targetBookId)
                             ON UPDATE NO ACTION ON DELETE CASCADE,
                         FOREIGN KEY(chapterId, targetBookId)
                             REFERENCES manga_chapters(id, bookId)
@@ -354,6 +359,11 @@ abstract class VeilDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_manga_merge_original_chapters_mergeId " +
                         "ON manga_merge_original_chapters(mergeId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "index_manga_merge_original_chapters_mergeId_targetBookId " +
+                        "ON manga_merge_original_chapters(mergeId, targetBookId)"
                 )
                 db.execSQL(
                     "CREATE UNIQUE INDEX IF NOT EXISTS " +
@@ -368,16 +378,22 @@ abstract class VeilDatabase : RoomDatabase() {
                         sourceChapterId TEXT NOT NULL,
                         sourceBookId TEXT NOT NULL,
                         targetChapterId TEXT NOT NULL,
+                        targetBookId TEXT NOT NULL,
                         sourceReadingOrder INTEGER NOT NULL,
                         targetReadingOrder INTEGER NOT NULL,
                         disposition TEXT NOT NULL,
                         PRIMARY KEY(mergeId, sourceChapterId),
-                        FOREIGN KEY(mergeId) REFERENCES manga_work_merges(id)
+                        FOREIGN KEY(mergeId, targetBookId)
+                            REFERENCES manga_work_merges(id, targetBookId)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(mergeId, sourceBookId)
+                            REFERENCES manga_merge_members(mergeId, sourceBookId)
                             ON UPDATE NO ACTION ON DELETE CASCADE,
                         FOREIGN KEY(sourceChapterId, sourceBookId)
                             REFERENCES manga_chapters(id, bookId)
                             ON UPDATE NO ACTION ON DELETE RESTRICT,
-                        FOREIGN KEY(targetChapterId) REFERENCES manga_chapters(id)
+                        FOREIGN KEY(targetChapterId, targetBookId)
+                            REFERENCES manga_chapters(id, bookId)
                             ON UPDATE NO ACTION ON DELETE RESTRICT
                     )
                     """.trimIndent()
@@ -387,13 +403,22 @@ abstract class VeilDatabase : RoomDatabase() {
                         "ON manga_merge_chapters(mergeId)"
                 )
                 db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_mergeId_targetBookId " +
+                        "ON manga_merge_chapters(mergeId, targetBookId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_mergeId_sourceBookId " +
+                        "ON manga_merge_chapters(mergeId, sourceBookId)"
+                )
+                db.execSQL(
                     "CREATE UNIQUE INDEX IF NOT EXISTS " +
                         "index_manga_merge_chapters_sourceChapterId_sourceBookId " +
                         "ON manga_merge_chapters(sourceChapterId, sourceBookId)"
                 )
                 db.execSQL(
-                    "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_targetChapterId " +
-                        "ON manga_merge_chapters(targetChapterId)"
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "index_manga_merge_chapters_targetChapterId_targetBookId " +
+                        "ON manga_merge_chapters(targetChapterId, targetBookId)"
                 )
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_mergeId_targetReadingOrder " +
