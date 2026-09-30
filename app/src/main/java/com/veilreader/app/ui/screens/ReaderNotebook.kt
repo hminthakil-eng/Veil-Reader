@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -87,14 +91,28 @@ fun ReaderNotebook(
     var bookSearchErrorRes by remember { mutableStateOf<Int?>(null) }
     var bookSearchLimited by remember { mutableStateOf(false) }
     var searchingBook by remember { mutableStateOf(false) }
+    var completedBookSearchTerm by remember(opened.book.id) { mutableStateOf<String?>(null) }
 
     val chapters = remember(opened.book.id) {
         fun flatten(links: List<Link>, depth: Int): List<Pair<Link, Int>> =
             links.flatMap { listOf(it to depth) + flatten(it.children, depth + 1) }
         flatten(opened.publication.tableOfContents.ifEmpty { opened.publication.readingOrder }, 0)
     }
-    val matchingHighlights = highlights.filter {
-        query.isBlank() || it.quote.contains(query.trim(), true) || it.note.contains(query.trim(), true)
+    val searchableHighlights = remember(highlights) {
+        highlights.map { highlight ->
+            Triple(
+                highlight,
+                normalizeLibrarySearchText(highlight.quote),
+                normalizeLibrarySearchText(highlight.note)
+            )
+        }
+    }
+    val normalizedNoteQuery = remember(query) { normalizeLibrarySearchText(query) }
+    val matchingHighlights = remember(searchableHighlights, normalizedNoteQuery) {
+        searchableHighlights.filter { (_, quote, noteText) ->
+            normalizedNoteQuery.isEmpty() ||
+                quote.contains(normalizedNoteQuery) || noteText.contains(normalizedNoteQuery)
+        }.map { it.first }
     }
 
     fun runBookSearch() {
@@ -102,6 +120,7 @@ fun ReaderNotebook(
         if (term.length < 2 || searchingBook) return
         scope.launch {
             searchingBook = true
+            completedBookSearchTerm = null
             bookSearchErrorRes = null
             bookSearchLimited = false
             bookSearchResults = emptyList()
@@ -145,6 +164,7 @@ fun ReaderNotebook(
                         found.size > READER_SEARCH_RESULT_LIMIT
                     bookSearchResults =
                         found.take(READER_SEARCH_RESULT_LIMIT)
+                    if (!failed) completedBookSearchTerm = term
                 } finally {
                     iterator.close()
                 }
@@ -258,9 +278,18 @@ fun ReaderNotebook(
                 ) {
                     OutlinedTextField(
                         value = bookSearchQuery,
-                        onValueChange = { bookSearchQuery = it },
+                        onValueChange = {
+                            bookSearchQuery = it
+                            bookSearchResults = emptyList()
+                            bookSearchErrorRes = null
+                            bookSearchLimited = false
+                            completedBookSearchTerm = null
+                        },
+                        enabled = !searchingBook,
                         label = { Text(stringResource(R.string.reader_notebook_search_book)) },
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                        keyboardActions = KeyboardActions(onSearch = { runBookSearch() }),
                         modifier = Modifier.fillMaxWidth()
                     )
                     Button(
@@ -510,7 +539,10 @@ fun ReaderNotebook(
                         bookSearchErrorRes?.let { messageRes ->
                             item { Text(stringResource(messageRes), color = MaterialTheme.colorScheme.error) }
                         }
-                        if (!searchingBook && bookSearchErrorRes == null && bookSearchQuery.isNotBlank() && bookSearchResults.isEmpty()) {
+                        if (!searchingBook && bookSearchErrorRes == null &&
+                            completedBookSearchTerm == bookSearchQuery.trim() &&
+                            bookSearchResults.isEmpty()
+                        ) {
                             item {
                                 Text(
                                     stringResource(R.string.reader_notebook_no_search_matches),
@@ -605,7 +637,7 @@ fun ReaderNotebook(
                             strength = 0.24f
                         )
                         Column(
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier.verticalScroll(rememberScrollState()).padding(20.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
@@ -755,7 +787,7 @@ fun ReaderNotebook(
                     shadowElevation = 0.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier.verticalScroll(rememberScrollState()).padding(20.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
