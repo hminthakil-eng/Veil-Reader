@@ -85,6 +85,7 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilTracking
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -2549,7 +2550,7 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
+                style = MaterialTheme.typography.labelMedium.withVeilTracking(eyebrow, 1.35.sp),
                 color = VeilPalette.Brass
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
@@ -2923,9 +2924,7 @@ private fun MemoryReturnCard(
                 Spacer(Modifier.width(8.dp))
                 Text(
                     eyebrow,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 1.08.sp
-                    ),
+                    style = MaterialTheme.typography.labelSmall.withVeilTracking(eyebrow, 1.08.sp),
                     color = VeilPalette.Brass,
                     modifier = Modifier.weight(1f)
                 )
@@ -3862,7 +3861,7 @@ private fun ViewModeToggle(
                 }
                 Text(
                     label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.7.sp),
+                    style = MaterialTheme.typography.labelSmall.withVeilTracking(label, 0.7.sp),
                     color = if (active) {
                         VeilPalette.Brass
                     } else {
