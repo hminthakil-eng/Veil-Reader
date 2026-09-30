@@ -59,6 +59,18 @@ interface BookDao {
     @Query("UPDATE books SET lastOpenedAtEpochMs = :openedAtEpochMs WHERE id = :id")
     suspend fun updateLastOpened(id: String, openedAtEpochMs: Long): Int
 
+    @Query("UPDATE books SET coverCachePath = :path WHERE id = :id")
+    suspend fun updateCoverCachePath(id: String, path: String): Int
+
+    @Query(
+        """
+        UPDATE books
+        SET contentFingerprint = :fingerprint
+        WHERE id = :id AND (contentFingerprint IS NULL OR contentFingerprint = '')
+        """
+    )
+    suspend fun updateContentFingerprintIfMissing(id: String, fingerprint: String): Int
+
     /**
      * Narrow projection used by the Manga engine. Manga owns detailed chapter/page progress in its
      * dedicated tables; Book keeps only the cross-product library summary.
