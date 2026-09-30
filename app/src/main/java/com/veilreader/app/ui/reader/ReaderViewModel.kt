@@ -103,16 +103,24 @@ class ReaderViewModel(
         ReaderTrace.event("reader_pause", bookId = current.bookId, sessionId = current.sessionId)
         library.flushProgress(current.bookId)
         ReaderTrace.event("locator_flush_enqueued", bookId = current.bookId, sessionId = current.sessionId)
+
         if (!resumed) {
             library.flushReadingSession(current.sessionId)
             game.pauseReading()
-            return
+        } else {
+            creditActive(current.onPause(SystemClock.elapsedRealtime()))
+            resumed = false
+            game.pauseReading()
+            publishActiveMillis()
+            persistSession(immediate = true)
         }
-        creditActive(current.onPause(SystemClock.elapsedRealtime()))
-        resumed = false
-        game.pauseReading()
-        publishActiveMillis()
-        persistSession(immediate = true)
+
+        // Do not rely on a composition-owned coroutine here. ON_PAUSE/ON_STOP can be followed by
+        // immediate UI disposal; the repository owns this barrier for the rest of the app process.
+        library.requestLifecycleDurability(
+            bookId = current.bookId,
+            sessionId = current.sessionId
+        )
     }
 
     fun onUserInteraction() {
