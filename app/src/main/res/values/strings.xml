@@ -1188,4 +1188,12 @@
     <string name="manga_reader_error_eyebrow">VISUAL READER · INTERRUPTION</string>
     <string name="manga_reader_saving_position">Saving your place…</string>
     <string name="manga_reader_message_progress_save_failed">Your latest place could not be saved. The reader stayed open so you can retry.</string>
+    <string name="book_detail_delete">Remove from Veil</string>
+    <string name="book_delete_eyebrow">ARCHIVE · PERMANENT REMOVAL</string>
+    <string name="book_delete_title">Remove this publication?</string>
+    <string name="book_delete_body">%1$s and its saved annotations will be removed from this device. Historical reading-session totals remain in the archive. Local manga page cache is removed too.</string>
+    <string name="book_delete_cancel">Keep it</string>
+    <string name="book_delete_confirm">Remove</string>
+    <string name="notice_book_deleted">Removed %1$s from Veil.</string>
+    <string name="notice_book_delete_failed">This publication could not be removed completely. Nothing else was changed.</string>
 </resources>
