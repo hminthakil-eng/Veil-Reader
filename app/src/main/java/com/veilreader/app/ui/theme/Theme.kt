@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -15,22 +16,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.AppThemeMode
 
-/** Veil Reader visual system: quiet reading utility wrapped in a mysterious world. */
+/**
+ * Veil Reader visual system.
+ *
+ * The shell is an archival instrument: blue-black structure, aged brass detail and editorial type.
+ * The reader remains materially quiet and paper-led. Amethyst is reserved for rare/mystical states,
+ * not used as the default "premium" paint.
+ */
 object VeilPalette {
-    val Ink = Color(0xFF0B0A0F)
-    val Obsidian = Color(0xFF121117)
-    val Slate = Color(0xFF1B1921)
-    val RaisedSlate = Color(0xFF24212B)
-    val Moon = Color(0xFFF5F0F7)
-    val Mist = Color(0xFFCFC6D3)
-    val Amethyst = Color(0xFFD5BCFF)
-    val DeepAmethyst = Color(0xFF4C2D6D)
-    val OldGold = Color(0xFFE5C97B)
-    val Jade = Color(0xFF8EDBC7)
-    val AshLine = Color(0xFF514A58)
-    val Parchment = Color(0xFFF6F1EA)
-    val WarmPaper = Color(0xFFFFFBF6)
-    val InkOnPaper = Color(0xFF252128)
+    val Ink = Color(0xFF07090C)
+    val Obsidian = Color(0xFF0B0F14)
+    val ArchiveBlue = Color(0xFF101722)
+    val Slate = Color(0xFF171E28)
+    val RaisedSlate = Color(0xFF202936)
+
+    val Moon = Color(0xFFF1EEE7)
+    val Mist = Color(0xFFB7BDC5)
+    val Fog = Color(0xFF8793A2)
+
+    val OldGold = Color(0xFFC5A15B)
+    val Brass = Color(0xFF9C7A3D)
+    val PaleGold = Color(0xFFE4CD96)
+    val Amethyst = Color(0xFF9A86B8)
+    val DeepAmethyst = Color(0xFF4A3A5D)
+    val Jade = Color(0xFF79B5A4)
+    val AshLine = Color(0xFF3B4653)
+
+    val Parchment = Color(0xFFEDE3CF)
+    val WarmPaper = Color(0xFFF7EEDC)
+    val AgedPaper = Color(0xFFE2D2B5)
+    val InkOnPaper = Color(0xFF282118)
 }
 
 object VeilSpacing {
@@ -44,53 +59,57 @@ object VeilSpacing {
 }
 
 object VeilMotion {
-    const val QUICK_MS = 150
-    const val STANDARD_MS = 250
-    const val CEREMONIAL_MS = 480
+    const val QUICK_MS = 140
+    const val STANDARD_MS = 230
+    const val CEREMONIAL_MS = 520
 }
 
 private val VeilDarkColors = darkColorScheme(
-    primary = VeilPalette.Amethyst,
-    onPrimary = Color(0xFF251538),
-    primaryContainer = Color(0xFF372349),
-    onPrimaryContainer = Color(0xFFF0E2FF),
-    secondary = VeilPalette.OldGold,
-    onSecondary = Color(0xFF342906),
-    secondaryContainer = Color(0xFF443712),
-    onSecondaryContainer = Color(0xFFFFEBB2),
-    tertiary = VeilPalette.Jade,
-    onTertiary = Color(0xFF07342A),
+    primary = VeilPalette.OldGold,
+    onPrimary = VeilPalette.Ink,
+    primaryContainer = Color(0xFF2B2518),
+    onPrimaryContainer = VeilPalette.PaleGold,
+    secondary = VeilPalette.Mist,
+    onSecondary = VeilPalette.Ink,
+    secondaryContainer = Color(0xFF222B35),
+    onSecondaryContainer = Color(0xFFE0E6EC),
+    tertiary = VeilPalette.Amethyst,
+    onTertiary = Color(0xFF17101F),
+    tertiaryContainer = VeilPalette.DeepAmethyst,
+    onTertiaryContainer = Color(0xFFEADFFF),
     background = VeilPalette.Ink,
     onBackground = VeilPalette.Moon,
     surface = VeilPalette.Obsidian,
     onSurface = VeilPalette.Moon,
-    surfaceVariant = VeilPalette.Slate,
+    surfaceVariant = VeilPalette.ArchiveBlue,
     onSurfaceVariant = VeilPalette.Mist,
-    outline = VeilPalette.AshLine,
-    outlineVariant = Color(0xFF332E39),
-    error = Color(0xFFFFB4AB),
-    onError = Color(0xFF690005)
+    outline = Color(0xFF6E6147),
+    outlineVariant = VeilPalette.AshLine,
+    error = Color(0xFFE8A29B),
+    onError = Color(0xFF35100D)
 )
 
 private val VeilLightColors = lightColorScheme(
-    primary = Color(0xFF68438D),
+    primary = Color(0xFF775B27),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFEBD9FF),
-    onPrimaryContainer = Color(0xFF28113F),
-    secondary = Color(0xFF755D12),
+    primaryContainer = Color(0xFFEBD9AE),
+    onPrimaryContainer = Color(0xFF281D08),
+    secondary = Color(0xFF4F5E6A),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFFFE8A7),
-    onSecondaryContainer = Color(0xFF251C00),
-    tertiary = Color(0xFF276D5E),
+    secondaryContainer = Color(0xFFDCE5EB),
+    onSecondaryContainer = Color(0xFF132029),
+    tertiary = Color(0xFF665675),
     onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFEBDDFA),
+    onTertiaryContainer = Color(0xFF21172A),
     background = VeilPalette.Parchment,
     onBackground = VeilPalette.InkOnPaper,
     surface = VeilPalette.WarmPaper,
     onSurface = VeilPalette.InkOnPaper,
-    surfaceVariant = Color(0xFFECE6ED),
-    onSurfaceVariant = Color(0xFF514A54),
-    outline = Color(0xFF807781),
-    outlineVariant = Color(0xFFD3CAD5)
+    surfaceVariant = VeilPalette.AgedPaper,
+    onSurfaceVariant = Color(0xFF564C3F),
+    outline = Color(0xFF88785E),
+    outlineVariant = Color(0xFFC8B99E)
 )
 
 private val VeilTypography = Typography(
@@ -115,13 +134,13 @@ private val VeilTypography = Typography(
         lineHeight = 29.sp
     ),
     headlineSmall = TextStyle(
-        fontFamily = FontFamily.SansSerif,
-        fontWeight = FontWeight.Bold,
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.SemiBold,
         fontSize = 20.sp,
         lineHeight = 25.sp
     ),
     titleLarge = TextStyle(
-        fontFamily = FontFamily.SansSerif,
+        fontFamily = FontFamily.Serif,
         fontWeight = FontWeight.SemiBold,
         fontSize = 19.sp,
         lineHeight = 24.sp,
@@ -157,23 +176,27 @@ private val VeilTypography = Typography(
         fontWeight = FontWeight.SemiBold,
         fontSize = 11.sp,
         lineHeight = 16.sp,
-        letterSpacing = 0.65.sp
+        letterSpacing = 0.55.sp
     ),
     labelSmall = TextStyle(
         fontFamily = FontFamily.SansSerif,
         fontWeight = FontWeight.Medium,
         fontSize = 10.sp,
         lineHeight = 14.sp,
-        letterSpacing = 0.35.sp
+        letterSpacing = 0.25.sp
     )
 )
 
+/**
+ * Architectural rather than pill-like. Large radii are deliberately capped so screens read like
+ * bound plates and archive furniture, not a stack of generic rounded cards.
+ */
 private val VeilShapes = Shapes(
-    extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-    small = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-    medium = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-    large = androidx.compose.foundation.shape.RoundedCornerShape(24.dp),
-    extraLarge = androidx.compose.foundation.shape.RoundedCornerShape(32.dp)
+    extraSmall = RoundedCornerShape(4.dp),
+    small = RoundedCornerShape(7.dp),
+    medium = RoundedCornerShape(10.dp),
+    large = RoundedCornerShape(14.dp),
+    extraLarge = RoundedCornerShape(18.dp)
 )
 
 @Composable
