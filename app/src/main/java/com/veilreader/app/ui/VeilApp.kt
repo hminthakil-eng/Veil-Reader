@@ -375,13 +375,18 @@ fun VeilApp(
         }
     }
 
-    fun appendMangaChapter(book: Book, uri: Uri) {
-        if (isImporting || restoring || book.format != BookFormat.COMIC) return
+    fun appendMangaChapters(book: Book, uris: List<Uri>) {
+        if (
+            isImporting ||
+            restoring ||
+            book.format != BookFormat.COMIC ||
+            uris.isEmpty()
+        ) return
         isImporting = true
         mangaMutationInProgress = true
         scope.launch {
             try {
-                val result = mangaImporter.appendChapter(book.id, uri)
+                val result = mangaImporter.appendChapters(book.id, uris)
                 val error = result.exceptionOrNull()
                 if (error != null) {
                     if (error is CancellationException) throw error
@@ -389,23 +394,35 @@ fun VeilApp(
                     return@launch
                 }
 
-                val chapter = result.getOrThrow()
-                if (!chapter.duplicate) {
+                val batch = result.getOrThrow()
+                if (batch.addedCount > 0) {
                     mangaStorageRevision += 1
                 }
-                if (chapter.duplicate) {
-                    showNotice(
-                        R.string.notice_manga_chapter_duplicate,
-                        VeilNoticeKind.SUCCESS,
-                        book.title
-                    )
-                } else {
-                    showNotice(
-                        R.string.notice_manga_chapter_added,
-                        VeilNoticeKind.SUCCESS,
-                        book.title,
-                        chapter.readingOrder + 1
-                    )
+                when {
+                    batch.addedCount == 0 && batch.duplicateCount > 0 -> {
+                        showNotice(
+                            R.string.notice_manga_chapter_duplicate,
+                            VeilNoticeKind.SUCCESS,
+                            book.title
+                        )
+                    }
+                    batch.duplicateCount > 0 -> {
+                        showNotice(
+                            R.string.notice_manga_chapters_added_with_duplicates,
+                            VeilNoticeKind.SUCCESS,
+                            batch.addedCount,
+                            batch.duplicateCount,
+                            book.title
+                        )
+                    }
+                    else -> {
+                        showNotice(
+                            R.string.notice_manga_chapters_added,
+                            VeilNoticeKind.SUCCESS,
+                            batch.addedCount,
+                            book.title
+                        )
+                    }
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -868,7 +885,7 @@ fun VeilApp(
         MangaHubScreen(
             books = books,
             onOpenBook = ::requestOpenBook,
-            onAddChapterUri = ::appendMangaChapter,
+            onAddChapterUris = ::appendMangaChapters,
             storageSummaryProvider = { book -> mangaImporter.storageSummary(book.id) },
             onClearDerivedCache = ::clearMangaDerivedCache,
             storageRevision = mangaStorageRevision,
