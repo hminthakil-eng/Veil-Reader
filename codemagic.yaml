@@ -74,8 +74,22 @@ workflows:
 
       - name: Android lint
         script: |
+          set -o pipefail
           cd "$CM_BUILD_DIR"
-          ./gradlew :app:lintDebug --stacktrace --no-daemon
+          ./gradlew :app:lintDebug --stacktrace --console=plain --no-daemon 2>&1 | tee "$CM_BUILD_DIR/android-lint.log"
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            report="$CM_BUILD_DIR/app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt"
+            echo
+            echo "===== ANDROID LINT FULL ERROR SUMMARY ====="
+            if [ -f "$report" ]; then
+              grep -n -E "Error:|^[^ ].*:[0-9]+: Error:" "$report" || cat "$report"
+            else
+              grep -E -i "Error:|Lint found|FAILURE:|Execution failed for task" "$CM_BUILD_DIR/android-lint.log" | tail -n 240 || true
+            fi
+            echo "===== END LINT SUMMARY ====="
+            exit "$status"
+          fi
 
       - name: Assemble debug APK
         script: |
@@ -84,6 +98,7 @@ workflows:
 
     artifacts:
       - unit-test.log
+      - android-lint.log
       - app/build/outputs/apk/debug/*.apk
       - app/build/reports/**
       - app/build/test-results/**
@@ -155,6 +170,13 @@ workflows:
             echo
             echo "===== FULL VERIFY ROOT-CAUSE SUMMARY ====="
             grep -E -i "^(e:|FAILURE:|\* What went wrong:|Execution failed for task|There were failing tests|.*FAILED.*|Caused by:)" "$CM_BUILD_DIR/full-verify.log" | tail -n 160 || true
+            lint_report="$CM_BUILD_DIR/app/build/intermediates/lint_intermediate_text_report/debug/lintReportDebug/lint-results-debug.txt"
+            if [ -f "$lint_report" ]; then
+              echo
+              echo "===== FULL LINT ERRORS ====="
+              grep -n -E "Error:|^[^ ].*:[0-9]+: Error:" "$lint_report" || cat "$lint_report"
+              echo "===== END FULL LINT ERRORS ====="
+            fi
             echo "===== END SUMMARY ====="
             exit "$status"
           fi
