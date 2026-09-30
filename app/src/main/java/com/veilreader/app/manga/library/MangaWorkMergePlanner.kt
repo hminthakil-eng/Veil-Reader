@@ -55,7 +55,8 @@ class MangaWorkMergePlanner {
 
         data class TargetProjection(
             val chapterId: String,
-            val readingOrder: Int
+            val readingOrder: Int,
+            val semanticIdentity: String?
         )
 
         val exactOwnerByFingerprint = linkedMapOf<String, TargetProjection>()
@@ -65,7 +66,11 @@ class MangaWorkMergePlanner {
                 chapter.localArchiveFingerprint()?.let { fingerprint ->
                     exactOwnerByFingerprint.putIfAbsent(
                         fingerprint,
-                        TargetProjection(chapter.chapterId, chapter.readingOrder)
+                        TargetProjection(
+                            chapterId = chapter.chapterId,
+                            readingOrder = chapter.readingOrder,
+                            semanticIdentity = chapter.semanticIdentity()
+                        )
                     )
                 }
             }
@@ -84,7 +89,20 @@ class MangaWorkMergePlanner {
                 .sortedBy(MangaMergeChapterCandidate::readingOrder)
                 .forEach { chapter ->
                     val fingerprint = chapter.localArchiveFingerprint()
+                    val sourceSemantic = chapter.semanticIdentity()
                     val exact = fingerprint?.let(exactOwnerByFingerprint::get)
+                    if (
+                        exact != null &&
+                        exact.semanticIdentity != null &&
+                        sourceSemantic != null &&
+                        exact.semanticIdentity != sourceSemantic
+                    ) {
+                        return MangaMergePlanResult.Rejected(
+                            reason = MangaMergeRejection.EXACT_ARCHIVE_METADATA_CONFLICT,
+                            conflictingSourceChapterId = chapter.chapterId,
+                            conflictingTargetChapterId = exact.chapterId
+                        )
+                    }
                     if (exact != null) {
                         actions += MangaMergeChapterAction(
                             sourceBookId = source.bookId,
@@ -99,7 +117,7 @@ class MangaWorkMergePlanner {
                         return@forEach
                     }
 
-                    val semantic = chapter.semanticIdentity()
+                    val semantic = sourceSemantic
                     val semanticMatch = semantic?.let(semanticOwner::get)
                     if (semanticMatch != null) {
                         return MangaMergePlanResult.Rejected(
@@ -129,8 +147,9 @@ class MangaWorkMergePlanner {
                     )
                     if (fingerprint != null) {
                         exactOwnerByFingerprint[fingerprint] = TargetProjection(
-                            projectedTargetChapterId,
-                            targetReadingOrder
+                            chapterId = projectedTargetChapterId,
+                            readingOrder = targetReadingOrder,
+                            semanticIdentity = semantic
                         )
                     }
                     if (semantic != null) {
@@ -349,6 +368,7 @@ enum class MangaMergeRejection {
     DUPLICATE_CHAPTER_ID,
     INVALID_CHAPTER_ORDER,
     UNSTABLE_TARGET_IDENTITY,
+    EXACT_ARCHIVE_METADATA_CONFLICT,
     AMBIGUOUS_CHAPTER_COLLISION
 }
 
