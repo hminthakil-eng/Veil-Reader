@@ -3,6 +3,7 @@ package com.veilreader.app.ui.theme
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -11,6 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.domain.PerformanceTier
 
 /**
  * Art-direction realms deliberately have different visual budgets.
@@ -33,6 +35,54 @@ data class VeilVisualBudget(
     val ornament: Float,
     val motion: Float
 )
+
+
+/**
+ * Performance tiers never reduce reading correctness or content legibility.
+ * They only scale decorative atmosphere, geometry, particle density and ceremonial motion.
+ */
+data class VeilQualityPolicy(
+    val atmosphereMultiplier: Float,
+    val ornamentMultiplier: Float,
+    val geometryMultiplier: Float,
+    val particleMultiplier: Float,
+    val ceremonialMotionMultiplier: Float
+)
+
+fun qualityPolicyFor(tier: PerformanceTier): VeilQualityPolicy =
+    when (tier) {
+        PerformanceTier.FULL -> VeilQualityPolicy(
+            atmosphereMultiplier = 1.00f,
+            ornamentMultiplier = 1.00f,
+            geometryMultiplier = 1.00f,
+            particleMultiplier = 1.00f,
+            ceremonialMotionMultiplier = 1.00f
+        )
+        PerformanceTier.BALANCED -> VeilQualityPolicy(
+            atmosphereMultiplier = 0.78f,
+            ornamentMultiplier = 0.82f,
+            geometryMultiplier = 0.78f,
+            particleMultiplier = 0.58f,
+            ceremonialMotionMultiplier = 0.88f
+        )
+        PerformanceTier.ESSENTIAL -> VeilQualityPolicy(
+            atmosphereMultiplier = 0.42f,
+            ornamentMultiplier = 0.48f,
+            geometryMultiplier = 0.46f,
+            particleMultiplier = 0.18f,
+            ceremonialMotionMultiplier = 0.68f
+        )
+    }
+
+internal fun scaledDecorativeCount(
+    value: Int,
+    multiplier: Float,
+    minimumWhenPresent: Int = 0
+): Int {
+    if (value <= 0 || multiplier <= 0f) return 0
+    val scaled = kotlin.math.round(value * multiplier).toInt()
+    return scaled.coerceAtLeast(minimumWhenPresent).coerceAtMost(value)
+}
 
 fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
     when (realm) {
@@ -84,10 +134,12 @@ fun Modifier.grayfogAtmosphere(
     realm: VeilRealm,
     seed: Int = 0,
     intensity: Float = 1f,
-    qualityTier: VeilQualityTier = VeilQualityTier.FULL
-): Modifier = drawBehind {
+    qualityTier: PerformanceTier? = null
+): Modifier = composed {
+    val resolvedTier = qualityTier ?: LocalVeilPerformanceTier.current
+    val quality = qualityPolicyFor(resolvedTier)
+    drawBehind {
     val budget = visualBudgetFor(realm)
-    val quality = qualityPolicyFor(qualityTier)
     val atmosphere = (
         budget.atmosphere *
             intensity *
@@ -184,6 +236,7 @@ fun Modifier.grayfogAtmosphere(
         ),
         size = size
     )
+    }
 }
 
 @Composable
@@ -191,8 +244,9 @@ fun GrayfogOrnamentFrame(
     modifier: Modifier = Modifier,
     strength: Float = 1f
 ) {
+    val quality = qualityPolicyFor(LocalVeilPerformanceTier.current)
     Canvas(modifier) {
-        val s = strength.coerceIn(0f, 1f)
+        val s = (strength * quality.ornamentMultiplier).coerceIn(0f, 1f)
         if (s <= 0.001f) return@Canvas
 
         val line = VeilPalette.Brass.copy(alpha = 0.28f * s)
