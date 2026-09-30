@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.PerformanceTier
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
@@ -36,6 +37,7 @@ data class AppSettings(
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val readerAppearanceOverrides: Map<String, ReaderAppearance> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
+    val performanceTier: PerformanceTier = PerformanceTier.FULL,
     val dailyGoalMinutes: Int = 20,
     val gameVisible: Boolean = true,
     val legacyLibraryImported: Boolean = false,
@@ -137,6 +139,7 @@ class SettingsStore(private val context: Context) {
         val sensoryInteractionSounds = booleanPreferencesKey("sensory_interaction_sounds")
         val sensoryAmbient = stringPreferencesKey("sensory_ambient")
         val sensoryAudioVolume = doublePreferencesKey("sensory_audio_volume")
+        val performanceTier = stringPreferencesKey("performance_tier")
         val gameVisible = booleanPreferencesKey("game_visible")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
         val legacyGameImported = booleanPreferencesKey("legacy_game_imported")
@@ -179,6 +182,11 @@ class SettingsStore(private val context: Context) {
                     ?.coerceIn(0.0, 0.55)
                     ?: 0.18
             ),
+            performanceTier = runCatching {
+                PerformanceTier.valueOf(
+                    prefs[Keys.performanceTier] ?: PerformanceTier.FULL.name
+                )
+            }.getOrDefault(PerformanceTier.FULL),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
             legacyLibraryImported = prefs[Keys.legacyLibraryImported] ?: false,
@@ -243,6 +251,10 @@ class SettingsStore(private val context: Context) {
                 ?.coerceIn(0.0, 0.55)
                 ?: 0.18
         }
+    }
+
+    suspend fun setPerformanceTier(tier: PerformanceTier) {
+        context.veilSettingsDataStore.edit { it[Keys.performanceTier] = tier.name }
     }
 
     suspend fun setDailyGoal(minutes: Int) {
