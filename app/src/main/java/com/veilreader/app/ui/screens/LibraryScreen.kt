@@ -1660,19 +1660,25 @@ private fun BookDetailDestination(
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                         ) {
                             book.allCollections.forEach { collection ->
-                                Surface(
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.54f),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        VeilPalette.Brass.copy(alpha = 0.32f)
-                                    )
+                                Box(
+                                    modifier = Modifier
+                                        .heightIn(min = 36.dp)
+                                        .padding(horizontal = 4.dp),
+                                    contentAlignment = Alignment.Center
                                 ) {
+                                    Canvas(Modifier.matchParentSize()) {
+                                        drawLine(
+                                            color = VeilPalette.Brass.copy(alpha = 0.34f),
+                                            start = Offset(0f, size.height - 1.dp.toPx()),
+                                            end = Offset(size.width, size.height - 1.dp.toPx()),
+                                            strokeWidth = 1.dp.toPx()
+                                        )
+                                    }
                                     Text(
                                         collection,
-                                        Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                        Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = VeilPalette.Mist.copy(alpha = 0.86f)
                                     )
                                 }
                             }
@@ -1849,8 +1855,8 @@ private fun BookDetailFragments(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    stringResource(R.string.book_detail_preserved_memory),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                    stringResource(R.string.book_detail_preserved_memory).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
@@ -1871,23 +1877,34 @@ private fun BookDetailFragments(
         }
 
         highlights.take(3).forEachIndexed { index, highlight ->
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraSmall,
-                color = VeilPalette.Archive.copy(alpha = 0.62f),
-                border = BorderStroke(
-                    1.dp,
-                    if (index == 0) {
-                        VeilPalette.Brass.copy(alpha = 0.34f)
-                    } else {
-                        VeilPalette.BorderDark.copy(alpha = 0.68f)
-                    }
-                ),
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(VeilPalette.Ink.copy(alpha = 0.18f))
+                    .padding(horizontal = VeilSpacing.sm, vertical = 10.dp)
             ) {
+                Canvas(Modifier.matchParentSize()) {
+                    val registration = if (index == 0) {
+                        VeilPalette.MoonCrimson.copy(alpha = 0.74f)
+                    } else {
+                        VeilPalette.Brass.copy(alpha = 0.34f)
+                    }
+                    drawLine(
+                        color = registration,
+                        start = Offset(0f, 0f),
+                        end = Offset(0f, size.height),
+                        strokeWidth = if (index == 0) 2.dp.toPx() else 1.dp.toPx()
+                    )
+                    drawLine(
+                        color = VeilPalette.BorderDark.copy(alpha = 0.52f),
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+
                 Column(
-                    modifier = Modifier.padding(VeilSpacing.sm),
+                    modifier = Modifier.padding(start = 6.dp),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
@@ -1977,33 +1994,30 @@ private fun BookDetailIdentity(
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
-            Surface(
-                shape = MaterialTheme.shapes.extraSmall,
-                color = VeilPalette.Ink.copy(alpha = 0.58f),
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.32f))
-            ) {
-                Text(
-                    book.format.name,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Moon.copy(alpha = 0.84f)
-                )
-            }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                book.format.name.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                color = VeilPalette.Mist.copy(alpha = 0.76f)
+            )
 
             if (book.favorite) {
-                Surface(
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = VeilPalette.DeepBrass.copy(alpha = 0.54f),
-                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
-                ) {
-                    Text(
-                        stringResource(R.string.book_detail_favorite_badge),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                }
+                Box(
+                    Modifier
+                        .size(5.dp)
+                        .background(
+                            VeilPalette.MoonCrimson,
+                            CircleShape
+                        )
+                )
+                Text(
+                    stringResource(R.string.book_detail_favorite_badge).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                    color = VeilPalette.MoonCrimson
+                )
             }
         }
     }
