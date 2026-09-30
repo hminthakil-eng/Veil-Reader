@@ -16,7 +16,10 @@ import org.junit.Assert.assertTrue
 import org.readium.r2.navigator.preferences.ImageFilter
 import org.readium.r2.navigator.preferences.Spread
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class ReaderPreferenceMappingTest {
     @Test
     fun `new reader sessions default to the paper sanctuary`() {
