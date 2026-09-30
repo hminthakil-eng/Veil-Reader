@@ -18,7 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.draw.graphicsLayer
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -31,6 +31,7 @@ import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReadingContinuitySummary
+import com.veilreader.app.ui.books.bookArtifactState as canonicalBookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -106,6 +107,7 @@ fun BookThresholdTransitionOverlay(
         )
     ) {
         val artifact = remember(book) { bookArtifactState(book) }
+        val coverArtifact = remember(book) { canonicalBookArtifactState(book) }
         val memory = remember(book) { bookEntryMemory(book) }
         val ritual = remember(book.id, returnRitual) {
             returnRitual?.takeIf { it.bookId == book.id }
@@ -247,7 +249,7 @@ fun BookThresholdTransitionOverlay(
                         title = book.title,
                         subtitle = book.author,
                         imagePath = book.coverCachePath,
-                        artifact = artifact,
+                        artifact = coverArtifact,
                         modifier = Modifier.matchParentSize()
                     )
 
