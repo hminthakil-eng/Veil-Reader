@@ -99,6 +99,78 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     }
 
     @Test
+    fun appendingSecondCbzExtendsOneBookAndReopensCompletion() = runBlocking {
+        val firstArchive = testArchive("Series ch 1.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val first = coordinator.import(Uri.fromFile(firstArchive)).getOrThrow()
+        val book = first.book
+        val mangaId = CanonicalMangaId(book.id)
+        val progressStore = RoomMangaProgressStore(db)
+
+        progressStore.save(
+            MangaReadingProgress(
+                mangaId = mangaId,
+                chapter = MangaChapterAnchor(
+                    number = 1.0,
+                    normalizedTitle = book.title
+                ),
+                pageIndex = 1,
+                pageCount = 2,
+                chapterProgression = 1.0,
+                updatedAtEpochMs = 500L
+            )
+        )
+        assertTrue(requireNotNull(db.books().findEntity(book.id)).finished)
+
+        val secondArchive = testArchive("Series ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+            addPng("003.png")
+        }
+        val appended = coordinator.appendChapter(
+            bookId = book.id,
+            uri = Uri.fromFile(secondArchive)
+        ).getOrThrow()
+
+        assertFalse(appended.duplicate)
+        assertEquals(1, appended.readingOrder)
+
+        val chapters = db.mangaCatalog().listChapters(book.id)
+        assertEquals(listOf(0, 1), chapters.map { it.readingOrder })
+        assertEquals(2.0, requireNotNull(chapters[1].number), 0.000001)
+        assertEquals("Series ch 2", chapters[1].title)
+
+        val sourceKeys = chapters.map { chapter ->
+            db.mangaCatalog().listChapterSources(chapter.id).single().mangaKey
+        }
+        assertEquals(
+            listOf("local:" + book.id, "local:" + book.id),
+            sourceKeys
+        )
+        assertEquals(2, db.mangaOffline().listForBook(book.id).size)
+
+        val extendedSummary = requireNotNull(db.books().findEntity(book.id))
+        assertEquals(0.5f, extendedSummary.progress, 0.000001f)
+        assertFalse(extendedSummary.finished)
+
+        val duplicateSecond = coordinator.appendChapter(
+            bookId = book.id,
+            uri = Uri.fromFile(secondArchive)
+        ).getOrThrow()
+        assertTrue(duplicateSecond.duplicate)
+        assertEquals(2, db.mangaCatalog().listChapters(book.id).size)
+
+        val duplicatePrimary = coordinator.appendChapter(
+            bookId = book.id,
+            uri = Uri.fromFile(firstArchive)
+        ).getOrThrow()
+        assertTrue(duplicatePrimary.duplicate)
+        assertEquals(2, db.mangaCatalog().listChapters(book.id).size)
+    }
+
+    @Test
     fun mangaBackupRoundTripRebuildsCatalogCacheAndExactProgress() = runBlocking {
         val archive = testArchive("backup.cbz") {
             addPng("001.png")
