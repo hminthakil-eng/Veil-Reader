@@ -252,18 +252,24 @@ class LocalLibraryRepository internal constructor(
      * meaning extraction was attempted but this publication has no usable cover.
      */
     fun updateCoverCachePath(id: String, path: String) {
-        val updated = updateBookCached(id) { it.copy(coverCachePath = path) } ?: return
-        enqueue { database.books().upsert(updated.toEntity()) }
+        updateBookCached(id) { it.copy(coverCachePath = path) } ?: return
+        enqueue {
+            check(database.books().updateCoverCachePath(id, path) == 1) {
+                "Cover cache path target disappeared before persistence"
+            }
+        }
     }
 
     /** Backfills the derived duplicate-detection fingerprint for pre-0.8 library entries. */
     fun updateContentFingerprint(id: String, fingerprint: String) {
         if (fingerprint.isBlank()) return
-        val updated = updateBookCached(id) { current ->
-            if (!current.contentFingerprint.isNullOrBlank()) current
-            else current.copy(contentFingerprint = fingerprint.lowercase(Locale.ROOT))
-        } ?: return
-        enqueue { database.books().upsert(updated.toEntity()) }
+        val normalized = fingerprint.lowercase(Locale.ROOT)
+        val current = getBook(id) ?: return
+        if (!current.contentFingerprint.isNullOrBlank()) return
+        replaceBookCached(current.copy(contentFingerprint = normalized))
+        enqueue {
+            database.books().updateContentFingerprintIfMissing(id, normalized)
+        }
     }
 
     fun editMetadata(update: BookMetadataUpdate) {
