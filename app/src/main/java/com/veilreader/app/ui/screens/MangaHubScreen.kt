@@ -43,7 +43,6 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 @Composable
 fun MangaHubScreen(
     books: List<Book>,
-    onOpenBook: (Book) -> Unit,
     onOpenLibrary: () -> Unit,
     onClose: () -> Unit
 ) {
@@ -179,7 +178,6 @@ fun MangaHubScreen(
                 key = Book::id
             ) { book ->
                 Surface(
-                    onClick = { onOpenBook(book) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .widthIn(max = 860.dp),
@@ -217,6 +215,11 @@ fun MangaHubScreen(
                             ),
                             style = MaterialTheme.typography.labelMedium,
                             color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
+                        )
+                        Text(
+                            stringResource(R.string.manga_hub_adapter_pending),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
