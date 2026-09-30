@@ -1197,4 +1197,15 @@
     <string name="book_delete_confirm">حذف</string>
     <string name="notice_book_deleted">%1$s از Veil حذف شد.</string>
     <string name="notice_book_delete_failed">حذف کامل این کتاب ممکن نشد. بخش دیگری تغییر نکرد.</string>
+    <string name="manga_hub_engine_ready">کتاب‌های تصویری دانلودشده روی همین دستگاه می‌مانند و مستقیم در خوانندهٔ تصویری اختصاصی Veil باز می‌شوند.</string>
+    <string name="manga_hub_live_sources_off">منابع آنلاین به‌طور پیش‌فرض خاموش‌اند. تا وقتی خودت چیزی اضافه نکنی، هیچ داده‌ای دریافت نمی‌شود.</string>
+    <string name="manga_hub_empty_body">برای شروع یک فایل CBZ را از کتابخانه وارد کن. Veil صفحه‌ها را محلی نگه می‌دارد، جای مطالعه را به خاطر می‌سپارد و آن را در خوانندهٔ تصویری باز می‌کند.</string>
+    <string name="manga_hub_open_library">ورود از کتابخانه</string>
+    <string name="manga_hub_reader_ready">به‌صورت محلی ذخیره شده و برای خوانندهٔ تصویری Veil آماده است.</string>
+    <string name="manga_hub_read">مطالعهٔ مانگا</string>
+    <string name="manga_hub_saved_offline">ذخیره‌شده روی دستگاه · آمادهٔ مطالعهٔ آفلاین</string>
+    <string name="manga_hub_finished">تکمیل‌شده · در دسترس آفلاین</string>
+    <string name="manga_hub_continue">ادامهٔ مطالعه</string>
+    <string name="manga_hub_start">شروع مطالعه</string>
+    <string name="manga_hub_read_again">مطالعهٔ دوباره</string>
 </resources>
