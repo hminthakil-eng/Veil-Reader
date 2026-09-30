@@ -2045,23 +2045,40 @@ private fun localizedBookArtifactRecordLabel(state: BookArtifactState): String {
 
 @Composable
 private fun BookDetailFact(label: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-        verticalAlignment = Alignment.Top
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(0.38f)
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(0.62f)
-        )
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.46f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 7.dp),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Mist.copy(alpha = 0.70f),
+                modifier = Modifier.weight(0.38f)
+            )
+            Text(
+                value,
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.90f),
+                modifier = Modifier.weight(0.62f)
+            )
+        }
     }
 }
 
