@@ -25,6 +25,7 @@ class VeilAppViewModelProcessDeathTest {
             first.requestBook("book-42", "{\"href\":\"chapter.xhtml\"}")
 
             assertEquals("book-42", first.route.value.activeBookId)
+            val readerSessionId = requireNotNull(first.route.value.readerSessionInstanceId)
             assertEquals("{\"href\":\"chapter.xhtml\"}", first.route.value.locatorOverrideJson)
             assertFalse(first.route.value.showArchive)
 
@@ -33,6 +34,7 @@ class VeilAppViewModelProcessDeathTest {
 
             assertEquals(VeilTab.CASTLE, recreated.route.value.selectedTab)
             assertEquals("book-42", recreated.route.value.activeBookId)
+            assertEquals(readerSessionId, recreated.route.value.readerSessionInstanceId)
             assertEquals("{\"href\":\"chapter.xhtml\"}", recreated.route.value.locatorOverrideJson)
 
             recreated.readerOpened("book-42")
@@ -42,6 +44,7 @@ class VeilAppViewModelProcessDeathTest {
             recreated.closeReader()
             assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
             assertNull(recreated.route.value.activeBookId)
+            assertNull(recreated.route.value.readerSessionInstanceId)
             assertNull(recreated.route.value.activeChamber)
             assertFalse(recreated.route.value.showArchive)
         }
