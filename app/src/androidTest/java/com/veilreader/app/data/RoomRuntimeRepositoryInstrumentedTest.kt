@@ -649,6 +649,76 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(219L, stored.endedAtEpochMs)
     }
 
+
+    @Test
+    fun deleteImportedBook_flushesPendingWrites_keepsHistoricalSession_andDeletesFiles() =
+        runBlocking<Unit> {
+            val repository = repository()
+            val publications = File(context.filesDir, "publications").apply { mkdirs() }
+            val covers = File(context.filesDir, "covers").apply { mkdirs() }
+            val publication = File(publications, "delete-me.epub").apply {
+                writeBytes(byteArrayOf(1, 2, 3, 4))
+            }
+            val cover = File(covers, "delete-me.jpg").apply {
+                writeBytes(byteArrayOf(5, 6, 7))
+            }
+            val book = Book(
+                id = "delete-book",
+                title = "Delete Me",
+                author = "Veil",
+                totalPages = 100,
+                format = BookFormat.EPUB,
+                sourceUri = Uri.fromFile(publication).toString(),
+                mediaType = "application/epub+zip",
+                coverCachePath = cover.absolutePath,
+                contentFingerprint = "delete-fingerprint"
+            )
+
+            repository.addImportedBook(book)
+            repository.addHighlight(
+                "delete-book",
+                "Temporary passage",
+                "{\"href\":\"c1.xhtml\"}"
+            )
+            assertTrue(
+                repository.addBookmark(
+                    "delete-book",
+                    "Temporary mark",
+                    "{\"href\":\"c1.xhtml\"}"
+                )
+            )
+            repository.saveReadingSession(
+                ReadingSessionSnapshot(
+                    id = "delete-session",
+                    bookId = "delete-book",
+                    startedAtEpochMs = 10L,
+                    endedAtEpochMs = 20L,
+                    activeMillis = 10L,
+                    pacedPageTurns = 1,
+                    highlightCount = 1,
+                    noteCount = 0
+                )
+            )
+            repository.saveProgress(
+                "delete-book",
+                0.40,
+                "{\"href\":\"c2.xhtml\"}"
+            )
+
+            val deleted = repository.deleteImportedBook("delete-book")
+
+            assertEquals("delete-book", deleted?.id)
+            assertNull(db.books().findEntity("delete-book"))
+            assertTrue(db.highlights().observeAll().first().isEmpty())
+            assertTrue(db.bookmarks().observeAll().first().isEmpty())
+            val session = db.readingSessions().listAll().single()
+            assertEquals("delete-session", session.id)
+            assertNull(session.bookId)
+            assertTrue(repository.books.value.none { it.id == "delete-book" })
+            assertFalse(publication.exists())
+            assertFalse(cover.exists())
+        }
+
     private fun repository(): LocalLibraryRepository = LocalLibraryRepository(
         appContext = context,
         database = db,
