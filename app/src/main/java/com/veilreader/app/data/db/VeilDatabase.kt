@@ -23,9 +23,12 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MangaChapterSourceEntity::class,
         MangaProgressEntity::class,
         MangaOfflineChapterEntity::class,
-        MangaOfflinePageEntity::class
+        MangaOfflinePageEntity::class,
+        MangaWorkMergeEntity::class,
+        MangaMergeMemberEntity::class,
+        MangaMergeChapterEntity::class
     ],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class VeilDatabase : RoomDatabase() {
@@ -40,6 +43,7 @@ abstract class VeilDatabase : RoomDatabase() {
     abstract fun mangaCatalog(): MangaCatalogDao
     abstract fun mangaProgress(): MangaProgressDao
     abstract fun mangaOffline(): MangaOfflineDao
+    abstract fun mangaMerges(): MangaMergeDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -262,6 +266,98 @@ abstract class VeilDatabase : RoomDatabase() {
             }
         }
 
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_work_merges (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        targetBookId TEXT NOT NULL,
+                        createdAtEpochMs INTEGER NOT NULL,
+                        receiptVersion INTEGER NOT NULL,
+                        FOREIGN KEY(targetBookId) REFERENCES books(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_work_merges_targetBookId " +
+                        "ON manga_work_merges(targetBookId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_work_merges_createdAtEpochMs " +
+                        "ON manga_work_merges(createdAtEpochMs)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_merge_members (
+                        mergeId TEXT NOT NULL,
+                        sourceBookId TEXT NOT NULL,
+                        sourceOrder INTEGER NOT NULL,
+                        PRIMARY KEY(mergeId, sourceBookId),
+                        FOREIGN KEY(mergeId) REFERENCES manga_work_merges(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(sourceBookId) REFERENCES books(id)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_members_mergeId " +
+                        "ON manga_merge_members(mergeId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_merge_members_sourceBookId " +
+                        "ON manga_merge_members(sourceBookId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_merge_members_mergeId_sourceOrder " +
+                        "ON manga_merge_members(mergeId, sourceOrder)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_merge_chapters (
+                        mergeId TEXT NOT NULL,
+                        sourceChapterId TEXT NOT NULL,
+                        sourceBookId TEXT NOT NULL,
+                        targetChapterId TEXT NOT NULL,
+                        sourceReadingOrder INTEGER NOT NULL,
+                        targetReadingOrder INTEGER NOT NULL,
+                        disposition TEXT NOT NULL,
+                        PRIMARY KEY(mergeId, sourceChapterId),
+                        FOREIGN KEY(mergeId) REFERENCES manga_work_merges(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(sourceChapterId, sourceBookId)
+                            REFERENCES manga_chapters(id, bookId)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT,
+                        FOREIGN KEY(targetChapterId) REFERENCES manga_chapters(id)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_mergeId " +
+                        "ON manga_merge_chapters(mergeId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "index_manga_merge_chapters_sourceChapterId_sourceBookId " +
+                        "ON manga_merge_chapters(sourceChapterId, sourceBookId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_targetChapterId " +
+                        "ON manga_merge_chapters(targetChapterId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_chapters_mergeId_targetReadingOrder " +
+                        "ON manga_merge_chapters(mergeId, targetReadingOrder)"
+                )
+            }
+        }
+
+
         @Volatile private var instance: VeilDatabase? = null
 
         fun get(context: Context): VeilDatabase = instance ?: synchronized(this) {
@@ -270,7 +366,7 @@ abstract class VeilDatabase : RoomDatabase() {
                 VeilDatabase::class.java,
                 "veil_reader.db"
             )
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
                 .also { instance = it }
         }
