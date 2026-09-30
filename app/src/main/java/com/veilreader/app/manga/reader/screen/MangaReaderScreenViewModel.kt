@@ -189,7 +189,7 @@ class MangaReaderScreenViewModel(
                     chapter = entry.route.readerChapter,
                     error = MangaPresentationError(
                         kind = MangaPresentationErrorKind.SOURCE_FAILURE,
-                        message = error.message ?: "The chapter could not be loaded.",
+                        message = "Unexpected source failure",
                         retryable = true
                     )
                 )
