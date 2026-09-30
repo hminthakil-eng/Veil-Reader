@@ -236,6 +236,7 @@ class MangaLocalImportCoordinator(
                 ) == 1
             )
         }
+        database.books().reopenMangaAfterExtension(bookId)
         recomputeStoredMangaProgress(bookId)
         destinationOrder
     }
@@ -289,6 +290,7 @@ class MangaLocalImportCoordinator(
             archive?.let { pruneEmptyLocalArchiveParents(listOf(it)) }
         }
 
+        database.books().reopenMangaAfterExtension(bookId)
         if (deletingCurrent && fallback != null) {
             val fallbackSource = database.mangaCatalog()
                 .listChapterSources(fallback.id)
