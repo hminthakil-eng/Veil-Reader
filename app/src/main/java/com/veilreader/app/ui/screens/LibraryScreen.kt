@@ -46,6 +46,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
 import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.ArchiveWing
@@ -978,26 +980,30 @@ private fun BookDetailSheet(
         else -> stringResource(R.string.book_detail_open_book)
     }
 
-    ModalBottomSheet(
+    Dialog(
         onDismissRequest = onDismiss,
-        containerColor = VeilPalette.Ink,
-        dragHandle = {
-            BottomSheetDefaults.DragHandle(
-                color = VeilPalette.Brass.copy(alpha = 0.48f)
-            )
-        }
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(bottom = VeilSpacing.xxl),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = VeilPalette.Ink,
+            tonalElevation = 0.dp
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .statusBarsPadding()
+                    .padding(bottom = VeilSpacing.xxl),
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
+            ) {
             BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 320.dp)
+                    .heightIn(min = 390.dp)
             ) {
                 val compact = maxWidth < 520.dp
 
@@ -1035,9 +1041,36 @@ private fun BookDetailSheet(
                 )
 
                 GrayfogOrnamentFrame(
-                    modifier = Modifier.matchParentSize(),
-                    strength = 0.58f
+                    modifier = Modifier
+                        .matchParentSize()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    strength = 0.50f
                 )
+
+                Surface(
+                    onClick = onDismiss,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(VeilSpacing.sm)
+                        .size(48.dp),
+                    shape = CircleShape,
+                    color = VeilPalette.Ink.copy(alpha = 0.66f),
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.42f)
+                    )
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Text(
+                            "×",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = VeilPalette.Moon,
+                            modifier = Modifier.semantics {
+                                contentDescription = "Close book details"
+                            }
+                        )
+                    }
+                }
 
                 Column(
                     modifier = Modifier
@@ -1370,6 +1403,7 @@ private fun BookDetailSheet(
                     }
                 }
             }
+        }
         }
     }
 }
