@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.UUID
 
 enum class VeilTab(val label: String, val glyph: String) {
     READING("Reading", "◉"),
@@ -20,6 +21,7 @@ data class VeilRouteState(
     val showArchive: Boolean = false,
     val activeChamber: String? = null,
     val activeBookId: String? = null,
+    val readerSessionInstanceId: String? = null,
     val locatorOverrideJson: String? = null,
     val readerLocatorCheckpointJson: String? = null
 )
@@ -36,6 +38,12 @@ class VeilAppViewModel(
     private val _route = MutableStateFlow(readSavedRoute())
     val route: StateFlow<VeilRouteState> = _route.asStateFlow()
 
+    init {
+        // Normalization may mint a missing reader-session id for legacy saved state. Persist it
+        // immediately so process recreation keeps the same ViewModel/SavedStateHandle key.
+        persist(_route.value)
+    }
+
     fun selectTab(tab: VeilTab) = update {
         copy(
             selectedTab = tab,
@@ -43,6 +51,7 @@ class VeilAppViewModel(
             showArchive = false,
             activeChamber = null,
             activeBookId = null,
+            readerSessionInstanceId = null,
             locatorOverrideJson = null,
             readerLocatorCheckpointJson = null
         )
@@ -54,6 +63,7 @@ class VeilAppViewModel(
             showArchive = true,
             activeChamber = null,
             activeBookId = null,
+            readerSessionInstanceId = null,
             locatorOverrideJson = null,
             readerLocatorCheckpointJson = null
         )
@@ -67,6 +77,7 @@ class VeilAppViewModel(
             showArchive = false,
             activeChamber = null,
             activeBookId = null,
+            readerSessionInstanceId = null,
             locatorOverrideJson = null,
             readerLocatorCheckpointJson = null
         )
@@ -95,6 +106,7 @@ class VeilAppViewModel(
         update {
             copy(
                 activeBookId = bookId,
+                readerSessionInstanceId = UUID.randomUUID().toString(),
                 locatorOverrideJson = explicitLocator,
                 readerLocatorCheckpointJson = explicitLocator,
                 showSettings = false,
@@ -144,7 +156,8 @@ class VeilAppViewModel(
         update {
             copy(
                 activeBookId = null,
-                locatorOverrideJson = null,
+                readerSessionInstanceId = null,
+            locatorOverrideJson = null,
                 readerLocatorCheckpointJson = null
             )
         }
@@ -155,6 +168,7 @@ class VeilAppViewModel(
             selectedTab = VeilTab.LIBRARY,
             showSettings = false,
             activeBookId = null,
+            readerSessionInstanceId = null,
             locatorOverrideJson = null,
             showArchive = false,
             activeChamber = null
@@ -175,6 +189,11 @@ class VeilAppViewModel(
         else savedStateHandle[KEY_CHAMBER] = next.activeChamber
         if (next.activeBookId == null) savedStateHandle.remove<String>(KEY_BOOK)
         else savedStateHandle[KEY_BOOK] = next.activeBookId
+        if (next.readerSessionInstanceId == null) {
+            savedStateHandle.remove<String>(KEY_READER_SESSION)
+        } else {
+            savedStateHandle[KEY_READER_SESSION] = next.readerSessionInstanceId
+        }
         if (next.locatorOverrideJson == null) savedStateHandle.remove<String>(KEY_LOCATOR)
         else savedStateHandle[KEY_LOCATOR] = next.locatorOverrideJson
         if (next.readerLocatorCheckpointJson == null) {
@@ -194,6 +213,7 @@ class VeilAppViewModel(
             showArchive = savedStateHandle.get<Boolean>(KEY_ARCHIVE) == true,
             activeChamber = savedStateHandle.get<String>(KEY_CHAMBER),
             activeBookId = savedStateHandle.get<String>(KEY_BOOK),
+            readerSessionInstanceId = savedStateHandle.get<String>(KEY_READER_SESSION),
             locatorOverrideJson = savedStateHandle.get<String>(KEY_LOCATOR),
             readerLocatorCheckpointJson = savedStateHandle.get<String>(KEY_READER_CHECKPOINT)
         ).normalized()
@@ -207,6 +227,9 @@ class VeilAppViewModel(
                 showArchive = false,
                 activeChamber = null,
                 activeBookId = cleanBookId,
+                readerSessionInstanceId = readerSessionInstanceId
+                    ?.takeIf(String::isNotBlank)
+                    ?: UUID.randomUUID().toString(),
                 locatorOverrideJson = locatorOverrideJson?.takeIf(String::isNotBlank),
                 readerLocatorCheckpointJson = readerLocatorCheckpointJson?.takeIf(String::isNotBlank)
             )
@@ -218,6 +241,7 @@ class VeilAppViewModel(
             showArchive = showArchive && cleanChamber == null && !cleanSettings,
             activeChamber = cleanChamber,
             activeBookId = null,
+            readerSessionInstanceId = null,
             locatorOverrideJson = null,
             readerLocatorCheckpointJson = null
         )
@@ -229,6 +253,7 @@ class VeilAppViewModel(
         private const val KEY_ARCHIVE = "veil.route.archive"
         private const val KEY_CHAMBER = "veil.route.chamber"
         private const val KEY_BOOK = "veil.route.book"
+        private const val KEY_READER_SESSION = "veil.route.reader_session"
         private const val KEY_LOCATOR = "veil.route.locator"
         private const val KEY_READER_CHECKPOINT = "veil.route.reader_checkpoint"
         private val RESTORABLE_CHAMBERS = setOf("observatory", "treasury", "sanctum", "mirror", "manga")
