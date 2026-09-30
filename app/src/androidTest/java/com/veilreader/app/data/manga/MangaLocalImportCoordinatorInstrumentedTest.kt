@@ -172,6 +172,57 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     }
 
     @Test
+    fun batchImportUsesNaturalFilenameOrderAndCountsDuplicates() = runBlocking {
+        val firstArchive = testArchive("Batch ch 1.cbz") {
+            addPng("001.png")
+        }
+        val book = coordinator.import(Uri.fromFile(firstArchive))
+            .getOrThrow()
+            .book
+
+        val chapter10 = testArchive("Batch ch 10.cbz") {
+            addPng("001.png")
+        }
+        val chapter2 = testArchive("Batch ch 2.cbz") {
+            addPng("001.png")
+        }
+        val chapter3 = testArchive("Batch ch 3.cbz") {
+            addPng("001.png")
+        }
+
+        val batch = coordinator.appendChapters(
+            bookId = book.id,
+            uris = listOf(
+                Uri.fromFile(chapter10),
+                Uri.fromFile(chapter2),
+                Uri.fromFile(chapter3),
+                Uri.fromFile(firstArchive),
+                Uri.fromFile(chapter2)
+            )
+        ).getOrThrow()
+
+        assertEquals(3, batch.addedCount)
+        assertEquals(1, batch.duplicateCount)
+        assertEquals(3, batch.lastReadingOrder)
+
+        val chapters = db.mangaCatalog().listChapters(book.id)
+        assertEquals(listOf(0, 1, 2, 3), chapters.map { it.readingOrder })
+        assertEquals(
+            listOf(1.0, 2.0, 3.0, 10.0),
+            chapters.map { requireNotNull(it.number) }
+        )
+        assertEquals(
+            listOf(
+                book.title,
+                "Batch ch 2",
+                "Batch ch 3",
+                "Batch ch 10"
+            ),
+            chapters.map { it.normalizedTitle }
+        )
+    }
+
+    @Test
     fun derivedCacheCanBeClearedAndSelfHealedWithoutLosingProgress() = runBlocking {
         val firstArchive = testArchive("cache ch 1.cbz") {
             addPng("001.png")
