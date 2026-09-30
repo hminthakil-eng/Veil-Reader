@@ -69,6 +69,9 @@
 
     <string name="library_search_placeholder">Search the archive…</string>
     <string name="library_clear">Clear</string>
+    <string name="library_archive_overview">Archive overview</string>
+    <string name="library_hide_archive_overview">Hide archive overview</string>
+    <string name="book_metadata_archive_record">ARCHIVE RECORD</string>
     <string name="library_archive_eyebrow">Archive</string>
     <string name="library_shelves_title">Shelves</string>
     <string name="library_tap_to_filter">Tap to filter</string>
