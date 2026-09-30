@@ -637,7 +637,7 @@ fun VeilApp(
 
         val book = library.getBook(targetId) ?: targetBook ?: return@LaunchedEffect
         if (!book.isImported) {
-            routeViewModel.bookOpenFailed(targetId)
+            routeViewModel.bookOpenFailed(targetId, openRequestId)
             showNotice(R.string.notice_book_file_missing)
             return@LaunchedEffect
         }
@@ -648,7 +648,7 @@ fun VeilApp(
             }
             val repaired = mangaImporter.ensureLocalCache(targetId)
             if (repaired.isFailure) {
-                routeViewModel.bookOpenFailed(targetId)
+                routeViewModel.bookOpenFailed(targetId, openRequestId)
                 showNotice(
                     R.string.notice_manga_cache_repair_failed,
                     VeilNoticeKind.WARNING
@@ -674,10 +674,10 @@ fun VeilApp(
                     }
                     activeMangaSession = result.session
                     library.markOpened(targetId)
-                    routeViewModel.readerOpened(targetId)
+                    routeViewModel.readerOpened(targetId, openRequestId)
                 }
                 is MangaSessionAdapterResult.Unavailable -> {
-                    routeViewModel.bookOpenFailed(targetId)
+                    routeViewModel.bookOpenFailed(targetId, openRequestId)
                     showNotice(
                         R.string.notice_manga_open_failed,
                         VeilNoticeKind.WARNING
@@ -727,7 +727,7 @@ fun VeilApp(
             onSuccess = { it },
             onFailure = { error ->
                 if (error is CancellationException) throw error
-                routeViewModel.bookOpenFailed(targetId)
+                routeViewModel.bookOpenFailed(targetId, openRequestId)
                 showNotice(R.string.notice_open_failed)
                 return@LaunchedEffect
             }
@@ -749,6 +749,15 @@ fun VeilApp(
             throw cancelled
         } catch (error: Exception) {
             showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING)
+        }
+
+        val routeBeforeCommit = routeViewModel.route.value
+        if (
+            routeBeforeCommit.activeBookId != targetId ||
+            routeBeforeCommit.readerSessionInstanceId != openRequestId
+        ) {
+            opened.close()
+            return@LaunchedEffect
         }
 
         val recoveryLocator = locatorOverride ?: readerCheckpoint
@@ -779,9 +788,10 @@ fun VeilApp(
                         val currentRoute = routeViewModel.route.value
                         if (
                             currentRoute.activeBookId == targetId &&
+                            currentRoute.readerSessionInstanceId == openRequestId &&
                             currentRoute.locatorOverrideJson == locatorOverride
                         ) {
-                            routeViewModel.readerOpened(targetId)
+                            routeViewModel.readerOpened(targetId, openRequestId)
                         }
                     } catch (cancelled: CancellationException) {
                         throw cancelled
@@ -795,7 +805,7 @@ fun VeilApp(
                 scope.launch {
                     try {
                         library.flushWrites()
-                        routeViewModel.readerCheckpointPersisted(targetId, readerCheckpoint)
+                        routeViewModel.readerCheckpointPersisted(targetId, openRequestId, readerCheckpoint)
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
@@ -804,7 +814,7 @@ fun VeilApp(
                 }
             }
 
-            else -> routeViewModel.readerOpened(targetId)
+            else -> routeViewModel.readerOpened(targetId, openRequestId)
         }
     }
 
@@ -920,8 +930,10 @@ fun VeilApp(
                 progressStore = mangaProgressStore,
                 cacheRoot = mangaImporter.cacheRoot,
                 onClose = {
-                    activeMangaSession = null
-                    routeViewModel.closeReader()
+                    if (activeMangaSession?.instanceId == mangaSession.instanceId) {
+                        activeMangaSession = null
+                    }
+                    routeViewModel.closeReader(mangaSession.instanceId)
                 },
                 modifier = Modifier.fillMaxSize()
             )
@@ -943,15 +955,21 @@ fun VeilApp(
             initialReturnLocatorJson = activeReturnLocatorJson,
             onSensoryEvent = { event -> sensory.perform(view, event) },
             onClose = {
-                openedPublication = null
-                openedPublicationSessionId = null
-                activeContinuity = null
-                activeReturnRitual = null
-                activeReturnLocatorJson = null
-                routeViewModel.closeReader()
+                if (openedPublicationSessionId == openedSessionId) {
+                    openedPublication = null
+                    openedPublicationSessionId = null
+                    activeContinuity = null
+                    activeReturnRitual = null
+                    activeReturnLocatorJson = null
+                }
+                routeViewModel.closeReader(openedSessionId)
             },
             onLocatorCheckpoint = { locatorJson ->
-                routeViewModel.checkpointReaderLocator(opened.book.id, locatorJson)
+                routeViewModel.checkpointReaderLocator(
+                    bookId = opened.book.id,
+                    sessionInstanceId = openedSessionId,
+                    locatorJson = locatorJson
+                )
             }
         )
     } else if (route.showSettings) {
