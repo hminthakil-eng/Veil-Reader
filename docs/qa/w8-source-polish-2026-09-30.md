@@ -40,3 +40,11 @@ When build/device work is resumed:
 4. Inspect all modified chambers and Settings at compact/expanded widths, landscape, FA/EN, and increased font scale.
 5. Compare device captures with the pinned reference boards. This source pass does not establish rendered fidelity.
 
+## Follow-up: note reward integrity
+
+- Reproduced: 80 Persian half-spaces qualified as a substantial note in the original ReadingPolicy.
+- qualifiesNote now counts visible Unicode code points, ignoring whitespace, control/format characters, and standalone combining marks. Surrogate pairs count once.
+- Existing note text is unchanged. Existing credited rewards are preserved. Only future qualification is affected; forty visible characters remain the threshold.
+- Executed the repository's dependency-free Java policy suite using JDK 17 compiler module and runtime. Before change: 39 checks passed. New regression failed against original policy. After fix: all 46 checks passed.
+- Coverage includes Unicode space and format padding, short padded notes, interior-space padding, standalone accents, supplementary characters, and Persian letters.
+- This Java result does not validate Android UI, Kotlin compilation, image JUnit tests, rendering, memory behavior on a device, or the whole application.

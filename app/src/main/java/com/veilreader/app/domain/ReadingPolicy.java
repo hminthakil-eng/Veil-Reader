@@ -41,7 +41,23 @@ public final class ReadingPolicy {
         }
     }
     public static boolean isNight(int hour) { return hour >= 0 && hour < 24 && (hour >= 20 || hour < 6); }
-    public static boolean qualifiesNote(String note) { return note != null && note.trim().length() >= 40; }
+    /** Formatting, whitespace and standalone combining marks are not note content. */
+    public static boolean qualifiesNote(String note) {
+        if (note == null) return false;
+        int visible = 0;
+        for (int offset = 0; offset < note.length();) {
+            int codePoint = note.codePointAt(offset);
+            offset += Character.charCount(codePoint);
+            int type = Character.getType(codePoint);
+            if (Character.isWhitespace(codePoint) || Character.isSpaceChar(codePoint)
+                || Character.isISOControl(codePoint) || type == Character.FORMAT
+                || type == Character.NON_SPACING_MARK
+                || type == Character.COMBINING_SPACING_MARK
+                || type == Character.ENCLOSING_MARK) continue;
+            if (++visible >= 40) return true;
+        }
+        return false;
+    }
 
     /** Per-session uniqueness plus dwell time, with a daily budget tied to reading minutes. */
     public static final class PageGate {
