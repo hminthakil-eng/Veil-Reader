@@ -38,7 +38,7 @@ class ReaderNavigationTransactionTest {
 
         gate.cancel(current.token)
 
-        assertNull(gate.consumeSettled())
+        assertNull(gate.consumeSettled(nowElapsedMs = 500L))
     }
 
     @Test
