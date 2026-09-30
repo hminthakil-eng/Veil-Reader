@@ -569,6 +569,42 @@ class LocalLibraryRepository internal constructor(
         storageFailure.get()?.let { throw IllegalStateException("A library write failed.", it) }
     }
 
+    /**
+     * Starts a storage barrier from the repository-owned IO scope.
+     *
+     * Lifecycle callbacks are synchronous and UI/composition coroutines can be cancelled as soon as
+     * the Activity leaves the foreground. Moving this barrier onto the repository scope gives the
+     * final progress/session writes a chance to reach Room independently of Reader composition.
+     * This is still best-effort against an immediate OS process kill; Android offers no callback
+     * that can make arbitrary asynchronous work absolutely guaranteed at that boundary.
+     */
+    fun requestLifecycleDurability(bookId: String, sessionId: String?) {
+        ReaderTrace.event(
+            "reader_lifecycle_durability_requested",
+            bookId = bookId,
+            sessionId = sessionId
+        )
+        scope.launch {
+            try {
+                flushWrites()
+                ReaderTrace.event(
+                    "reader_lifecycle_durable",
+                    bookId = bookId,
+                    sessionId = sessionId
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (error: Throwable) {
+                storageFailure.compareAndSet(null, error)
+                ReaderTrace.event(
+                    "reader_lifecycle_durability_failed",
+                    bookId = bookId,
+                    sessionId = sessionId,
+                    details = "error=${error::class.java.simpleName}"
+                )
+            }
+        }
+    }
     /** Returns one point-in-time database snapshot ordered with all normal reader writes. */
     suspend fun snapshot(): LibrarySnapshot {
         flushAllProgress()
