@@ -335,6 +335,31 @@ fun VeilApp(
         )
     }
 
+    fun deleteBook(book: Book) {
+        if (!book.isImported || restoring || isImporting) return
+        scope.launch {
+            val result = if (book.format == BookFormat.COMIC) {
+                mangaImporter.deleteImportedManga(book.id)
+            } else {
+                runCatching { library.deleteImportedBook(book.id) }
+            }
+
+            val deleted = result.getOrNull()
+            if (deleted != null) {
+                showNotice(
+                    R.string.notice_book_deleted,
+                    VeilNoticeKind.SUCCESS,
+                    deleted.title
+                )
+            } else {
+                showNotice(
+                    R.string.notice_book_delete_failed,
+                    VeilNoticeKind.WARNING
+                )
+            }
+        }
+    }
+
     fun importBook(uri: Uri) {
         if (isImporting || restoring) return
         isImporting = true
@@ -584,6 +609,7 @@ fun VeilApp(
                 onOpenBook = { requestOpenBook(it) },
                 onFavorite = library::toggleFavorite,
                 onEditMetadata = library::editMetadata,
+                onDeleteBook = ::deleteBook,
                 onOpenSettings = routeViewModel::openSettings,
                 onOpenManga = { routeViewModel.openChamber("manga") }
             )
