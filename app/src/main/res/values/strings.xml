@@ -1161,4 +1161,21 @@
     <string name="manga_hub_empty_body">No Manga session is registered yet. Local Manga ingestion and source adapters will connect here while visual reading stays separate from the text-reader experience.</string>
     <string name="manga_hub_open_library">Return to Library</string>
     <string name="manga_hub_progress">%1$d%% read</string>\n    <string name="manga_hub_adapter_pending">Dedicated Manga session adapter pending — this record is not sent to the EPUB/PDF reader.</string>
+
+    <string name="manga_reader_partial_offline_notice">Offline preview · reconnect to load the rest</string>
+    <string name="manga_reader_retry">Retry</string>
+    <string name="manga_reader_back">Back</string>
+    <string name="manga_reader_mode_webtoon">Webtoon</string>
+    <string name="manga_reader_mode_paged">Paged</string>
+    <string name="manga_reader_direction_rtl">RTL</string>
+    <string name="manga_reader_direction_ltr">LTR</string>
+    <string name="manga_reader_page_failed">This page could not be opened.</string>
+    <string name="manga_reader_message_partial_offline_boundary">Reconnect to load the rest of this chapter before continuing.</string>
+    <string name="manga_reader_message_series_boundary">You reached the edge of the available chapter list.</string>
+    <string name="manga_reader_message_route_unavailable">The next chapter route is unavailable.</string>
+    <string name="manga_reader_error_offline_unavailable">This chapter is not available offline yet.</string>
+    <string name="manga_reader_error_source_failure">The chapter source could not be reached. Try again.</string>
+    <string name="manga_reader_error_empty_chapter">This chapter does not contain readable pages.</string>
+    <string name="manga_reader_error_invalid_page_set">This chapter returned an invalid page set.</string>
+    <string name="manga_reader_error_request_mismatch">The chapter changed while loading. Try opening it again.</string>
 </resources>
