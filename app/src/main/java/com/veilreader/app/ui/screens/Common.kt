@@ -42,11 +42,22 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
-        Text(
-            eyebrow.uppercase(),
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp)
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            Box(
+                Modifier
+                    .width(28.dp)
+                    .height(1.dp)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.78f))
+            )
+            Text(
+                eyebrow.uppercase(),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.25.sp)
+            )
+        }
         Text(
             title,
             style = MaterialTheme.typography.headlineLarge,
@@ -63,18 +74,23 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
     }
 }
 
-/** Shared quiet panel for the world around the book. */
+/**
+ * Shared archive plate for the world around the book.
+ *
+ * Intentionally avoids the old universal "large rounded gradient card" treatment. The hierarchy is
+ * carried by restrained material contrast, a brass registration rule and quiet depth.
+ */
 @Composable
 fun MysteryCard(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val shape = MaterialTheme.shapes.large
+    val shape = MaterialTheme.shapes.medium
     val colors = MaterialTheme.colorScheme
     val panelBrush = Brush.verticalGradient(
         listOf(
-            colors.surfaceVariant.copy(alpha = 0.74f),
-            colors.surface.copy(alpha = 0.94f)
+            colors.surfaceVariant.copy(alpha = 0.84f),
+            colors.surface.copy(alpha = 0.98f)
         )
     )
 
@@ -84,19 +100,31 @@ fun MysteryCard(
             .clip(shape)
             .background(panelBrush)
             .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
+                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.72f)),
                 shape
             )
     ) {
         Box(
             Modifier
-                .fillMaxWidth()
+                .width(86.dp)
                 .height(1.dp)
-                .background(Color.White.copy(alpha = 0.055f))
-                .align(Alignment.TopCenter)
+                .background(colors.primary.copy(alpha = 0.62f))
+                .align(Alignment.TopStart)
+        )
+        Box(
+            Modifier
+                .fillMaxHeight()
+                .width(1.dp)
+                .background(colors.primary.copy(alpha = 0.16f))
+                .align(Alignment.CenterStart)
         )
         Column(
-            modifier = Modifier.padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
+            modifier = Modifier.padding(
+                start = VeilSpacing.lg,
+                end = VeilSpacing.lg,
+                top = VeilSpacing.lg,
+                bottom = VeilSpacing.lg
+            ),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
             content = content
         )
@@ -129,19 +157,19 @@ fun BookCover(
         label = "cover-fade"
     )
 
-    val shape = RoundedCornerShape(11.dp)
+    val shape = RoundedCornerShape(6.dp)
     Box(
         modifier = modifier
             .shadow(
-                elevation = 10.dp,
+                elevation = 12.dp,
                 shape = shape,
-                ambientColor = Color.Black.copy(alpha = 0.22f),
-                spotColor = Color.Black.copy(alpha = 0.30f)
+                ambientColor = Color.Black.copy(alpha = 0.28f),
+                spotColor = Color.Black.copy(alpha = 0.36f)
             )
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
-                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.52f)),
+                BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)),
                 shape
             )
     ) {
@@ -158,15 +186,15 @@ fun BookCover(
         Box(
             Modifier
                 .fillMaxHeight()
-                .width(3.dp)
-                .background(Color.Black.copy(alpha = 0.16f))
+                .width(5.dp)
+                .background(Color.Black.copy(alpha = 0.26f))
                 .align(Alignment.CenterStart)
         )
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(Color.White.copy(alpha = 0.12f))
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.34f))
                 .align(Alignment.TopCenter)
         )
     }
@@ -174,36 +202,61 @@ fun BookCover(
 
 @Composable
 private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
-    val hue = ((title.hashCode().ushr(1) % 260) + 235).toFloat() % 360f
-    val accent = Color.hsv(hue, 0.38f, 0.58f)
-    val middle = Color.hsv((hue + 18f) % 360f, 0.46f, 0.31f)
-    val deep = Color.hsv((hue + 34f) % 360f, 0.48f, 0.13f)
+    val archivalTones = listOf(
+        Color(0xFF182636),
+        Color(0xFF272333),
+        Color(0xFF30261E),
+        Color(0xFF1B2A2B),
+        Color(0xFF242338),
+        Color(0xFF2A1E23)
+    )
+    val index = (title.hashCode() and Int.MAX_VALUE) % archivalTones.size
+    val body = archivalTones[index]
+    val deep = Color(0xFF080B10)
+    val gold = VeilPalette.OldGold
 
     Box(
         Modifier
             .matchParentSize()
-            .background(Brush.linearGradient(listOf(accent, middle, deep)))
+            .background(Brush.linearGradient(listOf(body, deep)))
+    )
+
+    Box(
+        Modifier
+            .matchParentSize()
+            .padding(9.dp)
+            .border(BorderStroke(1.dp, gold.copy(alpha = 0.34f)), RoundedCornerShape(2.dp))
     )
 
     Column(
         Modifier
             .fillMaxSize()
-            .padding(start = 16.dp, end = 13.dp, top = 15.dp, bottom = 15.dp),
+            .padding(start = 17.dp, end = 14.dp, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(
-            "VEIL",
-            color = VeilPalette.Moon.copy(alpha = 0.72f),
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontSize = 8.sp,
-                letterSpacing = 1.8.sp,
-                fontWeight = FontWeight.Bold
-            )
-        )
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
+                "VEIL ARCHIVE",
+                color = gold.copy(alpha = 0.88f),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 8.sp,
+                    letterSpacing = 1.45.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            )
+            Box(
+                Modifier
+                    .width(34.dp)
+                    .height(1.dp)
+                    .background(gold.copy(alpha = 0.62f))
+            )
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
                 title,
-                color = Color.White,
+                color = VeilPalette.Moon,
+                fontFamily = MaterialTheme.typography.titleLarge.fontFamily,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 14.sp,
                 lineHeight = 17.sp,
@@ -213,7 +266,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             subtitle?.takeIf { it.isNotBlank() }?.let {
                 Text(
                     it,
-                    color = Color.White.copy(alpha = 0.72f),
+                    color = VeilPalette.Mist.copy(alpha = 0.78f),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
