@@ -236,7 +236,11 @@ class LibraryExport(
                     .firstOrNull {
                         it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
                     }
-                    ?: continue
+                    ?: error(
+                        "Cannot create a complete local backup for " + book.title +
+                            ": chapter " + (chapter.readingOrder + 1) +
+                            " has no local CBZ source."
+                    )
                 val archive = mangaImporter.resolveLocalArchiveFile(
                     book = book,
                     chapterKey = localSource.chapterKey,
