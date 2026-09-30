@@ -97,6 +97,7 @@ class LibraryWingsTest {
                 title = "B$index",
                 author = "Veil",
                 collections = listOf("Shelf $index"),
+                addedAtEpochMs = 0L,
                 lastOpenedAtEpochMs = index.toLong()
             )
         }
