@@ -170,10 +170,10 @@ class MangaPersistenceMigrationInstrumentedTest {
         migrated.execSQL(
             """
             INSERT INTO manga_merge_chapters (
-                mergeId, sourceChapterId, sourceBookId, targetChapterId,
+                mergeId, sourceChapterId, sourceBookId, targetChapterId, targetBookId,
                 sourceReadingOrder, targetReadingOrder, disposition
             ) VALUES (
-                'merge-1', 'source-chapter', 'source-comic', 'chapter-1',
+                'merge-1', 'source-chapter', 'source-comic', 'chapter-1', 'comic',
                 0, 0, 'DEDUPLICATE_EXACT_ARCHIVE'
             )
             """.trimIndent()
