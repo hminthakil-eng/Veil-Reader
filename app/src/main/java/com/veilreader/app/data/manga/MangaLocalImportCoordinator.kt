@@ -432,7 +432,7 @@ class MangaLocalImportCoordinator(
                 .sortedWith { left, right ->
                     compareNaturalArchiveNames(left.second, right.second)
                 }
-                .map(Pair<Uri, String>::first)
+                .map { it.first }
         }
 
         var added = 0
