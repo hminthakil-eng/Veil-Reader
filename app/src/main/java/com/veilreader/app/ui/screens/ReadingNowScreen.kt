@@ -22,6 +22,7 @@ import com.veilreader.app.R
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -235,10 +236,11 @@ private fun ThresholdHeader(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(VeilPalette.Ink)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
-                MaterialTheme.shapes.medium
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                MaterialTheme.shapes.extraSmall
             )
     ) {
         Box(
@@ -287,6 +289,14 @@ private fun ThresholdHeader(
             GrayfogOrnamentFrame(
                 modifier = Modifier.matchParentSize(),
                 strength = 0.74f
+            )
+
+            ThresholdLiminalSeal(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = VeilSpacing.lg)
+                    .size(72.dp),
+                waking = (bookCount.coerceIn(0, 12) / 12f)
             )
 
             Text(
@@ -424,6 +434,63 @@ private fun ThresholdDepthField(
 }
 
 @Composable
+private fun ThresholdLiminalSeal(
+    modifier: Modifier = Modifier,
+    waking: Float
+) {
+    Canvas(modifier) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val glow = (0.22f + waking * 0.28f).coerceIn(0f, 0.56f)
+        val outer = size.minDimension * 0.44f
+        val inner = size.minDimension * 0.25f
+
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.34f + waking * 0.12f),
+            radius = outer,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx())
+        )
+        drawCircle(
+            color = VeilPalette.Moon.copy(alpha = glow),
+            radius = inner,
+            center = center,
+            style = androidx.compose.ui.graphics.drawscope.Stroke(0.8.dp.toPx())
+        )
+
+        repeat(8) { index ->
+            val angle = Math.toRadians((index * 45.0) - 90.0)
+            val start = Offset(
+                x = center.x + kotlin.math.cos(angle).toFloat() * inner,
+                y = center.y + kotlin.math.sin(angle).toFloat() * inner
+            )
+            val end = Offset(
+                x = center.x + kotlin.math.cos(angle).toFloat() * outer,
+                y = center.y + kotlin.math.sin(angle).toFloat() * outer
+            )
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.24f + waking * 0.08f),
+                start = start,
+                end = end,
+                strokeWidth = 0.7.dp.toPx()
+            )
+        }
+
+        drawCircle(
+            brush = Brush.radialGradient(
+                colors = listOf(
+                    VeilPalette.Brass.copy(alpha = 0.11f + waking * 0.08f),
+                    Color.Transparent
+                ),
+                center = center,
+                radius = outer
+            ),
+            radius = outer,
+            center = center
+        )
+    }
+}
+
+@Composable
 private fun ContinueReadingHero(
     current: Book,
     artifactMemory: BookArtifactMemory?,
@@ -433,45 +500,41 @@ private fun ContinueReadingHero(
 ) {
     val formatPercent = rememberVeilPercentFormatter()
     val progress = current.progress.coerceIn(0f, 1f)
-    val paper = VeilPalette.ReaderPaper
-    val paperLight = Color(0xFFF2E8D2)
-    val paperDark = Color(0xFFD9C8A6)
-    val ink = Color(0xFF29231C)
-    val secondaryInk = Color(0xFF6A5A43)
-    val shape = MaterialTheme.shapes.extraSmall
     val fontScale = LocalDensity.current.fontScale
+    val shellShape = MaterialTheme.shapes.extraSmall
 
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .clip(shape)
+            .clip(shellShape)
             .background(
-                Brush.linearGradient(
+                Brush.verticalGradient(
                     listOf(
-                        paperLight,
-                        paper,
-                        Color(0xFFE1D3B7),
-                        paperDark
+                        VeilPalette.Archive.copy(alpha = 0.96f),
+                        VeilPalette.Ink.copy(alpha = 0.99f)
                     )
                 )
             )
-            .border(BorderStroke(1.dp, VeilPalette.DeepBrass.copy(alpha = 0.76f)), shape)
+            .border(
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f)),
+                shellShape
+            )
             .padding(18.dp)
     ) {
         val stacked = maxWidth < 300.dp || fontScale > 1.45f
 
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
-            strength = 0.34f
+            strength = 0.58f
         )
 
         Box(
             Modifier
                 .align(Alignment.TopEnd)
-                .padding(9.dp)
-                .size(8.dp)
+                .padding(10.dp)
+                .size(7.dp)
                 .rotate(45f)
-                .background(VeilPalette.DeepBrass.copy(alpha = 0.62f))
+                .background(VeilPalette.MoonCrimson.copy(alpha = 0.88f))
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
@@ -479,18 +542,42 @@ private fun ContinueReadingHero(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.library_continue_reading).uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
-                    color = secondaryInk,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    formatPercent(progress),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = secondaryInk
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.library_continue_reading).uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
+                        color = VeilPalette.Brass
+                    )
+                    Text(
+                        heroProgressLabel(current, progress),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Mist.copy(alpha = 0.82f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(50.dp)
+                        .border(
+                            BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
+                            MaterialTheme.shapes.extraSmall
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        formatPercent(progress),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = VeilPalette.Moon
+                    )
+                }
             }
+
+            BrassRule(Modifier.fillMaxWidth())
 
             if (stacked) {
                 Row(
@@ -499,7 +586,7 @@ private fun ContinueReadingHero(
                 ) {
                     HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
                 }
-                HeroDetails(current, ink, secondaryInk)
+                HeroDetails(current, VeilPalette.Moon, VeilPalette.Mist)
             } else {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -509,8 +596,8 @@ private fun ContinueReadingHero(
                     HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
                     HeroDetails(
                         current = current,
-                        ink = ink,
-                        secondaryInk = secondaryInk,
+                        ink = VeilPalette.Moon,
+                        secondaryInk = VeilPalette.Mist,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -518,33 +605,25 @@ private fun ContinueReadingHero(
 
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(3.dp),
-                color = ink,
-                trackColor = secondaryInk.copy(alpha = 0.18f),
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = VeilPalette.Brass,
+                trackColor = VeilPalette.BorderDark.copy(alpha = 0.52f),
                 drawStopIndicator = {}
-            )
-
-            Text(
-                heroProgressLabel(current, progress),
-                style = MaterialTheme.typography.labelMedium,
-                color = secondaryInk,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
             )
 
             Surface(
                 onClick = { onOpenBook(current) },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 50.dp),
+                    .heightIn(min = 52.dp),
                 shape = MaterialTheme.shapes.extraSmall,
-                color = ink,
-                contentColor = paperLight,
+                color = VeilPalette.ReaderPaper,
+                contentColor = VeilPalette.InkOnPaper,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 border = BorderStroke(
                     1.dp,
-                    VeilPalette.DeepBrass.copy(alpha = 0.92f)
+                    VeilPalette.Brass.copy(alpha = 0.80f)
                 )
             ) {
                 Row(
@@ -562,14 +641,12 @@ private fun ContinueReadingHero(
                             }
                         ),
                         modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.labelLarge.copy(
-                            letterSpacing = 0.55.sp
-                        )
+                        style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 0.36.sp)
                     )
                     Text(
                         "›",
                         style = MaterialTheme.typography.titleMedium,
-                        color = VeilPalette.Brass
+                        color = VeilPalette.DeepBrass
                     )
                 }
             }
