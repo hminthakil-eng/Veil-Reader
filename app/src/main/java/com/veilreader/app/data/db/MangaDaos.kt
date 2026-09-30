@@ -77,6 +77,25 @@ interface MangaCatalogDao {
     @Query("DELETE FROM manga_chapters WHERE id = :chapterId")
     suspend fun deleteChapter(chapterId: String)
 
+    @Query(
+        "UPDATE manga_chapters " +
+            "SET title = :title, normalizedTitle = :normalizedTitle " +
+            "WHERE id = :chapterId"
+    )
+    suspend fun updateChapterTitle(
+        chapterId: String,
+        title: String,
+        normalizedTitle: String
+    ): Int
+
+    @Query(
+        "UPDATE manga_chapters SET readingOrder = :readingOrder WHERE id = :chapterId"
+    )
+    suspend fun updateChapterReadingOrder(
+        chapterId: String,
+        readingOrder: Int
+    ): Int
+
 }
 
 @Dao
