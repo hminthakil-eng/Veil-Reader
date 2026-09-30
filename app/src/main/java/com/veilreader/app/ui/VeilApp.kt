@@ -360,6 +360,44 @@ fun VeilApp(
         }
     }
 
+    fun appendMangaChapter(book: Book, uri: Uri) {
+        if (isImporting || restoring || book.format != BookFormat.COMIC) return
+        isImporting = true
+        scope.launch {
+            try {
+                val result = mangaImporter.appendChapter(book.id, uri)
+                val error = result.exceptionOrNull()
+                if (error != null) {
+                    if (error is CancellationException) throw error
+                    showNotice(R.string.notice_manga_chapter_import_failed)
+                    return@launch
+                }
+
+                val chapter = result.getOrThrow()
+                if (chapter.duplicate) {
+                    showNotice(
+                        R.string.notice_manga_chapter_duplicate,
+                        VeilNoticeKind.SUCCESS,
+                        book.title
+                    )
+                } else {
+                    showNotice(
+                        R.string.notice_manga_chapter_added,
+                        VeilNoticeKind.SUCCESS,
+                        book.title,
+                        chapter.readingOrder + 1
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                showNotice(R.string.notice_manga_chapter_import_failed)
+            } finally {
+                isImporting = false
+            }
+        }
+    }
+
     fun importBook(uri: Uri) {
         if (isImporting || restoring) return
         isImporting = true
@@ -771,8 +809,10 @@ fun VeilApp(
         MangaHubScreen(
             books = books,
             onOpenBook = ::requestOpenBook,
+            onAddChapterUri = ::appendMangaChapter,
             onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
-            onClose = routeViewModel::closeChamber
+            onClose = routeViewModel::closeChamber,
+            isImporting = isImporting
         )
     } else if (
         profile == null ||
