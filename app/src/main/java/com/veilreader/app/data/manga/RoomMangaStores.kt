@@ -1,5 +1,6 @@
 package com.veilreader.app.data.manga
 
+import androidx.room.withTransaction
 import com.veilreader.app.data.db.MangaChapterEntity
 import com.veilreader.app.data.db.MangaOfflineChapterWithPages
 import com.veilreader.app.data.db.MangaProgressEntity
@@ -26,7 +27,7 @@ import com.veilreader.app.manga.source.SourceId
  * chapter row; the catalog must establish chapter order/identity first.
  */
 class RoomMangaProgressStore(
-    database: VeilDatabase
+    private val database: VeilDatabase
 ) : MangaProgressStore {
     private val books = database.books()
     private val catalog = database.mangaCatalog()
@@ -57,33 +58,42 @@ class RoomMangaProgressStore(
                 "Manga progress cannot be persisted before its chapter is in the catalog"
             )
 
-        progress.upsert(
-            MangaProgressEntity(
-                bookId = progressValue.mangaId.value,
-                chapterId = chapter.id,
-                pageIndex = progressValue.pageIndex,
-                pageCount = progressValue.pageCount,
-                chapterProgression = progressValue.chapterProgression,
-                updatedAtEpochMs = progressValue.updatedAtEpochMs
-            )
-        )
-
         val chapters = catalog.listChapters(progressValue.mangaId.value)
         val chapterIndex = chapters.indexOfFirst { it.id == chapter.id }
-        if (chapterIndex >= 0 && chapters.isNotEmpty()) {
+        val summary = if (chapterIndex >= 0 && chapters.isNotEmpty()) {
             val overallProgress = (
                 (chapterIndex.toDouble() + progressValue.chapterProgression) /
                     chapters.size.toDouble()
                 ).coerceIn(0.0, 1.0)
-            val finished =
-                chapterIndex == chapters.lastIndex &&
-                    progressValue.chapterProgression >= FINISHED_PROGRESSION
-            books.updateMangaProgressSummary(
-                id = progressValue.mangaId.value,
+            MangaLibraryProgressSummary(
                 progress = overallProgress.toFloat(),
-                updatedAtEpochMs = progressValue.updatedAtEpochMs,
-                finished = finished
+                finished =
+                    chapterIndex == chapters.lastIndex &&
+                        progressValue.chapterProgression >= FINISHED_PROGRESSION
             )
+        } else {
+            null
+        }
+
+        database.withTransaction {
+            progress.upsert(
+                MangaProgressEntity(
+                    bookId = progressValue.mangaId.value,
+                    chapterId = chapter.id,
+                    pageIndex = progressValue.pageIndex,
+                    pageCount = progressValue.pageCount,
+                    chapterProgression = progressValue.chapterProgression,
+                    updatedAtEpochMs = progressValue.updatedAtEpochMs
+                )
+            )
+            summary?.let {
+                books.updateMangaProgressSummary(
+                    id = progressValue.mangaId.value,
+                    progress = it.progress,
+                    updatedAtEpochMs = progressValue.updatedAtEpochMs,
+                    finished = it.finished
+                )
+            }
         }
     }
 
@@ -112,6 +122,15 @@ class RoomMangaProgressStore(
                 anchor = candidate.toAnchor()
             ).sameLogicalChapter(target)
         }
+    }
+
+    private data class MangaLibraryProgressSummary(
+        val progress: Float,
+        val finished: Boolean
+    )
+
+    private companion object {
+        const val FINISHED_PROGRESSION = 0.999
     }
 }
 
