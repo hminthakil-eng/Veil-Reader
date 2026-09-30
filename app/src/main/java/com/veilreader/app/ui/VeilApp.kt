@@ -186,7 +186,11 @@ fun VeilApp(
 
     // Existing libraries and restored backups may have no cached covers. Process one book at a time
     // so each Room update naturally advances this effect to the next pending publication.
-    val nextCoverBook = books.firstOrNull { it.isImported && it.coverCachePath == null }
+    val nextCoverBook = books.firstOrNull {
+        it.isImported &&
+            it.coverCachePath == null &&
+            it.format != BookFormat.COMIC
+    }
     LaunchedEffect(nextCoverBook?.id) {
         val book = nextCoverBook ?: return@LaunchedEffect
         val cachedPath = readerEngine.extractAndCacheCover(book).getOrDefault("")
@@ -325,6 +329,22 @@ fun VeilApp(
             showNotice(R.string.notice_sample_no_file)
             return
         }
+        if (book.format == BookFormat.COMIC) {
+            scope.launch {
+                when (val result = mangaSessionRepository.build(book.id)) {
+                    is MangaSessionAdapterResult.Ready -> {
+                        activeMangaSession = result.session
+                    }
+                    is MangaSessionAdapterResult.Unavailable -> {
+                        showNotice(
+                            R.string.notice_manga_open_failed,
+                            VeilNoticeKind.WARNING
+                        )
+                    }
+                }
+            }
+            return
+        }
         routeViewModel.requestBook(book.id, locatorOverride)
     }
 
@@ -333,19 +353,34 @@ fun VeilApp(
         isImporting = true
         scope.launch {
             try {
-                val inspected = readerEngine.inspectAndCreateBook(uri)
-                val inspectionError = inspected.exceptionOrNull()
-                if (inspectionError != null) {
-                    if (inspectionError is CancellationException) throw inspectionError
-                    showNotice(R.string.notice_import_failed)
-                    return@launch
+                val commit = if (mangaImporter.canImport(uri)) {
+                    val imported = mangaImporter.import(uri)
+                    val importError = imported.exceptionOrNull()
+                    if (importError != null) {
+                        if (importError is CancellationException) throw importError
+                        showNotice(R.string.notice_import_failed)
+                        return@launch
+                    }
+                    imported.getOrThrow()
+                } else {
+                    val inspected = readerEngine.inspectAndCreateBook(uri)
+                    val inspectionError = inspected.exceptionOrNull()
+                    if (inspectionError != null) {
+                        if (inspectionError is CancellationException) throw inspectionError
+                        showNotice(R.string.notice_import_failed)
+                        return@launch
+                    }
+                    library.addImportedBook(inspected.getOrThrow())
                 }
 
-                val commit = library.addImportedBook(inspected.getOrThrow())
                 routeViewModel.selectTab(VeilTab.LIBRARY)
-                routeViewModel.requestBook(commit.book.id)
+                requestOpenBook(commit.book)
                 if (commit.duplicate) {
-                    showNotice(R.string.notice_duplicate_book, VeilNoticeKind.SUCCESS, commit.book.title)
+                    showNotice(
+                        R.string.notice_duplicate_book,
+                        VeilNoticeKind.SUCCESS,
+                        commit.book.title
+                    )
                 }
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -603,8 +638,18 @@ fun VeilApp(
     }
 
     val opened = openedPublication
+    val mangaSession = activeMangaSession
     Box(Modifier.fillMaxSize()) {
-        if (opened != null) {
+        if (mangaSession != null) {
+            MangaReaderIntegratedScreen(
+                session = mangaSession,
+                loader = mangaLoader,
+                progressStore = mangaProgressStore,
+                cacheRoot = mangaImporter.cacheRoot,
+                onClose = { activeMangaSession = null },
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (opened != null) {
         ReaderScreen(
             opened = opened,
             library = library,
@@ -685,6 +730,7 @@ fun VeilApp(
     } else if (route.activeChamber == "manga") {
         MangaHubScreen(
             books = books,
+            onOpenBook = ::requestOpenBook,
             onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
             onClose = routeViewModel::closeChamber
         )
