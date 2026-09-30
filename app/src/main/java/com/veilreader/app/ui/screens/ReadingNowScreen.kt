@@ -791,31 +791,53 @@ private fun RecentBookCard(
         onClick = { onOpenBook(book) },
         modifier = Modifier.width(itemWidthDp.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.78f),
+        color = Color.Transparent,
         tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-        border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = 0.22f)
-        )
+        shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(8.dp),
+            modifier = Modifier.padding(horizontal = 3.dp, vertical = 6.dp),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            BookCover(
-                title = book.title,
-                subtitle = book.author,
-                imagePath = book.coverCachePath,
-                artifact = bookArtifactState(
-                    book,
-                    memory = artifactMemory
-                ),
+            Box(
                 modifier = Modifier
-                    .width(coverWidthDp.dp)
-                    .height(coverHeightDp.dp)
-                    .align(Alignment.CenterHorizontally)
-            )
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                BookCover(
+                    title = book.title,
+                    subtitle = book.author,
+                    imagePath = book.coverCachePath,
+                    artifact = bookArtifactState(
+                        book,
+                        memory = artifactMemory
+                    ),
+                    modifier = Modifier
+                        .width(coverWidthDp.dp)
+                        .height(coverHeightDp.dp)
+                )
+
+                Canvas(
+                    Modifier
+                        .matchParentSize()
+                        .padding(horizontal = 2.dp)
+                ) {
+                    val hairline = VeilPalette.Brass.copy(alpha = 0.28f)
+                    drawLine(
+                        color = hairline,
+                        start = Offset(0f, size.height - 1.dp.toPx()),
+                        end = Offset(size.width, size.height - 1.dp.toPx()),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                    drawCircle(
+                        color = VeilPalette.MoonCrimson.copy(alpha = 0.74f),
+                        radius = 2.2.dp.toPx(),
+                        center = Offset(size.width - 6.dp.toPx(), 6.dp.toPx())
+                    )
+                }
+            }
+
             Text(
                 book.title,
                 style = MaterialTheme.typography.titleSmall,
@@ -823,6 +845,15 @@ private fun RecentBookCard(
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
+
+            Text(
+                recentBookStatus(book).uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.55.sp),
+                color = VeilPalette.Mist.copy(alpha = 0.80f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+
             if (book.progress > 0f && !book.finished) {
                 LinearProgressIndicator(
                     progress = { book.progress.coerceIn(0f, 1f) },
@@ -830,17 +861,10 @@ private fun RecentBookCard(
                         .fillMaxWidth()
                         .height(2.dp),
                     color = VeilPalette.Brass,
-                    trackColor = VeilPalette.Mist.copy(alpha = 0.16f),
+                    trackColor = VeilPalette.BorderDark.copy(alpha = 0.42f),
                     drawStopIndicator = {}
                 )
             }
-            Text(
-                recentBookStatus(book),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass.copy(alpha = 0.86f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
     }
 }
@@ -968,10 +992,10 @@ private fun ThresholdWhisperCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.42f),
+        color = VeilPalette.Ink.copy(alpha = 0.40f),
         border = BorderStroke(
             1.dp,
-            VeilPalette.BorderDark.copy(alpha = 0.68f)
+            VeilPalette.Brass.copy(alpha = 0.24f)
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -1117,83 +1141,82 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
 
 @Composable
 private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
-    val paper = VeilPalette.ReaderPaper
-    val ink = Color(0xFF29231C)
-    val mutedInk = Color(0xFF6A5A43)
-
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.small,
-        color = Color.Transparent,
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.90f),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.72f))
+        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f))
     ) {
         Box(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color(0xFFF3E9D5),
-                            paper,
-                            Color(0xFFD7C6A4)
-                        )
-                    )
-                )
                 .padding(VeilSpacing.lg)
         ) {
+            GrayfogOrnamentFrame(
+                modifier = Modifier.matchParentSize(),
+                strength = 0.50f
+            )
+
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
                 Text(
-                    stringResource(R.string.threshold_first_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
-                    color = mutedInk
+                    stringResource(R.string.threshold_first_eyebrow).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                    color = VeilPalette.Brass
                 )
                 Text(
                     stringResource(R.string.threshold_first_title),
                     style = MaterialTheme.typography.titleLarge,
-                    color = ink
+                    color = VeilPalette.Moon
                 )
                 Text(
                     stringResource(R.string.threshold_first_body),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = mutedInk
+                    color = VeilPalette.Mist.copy(alpha = 0.86f)
                 )
-                Box(
-                    Modifier
-                        .width(86.dp)
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    ink.copy(alpha = 0.74f),
-                                    ink.copy(alpha = 0.24f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
-                Button(
+                BrassRule(Modifier.width(112.dp))
+                Surface(
                     onClick = onOpenLibrary,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 50.dp)
-                        .padding(top = 2.dp),
+                        .heightIn(min = 52.dp),
                     shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = ink,
-                        contentColor = Color(0xFFF3E9D5)
+                    color = VeilPalette.ReaderPaper,
+                    contentColor = VeilPalette.InkOnPaper,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.82f)
                     )
                 ) {
-                    Text(stringResource(R.string.threshold_enter_library))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = VeilSpacing.md, vertical = 13.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            stringResource(R.string.threshold_enter_library),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Text(
+                            "›",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = VeilPalette.DeepBrass
+                        )
+                    }
                 }
             }
         }
     }
 }
+
 @Composable
 private fun formatReadingTime(minutes: Int): String = when {
     minutes >= 6000 -> stringResource(R.string.profile_duration_hours, minutes / 60)
