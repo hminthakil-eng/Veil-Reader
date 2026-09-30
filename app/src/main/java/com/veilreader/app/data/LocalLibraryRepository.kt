@@ -121,7 +121,9 @@ class LocalLibraryRepository internal constructor(
             initialized.complete(Unit)
         }
         scope.launch {
-            database.books().observeAll().collect { rows -> _books.value = rows.map { it.toDomain() } }
+            database.books().observeVisible().collect { rows ->
+                _books.value = rows.map { it.toDomain() }
+            }
         }
         scope.launch {
             database.highlights().observeAll().collect { rows -> _highlights.value = rows.map { it.toDomain() } }
