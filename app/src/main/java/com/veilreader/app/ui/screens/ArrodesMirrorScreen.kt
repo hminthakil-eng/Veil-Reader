@@ -219,13 +219,16 @@ fun ArrodesMirrorScreen(
                     }
                 }
             } else {
-                val actionDescription = if (manifested) {
-                    stringResource(
-                        R.string.mirror_content_description_open,
-                        fragment.book.title
-                    )
-                } else {
-                    stringResource(R.string.mirror_content_description_awaken)
+                val actionDescription = when {
+                    transitioning ->
+                        stringResource(R.string.mirror_content_description_transition)
+                    manifested && contentVisible ->
+                        stringResource(
+                            R.string.mirror_content_description_open,
+                            fragment.book.title
+                        )
+                    else ->
+                        stringResource(R.string.mirror_content_description_awaken)
                 }
 
                 Box(
@@ -319,52 +322,58 @@ fun ArrodesMirrorScreen(
                         }
                     }
 
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 42.dp)
-                            .graphicsLayer(alpha = revealAlpha),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                    ) {
-                        Text(
-                            text = if (fragment.kind == ArrodesFragmentKind.NOTE) {
-                                stringResource(R.string.mirror_fragment_note)
-                            } else {
-                                stringResource(R.string.mirror_fragment_highlight)
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
-                        )
-                        val passageStyle = when {
-                            fragment.text.length <= 160 -> MaterialTheme.typography.titleLarge
-                            fragment.text.length <= 320 -> MaterialTheme.typography.titleMedium
-                            else -> MaterialTheme.typography.bodyLarge
+                    if (manifested && contentVisible) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 42.dp)
+                                .graphicsLayer(alpha = revealAlpha),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                        ) {
+                            Text(
+                                text = if (fragment.kind == ArrodesFragmentKind.NOTE) {
+                                    stringResource(R.string.mirror_fragment_note)
+                                } else {
+                                    stringResource(R.string.mirror_fragment_highlight)
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (highContrast) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    VeilPalette.Brass
+                                }
+                            )
+                            val passageStyle = when {
+                                fragment.text.length <= 160 -> MaterialTheme.typography.titleLarge
+                                fragment.text.length <= 320 -> MaterialTheme.typography.titleMedium
+                                else -> MaterialTheme.typography.bodyLarge
+                            }
+                            Text(
+                                text = stringResource(
+                                    R.string.mirror_fragment_quote,
+                                    fragment.text
+                                ),
+                                style = passageStyle,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center,
+                                maxLines = 10,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Spacer(Modifier.height(2.dp))
+                            Text(
+                                fragment.book.title,
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                stringResource(R.string.mirror_open_source_hint),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f),
+                                textAlign = TextAlign.Center
+                            )
                         }
-                        Text(
-                            text = stringResource(
-                                R.string.mirror_fragment_quote,
-                                fragment.text
-                            ),
-                            style = passageStyle,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center,
-                            maxLines = 10,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Spacer(Modifier.height(2.dp))
-                        Text(
-                            fragment.book.title,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
-                        )
-                        Text(
-                            stringResource(R.string.mirror_open_source_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.86f),
-                            textAlign = TextAlign.Center
-                        )
                     }
 
                     if (!manifested) {
