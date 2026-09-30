@@ -43,15 +43,15 @@ fun deriveArrodesFragments(
                 passageVisits = passageVisits
             )
             val annotated = highlight.note.isNotBlank()
+            val annotationBonus = if (annotated) 200 else 0
+            val favoriteBonus = if (book.favorite) 25 else 0
             ArrodesFragment(
                 id = highlight.id,
                 text = text,
                 book = book,
                 locatorJson = locator,
                 kind = if (annotated) ArrodesFragmentKind.NOTE else ArrodesFragmentKind.HIGHLIGHT,
-                resonanceScore = memory.resonanceScore +
-                    if (annotated) 200 else 0 +
-                    if (book.favorite) 25 else 0
+                resonanceScore = memory.resonanceScore + annotationBonus + favoriteBonus
             )
         }
         .sortedWith(
