@@ -1186,4 +1186,6 @@
     <string name="manga_reader_page_unknown">Page %1$s</string>
     <string name="manga_reader_loading">Preparing the page…</string>
     <string name="manga_reader_error_eyebrow">VISUAL READER · INTERRUPTION</string>
+    <string name="manga_reader_saving_position">Saving your place…</string>
+    <string name="manga_reader_message_progress_save_failed">Your latest place could not be saved. The reader stayed open so you can retry.</string>
 </resources>
