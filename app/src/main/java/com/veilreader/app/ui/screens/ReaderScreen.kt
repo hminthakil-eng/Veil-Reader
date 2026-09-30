@@ -167,25 +167,25 @@ fun ReaderScreen(
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
     val formatPercent = rememberVeilPercentFormatter()
-    var entryVisible by rememberSaveable(opened.book.id) { mutableStateOf(true) }
-    var navigatorAttached by remember(opened.book.id) { mutableStateOf(false) }
-    var previousLocationJson by rememberSaveable(opened.book.id) {
+    var entryVisible by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(true) }
+    var navigatorAttached by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var previousLocationJson by rememberSaveable(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(initialReturnLocatorJson)
     }
 
-    LaunchedEffect(initialReturnLocatorJson, opened.book.id) {
+    LaunchedEffect(initialReturnLocatorJson, opened.book.id, readerSessionInstanceId) {
         if (previousLocationJson == null && !initialReturnLocatorJson.isNullOrBlank()) {
             previousLocationJson = initialReturnLocatorJson
         }
     }
 
-    LaunchedEffect(opened.book.id) {
+    LaunchedEffect(opened.book.id, readerSessionInstanceId) {
         // Safety ceiling: a Reader failure must never leave an opaque transition permanently stuck.
         delay(2400)
         entryVisible = false
     }
 
-    LaunchedEffect(navigatorAttached, opened.book.id) {
+    LaunchedEffect(navigatorAttached, opened.book.id, readerSessionInstanceId) {
         if (navigatorAttached) {
             // Rare return rituals get only a slightly longer handoff; they never block reading.
             delay(if (returnRitual != null) 760 else 520)
@@ -196,7 +196,7 @@ fun ReaderScreen(
         key = "veil-reader-state",
         factory = remember(library, game) { ReaderViewModel.factory(library, game) }
     )
-    val progressFlow = remember(readerViewModel, opened.book.id, opened.book.progress) {
+    val progressFlow = remember(readerViewModel, opened.book.id, opened.book.progress, readerSessionInstanceId) {
         readerViewModel.uiState
             .map { state ->
                 if (state.bookId == opened.book.id) state.progress else opened.book.progress
@@ -205,10 +205,10 @@ fun ReaderScreen(
     }
     val progress by progressFlow.collectAsStateWithLifecycle(initialValue = opened.book.progress)
 
-    var navigator by remember(opened.book.id) { mutableStateOf<Navigator?>(null) }
+    var navigator by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
-    var controlsVisible by rememberSaveable(opened.book.id) { mutableStateOf(false) }
-    var selectionModeActive by remember(opened.book.id) { mutableStateOf(false) }
+    var controlsVisible by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var selectionModeActive by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     val accessibilityManager = remember(activity) {
         activity.getSystemService(AccessibilityManager::class.java)
     }
@@ -231,14 +231,14 @@ fun ReaderScreen(
         }
     }
     val reducedMotion = LocalVeilReducedMotion.current
-    val fixedLayoutPublication = remember(opened.book.id, opened.format) {
+    val fixedLayoutPublication = remember(opened.book.id, opened.format, readerSessionInstanceId) {
         opened.format == BookFormat.EPUB &&
             opened.publication.metadata.layout == Layout.FIXED
     }
     var activeFixedLayoutSpread by remember(opened.book.id) {
         mutableStateOf(fixedLayoutSpread)
     }
-    LaunchedEffect(fixedLayoutSpread, opened.book.id) {
+    LaunchedEffect(fixedLayoutSpread, opened.book.id, readerSessionInstanceId) {
         if (activeFixedLayoutSpread != fixedLayoutSpread) {
             activeFixedLayoutSpread = fixedLayoutSpread
         }
@@ -258,10 +258,10 @@ fun ReaderScreen(
     var rendererPreferencesSettling by remember(opened.book.id) {
         mutableStateOf(false)
     }
-    val readerModeHandoffState = remember(opened.book.id) {
+    val readerModeHandoffState = remember(opened.book.id, readerSessionInstanceId) {
         ReaderModeHandoffState()
     }
-    val publicationLanguage = remember(opened.book.id, opened.book.language) {
+    val publicationLanguage = remember(opened.book.id, opened.book.language, readerSessionInstanceId) {
         opened.book.language
             ?.trim()
             ?.takeIf { it.isNotEmpty() }
@@ -288,22 +288,22 @@ fun ReaderScreen(
         stringResource(R.string.reader_external_link_failed)
     val imageViewerFailedMessage =
         stringResource(R.string.reader_image_viewer_failed)
-    val paperCurlState = remember(opened.book.id) { PaperCurlState() }
-    var paperInputListener by remember(opened.book.id) {
+    val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
+    var paperInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlInputListener?>(null)
     }
-    val slidePageState = remember(opened.book.id) { SlidePageState() }
-    var slideInputListener by remember(opened.book.id) {
+    val slidePageState = remember(opened.book.id, readerSessionInstanceId) { SlidePageState() }
+    var slideInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<SlideNavigationInputListener?>(null)
     }
-    var boundaryPulseSide by remember(opened.book.id) {
+    var boundaryPulseSide by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlSide?>(null)
     }
-    var boundaryPulseSerial by remember(opened.book.id) { mutableIntStateOf(0) }
-    var lastBoundaryFeedbackAtMillis by remember(opened.book.id) {
+    var boundaryPulseSerial by remember(opened.book.id, readerSessionInstanceId) { mutableIntStateOf(0) }
+    var lastBoundaryFeedbackAtMillis by remember(opened.book.id, readerSessionInstanceId) {
         mutableLongStateOf(0L)
     }
-    val boundaryPulseAlpha = remember(opened.book.id) { Animatable(0f) }
+    val boundaryPulseAlpha = remember(opened.book.id, readerSessionInstanceId) { Animatable(0f) }
 
     fun emitBoundaryFeedback(side: PaperCurlSide) {
         val now = SystemClock.uptimeMillis()
@@ -321,7 +321,7 @@ fun ReaderScreen(
         onSensoryEvent(VeilSensoryEvent.BOUNDARY)
     }
 
-    LaunchedEffect(boundaryPulseSerial, opened.book.id) {
+    LaunchedEffect(boundaryPulseSerial, opened.book.id, readerSessionInstanceId) {
         if (boundaryPulseSerial <= 0) return@LaunchedEffect
         boundaryPulseAlpha.snapTo(0f)
         boundaryPulseAlpha.animateTo(
@@ -334,7 +334,7 @@ fun ReaderScreen(
         )
         boundaryPulseSide = null
     }
-    LaunchedEffect(touchExplorationEnabled, opened.book.id) {
+    LaunchedEffect(touchExplorationEnabled, opened.book.id, readerSessionInstanceId) {
         if (touchExplorationEnabled) {
             controlsVisible = true
             val restoredPaper =
@@ -345,9 +345,9 @@ fun ReaderScreen(
             if (!restoredSlide && slidePageState.active) slidePageState.clear()
         }
     }
-    var showAppearance by rememberSaveable(opened.book.id) { mutableStateOf(false) }
-    var appearanceCloseJob by remember(opened.book.id) { mutableStateOf<Job?>(null) }
-    var showPdfZoom by rememberSaveable(opened.book.id) { mutableStateOf(false) }
+    var showAppearance by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var appearanceCloseJob by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Job?>(null) }
+    var showPdfZoom by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
 
     fun closeAppearanceAfterRendererSettles() {
         appearanceCloseJob?.cancel()
@@ -411,9 +411,9 @@ fun ReaderScreen(
             )
         }
     }
-    var showNotebook by rememberSaveable(opened.book.id) { mutableStateOf(false) }
+    var showNotebook by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
 
-    LaunchedEffect(readerAppearance, opened.book.id) {
+    LaunchedEffect(readerAppearance, opened.book.id, readerSessionInstanceId) {
         ReaderTrace.event(
             "appearance_observed",
             bookId = opened.book.id,
@@ -496,17 +496,17 @@ fun ReaderScreen(
     val bookPassageVisits by bookPassageVisitsFlow.collectAsStateWithLifecycle(
         initialValue = library.passageVisits.value.filter { it.bookId == opened.book.id }
     )
-    var readerMessage by remember { mutableStateOf<String?>(null) }
-    var footnote by remember(opened.book.id) {
+    var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    var footnote by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<ReaderFootnote?>(null)
     }
-    var imageViewer by remember(opened.book.id) {
+    var imageViewer by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<ReaderImageContent?>(null)
     }
-    var imageLoading by remember(opened.book.id) { mutableStateOf(false) }
-    var imageLoadJob by remember(opened.book.id) { mutableStateOf<Job?>(null) }
-    var imageLoadSerial by remember(opened.book.id) { mutableIntStateOf(0) }
-    var closeInFlight by remember(opened.book.id) { mutableStateOf(false) }
+    var imageLoading by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var imageLoadJob by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Job?>(null) }
+    var imageLoadSerial by remember(opened.book.id, readerSessionInstanceId) { mutableIntStateOf(0) }
+    var closeInFlight by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
 
     DisposableEffect(imageViewer?.bitmap) {
         val ownedBitmap = imageViewer?.bitmap
@@ -516,16 +516,16 @@ fun ReaderScreen(
                 ?.recycle()
         }
     }
-    var pendingNoteHighlightId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
-    var pendingNoteText by rememberSaveable(opened.book.id) { mutableStateOf("") }
-    var noteSaving by remember { mutableStateOf(false) }
-    var locationTitle by remember(opened.book.id) {
+    var pendingNoteHighlightId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
+    var pendingNoteText by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
+    var noteSaving by remember(readerSessionInstanceId) { mutableStateOf(false) }
+    var locationTitle by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
-    var currentLocationHref by remember(opened.book.id) {
+    var currentLocationHref by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(opened.initialLocator?.href?.toString())
     }
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = remember(readerSessionInstanceId) { SnackbarHostState() }
     val snackbarBottom by animateDpAsState(
         targetValue = if (controlsVisible) 104.dp else 16.dp,
         animationSpec = if (reducedMotion) {
@@ -603,7 +603,7 @@ fun ReaderScreen(
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume()
     }
 
-    LaunchedEffect(readerMessage) {
+    LaunchedEffect(readerMessage, readerSessionInstanceId) {
         val message = readerMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(
             message = message,
@@ -823,7 +823,7 @@ fun ReaderScreen(
             epubNavigatorListener = epubNavigatorListener
         )
     }
-    val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id) {
+    val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id, readerSessionInstanceId) {
         { ready ->
             navigator = ready
             navigatorAttached = true
@@ -849,7 +849,7 @@ fun ReaderScreen(
         onDispose { readerModeHandoffState.dispose() }
     }
 
-    DisposableEffect(lifecycle, readerViewModel) {
+    DisposableEffect(lifecycle, readerViewModel, readerSessionInstanceId) {
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> readerViewModel.onResume()
@@ -890,7 +890,7 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(navigator, opened.book.id) {
+    LaunchedEffect(navigator, opened.book.id, readerSessionInstanceId) {
         val nav = navigator ?: return@LaunchedEffect
         var initialLocatorPending = true
         nav.currentLocator
@@ -938,7 +938,7 @@ fun ReaderScreen(
             }
     }
 
-    DisposableEffect(navigator, opened.book.id) {
+    DisposableEffect(navigator, opened.book.id, readerSessionInstanceId) {
         val nav = navigator as? OverflowableNavigator
         if (nav == null) {
             onDispose { }
