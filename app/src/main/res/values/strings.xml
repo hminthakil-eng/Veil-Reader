@@ -1160,7 +1160,7 @@
     <string name="manga_hub_empty_title">No local manga yet</string>
     <string name="manga_hub_empty_body">No Manga session is registered yet. Local Manga ingestion and source adapters will connect here while visual reading stays separate from the text-reader experience.</string>
     <string name="manga_hub_open_library">Return to Library</string>
-    <string name="manga_hub_progress">%1$d%% read</string>\n    <string name="manga_hub_adapter_pending">Dedicated Manga session adapter pending — this record is not sent to the EPUB/PDF reader.</string>
+    <string name="manga_hub_progress">%1$d%% read</string>\n    <string name="manga_hub_reader_ready">Opens in Veil’s dedicated visual reader with durable local progress and offline page ownership.</string>
 
     <string name="manga_reader_partial_offline_notice">Offline preview · reconnect to load the rest</string>
     <string name="manga_reader_retry">Retry</string>
@@ -1179,4 +1179,6 @@
     <string name="manga_reader_error_invalid_page_set">This chapter returned an invalid page set.</string>
     <string name="manga_reader_error_request_mismatch">The chapter changed while loading. Try opening it again.</string>
     <string name="mirror_fragment_quote">“%1$s”</string>
+    <string name="manga_hub_read">Read manga</string>
+    <string name="notice_manga_open_failed">This manga is not ready to open yet. Its local chapter data may be incomplete.</string>
 </resources>
