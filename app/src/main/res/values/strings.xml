@@ -1137,6 +1137,7 @@
     <string name="mirror_empty_body">Create a highlight or note in a book. Arrodes only speaks with memories you actually saved.</string>
     <string name="mirror_content_description_open">Open the source passage in %1$s</string>
     <string name="mirror_content_description_awaken">Awaken the mirror</string>
+    <string name="mirror_content_description_transition">The mirror is forming another saved echo</string>
     <string name="mirror_fragment_note">SAVED NOTE</string>
     <string name="mirror_fragment_highlight">SAVED HIGHLIGHT</string>
     <string name="mirror_open_source_hint">Tap the glass again to return to the exact passage.</string>
