@@ -61,3 +61,35 @@ fun deriveArrodesFragments(
         .take(limit)
         .toList()
 }
+
+
+/**
+ * Builds a stable non-repeating deck for one Mirror visit.
+ *
+ * The strongest fragment remains first so authored-note/resonance priority is preserved. The
+ * remainder is deterministically permuted from [sessionSeed], giving a fresh traversal per visit
+ * without random reshuffling or repeats before the deck wraps.
+ */
+fun orderArrodesFragmentsForSession(
+    fragments: List<ArrodesFragment>,
+    sessionSeed: Int
+): List<ArrodesFragment> {
+    if (fragments.size <= 2) return fragments
+    val strongest = fragments.first()
+    val remainder = fragments.drop(1).sortedWith(
+        compareBy<ArrodesFragment> { stableArrodesSessionKey(it.id, sessionSeed) }
+            .thenBy { it.id }
+    )
+    return buildList(fragments.size) {
+        add(strongest)
+        addAll(remainder)
+    }
+}
+
+private fun stableArrodesSessionKey(id: String, sessionSeed: Int): Long {
+    var value = id.hashCode().toLong() xor (sessionSeed.toLong() shl 32)
+    value = value xor (value shl 13)
+    value = value xor (value ushr 7)
+    value = value xor (value shl 17)
+    return value
+}
