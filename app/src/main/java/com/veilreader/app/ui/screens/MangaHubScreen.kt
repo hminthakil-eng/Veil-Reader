@@ -89,6 +89,7 @@ fun MangaHubScreen(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val context = LocalContext.current
+    val numberFormatter = rememberVeilNumberFormatter(maximumFractionDigits = 2)
     val mangaBooks = remember(books) {
         books
             .filter { it.format == BookFormat.COMIC }
@@ -317,7 +318,7 @@ fun MangaHubScreen(
                                             stringResource(
                                                 R.string.manga_hub_series_with_index,
                                                 name,
-                                                formatChapterNumber(book.seriesIndex)
+                                                numberFormatter(book.seriesIndex)
                                             )
                                         } else {
                                             stringResource(
@@ -392,7 +393,7 @@ fun MangaHubScreen(
                                         seriesAuthor = book.author
                                         seriesName = book.seriesName.orEmpty()
                                         seriesIndex = book.seriesIndex
-                                            ?.let(::formatChapterNumber)
+                                            ?.let(numberFormatter)
                                             .orEmpty()
                                         seriesLanguage = book.language.orEmpty()
                                     },
@@ -437,10 +438,10 @@ fun MangaHubScreen(
                                                 editTarget = book to chapter
                                                 editTitle = chapter.title
                                                 editNumber = chapter.number
-                                                    ?.let(::formatChapterNumber)
+                                                    ?.let(numberFormatter)
                                                     .orEmpty()
                                                 editVolume = chapter.volume
-                                                    ?.let(::formatChapterNumber)
+                                                    ?.let(numberFormatter)
                                                     .orEmpty()
                                                 editLanguage = chapter.languageTag.orEmpty()
                                             },
@@ -761,6 +762,7 @@ private fun MangaChapterManagementRow(
     onDelete: () -> Unit
 ) {
     val context = LocalContext.current
+    val numberFormatter = rememberVeilNumberFormatter(maximumFractionDigits = 2)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.extraSmall,
@@ -789,7 +791,7 @@ private fun MangaChapterManagementRow(
                         stringResource(
                             R.string.manga_chapter_metadata,
                             chapter.readingOrder + 1,
-                            chapter.number?.let { formatChapterNumber(it) }
+                            chapter.number?.let(numberFormatter)
                                 ?: stringResource(R.string.manga_chapter_unknown_number),
                             chapter.pageCount,
                             Formatter.formatShortFileSize(
@@ -862,14 +864,6 @@ private fun parseLocalizedChapterDecimal(value: String): Double? {
     }
     return normalized.toDoubleOrNull()
 }
-
-private fun formatChapterNumber(value: Double): String =
-    if (value % 1.0 == 0.0) {
-        value.toInt().toString()
-    } else {
-        value.toString().trimEnd('0').trimEnd('.')
-    }
-
 
 @Composable
 private fun MangaHubCover(book: Book) {
