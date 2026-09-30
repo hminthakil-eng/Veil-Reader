@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -660,7 +660,7 @@ private fun ArchiveRegisterStat(
 
 @Composable
 private fun archiveNumber(value: Int, minimumDigits: Int = 1): String {
-    val locale = LocalContext.current.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
     return remember(value, minimumDigits, locale) {
         NumberFormat.getIntegerInstance(locale).apply {
             minimumIntegerDigits = minimumDigits
