@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -270,6 +271,7 @@ fun VeilApp(
     var exporting by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
+    var mangaStorageRevision by remember { mutableIntStateOf(0) }
     var notice by remember { mutableStateOf<VeilNotice?>(null) }
 
     fun showNotice(resourceId: Int, kind: VeilNoticeKind = VeilNoticeKind.ERROR, vararg args: Any) {
@@ -374,6 +376,9 @@ fun VeilApp(
                 }
 
                 val chapter = result.getOrThrow()
+                if (!chapter.duplicate) {
+                    mangaStorageRevision += 1
+                }
                 if (chapter.duplicate) {
                     showNotice(
                         R.string.notice_manga_chapter_duplicate,
@@ -392,6 +397,31 @@ fun VeilApp(
                 throw cancelled
             } catch (_: Exception) {
                 showNotice(R.string.notice_manga_chapter_import_failed)
+            } finally {
+                isImporting = false
+            }
+        }
+    }
+
+    fun clearMangaDerivedCache(book: Book) {
+        if (isImporting || restoring || book.format != BookFormat.COMIC) return
+        isImporting = true
+        scope.launch {
+            try {
+                val result = mangaImporter.clearDerivedCache(book.id)
+                if (result.isFailure) {
+                    showNotice(R.string.notice_manga_cache_clear_failed)
+                } else {
+                    mangaStorageRevision += 1
+                    showNotice(
+                        R.string.notice_manga_cache_cleared,
+                        VeilNoticeKind.SUCCESS
+                    )
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                showNotice(R.string.notice_manga_cache_clear_failed)
             } finally {
                 isImporting = false
             }
@@ -474,6 +504,18 @@ fun VeilApp(
         if (book.format == BookFormat.COMIC) {
             if (activeMangaSession?.mangaId?.value == targetId) {
                 return@LaunchedEffect
+            }
+            val repaired = mangaImporter.ensureLocalCache(targetId)
+            if (repaired.isFailure) {
+                routeViewModel.bookOpenFailed(targetId)
+                showNotice(
+                    R.string.notice_manga_cache_repair_failed,
+                    VeilNoticeKind.WARNING
+                )
+                return@LaunchedEffect
+            }
+            if (repaired.getOrDefault(0) > 0) {
+                mangaStorageRevision += 1
             }
             when (val result = mangaSessionRepository.build(targetId)) {
                 is MangaSessionAdapterResult.Ready -> {
@@ -810,6 +852,9 @@ fun VeilApp(
             books = books,
             onOpenBook = ::requestOpenBook,
             onAddChapterUri = ::appendMangaChapter,
+            storageSummaryProvider = { book -> mangaImporter.storageSummary(book.id) },
+            onClearDerivedCache = ::clearMangaDerivedCache,
+            storageRevision = mangaStorageRevision,
             onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
             onClose = routeViewModel::closeChamber,
             isImporting = isImporting
