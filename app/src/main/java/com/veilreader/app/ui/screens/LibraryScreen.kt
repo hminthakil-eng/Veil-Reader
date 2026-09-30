@@ -210,6 +210,7 @@ fun LibraryScreen(
     onOpenBook: (Book) -> Unit,
     onFavorite: (String) -> Unit,
     onEditMetadata: (BookMetadataUpdate) -> Unit,
+    onDeleteBook: (Book) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenManga: () -> Unit = {}
 ) {
@@ -239,6 +240,7 @@ fun LibraryScreen(
     var sortMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Book?>(null) }
     var detailBookId by rememberSaveable { mutableStateOf<String?>(null) }
+    var deletingBookId by rememberSaveable { mutableStateOf<String?>(null) }
     var title by remember { mutableStateOf("") }
     var author by remember { mutableStateOf("") }
     var collectionNames by remember { mutableStateOf("") }
@@ -947,9 +949,26 @@ fun LibraryScreen(
             onEditMetadata = {
                 detailBookId = null
                 beginMetadataEdit(book)
+            },
+            onDelete = {
+                deletingBookId = book.id
             }
         )
     }
+
+    deletingBookId
+        ?.let(booksById::get)
+        ?.let { book ->
+            DeleteBookDialog(
+                book = book,
+                onDismiss = { deletingBookId = null },
+                onConfirm = {
+                    deletingBookId = null
+                    detailBookId = null
+                    onDeleteBook(book)
+                }
+            )
+        }
 
     editing?.let { book ->
         val parsedSeriesIndex = seriesIndex
@@ -1133,6 +1152,92 @@ fun LibraryScreen(
     }
 }
 
+@Composable
+private fun DeleteBookDialog(
+    book: Book,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            dismissOnBackPress = true,
+            dismissOnClickOutside = false,
+            usePlatformDefaultWidth = false
+        )
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 22.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 520.dp),
+                shape = MaterialTheme.shapes.small,
+                color = VeilPalette.Archive,
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.error.copy(alpha = 0.46f)
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 12.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(VeilSpacing.lg),
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
+                ) {
+                    Text(
+                        stringResource(R.string.book_delete_eyebrow),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                    Text(
+                        stringResource(R.string.book_delete_title),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        stringResource(R.string.book_delete_body, book.title),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    BrassRule(Modifier.fillMaxWidth())
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    ) {
+                        OutlinedButton(
+                            onClick = onDismiss,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall
+                        ) {
+                            Text(stringResource(R.string.book_delete_cancel))
+                        }
+                        Button(
+                            onClick = onConfirm,
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError
+                            )
+                        ) {
+                            Text(stringResource(R.string.book_delete_confirm))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookDetailSheet(
@@ -1145,7 +1250,8 @@ private fun BookDetailSheet(
     onDismiss: () -> Unit,
     onOpen: () -> Unit,
     onFavorite: () -> Unit,
-    onEditMetadata: () -> Unit
+    onEditMetadata: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val formatPercent = rememberVeilPercentFormatter()
     val progress = bookArtifactState(book, memory = artifactMemory).progress
@@ -1429,6 +1535,25 @@ private fun BookDetailSheet(
                         )
                     ) {
                         Text(stringResource(R.string.book_detail_edit_details))
+                    }
+                }
+
+                if (book.isImported) {
+                    OutlinedButton(
+                        onClick = onDelete,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            MaterialTheme.colorScheme.error.copy(alpha = 0.52f)
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text(stringResource(R.string.book_detail_delete))
                     }
                 }
 
