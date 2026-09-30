@@ -46,6 +46,7 @@ import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PerformanceTier
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderLayoutMode
 import com.veilreader.app.domain.ReaderTheme
@@ -61,6 +62,7 @@ fun SettingsScreen(
     exporting: Boolean,
     restoring: Boolean,
     onSetAppThemeMode: (AppThemeMode) -> Unit,
+    onSetPerformanceTier: (PerformanceTier) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
     onExportBackup: (Uri) -> Unit,
@@ -101,6 +103,11 @@ fun SettingsScreen(
         AppThemeMode.SYSTEM to stringResource(R.string.settings_theme_system),
         AppThemeMode.LIGHT to stringResource(R.string.settings_theme_light),
         AppThemeMode.DARK to stringResource(R.string.settings_theme_dark)
+    )
+    val performanceTierLabels = mapOf(
+        PerformanceTier.FULL to stringResource(R.string.settings_quality_full),
+        PerformanceTier.BALANCED to stringResource(R.string.settings_quality_balanced),
+        PerformanceTier.ESSENTIAL to stringResource(R.string.settings_quality_essential)
     )
     val readerThemeLabels = mapOf(
         ReaderTheme.PAPER to stringResource(R.string.reader_theme_paper),
@@ -175,6 +182,27 @@ fun SettingsScreen(
                 selected = settings.appThemeMode,
                 label = { appThemeLabels.getValue(it) },
                 onSelected = onSetAppThemeMode
+            )
+        }
+
+        SettingsSection(
+            title = stringResource(R.string.settings_quality_title),
+            description = stringResource(R.string.settings_quality_body)
+        ) {
+            ChoiceRow(
+                entries = PerformanceTier.entries,
+                selected = settings.performanceTier,
+                label = { performanceTierLabels.getValue(it) },
+                onSelected = onSetPerformanceTier
+            )
+            Text(
+                when (settings.performanceTier) {
+                    PerformanceTier.FULL -> stringResource(R.string.settings_quality_full_body)
+                    PerformanceTier.BALANCED -> stringResource(R.string.settings_quality_balanced_body)
+                    PerformanceTier.ESSENTIAL -> stringResource(R.string.settings_quality_essential_body)
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
