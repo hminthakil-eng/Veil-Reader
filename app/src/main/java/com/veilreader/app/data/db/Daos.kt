@@ -59,6 +59,26 @@ interface BookDao {
     @Query("UPDATE books SET lastOpenedAtEpochMs = :openedAtEpochMs WHERE id = :id")
     suspend fun updateLastOpened(id: String, openedAtEpochMs: Long): Int
 
+    /**
+     * Narrow projection used by the Manga engine. Manga owns detailed chapter/page progress in its
+     * dedicated tables; Book keeps only the cross-product library summary.
+     */
+    @Query(
+        """
+        UPDATE books
+        SET progress = :progress,
+            lastOpenedAtEpochMs = :updatedAtEpochMs,
+            finished = CASE WHEN finished = 1 THEN 1 ELSE :finished END
+        WHERE id = :id
+        """
+    )
+    suspend fun updateMangaProgressSummary(
+        id: String,
+        progress: Float,
+        updatedAtEpochMs: Long,
+        finished: Boolean
+    ): Int
+
     @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)
     @Query("DELETE FROM books") suspend fun deleteAll()
     @Query("SELECT COUNT(*) FROM books") suspend fun count(): Int
