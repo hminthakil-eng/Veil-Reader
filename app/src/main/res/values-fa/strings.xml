@@ -69,6 +69,9 @@
 
     <string name="library_search_placeholder">جست‌وجو در آرشیو…</string>
     <string name="library_clear">پاک کردن</string>
+    <string name="library_archive_overview">نمای کلی آرشیو</string>
+    <string name="library_hide_archive_overview">بستن نمای کلی آرشیو</string>
+    <string name="book_metadata_archive_record">رکورد آرشیو</string>
     <string name="library_archive_eyebrow">آرشیو</string>
     <string name="library_shelves_title">قفسه‌ها</string>
     <string name="library_tap_to_filter">برای فیلتر لمس کنید</string>
