@@ -57,6 +57,7 @@ import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
+import com.veilreader.app.ui.theme.withVeilTracking
 import java.io.File
 import java.text.NumberFormat
 import kotlinx.coroutines.Dispatchers
@@ -671,14 +672,16 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+            val archiveLabel = stringResource(R.string.threshold_grayfog_archive)
             Text(
-                stringResource(R.string.threshold_grayfog_archive),
+                archiveLabel,
                 color = VeilPalette.Brass.copy(alpha = 0.82f),
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 7.sp,
-                    letterSpacing = 1.45.sp,
-                    fontWeight = FontWeight.SemiBold
-                )
+                style = MaterialTheme.typography.labelSmall
+                    .copy(
+                        fontSize = 7.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    .withVeilTracking(archiveLabel, 1.45.sp)
             )
             BrassRule(Modifier.width(42.dp))
         }
