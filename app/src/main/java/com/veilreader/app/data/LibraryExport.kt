@@ -198,15 +198,19 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         library.flushWrites()
     }
 
-    /** Restores current schema-3 backups and older schema-1/2 local backups. */
+    /** Restores current schema-4 backups and older schema-1/2/3 local backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
-        val stagingRoot = File(context.cacheDir, "veil-restore-${UUID.randomUUID()}").apply { mkdirs() }
+        val stagingRoot = File(context.cacheDir, "veil-restore-" + UUID.randomUUID()).apply {
+            mkdirs()
+        }
         var installedRoot: File? = null
         try {
             extractValidatedBackup(source, stagingRoot)
             val manifestFile = File(stagingRoot, "manifest.json")
             require(manifestFile.isFile) { "This archive has no Veil Reader manifest." }
-            require(manifestFile.length() <= MAX_MANIFEST_BYTES) { "The backup manifest is unexpectedly large." }
+            require(manifestFile.length() <= MAX_MANIFEST_BYTES) {
+                "The backup manifest is unexpectedly large."
+            }
             val manifest = JSONObject(manifestFile.readText(Charsets.UTF_8))
             val schema = manifest.optInt("schemaVersion", -1)
             require(schema in SUPPORTED_BACKUP_SCHEMAS) {
@@ -215,31 +219,54 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val incoming = when (schema) {
                 1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
-                2, CURRENT_BACKUP_SCHEMA -> LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
+                2, 3, CURRENT_BACKUP_SCHEMA ->
+                    LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
                 else -> error("Unsupported backup schema.")
             }
-            val gamePreferences = JSONObject(manifest.getJSONObject("gamePreferences").toString())
+            val incomingMangaProgress = parseMangaRestorePoints(manifest)
+            val incomingComicIds = incoming.books
+                .filter { it.format == BookFormat.COMIC }
+                .mapTo(mutableSetOf()) { it.id }
+            require(incomingMangaProgress.keys.all(incomingComicIds::contains)) {
+                "Manga progress references a book that is not a comic in this backup."
+            }
+            val gamePreferences = JSONObject(
+                manifest.getJSONObject("gamePreferences").toString()
+            )
             val archivedByBookId = stagedPublications(manifest, stagingRoot)
 
-            val publicationsRoot = File(context.filesDir, "publications").apply { mkdirs() }.canonicalFile
-            installedRoot = File(publicationsRoot, "restore-${UUID.randomUUID()}").apply { mkdirs() }.canonicalFile
-            require(installedRoot.toPath().startsWith(publicationsRoot.toPath())) { "Invalid restore location." }
+            val publicationsRoot = File(context.filesDir, "publications")
+                .apply { mkdirs() }
+                .canonicalFile
+            installedRoot = File(
+                publicationsRoot,
+                "restore-" + UUID.randomUUID()
+            ).apply { mkdirs() }.canonicalFile
+            require(installedRoot.toPath().startsWith(publicationsRoot.toPath())) {
+                "Invalid restore location."
+            }
 
             var restoredBooks = 0
             val restoredBookModels = incoming.books.map { book ->
                 val archived = archivedByBookId[book.id]
-                if (book.isImported) requireNotNull(archived) {
-                    "The backup is missing the publication file for ${book.title}."
+                if (book.isImported) {
+                    requireNotNull(archived) {
+                        "The backup is missing the publication file for " + book.title + "."
+                    }
                 }
                 if (archived == null) return@map book.copy(sourceUri = null)
-                val format = book.format.name.lowercase()
-                require(format == "epub" || format == "pdf") { "Unsupported publication format in backup." }
-                val target = File(installedRoot, "${UUID.randomUUID()}.$format")
-                archived.inputStream().use { input -> target.outputStream().use { output -> input.copyTo(output) } }
+
+                val extension = backupExtension(book)
+                val target = File(
+                    installedRoot,
+                    UUID.randomUUID().toString() + "." + extension
+                )
+                archived.inputStream().use { input ->
+                    target.outputStream().use { output -> input.copyTo(output) }
+                }
                 require(target.length() > 0) { "A restored publication is empty." }
                 restoredBooks += 1
-                // Cover paths and content fingerprints are derived cache metadata. Restores regenerate
-                // both from the restored private publication instead of trusting stale filesystem data.
+                // Cover paths and fingerprints are derived. Manga cache is rebuilt from CBZ.
                 book.copy(
                     sourceUri = Uri.fromFile(target).toString(),
                     coverCachePath = null,
@@ -250,17 +277,32 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
             val gamePrefs = context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE)
             val oldLibrary = library.snapshot()
+            val oldMangaProgress = captureMangaRestorePoints(oldLibrary.books)
             val oldGame = gamePrefs.all.toMap()
 
             try {
                 library.replaceAll(restoredSnapshot)
+                rebuildMangaBooks(restoredSnapshot.books, incomingMangaProgress)
                 if (!replacePreferences(gamePrefs, gamePreferences)) {
                     error("Could not commit restored progression data.")
                 }
             } catch (error: Throwable) {
-                runCatching { library.replaceAll(oldLibrary) }
+                val rollbackError = runCatching {
+                    library.replaceAll(oldLibrary)
+                    rebuildMangaBooks(oldLibrary.books, oldMangaProgress)
+                }.exceptionOrNull()
                 restorePreferencesSnapshot(gamePrefs, oldGame)
-                throw IllegalStateException("Restore could not be committed. Your previous data was kept.", error)
+
+                val wrapped = IllegalStateException(
+                    if (rollbackError == null) {
+                        "Restore could not be committed. Your previous data was kept."
+                    } else {
+                        "Restore failed and previous Manga state could not be fully rebuilt."
+                    },
+                    error
+                )
+                rollbackError?.let(wrapped::addSuppressed)
+                throw wrapped
             }
 
             publicationsRoot.listFiles()?.forEach { child ->
@@ -396,8 +438,8 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     companion object {
         private const val GAME_PREFS = "veil_game_v1"
-        private const val CURRENT_BACKUP_SCHEMA = 3
-        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, CURRENT_BACKUP_SCHEMA)
+        private const val CURRENT_BACKUP_SCHEMA = 4
+        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, 3, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
