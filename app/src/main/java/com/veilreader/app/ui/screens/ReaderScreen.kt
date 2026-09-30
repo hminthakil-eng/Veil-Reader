@@ -102,6 +102,7 @@ import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilTracking
 import com.veilreader.app.ui.theme.sanctuaryPageMaterialFor
 import com.veilreader.app.ui.theme.sanctuarySurfaceProfileFor
 import kotlinx.coroutines.CancellationException
@@ -3240,7 +3241,7 @@ private fun EpubAppearancePanel(
                     }
                     Text(
                         label,
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                        style = MaterialTheme.typography.labelSmall.withVeilTracking(label, 1.0.sp),
                         color = if (selected) {
                             VeilPalette.Brass
                         } else {
@@ -3804,8 +3805,9 @@ private fun ReaderAppearanceChoice(
 
         Text(
             label,
-            style = MaterialTheme.typography.labelLarge.copy(
-                letterSpacing = if (selected) 0.32.sp else 0.16.sp
+            style = MaterialTheme.typography.labelLarge.withVeilTracking(
+                label,
+                if (selected) 0.32.sp else 0.16.sp
             ),
             color = foreground,
             maxLines = 1,
