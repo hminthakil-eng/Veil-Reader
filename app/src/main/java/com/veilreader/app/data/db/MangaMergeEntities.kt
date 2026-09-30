@@ -18,7 +18,7 @@ import androidx.room.Index
             entity = BookEntity::class,
             parentColumns = ["id"],
             childColumns = ["targetBookId"],
-            onDelete = ForeignKey.CASCADE
+            onDelete = ForeignKey.RESTRICT
         ),
         ForeignKey(
             entity = MangaChapterEntity::class,
