@@ -167,6 +167,56 @@ private val VeilLightColors = lightColorScheme(
     outlineVariant = VeilPalette.BorderLight
 )
 
+private val VeilHighContrastDarkColors = darkColorScheme(
+    primary = Color(0xFFFFD98A),
+    onPrimary = Color(0xFF0A0804),
+    primaryContainer = Color(0xFF5E451C),
+    onPrimaryContainer = Color(0xFFFFFFFF),
+    secondary = Color(0xFF9FE8F1),
+    onSecondary = Color(0xFF001416),
+    secondaryContainer = Color(0xFF153D42),
+    onSecondaryContainer = Color(0xFFFFFFFF),
+    tertiary = Color(0xFFFFB4B8),
+    onTertiary = Color(0xFF220004),
+    tertiaryContainer = Color(0xFF6A1F2A),
+    onTertiaryContainer = Color(0xFFFFFFFF),
+    background = Color(0xFF000000),
+    onBackground = Color(0xFFFFFFFF),
+    surface = Color(0xFF090B0F),
+    onSurface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFF151A22),
+    onSurfaceVariant = Color(0xFFE8E9EA),
+    outline = Color(0xFFD9DDE3),
+    outlineVariant = Color(0xFF8E97A4),
+    error = Color(0xFFFFB4AB),
+    onError = Color(0xFF3B0000)
+)
+
+private val VeilHighContrastLightColors = lightColorScheme(
+    primary = Color(0xFF654600),
+    onPrimary = Color(0xFFFFFFFF),
+    primaryContainer = Color(0xFFFFE3A5),
+    onPrimaryContainer = Color(0xFF1F1600),
+    secondary = Color(0xFF004F56),
+    onSecondary = Color(0xFFFFFFFF),
+    secondaryContainer = Color(0xFFB8F0F5),
+    onSecondaryContainer = Color(0xFF001416),
+    tertiary = Color(0xFF7A0015),
+    onTertiary = Color(0xFFFFFFFF),
+    tertiaryContainer = Color(0xFFFFD9DE),
+    onTertiaryContainer = Color(0xFF2A0006),
+    background = Color(0xFFFFFFFF),
+    onBackground = Color(0xFF000000),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF000000),
+    surfaceVariant = Color(0xFFF1F1F1),
+    onSurfaceVariant = Color(0xFF202124),
+    outline = Color(0xFF34383D),
+    outlineVariant = Color(0xFF666B72),
+    error = Color(0xFF8C0009),
+    onError = Color(0xFFFFFFFF)
+)
+
 private val VeilShapes = Shapes(
     extraSmall = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Plate),
     small = androidx.compose.foundation.shape.RoundedCornerShape(VeilShapeLanguage.Architectural),
@@ -176,10 +226,12 @@ private val VeilShapes = Shapes(
 )
 
 val LocalVeilReducedMotion = staticCompositionLocalOf { false }
+val LocalVeilHighContrast = staticCompositionLocalOf { false }
 
 @Composable
 fun VeilTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    highContrastEnabled: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val useDarkTheme = when (themeMode) {
@@ -188,7 +240,12 @@ fun VeilTheme(
         AppThemeMode.DARK -> true
     }
 
-    val colors = if (useDarkTheme) VeilDarkColors else VeilLightColors
+    val colors = when {
+        highContrastEnabled && useDarkTheme -> VeilHighContrastDarkColors
+        highContrastEnabled -> VeilHighContrastLightColors
+        useDarkTheme -> VeilDarkColors
+        else -> VeilLightColors
+    }
     val language = LocalConfiguration.current.locales[0].language
     val scriptGroup = veilScriptGroupFor(language)
     val typography = veilTypographyFor(scriptGroup)
@@ -202,7 +259,8 @@ fun VeilTheme(
         CompositionLocalProvider(
             LocalContentColor provides colors.onBackground,
             LocalVeilScriptGroup provides scriptGroup,
-            LocalVeilReducedMotion provides reducedMotion
+            LocalVeilReducedMotion provides reducedMotion,
+            LocalVeilHighContrast provides highContrastEnabled
         ) {
             content()
         }
