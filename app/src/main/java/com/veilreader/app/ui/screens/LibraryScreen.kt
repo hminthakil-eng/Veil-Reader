@@ -1942,15 +1942,20 @@ private fun LibraryHeader(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
+            .background(VeilPalette.Ink)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
                 MaterialTheme.shapes.extraSmall
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 194.dp else 216.dp
+        val headerHeight = if (compact) 224.dp else 238.dp
 
-        Box(Modifier.fillMaxWidth().heightIn(min = headerHeight)) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = headerHeight)
+        ) {
             Image(
                 painter = painterResource(R.drawable.grayfog_threshold_v1),
                 contentDescription = null,
@@ -1963,8 +1968,8 @@ private fun LibraryHeader(
                     .matchParentSize()
                     .background(
                         Brush.verticalGradient(
-                            0f to VeilPalette.Ink.copy(alpha = 0.18f),
-                            0.42f to VeilPalette.Ink.copy(alpha = 0.38f),
+                            0f to VeilPalette.Ink.copy(alpha = 0.22f),
+                            0.36f to VeilPalette.Ink.copy(alpha = 0.56f),
                             1f to VeilPalette.Ink.copy(alpha = 0.995f)
                         )
                     )
@@ -1975,76 +1980,43 @@ private fun LibraryHeader(
                     .background(
                         Brush.horizontalGradient(
                             listOf(
-                                VeilPalette.Ink.copy(alpha = 0.58f),
+                                VeilPalette.Ink.copy(alpha = 0.70f),
+                                VeilPalette.Ink.copy(alpha = 0.20f),
                                 Color.Transparent,
-                                VeilPalette.Ink.copy(alpha = 0.22f)
+                                VeilPalette.Ink.copy(alpha = 0.34f)
                             )
                         )
                     )
             )
+
             GrayfogOrnamentFrame(
                 modifier = Modifier.matchParentSize(),
-                strength = 0.64f
+                strength = 0.72f
+            )
+
+            ArchiveHeaderSeal(
+                bookCount = bookCount,
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 14.dp, end = 14.dp)
+                    .size(if (compact) 58.dp else 68.dp)
             )
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = headerHeight)
-                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.sm),
+                    .padding(
+                        start = VeilSpacing.md,
+                        end = if (compact) 76.dp else 94.dp,
+                        top = VeilSpacing.md,
+                        bottom = VeilSpacing.sm
+                    ),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-                ) {
-                    OutlinedButton(
-                        onClick = onOpenSettings,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = VeilPalette.Moon.copy(alpha = 0.86f),
-                            containerColor = VeilPalette.Ink.copy(alpha = 0.72f)
-                        ),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.library_header_settings),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Button(
-                        onClick = onImport,
-                        enabled = !isImporting,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VeilPalette.DeepBrass.copy(alpha = 0.94f),
-                            contentColor = VeilPalette.Moon
-                        ),
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Text(
-                            stringResource(
-                                if (isImporting) R.string.library_header_importing
-                                else R.string.library_header_import
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                }
-
-                Spacer(Modifier.height(VeilSpacing.md))
-
                 Column(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
                         stringResource(R.string.app_name).uppercase(),
@@ -2058,24 +2030,12 @@ private fun LibraryHeader(
                     )
                     Text(
                         stringResource(R.string.library_header_tagline),
-                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
-                        color = VeilPalette.Moon.copy(alpha = 0.78f)
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Moon.copy(alpha = 0.76f),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    Box(
-                        Modifier
-                            .padding(vertical = 4.dp)
-                            .width(104.dp)
-                            .height(1.dp)
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(
-                                        VeilPalette.Brass.copy(alpha = 0.92f),
-                                        VeilPalette.Brass.copy(alpha = 0.34f),
-                                        Color.Transparent
-                                    )
-                                )
-                            )
-                    )
+                    BrassRule(Modifier.width(112.dp))
                     Text(
                         when (bookCount) {
                             0 -> stringResource(R.string.library_header_empty)
@@ -2083,11 +2043,116 @@ private fun LibraryHeader(
                             else -> stringResource(R.string.library_header_many, bookCount)
                         },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = VeilPalette.Moon.copy(alpha = 0.72f)
+                        color = VeilPalette.Mist.copy(alpha = 0.78f)
                     )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = onOpenSettings,
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        contentPadding = PaddingValues(horizontal = 8.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = VeilPalette.Mist
+                        )
+                    ) {
+                        Text(
+                            stringResource(R.string.library_header_settings),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    Spacer(Modifier.weight(1f))
+
+                    OutlinedButton(
+                        onClick = onImport,
+                        enabled = !isImporting,
+                        shape = MaterialTheme.shapes.extraSmall,
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = VeilPalette.Moon,
+                            containerColor = VeilPalette.Ink.copy(alpha = 0.48f)
+                        ),
+                        border = BorderStroke(
+                            1.dp,
+                            VeilPalette.Brass.copy(alpha = 0.62f)
+                        ),
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    ) {
+                        Text(
+                            stringResource(
+                                if (isImporting) R.string.library_header_importing
+                                else R.string.library_header_import
+                            ),
+                            style = MaterialTheme.typography.labelMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ArchiveHeaderSeal(
+    bookCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val outer = size.minDimension * 0.43f
+        val inner = size.minDimension * 0.27f
+        val density = (bookCount.coerceIn(0, 24) / 24f)
+
+        drawCircle(
+            color = VeilPalette.Ink.copy(alpha = 0.72f),
+            radius = outer + 3.dp.toPx(),
+            center = center
+        )
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.46f + density * 0.18f),
+            radius = outer,
+            center = center,
+            style = Stroke(1.dp.toPx())
+        )
+        drawCircle(
+            color = VeilPalette.Moon.copy(alpha = 0.22f + density * 0.18f),
+            radius = inner,
+            center = center,
+            style = Stroke(0.8.dp.toPx())
+        )
+
+        repeat(6) { index ->
+            val angle = Math.toRadians(index * 60.0 - 90.0)
+            val start = Offset(
+                center.x + cos(angle).toFloat() * inner,
+                center.y + sin(angle).toFloat() * inner
+            )
+            val end = Offset(
+                center.x + cos(angle).toFloat() * outer,
+                center.y + sin(angle).toFloat() * outer
+            )
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.22f + density * 0.08f),
+                start = start,
+                end = end,
+                strokeWidth = 0.7.dp.toPx()
+            )
+        }
+
+        drawCircle(
+            color = VeilPalette.MoonCrimson.copy(alpha = if (bookCount > 0) 0.74f else 0.26f),
+            radius = 2.4.dp.toPx(),
+            center = center
+        )
     }
 }
 
@@ -2232,61 +2297,64 @@ private fun LibraryShelfCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
-    Surface(
-        onClick = onClick,
+    Box(
         modifier = Modifier
-            .width(142.dp)
-            .heightIn(min = 78.dp),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.62f)
-        } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.48f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
-            else VeilPalette.Brass.copy(alpha = 0.30f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+            .width(150.dp)
+            .heightIn(min = 82.dp)
+            .semantics { this.selected = selected }
+            .clickable(role = Role.Button, onClick = onClick)
+            .background(
+                if (selected) {
+                    VeilPalette.DeepBrass.copy(alpha = 0.16f)
+                } else {
+                    VeilPalette.Ink.copy(alpha = 0.18f)
+                }
+            )
+            .padding(horizontal = 10.dp, vertical = 9.dp)
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.RaisedIron.copy(alpha = if (selected) 0.44f else 0.26f),
-                            Color.Transparent
-                        )
-                    )
-                )
-                .padding(horizontal = VeilSpacing.sm, vertical = 10.dp)
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    count.toString().padStart(2, '0'),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Brass
-                )
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (selected) VeilPalette.Moon
-                    else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+        Canvas(Modifier.matchParentSize()) {
+            val line = if (selected) {
+                VeilPalette.Brass.copy(alpha = 0.88f)
+            } else {
+                VeilPalette.BorderDark.copy(alpha = 0.70f)
             }
+            drawLine(
+                color = line,
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = if (selected) 1.5.dp.toPx() else 1.dp.toPx()
+            )
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = if (selected) 0.62f else 0.24f),
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height * 0.58f),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Text(
+                count.toString().padStart(2, '0'),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                color = if (selected) VeilPalette.Brass else VeilPalette.Mist
+            )
+            Text(
+                title,
+                style = MaterialTheme.typography.titleSmall,
+                color = VeilPalette.Moon,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = VeilPalette.Mist.copy(alpha = 0.70f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -2315,18 +2383,35 @@ private fun RecentReadingBook(
     onOpen: () -> Unit
 ) {
     val formatPercent = rememberVeilPercentFormatter()
-    Surface(
-        modifier = Modifier.width(224.dp).clickable(
-            role = Role.Button,
-            onClickLabel = stringResource(R.string.library_continue_book_semantics, book.title),
-            onClick = onOpen
-        ),
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.88f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.30f))
+
+    Box(
+        modifier = Modifier
+            .width(232.dp)
+            .heightIn(min = 96.dp)
+            .clickable(
+                role = Role.Button,
+                onClickLabel = stringResource(R.string.library_continue_book_semantics, book.title),
+                onClick = onOpen
+            )
+            .background(VeilPalette.Ink.copy(alpha = 0.24f))
+            .padding(horizontal = 8.dp, vertical = 9.dp)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.34f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawCircle(
+                color = VeilPalette.MoonCrimson.copy(alpha = 0.72f),
+                radius = 2.3.dp.toPx(),
+                center = Offset(size.width - 7.dp.toPx(), 7.dp.toPx())
+            )
+        }
+
         Row(
-            Modifier.padding(VeilSpacing.sm),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -2335,33 +2420,46 @@ private fun RecentReadingBook(
                 subtitle = book.author,
                 imagePath = book.coverCachePath,
                 artifact = bookArtifactState(book, memory = artifactMemory),
-                modifier = Modifier.width(48.dp).height(70.dp)
+                modifier = Modifier.width(50.dp).height(74.dp)
             )
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(stringResource(R.string.library_continue_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Text(
+                    stringResource(R.string.library_continue_reading).uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
+                    color = VeilPalette.Brass
+                )
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = VeilPalette.Moon,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.70f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 LinearProgressIndicator(
                     progress = { book.progress.coerceIn(0f, 1f) },
                     modifier = Modifier.fillMaxWidth().height(2.dp),
-                    color = MaterialTheme.colorScheme.primary,
-                    trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    color = VeilPalette.Brass,
+                    trackColor = VeilPalette.BorderDark.copy(alpha = 0.42f),
+                    drawStopIndicator = {}
                 )
                 Text(
-                    stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f))),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    stringResource(
+                        R.string.book_detail_percent_read_text,
+                        formatPercent(book.progress.coerceIn(0f, 1f))
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
             }
         }
