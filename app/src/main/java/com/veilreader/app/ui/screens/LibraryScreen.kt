@@ -489,29 +489,6 @@ fun LibraryScreen(
             }
         }
 
-        item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
-            if (
-                viewMode != LibraryViewMode.SHELVES &&
-                trimmedQuery.isBlank() &&
-                shelf == "All" &&
-                wingState.allWings.isNotEmpty()
-            ) {
-                LibraryArchiveWings(
-                    state = wingState,
-                    selectedCollection = collection,
-                    selectedSeries = seriesFilter,
-                    onCollection = { name ->
-                        collection = if (collection.equals(name, ignoreCase = true)) "" else name
-                        seriesFilter = ""
-                    },
-                    onSeries = { name ->
-                        seriesFilter = if (seriesFilter.equals(name, ignoreCase = true)) "" else name
-                        collection = ""
-                    }
-                )
-            }
-        }
-
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier.fillMaxWidth(),
@@ -660,6 +637,70 @@ fun LibraryScreen(
             }
         }
 
+        if (filtered.isEmpty()) {
+            item(key = "library:empty", span = { GridItemSpan(maxLineSpan) }) {
+                LibraryEmptyState(
+                    hasBooks = books.isNotEmpty(),
+                    isImporting = isImporting,
+                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    onReset = {
+                        query = ""
+                        shelf = "All"
+                        collection = ""
+                        seriesFilter = ""
+                    }
+                )
+            }
+        } else {
+            when (viewMode) {
+                LibraryViewMode.GALLERY -> {
+                    items(filtered, key = { "gallery:${it.id}" }, contentType = { "gallery" }) { book ->
+                        BookLibraryTile(
+                            book = book,
+                            archiveMemory = memoryState.memoryFor(book.id),
+                            artifactMemory = artifactMemoryByBookId[book.id],
+                            onOpen = { onOpenBook(book) },
+                            onFavorite = { onFavorite(book.id) },
+                            onDetails = { detailBookId = book.id }
+                        )
+                    }
+                }
+
+                LibraryViewMode.INDEX -> {
+                    items(filtered, key = { "index:${it.id}" }, contentType = { "index" }) { book ->
+                        BookLibraryRow(
+                            book = book,
+                            archiveMemory = memoryState.memoryFor(book.id),
+                            artifactMemory = artifactMemoryByBookId[book.id],
+                            showMemorySummary = archiveLayout.showIndexMemorySummary,
+                            onOpen = { onOpenBook(book) },
+                            onFavorite = { onFavorite(book.id) },
+                            onDetails = { detailBookId = book.id }
+                        )
+                    }
+                }
+
+                LibraryViewMode.SHELVES -> {
+                    item(key = "library:shelves-mode", span = { GridItemSpan(maxLineSpan) }) {
+                        LibraryShelvesView(
+                            groups = deriveLibraryShelfGroups(
+                                books = books,
+                                filtered = filtered,
+                                filterActive = trimmedQuery.isNotBlank() ||
+                                    shelf != "All" ||
+                                    collection.isNotEmpty() ||
+                                    seriesFilter.isNotEmpty()
+                            ),
+                            artifactMemoryByBookId = artifactMemoryByBookId,
+                            itemWidthDp = archiveLayout.shelfItemWidthDp,
+                            coverWidthDp = archiveLayout.shelfCoverWidthDp,
+                            coverHeightDp = archiveLayout.shelfCoverHeightDp,
+                            onOpen = onOpenBook,
+                            onDetails = { detailBookId = it.id }
+                        )
+                    }
+                }
+            }
         item(key = "library:memory-returns", span = { GridItemSpan(maxLineSpan) }) {
             if (
                 viewMode != LibraryViewMode.INDEX &&
@@ -761,70 +802,29 @@ fun LibraryScreen(
             }
         }
 
-        if (filtered.isEmpty()) {
-            item(key = "library:empty", span = { GridItemSpan(maxLineSpan) }) {
-                LibraryEmptyState(
-                    hasBooks = books.isNotEmpty(),
-                    isImporting = isImporting,
-                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
-                    onReset = {
-                        query = ""
-                        shelf = "All"
-                        collection = ""
+        item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
+            if (
+                viewMode != LibraryViewMode.SHELVES &&
+                trimmedQuery.isBlank() &&
+                shelf == "All" &&
+                wingState.allWings.isNotEmpty()
+            ) {
+                LibraryArchiveWings(
+                    state = wingState,
+                    selectedCollection = collection,
+                    selectedSeries = seriesFilter,
+                    onCollection = { name ->
+                        collection = if (collection.equals(name, ignoreCase = true)) "" else name
                         seriesFilter = ""
+                    },
+                    onSeries = { name ->
+                        seriesFilter = if (seriesFilter.equals(name, ignoreCase = true)) "" else name
+                        collection = ""
                     }
                 )
             }
-        } else {
-            when (viewMode) {
-                LibraryViewMode.GALLERY -> {
-                    items(filtered, key = { "gallery:${it.id}" }, contentType = { "gallery" }) { book ->
-                        BookLibraryTile(
-                            book = book,
-                            archiveMemory = memoryState.memoryFor(book.id),
-                            artifactMemory = artifactMemoryByBookId[book.id],
-                            onOpen = { onOpenBook(book) },
-                            onFavorite = { onFavorite(book.id) },
-                            onDetails = { detailBookId = book.id }
-                        )
-                    }
-                }
+        }
 
-                LibraryViewMode.INDEX -> {
-                    items(filtered, key = { "index:${it.id}" }, contentType = { "index" }) { book ->
-                        BookLibraryRow(
-                            book = book,
-                            archiveMemory = memoryState.memoryFor(book.id),
-                            artifactMemory = artifactMemoryByBookId[book.id],
-                            showMemorySummary = archiveLayout.showIndexMemorySummary,
-                            onOpen = { onOpenBook(book) },
-                            onFavorite = { onFavorite(book.id) },
-                            onDetails = { detailBookId = book.id }
-                        )
-                    }
-                }
-
-                LibraryViewMode.SHELVES -> {
-                    item(key = "library:shelves-mode", span = { GridItemSpan(maxLineSpan) }) {
-                        LibraryShelvesView(
-                            groups = deriveLibraryShelfGroups(
-                                books = books,
-                                filtered = filtered,
-                                filterActive = trimmedQuery.isNotBlank() ||
-                                    shelf != "All" ||
-                                    collection.isNotEmpty() ||
-                                    seriesFilter.isNotEmpty()
-                            ),
-                            artifactMemoryByBookId = artifactMemoryByBookId,
-                            itemWidthDp = archiveLayout.shelfItemWidthDp,
-                            coverWidthDp = archiveLayout.shelfCoverWidthDp,
-                            coverHeightDp = archiveLayout.shelfCoverHeightDp,
-                            onOpen = onOpenBook,
-                            onDetails = { detailBookId = it.id }
-                        )
-                    }
-                }
-            }
         item(key = "library:overview", span = { GridItemSpan(maxLineSpan) }) {
             if (books.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth()) {
@@ -1601,14 +1601,10 @@ private fun LibraryHeader(
     BoxWithConstraints(
         Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.medium)
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
-                MaterialTheme.shapes.medium
-            )
+            .background(VeilPalette.Ink)
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 158.dp else 190.dp
+        val headerHeight = if (compact) 184.dp else 216.dp
 
         Box(Modifier.fillMaxWidth().height(headerHeight)) {
             Image(
@@ -1843,61 +1839,52 @@ private fun LibraryShelfCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val borderColor = if (selected) {
+        VeilPalette.Brass.copy(alpha = 0.92f)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.72f)
+    }
+    val containerColor = if (selected) {
+        VeilPalette.DeepBrass.copy(alpha = 0.66f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.62f)
+    }
+
     Surface(
         onClick = onClick,
         modifier = Modifier
-            .width(142.dp)
-            .heightIn(min = 78.dp),
+            .widthIn(min = 112.dp, max = 148.dp)
+            .heightIn(min = 48.dp)
+            .semantics {
+                contentDescription = "$title. $subtitle. $count"
+            },
         shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.62f)
-        } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.48f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
-            else VeilPalette.Brass.copy(alpha = 0.30f)
-        ),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.RaisedIron.copy(alpha = if (selected) 0.44f else 0.26f),
-                            Color.Transparent
-                        )
-                    )
-                )
-                .padding(horizontal = VeilSpacing.sm, vertical = 10.dp)
+        Row(
+            modifier = Modifier.padding(horizontal = 11.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    count.toString().padStart(2, '0'),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Brass
-                )
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (selected) VeilPalette.Moon
-                    else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
+            Text(
+                count.toString().padStart(2, '0'),
+                style = MaterialTheme.typography.labelSmall,
+                color = VeilPalette.Brass
+            )
+            Text(
+                title,
+                style = MaterialTheme.typography.labelLarge,
+                color = if (selected) {
+                    VeilPalette.Moon
+                } else {
+                    MaterialTheme.colorScheme.onSurface
+                },
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
@@ -2878,309 +2865,3 @@ private fun LibraryEmptyState(
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
                 color = VeilPalette.Brass
             )
-
-            Text(
-                if (hasBooks) stringResource(R.string.library_empty_filtered_title) else stringResource(R.string.library_empty_archive_title),
-                style = MaterialTheme.typography.titleLarge
-            )
-
-            Text(
-                if (hasBooks) {
-                    stringResource(R.string.library_empty_filtered_body)
-                } else {
-                    stringResource(R.string.library_empty_archive_body)
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (hasBooks) {
-                OutlinedButton(
-                    onClick = onReset,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        VeilPalette.Brass.copy(alpha = 0.44f)
-                    )
-                ) {
-                    Text(stringResource(R.string.library_clear_active_filters))
-                }
-            } else {
-                Button(
-                    onClick = onImport,
-                    enabled = !isImporting,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
-                    )
-                ) {
-                    Text(if (isImporting) stringResource(R.string.library_preparing_publication) else stringResource(R.string.library_import_first_volume))
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun LibraryShelvesView(
-    groups: List<LibraryShelfGroup>,
-    artifactMemoryByBookId: Map<String, BookArtifactMemory>,
-    itemWidthDp: Float,
-    coverWidthDp: Float,
-    coverHeightDp: Float,
-    onOpen: (Book) -> Unit,
-    onDetails: (Book) -> Unit
-) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xl)
-    ) {
-        groups.forEach { group ->
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-            ) {
-                LibrarySectionHeading(
-                    eyebrow = localizedShelfEyebrow(group.eyebrow),
-                    title = localizedShelfTitle(group.title),
-                    trailing = stringResource(R.string.library_volume_count, group.books.size)
-                )
-                BrassRule(Modifier.fillMaxWidth())
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-                ) {
-                    group.books.forEach { book ->
-                        val readBookA11y = stringResource(R.string.library_read_book_a11y, book.title)
-                        Column(
-                            modifier = Modifier
-                                .width(itemWidthDp.dp)
-                                .clickable(
-                                    role = Role.Button,
-                                    onClickLabel = readBookA11y
-                                ) { onOpen(book) },
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            BookCover(
-                                title = book.title,
-                                subtitle = book.author,
-                                imagePath = book.coverCachePath,
-                                artifact = bookArtifactState(
-                                    book,
-                                    memory = artifactMemoryByBookId[book.id]
-                                ),
-                                modifier = Modifier
-                                    .width(coverWidthDp.dp)
-                                    .height(coverHeightDp.dp)
-                            )
-                            Text(
-                                book.title,
-                                style = veilContentTextStyle(MaterialTheme.typography.titleSmall, book.title),
-                                color = VeilPalette.Moon,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            Text(
-                                when {
-                                    book.finished -> stringResource(R.string.library_completed)
-                                    book.progress > 0f ->
-                                        stringResource(
-                                            R.string.book_detail_percent_read,
-                                            (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                                        )
-                                    else -> book.format.name
-                                },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                maxLines = 1
-                            )
-                            TextButton(
-                                onClick = { onDetails(book) },
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                contentPadding = PaddingValues(horizontal = 0.dp)
-                            ) {
-                                Text(stringResource(R.string.library_archive_record))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun localizedShelfEyebrow(value: String): String =
-    when (value) {
-        "Filtered archive" -> stringResource(R.string.library_group_filtered_archive)
-        "Journey" -> stringResource(R.string.library_group_journey)
-        "Collection" -> stringResource(R.string.library_collection)
-        "Series" -> stringResource(R.string.library_sort_series)
-        "Author" -> stringResource(R.string.library_sort_author)
-        "Record" -> stringResource(R.string.library_group_record)
-        "Unopened" -> stringResource(R.string.library_unopened)
-        else -> value
-    }
-
-@Composable
-private fun localizedShelfTitle(value: String): String =
-    when (value) {
-        "Matching volumes" -> stringResource(R.string.library_group_matching_volumes)
-        "Currently reading" -> stringResource(R.string.library_currently_reading)
-        "Completed volumes" -> stringResource(R.string.library_group_completed_volumes)
-        "Waiting on the shelf" -> stringResource(R.string.library_group_waiting_on_shelf)
-        else -> value
-    }
-@Composable
-private fun librarySortLabel(sort: String): String =
-    when (sort) {
-        "Archive Depth" -> stringResource(R.string.library_sort_archive_depth)
-        "Title" -> stringResource(R.string.library_sort_title)
-        "Author" -> stringResource(R.string.library_sort_author)
-        "Series" -> stringResource(R.string.library_sort_series)
-        "Progress" -> stringResource(R.string.library_sort_progress)
-        else -> stringResource(R.string.library_sort_recent)
-    }
-
-@Composable
-private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        listOf(
-            LibraryViewMode.GALLERY to stringResource(R.string.library_view_gallery),
-            LibraryViewMode.SHELVES to stringResource(R.string.library_view_shelves),
-            LibraryViewMode.INDEX to stringResource(R.string.library_view_index)
-        ).forEach { (candidate, label) ->
-            val active = mode == candidate
-            val viewA11y = stringResource(R.string.library_view_mode_a11y, label)
-            TextButton(
-                onClick = { onChange(candidate) },
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .semantics {
-                        contentDescription = viewA11y
-                        selected = active
-                    },
-                contentPadding = PaddingValues(horizontal = 9.dp),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (active) {
-                        VeilPalette.Brass
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-            ) {
-                Text(
-                    label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.7.sp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun SearchIcon(modifier: Modifier, tint: Color) {
-    Canvas(modifier) {
-        val width = 1.8.dp.toPx()
-        drawCircle(tint, size.minDimension * .29f, Offset(size.width * .43f, size.height * .43f), style = Stroke(width))
-        drawLine(
-            tint,
-            Offset(size.width * .64f, size.height * .64f),
-            Offset(size.width * .88f, size.height * .88f),
-            width,
-            StrokeCap.Round
-        )
-    }
-}
-
-@Composable
-private fun FavoriteIcon(favorite: Boolean, modifier: Modifier = Modifier) {
-    val tint = if (favorite) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurfaceVariant
-    Canvas(modifier) {
-        val outer = size.minDimension * .46f
-        val inner = outer * .44f
-        val path = Path()
-        repeat(10) { index ->
-            val radius = if (index % 2 == 0) outer else inner
-            val angle = Math.toRadians((-90.0 + index * 36.0))
-            val x = size.width / 2f + cos(angle).toFloat() * radius
-            val y = size.height / 2f + sin(angle).toFloat() * radius
-            if (index == 0) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        path.close()
-        if (favorite) drawPath(path, tint) else drawPath(path, tint, style = Stroke(1.5.dp.toPx()))
-    }
-}
-
-@Composable
-private fun EllipsisIcon(modifier: Modifier, tint: Color) {
-    Canvas(modifier) {
-        val r = size.minDimension * .08f
-        drawCircle(tint, r, Offset(size.width * .26f, size.height * .50f))
-        drawCircle(tint, r, Offset(size.width * .50f, size.height * .50f))
-        drawCircle(tint, r, Offset(size.width * .74f, size.height * .50f))
-    }
-}
-
-@Composable
-private fun GridIcon(modifier: Modifier, tint: Color) {
-    Canvas(modifier) {
-        val width = 1.6.dp.toPx()
-        val stroke = Stroke(width)
-        val cell = size.minDimension * .30f
-        val gap = size.minDimension * .12f
-        val start = size.minDimension * .13f
-        drawRect(tint, Offset(start, start), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
-        drawRect(tint, Offset(start + cell + gap, start), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
-        drawRect(tint, Offset(start, start + cell + gap), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
-        drawRect(tint, Offset(start + cell + gap, start + cell + gap), androidx.compose.ui.geometry.Size(cell, cell), style = stroke)
-    }
-}
-
-@Composable
-private fun ListIcon(modifier: Modifier, tint: Color) {
-    Canvas(modifier) {
-        val width = 1.7.dp.toPx()
-        repeat(3) { i ->
-            val y = size.height * (.24f + i * .26f)
-            drawCircle(tint, size.minDimension * .035f, Offset(size.width * .14f, y))
-            drawLine(tint, Offset(size.width * .28f, y), Offset(size.width * .88f, y), width, StrokeCap.Round)
-        }
-    }
-}
-
-@Composable
-private fun ShelfIcon(modifier: Modifier, tint: Color) {
-    Canvas(modifier) {
-        val width = 1.7.dp.toPx()
-        val stroke = Stroke(width)
-        repeat(3) { i ->
-            val left = size.width * (.12f + i * .27f)
-            drawRoundRect(
-                tint,
-                topLeft = Offset(left, size.height * (.20f + if (i == 1) .08f else 0f)),
-                size = androidx.compose.ui.geometry.Size(size.width * .20f, size.height * (.62f - if (i == 1) .08f else 0f)),
-                cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx()),
-                style = stroke
-            )
-        }
-    }
-}
-
-private fun parseCollectionNames(value: String): List<String> = value
-    .split(',')
-    .map(String::trim)
-    .filter(String::isNotEmpty)
-    .distinctBy { it.lowercase(Locale.ROOT) }
-
-private fun formatSeriesIndex(value: Double): String =
-    if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()
-
