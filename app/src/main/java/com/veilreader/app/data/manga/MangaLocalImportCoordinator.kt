@@ -289,8 +289,8 @@ class MangaLocalImportCoordinator(
                 is MangaCbzImportResult.Failure ->
                     throw MangaLocalImportException(imported.reason)
             }
-            RoomMangaOfflineCacheIndex(database).put(manifest)
             recomputeStoredMangaProgress(bookId)
+            RoomMangaOfflineCacheIndex(database).put(manifest)
 
             withContext(Dispatchers.IO) {
                 deleteGeneratedChapterDirectory(oldDirectory)
@@ -305,7 +305,7 @@ class MangaLocalImportCoordinator(
                         title = current.title ?: current.normalizedTitle ?: title,
                         normalizedTitle = current.normalizedTitle ?: current.title ?: title,
                         volume = current.volume,
-                        number = requireNotNull(current.number),
+                        number = current.number,
                         languageTag = current.languageTag
                     )
                 }
