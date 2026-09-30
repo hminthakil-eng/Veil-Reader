@@ -978,7 +978,7 @@ fun ReaderScreen(
             ReaderTrace.event(
                 "navigator_attached",
                 bookId = opened.book.id,
-                sessionId = readerViewModel.traceSessionId(),
+                sessionId = readerSessionInstanceId,
                 details = "type=${ready::class.java.simpleName}"
             )
         }
@@ -1380,7 +1380,8 @@ fun ReaderScreen(
                     readerInteractionMode(
                         selectionModeActive = selectionModeActive,
                         overlayVisible =
-                            rendererPreferencesSettling ||
+                            !latestReaderSessionReady.value ||
+                                rendererPreferencesSettling ||
                                 showNotebook ||
                                 showAppearance ||
                                 showPdfZoom ||
