@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -92,6 +93,7 @@ fun ProfileScreen(
     ) {
     Column(
         Modifier
+            .widthIn(max = 920.dp)
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
@@ -385,6 +387,7 @@ internal fun deriveReaderDossierHistory(
 
 @Composable
 private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    val formatInteger = rememberVeilIntegerFormatter()
     val startDate = formatDossierDate(history.firstRecordedAtEpochMs)
     val endDate = formatDossierDate(history.latestRecordedAtEpochMs)
     Column(
@@ -429,15 +432,15 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         )
         DossierLedgerLine(
             label = stringResource(R.string.profile_completion_records),
-            value = history.completionCycleCount.toString()
+            value = formatInteger(history.completionCycleCount)
         )
         DossierLedgerLine(
             label = stringResource(R.string.profile_reread_cycles),
-            value = history.rereadCycleCount.toString()
+            value = formatInteger(history.rereadCycleCount)
         )
         DossierLedgerLine(
             label = stringResource(R.string.profile_archived_volumes),
-            value = history.archivedVolumeCount.toString()
+            value = formatInteger(history.archivedVolumeCount)
         )
 
         Text(
@@ -474,14 +477,16 @@ private fun DossierLedgerLine(
 }
 
 @Composable
-private fun formatDossierDate(epochMs: Long?): String =
-    epochMs
+private fun formatDossierDate(epochMs: Long?): String {
+    val locale = LocalContext.current.resources.configuration.locales[0]
+    val formatter = remember(locale) { DateFormat.getDateInstance(DateFormat.MEDIUM, locale) }
+    return epochMs
         ?.takeIf { it > 0L }
         ?.let {
-            DateFormat.getDateInstance(DateFormat.MEDIUM)
-                .format(Date(it))
+            formatter.format(Date(it))
         }
         ?: stringResource(R.string.profile_no_record)
+}
 
 @Composable
 private fun formatDossierDuration(activeMillis: Long): String {
@@ -510,6 +515,7 @@ private fun ArchivistDossierPanel(
     totalDiscoveries: Int,
     onOpenSettings: () -> Unit
 ) {
+    val formatInteger = rememberVeilIntegerFormatter()
     val xpTarget = profile.xpForNextLevel.coerceAtLeast(1)
     val xpProgress = (profile.xp.toFloat() / xpTarget).coerceIn(0f, 1f)
     val identity = localizedPathIdentity(profile.path)
@@ -597,10 +603,10 @@ private fun ArchivistDossierPanel(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     DossierFact(stringResource(R.string.profile_fact_path), pathName)
-                    DossierFact(stringResource(R.string.profile_fact_level), profile.level.toString())
+                    DossierFact(stringResource(R.string.profile_fact_level), formatInteger(profile.level))
                     DossierFact(
                         stringResource(R.string.profile_fact_castle_tier),
-                        (profile.rankIndex + 1).toString()
+                        formatInteger(profile.rankIndex + 1)
                     )
                     equippedSigilName?.let {
                         DossierFact(stringResource(R.string.profile_fact_equipped_sigil), it)
@@ -718,6 +724,7 @@ private fun DossierBackdrop(
 
 @Composable
 private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
+    val formatInteger = rememberVeilIntegerFormatter(minimumDigits = 2)
     Box(modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.matchParentSize()) {
             val center = Offset(size.width / 2f, size.height / 2f)
@@ -748,7 +755,7 @@ private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
         }
 
         Text(
-            rank.toString().padStart(2, '0'),
+            formatInteger(rank),
             style = MaterialTheme.typography.titleLarge,
             color = VeilPalette.Brass
         )
@@ -765,14 +772,13 @@ private fun DossierFact(label: String, value: String) {
             label,
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
             color = VeilPalette.Mist.copy(alpha = 0.66f),
-            modifier = Modifier.width(82.dp)
+            modifier = Modifier.weight(0.34f)
         )
         Text(
             value,
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Moon,
-            modifier = Modifier.weight(1f),
-            maxLines = 1
+            modifier = Modifier.weight(0.66f)
         )
     }
 }
@@ -782,6 +788,7 @@ private fun DossierRecordGrid(
     profile: ReaderProfile,
     highlightCount: Int
 ) {
+    val formatInteger = rememberVeilIntegerFormatter()
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             DossierStat(
@@ -792,13 +799,13 @@ private fun DossierRecordGrid(
             )
             DossierStat(
                 stringResource(R.string.profile_stat_volumes),
-                profile.booksFinished.toString(),
+                formatInteger(profile.booksFinished),
                 stringResource(R.string.profile_stat_finished),
                 Modifier.weight(1f)
             )
             DossierStat(
                 stringResource(R.string.profile_stat_marks),
-                highlightCount.toString(),
+                formatInteger(highlightCount),
                 stringResource(R.string.profile_stat_highlights),
                 Modifier.weight(1f)
             )
@@ -806,7 +813,7 @@ private fun DossierRecordGrid(
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             DossierStat(
                 stringResource(R.string.profile_stat_pages),
-                profile.pagesRead.toString(),
+                formatInteger(profile.pagesRead),
                 stringResource(R.string.profile_stat_turned),
                 Modifier.weight(1f)
             )
@@ -818,7 +825,7 @@ private fun DossierRecordGrid(
             )
             DossierStat(
                 stringResource(R.string.profile_stat_tier),
-                (profile.rankIndex + 1).toString(),
+                formatInteger(profile.rankIndex + 1),
                 stringResource(R.string.profile_stat_castle),
                 Modifier.weight(1f)
             )
@@ -1046,3 +1053,4 @@ private fun formatMinutes(minutes: Int): String =
             stringResource(R.string.profile_duration_hours_minutes, hours, rest)
         }
     }
+

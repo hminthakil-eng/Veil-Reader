@@ -11,6 +11,32 @@ class BookArtifactTest {
     private val now = 220L * day
 
     @Test
+    fun `invalid progress never contaminates artifact geometry`() {
+        for (progress in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY)) {
+            val state = bookArtifactState(
+                Book(id = "invalid", title = "Invalid", author = "", progress = progress),
+                nowEpochMs = now
+            )
+            assertEquals(0f, state.progress, 0f)
+            assertTrue(state.leftPageStack.isFinite())
+            assertTrue(state.rightPageStack.isFinite())
+            val stack = bookPageStackBalance(progress)
+            assertTrue(stack.first.isFinite())
+            assertTrue(stack.second.isFinite())
+        }
+    }
+
+    @Test
+    fun `completion remains authoritative even with invalid stored progress`() {
+        val state = bookArtifactState(
+            Book(id = "sealed", title = "Sealed", author = "", progress = Float.NaN, finished = true),
+            nowEpochMs = now
+        )
+        assertEquals(1f, state.progress, 0f)
+        assertEquals(BookReadingState.FINISHED, state.readingState)
+    }
+
+    @Test
     fun `page mass transfers from right to left as reading progresses`() {
         val start = bookPageStackBalance(0f)
         val middle = bookPageStackBalance(0.5f)
@@ -93,3 +119,4 @@ class BookArtifactTest {
         assertTrue(state.finished)
     }
 }
+

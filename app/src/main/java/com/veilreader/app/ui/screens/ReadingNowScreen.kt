@@ -62,7 +62,7 @@ fun ReadingNowScreen(
     onOpenLibrary: () -> Unit,
     onOpenCastle: () -> Unit
 ) {
-    val snapshot = buildThresholdSnapshot(books)
+    val snapshot = remember(books) { buildThresholdSnapshot(books) }
     val current = snapshot.hero
     val thresholdAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
@@ -414,7 +414,7 @@ private fun ContinueReadingHero(
     onOpenBook: (Book) -> Unit
 ) {
     val formatPercent = rememberVeilPercentFormatter()
-    val progress = current.progress.coerceIn(0f, 1f)
+    val progress = bookArtifactState(current).progress
     val paper = VeilPalette.ReaderPaper
     val paperLight = Color(0xFFF2E8D2)
     val paperDark = Color(0xFFD9C8A6)
@@ -692,7 +692,7 @@ private fun RecentBookCard(
 
 @Composable
 private fun recentBookStatus(book: Book): String {
-    val progress = book.progress.coerceIn(0f, 1f)
+    val progress = bookArtifactState(book).progress
     val formatPercent = rememberVeilPercentFormatter()
     return when {
         book.finished -> stringResource(R.string.book_detail_finished)
@@ -1064,4 +1064,5 @@ private fun localizedThresholdQuest(
     }
     else -> stringResource(R.string.threshold_quest_generic)
 }
+
 

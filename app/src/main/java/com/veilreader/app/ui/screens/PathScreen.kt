@@ -89,7 +89,12 @@ fun PathScreen(
         profile.rankIndex,
         profile.rankName
     )
-    var showCeremony by rememberSaveable { mutableStateOf(false) }
+    var showCeremony by rememberSaveable(profile.path.id, profile.rankIndex) {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(canAdvance) {
+        if (!canAdvance) showCeremony = false
+    }
     var reveal by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) { reveal = true }
 
@@ -104,8 +109,8 @@ fun PathScreen(
     ) {
     Column(
         Modifier
-            .fillMaxSize()
             .widthIn(max = 920.dp)
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
@@ -167,7 +172,7 @@ fun PathScreen(
     }
     }
 
-    if (showCeremony && nextRank != null) {
+    if (showCeremony && canAdvance && nextRank != null) {
         AdvancementCeremonyDialog(
             profile = profile,
             nextRank = nextRank,
@@ -746,6 +751,7 @@ private fun PathMasteryRow(
 
 @Composable
 private fun RankConstellation(profile: ReaderProfile) {
+    val formatInteger = rememberVeilIntegerFormatter(minimumDigits = 2)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -827,7 +833,7 @@ private fun RankConstellation(profile: ReaderProfile) {
                             Text(
                                 stringResource(
                                     R.string.path_rank_number,
-                                    (index + 1).toString().padStart(2, '0')
+                                    formatInteger(index + 1)
                                 ),
                                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
                                 color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f)
@@ -1033,6 +1039,7 @@ private fun AdvancementCeremonyDialog(
                             ),
                             MaterialTheme.shapes.medium
                         )
+                        .verticalScroll(rememberScrollState())
                         .padding(
                             horizontal = VeilSpacing.lg,
                             vertical = VeilSpacing.xl
@@ -1204,3 +1211,4 @@ private fun SectionHeading(eyebrow: String, title: String) {
         Text(title, style = MaterialTheme.typography.titleLarge)
     }
 }
+

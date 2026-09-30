@@ -149,8 +149,8 @@ fun CastleScreen(
     ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .widthIn(max = castleLayout.contentMaxWidthDp.dp)
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(
                 horizontal = castleLayout.horizontalPaddingDp.dp,
@@ -1071,13 +1071,14 @@ private fun FloorInscription(
     unlocked: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val formatInteger = rememberVeilIntegerFormatter(minimumDigits = 2)
     Column(
         modifier = modifier.padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
+            stringResource(R.string.castle_floor, formatInteger(floor)),
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
@@ -1413,3 +1414,4 @@ private fun CastleRoomIcon(
         }
     }
 }
+
