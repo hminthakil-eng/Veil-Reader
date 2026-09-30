@@ -1137,6 +1137,7 @@
     <string name="mirror_empty_body">Create a highlight or note in a book. Arrodes only speaks with memories you actually saved.</string>
     <string name="mirror_content_description_open">Open the source passage in %1$s</string>
     <string name="mirror_content_description_awaken">Awaken the mirror</string>
+    <string name="mirror_content_description_transition">The mirror is forming another saved echo</string>
     <string name="mirror_fragment_note">SAVED NOTE</string>
     <string name="mirror_fragment_highlight">SAVED HIGHLIGHT</string>
     <string name="mirror_open_source_hint">Tap the glass again to return to the exact passage.</string>
@@ -1203,6 +1204,19 @@
     <string name="manga_hub_start">Start reading</string>
     <string name="manga_hub_read_again">Read again</string>
     <string name="manga_hub_add_chapter">Add chapters</string>
+    <string name="manga_hub_edit_series">Edit series</string>
+    <string name="manga_hub_series_name">Series · %1$s</string>
+    <string name="manga_hub_series_with_index">%1$s · Vol. %2$s</string>
+    <string name="manga_series_edit_title">Edit Manga identity</string>
+    <string name="manga_series_edit_body">These fields belong to the same canonical Library book. Editing them will not duplicate chapters, reset progress, or change local source files.</string>
+    <string name="manga_series_title_label">Work title</string>
+    <string name="manga_series_creator_label">Creator / author</string>
+    <string name="manga_series_name_label">Series name</string>
+    <string name="manga_series_index_label">Series position / volume</string>
+    <string name="manga_series_language_label">Language tag</string>
+    <string name="manga_series_index_invalid">Enter a non-negative number or leave this field empty.</string>
+    <string name="notice_manga_series_metadata_updated">Manga identity updated without changing chapters or reading progress.</string>
+    <string name="notice_manga_series_update_failed">The Manga identity could not be updated. Existing data was kept.</string>
     <string name="notice_manga_chapter_added">Added chapter %2$d to %1$s.</string>
     <string name="notice_manga_chapter_duplicate">That CBZ is already part of %1$s.</string>
     <string name="notice_manga_chapter_import_failed">The Manga chapter could not be added.</string>

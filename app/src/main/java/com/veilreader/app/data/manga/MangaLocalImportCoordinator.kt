@@ -23,6 +23,12 @@ import com.veilreader.app.manga.library.CanonicalMangaId
 import com.veilreader.app.manga.library.MangaCacheLayout
 import com.veilreader.app.manga.library.MangaChapterAnchor
 import com.veilreader.app.manga.library.MangaOfflineChapterLocator
+import com.veilreader.app.manga.library.MangaMergeChapterCandidate
+import com.veilreader.app.manga.library.MangaMergeMember
+import com.veilreader.app.manga.library.MangaMergePlanResult
+import com.veilreader.app.manga.library.MangaMergeRejection
+import com.veilreader.app.manga.library.MangaWorkMergePlan
+import com.veilreader.app.manga.library.MangaWorkMergePlanner
 import com.veilreader.app.manga.library.OfflineChapterManifest
 import java.io.File
 import java.io.IOException
@@ -37,6 +43,18 @@ import kotlin.math.min
 class MangaLocalImportException(
     val reason: MangaCbzImportFailureReason
 ) : IllegalStateException("Local Manga import failed: $reason")
+
+class MangaMergePreflightException(
+    val reason: MangaMergeRejection,
+    val conflictingSourceChapterId: String? = null,
+    val conflictingTargetChapterId: String? = null
+) : IllegalStateException("Local Manga merge preflight rejected: $reason")
+
+class MangaMergeSourceIntegrityException(
+    val bookId: String,
+    val chapterId: String,
+    message: String
+) : IllegalStateException(message)
 
 data class MangaLocalRestorePoint(
     val pageIndex: Int,
@@ -595,6 +613,109 @@ class MangaLocalImportCoordinator(
             rebuilt += 1
         }
         rebuilt
+    }
+
+    /**
+     * Verifies an explicit local-work merge without mutating Room or app-private files.
+     *
+     * Every participating chapter must still have its original CBZ and the file's SHA-256 must
+     * match the durable chapter key. Derived page cache is deliberately ignored because a later
+     * executor must rebuild cache identities under the target Book rather than transplant them.
+     */
+    suspend fun preflightLocalMerge(
+        targetBookId: String,
+        sourceBookIds: List<String>
+    ): Result<MangaWorkMergePlan> = runCatching {
+        require(targetBookId.isNotBlank()) { "Target Manga Book id cannot be blank" }
+        require(sourceBookIds.isNotEmpty()) { "At least one source Manga Book is required" }
+
+        val requestedIds = listOf(targetBookId) + sourceBookIds
+        val books = requestedIds.map { bookId ->
+            library.getBook(bookId)
+                ?: error("Manga Book is not present in the Library: $bookId")
+        }
+        require(books.all { it.format == BookFormat.COMIC }) {
+            "Only local COMIC books can participate in a Manga merge"
+        }
+
+        val members = books.map { book -> buildVerifiedMergeMember(book) }
+        val planned = MangaWorkMergePlanner().plan(
+            target = members.first(),
+            sources = members.drop(1)
+        )
+        when (planned) {
+            is MangaMergePlanResult.Ready -> planned.plan
+            is MangaMergePlanResult.Rejected -> throw MangaMergePreflightException(
+                reason = planned.reason,
+                conflictingSourceChapterId = planned.conflictingSourceChapterId,
+                conflictingTargetChapterId = planned.conflictingTargetChapterId
+            )
+        }
+    }
+
+    private suspend fun buildVerifiedMergeMember(book: Book): MangaMergeMember {
+        val chapters = database.mangaCatalog().listChapters(book.id)
+        val candidates = chapters.map { chapter ->
+            val source = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .singleOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?: throw MangaMergeSourceIntegrityException(
+                    bookId = book.id,
+                    chapterId = chapter.id,
+                    message = "Manga merge requires exactly one local CBZ source per chapter"
+                )
+
+            val expectedFingerprint = fingerprintFromChapterKey(source.chapterKey)
+                ?: throw MangaMergeSourceIntegrityException(
+                    bookId = book.id,
+                    chapterId = chapter.id,
+                    message = "Manga chapter does not carry a verifiable local CBZ fingerprint"
+                )
+            val archive = resolveLocalArchiveFile(
+                book = book,
+                chapterKey = source.chapterKey,
+                readingOrder = chapter.readingOrder
+            ) ?: throw MangaMergeSourceIntegrityException(
+                bookId = book.id,
+                chapterId = chapter.id,
+                message = "Manga chapter source archive is missing"
+            )
+            val actualFingerprint = sha256(archive)
+            if (!actualFingerprint.equals(expectedFingerprint, ignoreCase = true)) {
+                throw MangaMergeSourceIntegrityException(
+                    bookId = book.id,
+                    chapterId = chapter.id,
+                    message = "Manga chapter source archive failed SHA-256 verification"
+                )
+            }
+
+            MangaMergeChapterCandidate(
+                bookId = book.id,
+                chapterId = chapter.id,
+                readingOrder = chapter.readingOrder,
+                cacheKey = chapter.cacheKey,
+                chapterKey = source.chapterKey,
+                volume = chapter.volume,
+                number = chapter.number,
+                languageTag = chapter.languageTag,
+                normalizedTitle = chapter.normalizedTitle ?: chapter.title
+            )
+        }
+
+        return MangaMergeMember(
+            bookId = book.id,
+            title = book.title,
+            author = book.author,
+            sourceUri = book.sourceUri,
+            contentFingerprint = book.contentFingerprint,
+            seriesName = book.seriesName,
+            seriesIndex = book.seriesIndex,
+            language = book.language,
+            collections = book.allCollections,
+            chapters = candidates
+        )
     }
 
     suspend fun canImport(uri: Uri): Boolean = withContext(Dispatchers.IO) {

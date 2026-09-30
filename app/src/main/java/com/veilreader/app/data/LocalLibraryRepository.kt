@@ -297,6 +297,41 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
+    /**
+     * Durable metadata mutation for identity-sensitive surfaces.
+     *
+     * Unlike [editMetadata], this method does not expose optimistic UI state before Room accepts the
+     * transaction. It is intended for product identities such as local Manga works where a failed
+     * write must leave both the in-memory catalog and durable catalog on the same previous value.
+     */
+    suspend fun editMetadataDurably(update: BookMetadataUpdate): Book? {
+        require(update.title.isNotBlank()) { "A book title cannot be empty." }
+        val cleanCollections = update.collections
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .distinctBy { it.lowercase(Locale.ROOT) }
+        val current = getBook(update.bookId) ?: return null
+        val updated = current.copy(
+            title = update.title.trim(),
+            author = update.author.trim().ifEmpty { "Unknown author" },
+            seriesName = update.seriesName?.trim()?.takeIf { it.isNotEmpty() },
+            seriesIndex = update.seriesIndex?.takeIf { it.isFinite() },
+            language = update.language?.trim()?.takeIf { it.isNotEmpty() },
+            collection = cleanCollections.firstOrNull().orEmpty(),
+            collections = cleanCollections
+        )
+
+        val persisted = orderedWrite {
+            database.withTransaction {
+                database.books().upsert(updated.toEntity())
+                setCollectionsInternal(update.bookId, cleanCollections.toSet())
+            }
+            updated
+        }
+        replaceBookCached(persisted)
+        return persisted
+    }
+
     fun toggleFavorite(id: String) {
         val updated = updateBookCached(id) { it.copy(favorite = !it.favorite) } ?: return
         enqueue { database.books().upsert(updated.toEntity()) }
