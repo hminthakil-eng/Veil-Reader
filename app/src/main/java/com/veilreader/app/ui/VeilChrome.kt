@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.ui.navigation.VeilTab
+import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -62,26 +63,37 @@ fun VeilWorldBackdrop(
     content: @Composable BoxScope.() -> Unit
 ) {
     val colors = MaterialTheme.colorScheme
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) colors.primary else VeilPalette.Brass
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(
                 Brush.verticalGradient(
-                    listOf(
-                        Color(0xFF080A0D),
-                        colors.background,
-                        Color(0xFF0D1116),
-                        colors.surface.copy(alpha = 0.96f)
-                    )
+                    if (highContrast) {
+                        listOf(
+                            colors.background,
+                            colors.background,
+                            colors.surfaceVariant,
+                            colors.surface
+                        )
+                    } else {
+                        listOf(
+                            Color(0xFF080A0D),
+                            colors.background,
+                            Color(0xFF0D1116),
+                            colors.surface.copy(alpha = 0.96f)
+                        )
+                    }
                 )
             )
     ) {
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
-            val brass = VeilPalette.Brass.copy(alpha = 0.075f)
-            val stone = colors.outlineVariant.copy(alpha = 0.10f)
-            val stroke = 1.dp.toPx()
+            val brass = accent.copy(alpha = if (highContrast) 0.24f else 0.075f)
+            val stone = colors.outlineVariant.copy(alpha = if (highContrast) 0.30f else 0.10f)
+            val stroke = (if (highContrast) 1.5.dp else 1.dp).toPx()
 
             // Tall archive pillars.
             drawLine(stone, Offset(w * 0.08f, 0f), Offset(w * 0.08f, h), stroke)
@@ -129,8 +141,8 @@ fun VeilWorldBackdrop(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            VeilPalette.Spirit.copy(alpha = 0.11f),
-                            VeilPalette.Spirit.copy(alpha = 0.025f),
+                            VeilPalette.Spirit.copy(alpha = if (highContrast) 0.045f else 0.11f),
+                            VeilPalette.Spirit.copy(alpha = if (highContrast) 0.012f else 0.025f),
                             Color.Transparent
                         )
                     )
@@ -146,7 +158,7 @@ fun VeilWorldBackdrop(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            Color(0xFFD18B3E).copy(alpha = 0.10f),
+                            Color(0xFFD18B3E).copy(alpha = if (highContrast) 0.035f else 0.10f),
                             Color.Transparent
                         )
                     )
@@ -162,7 +174,7 @@ fun VeilWorldBackdrop(
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            VeilPalette.Brass.copy(alpha = 0.08f),
+                            accent.copy(alpha = if (highContrast) 0.035f else 0.08f),
                             Color.Transparent
                         )
                     )
@@ -178,19 +190,19 @@ fun VeilWorldBackdrop(
             val stroke = Stroke(width = 1.dp.toPx())
             val center = Offset(size.width / 2f, size.height / 2f)
             drawCircle(
-                color = VeilPalette.Brass.copy(alpha = 0.040f),
+                color = accent.copy(alpha = if (highContrast) 0.12f else 0.040f),
                 radius = size.minDimension * 0.34f,
                 center = center,
                 style = stroke
             )
             drawLine(
-                VeilPalette.Brass.copy(alpha = 0.045f),
+                accent.copy(alpha = if (highContrast) 0.13f else 0.045f),
                 Offset(center.x, size.height * 0.08f),
                 Offset(center.x, size.height * 0.92f),
                 stroke.width
             )
             drawLine(
-                VeilPalette.Brass.copy(alpha = 0.035f),
+                accent.copy(alpha = if (highContrast) 0.10f else 0.035f),
                 Offset(size.width * 0.18f, center.y),
                 Offset(size.width * 0.82f, center.y),
                 stroke.width
@@ -206,8 +218,8 @@ fun VeilWorldBackdrop(
                     Brush.verticalGradient(
                         listOf(
                             Color.Transparent,
-                            VeilPalette.Ink.copy(alpha = 0.34f),
-                            VeilPalette.Ink.copy(alpha = 0.72f)
+                            colors.background.copy(alpha = 0.34f),
+                            colors.background.copy(alpha = 0.72f)
                         )
                     )
                 )
@@ -276,6 +288,8 @@ fun VeilBottomDock(
     onSelect: (VeilTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -287,8 +301,8 @@ fun VeilBottomDock(
         shadowElevation = 0.dp,
         tonalElevation = 0.dp,
         border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = 0.22f)
+            if (highContrast) 1.5.dp else 1.dp,
+            accent.copy(alpha = if (highContrast) 0.72f else 0.22f)
         )
     ) {
         Column(
@@ -321,9 +335,11 @@ private fun VeilDockItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     val background = Color.Transparent
     val foreground = if (selected) {
-        VeilPalette.Brass
+        accent
     } else {
         MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -358,7 +374,7 @@ private fun VeilDockItem(
             Modifier
                 .width(18.dp)
                 .height(1.dp)
-                .background(if (selected) VeilPalette.Brass.copy(alpha = 0.86f) else Color.Transparent)
+                .background(if (selected) accent.copy(alpha = if (highContrast) 1f else 0.86f) else Color.Transparent)
         )
     }
 }
@@ -369,6 +385,8 @@ fun VeilNavigationRail(
     onSelect: (VeilTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     Surface(
         modifier = modifier
             .fillMaxHeight()
@@ -378,8 +396,8 @@ fun VeilNavigationRail(
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.975f),
         shadowElevation = 0.dp,
         border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = 0.22f)
+            if (highContrast) 1.5.dp else 1.dp,
+            accent.copy(alpha = if (highContrast) 0.72f else 0.22f)
         )
     ) {
         Column(
@@ -395,7 +413,7 @@ fun VeilNavigationRail(
                 VeilTab.entries.forEach { tab ->
                     val isSelected = selected == tab
                     val foreground = if (isSelected) {
-                        VeilPalette.Brass
+                        accent
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
@@ -430,6 +448,8 @@ fun VeilNavigationRail(
 
 @Composable
 private fun VeilBrandMark() {
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     Box(
         modifier = Modifier
             .size(52.dp)
@@ -443,14 +463,17 @@ private fun VeilBrandMark() {
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
+                BorderStroke(
+                    if (highContrast) 1.5.dp else 1.dp,
+                    accent.copy(alpha = if (highContrast) 0.82f else 0.44f)
+                ),
                 RoundedCornerShape(4.dp)
             ),
         contentAlignment = Alignment.Center
     ) {
         VeilSigilMark(
             modifier = Modifier.size(34.dp),
-            tint = VeilPalette.Brass
+            tint = accent
         )
     }
 }
@@ -511,6 +534,8 @@ fun VeilLoadingState(
     label: String = "Opening the archive",
     modifier: Modifier = Modifier
 ) {
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -520,13 +545,13 @@ fun VeilLoadingState(
     ) {
         VeilSigilMark(
             modifier = Modifier.size(58.dp),
-            tint = VeilPalette.Brass
+            tint = accent
         )
         Spacer(Modifier.height(18.dp))
         Text(
             "VEIL READER",
             style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
-            color = VeilPalette.Brass
+            color = accent
         )
         Spacer(Modifier.height(6.dp))
         Text(
@@ -539,22 +564,24 @@ fun VeilLoadingState(
             modifier = Modifier
                 .width(132.dp)
                 .height(2.dp),
-            color = VeilPalette.Brass,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.24f)
+            color = accent,
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (highContrast) 0.52f else 0.24f)
         )
     }
 }
 
 @Composable
 private fun GrayfogRule(modifier: Modifier = Modifier) {
+    val highContrast = LocalVeilHighContrast.current
+    val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     Box(
         modifier = modifier
-            .height(1.dp)
+            .height(if (highContrast) 2.dp else 1.dp)
             .background(
                 Brush.horizontalGradient(
                     listOf(
                         Color.Transparent,
-                        VeilPalette.Brass.copy(alpha = 0.58f),
+                        accent.copy(alpha = if (highContrast) 0.88f else 0.58f),
                         Color.Transparent
                     )
                 )
