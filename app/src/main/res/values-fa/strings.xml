@@ -1213,4 +1213,23 @@
     <string name="notice_manga_cache_repair_failed">بازسازی صفحه‌های مانگا از فایل‌های محلی CBZ ممکن نشد.</string>
     <string name="notice_manga_chapters_added">%1$d فصل به %2$s اضافه شد.</string>
     <string name="notice_manga_chapters_added_with_duplicates">%1$d فصل به %3$s اضافه شد؛ %2$d فصل از قبل وجود داشت.</string>
+    <string name="action_save">ذخیره</string>
+    <string name="action_cancel">لغو</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_rename">تغییر نام</string>
+    <string name="manga_hub_manage_chapters">مدیریت فصل‌ها (%1$d)</string>
+    <string name="manga_hub_hide_chapters">بستن فصل‌ها (%1$d)</string>
+    <string name="manga_chapter_rename_title">تغییر نام فصل</string>
+    <string name="manga_chapter_title_label">عنوان فصل</string>
+    <string name="manga_chapter_delete_title">فصل حذف شود؟</string>
+    <string name="manga_chapter_delete_body">«%1$s» از این مانگا حذف شود؟ فایل اصلی CBZ این فصل اضافه‌شده و کش صفحه‌های ساخته‌شده نیز حذف می‌شوند.</string>
+    <string name="manga_chapter_metadata">جایگاه %1$d · فصل %2$s · %3$d صفحه · %4$s</string>
+    <string name="manga_chapter_unknown_number">—</string>
+    <string name="manga_chapter_primary_badge">فصل پایه · ثابت</string>
+    <string name="manga_chapter_move_up">بالاتر</string>
+    <string name="manga_chapter_move_down">پایین‌تر</string>
+    <string name="notice_manga_chapter_renamed">عنوان فصل به‌روزرسانی شد.</string>
+    <string name="notice_manga_chapter_reordered">ترتیب فصل‌ها به‌روزرسانی شد.</string>
+    <string name="notice_manga_chapter_deleted">فصل حذف شد.</string>
+    <string name="notice_manga_chapter_update_failed">ذخیرهٔ تغییر فصل مانگا ممکن نشد.</string>
 </resources>
