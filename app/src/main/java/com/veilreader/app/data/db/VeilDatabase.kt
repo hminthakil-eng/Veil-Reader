@@ -17,9 +17,15 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ReadingSessionEntity::class,
         ReadingCycleEntity::class,
         PassageVisitEntity::class,
-        ReadingMilestoneEntity::class
+        ReadingMilestoneEntity::class,
+        MangaChapterEntity::class,
+        MangaSourceLinkEntity::class,
+        MangaChapterSourceEntity::class,
+        MangaProgressEntity::class,
+        MangaOfflineChapterEntity::class,
+        MangaOfflinePageEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = true
 )
 abstract class VeilDatabase : RoomDatabase() {
@@ -31,6 +37,9 @@ abstract class VeilDatabase : RoomDatabase() {
     abstract fun readingCycles(): ReadingCycleDao
     abstract fun passageVisits(): PassageVisitDao
     abstract fun readingMilestones(): ReadingMilestoneDao
+    abstract fun mangaCatalog(): MangaCatalogDao
+    abstract fun mangaProgress(): MangaProgressDao
+    abstract fun mangaOffline(): MangaOfflineDao
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
@@ -111,6 +120,148 @@ abstract class VeilDatabase : RoomDatabase() {
             }
         }
 
+
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_chapters (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        bookId TEXT NOT NULL,
+                        readingOrder INTEGER NOT NULL,
+                        cacheKey TEXT NOT NULL,
+                        title TEXT,
+                        normalizedTitle TEXT,
+                        volume REAL,
+                        number REAL,
+                        languageTag TEXT,
+                        FOREIGN KEY(bookId) REFERENCES books(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_chapters_bookId " +
+                        "ON manga_chapters(bookId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_chapters_bookId_readingOrder " +
+                        "ON manga_chapters(bookId, readingOrder)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_chapters_id_bookId " +
+                        "ON manga_chapters(id, bookId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_chapters_cacheKey " +
+                        "ON manga_chapters(cacheKey)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_source_links (
+                        bookId TEXT NOT NULL,
+                        sourceId TEXT NOT NULL,
+                        mangaKey TEXT NOT NULL,
+                        publicUrl TEXT,
+                        PRIMARY KEY(bookId, sourceId),
+                        FOREIGN KEY(bookId) REFERENCES books(id) ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_source_links_sourceId " +
+                        "ON manga_source_links(sourceId)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_chapter_sources (
+                        chapterId TEXT NOT NULL,
+                        bookId TEXT NOT NULL,
+                        sourceId TEXT NOT NULL,
+                        mangaKey TEXT NOT NULL,
+                        chapterKey TEXT NOT NULL,
+                        PRIMARY KEY(chapterId, sourceId),
+                        FOREIGN KEY(chapterId, bookId)
+                            REFERENCES manga_chapters(id, bookId)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(bookId, sourceId)
+                            REFERENCES manga_source_links(bookId, sourceId)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_chapter_sources_chapterId_bookId " +
+                        "ON manga_chapter_sources(chapterId, bookId)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_chapter_sources_bookId_sourceId " +
+                        "ON manga_chapter_sources(bookId, sourceId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "index_manga_chapter_sources_sourceId_mangaKey_chapterKey " +
+                        "ON manga_chapter_sources(sourceId, mangaKey, chapterKey)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_progress (
+                        bookId TEXT NOT NULL PRIMARY KEY,
+                        chapterId TEXT NOT NULL,
+                        pageIndex INTEGER NOT NULL,
+                        pageCount INTEGER,
+                        chapterProgression REAL NOT NULL,
+                        updatedAtEpochMs INTEGER NOT NULL,
+                        FOREIGN KEY(bookId) REFERENCES books(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(chapterId, bookId)
+                            REFERENCES manga_chapters(id, bookId)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_progress_chapterId_bookId " +
+                        "ON manga_progress(chapterId, bookId)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_offline_chapters (
+                        chapterId TEXT NOT NULL PRIMARY KEY,
+                        originSourceId TEXT NOT NULL,
+                        originChapterKey TEXT NOT NULL,
+                        completed INTEGER NOT NULL,
+                        updatedAtEpochMs INTEGER NOT NULL,
+                        FOREIGN KEY(chapterId) REFERENCES manga_chapters(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_offline_pages (
+                        chapterId TEXT NOT NULL,
+                        pageIndex INTEGER NOT NULL,
+                        relativePath TEXT NOT NULL,
+                        byteSize INTEGER NOT NULL,
+                        contentSha256 TEXT,
+                        PRIMARY KEY(chapterId, pageIndex),
+                        FOREIGN KEY(chapterId) REFERENCES manga_offline_chapters(chapterId)
+                            ON UPDATE NO ACTION ON DELETE CASCADE
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_offline_pages_relativePath " +
+                        "ON manga_offline_pages(relativePath)"
+                )
+            }
+        }
+
         @Volatile private var instance: VeilDatabase? = null
 
         fun get(context: Context): VeilDatabase = instance ?: synchronized(this) {
@@ -119,7 +270,7 @@ abstract class VeilDatabase : RoomDatabase() {
                 VeilDatabase::class.java,
                 "veil_reader.db"
             )
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
                 .also { instance = it }
         }
