@@ -311,6 +311,7 @@ class ReaderViewModel(
         persistSession()
     }
 
+    @Synchronized
     private fun finishCurrentSession() {
         val current = tracker
         val writerLease = progressWriterLease
