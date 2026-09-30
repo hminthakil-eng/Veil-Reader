@@ -36,6 +36,30 @@ class ArrodesMirrorTest {
         assertEquals(ArrodesFragmentKind.NOTE, result.first().kind)
     }
 
+
+    @Test
+    fun sessionDeckKeepsStrongestFirstAndNeverDuplicatesFragments() {
+        val book = Book(id = "book-1", title = "Volume", author = "Author")
+        val fragments = (0 until 8).map { index ->
+            ArrodesFragment(
+                id = "fragment-$index",
+                text = "Echo $index",
+                book = book,
+                locatorJson = """{"index":$index}""",
+                kind = if (index == 0) ArrodesFragmentKind.NOTE else ArrodesFragmentKind.HIGHLIGHT,
+                resonanceScore = 1_000 - index
+            )
+        }
+
+        val first = orderArrodesFragmentsForSession(fragments, sessionSeed = 73)
+        val second = orderArrodesFragmentsForSession(fragments, sessionSeed = 73)
+
+        assertEquals(fragments.first(), first.first())
+        assertEquals(first.map { it.id }, second.map { it.id })
+        assertEquals(fragments.size, first.map { it.id }.distinct().size)
+        assertEquals(fragments.map { it.id }.toSet(), first.map { it.id }.toSet())
+    }
+
     @Test
     fun fragmentsWithoutBookOrLocatorAreRejected() {
         val book = Book(id = "book-1", title = "Volume", author = "Author")
