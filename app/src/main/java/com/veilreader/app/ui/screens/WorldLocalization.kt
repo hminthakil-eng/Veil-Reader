@@ -136,3 +136,59 @@ internal fun localizedRitualDescription(pathId: String, rankIndex: Int): String 
     }
     return stringResource(resource, target)
 }
+
+
+@Composable
+internal fun localizedSigilName(id: String): String =
+    stringResource(
+        when (id) {
+            "first_hour" -> R.string.sigil_first_hour_name
+            "passage_keeper" -> R.string.sigil_passage_keeper_name
+            "seven_days" -> R.string.sigil_seven_days_name
+            "ten_tomes" -> R.string.sigil_ten_tomes_name
+            "first_threshold" -> R.string.sigil_first_threshold_name
+            else -> R.string.sigil_unknown_name
+        }
+    )
+
+@Composable
+internal fun localizedDiscoveryTitle(id: String): String =
+    stringResource(
+        when (id) {
+            "patient_flame" -> R.string.discovery_patient_flame_title
+            "marginalia_gate" -> R.string.discovery_marginalia_gate_title
+            "deep_shelf" -> R.string.discovery_deep_shelf_title
+            "long_watch" -> R.string.discovery_long_watch_title
+            "veil_thins" -> R.string.discovery_veil_thins_title
+            "unnamed_chamber" -> R.string.discovery_unnamed_chamber_title
+            else -> R.string.discovery_unknown_title
+        }
+    )
+
+@Composable
+internal fun localizedDiscoveryClue(id: String): String =
+    stringResource(
+        when (id) {
+            "patient_flame" -> R.string.discovery_patient_flame_clue
+            "marginalia_gate" -> R.string.discovery_marginalia_gate_clue
+            "deep_shelf" -> R.string.discovery_deep_shelf_clue
+            "long_watch" -> R.string.discovery_long_watch_clue
+            "veil_thins" -> R.string.discovery_veil_thins_clue
+            "unnamed_chamber" -> R.string.discovery_unnamed_chamber_clue
+            else -> R.string.discovery_unknown_clue
+        }
+    )
+
+@Composable
+internal fun localizedDiscoveryLore(id: String): String =
+    stringResource(
+        when (id) {
+            "patient_flame" -> R.string.discovery_patient_flame_lore
+            "marginalia_gate" -> R.string.discovery_marginalia_gate_lore
+            "deep_shelf" -> R.string.discovery_deep_shelf_lore
+            "long_watch" -> R.string.discovery_long_watch_lore
+            "veil_thins" -> R.string.discovery_veil_thins_lore
+            "unnamed_chamber" -> R.string.discovery_unnamed_chamber_lore
+            else -> R.string.discovery_unknown_lore
+        }
+    )
