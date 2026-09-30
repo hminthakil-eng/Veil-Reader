@@ -34,5 +34,5 @@ internal fun shouldReplacePendingProgress(
 ): Boolean =
     when {
         current == null || incoming == null -> true
-        else -> incoming >= current
+        else -> incoming > current
     }
