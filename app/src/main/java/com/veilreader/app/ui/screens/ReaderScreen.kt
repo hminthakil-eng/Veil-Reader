@@ -669,12 +669,46 @@ fun ReaderScreen(
     }
 
     LaunchedEffect(opened.book.id, readerSessionInstanceId) {
+        readerSessionReady = false
+        ReaderTrace.event(
+            "reader_startup_handshake_started",
+            bookId = opened.book.id,
+            sessionId = readerSessionInstanceId
+        )
         readerViewModel.openBook(
             bookId = opened.book.id,
             initialProgress = opened.book.progress,
             openInstanceId = readerSessionInstanceId
         )
-        if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume(readerSessionInstanceId)
+        if (
+            !readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            )
+        ) {
+            return@LaunchedEffect
+        }
+
+        readerSessionReady = true
+        val lifecycleResumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        ReaderTrace.event(
+            "reader_startup_handshake_ready",
+            bookId = opened.book.id,
+            sessionId = readerSessionInstanceId,
+            details = "lifecycleResumed=$lifecycleResumed navigatorAttached=$navigatorAttached"
+        )
+        if (
+            shouldResumeReaderAfterOpen(
+                sessionReady = true,
+                lifecycleResumed = lifecycleResumed
+            )
+        ) {
+            readerViewModel.onResume(readerSessionInstanceId)
+        } else {
+            // The app may have backgrounded while Room hydration was suspended. Reconcile the
+            // durable session immediately; the first locator commit performs a second barrier.
+            readerViewModel.onPause(readerSessionInstanceId)
+        }
     }
 
     LaunchedEffect(readerMessage, readerSessionInstanceId) {
