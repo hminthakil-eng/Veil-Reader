@@ -33,6 +33,37 @@
     <string name="common_unknown_author">Unknown author</string>
 
     <string name="notebook_eyebrow">HIDDEN ARCHIVE</string>
+    <string name="common_remove">Remove</string>
+    <string name="common_keep">Keep</string>
+    <string name="reader_notebook_title">Reading tools</string>
+    <string name="reader_notebook_tab_contents">Contents</string>
+    <string name="reader_notebook_tab_bookmarks">Bookmarks</string>
+    <string name="reader_notebook_tab_notes">Notes</string>
+    <string name="reader_notebook_tab_search">Search</string>
+    <string name="reader_notebook_search_notes">Search highlights and notes</string>
+    <string name="reader_notebook_search_book">Search inside this book</string>
+    <string name="reader_notebook_find">Find</string>
+    <string name="reader_notebook_searching">Searching…</string>
+    <string name="reader_notebook_search_unavailable">Search is not available for this publication.</string>
+    <string name="reader_notebook_search_failed">Search could not be completed.</string>
+    <string name="reader_notebook_no_chapters">This book has no chapter list.</string>
+    <string name="reader_notebook_untitled_section">Untitled section</string>
+    <string name="reader_notebook_bookmarks_empty">Save a place with Bookmark in the reader. Your saved locations will appear here.</string>
+    <string name="reader_notebook_notes_empty">Highlight a passage to start your notebook. EPUB text highlights are supported; PDF locations can be saved with Bookmark.</string>
+    <string name="reader_notebook_notes_no_match">No matching highlights or notes.</string>
+    <string name="reader_notebook_volume_activity_continued">VOLUME ACTIVITY CONTINUED AFTER THIS MARK</string>
+    <string name="reader_notebook_return_passage">Return to passage</string>
+    <string name="reader_notebook_no_search_matches">No matches found in this book.</string>
+    <string name="reader_notebook_match">MATCH</string>
+    <string name="reader_notebook_search_match_fallback">Search match</string>
+    <string name="reader_notebook_return_match">Return to match</string>
+    <string name="reader_notebook_note_save_failed">This note could not be saved yet.</string>
+    <string name="reader_notebook_saving">Saving…</string>
+    <plurals name="reader_notebook_revisited_times">
+        <item quantity="one">REVISITED %1$d TIME</item>
+        <item quantity="other">REVISITED %1$d TIMES</item>
+    </plurals>
+
     <string name="notebook_title">Notebook</string>
     <string name="notebook_counts">%1$d highlights · %2$d bookmarks</string>
     <string name="notebook_search_label">Search books, passages and notes</string>
