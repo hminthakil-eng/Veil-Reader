@@ -28,6 +28,7 @@ import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Link
@@ -47,6 +48,7 @@ private enum class ReaderNotebookTab(val labelRes: Int) {
 @Composable
 fun ReaderNotebook(
     opened: OpenedPublication,
+    readerSessionInstanceId: String,
     currentHref: String? = null,
     highlights: List<Highlight>,
     bookmarks: List<Bookmark>,
@@ -59,7 +61,15 @@ fun ReaderNotebook(
     onDeleteBookmark: (String) -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    val searchable = remember(opened.book.id) { opened.publication.isSearchable }
+    var searchJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
+    var noteSaveJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
+    DisposableEffect(readerSessionInstanceId) {
+        onDispose {
+            searchJob?.cancel()
+            noteSaveJob?.cancel()
+        }
+    }
+    val searchable = remember(opened.book.id, readerSessionInstanceId) { opened.publication.isSearchable }
     val tabs = remember(searchable) {
         buildList {
             add(ReaderNotebookTab.CONTENTS)
@@ -68,27 +78,27 @@ fun ReaderNotebook(
             if (searchable) add(ReaderNotebookTab.SEARCH)
         }
     }
-    var tabName by rememberSaveable(opened.book.id, searchable) {
+    var tabName by rememberSaveable(opened.book.id, readerSessionInstanceId, searchable) {
         mutableStateOf(ReaderNotebookTab.CONTENTS.name)
     }
     val tab = ReaderNotebookTab.entries
         .firstOrNull { it.name == tabName && it in tabs }
         ?: ReaderNotebookTab.CONTENTS
-    var query by rememberSaveable(opened.book.id) { mutableStateOf("") }
-    var editingId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
+    var query by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
+    var editingId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val editing = editingId?.let { id -> highlights.firstOrNull { it.id == id } }
-    var note by rememberSaveable(opened.book.id) { mutableStateOf("") }
-    var savingNote by remember { mutableStateOf(false) }
-    var noteSaveErrorRes by remember { mutableStateOf<Int?>(null) }
-    var deletingId by rememberSaveable(opened.book.id) { mutableStateOf<String?>(null) }
+    var note by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
+    var savingNote by remember(readerSessionInstanceId) { mutableStateOf(false) }
+    var noteSaveErrorRes by remember(readerSessionInstanceId) { mutableStateOf<Int?>(null) }
+    var deletingId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val deleting = deletingId?.let { id -> highlights.firstOrNull { it.id == id } }
-    var bookSearchQuery by rememberSaveable(opened.book.id) { mutableStateOf("") }
-    var bookSearchResults by remember { mutableStateOf<List<Locator>>(emptyList()) }
-    var bookSearchErrorRes by remember { mutableStateOf<Int?>(null) }
-    var bookSearchLimited by remember { mutableStateOf(false) }
-    var searchingBook by remember { mutableStateOf(false) }
+    var bookSearchQuery by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
+    var bookSearchResults by remember(readerSessionInstanceId) { mutableStateOf<List<Locator>>(emptyList()) }
+    var bookSearchErrorRes by remember(readerSessionInstanceId) { mutableStateOf<Int?>(null) }
+    var bookSearchLimited by remember(readerSessionInstanceId) { mutableStateOf(false) }
+    var searchingBook by remember(readerSessionInstanceId) { mutableStateOf(false) }
 
-    val chapters = remember(opened.book.id) {
+    val chapters = remember(opened.book.id, readerSessionInstanceId) {
         fun flatten(links: List<Link>, depth: Int): List<Pair<Link, Int>> =
             links.flatMap { listOf(it to depth) + flatten(it.children, depth + 1) }
         flatten(opened.publication.tableOfContents.ifEmpty { opened.publication.readingOrder }, 0)
@@ -100,7 +110,8 @@ fun ReaderNotebook(
     fun runBookSearch() {
         val term = bookSearchQuery.trim()
         if (term.length < 2 || searchingBook) return
-        scope.launch {
+        searchJob?.cancel()
+        searchJob = scope.launch {
             searchingBook = true
             bookSearchErrorRes = null
             bookSearchLimited = false
@@ -154,6 +165,7 @@ fun ReaderNotebook(
                 bookSearchErrorRes = R.string.reader_notebook_search_failed
             } finally {
                 searchingBook = false
+                searchJob = null
             }
         }
     }
@@ -680,7 +692,7 @@ fun ReaderNotebook(
                                 Button(
                                     enabled = !savingNote,
                                     onClick = {
-                                        scope.launch {
+                                        noteSaveJob = scope.launch {
                                             savingNote = true
                                             noteSaveErrorRes = null
                                             try {
@@ -693,6 +705,7 @@ fun ReaderNotebook(
                                                     R.string.reader_notebook_note_save_failed
                                             } finally {
                                                 savingNote = false
+                                                noteSaveJob = null
                                             }
                                         }
                                     },
