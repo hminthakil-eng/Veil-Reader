@@ -19,24 +19,63 @@ import androidx.room.Index
             parentColumns = ["id"],
             childColumns = ["targetBookId"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = MangaChapterEntity::class,
+            parentColumns = ["id", "bookId"],
+            childColumns = ["targetProgressChapterId", "targetBookId"],
+            onDelete = ForeignKey.RESTRICT
         )
     ],
     indices = [
         Index(value = ["targetBookId"], unique = true),
-        Index("createdAtEpochMs")
+        Index("createdAtEpochMs"),
+        Index(value = ["targetProgressChapterId", "targetBookId"])
     ]
 )
 data class MangaWorkMergeEntity(
     @androidx.room.PrimaryKey val id: String,
     val targetBookId: String,
     val createdAtEpochMs: Long,
-    val receiptVersion: Int = 1
+    val receiptVersion: Int = 1,
+    val targetBookProgress: Float,
+    val targetBookFinished: Boolean,
+    val targetBookLastOpenedAtEpochMs: Long,
+    val targetProgressChapterId: String? = null,
+    val targetProgressPageIndex: Int? = null,
+    val targetProgressPageCount: Int? = null,
+    val targetProgressChapterProgression: Double? = null,
+    val targetProgressUpdatedAtEpochMs: Long? = null
 ) {
     init {
         require(id.isNotBlank())
         require(targetBookId.isNotBlank())
         require(createdAtEpochMs >= 0L)
         require(receiptVersion >= 1)
+        require(targetBookProgress.isFinite() && targetBookProgress in 0f..1f)
+        require(targetBookLastOpenedAtEpochMs >= 0L)
+        require(targetProgressPageIndex == null || targetProgressPageIndex >= 0)
+        require(targetProgressPageCount == null || targetProgressPageCount > 0)
+        require(
+            targetProgressChapterProgression == null ||
+                (
+                    targetProgressChapterProgression.isFinite() &&
+                        targetProgressChapterProgression in 0.0..1.0
+                    )
+        )
+        val hasProgress = targetProgressChapterId != null
+        require(
+            if (hasProgress) {
+                targetProgressPageIndex != null &&
+                    targetProgressChapterProgression != null &&
+                    targetProgressUpdatedAtEpochMs != null
+            } else {
+                targetProgressPageIndex == null &&
+                    targetProgressPageCount == null &&
+                    targetProgressChapterProgression == null &&
+                    targetProgressUpdatedAtEpochMs == null
+            }
+        )
     }
 }
 
