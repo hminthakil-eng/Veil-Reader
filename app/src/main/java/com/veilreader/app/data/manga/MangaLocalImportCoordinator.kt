@@ -10,8 +10,15 @@ import com.veilreader.app.data.BookImportResult
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.db.MangaChapterEntity
 import com.veilreader.app.data.db.MangaChapterSourceEntity
+import com.veilreader.app.data.db.MangaMergeChapterEntity
+import com.veilreader.app.data.db.MangaMergeMemberEntity
+import com.veilreader.app.data.db.MangaOfflineChapterEntity
+import com.veilreader.app.data.db.MangaOfflinePageEntity
+import com.veilreader.app.data.db.MangaProgressEntity
 import com.veilreader.app.data.db.MangaSourceLinkEntity
+import com.veilreader.app.data.db.MangaWorkMergeEntity
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.db.toDomain
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.manga.importing.MangaCbzImportFailureReason
@@ -24,6 +31,7 @@ import com.veilreader.app.manga.library.MangaCacheLayout
 import com.veilreader.app.manga.library.MangaChapterAnchor
 import com.veilreader.app.manga.library.MangaOfflineChapterLocator
 import com.veilreader.app.manga.library.MangaMergeChapterCandidate
+import com.veilreader.app.manga.library.MangaMergeDisposition
 import com.veilreader.app.manga.library.MangaMergeMember
 import com.veilreader.app.manga.library.MangaMergePlanResult
 import com.veilreader.app.manga.library.MangaMergeRejection
@@ -127,6 +135,36 @@ data class MangaLocalStorageSummary(
 ) {
     val totalBytes: Long get() = sourceBytes + cacheBytes
 }
+
+data class MangaMergeExecutionResult(
+    val mergeId: String,
+    val targetBookId: String,
+    val sourceBookIds: List<String>,
+    val copiedChapterCount: Int,
+    val deduplicatedChapterCount: Int
+)
+
+data class MangaSplitExecutionResult(
+    val mergeId: String,
+    val targetBookId: String,
+    val restoredSourceBookIds: List<String>,
+    val removedCopiedChapterCount: Int
+)
+
+private data class CopiedMergeArchive(
+    val file: File,
+    val createdByMerge: Boolean
+)
+
+private data class PreparedMergeCopy(
+    val sourceBookId: String,
+    val sourceChapter: MangaChapterEntity,
+    val sourceChapterKey: String,
+    val targetChapter: MangaChapterEntity,
+    val targetArchive: CopiedMergeArchive,
+    val cacheDirectory: File,
+    val manifest: OfflineChapterManifest
+)
 
 /**
  * Atomic-enough coordinator for local CBZ import across filesystem + Room.
@@ -630,6 +668,14 @@ class MangaLocalImportCoordinator(
         require(sourceBookIds.isNotEmpty()) { "At least one source Manga Book is required" }
 
         val requestedIds = listOf(targetBookId) + sourceBookIds
+        requestedIds.forEach { bookId ->
+            require(database.mangaMerges().findForTarget(bookId) == null) {
+                "A Manga merge target cannot participate in another active merge"
+            }
+            require(database.mangaMerges().findForSource(bookId) == null) {
+                "A Manga merge source cannot participate in another active merge"
+            }
+        }
         val books = requestedIds.map { bookId ->
             library.getBook(bookId)
                 ?: error("Manga Book is not present in the Library: $bookId")
@@ -716,6 +762,398 @@ class MangaLocalImportCoordinator(
             collections = book.allCollections,
             chapters = candidates
         )
+    }
+
+    /**
+     * Executes a verified non-destructive local Manga merge.
+     *
+     * Source Books and source CBZ files remain untouched. New target chapters are rebuilt under the
+     * target canonical identity, then one Room transaction publishes both the copies and the split
+     * receipt. Only after that transaction do source Books disappear from the normal Library view.
+     */
+    suspend fun executeLocalMerge(
+        targetBookId: String,
+        sourceBookIds: List<String>
+    ): Result<MangaMergeExecutionResult> = runCatching {
+        val plan = preflightLocalMerge(targetBookId, sourceBookIds).getOrThrow()
+        val targetBook = library.getBook(targetBookId)
+            ?: error("Merge target disappeared before execution")
+        val sourceBooks = sourceBookIds.associateWith { sourceBookId ->
+            library.getBook(sourceBookId)
+                ?: error("Merge source disappeared before execution: $sourceBookId")
+        }
+        val originalTargetProgress = database.mangaProgress().find(targetBookId)
+        val mergeId = UUID.randomUUID().toString()
+        val prepared = mutableListOf<PreparedMergeCopy>()
+        var committed = false
+
+        try {
+            for (action in plan.chapterActions) {
+                if (action.disposition != MangaMergeDisposition.REBUILD_FROM_SOURCE_ARCHIVE) {
+                    continue
+                }
+                val sourceBook = requireNotNull(sourceBooks[action.sourceBookId])
+                val sourceChapter = database.mangaCatalog().findChapter(action.sourceChapterId)
+                    ?: error("Merge source chapter disappeared before execution")
+                require(sourceChapter.bookId == sourceBook.id)
+                require(sourceChapter.readingOrder == action.sourceReadingOrder)
+
+                val sourceLink = database.mangaCatalog()
+                    .listChapterSources(sourceChapter.id)
+                    .singleOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?: error("Merge source chapter lost its local CBZ identity")
+                val fingerprint = fingerprintFromChapterKey(sourceLink.chapterKey)
+                    ?: error("Merge source chapter has no verifiable fingerprint")
+                val sourceArchive = resolveLocalArchiveFile(
+                    book = sourceBook,
+                    chapterKey = sourceLink.chapterKey,
+                    readingOrder = sourceChapter.readingOrder
+                ) ?: error("Merge source archive disappeared before execution")
+                require(sha256(sourceArchive).equals(fingerprint, ignoreCase = true)) {
+                    "Merge source archive changed after preflight"
+                }
+
+                val anchor = MangaChapterAnchor(
+                    volume = sourceChapter.volume,
+                    number = sourceChapter.number,
+                    languageTag = sourceChapter.languageTag,
+                    normalizedTitle = sourceChapter.normalizedTitle ?: sourceChapter.title,
+                    providerChapterKeyHint = sourceLink.chapterKey
+                )
+                val offlineId = requireNotNull(
+                    MangaOfflineChapterLocator.idFor(
+                        CanonicalMangaId(targetBook.id),
+                        anchor
+                    )
+                )
+                val cacheKey = MangaCacheLayout.chapterDirectory(offlineId)
+                val targetChapterId = UUID.nameUUIDFromBytes(
+                    ("veil-cbz:" + targetBook.id + ":" + cacheKey)
+                        .toByteArray(Charsets.UTF_8)
+                ).toString()
+                require(targetChapterId == action.plannedTargetChapterId) {
+                    "Merge plan target identity changed before execution"
+                }
+                require(database.mangaCatalog().findChapterByCacheKey(cacheKey) == null) {
+                    "Merge target chapter identity is already occupied"
+                }
+
+                val targetArchive = copyVerifiedArchiveToTarget(
+                    targetBook = targetBook,
+                    sourceArchive = sourceArchive,
+                    fingerprint = fingerprint
+                )
+                val cacheDirectory = File(cacheRoot, cacheKey)
+                withContext(Dispatchers.IO) {
+                    if (cacheDirectory.exists()) {
+                        deleteGeneratedChapterDirectory(cacheDirectory)
+                    }
+                }
+
+                val imported = ingestor.ingest(
+                    archiveFile = targetArchive.file,
+                    cacheRoot = cacheRoot,
+                    chapterId = offlineId,
+                    anchor = anchor,
+                    originChapterKey = sourceLink.chapterKey,
+                    originSourceId = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+                )
+                val manifest = when (imported) {
+                    is MangaCbzImportResult.Success -> imported.manifest
+                    is MangaCbzImportResult.Failure ->
+                        throw MangaLocalImportException(imported.reason)
+                }
+
+                prepared += PreparedMergeCopy(
+                    sourceBookId = sourceBook.id,
+                    sourceChapter = sourceChapter,
+                    sourceChapterKey = sourceLink.chapterKey,
+                    targetChapter = MangaChapterEntity(
+                        id = targetChapterId,
+                        bookId = targetBook.id,
+                        readingOrder = action.targetReadingOrder,
+                        cacheKey = cacheKey,
+                        title = sourceChapter.title,
+                        normalizedTitle = sourceChapter.normalizedTitle,
+                        volume = sourceChapter.volume,
+                        number = sourceChapter.number,
+                        languageTag = sourceChapter.languageTag
+                    ),
+                    targetArchive = targetArchive,
+                    cacheDirectory = cacheDirectory,
+                    manifest = manifest
+                )
+            }
+
+            val existingTargetIds = database.mangaCatalog()
+                .listChapters(targetBook.id)
+                .mapTo(mutableSetOf(), MangaChapterEntity::id)
+            val preparedTargetIds = prepared
+                .mapTo(mutableSetOf()) { it.targetChapter.id }
+            plan.chapterActions
+                .filter { it.disposition == MangaMergeDisposition.DEDUPLICATE_EXACT_ARCHIVE }
+                .forEach { action ->
+                    require(
+                        action.plannedTargetChapterId in existingTargetIds ||
+                            action.plannedTargetChapterId in preparedTargetIds
+                    ) {
+                        "Merge deduplication target does not exist"
+                    }
+                }
+
+            val localSource = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+            val targetMangaKey = localMangaKey(targetBook.id)
+            val now = System.currentTimeMillis()
+            database.withTransaction {
+                database.mangaCatalog().upsertSourceLink(
+                    MangaSourceLinkEntity(
+                        bookId = targetBook.id,
+                        sourceId = localSource.value,
+                        mangaKey = targetMangaKey
+                    )
+                )
+
+                prepared.forEach { copy ->
+                    database.mangaCatalog().upsertChapter(copy.targetChapter)
+                    database.mangaCatalog().upsertChapterSource(
+                        MangaChapterSourceEntity(
+                            chapterId = copy.targetChapter.id,
+                            bookId = targetBook.id,
+                            sourceId = localSource.value,
+                            mangaKey = targetMangaKey,
+                            chapterKey = copy.sourceChapterKey
+                        )
+                    )
+                    database.mangaOffline().replaceChapter(
+                        chapter = MangaOfflineChapterEntity(
+                            chapterId = copy.targetChapter.id,
+                            originSourceId = copy.manifest.originSourceId.value,
+                            originChapterKey = copy.manifest.originChapterKey,
+                            completed = copy.manifest.completed,
+                            updatedAtEpochMs = copy.manifest.updatedAtEpochMs
+                        ),
+                        pages = copy.manifest.pages.map { page ->
+                            MangaOfflinePageEntity(
+                                chapterId = copy.targetChapter.id,
+                                pageIndex = page.index,
+                                relativePath = page.relativePath,
+                                byteSize = page.byteSize,
+                                contentSha256 = page.contentSha256
+                            )
+                        }
+                    )
+                }
+
+                database.mangaMerges().upsertMerge(
+                    MangaWorkMergeEntity(
+                        id = mergeId,
+                        targetBookId = targetBook.id,
+                        createdAtEpochMs = now,
+                        receiptVersion = 1,
+                        targetBookProgress = targetBook.progress.coerceIn(0f, 1f),
+                        targetBookFinished = targetBook.finished,
+                        targetBookLastOpenedAtEpochMs =
+                            targetBook.lastOpenedAtEpochMs.coerceAtLeast(0L),
+                        targetProgressChapterId = originalTargetProgress?.chapterId,
+                        targetProgressPageIndex = originalTargetProgress?.pageIndex,
+                        targetProgressPageCount = originalTargetProgress?.pageCount,
+                        targetProgressChapterProgression =
+                            originalTargetProgress?.chapterProgression,
+                        targetProgressUpdatedAtEpochMs =
+                            originalTargetProgress?.updatedAtEpochMs
+                    )
+                )
+                database.mangaMerges().upsertMembers(
+                    sourceBookIds.mapIndexed { index, sourceBookId ->
+                        MangaMergeMemberEntity(
+                            mergeId = mergeId,
+                            sourceBookId = sourceBookId,
+                            sourceOrder = index
+                        )
+                    }
+                )
+                database.mangaMerges().upsertChapters(
+                    plan.chapterActions.map { action ->
+                        MangaMergeChapterEntity(
+                            mergeId = mergeId,
+                            sourceChapterId = action.sourceChapterId,
+                            sourceBookId = action.sourceBookId,
+                            targetChapterId = action.plannedTargetChapterId,
+                            sourceReadingOrder = action.sourceReadingOrder,
+                            targetReadingOrder = action.targetReadingOrder,
+                            disposition = action.disposition.name
+                        )
+                    }
+                )
+            }
+            committed = true
+
+            check(database.books().reopenMangaAfterExtension(targetBook.id) == 1)
+            recomputeStoredMangaProgress(targetBook.id)
+
+            val receipt = database.mangaMerges().find(mergeId)
+                ?: error("Merge receipt disappeared after commit")
+            require(receipt.members.size == sourceBookIds.size)
+            require(receipt.chapters.size == plan.chapterActions.size)
+            prepared.forEach { copy ->
+                require(copy.targetArchive.file.isFile)
+                val offline = database.mangaOffline().findChapter(copy.targetChapter.id)
+                    ?: error("Merged Manga copy has no offline manifest")
+                require(offline.chapter.completed)
+                require(
+                    offline.pages.isNotEmpty() &&
+                        offline.pages.all { page ->
+                            File(cacheRoot, page.relativePath).isFile
+                        }
+                )
+            }
+
+            MangaMergeExecutionResult(
+                mergeId = mergeId,
+                targetBookId = targetBook.id,
+                sourceBookIds = sourceBookIds.toList(),
+                copiedChapterCount = prepared.size,
+                deduplicatedChapterCount =
+                    plan.chapterActions.count {
+                        it.disposition == MangaMergeDisposition.DEDUPLICATE_EXACT_ARCHIVE
+                    }
+            )
+        } catch (error: Throwable) {
+            if (committed) {
+                runCatching { splitCommittedMerge(mergeId) }
+                    .exceptionOrNull()
+                    ?.let(error::addSuppressed)
+            } else {
+                cleanupPreparedMergeCopies(prepared)
+            }
+            if (error is CancellationException) throw error
+            throw error
+        }
+    }
+
+    suspend fun splitLocalMerge(
+        targetBookId: String
+    ): Result<MangaSplitExecutionResult> = runCatching {
+        val receipt = database.mangaMerges().findForTarget(targetBookId)
+            ?: error("This Manga work has no active reversible merge")
+        splitCommittedMerge(receipt.merge.id)
+    }
+
+    private suspend fun splitCommittedMerge(
+        mergeId: String
+    ): MangaSplitExecutionResult {
+        val receipt = database.mangaMerges().find(mergeId)
+            ?: error("Manga merge receipt is missing")
+        val merge = receipt.merge
+        val targetBook = database.books()
+            .findWithCollections(merge.targetBookId)
+            ?.toDomain()
+            ?: error("Merged target Book is missing")
+
+        val copyMappings = receipt.chapters
+            .filter {
+                it.disposition == MangaMergeChapterEntity.REBUILD_FROM_SOURCE_ARCHIVE
+            }
+        val targetCopies = copyMappings.map { mapping ->
+            val chapter = database.mangaCatalog().findChapter(mapping.targetChapterId)
+                ?: error("Merged target chapter is missing")
+            require(chapter.bookId == targetBook.id)
+            val source = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .singleOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?: error("Merged target chapter lost its local source")
+            Triple(
+                chapter,
+                File(cacheRoot, chapter.cacheKey),
+                resolveLocalArchiveFile(
+                    book = targetBook,
+                    chapterKey = source.chapterKey,
+                    readingOrder = chapter.readingOrder
+                )
+            )
+        }
+
+        database.withTransaction {
+            database.mangaMerges().deleteMerge(mergeId)
+            targetCopies.forEach { (chapter, _, _) ->
+                database.mangaCatalog().deleteChapter(chapter.id)
+            }
+
+            if (merge.targetProgressChapterId != null) {
+                database.mangaProgress().upsert(
+                    MangaProgressEntity(
+                        bookId = targetBook.id,
+                        chapterId = merge.targetProgressChapterId,
+                        pageIndex = requireNotNull(merge.targetProgressPageIndex),
+                        pageCount = merge.targetProgressPageCount,
+                        chapterProgression =
+                            requireNotNull(merge.targetProgressChapterProgression),
+                        updatedAtEpochMs =
+                            requireNotNull(merge.targetProgressUpdatedAtEpochMs)
+                    )
+                )
+            } else {
+                database.mangaProgress().delete(targetBook.id)
+            }
+            check(
+                database.books().restoreMangaMergeSummary(
+                    id = targetBook.id,
+                    progress = merge.targetBookProgress,
+                    lastOpenedAtEpochMs = merge.targetBookLastOpenedAtEpochMs,
+                    finished = merge.targetBookFinished
+                ) == 1
+            )
+        }
+
+        withContext(Dispatchers.IO) {
+            targetCopies.forEach { (_, cacheDirectory, archive) ->
+                deleteGeneratedChapterDirectory(cacheDirectory)
+                archive?.let(::deleteConfinedPublicationFile)
+            }
+            pruneEmptyMangaCacheParents(targetCopies.map { it.second })
+            pruneEmptyLocalArchiveParents(targetCopies.mapNotNull { it.third })
+        }
+
+        return MangaSplitExecutionResult(
+            mergeId = mergeId,
+            targetBookId = targetBook.id,
+            restoredSourceBookIds = receipt.members
+                .sortedBy { it.sourceOrder }
+                .map { it.sourceBookId },
+            removedCopiedChapterCount = targetCopies.size
+        )
+    }
+
+    private suspend fun requireMangaStructureMutable(bookId: String) {
+        require(database.mangaMerges().findForTarget(bookId) == null) {
+            "Merged Manga chapters are locked until the work is split"
+        }
+        require(database.mangaMerges().findForSource(bookId) == null) {
+            "A hidden Manga source cannot be structurally edited while merged"
+        }
+    }
+
+    private suspend fun cleanupPreparedMergeCopies(
+        prepared: List<PreparedMergeCopy>
+    ) {
+        withContext(Dispatchers.IO) {
+            prepared.forEach { copy ->
+                deleteGeneratedChapterDirectory(copy.cacheDirectory)
+                if (copy.targetArchive.createdByMerge) {
+                    deleteConfinedPublicationFile(copy.targetArchive.file)
+                }
+            }
+            pruneEmptyMangaCacheParents(prepared.map { it.cacheDirectory })
+            pruneEmptyLocalArchiveParents(
+                prepared
+                    .filter { it.targetArchive.createdByMerge }
+                    .map { it.targetArchive.file }
+            )
+        }
     }
 
     suspend fun canImport(uri: Uri): Boolean = withContext(Dispatchers.IO) {
