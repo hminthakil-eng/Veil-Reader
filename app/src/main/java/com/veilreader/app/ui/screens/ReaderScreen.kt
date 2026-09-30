@@ -88,6 +88,7 @@ import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
+import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
@@ -297,6 +298,39 @@ fun ReaderScreen(
     var slideInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<SlideNavigationInputListener?>(null)
     }
+    val navigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
+        ReaderNavigationTransactionGate()
+    }
+    DisposableEffect(navigationTransactionGate) {
+        onDispose { navigationTransactionGate.reset() }
+    }
+
+    fun beginProgrammaticNavigation(originLocatorJson: String?): Long {
+        paperInputListener?.forceCancelPendingTurn()
+        slideInputListener?.forceCancelPendingTurn()
+        val transaction = navigationTransactionGate.begin(
+            originLocatorJson = originLocatorJson,
+            nowElapsedMs = SystemClock.elapsedRealtime()
+        )
+        ReaderTrace.event(
+            "navigation_jump_requested",
+            bookId = opened.book.id,
+            sessionId = readerSessionInstanceId,
+            details = "token=${transaction.token}"
+        )
+        return transaction.token
+    }
+
+    fun cancelProgrammaticNavigation(token: Long) {
+        navigationTransactionGate.cancel(token)
+        ReaderTrace.event(
+            "navigation_jump_cancelled",
+            bookId = opened.book.id,
+            sessionId = readerSessionInstanceId,
+            details = "token=$token"
+        )
+    }
+
     var boundaryPulseSide by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlSide?>(null)
     }
@@ -672,15 +706,21 @@ fun ReaderScreen(
         val locator = runCatching {
             Locator.fromJSON(JSONObject(targetJson))
         }.getOrNull()
-        val currentJson = currentLocatorJson()
+        val nav = navigator
+        if (locator == null || nav == null) {
+            readerMessage = previousLocationFailedMessage
+            return
+        }
 
+        val originJson = currentLocatorJson()
         readerViewModel.onUserInteraction(readerSessionInstanceId)
         game.rebasePagePacing()
+        val transactionToken = beginProgrammaticNavigation(originJson)
 
-        if (locator != null && navigator?.go(locator, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
-            previousLocationJson = currentJson?.takeIf { it != targetJson }
+        if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
             controlsVisible = false
         } else {
+            cancelProgrammaticNavigation(transactionToken)
             readerMessage = previousLocationFailedMessage
         }
     }
@@ -829,8 +869,17 @@ fun ReaderScreen(
                             ?.currentLocator
                             ?.value
                             ?.toVeilPersistedJson(opened.format)
+                        val transaction = navigationTransactionGate.begin(
+                            originLocatorJson = origin,
+                            nowElapsedMs = SystemClock.elapsedRealtime()
+                        )
+                        ReaderTrace.event(
+                            "navigation_jump_requested",
+                            bookId = opened.book.id,
+                            sessionId = readerSessionInstanceId,
+                            details = "token=${transaction.token} source=internal_link"
+                        )
                         activity.runOnUiThread {
-                            previousLocationJson = origin
                             controlsVisible = false
                         }
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
@@ -962,16 +1011,34 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId(),
                     details = "progress=${locator.locations.totalProgression}"
                 )
+                val settledNavigation = navigationTransactionGate.consumeSettled(
+                    nowElapsedMs = SystemClock.elapsedRealtime()
+                )
+                if (settledNavigation != null) {
+                    previousLocationJson = settledNavigation.originLocatorJson
+                        ?.takeIf { origin -> origin != json }
+                    ReaderTrace.event(
+                        "navigation_jump_settled",
+                        bookId = opened.book.id,
+                        sessionId = readerSessionInstanceId,
+                        details = "token=${settledNavigation.token} progress=${locator.locations.totalProgression}"
+                    )
+                }
+
                 val continuousScroll =
                     (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
-                val event = navigatorLocatorEvent(
-                    isInitialEmission = initialLocatorPending,
-                    isContinuousScroll = continuousScroll,
-                    isPaperMode =
-                        opened.format == BookFormat.EPUB &&
-                            latestAppearance.value.navigationMode ==
-                                ReaderNavigationMode.PAPER_CURL
-                )
+                val event = if (settledNavigation != null) {
+                    ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+                } else {
+                    navigatorLocatorEvent(
+                        isInitialEmission = initialLocatorPending,
+                        isContinuousScroll = continuousScroll,
+                        isPaperMode =
+                            opened.format == BookFormat.EPUB &&
+                                latestAppearance.value.navigationMode ==
+                                    ReaderNavigationMode.PAPER_CURL
+                    )
+                }
                 initialLocatorPending = false
                 readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
@@ -2054,32 +2121,44 @@ fun ReaderScreen(
             passageVisits = bookPassageVisits,
             onDismiss = { showNotebook = false },
             onGo = { json ->
-                readerViewModel.onUserInteraction(readerSessionInstanceId)
-                game.rebasePagePacing()
-                val origin = currentLocatorJson()
+                val nav = navigator
                 val locator = runCatching { Locator.fromJSON(JSONObject(json)) }.getOrNull()
-                if (locator != null && navigator?.go(locator, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
-                    library.recordPassageVisitForLocator(
-                        bookId = opened.book.id,
-                        locatorJson = json
-                    )
-                    previousLocationJson = origin?.takeIf { it != json }
-                    showNotebook = false
-                } else {
+                if (locator == null || nav == null) {
                     showNotebook = false
                     readerMessage = savedLocationFailedMessage
+                } else {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    game.rebasePagePacing()
+                    val transactionToken = beginProgrammaticNavigation(currentLocatorJson())
+                    if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
+                        library.recordPassageVisitForLocator(
+                            bookId = opened.book.id,
+                            locatorJson = json
+                        )
+                        showNotebook = false
+                    } else {
+                        cancelProgrammaticNavigation(transactionToken)
+                        showNotebook = false
+                        readerMessage = savedLocationFailedMessage
+                    }
                 }
             },
             onChapter = { link ->
-                readerViewModel.onUserInteraction(readerSessionInstanceId)
-                game.rebasePagePacing()
-                val origin = currentLocatorJson()
-                if (navigator?.go(link, animated = shouldAnimateReaderJump(reducedMotion)) == true) {
-                    previousLocationJson = origin
-                    showNotebook = false
-                } else {
+                val nav = navigator
+                if (nav == null) {
                     showNotebook = false
                     readerMessage = chapterFailedMessage
+                } else {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    game.rebasePagePacing()
+                    val transactionToken = beginProgrammaticNavigation(currentLocatorJson())
+                    if (nav.go(link, animated = shouldAnimateReaderJump(reducedMotion))) {
+                        showNotebook = false
+                    } else {
+                        cancelProgrammaticNavigation(transactionToken)
+                        showNotebook = false
+                        readerMessage = chapterFailedMessage
+                    }
                 }
             },
             onSaveNote = onSaveNote@{ id, note ->
