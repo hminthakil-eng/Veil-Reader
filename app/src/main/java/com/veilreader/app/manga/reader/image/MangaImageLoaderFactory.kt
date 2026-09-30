@@ -2,6 +2,7 @@ package com.veilreader.app.manga.reader.image
 
 import android.content.Context
 import coil3.ImageLoader
+import coil3.bitmapFactoryMaxParallelism
 import coil3.memoryCacheMaxSizePercentWhileInBackground
 import coil3.memory.MemoryCache
 import coil3.request.CachePolicy
