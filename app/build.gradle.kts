@@ -88,6 +88,11 @@ dependencies {
     // Explicit access to the PDFView already used by Readium's Pdfium adapter for manual zoom fallback controls.
     implementation("com.github.marain87:AndroidPdfViewer:3.2.8")
 
+    // Manga image delivery: request-scoped network headers + large-image subsampling.
+    implementation("io.coil-kt.coil3:coil-compose:3.6.3")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.6.3")
+    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3-core:1.5.0")
+
     baselineProfile(project(":benchmark"))
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
