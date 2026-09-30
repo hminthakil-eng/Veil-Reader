@@ -523,7 +523,7 @@ fun ReaderNotebook(
                     onClick = {
                         scope.launch {
                             savingNote = true
-                            noteSaveError = null
+                            noteSaveErrorRes = null
                             try {
                                 onSaveNote(highlight.id, note)
                                 editing = null
