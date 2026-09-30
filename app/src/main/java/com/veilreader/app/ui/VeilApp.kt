@@ -604,12 +604,14 @@ fun VeilApp(
     val targetBook = route.activeBookId?.let { id -> books.firstOrNull { it.id == id } }
     LaunchedEffect(
         route.activeBookId,
+        route.readerSessionInstanceId,
         route.locatorOverrideJson,
         targetBook?.id,
         openedPublication?.book?.id,
         restoring
     ) {
         val targetId = route.activeBookId ?: return@LaunchedEffect
+        val openRequestId = route.readerSessionInstanceId ?: return@LaunchedEffect
         if (restoring) return@LaunchedEffect
 
         val currentlyOpened = openedPublication
@@ -631,7 +633,7 @@ fun VeilApp(
         }
 
         if (book.format == BookFormat.COMIC) {
-            if (activeMangaSession?.mangaId?.value == targetId) {
+            if (activeMangaSession?.instanceId == openRequestId) {
                 return@LaunchedEffect
             }
             val repaired = mangaImporter.ensureLocalCache(targetId)
@@ -646,9 +648,18 @@ fun VeilApp(
             if (repaired.getOrDefault(0) > 0) {
                 mangaStorageRevision += 1
             }
-            when (val result = mangaSessionRepository.build(targetId)) {
+            when (
+                val result = mangaSessionRepository.build(
+                    bookId = targetId,
+                    instanceId = openRequestId
+                )
+            ) {
                 is MangaSessionAdapterResult.Ready -> {
-                    if (routeViewModel.route.value.activeBookId != targetId) {
+                    val currentRoute = routeViewModel.route.value
+                    if (
+                        currentRoute.activeBookId != targetId ||
+                        currentRoute.readerSessionInstanceId != openRequestId
+                    ) {
                         return@LaunchedEffect
                     }
                     activeMangaSession = result.session
@@ -712,7 +723,11 @@ fun VeilApp(
             }
         )
 
-        if (routeViewModel.route.value.activeBookId != targetId) {
+        val routeAfterOpen = routeViewModel.route.value
+        if (
+            routeAfterOpen.activeBookId != targetId ||
+            routeAfterOpen.readerSessionInstanceId != openRequestId
+        ) {
             opened.close()
             return@LaunchedEffect
         }
