@@ -166,6 +166,7 @@ class ReaderViewModel(
         publishActiveMillis()
     }
 
+    @Synchronized
     internal fun onLocatorUpdate(
         bookId: String,
         expectedOpenInstanceId: String,
@@ -270,6 +271,7 @@ class ReaderViewModel(
         persistSession()
     }
 
+    @Synchronized
     fun closeBook(expectedOpenInstanceId: String) {
         val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         ReaderTrace.event(
