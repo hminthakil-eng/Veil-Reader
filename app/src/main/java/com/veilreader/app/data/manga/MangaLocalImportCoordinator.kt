@@ -41,14 +41,35 @@ data class MangaLocalRestorePoint(
     val pageIndex: Int,
     val pageCount: Int?,
     val chapterProgression: Double,
-    val updatedAtEpochMs: Long
+    val updatedAtEpochMs: Long,
+    val chapterReadingOrder: Int = 0
 ) {
     init {
         require(pageIndex >= 0)
         require(pageCount == null || pageCount > 0)
         require(chapterProgression.isFinite() && chapterProgression in 0.0..1.0)
+        require(chapterReadingOrder >= 0)
     }
 }
+
+data class MangaLocalChapterMetadata(
+    val title: String? = null,
+    val volume: Double? = null,
+    val number: Double? = null,
+    val languageTag: String? = null
+) {
+    init {
+        require(volume == null || volume.isFinite())
+        require(number == null || number.isFinite())
+    }
+}
+
+data class MangaLocalChapterImportResult(
+    val book: Book,
+    val chapterId: String,
+    val readingOrder: Int,
+    val duplicate: Boolean
+)
 
 /**
  * Atomic-enough coordinator for local CBZ import across filesystem + Room.
@@ -79,15 +100,30 @@ class MangaLocalImportCoordinator(
      */
     suspend fun deleteImportedManga(bookId: String): Result<Book?> = runCatching {
         require(bookId.isNotBlank())
-        val chapterDirectories = database.mangaCatalog()
-            .listChapters(bookId)
-            .map { chapter -> File(cacheRoot, chapter.cacheKey) }
+        val book = library.getBook(bookId)
+            ?: return@runCatching null
+        val chapters = database.mangaCatalog().listChapters(bookId)
+        val chapterDirectories = chapters.map { chapter ->
+            File(cacheRoot, chapter.cacheKey)
+        }
+        val additionalArchives = chapters.mapNotNull { chapter ->
+            if (chapter.readingOrder == 0) return@mapNotNull null
+            val local = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .firstOrNull { it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value }
+                ?: return@mapNotNull null
+            resolveLocalArchiveFile(book, local.chapterKey, chapter.readingOrder)
+        }
 
         val deleted = library.deleteImportedBook(bookId) ?: return@runCatching null
 
         withContext(Dispatchers.IO) {
+            additionalArchives.forEach { archive ->
+                deleteConfinedPublicationFile(archive)
+            }
             chapterDirectories.forEach(::deleteGeneratedChapterDirectory)
             pruneEmptyMangaCacheParents(chapterDirectories)
+            pruneEmptyLocalArchiveParents(additionalArchives)
         }
         deleted
     }
@@ -106,7 +142,7 @@ class MangaLocalImportCoordinator(
         val sourceFile = requireAppPrivatePublication(book)
         val fingerprint = sha256(sourceFile)
         val mangaId = CanonicalMangaId(book.id)
-        val chapterKey = "cbz-" + fingerprint.take(24)
+        val chapterKey = chapterKeyFor(fingerprint)
         val anchor = MangaChapterAnchor(
             number = 1.0,
             normalizedTitle = book.title,
@@ -120,7 +156,7 @@ class MangaLocalImportCoordinator(
             ("veil-cbz:" + book.id + ":" + cacheKey).toByteArray(Charsets.UTF_8)
         ).toString()
         val localSource = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
-        val mangaKey = "cbz-" + fingerprint
+        val mangaKey = localMangaKey(book.id)
 
         database.withTransaction {
             database.mangaCatalog().deleteChaptersForBook(book.id)
@@ -186,6 +222,182 @@ class MangaLocalImportCoordinator(
         }
     }
 
+    /**
+     * Adds another local CBZ as a chapter of an existing Manga Book.
+     *
+     * Book remains the single library/catalog identity. The chapter source fingerprint is durable,
+     * while its app-private file path is derived from the Book's publication directory and can be
+     * reconstructed during backup restore without adding another catalog table.
+     */
+    suspend fun appendChapter(
+        bookId: String,
+        uri: Uri,
+        metadata: MangaLocalChapterMetadata? = null
+    ): Result<MangaLocalChapterImportResult> = runCatching {
+        require(bookId.isNotBlank())
+        require(canImport(uri)) { "The selected document is not a CBZ publication" }
+
+        val book = library.getBook(bookId)
+            ?: error("Manga Book is not present in the Library")
+        require(book.format == BookFormat.COMIC) {
+            "Only COMIC books can accept Manga chapters"
+        }
+
+        val displayTitle = withContext(Dispatchers.IO) { displayName(uri) }
+            ?.substringBeforeLast('.', missingDelimiterValue = "")
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: "Chapter"
+
+        val staged = materialize(uri)
+        var committedArchive: File? = null
+        var chapterId: String? = null
+        var cacheDirectory: File? = null
+
+        try {
+            val fingerprint = sha256(staged)
+            val chapterKey = chapterKeyFor(fingerprint)
+            val localSource = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+
+            val duplicateSource = database.mangaCatalog().findChapterSourceForBook(
+                bookId = book.id,
+                sourceId = localSource.value,
+                chapterKey = chapterKey
+            )
+            if (duplicateSource != null) {
+                staged.delete()
+                val existing = database.mangaCatalog()
+                    .findChapter(duplicateSource.chapterId)
+                    ?: error("Duplicate Manga source points to a missing chapter")
+                return@runCatching MangaLocalChapterImportResult(
+                    book = book,
+                    chapterId = existing.id,
+                    readingOrder = existing.readingOrder,
+                    duplicate = true
+                )
+            }
+
+            val existingChapters = database.mangaCatalog().listChapters(book.id)
+            val readingOrder = existingChapters.maxOfOrNull { it.readingOrder }
+                ?.plus(1)
+                ?: 0
+            val inferred = inferChapterMetadata(displayTitle, readingOrder)
+            val resolvedMetadata = MangaLocalChapterMetadata(
+                title = metadata?.title?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: inferred.title,
+                volume = metadata?.volume ?: inferred.volume,
+                number = metadata?.number ?: inferred.number,
+                languageTag = metadata?.languageTag
+                    ?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: inferred.languageTag
+            )
+
+            val archive = commitAdditionalArchive(book, staged, fingerprint)
+            committedArchive = archive
+
+            val anchor = MangaChapterAnchor(
+                volume = resolvedMetadata.volume,
+                number = resolvedMetadata.number,
+                languageTag = resolvedMetadata.languageTag,
+                normalizedTitle = resolvedMetadata.title,
+                providerChapterKeyHint = chapterKey
+            )
+            val mangaId = CanonicalMangaId(book.id)
+            val offlineId = requireNotNull(
+                MangaOfflineChapterLocator.idFor(mangaId, anchor)
+            )
+            val cacheKey = MangaCacheLayout.chapterDirectory(offlineId)
+            val newChapterId = UUID.nameUUIDFromBytes(
+                ("veil-cbz:" + book.id + ":" + cacheKey).toByteArray(Charsets.UTF_8)
+            ).toString()
+            chapterId = newChapterId
+            cacheDirectory = File(cacheRoot, cacheKey)
+            val mangaKey = localMangaKey(book.id)
+
+            database.withTransaction {
+                // Normalize pre-multi-chapter local rows to one source-stable work key.
+                database.mangaCatalog().upsertSourceLink(
+                    MangaSourceLinkEntity(
+                        bookId = book.id,
+                        sourceId = localSource.value,
+                        mangaKey = mangaKey
+                    )
+                )
+                existingChapters.forEach { existing ->
+                    database.mangaCatalog()
+                        .listChapterSources(existing.id)
+                        .filter { it.sourceId == localSource.value }
+                        .forEach { source ->
+                            database.mangaCatalog().upsertChapterSource(
+                                source.copy(mangaKey = mangaKey)
+                            )
+                        }
+                }
+                database.mangaCatalog().upsertChapter(
+                    MangaChapterEntity(
+                        id = newChapterId,
+                        bookId = book.id,
+                        readingOrder = readingOrder,
+                        cacheKey = cacheKey,
+                        title = resolvedMetadata.title,
+                        normalizedTitle = resolvedMetadata.title,
+                        volume = resolvedMetadata.volume,
+                        number = resolvedMetadata.number,
+                        languageTag = resolvedMetadata.languageTag
+                    )
+                )
+                database.mangaCatalog().upsertChapterSource(
+                    MangaChapterSourceEntity(
+                        chapterId = newChapterId,
+                        bookId = book.id,
+                        sourceId = localSource.value,
+                        mangaKey = mangaKey,
+                        chapterKey = chapterKey
+                    )
+                )
+            }
+
+            val imported = ingestor.ingest(
+                archiveFile = archive,
+                cacheRoot = cacheRoot,
+                chapterId = offlineId,
+                anchor = anchor,
+                originChapterKey = chapterKey,
+                originSourceId = localSource
+            )
+            val manifest = when (imported) {
+                is MangaCbzImportResult.Success -> imported.manifest
+                is MangaCbzImportResult.Failure ->
+                    throw MangaLocalImportException(imported.reason)
+            }
+            RoomMangaOfflineCacheIndex(database).put(manifest)
+
+            database.books().reopenMangaAfterExtension(book.id)
+            val progressStore = RoomMangaProgressStore(database)
+            progressStore.load(mangaId)?.let { previous ->
+                progressStore.save(previous)
+            }
+
+            MangaLocalChapterImportResult(
+                book = book,
+                chapterId = newChapterId,
+                readingOrder = readingOrder,
+                duplicate = false
+            )
+        } catch (error: Throwable) {
+            val insertedChapterId = chapterId
+            if (insertedChapterId != null) {
+                runCatching { database.mangaCatalog().deleteChapter(insertedChapterId) }
+            }
+            cacheDirectory?.let(::deleteGeneratedChapterDirectory)
+            committedArchive?.let(::deleteConfinedPublicationFile)
+            staged.takeIf(File::exists)?.delete()
+            if (error is CancellationException) throw error
+            throw error
+        }
+    }
+
     suspend fun import(uri: Uri): Result<BookImportResult> {
         if (!canImport(uri)) {
             return Result.failure(
@@ -224,7 +436,7 @@ class MangaLocalImportCoordinator(
             committedNew = true
 
             val mangaId = CanonicalMangaId(book.id)
-            val chapterKey = "cbz-" + fingerprint.take(24)
+            val chapterKey = chapterKeyFor(fingerprint)
             val anchor = MangaChapterAnchor(
                 number = 1.0,
                 normalizedTitle = book.title,
@@ -256,7 +468,7 @@ class MangaLocalImportCoordinator(
                     MangaSourceLinkEntity(
                         bookId = book.id,
                         sourceId = localSource.value,
-                        mangaKey = "cbz-$fingerprint"
+                        mangaKey = localMangaKey(book.id)
                     )
                 )
                 database.mangaCatalog().upsertChapterSource(
@@ -264,7 +476,7 @@ class MangaLocalImportCoordinator(
                         chapterId = chapterId,
                         bookId = book.id,
                         sourceId = localSource.value,
-                        mangaKey = "cbz-$fingerprint",
+                        mangaKey = localMangaKey(book.id),
                         chapterKey = chapterKey
                     )
                 )
@@ -345,6 +557,139 @@ class MangaLocalImportCoordinator(
             partial.delete()
             target.delete()
             throw error
+        }
+    }
+
+    fun resolveLocalArchiveFile(
+        book: Book,
+        chapterKey: String,
+        readingOrder: Int
+    ): File? {
+        if (readingOrder == 0) {
+            return runCatching { requireAppPrivatePublication(book) }.getOrNull()
+        }
+        val fingerprint = fingerprintFromChapterKey(chapterKey) ?: return null
+        val primary = runCatching { requireAppPrivatePublication(book) }.getOrNull()
+            ?: return null
+        val candidate = File(
+            primary.parentFile,
+            "manga/" + book.id + "/" + fingerprint + ".cbz"
+        )
+        return runCatching {
+            val root = File(appContext.filesDir, "publications").canonicalFile
+            val canonical = candidate.canonicalFile
+            canonical.takeIf {
+                it.toPath().startsWith(root.toPath()) && it.isFile
+            }
+        }.getOrNull()
+    }
+
+    private suspend fun commitAdditionalArchive(
+        book: Book,
+        staged: File,
+        fingerprint: String
+    ): File = withContext(Dispatchers.IO) {
+        val primary = requireAppPrivatePublication(book)
+        val root = File(appContext.filesDir, "publications").canonicalFile
+        val directory = File(primary.parentFile, "manga/" + book.id).canonicalFile
+        require(directory.toPath().startsWith(root.toPath())) {
+            "Derived Manga archive directory escaped app-private publications"
+        }
+        check(directory.mkdirs() || directory.isDirectory) {
+            "Could not create Manga chapter publication directory"
+        }
+        val target = File(directory, fingerprint + ".cbz").canonicalFile
+        require(target.toPath().startsWith(root.toPath())) {
+            "Derived Manga archive path escaped app-private publications"
+        }
+
+        if (target.exists()) {
+            if (sha256(target) == fingerprint) {
+                staged.delete()
+                return@withContext target
+            }
+            check(target.delete()) { "Could not replace a corrupt staged Manga chapter" }
+        }
+        if (!staged.renameTo(target)) {
+            staged.inputStream().use { input ->
+                target.outputStream().use { output -> input.copyTo(output) }
+            }
+            check(target.length() == staged.length() && sha256(target) == fingerprint) {
+                target.delete()
+                "Could not verify copied Manga chapter"
+            }
+            staged.delete()
+        }
+        target
+    }
+
+    private fun inferChapterMetadata(
+        displayTitle: String,
+        readingOrder: Int
+    ): MangaLocalChapterMetadata {
+        val clean = displayTitle.trim().ifEmpty { "Chapter " + (readingOrder + 1) }
+        val volume = VOLUME_PATTERN.find(clean)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.toDoubleOrNull()
+        val number = CHAPTER_PATTERN.find(clean)
+            ?.groupValues
+            ?.getOrNull(1)
+            ?.toDoubleOrNull()
+            ?: TRAILING_NUMBER_PATTERN.find(clean)
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.toDoubleOrNull()
+            ?: (readingOrder + 1).toDouble()
+        return MangaLocalChapterMetadata(
+            title = clean,
+            volume = volume,
+            number = number
+        )
+    }
+
+    private fun localMangaKey(bookId: String): String = "local:" + bookId
+
+    private fun chapterKeyFor(fingerprint: String): String = "cbz-" + fingerprint
+
+    private fun fingerprintFromChapterKey(chapterKey: String): String? =
+        chapterKey
+            .takeIf { it.startsWith("cbz-") }
+            ?.removePrefix("cbz-")
+            ?.takeIf { value ->
+                value.length == 64 && value.all { it in '0'..'9' || it in 'a'..'f' }
+            }
+
+    private fun deleteConfinedPublicationFile(file: File) {
+        runCatching {
+            val root = File(appContext.filesDir, "publications").canonicalFile
+            val candidate = file.canonicalFile
+            if (candidate.toPath().startsWith(root.toPath()) && candidate.isFile) {
+                candidate.delete()
+            }
+        }
+    }
+
+    private fun pruneEmptyLocalArchiveParents(files: List<File>) {
+        val root = runCatching {
+            File(appContext.filesDir, "publications").canonicalFile
+        }.getOrNull() ?: return
+        files.forEach { file ->
+            var current = runCatching { file.canonicalFile.parentFile }.getOrNull()
+            while (
+                current != null &&
+                current != root &&
+                current.toPath().startsWith(root.toPath())
+            ) {
+                val children = current.listFiles()
+                if (children != null && children.isEmpty()) {
+                    val parent = current.parentFile
+                    if (!current.delete()) break
+                    current = parent
+                } else {
+                    break
+                }
+            }
         }
     }
 
