@@ -50,6 +50,7 @@ import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
@@ -461,6 +462,33 @@ fun VeilApp(
                 throw cancelled
             } catch (_: Exception) {
                 showNotice(R.string.notice_manga_chapter_update_failed)
+            } finally {
+                mangaMutationInProgress = false
+                isImporting = false
+            }
+        }
+    }
+
+    fun updateMangaSeriesMetadata(update: BookMetadataUpdate) {
+        if (isImporting || restoring) return
+        val book = library.getBook(update.bookId) ?: return
+        if (book.format != BookFormat.COMIC) return
+
+        isImporting = true
+        mangaMutationInProgress = true
+        scope.launch {
+            try {
+                library.editMetadata(update)
+                library.flushWrites()
+                mangaStorageRevision += 1
+                showNotice(
+                    R.string.notice_manga_series_metadata_updated,
+                    VeilNoticeKind.SUCCESS
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                showNotice(R.string.notice_manga_series_update_failed)
             } finally {
                 mangaMutationInProgress = false
                 isImporting = false
@@ -984,6 +1012,7 @@ fun VeilApp(
             storageSummaryProvider = { book -> mangaImporter.storageSummary(book.id) },
             chapterSummaryProvider = { book -> mangaImporter.listChapterSummaries(book.id) },
             onUpdateChapterMetadata = ::updateMangaChapterMetadata,
+            onUpdateSeriesMetadata = ::updateMangaSeriesMetadata,
             onMoveChapter = ::moveMangaChapter,
             onDeleteChapter = ::deleteMangaChapter,
             onClearDerivedCache = ::clearMangaDerivedCache,
