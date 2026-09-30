@@ -457,6 +457,37 @@ class LocalLibraryRepository internal constructor(
         }
 
     /**
+     * Persists the app-level restore locator before Compose takes ownership of the publication.
+     *
+     * A temporary ordered writer supersedes any stale Reader instance for the same book, then
+     * releases ownership so the real ReaderViewModel can claim the next writer epoch.
+     */
+    internal fun saveReaderOpenRecoveryProgress(
+        bookId: String,
+        sessionId: String,
+        progression: Double,
+        locatorJson: String,
+        nowEpochMs: Long = System.currentTimeMillis()
+    ): ReaderProgressSaveOutcome {
+        val lease = beginReaderProgressSession(
+            bookId = bookId,
+            sessionId = sessionId
+        )
+        return try {
+            saveReaderProgress(
+                lease = lease,
+                progression = progression,
+                locatorJson = locatorJson,
+                sequence = 1L,
+                completionSessionSnapshot = null,
+                nowEpochMs = nowEpochMs
+            )
+        } finally {
+            endReaderProgressSession(lease)
+        }
+    }
+
+    /**
      * Legacy/internal non-session progress path. Reader code should use [saveReaderProgress].
      */
     fun saveProgress(
