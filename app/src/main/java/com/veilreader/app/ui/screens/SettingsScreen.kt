@@ -45,6 +45,7 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderLayoutMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -210,15 +211,50 @@ fun SettingsScreen(
                 }
             )
 
-            Text(stringResource(R.string.settings_reading_motion), style = MaterialTheme.typography.labelLarge)
-            ReaderMotionSelector(
-                selected = appearance.navigationMode,
+            Text(
+                stringResource(R.string.reader_flow_mode),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ReaderFlowSelector(
+                selected = appearance.layoutMode,
                 onSelect = { mode ->
-                    commitReaderAppearance { current -> current.withNavigationMode(mode) }
+                    commitReaderAppearance { current -> current.withLayoutMode(mode) }
                 }
             )
             Text(
-                readerNavigationModeDescriptionLocalized(appearance.navigationMode),
+                if (appearance.layoutMode == ReaderLayoutMode.PAGED) {
+                    stringResource(R.string.reader_flow_paged_description)
+                } else {
+                    stringResource(R.string.reader_mode_scroll_description)
+                },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Text(
+                stringResource(R.string.reader_page_turn_effect),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ReaderPageTurnSelector(
+                selected = appearance.pageTurnStyle,
+                enabled = appearance.layoutMode == ReaderLayoutMode.PAGED,
+                onSelect = { style ->
+                    commitReaderAppearance { current -> current.withPageTurnStyle(style) }
+                }
+            )
+            Text(
+                if (appearance.layoutMode == ReaderLayoutMode.SCROLL) {
+                    stringResource(R.string.reader_turn_inactive_scroll)
+                } else {
+                    when (appearance.pageTurnStyle) {
+                        com.veilreader.app.domain.PageTurnStyle.PAPER ->
+                            stringResource(R.string.reader_mode_curl_description)
+                        com.veilreader.app.domain.PageTurnStyle.SLIDE ->
+                            stringResource(R.string.reader_mode_slide_description)
+                        com.veilreader.app.domain.PageTurnStyle.NONE ->
+                            stringResource(R.string.reader_mode_paged_description)
+                    }
+                },
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
