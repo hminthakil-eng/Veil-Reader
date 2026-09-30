@@ -72,6 +72,7 @@ class MangaReaderScreenViewModel(
 
     private val processSnapshot = savedState.load()
     private var currentEntry = processSnapshot
+        ?.chapter
         ?.let(session::entryForChapter)
         ?: session.initialEntry
 
