@@ -58,6 +58,8 @@ class ReadingSessionTrackerTest {
             )
         )
 
+        restored.onResume(50_000L)
+        restored.tick(80_000L)
         restored.recordPacedPageTurn()
         restored.recordHighlight()
         restored.recordNote("note-existing", "edited after recreation")
@@ -66,7 +68,7 @@ class ReadingSessionTrackerTest {
         val snapshot = restored.snapshot(10_000L)
         assertEquals("session-restored", snapshot.id)
         assertEquals(1_000L, snapshot.startedAtEpochMs)
-        assertEquals(95_000L, snapshot.activeMillis)
+        assertEquals(125_000L, snapshot.activeMillis)
         assertEquals(8, snapshot.pacedPageTurns)
         assertEquals(4, snapshot.highlightCount)
         assertEquals(3, snapshot.noteCount)
