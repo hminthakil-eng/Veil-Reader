@@ -1123,4 +1123,42 @@
     <string name="book_detail_percent_read_text">%1$s خوانده‌شده</string>
     <string name="library_collection_more">%1$s +%2$s</string>
     <string name="reader_percent_read_text">%1$s خوانده‌شده</string>
+
+    <!-- W11 · آینه آرودز -->
+    <string name="mirror_portal_eyebrow">آرودز</string>
+    <string name="mirror_portal_title">آینه‌ی حافظه</string>
+    <string name="mirror_portal_body">%1$d ردِ ذخیره‌شده می‌توانند از میان آینه بازگردند.</string>
+    <string name="mirror_portal_action">ورود به آینه</string>
+    <string name="mirror_eyebrow">آرودز · آینه‌ی حافظه</string>
+    <string name="mirror_title">پژواک‌های پشت شیشه</string>
+    <string name="mirror_subtitle">یادداشت‌ها و هایلایت‌های ذخیره‌شده اینجا ظاهر می‌شوند و دوباره به همان جای دقیق در کتاب راه باز می‌کنند.</string>
+    <string name="mirror_close">بستن</string>
+    <string name="mirror_empty_title">آینه خاموش است</string>
+    <string name="mirror_empty_body">در یک کتاب هایلایت یا یادداشت بساز. آرودز فقط با خاطره‌هایی سخن می‌گوید که واقعاً ذخیره کرده‌ای.</string>
+    <string name="mirror_content_description_open">بازگشت به متن اصلی در %1$s</string>
+    <string name="mirror_content_description_awaken">بیدار کردن آینه</string>
+    <string name="mirror_fragment_note">یادداشت ذخیره‌شده</string>
+    <string name="mirror_fragment_highlight">هایلایت ذخیره‌شده</string>
+    <string name="mirror_open_source_hint">برای بازگشت دقیق به همان بخش، دوباره روی شیشه بزن.</string>
+    <string name="mirror_idle_hint">برای بیدار کردن لمس کن</string>
+    <string name="mirror_next">پژواک دیگر</string>
+    <string name="mirror_summon">احضار یک پژواک</string>
+    <string name="mirror_return_to_source">بازگشت به متن اصلی</string>
+
+    <!-- W11 · مانگا -->
+    <string name="manga_portal_eyebrow">مانگا</string>
+    <string name="manga_portal_title">مرکز مانگا</string>
+    <string name="manga_portal_body">%1$d جلد کمیک محلی · زیرساخت اختصاصی مطالعه مانگا</string>
+    <string name="manga_portal_action">باز کردن مرکز مانگا</string>
+    <string name="manga_hub_eyebrow">آرشیو · مانگا</string>
+    <string name="manga_hub_title">مرکز مانگا</string>
+    <string name="manga_hub_subtitle">فضای مطالعه‌ی بصری با اولویت محلی و آفلاین و موتور اختصاصی مانگا.</string>
+    <string name="manga_hub_close">بستن</string>
+    <string name="manga_hub_local_badge">اول محلی / آفلاین</string>
+    <string name="manga_hub_engine_ready">موتور صفحه، کش، بازیابی، پایش سلامت و لایه‌ی ارائه‌ی فصل اختصاصی مانگا وارد اپ شده‌اند.</string>
+    <string name="manga_hub_live_sources_off">منابع زنده‌ی شبکه به‌طور پیش‌فرض خاموش‌اند و این صفحه با هیچ منبعی تماس نمی‌گیرد.</string>
+    <string name="manga_hub_empty_title">هنوز مانگای محلی نداری</string>
+    <string name="manga_hub_empty_body">یک فایل کمیک پشتیبانی‌شده را وارد Library کن. Manga Hub تجربه‌ی مطالعه‌ی تصویری را از Reader متنی جدا نگه می‌دارد.</string>
+    <string name="manga_hub_open_library">باز کردن Library</string>
+    <string name="manga_hub_progress">%1$d٪ خوانده‌شده</string>
 </resources>
