@@ -7,6 +7,7 @@ import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PerformanceTier
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReaderAppearance
 import kotlinx.coroutines.flow.SharingStarted
@@ -53,6 +54,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             ReaderTrace.event("book_appearance_cleared", details = "book=$bookId")
         }
     }
+    fun setPerformanceTier(tier: PerformanceTier) {
+        viewModelScope.launch { store.setPerformanceTier(tier) }
+    }
+
     fun saveSensorySettings(settings: SensorySettings) {
         viewModelScope.launch { store.saveSensorySettings(settings) }
     }
