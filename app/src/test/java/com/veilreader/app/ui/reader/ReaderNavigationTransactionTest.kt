@@ -42,6 +42,24 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun activeTransaction_canBeObservedWithoutConsumingIt() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
+        val transaction = gate.begin("origin", nowElapsedMs = 100L)
+
+        assertTrue(gate.isActive(nowElapsedMs = 500L))
+        assertEquals(transaction.token, gate.consumeSettled(nowElapsedMs = 600L)?.token)
+    }
+
+    @Test
+    fun closeCanCancelFreshTransactionWithoutSettlingIt() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
+        val transaction = gate.begin("origin", nowElapsedMs = 100L)
+
+        assertEquals(transaction.token, gate.cancelActive(nowElapsedMs = 500L)?.token)
+        assertFalse(gate.isActive(nowElapsedMs = 600L))
+    }
+
+    @Test
     fun expiredTransaction_doesNotCaptureLaterUserTurn() {
         val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
         gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
