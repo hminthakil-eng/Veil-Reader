@@ -277,8 +277,14 @@ fun VeilAnimatedTabHost(
 fun VeilBottomDock(
     selected: VeilTab,
     onSelect: (VeilTab) -> Unit,
+    onOpenArchive: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val moreSelected =
+        selected == VeilTab.CASTLE ||
+            selected == VeilTab.PATH ||
+            selected == VeilTab.PROFILE
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -304,16 +310,152 @@ fun VeilBottomDock(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                VeilTab.entries.forEach { tab ->
-                    VeilDockItem(
-                        tab = tab,
-                        selected = selected == tab,
-                        onClick = { onSelect(tab) },
-                        modifier = Modifier.weight(1f)
-                    )
+                VeilPrimaryDockItem(
+                    label = stringResource(R.string.nav_home),
+                    selected = selected == VeilTab.READING,
+                    onClick = { onSelect(VeilTab.READING) },
+                    modifier = Modifier.weight(1f)
+                ) { tint ->
+                    VeilTabIcon(VeilTab.READING, tint = tint, modifier = Modifier.size(21.dp))
+                }
+
+                VeilPrimaryDockItem(
+                    label = stringResource(R.string.nav_library),
+                    selected = selected == VeilTab.LIBRARY,
+                    onClick = { onSelect(VeilTab.LIBRARY) },
+                    modifier = Modifier.weight(1f)
+                ) { tint ->
+                    VeilTabIcon(VeilTab.LIBRARY, tint = tint, modifier = Modifier.size(21.dp))
+                }
+
+                VeilPrimaryDockItem(
+                    label = stringResource(R.string.nav_notebook),
+                    selected = false,
+                    onClick = onOpenArchive,
+                    modifier = Modifier.weight(1f)
+                ) { tint ->
+                    VeilNotebookIcon(tint = tint, modifier = Modifier.size(21.dp))
+                }
+
+                VeilPrimaryDockItem(
+                    label = stringResource(R.string.nav_more),
+                    selected = moreSelected,
+                    onClick = { onSelect(VeilTab.PROFILE) },
+                    modifier = Modifier.weight(1f)
+                ) { tint ->
+                    VeilMoreIcon(tint = tint, modifier = Modifier.size(21.dp))
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun VeilPrimaryDockItem(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: @Composable (Color) -> Unit
+) {
+    val foreground = if (selected) {
+        VeilPalette.Brass
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
+    Column(
+        modifier = modifier
+            .heightIn(min = 52.dp)
+            .clip(RoundedCornerShape(2.dp))
+            .selectable(
+                selected = selected,
+                role = Role.Tab,
+                onClick = onClick
+            )
+            .padding(horizontal = 2.dp, vertical = 7.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        icon(foreground)
+        Spacer(Modifier.height(3.dp))
+        Text(
+            label,
+            style = veilContentTextStyle(
+                MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 9.5.sp,
+                    letterSpacing = 0.48.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                label
+            ),
+            color = foreground,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.height(3.dp))
+        Box(
+            Modifier
+                .width(18.dp)
+                .height(1.dp)
+                .background(
+                    if (selected) VeilPalette.Brass.copy(alpha = 0.86f)
+                    else Color.Transparent
+                )
+        )
+    }
+}
+
+@Composable
+private fun VeilNotebookIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val stroke = Stroke(
+            width = 1.45.dp.toPx(),
+            cap = StrokeCap.Round,
+            join = StrokeJoin.Round
+        )
+        val w = size.width
+        val h = size.height
+        val left = Path().apply {
+            moveTo(w * 0.12f, h * 0.22f)
+            quadraticTo(w * 0.32f, h * 0.17f, w * 0.50f, h * 0.31f)
+            lineTo(w * 0.50f, h * 0.82f)
+            quadraticTo(w * 0.31f, h * 0.68f, w * 0.12f, h * 0.73f)
+            close()
+        }
+        val right = Path().apply {
+            moveTo(w * 0.88f, h * 0.22f)
+            quadraticTo(w * 0.68f, h * 0.17f, w * 0.50f, h * 0.31f)
+            lineTo(w * 0.50f, h * 0.82f)
+            quadraticTo(w * 0.69f, h * 0.68f, w * 0.88f, h * 0.73f)
+            close()
+        }
+        drawPath(left, tint, style = stroke)
+        drawPath(right, tint, style = stroke)
+        drawLine(
+            tint.copy(alpha = 0.72f),
+            Offset(w * 0.50f, h * 0.31f),
+            Offset(w * 0.50f, h * 0.82f),
+            stroke.width
+        )
+    }
+}
+
+@Composable
+private fun VeilMoreIcon(
+    tint: Color,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val radius = size.minDimension * 0.075f
+        val y = size.height * 0.50f
+        drawCircle(tint, radius, Offset(size.width * 0.24f, y))
+        drawCircle(tint, radius, Offset(size.width * 0.50f, y))
+        drawCircle(tint, radius, Offset(size.width * 0.76f, y))
     }
 }
 
@@ -696,4 +838,3 @@ private fun VeilTabIcon(
         }
     }
 }
-
