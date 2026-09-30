@@ -2988,6 +2988,14 @@ private fun BookLibraryTile(
         book.title
     )
     val detailsLabel = stringResource(R.string.library_book_details_semantics, book.title)
+    val artifact = bookArtifactState(book, memory = artifactMemory)
+    val registrationColor = when {
+        book.finished -> VeilPalette.Brass
+        book.favorite -> VeilPalette.MoonCrimson
+        artifact.recentlyOpened -> VeilPalette.Spirit
+        book.progress > 0f -> VeilPalette.Mist
+        else -> VeilPalette.BorderDark
+    }
 
     Column(
         Modifier
@@ -2999,33 +3007,79 @@ private fun BookLibraryTile(
             ),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        BookCover(
-            title = book.title,
-            subtitle = book.author,
-            imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book, memory = artifactMemory),
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.69f)
-        )
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            BookCover(
+                title = book.title,
+                subtitle = book.author,
+                imagePath = book.coverCachePath,
+                artifact = artifact,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(0.69f)
+            )
+
+            Canvas(
+                Modifier
+                    .matchParentSize()
+                    .padding(3.dp)
+            ) {
+                drawLine(
+                    color = VeilPalette.Brass.copy(alpha = 0.24f),
+                    start = Offset(0f, size.height),
+                    end = Offset(size.width, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+                drawLine(
+                    color = registrationColor.copy(alpha = 0.76f),
+                    start = Offset(0f, size.height * 0.62f),
+                    end = Offset(0f, size.height),
+                    strokeWidth = 2.dp.toPx()
+                )
+                if (book.favorite) {
+                    drawCircle(
+                        color = VeilPalette.Ink.copy(alpha = 0.72f),
+                        radius = 5.2.dp.toPx(),
+                        center = Offset(size.width - 8.dp.toPx(), 8.dp.toPx())
+                    )
+                    drawCircle(
+                        color = VeilPalette.MoonCrimson.copy(alpha = 0.90f),
+                        radius = 3.4.dp.toPx(),
+                        center = Offset(size.width - 8.dp.toPx(), 8.dp.toPx())
+                    )
+                }
+            }
+        }
 
         Text(
             book.title,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
+            color = VeilPalette.Moon,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
 
         Text(
             book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = VeilPalette.Mist.copy(alpha = 0.78f),
             style = MaterialTheme.typography.labelMedium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
 
         ArchiveDepthMark(archiveMemory)
+
+        if (book.progress > 0f && !book.finished) {
+            LinearProgressIndicator(
+                progress = { book.progress.coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = VeilPalette.Brass,
+                trackColor = VeilPalette.BorderDark.copy(alpha = 0.42f),
+                drawStopIndicator = {}
+            )
+        }
 
         Row(
             Modifier.fillMaxWidth(),
@@ -3034,21 +3088,24 @@ private fun BookLibraryTile(
             Text(
                 when {
                     book.finished -> stringResource(R.string.book_detail_finished)
-                    book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
+                    book.progress > 0f -> stringResource(
+                        R.string.book_detail_percent_read_text,
+                        formatPercent(book.progress.coerceIn(0f, 1f))
+                    )
                     else -> book.format.name
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass.copy(alpha = 0.88f),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             IconButton(
                 onClick = onFavorite,
                 modifier = Modifier
                     .size(48.dp)
-                    .semantics {
-                        contentDescription = favoriteLabel
-                    }
+                    .semantics { contentDescription = favoriteLabel }
             ) {
                 FavoriteIcon(book.favorite, Modifier.size(15.dp))
             }
@@ -3057,9 +3114,7 @@ private fun BookLibraryTile(
                 onClick = onDetails,
                 modifier = Modifier
                     .size(48.dp)
-                    .semantics {
-                        contentDescription = detailsLabel
-                    }
+                    .semantics { contentDescription = detailsLabel }
             ) {
                 EllipsisIcon(
                     Modifier.size(15.dp),
@@ -3465,15 +3520,27 @@ private fun LibraryShelvesView(
                     LibrarySectionHeading(
                         eyebrow = group.eyebrow,
                         title = group.title,
-                        trailing = stringResource(R.string.library_group_volume_count, group.books.size)
+                        trailing = stringResource(
+                            R.string.library_group_volume_count,
+                            group.books.size
+                        )
                     )
                     BrassRule(Modifier.fillMaxWidth())
+
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                     ) {
-                        lazyRowItems(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
-                            val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
+                        lazyRowItems(
+                            group.books,
+                            key = { it.id },
+                            contentType = { "shelfBook" }
+                        ) { book ->
+                            val readLabel = stringResource(
+                                R.string.library_read_book_semantics,
+                                book.title
+                            )
+
                             Column(
                                 modifier = Modifier
                                     .width(itemWidthDp.dp)
@@ -3483,18 +3550,29 @@ private fun LibraryShelvesView(
                                     ) { onOpen(book) },
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                BookCover(
-                                    title = book.title,
-                                    subtitle = book.author,
-                                    imagePath = book.coverCachePath,
-                                    artifact = bookArtifactState(
-                                        book,
-                                        memory = artifactMemoryByBookId[book.id]
-                                    ),
-                                    modifier = Modifier
-                                        .width(coverWidthDp.dp)
-                                        .height(coverHeightDp.dp)
-                                )
+                                Box {
+                                    BookCover(
+                                        title = book.title,
+                                        subtitle = book.author,
+                                        imagePath = book.coverCachePath,
+                                        artifact = bookArtifactState(
+                                            book,
+                                            memory = artifactMemoryByBookId[book.id]
+                                        ),
+                                        modifier = Modifier
+                                            .width(coverWidthDp.dp)
+                                            .height(coverHeightDp.dp)
+                                    )
+                                    Canvas(Modifier.matchParentSize()) {
+                                        drawLine(
+                                            color = VeilPalette.Brass.copy(alpha = 0.30f),
+                                            start = Offset(0f, size.height),
+                                            end = Offset(size.width, size.height),
+                                            strokeWidth = 1.dp.toPx()
+                                        )
+                                    }
+                                }
+
                                 Text(
                                     book.title,
                                     style = MaterialTheme.typography.titleSmall,
@@ -3502,22 +3580,35 @@ private fun LibraryShelvesView(
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis
                                 )
+
                                 Text(
                                     when {
-                                        book.finished -> stringResource(R.string.book_detail_finished)
-                                        book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
+                                        book.finished ->
+                                            stringResource(R.string.book_detail_finished)
+                                        book.progress > 0f ->
+                                            stringResource(
+                                                R.string.book_detail_percent_read_text,
+                                                formatPercent(book.progress.coerceIn(0f, 1f))
+                                            )
                                         else -> book.format.name
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = VeilPalette.Brass.copy(alpha = 0.82f),
                                     maxLines = 1
                                 )
+
                                 TextButton(
                                     onClick = { onDetails(book) },
                                     modifier = Modifier.heightIn(min = 48.dp),
-                                    contentPadding = PaddingValues(horizontal = 0.dp)
+                                    contentPadding = PaddingValues(horizontal = 0.dp),
+                                    colors = ButtonDefaults.textButtonColors(
+                                        contentColor = VeilPalette.Mist
+                                    )
                                 ) {
-                                    Text(stringResource(R.string.library_archive_record_button))
+                                    Text(
+                                        stringResource(R.string.library_archive_record_button),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
                                 }
                             }
                         }
@@ -3529,7 +3620,10 @@ private fun LibraryShelvesView(
 }
 
 @Composable
-private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
+private fun ViewModeToggle(
+    mode: LibraryViewMode,
+    onChange: (LibraryViewMode) -> Unit
+) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(2.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -3541,26 +3635,36 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
         ).forEach { (candidate, label) ->
             val active = mode == candidate
             val viewDescription = stringResource(R.string.library_view_semantics, label)
-            TextButton(
-                onClick = { onChange(candidate) },
+
+            Box(
                 modifier = Modifier
                     .heightIn(min = 48.dp)
                     .semantics {
                         contentDescription = viewDescription
                         selected = active
-                    },
-                contentPadding = PaddingValues(horizontal = 9.dp),
-                colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (active) {
+                    }
+                    .clickable(role = Role.Button) { onChange(candidate) }
+                    .padding(horizontal = 10.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(Modifier.matchParentSize()) {
+                    if (active) {
+                        drawLine(
+                            color = VeilPalette.Brass,
+                            start = Offset(0f, size.height - 1.dp.toPx()),
+                            end = Offset(size.width, size.height - 1.dp.toPx()),
+                            strokeWidth = 1.5.dp.toPx()
+                        )
+                    }
+                }
+                Text(
+                    label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.7.sp),
+                    color = if (active) {
                         VeilPalette.Brass
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
-                )
-            ) {
-                Text(
-                    label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.7.sp)
                 )
             }
         }
