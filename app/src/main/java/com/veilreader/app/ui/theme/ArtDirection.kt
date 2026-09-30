@@ -178,7 +178,7 @@ fun Modifier.grayfogAtmosphere(
     )
 
     // Architectural memory: a few enormous arches rather than a decorative tiled pattern.
-    repeat(3) { index ->
+    repeat(scaledDecorativeCount(3, quality.geometryMultiplier, minimumWhenPresent = 1)) { index ->
         val inset = w * (0.08f + index * 0.075f)
         drawArc(
             color = brass.copy(alpha = (0.035f + index * 0.012f) * atmosphere),
@@ -192,7 +192,7 @@ fun Modifier.grayfogAtmosphere(
     }
 
     // Fog strata are intentionally broad; narrow bands read as UI decoration rather than space.
-    repeat(3) { index ->
+    repeat(scaledDecorativeCount(3, quality.geometryMultiplier, minimumWhenPresent = 1)) { index ->
         val y = h * (0.34f + index * 0.21f)
         val bandHeight = h * (0.12f + index * 0.025f)
         drawRect(
@@ -211,7 +211,7 @@ fun Modifier.grayfogAtmosphere(
     }
 
     // Deterministic dust points. They should be felt at rest, not read as particles.
-    repeat(14) { index ->
+    repeat(scaledDecorativeCount(14, quality.particleMultiplier, minimumWhenPresent = 2)) { index ->
         val xUnit = ((index * 37 + seed * 11 + 17) % 101) / 100f
         val yUnit = ((index * 61 + seed * 7 + 29) % 103) / 102f
         val radius = if (index % 4 == 0) 1.15.dp.toPx() else 0.65.dp.toPx()
