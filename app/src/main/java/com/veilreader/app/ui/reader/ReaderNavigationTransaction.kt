@@ -72,6 +72,6 @@ internal class ReaderNavigationTransactionGate(
     }
 
     companion object {
-        const val DEFAULT_TIMEOUT_MS = 1_500L
+        const val DEFAULT_TIMEOUT_MS = 3_000L
     }
 }
