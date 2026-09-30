@@ -66,6 +66,7 @@ import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 
@@ -105,6 +106,8 @@ fun SettingsScreen(
     }
 
     val appearance = appearanceDraft
+    val highContrast = LocalVeilHighContrast.current
+    val shellAccent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
     val context = LocalContext.current
@@ -134,7 +137,7 @@ fun SettingsScreen(
             contentDescription = null,
             contentScale = ContentScale.Crop,
             alignment = Alignment.TopCenter,
-            alpha = 0.18f,
+            alpha = if (highContrast) 0.07f else 0.18f,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(300.dp)
@@ -145,11 +148,19 @@ fun SettingsScreen(
                 .height(330.dp)
                 .background(
                     Brush.verticalGradient(
-                        listOf(
-                            VeilPalette.Ink.copy(alpha = 0.16f),
-                            VeilPalette.Ink.copy(alpha = 0.62f),
-                            VeilPalette.Ink
-                        )
+                        if (highContrast) {
+                            listOf(
+                                MaterialTheme.colorScheme.background.copy(alpha = 0.18f),
+                                MaterialTheme.colorScheme.background.copy(alpha = 0.76f),
+                                MaterialTheme.colorScheme.background
+                            )
+                        } else {
+                            listOf(
+                                VeilPalette.Ink.copy(alpha = 0.16f),
+                                VeilPalette.Ink.copy(alpha = 0.62f),
+                                VeilPalette.Ink
+                            )
+                        }
                     )
                 )
         )
@@ -175,7 +186,7 @@ fun SettingsScreen(
             Text(
                 stringResource(R.string.settings_eyebrow),
                 style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass
+                color = shellAccent
             )
             Text(
                 stringResource(R.string.settings_heading),
