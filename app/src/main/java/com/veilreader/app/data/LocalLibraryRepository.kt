@@ -77,6 +77,7 @@ class LocalLibraryRepository internal constructor(
     private val progressFlushJobs = mutableMapOf<String, Job>()
     private val readerProgressEpochByBook = mutableMapOf<String, Long>()
     private val activeReaderProgressWriters = mutableMapOf<String, ReaderProgressWriterLease>()
+    private val latestReaderProgressOrderByBook = mutableMapOf<String, ReaderProgressWriteOrder>()
     private val pendingReadingSessions = mutableMapOf<String, ReadingSessionSnapshot>()
     private val sessionFlushJobs = mutableMapOf<String, Job>()
 
@@ -405,6 +406,25 @@ class LocalLibraryRepository internal constructor(
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
 
+            val order = ReaderProgressWriteOrder(lease.epoch, sequence)
+            val latestAccepted = latestReaderProgressOrderByBook[lease.bookId]
+            if (
+                latestAccepted != null &&
+                !shouldReplacePendingProgress(
+                    current = latestAccepted,
+                    incoming = order
+                )
+            ) {
+                ReaderTrace.event(
+                    "locator_save_rejected_out_of_order",
+                    bookId = lease.bookId,
+                    sessionId = lease.sessionId,
+                    details = "latest=$latestAccepted incoming=$order"
+                )
+                return@synchronized ReaderProgressSaveOutcome(accepted = false)
+            }
+            latestReaderProgressOrderByBook[lease.bookId] = order
+
             val newlyFinished = saveProgressLocked(
                 id = lease.bookId,
                 progression = progression,
@@ -412,7 +432,7 @@ class LocalLibraryRepository internal constructor(
                 traceSequence = sequence,
                 completionSessionSnapshot = completionSessionSnapshot,
                 nowEpochMs = nowEpochMs,
-                order = ReaderProgressWriteOrder(lease.epoch, sequence)
+                order = order
             )
             ReaderProgressSaveOutcome(
                 accepted = true,
@@ -896,6 +916,7 @@ class LocalLibraryRepository internal constructor(
             pendingProgress.clear()
             activeReaderProgressWriters.clear()
             readerProgressEpochByBook.clear()
+            latestReaderProgressOrderByBook.clear()
         }
     }
 
