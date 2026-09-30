@@ -38,6 +38,7 @@ data class MangaWorkMergeEntity(
     val targetBookId: String,
     val createdAtEpochMs: Long,
     val receiptVersion: Int = 1,
+    val targetOriginalChapterCount: Int,
     val targetBookProgress: Float,
     val targetBookFinished: Boolean,
     val targetBookLastOpenedAtEpochMs: Long,
@@ -52,6 +53,7 @@ data class MangaWorkMergeEntity(
         require(targetBookId.isNotBlank())
         require(createdAtEpochMs >= 0L)
         require(receiptVersion >= 1)
+        require(targetOriginalChapterCount > 0)
         require(targetBookProgress.isFinite() && targetBookProgress in 0f..1f)
         require(targetBookLastOpenedAtEpochMs >= 0L)
         require(targetProgressPageIndex == null || targetProgressPageIndex >= 0)
