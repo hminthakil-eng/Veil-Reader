@@ -223,6 +223,133 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     }
 
     @Test
+    fun chapterManagementPreservesIdentityReordersProgressAndDeletesSafely() = runBlocking {
+        val firstArchive = testArchive("Manage ch 1.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val book = coordinator.import(Uri.fromFile(firstArchive))
+            .getOrThrow()
+            .book
+        val secondArchive = testArchive("Manage ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val thirdArchive = testArchive("Manage ch 3.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        coordinator.appendChapters(
+            bookId = book.id,
+            uris = listOf(Uri.fromFile(secondArchive), Uri.fromFile(thirdArchive))
+        ).getOrThrow()
+
+        val original = db.mangaCatalog().listChapters(book.id)
+        val second = original.single { it.readingOrder == 1 }
+        val third = original.single { it.readingOrder == 2 }
+        val secondCacheKey = second.cacheKey
+        val secondSource = db.mangaCatalog().listChapterSources(second.id).single()
+        val secondArchiveFile = requireNotNull(
+            coordinator.resolveLocalArchiveFile(
+                book = book,
+                chapterKey = secondSource.chapterKey,
+                readingOrder = second.readingOrder
+            )
+        )
+        assertTrue(secondArchiveFile.isFile)
+
+        coordinator.renameChapter(
+            bookId = book.id,
+            chapterId = second.id,
+            title = "The Gray Fog"
+        ).getOrThrow()
+
+        val renamed = requireNotNull(db.mangaCatalog().findChapter(second.id))
+        assertEquals("The Gray Fog", renamed.title)
+        assertEquals(secondCacheKey, renamed.cacheKey)
+        assertEquals(
+            secondSource.chapterKey,
+            db.mangaCatalog().listChapterSources(second.id).single().chapterKey
+        )
+        assertTrue(File(coordinator.cacheRoot, renamed.cacheKey).isDirectory)
+
+        val thirdSource = db.mangaCatalog().listChapterSources(third.id).single()
+        val progressStore = RoomMangaProgressStore(db)
+        progressStore.save(
+            MangaReadingProgress(
+                mangaId = CanonicalMangaId(book.id),
+                chapter = MangaChapterAnchor(
+                    volume = third.volume,
+                    number = third.number,
+                    languageTag = third.languageTag,
+                    normalizedTitle = third.normalizedTitle,
+                    providerChapterKeyHint = thirdSource.chapterKey
+                ),
+                pageIndex = 0,
+                pageCount = 2,
+                chapterProgression = 0.5,
+                updatedAtEpochMs = 1_111L
+            )
+        )
+        assertEquals(
+            (2.5 / 3.0).toFloat(),
+            requireNotNull(db.books().findEntity(book.id)).progress,
+            0.000001f
+        )
+
+        assertEquals(
+            1,
+            coordinator.moveChapter(
+                bookId = book.id,
+                chapterId = third.id,
+                direction = -1
+            ).getOrThrow()
+        )
+        val reordered = db.mangaCatalog().listChapters(book.id)
+        assertEquals(
+            listOf(book.title, "Manage ch 3", "The Gray Fog"),
+            reordered.map { it.normalizedTitle }
+        )
+        assertEquals(
+            0.5f,
+            requireNotNull(db.books().findEntity(book.id)).progress,
+            0.000001f
+        )
+        assertFalse(requireNotNull(db.books().findEntity(book.id)).finished)
+
+        coordinator.deleteChapter(
+            bookId = book.id,
+            chapterId = second.id
+        ).getOrThrow()
+        assertFalse(secondArchiveFile.exists())
+        assertFalse(File(coordinator.cacheRoot, secondCacheKey).exists())
+
+        val afterNonCurrentDelete = db.mangaCatalog().listChapters(book.id)
+        assertEquals(listOf(0, 1), afterNonCurrentDelete.map { it.readingOrder })
+        assertEquals(
+            0.75f,
+            requireNotNull(db.books().findEntity(book.id)).progress,
+            0.000001f
+        )
+
+        coordinator.deleteChapter(
+            bookId = book.id,
+            chapterId = third.id
+        ).getOrThrow()
+
+        val finalChapters = db.mangaCatalog().listChapters(book.id)
+        assertEquals(1, finalChapters.size)
+        assertEquals(0, finalChapters.single().readingOrder)
+
+        val fallbackProgress = requireNotNull(
+            progressStore.load(CanonicalMangaId(book.id))
+        )
+        assertEquals(1.0, fallbackProgress.chapterProgression, 0.000001)
+        assertEquals(1f, requireNotNull(db.books().findEntity(book.id)).progress, 0.000001f)
+        assertTrue(requireNotNull(db.books().findEntity(book.id)).finished)
+    }
+
+    @Test
     fun derivedCacheCanBeClearedAndSelfHealedWithoutLosingProgress() = runBlocking {
         val firstArchive = testArchive("cache ch 1.cbz") {
             addPng("001.png")
