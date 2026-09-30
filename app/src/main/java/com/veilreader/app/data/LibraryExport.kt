@@ -3,6 +3,9 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.manga.MangaLocalImportCoordinator
+import com.veilreader.app.data.manga.MangaLocalRestorePoint
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
@@ -32,6 +35,11 @@ import org.json.JSONObject
 
 /** User-initiated local backup/export. No server or account is involved. */
 class LibraryExport(private val context: Context, private val library: LocalLibraryRepository) {
+    private val database = VeilDatabase.get(context.applicationContext)
+    private val mangaImporter by lazy {
+        MangaLocalImportCoordinator(context.applicationContext, library, database)
+    }
+
     suspend fun writeNotebook(destination: Uri) {
         val snapshot = library.snapshot()
         val books = snapshot.books.associateBy { it.id }
@@ -58,6 +66,7 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
 
     suspend fun writeBackup(destination: Uri) {
         val snapshot = library.snapshot()
+        val mangaProgress = captureMangaRestorePoints(snapshot.books)
         val gamePrefs = preferencesToJson(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE))
         withContext(Dispatchers.IO) {
             val files = snapshot.books.filter { it.isImported }.mapIndexed { index, book ->
@@ -68,13 +77,18 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
                 require(file.toPath().startsWith(allowed.toPath()) && file.isFile) {
                     "Cannot back up ${book.title}: the imported file is missing."
                 }
-                Triple(book, file, "books/${index + 1}.${book.format.name.lowercase()}")
+                Triple(
+                    book,
+                    file,
+                    "books/" + (index + 1) + "." + backupExtension(book)
+                )
             }
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
-                put("appVersion", "0.8.0")
+                put("appVersion", "0.10.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
+                put("mangaProgress", mangaRestorePointsToJson(mangaProgress))
                 put("gamePreferences", gamePrefs)
                 put("publications", JSONArray().apply {
                     files.forEach { (book, _, path) -> put(JSONObject().apply {
