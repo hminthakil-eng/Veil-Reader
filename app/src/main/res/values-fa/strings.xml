@@ -1206,4 +1206,9 @@
     <string name="notice_manga_chapter_added">فصل %2$d به %1$s اضافه شد.</string>
     <string name="notice_manga_chapter_duplicate">این فایل CBZ از قبل بخشی از %1$s است.</string>
     <string name="notice_manga_chapter_import_failed">افزودن فصل مانگا ممکن نشد.</string>
+    <string name="manga_hub_storage_summary">%1$d فصل · %2$s فایل اصلی · %3$s کش صفحه</string>
+    <string name="manga_hub_clear_cache">آزادسازی کش صفحه</string>
+    <string name="notice_manga_cache_cleared">کش صفحه‌های مانگا پاک شد و هنگام نیاز از فایل‌های محلی CBZ دوباره ساخته می‌شود.</string>
+    <string name="notice_manga_cache_clear_failed">پاک‌کردن کش صفحه‌های مانگا ممکن نشد.</string>
+    <string name="notice_manga_cache_repair_failed">بازسازی صفحه‌های مانگا از فایل‌های محلی CBZ ممکن نشد.</string>
 </resources>
