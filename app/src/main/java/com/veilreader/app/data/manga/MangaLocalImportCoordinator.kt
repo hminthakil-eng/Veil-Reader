@@ -880,39 +880,53 @@ class MangaLocalImportCoordinator(
                     }
                 }
 
-                val imported = ingestor.ingest(
-                    archiveFile = targetArchive.file,
-                    cacheRoot = cacheRoot,
-                    chapterId = offlineId,
-                    anchor = anchor,
-                    originChapterKey = sourceLink.chapterKey,
-                    originSourceId = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
-                )
-                val manifest = when (imported) {
-                    is MangaCbzImportResult.Success -> imported.manifest
-                    is MangaCbzImportResult.Failure ->
-                        throw MangaLocalImportException(imported.reason)
-                }
+                try {
+                    val imported = ingestor.ingest(
+                        archiveFile = targetArchive.file,
+                        cacheRoot = cacheRoot,
+                        chapterId = offlineId,
+                        anchor = anchor,
+                        originChapterKey = sourceLink.chapterKey,
+                        originSourceId = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+                    )
+                    val manifest = when (imported) {
+                        is MangaCbzImportResult.Success -> imported.manifest
+                        is MangaCbzImportResult.Failure ->
+                            throw MangaLocalImportException(imported.reason)
+                    }
 
-                prepared += PreparedMergeCopy(
-                    sourceBookId = sourceBook.id,
-                    sourceChapter = sourceChapter,
-                    sourceChapterKey = sourceLink.chapterKey,
-                    targetChapter = MangaChapterEntity(
-                        id = targetChapterId,
-                        bookId = targetBook.id,
-                        readingOrder = action.targetReadingOrder,
-                        cacheKey = cacheKey,
-                        title = sourceChapter.title,
-                        normalizedTitle = sourceChapter.normalizedTitle,
-                        volume = sourceChapter.volume,
-                        number = sourceChapter.number,
-                        languageTag = sourceChapter.languageTag
-                    ),
-                    targetArchive = targetArchive,
-                    cacheDirectory = cacheDirectory,
-                    manifest = manifest
-                )
+                    prepared += PreparedMergeCopy(
+                        sourceBookId = sourceBook.id,
+                        sourceChapter = sourceChapter,
+                        sourceChapterKey = sourceLink.chapterKey,
+                        targetChapter = MangaChapterEntity(
+                            id = targetChapterId,
+                            bookId = targetBook.id,
+                            readingOrder = action.targetReadingOrder,
+                            cacheKey = cacheKey,
+                            title = sourceChapter.title,
+                            normalizedTitle = sourceChapter.normalizedTitle,
+                            volume = sourceChapter.volume,
+                            number = sourceChapter.number,
+                            languageTag = sourceChapter.languageTag
+                        ),
+                        targetArchive = targetArchive,
+                        cacheDirectory = cacheDirectory,
+                        manifest = manifest
+                    )
+                } catch (error: Throwable) {
+                    withContext(Dispatchers.IO) {
+                        deleteGeneratedChapterDirectory(cacheDirectory)
+                        if (targetArchive.createdByMerge) {
+                            deleteConfinedPublicationFile(targetArchive.file)
+                        }
+                        pruneEmptyMangaCacheParents(listOf(cacheDirectory))
+                        if (targetArchive.createdByMerge) {
+                            pruneEmptyLocalArchiveParents(listOf(targetArchive.file))
+                        }
+                    }
+                    throw error
+                }
             }
 
             val existingTargetIds = database.mangaCatalog()
