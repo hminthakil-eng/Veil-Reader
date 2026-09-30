@@ -271,6 +271,7 @@ fun VeilApp(
     var exporting by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf(false) }
     var isImporting by remember { mutableStateOf(false) }
+    var mangaMutationInProgress by remember { mutableStateOf(false) }
     var mangaStorageRevision by remember { mutableIntStateOf(0) }
     var notice by remember { mutableStateOf<VeilNotice?>(null) }
 
@@ -326,7 +327,7 @@ fun VeilApp(
     }
 
     fun requestOpenBook(book: Book, locatorOverride: String? = null) {
-        if (restoring || isImporting) return
+        if (restoring || mangaMutationInProgress) return
         if (!book.isImported) {
             showNotice(R.string.notice_sample_no_file)
             return
@@ -365,6 +366,7 @@ fun VeilApp(
     fun appendMangaChapter(book: Book, uri: Uri) {
         if (isImporting || restoring || book.format != BookFormat.COMIC) return
         isImporting = true
+        mangaMutationInProgress = true
         scope.launch {
             try {
                 val result = mangaImporter.appendChapter(book.id, uri)
@@ -398,6 +400,7 @@ fun VeilApp(
             } catch (_: Exception) {
                 showNotice(R.string.notice_manga_chapter_import_failed)
             } finally {
+                mangaMutationInProgress = false
                 isImporting = false
             }
         }
@@ -406,6 +409,7 @@ fun VeilApp(
     fun clearMangaDerivedCache(book: Book) {
         if (isImporting || restoring || book.format != BookFormat.COMIC) return
         isImporting = true
+        mangaMutationInProgress = true
         scope.launch {
             try {
                 val result = mangaImporter.clearDerivedCache(book.id)
@@ -423,6 +427,7 @@ fun VeilApp(
             } catch (_: Exception) {
                 showNotice(R.string.notice_manga_cache_clear_failed)
             } finally {
+                mangaMutationInProgress = false
                 isImporting = false
             }
         }
