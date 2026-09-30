@@ -79,6 +79,28 @@ data class MangaLocalBatchImportResult(
     val lastReadingOrder: Int?
 )
 
+data class MangaLocalChapterSummary(
+    val id: String,
+    val readingOrder: Int,
+    val title: String,
+    val volume: Double?,
+    val number: Double?,
+    val languageTag: String?,
+    val pageCount: Int,
+    val sourceBytes: Long,
+    val cacheBytes: Long,
+    val isPrimary: Boolean
+) {
+    init {
+        require(id.isNotBlank())
+        require(readingOrder >= 0)
+        require(title.isNotBlank())
+        require(pageCount >= 0)
+        require(sourceBytes >= 0L)
+        require(cacheBytes >= 0L)
+    }
+}
+
 data class MangaLocalStorageSummary(
     val chapterCount: Int,
     val offlinePageCount: Int,
@@ -103,6 +125,204 @@ class MangaLocalImportCoordinator(
 ) {
     private val appContext = context.applicationContext
     val cacheRoot: File = File(appContext.filesDir, "manga-cache")
+
+    suspend fun listChapterSummaries(
+        bookId: String
+    ): List<MangaLocalChapterSummary> {
+        val book = library.getBook(bookId)
+            ?: return emptyList()
+        if (book.format != BookFormat.COMIC) return emptyList()
+
+        return database.mangaCatalog().listChapters(bookId).map { chapter ->
+            val source = database.mangaCatalog()
+                .listChapterSources(chapter.id)
+                .firstOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+            val archive = source?.let {
+                resolveLocalArchiveFile(book, it.chapterKey, chapter.readingOrder)
+            }
+            val offline = database.mangaOffline().findChapter(chapter.id)
+            val cacheBytes = withContext(Dispatchers.IO) {
+                offline?.pages.orEmpty().sumOf { page ->
+                    File(cacheRoot, page.relativePath)
+                        .takeIf(File::isFile)
+                        ?.length()
+                        ?: 0L
+                }
+            }
+            MangaLocalChapterSummary(
+                id = chapter.id,
+                readingOrder = chapter.readingOrder,
+                title = chapter.title
+                    ?.takeIf(String::isNotBlank)
+                    ?: chapter.normalizedTitle
+                    ?.takeIf(String::isNotBlank)
+                    ?: "Chapter " + (chapter.readingOrder + 1),
+                volume = chapter.volume,
+                number = chapter.number,
+                languageTag = chapter.languageTag,
+                pageCount = offline?.pages?.size ?: 0,
+                sourceBytes = withContext(Dispatchers.IO) {
+                    archive?.takeIf(File::isFile)?.length() ?: 0L
+                },
+                cacheBytes = cacheBytes,
+                isPrimary = chapter.readingOrder == 0
+            )
+        }
+    }
+
+    suspend fun renameChapter(
+        bookId: String,
+        chapterId: String,
+        title: String
+    ): Result<Unit> = runCatching {
+        val clean = title.trim()
+        require(clean.isNotEmpty()) { "Chapter title cannot be empty" }
+        val chapter = database.mangaCatalog().findChapter(chapterId)
+            ?: error("Manga chapter is not present")
+        require(chapter.bookId == bookId) { "Manga chapter belongs to another book" }
+        require(chapter.number != null) {
+            "Renaming an unnumbered chapter would change its offline identity"
+        }
+        check(
+            database.mangaCatalog().updateChapterTitle(
+                chapterId = chapterId,
+                title = clean,
+                normalizedTitle = clean
+            ) == 1
+        ) {
+            "Manga chapter disappeared before rename"
+        }
+    }
+
+    suspend fun moveChapter(
+        bookId: String,
+        chapterId: String,
+        direction: Int
+    ): Result<Int> = runCatching {
+        require(direction == -1 || direction == 1)
+        val chapters = database.mangaCatalog().listChapters(bookId)
+        val current = chapters.firstOrNull { it.id == chapterId }
+            ?: error("Manga chapter is not present")
+        require(current.readingOrder > 0) {
+            "The primary Manga chapter is pinned to reading order 0"
+        }
+        val destinationOrder = current.readingOrder + direction
+        require(destinationOrder > 0 && destinationOrder <= chapters.lastIndex) {
+            "Manga chapter cannot move beyond the managed chapter range"
+        }
+        val neighbor = chapters.firstOrNull { it.readingOrder == destinationOrder }
+            ?: error("Manga chapter ordering is not contiguous")
+        val temporaryOrder = (chapters.maxOfOrNull { it.readingOrder } ?: 0) + 1
+
+        database.withTransaction {
+            check(
+                database.mangaCatalog().updateChapterReadingOrder(
+                    current.id,
+                    temporaryOrder
+                ) == 1
+            )
+            check(
+                database.mangaCatalog().updateChapterReadingOrder(
+                    neighbor.id,
+                    current.readingOrder
+                ) == 1
+            )
+            check(
+                database.mangaCatalog().updateChapterReadingOrder(
+                    current.id,
+                    destinationOrder
+                ) == 1
+            )
+        }
+        recomputeStoredMangaProgress(bookId)
+        destinationOrder
+    }
+
+    suspend fun deleteChapter(
+        bookId: String,
+        chapterId: String
+    ): Result<Unit> = runCatching {
+        val book = library.getBook(bookId)
+            ?: error("Manga Book is not present in the Library")
+        require(book.format == BookFormat.COMIC)
+
+        val chapters = database.mangaCatalog().listChapters(bookId)
+        val target = chapters.firstOrNull { it.id == chapterId }
+            ?: error("Manga chapter is not present")
+        require(target.readingOrder > 0) {
+            "The primary Manga chapter cannot be removed independently"
+        }
+        val source = database.mangaCatalog()
+            .listChapterSources(target.id)
+            .firstOrNull { it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value }
+        val archive = source?.let {
+            resolveLocalArchiveFile(book, it.chapterKey, target.readingOrder)
+        }
+        val cacheDirectory = File(cacheRoot, target.cacheKey)
+        val storedProgress = database.mangaProgress().find(bookId)
+        val deletingCurrent = storedProgress?.chapterId == target.id
+        val fallback = chapters
+            .filter { it.readingOrder < target.readingOrder }
+            .maxByOrNull { it.readingOrder }
+
+        database.withTransaction {
+            database.mangaCatalog().deleteChapter(target.id)
+            chapters
+                .filter { it.readingOrder > target.readingOrder }
+                .sortedBy { it.readingOrder }
+                .forEach { chapter ->
+                    check(
+                        database.mangaCatalog().updateChapterReadingOrder(
+                            chapter.id,
+                            chapter.readingOrder - 1
+                        ) == 1
+                    )
+                }
+        }
+
+        withContext(Dispatchers.IO) {
+            deleteGeneratedChapterDirectory(cacheDirectory)
+            archive?.let(::deleteConfinedPublicationFile)
+            pruneEmptyMangaCacheParents(listOf(cacheDirectory))
+            archive?.let { pruneEmptyLocalArchiveParents(listOf(it)) }
+        }
+
+        if (deletingCurrent && fallback != null) {
+            val fallbackSource = database.mangaCatalog()
+                .listChapterSources(fallback.id)
+                .firstOrNull {
+                    it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                }
+                ?: error("Fallback Manga chapter has no local source")
+            val offline = database.mangaOffline().findChapter(fallback.id)
+            val pageCount = offline?.pages?.size?.takeIf { it > 0 }
+            RoomMangaProgressStore(database).save(
+                com.veilreader.app.manga.library.MangaReadingProgress(
+                    mangaId = CanonicalMangaId(bookId),
+                    chapter = MangaChapterAnchor(
+                        volume = fallback.volume,
+                        number = fallback.number,
+                        languageTag = fallback.languageTag,
+                        normalizedTitle = fallback.normalizedTitle ?: fallback.title,
+                        providerChapterKeyHint = fallbackSource.chapterKey
+                    ),
+                    pageIndex = pageCount?.minus(1)?.coerceAtLeast(0) ?: 0,
+                    pageCount = pageCount,
+                    chapterProgression = 1.0,
+                    updatedAtEpochMs = System.currentTimeMillis()
+                )
+            )
+        } else {
+            recomputeStoredMangaProgress(bookId)
+        }
+    }
+
+    private suspend fun recomputeStoredMangaProgress(bookId: String) {
+        val store = RoomMangaProgressStore(database)
+        store.load(CanonicalMangaId(bookId))?.let { store.save(it) }
+    }
 
     suspend fun storageSummary(bookId: String): MangaLocalStorageSummary {
         val book = library.getBook(bookId)
