@@ -8,7 +8,6 @@ import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReadingSessionTracker
-import java.util.UUID
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,35 +52,66 @@ class ReaderViewModel(
     }
 
     /**
-     * Idempotent for recomposition/configuration changes, but a fresh app-level open request owns a
-     * fresh reading session even when it targets the same book.
+     * Idempotent for recomposition/configuration changes. The app-level open-request id is also the
+     * durable reading-session id, allowing the same logical session to survive process recreation.
      */
-    fun openBook(bookId: String, initialProgress: Float, openInstanceId: String) {
+    suspend fun openBook(bookId: String, initialProgress: Float, openInstanceId: String) {
         if (tracker?.bookId == bookId && this.openInstanceId == openInstanceId) return
         finishCurrentSession()
-        this.openInstanceId = openInstanceId
+
         val nowWall = System.currentTimeMillis()
         val nowElapsed = SystemClock.elapsedRealtime()
-        tracker = ReadingSessionTracker(
-            sessionId = UUID.randomUUID().toString(),
+        val resumeState = library.loadReadingSessionForResume(
+            sessionId = openInstanceId,
+            bookId = bookId
+        )
+        val restoredTracker = resumeState?.let { state ->
+            ReadingSessionTracker.restore(
+                snapshot = state.snapshot,
+                bookId = bookId,
+                startedAtElapsedMs = nowElapsed,
+                notedHighlightIds = state.notedHighlightIds
+            )
+        }
+        val currentTracker = restoredTracker ?: ReadingSessionTracker(
+            sessionId = openInstanceId,
             bookId = bookId,
             startedAtEpochMs = nowWall,
             startedAtElapsedMs = nowElapsed
         )
+
+        this.openInstanceId = openInstanceId
+        tracker = currentTracker
         ReaderTrace.event(
-            "reader_open",
+            if (restoredTracker != null) "reader_session_restored" else "reader_open",
             bookId = bookId,
-            sessionId = tracker?.sessionId,
-            details = "initialProgress=${initialProgress.coerceIn(0f, 1f)} openInstanceId=$openInstanceId"
+            sessionId = currentTracker.sessionId,
+            details = buildString {
+                append("initialProgress=")
+                append(initialProgress.coerceIn(0f, 1f))
+                append(" openInstanceId=")
+                append(openInstanceId)
+                if (restoredTracker != null) {
+                    append(" activeMillis=")
+                    append(currentTracker.activeMillis)
+                    append(" pacedPageTurns=")
+                    append(currentTracker.pacedPageTurns)
+                    append(" highlights=")
+                    append(currentTracker.highlightCount)
+                    append(" notes=")
+                    append(currentTracker.noteCount)
+                }
+            }
         )
         resumed = false
-        uncreditedActiveMillis = 0L
+        uncreditedActiveMillis = currentTracker.activeMillis % ONE_MINUTE_MS
         locatorDeduplicator.reset()
         locatorSequence = 0L
         val startProgress = initialProgress.coerceIn(0f, 1f)
         _uiState.value = ReaderUiState(
             bookId = bookId,
             progress = startProgress,
+            activeMillis = currentTracker.activeMillis,
             sessionStartProgress = startProgress,
             sessionProgressDelta = 0f
         )
