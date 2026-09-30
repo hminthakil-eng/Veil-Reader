@@ -1,10 +1,10 @@
 package com.veilreader.app.data
 
 /**
- * A process-local lease for one logical Reader open request.
+ * A process-local lease for one concrete Reader writer instance.
  *
- * Epoch orders successive owners of the same book even though each Reader session restarts its
- * locator sequence at one.
+ * Session id preserves logical Reader identity while epoch orders successive in-process writers,
+ * including a recreated ViewModel that resumes the same session and restarts locator sequence at one.
  */
 internal data class ReaderProgressWriterLease(
     val bookId: String,
