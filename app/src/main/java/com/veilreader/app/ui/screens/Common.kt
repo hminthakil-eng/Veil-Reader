@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -64,7 +65,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 internal fun rememberVeilPercentFormatter(): (Float) -> String {
-    val locale = LocalContext.current.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
     val formatter = remember(locale) {
         NumberFormat.getPercentInstance(locale).apply {
             minimumFractionDigits = 0
@@ -77,7 +78,7 @@ internal fun rememberVeilPercentFormatter(): (Float) -> String {
 }
 @Composable
 internal fun rememberVeilIntegerFormatter(): (Number) -> String {
-    val locale = LocalContext.current.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
     val formatter = remember(locale) { NumberFormat.getIntegerInstance(locale) }
     return remember(formatter) {
         { value -> formatter.format(value) }
@@ -85,7 +86,7 @@ internal fun rememberVeilIntegerFormatter(): (Number) -> String {
 }
 @Composable
 internal fun rememberVeilNumberFormatter(maximumFractionDigits: Int = 2): (Number) -> String {
-    val locale = LocalContext.current.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
     val formatter = remember(locale, maximumFractionDigits) {
         NumberFormat.getNumberInstance(locale).apply {
             minimumFractionDigits = 0
