@@ -529,8 +529,7 @@ fun BookCover(
     )
 
     val aura = cachedCover?.aura
-        ?: artifact?.let(::fallbackBookAura)
-        ?: VeilPalette.Brass
+        ?: fallbackBookAura(title)
     val auraStrength = when {
         artifact?.recentlyOpened == true -> 0.40f
         artifact?.favorite == true -> 0.30f
@@ -586,7 +585,7 @@ fun BookCover(
         )
 
         artifact?.let {
-            BookArtifactOverlay(
+            BookArtifactLayer(
                 state = it,
                 aura = aura,
                 modifier = Modifier.matchParentSize()
