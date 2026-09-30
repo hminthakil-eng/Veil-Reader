@@ -226,6 +226,14 @@
     <string name="settings_grayfog_title">GRAYFOG SETTINGS</string>
     <string name="settings_reading_room">The Reading Room</string>
     <string name="settings_intro">Reading, appearance, storage, privacy, and backup controls. Everything remains local unless you export it.</string>
+    <string name="settings_quality_title">Visual fidelity</string>
+    <string name="settings_quality_body">Scale atmosphere and decorative complexity without changing reading correctness, typography, touch targets, or saved data.</string>
+    <string name="settings_quality_full">Full</string>
+    <string name="settings_quality_balanced">Balanced</string>
+    <string name="settings_quality_essential">Essential</string>
+    <string name="settings_quality_full_body">Maximum Grayfog depth, geometry, motes, and ornamental detail.</string>
+    <string name="settings_quality_balanced_body">Keeps the authored atmosphere while trimming decorative work for smoother everyday use.</string>
+    <string name="settings_quality_essential_body">Prioritizes reading, battery, and frame stability while preserving the Veil identity.</string>
     <string name="settings_appearance_title">Appearance</string>
     <string name="settings_appearance_body">Choose how the archive shell follows your device.</string>
     <string name="settings_theme_system">System</string>
