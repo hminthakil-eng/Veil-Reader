@@ -780,6 +780,16 @@ class MangaLocalImportCoordinator(
         val plan = preflightLocalMerge(targetBookId, sourceBookIds).getOrThrow()
         val targetBook = library.getBook(targetBookId)
             ?: error("Merge target disappeared before execution")
+        val originalTargetChapters = database.mangaCatalog().listChapters(targetBookId)
+        require(originalTargetChapters.isNotEmpty()) {
+            "Merge target has no persisted Manga chapters"
+        }
+        require(
+            originalTargetChapters.map { it.id } ==
+                plan.splitReceiptSeed.targetOriginalChapterIds
+        ) {
+            "Merge target chapter set changed after preflight"
+        }
         val sourceBooks = sourceBookIds.associateWith { sourceBookId ->
             library.getBook(sourceBookId)
                 ?: error("Merge source disappeared before execution: $sourceBookId")
@@ -954,6 +964,7 @@ class MangaLocalImportCoordinator(
                         targetBookId = targetBook.id,
                         createdAtEpochMs = now,
                         receiptVersion = 1,
+                        targetOriginalChapterCount = originalTargetChapters.size,
                         targetBookProgress = targetBook.progress.coerceIn(0f, 1f),
                         targetBookFinished = targetBook.finished,
                         targetBookLastOpenedAtEpochMs =
@@ -1054,10 +1065,31 @@ class MangaLocalImportCoordinator(
             ?.toDomain()
             ?: error("Merged target Book is missing")
 
+        val allTargetChapters = database.mangaCatalog().listChapters(targetBook.id)
+        require(allTargetChapters.size >= merge.targetOriginalChapterCount) {
+            "Merged target lost an original chapter before split"
+        }
+        val originalOrders = (0 until merge.targetOriginalChapterCount).toSet()
+        require(allTargetChapters.take(merge.targetOriginalChapterCount).map { it.readingOrder } ==
+            originalOrders.toList()) {
+            "Merged target original chapter boundary is corrupted"
+        }
+        merge.targetProgressChapterId?.let { progressChapterId ->
+            val progressChapter = database.mangaCatalog().findChapter(progressChapterId)
+                ?: error("Pre-merge target progress chapter disappeared")
+            require(progressChapter.bookId == targetBook.id)
+            require(progressChapter.readingOrder in originalOrders) {
+                "Pre-merge progress points outside the original target chapter boundary"
+            }
+        }
+
         val copyMappings = receipt.chapters
             .filter {
                 it.disposition == MangaMergeChapterEntity.REBUILD_FROM_SOURCE_ARCHIVE
             }
+        require(copyMappings.all { it.targetReadingOrder >= merge.targetOriginalChapterCount }) {
+            "Merge receipt attempts to classify an original target chapter as a removable copy"
+        }
         val targetCopies = copyMappings.map { mapping ->
             val chapter = database.mangaCatalog().findChapter(mapping.targetChapterId)
                 ?: error("Merged target chapter is missing")
