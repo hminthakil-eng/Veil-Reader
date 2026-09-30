@@ -590,6 +590,23 @@ class LibraryExport(
                     sourceOrder = member.sourceOrder
                 )
             }
+            val expectedSourceCoordinates = buildSet {
+                members.forEach { member ->
+                    database.mangaCatalog()
+                        .listChapters(member.sourceBookId)
+                        .forEach { chapter ->
+                            add(member.sourceBookId to chapter.readingOrder)
+                        }
+                }
+            }
+            require(
+                backup.chapters
+                    .map { it.sourceBookId to it.sourceReadingOrder }
+                    .toSet() == expectedSourceCoordinates
+            ) {
+                "Restored Manga merge receipt does not map every source chapter."
+            }
+
             val mappings = backup.chapters.map { chapter ->
                 val sourceChapter = database.mangaCatalog()
                     .listChapters(chapter.sourceBookId)
@@ -597,6 +614,23 @@ class LibraryExport(
                     ?: error("Restored Manga merge source chapter is missing")
                 val targetChapter = targetChapters[chapter.targetReadingOrder]
                     ?: error("Restored Manga merge target chapter is missing")
+                val sourceKey = database.mangaCatalog()
+                    .listChapterSources(sourceChapter.id)
+                    .singleOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?.chapterKey
+                    ?: error("Restored Manga merge source chapter has no local identity")
+                val targetKey = database.mangaCatalog()
+                    .listChapterSources(targetChapter.id)
+                    .singleOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?.chapterKey
+                    ?: error("Restored Manga merge target chapter has no local identity")
+                require(sourceKey == targetKey) {
+                    "Restored Manga merge maps chapters with different source archives"
+                }
                 MangaMergeChapterEntity(
                     mergeId = backup.id,
                     sourceChapterId = sourceChapter.id,
