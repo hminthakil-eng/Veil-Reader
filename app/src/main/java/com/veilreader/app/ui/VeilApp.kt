@@ -36,6 +36,7 @@ import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
+import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
