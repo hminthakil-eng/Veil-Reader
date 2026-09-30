@@ -275,6 +275,7 @@ abstract class VeilDatabase : RoomDatabase() {
                         targetBookId TEXT NOT NULL,
                         createdAtEpochMs INTEGER NOT NULL,
                         receiptVersion INTEGER NOT NULL,
+                        targetOriginalChapterCount INTEGER NOT NULL,
                         targetBookProgress REAL NOT NULL,
                         targetBookFinished INTEGER NOT NULL,
                         targetBookLastOpenedAtEpochMs INTEGER NOT NULL,
