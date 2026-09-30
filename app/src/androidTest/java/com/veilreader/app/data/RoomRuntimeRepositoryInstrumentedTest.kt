@@ -214,7 +214,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.flushWrites()
 
         val backupFile = File(context.cacheDir, "veil-roundtrip-${UUID.randomUUID()}.zip")
-        val exporter = LibraryExport(context, repository)
+        val exporter = LibraryExport(context, repository, db)
         exporter.writeBackup(Uri.fromFile(backupFile))
         assertTrue(backupFile.isFile && backupFile.length() > 0)
 
@@ -354,7 +354,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
             )
         )
         val backupFile = File(context.cacheDir, "veil-history-${UUID.randomUUID()}.zip")
-        val exporter = LibraryExport(context, repository)
+        val exporter = LibraryExport(context, repository, db)
         exporter.writeBackup(Uri.fromFile(backupFile))
 
         repository.replaceAll(
@@ -470,7 +470,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.flushWrites()
 
         val backupFile = File(context.cacheDir, "veil-pdf-locator-${UUID.randomUUID()}.zip")
-        val exporter = LibraryExport(context, repository)
+        val exporter = LibraryExport(context, repository, db)
         exporter.writeBackup(Uri.fromFile(backupFile))
 
         repository.replaceAll(
