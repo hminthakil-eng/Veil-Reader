@@ -66,6 +66,35 @@ class MangaWorkMergePlannerTest {
     }
 
     @Test
+    fun plan_deduplicatesSameArchiveAcrossTwoSources_toProjectedTargetCopy() {
+        val target = member(
+            "target",
+            chapter("target", "t0", 0, "0".repeat(64), number = 1.0)
+        )
+        val shared = "f".repeat(64)
+        val sourceA = member(
+            "source-a",
+            chapter("source-a", "a0", 0, shared, number = 2.0)
+        )
+        val sourceB = member(
+            "source-b",
+            chapter("source-b", "b0", 0, shared, number = 2.0)
+        )
+
+        val plan = (
+            planner.plan(target, listOf(sourceA, sourceB)) as MangaMergePlanResult.Ready
+            ).plan
+
+        val rebuilt = plan.chapterActions.first()
+        val deduped = plan.chapterActions.last()
+        assertEquals(MangaMergeDisposition.REBUILD_FROM_SOURCE_ARCHIVE, rebuilt.disposition)
+        assertEquals(MangaMergeDisposition.DEDUPLICATE_EXACT_ARCHIVE, deduped.disposition)
+        assertEquals(rebuilt.plannedTargetChapterId, deduped.plannedTargetChapterId)
+        assertEquals(rebuilt.plannedTargetChapterId, deduped.matchedTargetChapterId)
+        assertEquals(rebuilt.targetReadingOrder, deduped.targetReadingOrder)
+    }
+
+    @Test
     fun plan_rejectsDifferentArchivesWithSameChapterIdentity() {
         val target = member(
             "target",
