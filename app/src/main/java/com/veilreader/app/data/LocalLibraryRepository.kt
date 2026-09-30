@@ -205,6 +205,36 @@ class LocalLibraryRepository internal constructor(
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
 
     /**
+     * Permanently removes one imported publication after all queued reader/session writes reach
+     * Room. Reading sessions intentionally survive as historical records with a null bookId;
+     * book-owned annotations, cycles, milestones and format extensions follow database cascades.
+     */
+    suspend fun deleteImportedBook(bookId: String): Book? {
+        if (bookId.isBlank()) return null
+
+        flushWrites()
+        val deleted = orderedWrite {
+            val stored = database.books().findWithCollections(bookId)?.toDomain()
+                ?: return@orderedWrite null
+            database.books().deleteById(bookId)
+            stored
+        } ?: return null
+
+        _books.value = _books.value.filterNot { it.id == bookId }
+        _highlights.value = _highlights.value.filterNot { it.bookId == bookId }
+        _bookmarks.value = _bookmarks.value.filterNot { it.bookId == bookId }
+        _readingCycles.value = _readingCycles.value.filterNot { it.bookId == bookId }
+        _passageVisits.value = _passageVisits.value.filterNot { it.bookId == bookId }
+        _readingMilestones.value = _readingMilestones.value.filterNot { it.bookId == bookId }
+        _readingSessions.value = _readingSessions.value.map { session ->
+            if (session.bookId == bookId) session.copy(bookId = null) else session
+        }
+
+        discardImportedArtifacts(deleted)
+        return deleted
+    }
+
+    /**
      * Compensating rollback for a newly committed import when a format-specific post-commit step
      * fails. The Book row is the persistence owner, so foreign-key cascades remove dependent format
      * state before the app-private publication file is deleted.
