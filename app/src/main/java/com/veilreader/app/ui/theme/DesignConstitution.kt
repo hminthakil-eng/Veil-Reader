@@ -126,7 +126,7 @@ fun thresholdLayoutPolicyFor(
         VeilAdaptiveClass.COMPACT -> VeilThresholdLayoutPolicy(
             contentMaxWidthDp = 860f,
             horizontalPaddingDp = 16f,
-            headerHeightDp = 252f,
+            headerHeightDp = 282f,
             heroCoverWidthDp = 96f,
             heroCoverHeightDp = 142f,
             recentItemWidthDp = 118f,
@@ -136,7 +136,7 @@ fun thresholdLayoutPolicyFor(
         VeilAdaptiveClass.WIDE -> VeilThresholdLayoutPolicy(
             contentMaxWidthDp = 920f,
             horizontalPaddingDp = 20f,
-            headerHeightDp = 292f,
+            headerHeightDp = 320f,
             heroCoverWidthDp = 118f,
             heroCoverHeightDp = 174f,
             recentItemWidthDp = 132f,
@@ -146,7 +146,7 @@ fun thresholdLayoutPolicyFor(
         VeilAdaptiveClass.LARGE -> VeilThresholdLayoutPolicy(
             contentMaxWidthDp = 980f,
             horizontalPaddingDp = 28f,
-            headerHeightDp = 316f,
+            headerHeightDp = 348f,
             heroCoverWidthDp = 132f,
             heroCoverHeightDp = 194f,
             recentItemWidthDp = 146f,
