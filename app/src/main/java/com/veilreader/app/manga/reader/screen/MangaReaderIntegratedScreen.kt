@@ -34,6 +34,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
@@ -74,6 +75,7 @@ import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.io.File
+import kotlinx.coroutines.launch
 
 @Composable
 fun MangaReaderIntegratedScreen(
@@ -116,9 +118,22 @@ fun MangaReaderIntegratedScreen(
     MangaReaderOrientationEffect(state.readerUi.reader.orientationPolicy)
     MangaReaderLifecyclePersistence(readerViewModel)
 
-    BackHandler {
-        readerViewModel.onBackgrounded()
-        onClose()
+    val closeScope = rememberCoroutineScope()
+    var closing by remember { mutableStateOf(false) }
+    fun requestDurableClose() {
+        if (closing) return
+        closing = true
+        closeScope.launch {
+            if (readerViewModel.persistForClose()) {
+                onClose()
+            } else {
+                closing = false
+            }
+        }
+    }
+
+    BackHandler(enabled = !closing) {
+        requestDurableClose()
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -184,10 +199,8 @@ fun MangaReaderIntegratedScreen(
                     direction = state.readerUi.reader.direction,
                     itemIndex = state.readerUi.reader.position.itemIndex,
                     pageCount = state.readerUi.reader.pageCount,
-                    onClose = {
-                        readerViewModel.onBackgrounded()
-                        onClose()
-                    },
+                    closing = closing,
+                    onClose = ::requestDurableClose,
                     onIntent = readerViewModel::onIntent,
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
@@ -293,6 +306,7 @@ private fun MangaReaderChrome(
     direction: MangaPageDirection,
     itemIndex: Int,
     pageCount: Int?,
+    closing: Boolean,
     onClose: () -> Unit,
     onIntent: (MangaReaderUiIntent) -> Unit,
     modifier: Modifier = Modifier
@@ -303,7 +317,9 @@ private fun MangaReaderChrome(
         ?.takeIf { it > 0 }
         ?.let { ((itemIndex + 1).toFloat() / it.toFloat()).coerceIn(0f, 1f) }
         ?: 0f
-    val positionLabel = pageCount
+    val positionLabel = if (closing) {
+        stringResource(R.string.manga_reader_saving_position)
+    } else pageCount
         ?.takeIf { it > 0 }
         ?.let {
             stringResource(
@@ -369,6 +385,7 @@ private fun MangaReaderChrome(
                 }
                 OutlinedButton(
                     onClick = onClose,
+                    enabled = !closing,
                     modifier = Modifier.heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall
                 ) {
@@ -414,6 +431,7 @@ private fun MangaReaderChrome(
                             )
                         )
                     },
+                    enabled = !closing,
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp),
@@ -441,6 +459,7 @@ private fun MangaReaderChrome(
                             )
                         )
                     },
+                    enabled = !closing,
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp),
@@ -641,6 +660,8 @@ private fun MangaReaderScreenMessage.toUiText(): String = when (this) {
         stringResource(R.string.manga_reader_message_series_boundary)
     MangaReaderScreenMessage.ChapterRouteUnavailable ->
         stringResource(R.string.manga_reader_message_route_unavailable)
+    MangaReaderScreenMessage.ProgressSaveFailed ->
+        stringResource(R.string.manga_reader_message_progress_save_failed)
 }
 
 private fun MangaPresentationErrorKind.toUiMessageRes(): Int = when (this) {
