@@ -147,6 +147,7 @@ import org.readium.r2.shared.util.AbsoluteUrl
 @Composable
 fun ReaderScreen(
     opened: OpenedPublication,
+    readerSessionInstanceId: String,
     library: LocalLibraryRepository,
     game: GameRepository,
     readerAppearance: ReaderAppearance,
@@ -593,8 +594,12 @@ fun ReaderScreen(
         )
     }
 
-    LaunchedEffect(opened.book.id) {
-        readerViewModel.openBook(opened.book.id, opened.book.progress)
+    LaunchedEffect(opened.book.id, readerSessionInstanceId) {
+        readerViewModel.openBook(
+            bookId = opened.book.id,
+            initialProgress = opened.book.progress,
+            openInstanceId = readerSessionInstanceId
+        )
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) readerViewModel.onResume()
     }
 
@@ -830,7 +835,7 @@ fun ReaderScreen(
             )
         }
     }
-    val onDisposePublication = remember(opened.book.id) {
+    val onDisposePublication = remember(opened.book.id, readerSessionInstanceId) {
         { opened.close() }
     }
 
