@@ -1186,4 +1186,6 @@
     <string name="manga_reader_page_unknown">صفحهٔ %1$s</string>
     <string name="manga_reader_loading">در حال آماده‌سازی صفحه…</string>
     <string name="manga_reader_error_eyebrow">خوانندهٔ تصویری · وقفه</string>
+    <string name="manga_reader_saving_position">در حال ذخیرهٔ جای مطالعه…</string>
+    <string name="manga_reader_message_progress_save_failed">آخرین جای مطالعه ذخیره نشد. خواننده باز ماند تا بتوانی دوباره تلاش کنی.</string>
 </resources>
