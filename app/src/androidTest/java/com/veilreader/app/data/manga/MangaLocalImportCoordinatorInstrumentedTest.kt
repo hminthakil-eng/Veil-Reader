@@ -287,6 +287,49 @@ class MangaLocalImportCoordinatorInstrumentedTest {
         }
 
     @Test
+    fun deletingMergedTarget_splitsFirst_andPreservesSourceWork() = runBlocking {
+        val targetArchive = testArchive("Delete merge target ch 1.cbz") {
+            addPng("001.png")
+        }
+        val sourceArchive = testArchive("Delete merge source ch 2.cbz") {
+            addPng("001.png")
+        }
+        val target = coordinator.import(Uri.fromFile(targetArchive)).getOrThrow().book
+        val source = coordinator.import(Uri.fromFile(sourceArchive)).getOrThrow().book
+        val sourcePrimary = db.mangaCatalog().listChapters(source.id).single()
+        coordinator.updateChapterMetadata(
+            bookId = source.id,
+            chapterId = sourcePrimary.id,
+            metadata = MangaLocalChapterMetadata(
+                title = "Delete merge source ch 2",
+                number = 2.0
+            )
+        ).getOrThrow()
+        val sourceFile = File(
+            requireNotNull(Uri.parse(requireNotNull(source.sourceUri)).path)
+        )
+
+        coordinator.executeLocalMerge(
+            targetBookId = target.id,
+            sourceBookIds = listOf(source.id)
+        ).getOrThrow()
+        assertEquals(listOf(target.id), db.books().observeVisible().first().map { it.book.id })
+
+        val deleted = coordinator.deleteImportedManga(target.id).getOrThrow()
+
+        assertEquals(target.id, deleted?.id)
+        assertTrue(db.books().findEntity(target.id) == null)
+        assertTrue(db.books().findEntity(source.id) != null)
+        assertTrue(sourceFile.isFile)
+        assertTrue(db.mangaMerges().findForTarget(target.id) == null)
+        assertEquals(
+            listOf(source.id),
+            db.books().observeVisible().first().map { it.book.id }
+        )
+        assertEquals(1, db.mangaCatalog().listChapters(source.id).size)
+    }
+
+    @Test
     fun schema6Backup_restoresActiveMerge_andRemainsSplittable() = runBlocking {
         val targetArchive = testArchive("Backup merge target ch 1.cbz") {
             addPng("001.png")
