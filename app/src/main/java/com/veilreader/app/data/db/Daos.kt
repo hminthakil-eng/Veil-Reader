@@ -91,6 +91,9 @@ interface BookDao {
         finished: Boolean
     ): Int
 
+    @Query("UPDATE books SET finished = 0 WHERE id = :id")
+    suspend fun reopenMangaAfterExtension(id: String): Int
+
     @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)
     @Query("DELETE FROM books") suspend fun deleteAll()
     @Query("SELECT COUNT(*) FROM books") suspend fun count(): Int
