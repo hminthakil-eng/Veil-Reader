@@ -723,6 +723,7 @@ fun VeilApp(
                     VeilBottomDock(
                         selected = route.selectedTab,
                         onSelect = routeViewModel::selectTab,
+                        onOpenArchive = routeViewModel::openArchive,
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -798,4 +799,3 @@ private fun sigilDisplayName(id: String): String = when (id) {
     "first_threshold" -> "First Threshold"
     else -> "Unknown Sigil"
 }
-
