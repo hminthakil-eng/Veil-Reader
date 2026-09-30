@@ -896,13 +896,13 @@ fun ReaderScreen(
             ReaderBackDisposition.CANCEL_PAPER -> {
                 val restored = paperInputListener?.cancelPendingTurn() == true
                 if (!restored && paperCurlState.active) {
-                    paperCurlState.clear()
+                    paperCurlState.clearImmediately()
                 }
             }
             ReaderBackDisposition.CANCEL_SLIDE -> {
                 val restored = slideInputListener?.cancelPendingTurn() == true
                 if (!restored && slidePageState.active) {
-                    slidePageState.clear()
+                    slidePageState.clearImmediately()
                 }
             }
             ReaderBackDisposition.CLOSE -> closeReader()
