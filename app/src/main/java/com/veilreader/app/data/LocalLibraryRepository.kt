@@ -75,7 +75,7 @@ class LocalLibraryRepository internal constructor(
     private val coalescingLock = Any()
     private val pendingProgress = mutableMapOf<String, PendingProgressWrite>()
     private val progressFlushJobs = mutableMapOf<String, Job>()
-    private val readerProgressEpochByBook = mutableMapOf<String, Long>()
+    private var nextReaderProgressWriterEpoch = 0L
     private val activeReaderProgressWriters = mutableMapOf<String, ReaderProgressWriterLease>()
     private val latestReaderProgressOrderByBook = mutableMapOf<String, ReaderProgressWriteOrder>()
     private val pendingReadingSessions = mutableMapOf<String, ReadingSessionSnapshot>()
@@ -346,8 +346,7 @@ class LocalLibraryRepository internal constructor(
             progressFlushJobs.remove(bookId)?.cancel()
             pendingProgress.remove(bookId)?.let(::enqueueProgressWrite)
 
-            val nextEpoch = (readerProgressEpochByBook[bookId] ?: 0L) + 1L
-            readerProgressEpochByBook[bookId] = nextEpoch
+            val nextEpoch = ++nextReaderProgressWriterEpoch
             ReaderProgressWriterLease(
                 bookId = bookId,
                 sessionId = sessionId,
@@ -402,6 +401,16 @@ class LocalLibraryRepository internal constructor(
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
 
+            if (sequence <= 0L) {
+                ReaderTrace.event(
+                    "locator_save_rejected_invalid_sequence",
+                    bookId = lease.bookId,
+                    sessionId = lease.sessionId,
+                    details = "epoch=${lease.epoch} seq=$sequence"
+                )
+                return@synchronized ReaderProgressSaveOutcome(accepted = false)
+            }
+
             val order = ReaderProgressWriteOrder(lease.epoch, sequence)
             val latestAccepted = latestReaderProgressOrderByBook[lease.bookId]
             if (
@@ -419,7 +428,6 @@ class LocalLibraryRepository internal constructor(
                 )
                 return@synchronized ReaderProgressSaveOutcome(accepted = false)
             }
-            latestReaderProgressOrderByBook[lease.bookId] = order
 
             val newlyFinished = saveProgressLocked(
                 id = lease.bookId,
@@ -430,6 +438,16 @@ class LocalLibraryRepository internal constructor(
                 nowEpochMs = nowEpochMs,
                 order = order
             )
+            if (newlyFinished == null) {
+                ReaderTrace.event(
+                    "locator_save_rejected_missing_book",
+                    bookId = lease.bookId,
+                    sessionId = lease.sessionId,
+                    details = "epoch=${lease.epoch} seq=$sequence"
+                )
+                return@synchronized ReaderProgressSaveOutcome(accepted = false)
+            }
+            latestReaderProgressOrderByBook[lease.bookId] = order
             ReaderProgressSaveOutcome(
                 accepted = true,
                 newlyFinished = newlyFinished
@@ -464,7 +482,7 @@ class LocalLibraryRepository internal constructor(
                 completionSessionSnapshot = completionSessionSnapshot,
                 nowEpochMs = nowEpochMs,
                 order = null
-            )
+            ) ?: false
         }
 
     private fun saveProgressLocked(
@@ -475,8 +493,8 @@ class LocalLibraryRepository internal constructor(
         completionSessionSnapshot: ReadingSessionSnapshot?,
         nowEpochMs: Long,
         order: ReaderProgressWriteOrder?
-    ): Boolean {
-        val current = getBook(id) ?: return false
+    ): Boolean? {
+        val current = getBook(id) ?: return null
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
             .coerceIn(0.0, 1.0).toFloat()
         val finishedNow = safe >= 0.995f
@@ -919,7 +937,6 @@ class LocalLibraryRepository internal constructor(
             progressFlushJobs.clear()
             pendingProgress.clear()
             activeReaderProgressWriters.clear()
-            readerProgressEpochByBook.clear()
             latestReaderProgressOrderByBook.clear()
         }
     }
