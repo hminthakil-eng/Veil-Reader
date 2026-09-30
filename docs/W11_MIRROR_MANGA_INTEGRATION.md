@@ -80,15 +80,16 @@ The current `ReadiumEngine` accepts EPUB and PDF only. W11 therefore does **not*
 - Backup schema v5 archives every local CBZ chapter plus compact exact Manga progress metadata, including the active chapter reading order; derived page cache/cover/fingerprint are rebuilt on restore.
 - Restore remains compatible with schemas 1/2/3/4 and rollback rebuilds the previous Manga catalog/cache/progress from preserved source publications if the new restore cannot commit.
 - Local Manga titles support ordered multi-CBZ batch import with natural filename ordering, duplicate chapter detection, inferred volume/chapter metadata and one Book identity for the whole work.
-- Manga Hub exposes chapter management without creating a second catalog: rename, reorder among added chapters, guarded deletion, and a pinned primary chapter whose source remains the Book publication authority.
+- Manga Hub exposes chapter management without creating a second catalog: full title/volume/chapter/language editing, reorder among added chapters, guarded deletion, and a pinned primary chapter whose source remains the Book publication authority.
+- Identity-bearing chapter metadata edits migrate the offline cache to the new source-neutral chapter identity, reject collisions, preserve progress/source ownership and roll back to the previous cache identity on failure.
 - Per-title storage accounting separates original CBZ source bytes from generated page-cache bytes; generated cache can be cleared independently and self-heals from local CBZ sources before reader open.
 - Chapter reorder/delete re-computes the cross-product Book progress/finished summary so Library state cannot remain stale after catalog mutations.
 - Derived cover/fingerprint updates use narrow Book-column writes so they cannot overwrite newer Reader progress.
 
 ### Next refinement gates
 
-- Extend chapter metadata editing beyond safe title changes only after volume/number identity migration can atomically move cache ownership.
 - Add whole-series metadata editing and optional grouping heuristics for independently imported CBZ titles without auto-merging ambiguous works.
+- Design a reversible merge/split transaction before exposing any automatic work grouping.
 - Add CBR only after a safe archive strategy is chosen and verified.
 - Add source adapters only behind explicit opt-in and source-health policy.
 - Keep MangaDex/live providers disabled until separately approved.
