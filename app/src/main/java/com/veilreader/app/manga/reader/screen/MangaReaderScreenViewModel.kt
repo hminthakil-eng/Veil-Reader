@@ -23,8 +23,10 @@ import com.veilreader.app.manga.reader.ui.MangaReaderUiEffect
 import com.veilreader.app.manga.reader.ui.MangaReaderUiIntent
 import com.veilreader.app.manga.reader.ui.MangaReaderUiReducer
 import com.veilreader.app.manga.reader.ui.MangaReaderUiState
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,6 +38,7 @@ sealed interface MangaReaderScreenMessage {
     data object PartialOfflineBoundary : MangaReaderScreenMessage
     data object SeriesBoundary : MangaReaderScreenMessage
     data object ChapterRouteUnavailable : MangaReaderScreenMessage
+    data object ProgressSaveFailed : MangaReaderScreenMessage
 }
 
 data class MangaReaderScreenState(
@@ -60,6 +63,7 @@ class MangaReaderScreenViewModel(
         MangaChapterNavigationResolver(session.routes)
     )
     private val generation = AtomicLong(0L)
+    private val durableCloseInProgress = AtomicBoolean(false)
 
     private var loadJob: Job? = null
     private var progressSaveJob: Job? = null
@@ -106,6 +110,7 @@ class MangaReaderScreenViewModel(
     }
 
     fun onIntent(intent: MangaReaderUiIntent) {
+        if (durableCloseInProgress.get()) return
         val current = _state.value
         val reduction = reducer.reduce(current.readerUi, intent)
         _state.value = current.copy(readerUi = reduction.state)
@@ -133,13 +138,49 @@ class MangaReaderScreenViewModel(
 
     fun onBackgrounded() {
         val reader = _state.value.readerUi.reader
+        savedState.save(controller.snapshot(reader))
+        if (durableCloseInProgress.get()) return
+
         progressSaveJob?.cancel()
         if (reader.pageCount != null) {
             enqueueProgressWrite(
                 MangaReaderProgressMapper.toProgress(reader, clock())
             )
         }
+    }
+
+    /**
+     * Close gate: the screen must not disappear until the latest known position is durably written.
+     * A failed write keeps the reader open and surfaces a calm retryable notice.
+     */
+    suspend fun persistForClose(): Boolean {
+        if (!durableCloseInProgress.compareAndSet(false, true)) return false
+
+        val reader = _state.value.readerUi.reader
         savedState.save(controller.snapshot(reader))
+        progressSaveJob?.cancelAndJoin()
+
+        if (reader.pageCount == null) {
+            return true
+        }
+
+        val latest = MangaReaderProgressMapper.toProgress(reader, clock())
+        val previous = progressWriteJob
+        previous?.join()
+
+        return try {
+            progressStore.save(latest)
+            true
+        } catch (cancelled: CancellationException) {
+            durableCloseInProgress.set(false)
+            throw cancelled
+        } catch (_: Exception) {
+            durableCloseInProgress.set(false)
+            _state.value = _state.value.copy(
+                message = MangaReaderScreenMessage.ProgressSaveFailed
+            )
+            false
+        }
     }
 
     private suspend fun restorePersistentProgress() {
@@ -337,7 +378,17 @@ class MangaReaderScreenViewModel(
         val previous = progressWriteJob
         progressWriteJob = viewModelScope.launch {
             previous?.join()
-            progressStore.save(progress)
+            try {
+                progressStore.save(progress)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                if (!durableCloseInProgress.get()) {
+                    _state.value = _state.value.copy(
+                        message = MangaReaderScreenMessage.ProgressSaveFailed
+                    )
+                }
+            }
         }
     }
 
