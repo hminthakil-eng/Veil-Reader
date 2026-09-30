@@ -106,6 +106,18 @@ class RoomMangaStoresInstrumentedTest {
         assertEquals(900L, bookSummary.lastOpenedAtEpochMs)
         assertEquals(false, bookSummary.finished)
 
+        store.save(
+            expected.copy(
+                pageIndex = 19,
+                chapterProgression = 1.0,
+                updatedAtEpochMs = 901L
+            )
+        )
+        val finishedSummary = requireNotNull(db.books().findEntity(BOOK_ID))
+        assertEquals(1f, finishedSummary.progress, 0.000001f)
+        assertEquals(901L, finishedSummary.lastOpenedAtEpochMs)
+        assertEquals(true, finishedSummary.finished)
+
         store.delete(MANGA_ID)
         assertNull(store.load(MANGA_ID))
     }
