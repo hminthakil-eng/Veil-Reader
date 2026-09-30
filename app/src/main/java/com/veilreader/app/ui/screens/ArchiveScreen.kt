@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
@@ -17,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -615,24 +617,33 @@ private fun ArchiveRegister(
     echoes: Int,
     capsules: Int
 ) {
-    Row(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilPalette.Archive.copy(alpha = 0.56f))
-            .border(
-                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.74f)),
-                MaterialTheme.shapes.extraSmall
-            )
-            .padding(horizontal = 12.dp, vertical = 9.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
+            .background(VeilPalette.Ink.copy(alpha = 0.14f))
+            .padding(horizontal = 4.dp, vertical = 8.dp)
     ) {
-        ArchiveRegisterStat(stringResource(R.string.archive_notes), notes)
-        ArchiveRegisterStat(stringResource(R.string.archive_passages), highlights)
-        ArchiveRegisterStat(stringResource(R.string.archive_marks), bookmarks)
-        ArchiveRegisterStat(stringResource(R.string.archive_echoes), echoes)
-        ArchiveRegisterStat(stringResource(R.string.archive_sealed), capsules)
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.32f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            ArchiveRegisterStat(stringResource(R.string.archive_notes), notes)
+            ArchiveRegisterStat(stringResource(R.string.archive_passages), highlights)
+            ArchiveRegisterStat(stringResource(R.string.archive_marks), bookmarks)
+            ArchiveRegisterStat(stringResource(R.string.archive_echoes), echoes)
+            ArchiveRegisterStat(stringResource(R.string.archive_sealed), capsules)
+        }
     }
 }
 
@@ -677,43 +688,51 @@ private fun ArchiveSectionTab(
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
-    Surface(
+    Box(
         modifier = modifier
             .heightIn(min = 48.dp)
             .selectable(
                 selected = selected,
                 role = Role.Tab,
                 onClick = onClick
-            ),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.52f)
-        } else {
-            VeilPalette.Ink.copy(alpha = 0.24f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.84f)
-            else VeilPalette.BorderDark.copy(alpha = 0.62f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+            )
+            .background(
+                if (selected) {
+                    VeilPalette.Archive.copy(alpha = 0.22f)
+                } else {
+                    Color.Transparent
+                }
+            )
+            .padding(horizontal = 6.dp, vertical = 5.dp),
+        contentAlignment = Alignment.Center
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = if (selected) {
+                    VeilPalette.Brass
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.42f)
+                },
+                start = Offset(0f, size.height - 1.dp.toPx()),
+                end = Offset(size.width, size.height - 1.dp.toPx()),
+                strokeWidth = if (selected) 1.5.dp.toPx() else 1.dp.toPx()
+            )
+        }
+
         Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(1.dp)
         ) {
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall,
-                color = if (selected) VeilPalette.Moon
+                color = if (selected) VeilPalette.Brass
                 else MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 archiveNumber(count),
                 style = MaterialTheme.typography.labelSmall,
-                color = if (selected) VeilPalette.Brass
+                color = if (selected) VeilPalette.Moon
                 else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
             )
         }
@@ -733,16 +752,33 @@ private fun NotebookHighlightCard(
     recordNumber: Int,
     echoMode: Boolean = false
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.58f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.78f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Archive.copy(alpha = 0.24f))
+            .padding(VeilSpacing.md)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = if (echoMode) {
+                    VeilPalette.Brass.copy(alpha = 0.72f)
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.58f)
+                },
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = if (echoMode) 2.dp.toPx() else 1.dp.toPx()
+            )
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.48f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
         Column(
-            modifier = Modifier.padding(VeilSpacing.md),
+            modifier = Modifier.padding(start = 6.dp),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
             Row(
@@ -964,16 +1000,29 @@ private fun NotebookBookmarkCard(
     onDelete: () -> Unit,
     recordNumber: Int
 ) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.54f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Ink.copy(alpha = 0.18f))
+            .padding(VeilSpacing.md)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.30f),
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.48f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
         Column(
-            modifier = Modifier.padding(VeilSpacing.md),
+            modifier = Modifier.padding(start = 6.dp),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
             Row(
@@ -1041,19 +1090,22 @@ private fun NotebookBookmarkCard(
 
 @Composable
 private fun NotebookEmptyState(title: String, body: String) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Ink.copy(alpha = 0.30f),
-        border = BorderStroke(
-            1.dp,
-            VeilPalette.BorderDark.copy(alpha = 0.60f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Ink.copy(alpha = 0.18f))
+            .padding(VeilSpacing.lg)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.30f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width * 0.28f, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+        }
+
         Column(
-            modifier = Modifier.padding(VeilSpacing.lg),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             Text(
@@ -1064,7 +1116,8 @@ private fun NotebookEmptyState(title: String, body: String) {
             Text(
                 title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
+                fontWeight = FontWeight.SemiBold,
+                color = VeilPalette.Moon
             )
             Text(
                 body,
