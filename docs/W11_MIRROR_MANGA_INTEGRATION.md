@@ -56,6 +56,7 @@ The text Reader remains the reliability baseline. Mirror and Manga must integrat
 - Session adapter rejects provider/source mismatch, providers without page capability, duplicate logical chapters, and missing restore targets before Reader construction.
 - Source-replacement restore uses logical chapter identity rather than provider chapter key.
 - Manga reader chrome/failure copy is localized in English/Persian and presentation errors no longer expose raw exception text.
+- Safe transactional CBZ ingestion foundation: natural page ordering, Veil-owned cache paths, SHA-256 page hashes, zip-bomb limits, staging-directory commit, rollback on failure, and no direct trust in archive paths.
 - Product-level `MangaHubScreen`.
 - Library/Archive entry point.
 - Restorable app route: `manga`.
@@ -69,7 +70,7 @@ The current `ReadiumEngine` accepts EPUB and PDF only. W11 therefore does **not*
 
 - Wire the canonical Manga session adapter between Manga Hub and `MangaReaderIntegratedScreen` once durable catalog/offline facts exist.
 - Add durable Manga catalog/session persistence to the main app data layer.
-- Add local visual-publication ingestion (CBZ first; CBR only after a safe archive strategy).
+- Wire the safe transactional CBZ ingestor into local document picking/catalog persistence; CBR remains deferred until a safe archive strategy exists.
 - Connect offline cache ownership and cleanup to app storage policy.
 - Add Manga-specific cover/series/chapter metadata.
 - Add source adapters only behind explicit opt-in and source-health policy.
