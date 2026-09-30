@@ -74,6 +74,7 @@ fun VeilApp(
     onExternalOpenUriConsumed: () -> Unit = {},
     appSettings: AppSettings = AppSettings(),
     onSetAppThemeMode: (AppThemeMode) -> Unit = {},
+    onSetHighContrastEnabled: (Boolean) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
     onSaveFixedLayoutSpread: (String, ReaderFixedLayoutSpread) -> Unit = { _, _ -> },
     onSaveSensorySettings: (SensorySettings) -> Unit = {}
@@ -608,6 +609,7 @@ fun VeilApp(
                 exporting = exporting,
                 restoring = restoring,
                 onSetAppThemeMode = onSetAppThemeMode,
+                onSetHighContrastEnabled = onSetHighContrastEnabled,
                 onSaveReaderAppearance = onSaveReaderAppearance,
                 onSaveSensorySettings = onSaveSensorySettings,
                 onExportBackup = { exportData(it, true) },
