@@ -55,6 +55,7 @@ import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
 import com.veilreader.app.ui.theme.withVeilTracking
@@ -102,10 +103,23 @@ internal fun rememberVeilNumberFormatter(maximumFractionDigits: Int = 2): (Numbe
 
 
 
+internal fun veilRevealDurationFor(realm: VeilRealm?): Int =
+    when (realm) {
+        VeilRealm.SANCTUARY -> VeilMotion.FUNCTIONAL_ENTER_MS
+        VeilRealm.THRESHOLD,
+        VeilRealm.ARCHIVE -> VeilMotion.FUNCTIONAL_MS
+        VeilRealm.CASTLE,
+        VeilRealm.WORLD,
+        VeilRealm.RITUAL,
+        VeilRealm.SANCTUM,
+        null -> VeilMotion.SPATIAL_MS
+    }
+
 @Composable
 fun VeilReveal(
     delayMillis: Int = 0,
     distance: Dp = 14.dp,
+    realm: VeilRealm? = null,
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit
 ) {
@@ -118,13 +132,15 @@ fun VeilReveal(
         revealed = true
     }
 
+    val revealDuration = veilRevealDurationFor(realm)
+
     val alpha by animateFloatAsState(
         targetValue = if (revealed) 1f else 0f,
         animationSpec = if (reducedMotion) {
             tween(VeilMotion.REDUCED_MOTION_FADE_MS)
         } else {
             tween(
-                durationMillis = VeilMotion.SPATIAL_MS,
+                durationMillis = revealDuration,
                 easing = FastOutSlowInEasing
             )
         },
@@ -139,7 +155,7 @@ fun VeilReveal(
             snap()
         } else {
             tween(
-                durationMillis = VeilMotion.SPATIAL_MS,
+                durationMillis = revealDuration,
                 easing = FastOutSlowInEasing
             )
         },
