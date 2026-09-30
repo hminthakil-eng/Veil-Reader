@@ -1160,7 +1160,8 @@
     <string name="manga_hub_empty_title">هنوز مانگای محلی نداری</string>
     <string name="manga_hub_empty_body">هنوز نشست مانگایی ثبت نشده است. مسیر ورود مانگای محلی و آداپتورهای منبع به همین بخش وصل می‌شوند و مطالعه‌ی تصویری از Reader متنی جدا می‌ماند.</string>
     <string name="manga_hub_open_library">بازگشت به Library</string>
-    <string name="manga_hub_progress">%1$d٪ خوانده‌شده</string>\n    <string name="manga_hub_reader_ready">با خوانندهٔ تصویری اختصاصی Veil باز می‌شود؛ پیشرفت محلی و مالکیت صفحه‌های آفلاین به‌صورت پایدار حفظ می‌شوند.</string>
+    <string name="manga_hub_progress">%1$d٪ خوانده‌شده</string>
+    <string name="manga_hub_reader_ready">با خوانندهٔ تصویری اختصاصی Veil باز می‌شود؛ پیشرفت محلی و مالکیت صفحه‌های آفلاین به‌صورت پایدار حفظ می‌شوند.</string>
 
     <string name="manga_reader_partial_offline_notice">پیش‌نمایش آفلاین · برای بارگیری ادامه دوباره متصل شو</string>
     <string name="manga_reader_retry">تلاش دوباره</string>
