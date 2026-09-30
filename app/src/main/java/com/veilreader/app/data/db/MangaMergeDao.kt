@@ -18,6 +18,11 @@ data class MangaWorkMergeWithMembers(
         parentColumn = "id",
         entityColumn = "mergeId"
     )
+    val originals: List<MangaMergeOriginalChapterEntity>,
+    @Relation(
+        parentColumn = "id",
+        entityColumn = "mergeId"
+    )
     val chapters: List<MangaMergeChapterEntity>
 )
 
@@ -61,6 +66,9 @@ interface MangaMergeDao {
 
     @Upsert
     suspend fun upsertMembers(members: List<MangaMergeMemberEntity>)
+
+    @Upsert
+    suspend fun upsertOriginals(originals: List<MangaMergeOriginalChapterEntity>)
 
     @Upsert
     suspend fun upsertChapters(chapters: List<MangaMergeChapterEntity>)
