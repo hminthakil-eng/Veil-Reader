@@ -124,7 +124,7 @@ fun ReadingNowScreen(
                 .padding(bottom = VeilSpacing.xxl),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
+            VeilReveal(realm = VeilRealm.THRESHOLD, delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
                 Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
                     ThresholdHeader(
                         bookCount = books.size,
@@ -136,7 +136,7 @@ fun ReadingNowScreen(
 
             Spacer(Modifier.height(VeilSpacing.sm))
 
-            VeilReveal(delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
+            VeilReveal(realm = VeilRealm.THRESHOLD, delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
                 Box(
                     Modifier.padding(
                         horizontal = thresholdLayout.horizontalPaddingDp.dp
@@ -158,7 +158,7 @@ fun ReadingNowScreen(
 
             if (snapshot.recent.isNotEmpty()) {
                 Spacer(Modifier.height(VeilSpacing.xl))
-                VeilReveal(delayMillis = 130, modifier = Modifier.fillMaxWidth()) {
+                VeilReveal(realm = VeilRealm.THRESHOLD, delayMillis = 130, modifier = Modifier.fillMaxWidth()) {
                     Box(
                         Modifier.padding(
                             horizontal = thresholdLayout.horizontalPaddingDp.dp
@@ -179,7 +179,7 @@ fun ReadingNowScreen(
 
             thresholdWhisper?.let { whisper ->
                 Spacer(Modifier.height(VeilSpacing.xl))
-                VeilReveal(delayMillis = 170, modifier = Modifier.fillMaxWidth()) {
+                VeilReveal(realm = VeilRealm.THRESHOLD, delayMillis = 170, modifier = Modifier.fillMaxWidth()) {
                     Box(
                         Modifier.padding(
                             horizontal = thresholdLayout.horizontalPaddingDp.dp
@@ -197,7 +197,7 @@ fun ReadingNowScreen(
 
             if (highlights.isNotEmpty()) {
                 Spacer(Modifier.height(VeilSpacing.xl))
-                VeilReveal(delayMillis = 200, modifier = Modifier.fillMaxWidth()) {
+                VeilReveal(realm = VeilRealm.THRESHOLD, delayMillis = 200, modifier = Modifier.fillMaxWidth()) {
                     Box(
                         Modifier.padding(
                             horizontal = thresholdLayout.horizontalPaddingDp.dp
@@ -212,7 +212,7 @@ fun ReadingNowScreen(
             }
 
             Spacer(Modifier.height(VeilSpacing.xl))
-            VeilReveal(delayMillis = 230, modifier = Modifier.fillMaxWidth()) {
+            VeilReveal(realm = VeilRealm.THRESHOLD, delayMillis = 230, modifier = Modifier.fillMaxWidth()) {
                 Box(
                     Modifier.padding(
                         horizontal = thresholdLayout.horizontalPaddingDp.dp
