@@ -13,7 +13,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.veilreader.app.R
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
@@ -28,12 +31,21 @@ import org.readium.r2.shared.publication.Locator
 import org.readium.r2.shared.publication.services.search.isSearchable
 import org.readium.r2.shared.publication.services.search.search
 
-private enum class ReaderNotebookTab(val label: String) {
-    CONTENTS("Contents"),
-    BOOKMARKS("Bookmarks"),
-    NOTES("Notes"),
-    SEARCH("Search")
+private enum class ReaderNotebookTab {
+    CONTENTS,
+    BOOKMARKS,
+    NOTES,
+    SEARCH
 }
+
+@Composable
+private fun readerNotebookTabLabel(tab: ReaderNotebookTab): String =
+    when (tab) {
+        ReaderNotebookTab.CONTENTS -> stringResource(R.string.reader_notebook_tab_contents)
+        ReaderNotebookTab.BOOKMARKS -> stringResource(R.string.reader_notebook_tab_bookmarks)
+        ReaderNotebookTab.NOTES -> stringResource(R.string.reader_notebook_tab_notes)
+        ReaderNotebookTab.SEARCH -> stringResource(R.string.reader_notebook_tab_search)
+    }
 
 /** Reading tools stay in a dismissible sheet, away from the reading surface. */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalReadiumApi::class)
@@ -65,11 +77,11 @@ fun ReaderNotebook(
     var editing by remember { mutableStateOf<Highlight?>(null) }
     var note by remember { mutableStateOf("") }
     var savingNote by remember { mutableStateOf(false) }
-    var noteSaveError by remember { mutableStateOf<String?>(null) }
+    var noteSaveErrorRes by remember { mutableStateOf<Int?>(null) }
     var deleting by remember { mutableStateOf<Highlight?>(null) }
     var bookSearchQuery by remember { mutableStateOf("") }
     var bookSearchResults by remember { mutableStateOf<List<Locator>>(emptyList()) }
-    var bookSearchError by remember { mutableStateOf<String?>(null) }
+    var bookSearchErrorRes by remember { mutableStateOf<Int?>(null) }
     var searchingBook by remember { mutableStateOf(false) }
 
     val chapters = remember(opened.book.id) {
@@ -86,18 +98,18 @@ fun ReaderNotebook(
         if (term.length < 2 || searchingBook) return
         scope.launch {
             searchingBook = true
-            bookSearchError = null
+            bookSearchErrorRes = null
             bookSearchResults = emptyList()
             try {
                 val iterator = opened.publication.search(term)
                 if (iterator == null) {
-                    bookSearchError = "Search is not available for this publication."
+                    bookSearchErrorRes = R.string.reader_notebook_search_unavailable
                     return@launch
                 }
                 try {
                     val found = mutableListOf<Locator>()
                     iterator.forEach { page -> found += page.locators }
-                        .onFailure { error -> bookSearchError = error.message }
+                        .onFailure { bookSearchErrorRes = R.string.reader_notebook_search_failed }
                     bookSearchResults = found
                 } finally {
                     iterator.close()
@@ -105,7 +117,7 @@ fun ReaderNotebook(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                bookSearchError = error.message ?: "Search failed."
+                bookSearchErrorRes = R.string.reader_notebook_search_failed
             } finally {
                 searchingBook = false
             }
@@ -129,13 +141,13 @@ fun ReaderNotebook(
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 Text(
-                    "HIDDEN ARCHIVE · READING TOOLS",
+                    stringResource(R.string.reader_notebook_eyebrow),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
                 BrassRule(Modifier.width(84.dp))
                 Text(
-                    "Reading tools",
+                    stringResource(R.string.reader_notebook_title),
                     style = MaterialTheme.typography.headlineSmall,
                     color = VeilPalette.Moon
                 )
@@ -185,7 +197,7 @@ fun ReaderNotebook(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                item.label.uppercase(),
+                                readerNotebookTabLabel(item).uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = if (selected) VeilPalette.Moon
                                 else VeilPalette.Mist.copy(alpha = 0.74f)
@@ -199,7 +211,7 @@ fun ReaderNotebook(
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Search highlights and notes") },
+                    label = { Text(stringResource(R.string.reader_notebook_search_notes)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)
                 )
@@ -213,7 +225,7 @@ fun ReaderNotebook(
                     OutlinedTextField(
                         value = bookSearchQuery,
                         onValueChange = { bookSearchQuery = it },
-                        label = { Text("Search inside this book") },
+                        label = { Text(stringResource(R.string.reader_notebook_search_book)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -221,7 +233,12 @@ fun ReaderNotebook(
                         onClick = ::runBookSearch,
                         enabled = bookSearchQuery.trim().length >= 2 && !searchingBook,
                         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                    ) { Text(if (searchingBook) "…" else "Find") }
+                    ) {
+                        Text(
+                            if (searchingBook) stringResource(R.string.reader_notebook_searching)
+                            else stringResource(R.string.reader_notebook_find)
+                        )
+                    }
                 }
             }
 
@@ -232,7 +249,9 @@ fun ReaderNotebook(
             ) {
                 when (tab) {
                     ReaderNotebookTab.CONTENTS -> {
-                        if (chapters.isEmpty()) item { Text("This book has no chapter list.") }
+                        if (chapters.isEmpty()) {
+                            item { Text(stringResource(R.string.reader_notebook_no_chapters)) }
+                        }
                         items(chapters) { (link, depth) ->
                             TextButton(
                                 onClick = { onChapter(link) },
@@ -241,14 +260,17 @@ fun ReaderNotebook(
                                     .heightIn(min = 48.dp)
                                     .padding(start = (depth.coerceAtMost(4) * 12).dp)
                             ) {
-                                Text(link.title ?: "Untitled section", modifier = Modifier.fillMaxWidth())
+                                Text(
+                                    link.title ?: stringResource(R.string.reader_notebook_untitled_section),
+                                    modifier = Modifier.fillMaxWidth()
+                                )
                             }
                         }
                     }
 
                     ReaderNotebookTab.BOOKMARKS -> {
                         if (bookmarks.isEmpty()) item {
-                            Text("Save a place using Bookmark in the reader. Your bookmarks will appear here.")
+                            Text(stringResource(R.string.reader_notebook_bookmarks_empty))
                         }
                         items(bookmarks, key = { it.id }) { bookmark ->
                             Surface(
@@ -267,7 +289,7 @@ fun ReaderNotebook(
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
                                     Text(
-                                        "SAVED PLACE",
+                                        stringResource(R.string.reader_notebook_saved_place),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass
                                     )
@@ -283,11 +305,11 @@ fun ReaderNotebook(
                                         TextButton(
                                             onClick = { onGo(bookmark.locatorJson) },
                                             modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text("Return") }
+                                        ) { Text(stringResource(R.string.common_return)) }
                                         TextButton(
                                             onClick = { onDeleteBookmark(bookmark.id) },
                                             modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text("Remove") }
+                                        ) { Text(stringResource(R.string.common_remove)) }
                                     }
                                 }
                             }
@@ -297,8 +319,11 @@ fun ReaderNotebook(
                     ReaderNotebookTab.NOTES -> {
                         if (matchingHighlights.isEmpty()) item {
                             Text(
-                                if (query.isBlank()) "Highlight a passage to start your notebook. EPUB text highlights are supported; PDF bookmarks are available in the Bookmarks tab."
-                                else "No matching highlights or notes."
+                                if (query.isBlank()) {
+                                    stringResource(R.string.reader_notebook_notes_empty)
+                                } else {
+                                    stringResource(R.string.reader_notebook_notes_no_match)
+                                }
                             )
                         }
                         items(matchingHighlights, key = { it.id }) { highlight ->
@@ -332,8 +357,13 @@ fun ReaderNotebook(
                                     if (marginMemory.revisitCount > 0) {
                                         Text(
                                             buildString {
-                                                append("REVISITED ").append(marginMemory.revisitCount)
-                                                append(if (marginMemory.revisitCount == 1) " TIME" else " TIMES")
+                                                append(
+                                                    pluralStringResource(
+                                                        R.plurals.reader_notebook_revisited_times,
+                                                        marginMemory.revisitCount,
+                                                        marginMemory.revisitCount
+                                                    )
+                                                )
                                                 marginMemory.lastViewedLabel?.let {
                                                     append(" · ").append(it)
                                                 }
@@ -343,7 +373,7 @@ fun ReaderNotebook(
                                         )
                                     } else if (marginMemory.bookActivityAfterMark) {
                                         Text(
-                                            "VOLUME ACTIVITY CONTINUED AFTER THIS MARK",
+                                            stringResource(R.string.reader_notebook_volume_activity_continued),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = VeilPalette.Mist.copy(alpha = 0.52f)
                                         )
@@ -366,21 +396,27 @@ fun ReaderNotebook(
                                         TextButton(
                                             onClick = { onGo(highlight.locatorJson) },
                                             modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text("Return to passage") }
+                                        ) { Text(stringResource(R.string.reader_notebook_return_passage)) }
                                         TextButton(
                                             onClick = {
                                                 editing = highlight
                                                 note = highlight.note
-                                                noteSaveError = null
+                                                noteSaveErrorRes = null
                                             },
                                             modifier = Modifier.heightIn(min = 48.dp)
                                         ) {
-                                            Text(if (highlight.note.isBlank()) "Annotate" else "Edit annotation")
+                                            Text(
+                                                if (highlight.note.isBlank()) {
+                                                    stringResource(R.string.reader_notebook_annotate)
+                                                } else {
+                                                    stringResource(R.string.reader_notebook_edit_annotation)
+                                                }
+                                            )
                                         }
                                         TextButton(
                                             onClick = { deleting = highlight },
                                             modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text("Delete") }
+                                        ) { Text(stringResource(R.string.common_delete)) }
                                     }
                                 }
                             }
@@ -388,13 +424,18 @@ fun ReaderNotebook(
                     }
 
                     ReaderNotebookTab.SEARCH -> {
-                        bookSearchError?.let { message ->
-                            item { Text(message, color = MaterialTheme.colorScheme.error) }
-                        }
-                        if (!searchingBook && bookSearchError == null && bookSearchQuery.isNotBlank() && bookSearchResults.isEmpty()) {
+                        bookSearchErrorRes?.let { messageRes ->
                             item {
                                 Text(
-                                    "No matches found in this book.",
+                                    stringResource(messageRes),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                        if (!searchingBook && bookSearchErrorRes == null && bookSearchQuery.isNotBlank() && bookSearchResults.isEmpty()) {
+                            item {
+                                Text(
+                                    stringResource(R.string.reader_notebook_no_search_matches),
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -416,7 +457,7 @@ fun ReaderNotebook(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        "MATCH",
+                                        stringResource(R.string.reader_notebook_match),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = VeilPalette.Brass
                                     )
@@ -428,14 +469,17 @@ fun ReaderNotebook(
                                         )
                                     }
                                     Text(
-                                        searchSnippet(locator),
+                                        searchSnippet(
+                                            locator,
+                                            stringResource(R.string.reader_notebook_search_match_fallback)
+                                        ),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = VeilPalette.Mist.copy(alpha = 0.88f)
                                     )
                                     TextButton(
                                         onClick = { onGo(locator.toJSON().toString()) },
                                         modifier = Modifier.heightIn(min = 48.dp)
-                                    ) { Text("Return to match") }
+                                    ) { Text(stringResource(R.string.reader_notebook_return_match)) }
                                 }
                             }
                         }
@@ -453,19 +497,23 @@ fun ReaderNotebook(
             titleContentColor = VeilPalette.Moon,
             textContentColor = VeilPalette.Mist,
             tonalElevation = 0.dp,
-            title = { Text("Passage note") },
+            title = { Text(stringResource(R.string.reader_notebook_passage_note)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = note,
                         onValueChange = { note = it },
-                        label = { Text("Your thoughts") },
+                        label = { Text(stringResource(R.string.reader_notebook_your_thoughts)) },
                         minLines = 4,
                         maxLines = 8,
                         enabled = !savingNote
                     )
-                    noteSaveError?.let { message ->
-                        Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    noteSaveErrorRes?.let { messageRes ->
+                        Text(
+                            stringResource(messageRes),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
                     }
                 }
             },
@@ -482,16 +530,23 @@ fun ReaderNotebook(
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (error: Exception) {
-                                noteSaveError = error.message ?: "Could not save this note."
+                                noteSaveErrorRes = R.string.reader_notebook_note_save_failed
                             } finally {
                                 savingNote = false
                             }
                         }
                     }
-                ) { Text(if (savingNote) "Saving…" else "Save") }
+                ) {
+                    Text(
+                        if (savingNote) stringResource(R.string.reader_notebook_saving)
+                        else stringResource(R.string.common_save)
+                    )
+                }
             },
             dismissButton = {
-                TextButton(enabled = !savingNote, onClick = { editing = null }) { Text("Cancel") }
+                TextButton(enabled = !savingNote, onClick = { editing = null }) {
+                    Text(stringResource(R.string.common_cancel))
+                }
             }
         )
     }
@@ -504,17 +559,23 @@ fun ReaderNotebook(
             titleContentColor = VeilPalette.Moon,
             textContentColor = VeilPalette.Mist,
             tonalElevation = 0.dp,
-            title = { Text("Delete this highlight?") },
-            text = { Text("Its attached note will also be removed.") },
+            title = { Text(stringResource(R.string.reader_notebook_delete_highlight_title)) },
+            text = { Text(stringResource(R.string.reader_notebook_delete_highlight_body)) },
             confirmButton = {
-                TextButton(onClick = { onDeleteHighlight(highlight.id); deleting = null }) { Text("Delete") }
+                TextButton(onClick = { onDeleteHighlight(highlight.id); deleting = null }) {
+                    Text(stringResource(R.string.common_delete))
+                }
             },
-            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Keep") } }
+            dismissButton = {
+                TextButton(onClick = { deleting = null }) {
+                    Text(stringResource(R.string.common_keep))
+                }
+            }
         )
     }
 }
 
-private fun searchSnippet(locator: Locator): String {
+private fun searchSnippet(locator: Locator, fallback: String): String {
     val before = locator.text.before.orEmpty().replace(Regex("\\s+"), " ").trim().takeLast(100)
     val hit = locator.text.highlight.orEmpty().replace(Regex("\\s+"), " ").trim()
     val after = locator.text.after.orEmpty().replace(Regex("\\s+"), " ").trim().take(100)
@@ -522,5 +583,5 @@ private fun searchSnippet(locator: Locator): String {
         if (before.isNotBlank()) append("…").append(before).append(' ')
         if (hit.isNotBlank()) append(hit)
         if (after.isNotBlank()) append(' ').append(after).append("…")
-    }.ifBlank { locator.title ?: "Search match" }
+    }.ifBlank { locator.title ?: fallback }
 }
