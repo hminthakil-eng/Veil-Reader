@@ -216,6 +216,7 @@ class LocalLibraryRepository internal constructor(
         if (bookId.isBlank()) return null
 
         flushWrites()
+        invalidateReaderProgressOwnership(bookId)
         val deleted = orderedWrite {
             val stored = database.books().findWithCollections(bookId)?.toDomain()
                 ?: return@orderedWrite null
@@ -243,6 +244,7 @@ class LocalLibraryRepository internal constructor(
      * state before the app-private publication file is deleted.
      */
     suspend fun rollbackImportedBook(book: Book) {
+        invalidateReaderProgressOwnership(book.id)
         orderedWrite {
             database.books().deleteById(book.id)
         }
@@ -928,6 +930,19 @@ class LocalLibraryRepository internal constructor(
             progressFlushJobs.clear()
             pendingProgress.values.forEach(::enqueueProgressWrite)
             pendingProgress.clear()
+        }
+    }
+
+    private fun invalidateReaderProgressOwnership(bookId: String) {
+        synchronized(coalescingLock) {
+            progressFlushJobs.remove(bookId)?.cancel()
+            pendingProgress.remove(bookId)
+            activeReaderProgressWriters.remove(bookId)
+            latestReaderProgressOrderByBook.remove(bookId)
+            ReaderTrace.event(
+                "progress_writer_invalidated",
+                bookId = bookId
+            )
         }
     }
 
