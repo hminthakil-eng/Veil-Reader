@@ -19,6 +19,9 @@ The text Reader remains the reliability baseline. Mirror and Manga must integrat
 - Every manifested fragment carries its exact saved locator.
 - Activating a manifested fragment returns through the existing book-open locator path.
 - Deterministic fragment prioritization favors authored notes, then archive resonance.
+- Each Mirror visit keeps the strongest trace first, then uses a deterministic non-repeating session deck for the remaining echoes.
+- Manifested passages use locale-correct quotation punctuation and adaptive typography for long notes.
+- Echo transitions now disperse into restrained ash and coalesce into text-shaped particle bands; Reduced Motion snaps directly to the stable state.
 - Persian/RTL content is preserved as stored text.
 - Reduced-motion and high-contrast policies are respected.
 - Empty state is truthful: Arrodes is silent when no durable trace exists.
@@ -26,9 +29,8 @@ The text Reader remains the reliability baseline. Mirror and Manga must integrat
 
 ### Next refinement gates
 
-- Move from the current restrained native ash field to text-shaped glyph coalescence.
+- Refine the current text-shaped ash coalescence with device-tuned density and optional glyph-mask sampling after profiling.
 - Add the 30-minute ambient resurfacing policy only after lifecycle/battery review.
-- Add deterministic non-repeat rotation across a reading session.
 - Device-tune density for 60/90/120 Hz.
 - Extend exact-return verification across EPUB and PDF device tests.
 
@@ -50,6 +52,10 @@ The text Reader remains the reliability baseline. Mirror and Manga must integrat
 - Source replacement planner.
 - Dedicated screen/view-model stack.
 - Existing Manga unit test suite.
+- Canonical product-session adapter that converts ordered source/offline chapter facts into one Manga reader session without guessing sort order.
+- Session adapter rejects provider/source mismatch, providers without page capability, duplicate logical chapters, and missing restore targets before Reader construction.
+- Source-replacement restore uses logical chapter identity rather than provider chapter key.
+- Manga reader chrome/failure copy is localized in English/Persian and presentation errors no longer expose raw exception text.
 - Product-level `MangaHubScreen`.
 - Library/Archive entry point.
 - Restorable app route: `manga`.
@@ -61,7 +67,7 @@ The current `ReadiumEngine` accepts EPUB and PDF only. W11 therefore does **not*
 
 ### Next refinement gates
 
-- Create the canonical Manga session adapter between Manga Hub and `MangaReaderIntegratedScreen`.
+- Wire the canonical Manga session adapter between Manga Hub and `MangaReaderIntegratedScreen` once durable catalog/offline facts exist.
 - Add durable Manga catalog/session persistence to the main app data layer.
 - Add local visual-publication ingestion (CBZ first; CBR only after a safe archive strategy).
 - Connect offline cache ownership and cleanup to app storage policy.
