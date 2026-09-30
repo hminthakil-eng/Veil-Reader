@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.theme
 
+import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -72,5 +73,41 @@ class DesignSystemTest {
         assertTrue(threshold.authoredImage > 0.80f)
         assertTrue(threshold.ornament < ritual.ornament)
         assertTrue(threshold.motion < ritual.motion)
+    }
+
+    @Test
+    fun `local tracking override stays zero for Arabic script text`() {
+        assertEquals(
+            0.sp,
+            veilTrackingFor(
+                text = "کتابخانه خاکستری",
+                latinTracking = 1.45.sp,
+                scriptGroup = VeilScriptGroup.LATIN
+            )
+        )
+    }
+
+    @Test
+    fun `Persian locale suppresses Latin display tracking too`() {
+        assertEquals(
+            0.sp,
+            veilTrackingFor(
+                text = "GRAYFOG ARCHIVE",
+                latinTracking = 1.45.sp,
+                scriptGroup = VeilScriptGroup.PERSIAN_ARABIC
+            )
+        )
+    }
+
+    @Test
+    fun `Latin locale keeps deliberate Latin tracking`() {
+        assertEquals(
+            1.45.sp,
+            veilTrackingFor(
+                text = "GRAYFOG ARCHIVE",
+                latinTracking = 1.45.sp,
+                scriptGroup = VeilScriptGroup.LATIN
+            )
+        )
     }
 }
