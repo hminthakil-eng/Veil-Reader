@@ -1,5 +1,8 @@
 package com.veilreader.app.ui.screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,7 +27,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
@@ -53,8 +59,10 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 fun MangaHubScreen(
     books: List<Book>,
     onOpenBook: (Book) -> Unit,
+    onAddChapterUri: (Book, Uri) -> Unit,
     onOpenLibrary: () -> Unit,
-    onClose: () -> Unit
+    onClose: () -> Unit,
+    isImporting: Boolean = false
 ) {
     val highContrast = LocalVeilHighContrast.current
     val mangaBooks = remember(books) {
@@ -62,6 +70,19 @@ fun MangaHubScreen(
             .filter { it.format == BookFormat.COMIC }
             .sortedByDescending { maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs) }
     }
+
+    var chapterTargetId by remember { mutableStateOf<String?>(null) }
+    val chapterLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        val target = chapterTargetId
+            ?.let { targetId -> mangaBooks.firstOrNull { it.id == targetId } }
+        chapterTargetId = null
+        if (uri != null && target != null) {
+            onAddChapterUri(target, uri)
+        }
+    }
+
 
     LazyColumn(
         modifier = Modifier
@@ -258,21 +279,46 @@ fun MangaHubScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            Button(
-                                onClick = { onOpenBook(book) },
-                                modifier = Modifier.heightIn(min = 48.dp)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                             ) {
-                                Text(
-                                    stringResource(
-                                        if (progress > 0f && !book.finished) {
-                                            R.string.manga_hub_continue
-                                        } else if (book.finished) {
-                                            R.string.manga_hub_read_again
-                                        } else {
-                                            R.string.manga_hub_start
-                                        }
+                                Button(
+                                    onClick = { onOpenBook(book) },
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp)
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            if (progress > 0f && !book.finished) {
+                                                R.string.manga_hub_continue
+                                            } else if (book.finished) {
+                                                R.string.manga_hub_read_again
+                                            } else {
+                                                R.string.manga_hub_start
+                                            }
+                                        )
                                     )
-                                )
+                                }
+                                OutlinedButton(
+                                    onClick = {
+                                        chapterTargetId = book.id
+                                        chapterLauncher.launch(
+                                            arrayOf(
+                                                "application/vnd.comicbook+zip",
+                                                "application/x-cbz",
+                                                "application/zip"
+                                            )
+                                        )
+                                    },
+                                    enabled = !isImporting,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .heightIn(min = 48.dp)
+                                ) {
+                                    Text(stringResource(R.string.manga_hub_add_chapter))
+                                }
                             }
                         }
                     }
