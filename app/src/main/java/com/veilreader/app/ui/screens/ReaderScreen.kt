@@ -738,7 +738,10 @@ fun ReaderScreen(
             slideInputListener?.forceCancelPendingTurn() == true
         val cancelledPreview = cancelledPaperPreview || cancelledSlidePreview
 
+        val cancelledNavigationJump =
+            navigationTransactionGate.cancelActive(SystemClock.elapsedRealtime()) != null
         if (
+            !cancelledNavigationJump &&
             shouldTakeFinalNavigatorSnapshot(
                 format = opened.format,
                 paperPreviewActive = paperCurlState.active,
@@ -865,6 +868,8 @@ fun ReaderScreen(
                         false
                     }
                     else -> {
+                        paperInputListener?.forceCancelPendingTurn()
+                        slideInputListener?.forceCancelPendingTurn()
                         val origin = latestNavigator.value
                             ?.currentLocator
                             ?.value
@@ -961,7 +966,10 @@ fun ReaderScreen(
                         slideInputListener?.forceCancelPendingTurn() == true
                     val cancelledPreview =
                         cancelledPaperPreview || cancelledSlidePreview
+                    val navigationJumpInFlight =
+                        navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
                     if (
+                        !navigationJumpInFlight &&
                         shouldTakeFinalNavigatorSnapshot(
                             format = opened.format,
                             paperPreviewActive = paperCurlState.active,
@@ -1140,6 +1148,7 @@ fun ReaderScreen(
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
+                        navigationTransactionGate.reset()
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
                         controlsVisible = false
                     },
@@ -1234,6 +1243,7 @@ fun ReaderScreen(
                     )
                 },
                 onNavigationCommitted = {
+                    navigationTransactionGate.reset()
                     val event = when {
                         opened.format != BookFormat.EPUB ->
                             VeilSensoryEvent.PAGED_TURN
@@ -1248,7 +1258,10 @@ fun ReaderScreen(
                     }
                     onSensoryEvent(event)
                 },
-                onBoundaryHit = ::emitBoundaryFeedback
+                onBoundaryHit = { side ->
+                    navigationTransactionGate.reset()
+                    emitBoundaryFeedback(side)
+                }
             )
 
             val inputArbiter = ReaderInputArbiter(
