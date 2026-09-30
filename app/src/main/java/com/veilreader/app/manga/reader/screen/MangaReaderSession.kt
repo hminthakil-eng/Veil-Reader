@@ -7,6 +7,7 @@ import com.veilreader.app.manga.reader.MangaReaderMode
 import com.veilreader.app.manga.reader.presentation.MangaChapterPresentationRequest
 import com.veilreader.app.manga.reader.presentation.MangaChapterRoute
 import com.veilreader.app.manga.source.MangaSourceProvider
+import java.util.UUID
 
 data class MangaReaderChapterEntry(
     val route: MangaChapterRoute,
@@ -37,7 +38,8 @@ data class MangaReaderSessionOptions(
 class MangaReaderSession(
     val entriesInReadingOrder: List<MangaReaderChapterEntry>,
     val initialIndex: Int = 0,
-    val options: MangaReaderSessionOptions = MangaReaderSessionOptions()
+    val options: MangaReaderSessionOptions = MangaReaderSessionOptions(),
+    val instanceId: String = UUID.randomUUID().toString()
 ) {
     init {
         require(entriesInReadingOrder.isNotEmpty()) {
@@ -45,6 +47,9 @@ class MangaReaderSession(
         }
         require(initialIndex in entriesInReadingOrder.indices) {
             "Initial chapter index is outside the session"
+        }
+        require(instanceId.isNotBlank()) {
+            "Manga reader session instance id cannot be blank"
         }
 
         val mangaIds = entriesInReadingOrder
@@ -77,7 +82,7 @@ class MangaReaderSession(
         get() = entriesInReadingOrder.map { it.route }
 
     val sessionKey: String
-        get() = "manga-reader-" + mangaId.value
+        get() = "manga-reader-" + mangaId.value + "-" + instanceId
 
     fun entryForChapter(chapter: MangaReaderChapterRef): MangaReaderChapterEntry? =
         entriesInReadingOrder.singleOrNull {
