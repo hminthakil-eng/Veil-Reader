@@ -3215,34 +3215,38 @@ private fun EpubAppearancePanel(
                     true to stringResource(R.string.reader_advanced)
                 ).forEach { (advanced, label) ->
                 val selected = showAdvanced == advanced
-                Surface(
+                Box(
                     modifier = Modifier
                         .weight(1f)
                         .heightIn(min = 48.dp)
                         .selectable(
                             selected = selected,
                             role = Role.Tab
-                        ) { showAdvanced = advanced },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilPalette.DeepBrass.copy(alpha = 0.78f)
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.78f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                    )
+                        ) { showAdvanced = advanced }
+                        .padding(horizontal = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                            color = if (selected) VeilPalette.Moon
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                    Canvas(Modifier.matchParentSize()) {
+                        drawLine(
+                            color = if (selected) {
+                                VeilPalette.Brass
+                            } else {
+                                VeilPalette.BorderDark.copy(alpha = 0.42f)
+                            },
+                            start = Offset(0f, size.height - 1.dp.toPx()),
+                            end = Offset(size.width, size.height - 1.dp.toPx()),
+                            strokeWidth = if (selected) 1.5.dp.toPx() else 1.dp.toPx()
                         )
                     }
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                        color = if (selected) {
+                            VeilPalette.Brass
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
                 }
             }
         }
@@ -3762,47 +3766,51 @@ private fun ReaderAppearanceChoice(
 ) {
     val foreground = when {
         !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-        selected -> VeilPalette.Moon
+        selected -> VeilPalette.Brass
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.82f)
-        } else {
-            VeilPalette.Archive.copy(alpha = 0.66f)
-        },
-        contentColor = foreground,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-        border = BorderStroke(
-            if (selected) 1.5.dp else 1.dp,
-            if (selected) {
-                VeilPalette.Brass.copy(alpha = 0.76f)
-            } else {
-                VeilPalette.Brass.copy(alpha = 0.22f)
-            }
-        )
+
+    Box(
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .selectable(
+                selected = selected,
+                enabled = enabled,
+                role = Role.RadioButton,
+                onClick = onClick
+            )
+            .background(
+                if (selected) {
+                    VeilPalette.Archive.copy(alpha = 0.24f)
+                } else {
+                    Color.Transparent
+                }
+            )
+            .padding(horizontal = 10.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 10.dp, vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    letterSpacing = if (selected) 0.34.sp else 0.18.sp
-                ),
-                color = foreground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = if (selected) {
+                    VeilPalette.Brass.copy(alpha = 0.88f)
+                } else {
+                    VeilPalette.BorderDark.copy(alpha = 0.42f)
+                },
+                start = Offset(0f, size.height - 1.dp.toPx()),
+                end = Offset(size.width, size.height - 1.dp.toPx()),
+                strokeWidth = if (selected) 1.5.dp.toPx() else 1.dp.toPx()
             )
         }
+
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge.copy(
+                letterSpacing = if (selected) 0.32.sp else 0.16.sp
+            ),
+            color = foreground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -3952,18 +3960,13 @@ private fun ReaderAppearancePreview(
         ReadingProgression.LTR
     }
 
-    Surface(
-        modifier = modifier,
-        shape = MaterialTheme.shapes.small,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.52f),
-        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.38f)),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(VeilPalette.Ink.copy(alpha = 0.18f))
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
-        Column(
-            Modifier.padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(7.dp)
-        ) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -4035,7 +4038,6 @@ private fun ReaderAppearancePreview(
             }
         }
     }
-}
 
 @Composable
 internal fun localizedReaderNavigationModeDescription(mode: ReaderNavigationMode): String =
