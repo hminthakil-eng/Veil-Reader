@@ -620,8 +620,8 @@ fun ReaderNotebook(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
@@ -775,8 +775,8 @@ fun ReaderNotebook(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 520.dp),
+                        .widthIn(max = 520.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
@@ -919,3 +919,4 @@ private fun searchSnippet(locator: Locator, fallback: String): String {
         if (after.isNotBlank()) append(' ').append(after).append("…")
     }.ifBlank { locator.title ?: fallback }
 }
+

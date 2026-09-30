@@ -947,20 +947,21 @@ fun ReaderScreen(
                     imageLoadJob?.cancel()
                     imageLoading = true
                     imageLoadJob = scope.launch {
+                        // A cancelled dispatcher handoff can discard a decoded return value.
+                        // Retain ownership until the viewer accepts it so every exit releases it.
+                        var pendingBitmap: android.graphics.Bitmap? = null
                         try {
-                            val bytes = opened.publication
-                                .get(image.embeddedLink)
-                                ?.use { resource -> resource.read() }
-                                ?.getOrNull()
-                            val bitmap = bytes?.let { payload ->
-                                withContext(Dispatchers.Default) {
-                                    decodeReaderImage(payload)
-                                }
+                            withContext(Dispatchers.IO) {
+                                val bytes = opened.publication
+                                    .get(image.embeddedLink)
+                                    ?.use { resource -> resource.read() }
+                                    ?.getOrNull()
+                                pendingBitmap = bytes?.let { decodeReaderImage(it) }
                             }
                             if (requestSerial != imageLoadSerial) {
-                                bitmap?.takeIf { !it.isRecycled }?.recycle()
                                 return@launch
                             }
+                            val bitmap = pendingBitmap
                             if (bitmap == null) {
                                 readerMessage = imageViewerFailedMessage
                             } else {
@@ -970,6 +971,7 @@ fun ReaderScreen(
                                         ?.trim()
                                         ?.takeIf { it.isNotEmpty() }
                                 )
+                                pendingBitmap = null // ownership transferred to DisposableEffect
                             }
                         } catch (cancelled: CancellationException) {
                             throw cancelled
@@ -978,6 +980,7 @@ fun ReaderScreen(
                                 readerMessage = imageViewerFailedMessage
                             }
                         } finally {
+                            pendingBitmap?.takeIf { !it.isRecycled }?.recycle()
                             if (requestSerial == imageLoadSerial) {
                                 imageLoading = false
                                 imageLoadJob = null
@@ -1674,8 +1677,8 @@ fun ReaderScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .widthIn(max = 620.dp)
+                        .fillMaxWidth()
                         .heightIn(max = 680.dp),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
@@ -1765,8 +1768,8 @@ fun ReaderScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
@@ -4042,3 +4045,4 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
 private const val READER_HIGHLIGHT_ALPHA = 0.34
+

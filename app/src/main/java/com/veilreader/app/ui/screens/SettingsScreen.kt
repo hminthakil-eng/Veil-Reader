@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -155,6 +156,7 @@ fun SettingsScreen(
 
         Column(
             modifier = Modifier
+                .widthIn(max = 840.dp)
                 .fillMaxSize()
                 .systemBarsPadding()
                 .verticalScroll(rememberScrollState())
@@ -762,28 +764,27 @@ private fun ReaderOptionalSlider(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    valueDescription,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                TextButton(
-                    onClick = {
-                        draft = defaultValue.coerceIn(valueRange.start, valueRange.endInclusive)
-                        onCommit(null)
-                    },
-                    enabled = value != null,
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text(stringResource(R.string.reader_value_reset))
-                }
+            Text(
+                valueDescription,
+                modifier = Modifier.weight(1f),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.labelMedium
+            )
+            TextButton(
+                onClick = {
+                    draft = defaultValue.coerceIn(valueRange.start, valueRange.endInclusive)
+                    onCommit(null)
+                },
+                enabled = value != null,
+                modifier = Modifier.heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.reader_value_reset))
             }
         }
         Slider(
@@ -813,10 +814,10 @@ private fun ReaderSlider(
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
+            Text(label, style = MaterialTheme.typography.labelLarge, modifier = Modifier.weight(1f))
             Text(
                 valueDescription,
                 color = VeilPalette.Brass,
@@ -844,7 +845,15 @@ private fun SettingsSwitchRow(
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .toggleable(
+                value = checked,
+                role = Role.Switch,
+                onValueChange = onCheckedChange
+            )
+            .semantics(mergeDescendants = true) { },
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -861,8 +870,7 @@ private fun SettingsSwitchRow(
         }
         Switch(
             checked = checked,
-            onCheckedChange = onCheckedChange,
-            modifier = Modifier.semantics { contentDescription = title },
+            onCheckedChange = null,
             colors = androidx.compose.material3.SwitchDefaults.colors(
                 checkedThumbColor = VeilPalette.Moon,
                 checkedTrackColor = VeilPalette.DeepBrass,
@@ -871,3 +879,4 @@ private fun SettingsSwitchRow(
         )
     }
 }
+

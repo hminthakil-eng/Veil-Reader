@@ -968,8 +968,8 @@ fun LibraryScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .widthIn(max = 620.dp)
+                        .fillMaxWidth()
                         .heightIn(max = 720.dp),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
@@ -3405,5 +3405,6 @@ private fun parseCollectionNames(value: String): List<String> = value
     .map(String::trim)
     .filter(String::isNotEmpty)
     .distinctBy { it.lowercase(Locale.ROOT) }
+
 
 
