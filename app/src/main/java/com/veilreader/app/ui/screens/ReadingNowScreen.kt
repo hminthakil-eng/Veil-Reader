@@ -46,6 +46,7 @@ import com.veilreader.app.ui.theme.thresholdAtmosphereIntensityFor
 import com.veilreader.app.ui.theme.thresholdLayoutPolicyFor
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilTracking
 
 /**
  * Threshold is the calm front door to reading: resume first, recent books second, world progress last.
@@ -848,7 +849,10 @@ private fun RecentBookCard(
 
             Text(
                 recentBookStatus(book).uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.55.sp),
+                style = MaterialTheme.typography.labelSmall.withVeilTracking(
+                    recentBookStatus(book),
+                    0.55.sp
+                ),
                 color = VeilPalette.Mist.copy(alpha = 0.80f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
