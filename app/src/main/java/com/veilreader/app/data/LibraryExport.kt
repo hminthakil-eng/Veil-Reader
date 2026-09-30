@@ -187,6 +187,18 @@ class LibraryExport(
         BookFormat.AUDIO -> error("Audio publications are not backed up yet.")
     }
 
+    private fun resetMangaDerivedCache() {
+        val root = mangaImporter.cacheRoot
+        if (root.exists()) {
+            check(root.deleteRecursively()) {
+                "Could not clear derived Manga cache before restore rebuild."
+            }
+        }
+        check(root.mkdirs() || root.isDirectory) {
+            "Could not recreate derived Manga cache."
+        }
+    }
+
     private suspend fun rebuildMangaBooks(
         books: List<Book>,
         restorePoints: Map<String, MangaLocalRestorePoint>
@@ -285,6 +297,7 @@ class LibraryExport(
 
             try {
                 library.replaceAll(restoredSnapshot)
+                resetMangaDerivedCache()
                 rebuildMangaBooks(restoredSnapshot.books, incomingMangaProgress)
                 if (!replacePreferences(gamePrefs, gamePreferences)) {
                     error("Could not commit restored progression data.")
@@ -292,6 +305,7 @@ class LibraryExport(
             } catch (error: Throwable) {
                 val rollbackError = runCatching {
                     library.replaceAll(oldLibrary)
+                    resetMangaDerivedCache()
                     rebuildMangaBooks(oldLibrary.books, oldMangaProgress)
                 }.exceptionOrNull()
                 restorePreferencesSnapshot(gamePrefs, oldGame)
