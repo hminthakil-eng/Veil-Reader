@@ -91,6 +91,9 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
+import com.veilreader.app.ui.reader.shouldCollectReaderLocator
+import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
+import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -174,6 +177,10 @@ fun ReaderScreen(
     var previousLocationJson by rememberSaveable(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(initialReturnLocatorJson)
     }
+    var readerSessionReady by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(false)
+    }
+    val latestReaderSessionReady = rememberUpdatedState(readerSessionReady)
 
     LaunchedEffect(initialReturnLocatorJson, opened.book.id, readerSessionInstanceId) {
         if (previousLocationJson == null && !initialReturnLocatorJson.isNullOrBlank()) {
@@ -187,8 +194,13 @@ fun ReaderScreen(
         entryVisible = false
     }
 
-    LaunchedEffect(navigatorAttached, opened.book.id, readerSessionInstanceId) {
-        if (navigatorAttached) {
+    LaunchedEffect(
+        navigatorAttached,
+        readerSessionReady,
+        opened.book.id,
+        readerSessionInstanceId
+    ) {
+        if (navigatorAttached && readerSessionReady) {
             // Rare return rituals get only a slightly longer handoff; they never block reading.
             delay(if (returnRitual != null) 760 else 520)
             entryVisible = false
