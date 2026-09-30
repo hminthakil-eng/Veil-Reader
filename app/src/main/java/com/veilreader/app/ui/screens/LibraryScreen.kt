@@ -329,22 +329,40 @@ fun LibraryScreen(
     val normalizedQuery = remember(trimmedQuery) { normalizeLibrarySearchText(trimmedQuery) }
     val searchableByBookId = remember(books) {
         books.associate { book ->
-            val fields = buildList {
-                add(book.title)
-                add(book.author)
-                book.seriesName?.let(::add)
-                book.language?.let(::add)
-                addAll(book.allCollections)
-            }
-            book.id to fields.map(::normalizeLibrarySearchText)
+            book.id to normalizedLibrarySearchDocument(
+                title = book.title,
+                author = book.author,
+                series = book.seriesName,
+                language = book.language,
+                collections = book.allCollections
+            )
+        }
+    }
+    val searchScoreByBookId = remember(normalizedQuery, searchableByBookId) {
+        if (normalizedQuery.isBlank()) {
+            emptyMap()
+        } else {
+            searchableByBookId.mapNotNull { (bookId, document) ->
+                librarySearchRelevance(normalizedQuery, document)
+                    ?.let { score -> bookId to score }
+            }.toMap()
         }
     }
     val filtered = remember(
-        books, trimmedQuery, shelf, collection, seriesFilter, sort, deepShelfBookIds, memoryState
+        books,
+        trimmedQuery,
+        normalizedQuery,
+        searchScoreByBookId,
+        shelf,
+        collection,
+        seriesFilter,
+        sort,
+        deepShelfBookIds,
+        memoryState
     ) {
         books.filter { book ->
             val matchesQuery = normalizedQuery.isBlank() ||
-                searchableByBookId[book.id].orEmpty().any { it.contains(normalizedQuery) }
+                searchScoreByBookId.containsKey(book.id)
             val matchesShelf = when (shelf) {
                 "Reading" -> !book.finished && book.progress > 0f
                 "Unread" -> !book.finished && book.progress == 0f
@@ -372,8 +390,22 @@ fun LibraryScreen(
                         .thenBy { it.seriesIndex ?: Double.MAX_VALUE }
                         .thenBy { it.title.lowercase(Locale.ROOT) }
                 )
-                else -> list.sortedByDescending {
-                    maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
+                else -> if (normalizedQuery.isNotBlank()) {
+                    list.sortedWith(
+                        compareByDescending<Book> {
+                            searchScoreByBookId[it.id] ?: Int.MIN_VALUE
+                        }
+                            .thenByDescending {
+                                maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
+                            }
+                            .thenBy { it.id }
+                    )
+                } else {
+                    list.sortedWith(
+                        compareByDescending<Book> {
+                            maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs)
+                        }.thenBy { it.id }
+                    )
                 }
             }
         }
