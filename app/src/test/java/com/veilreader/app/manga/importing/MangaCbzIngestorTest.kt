@@ -111,7 +111,7 @@ class MangaCbzIngestorTest {
     @Test
     fun naturalComparatorOrdersNumericRunsByValue() {
         val names = listOf("p10.jpg", "p2.jpg", "p001.jpg", "p20.jpg")
-            .sortedWith(::compareNaturalArchiveNames)
+            .sortedWith(Comparator { left, right -> compareNaturalArchiveNames(left, right) })
 
         assertEquals(listOf("p001.jpg", "p2.jpg", "p10.jpg", "p20.jpg"), names)
     }
