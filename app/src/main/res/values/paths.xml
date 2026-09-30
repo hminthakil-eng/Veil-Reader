@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="path_generic_aspect">Reading</string>
+    <string name="path_generic_invocation">A Path is shaped by returning to the page.</string>
+
+    <string name="path_oracle_name">The Oracle Path</string>
+    <string name="path_oracle_epithet">Seek what hides between the lines</string>
+    <string name="path_oracle_description">For mystery, deduction, layered worlds, and readers who live for clues.</string>
+    <string name="path_oracle_aspect">Sight</string>
+    <string name="path_oracle_invocation">What is hidden may still be understood.</string>
+    <string name="path_oracle_rank_0">Observer</string>
+    <string name="path_oracle_rank_1">Cipher</string>
+    <string name="path_oracle_rank_2">Investigator</string>
+    <string name="path_oracle_rank_3">Augur</string>
+    <string name="path_oracle_rank_4">Oracle</string>
+    <string name="path_oracle_rank_5">Veilseer</string>
+
+    <string name="path_dreamwalker_name">The Dreamwalker Path</string>
+    <string name="path_dreamwalker_epithet">Cross worlds no map can hold</string>
+    <string name="path_dreamwalker_description">For fantasy, myth, wonder, and impossible journeys.</string>
+    <string name="path_dreamwalker_aspect">Wonder</string>
+    <string name="path_dreamwalker_invocation">Every page is a door that did not exist before.</string>
+    <string name="path_dreamwalker_rank_0">Wanderer</string>
+    <string name="path_dreamwalker_rank_1">Wayfarer</string>
+    <string name="path_dreamwalker_rank_2">Storybinder</string>
+    <string name="path_dreamwalker_rank_3">Dreamwalker</string>
+    <string name="path_dreamwalker_rank_4">Worldweaver</string>
+    <string name="path_dreamwalker_rank_5">Mythborne</string>
+
+    <string name="path_archivist_name">The Archivist Path</string>
+    <string name="path_archivist_epithet">Nothing learned is ever lost</string>
+    <string name="path_archivist_description">For history, science, philosophy, and knowledge-heavy reading.</string>
+    <string name="path_archivist_aspect">Memory</string>
+    <string name="path_archivist_invocation">What is learned deserves a place to remain.</string>
+    <string name="path_archivist_rank_0">Novice</string>
+    <string name="path_archivist_rank_1">Scribe</string>
+    <string name="path_archivist_rank_2">Scholar</string>
+    <string name="path_archivist_rank_3">Curator</string>
+    <string name="path_archivist_rank_4">Archivist</string>
+    <string name="path_archivist_rank_5">Keeper</string>
+
+    <string name="path_vanguard_name">The Vanguard Path</string>
+    <string name="path_vanguard_epithet">Turn every page like a battlefield</string>
+    <string name="path_vanguard_description">For action, adventure, progression fantasy, and relentless momentum.</string>
+    <string name="path_vanguard_aspect">Momentum</string>
+    <string name="path_vanguard_invocation">Forward is a discipline, not a speed.</string>
+    <string name="path_vanguard_rank_0">Recruit</string>
+    <string name="path_vanguard_rank_1">Strider</string>
+    <string name="path_vanguard_rank_2">Vanguard</string>
+    <string name="path_vanguard_rank_3">Champion</string>
+    <string name="path_vanguard_rank_4">Paragon</string>
+    <string name="path_vanguard_rank_5">Legend</string>
+
+    <string name="path_nocturne_name">The Nocturne Path</string>
+    <string name="path_nocturne_epithet">Read where the lantern fades</string>
+    <string name="path_nocturne_description">For horror, gothic fiction, dark fantasy, and unsettling mysteries.</string>
+    <string name="path_nocturne_aspect">Shadow</string>
+    <string name="path_nocturne_invocation">Some truths are visible only after the lantern dims.</string>
+    <string name="path_nocturne_rank_0">Listener</string>
+    <string name="path_nocturne_rank_1">Watcher</string>
+    <string name="path_nocturne_rank_2">Shade</string>
+    <string name="path_nocturne_rank_3">Nocturne</string>
+    <string name="path_nocturne_rank_4">Nightwarden</string>
+    <string name="path_nocturne_rank_5">Eclipse</string>
+
+    <string name="path_artificer_name">The Artificer Path</string>
+    <string name="path_artificer_epithet">Understand the machinery beneath the miracle</string>
+    <string name="path_artificer_description">For technology, engineering, hard science fiction, and systems thinkers.</string>
+    <string name="path_artificer_aspect">Making</string>
+    <string name="path_artificer_invocation">Understand the mechanism and the miracle changes shape.</string>
+    <string name="path_artificer_rank_0">Tinkerer</string>
+    <string name="path_artificer_rank_1">Analyst</string>
+    <string name="path_artificer_rank_2">Maker</string>
+    <string name="path_artificer_rank_3">Artificer</string>
+    <string name="path_artificer_rank_4">Architect</string>
+    <string name="path_artificer_rank_5">Prime Mechanist</string>
+
+    <string name="path_ritual_oracle">Highlight %1$d new passages that reveal clues, themes, or hidden structure.</string>
+    <string name="path_ritual_dreamwalker">Explore your worlds for %1$d active reading minutes.</string>
+    <string name="path_ritual_vanguard">Read %1$d paced pages. Fast tapping does not count.</string>
+    <string name="path_ritual_nocturne">Read for %1$d minutes between 8 PM and 6 AM in your device’s local time.</string>
+    <string name="path_ritual_archivist">Write %1$d new passage notes of at least 40 characters.</string>
+    <string name="path_ritual_artificer">Capture %1$d new concept notes of at least 40 characters.</string>
+
+    <string name="path_progression">Progression</string>
+    <string name="path_your_ascent">Your ascent</string>
+    <string name="path_other_paths">Other paths</string>
+    <string name="path_choose_fits">Choose what fits you</string>
+    <string name="path_choice_rooted">Your choice is rooted</string>
+    <string name="path_change_before_advancement">You can change Path until your first advancement. It changes progression flavor, never access to your books.</string>
+    <string name="path_lore_after_advancement">Other Paths stay visible as lore. Your current Path remains fixed for this journey.</string>
+    <string name="path_level">LEVEL %1$d</string>
+    <string name="path_ritual_complete">RITUAL COMPLETE</string>
+    <string name="path_next_threshold">NEXT THRESHOLD</string>
+    <string name="path_remains_open">The Path remains open</string>
+    <string name="path_no_higher_rank">No higher rank remains.</string>
+    <string name="path_perform_advancement">Perform advancement</string>
+    <string name="path_keep_reading">Keep reading · %1$d/%2$d</string>
+    <string name="path_rank">RANK %1$s</string>
+    <string name="path_mastered">MASTERED</string>
+    <string name="path_current_seal">CURRENT SEAL</string>
+    <string name="path_sealed">SEALED</string>
+    <string name="path_choose_this">Choose this Path</string>
+    <string name="path_locked_after_advancement">Locked after first advancement</string>
+    <string name="path_advance_to">Advance to %1$s</string>
+    <string name="path_advance_body">Your ritual is complete. This marks a permanent rank on %1$s.</string>
+    <string name="path_advance">Advance</string>
+    <string name="path_not_yet">Not yet</string>
+</resources>
