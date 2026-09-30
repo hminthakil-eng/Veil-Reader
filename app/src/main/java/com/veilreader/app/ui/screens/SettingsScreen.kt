@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
@@ -41,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
@@ -668,17 +670,11 @@ private fun SettingsSection(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Text(
-                title.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass,
-                modifier = Modifier.weight(1f)
-            )
-        }
+        Text(
+            title.uppercase(),
+            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
+            color = VeilPalette.Brass
+        )
 
         BrassRule(Modifier.fillMaxWidth())
 
@@ -688,19 +684,23 @@ private fun SettingsSection(
             style = MaterialTheme.typography.bodySmall
         )
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraSmall,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
-            ),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(VeilPalette.Ink.copy(alpha = 0.12f))
+                .padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.md)
         ) {
+            Canvas(Modifier.matchParentSize()) {
+                drawLine(
+                    color = VeilPalette.BorderDark.copy(alpha = 0.46f),
+                    start = Offset(0f, 0f),
+                    end = Offset(0f, size.height),
+                    strokeWidth = 1.dp.toPx()
+                )
+            }
+
             Column(
-                modifier = Modifier.padding(VeilSpacing.md),
+                modifier = Modifier.padding(start = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
             ) {
                 content()
@@ -721,37 +721,49 @@ private fun <T> ChoiceRow(
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
             .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        horizontalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         entries.forEach { entry ->
             val active = entry == selected
-            Surface(
+
+            Box(
                 modifier = Modifier
                     .heightIn(min = 48.dp)
                     .selectable(
                         selected = active,
                         role = Role.RadioButton
-                    ) { onSelected(entry) },
-                shape = MaterialTheme.shapes.extraSmall,
-                color = if (active) {
-                    VeilPalette.DeepBrass.copy(alpha = 0.78f)
-                } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-                },
-                border = BorderStroke(
-                    1.dp,
-                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                ),
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+                    ) { onSelected(entry) }
+                    .background(
+                        if (active) {
+                            VeilPalette.Archive.copy(alpha = 0.24f)
+                        } else {
+                            androidx.compose.ui.graphics.Color.Transparent
+                        }
+                    )
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                contentAlignment = Alignment.Center
             ) {
+                Canvas(Modifier.matchParentSize()) {
+                    drawLine(
+                        color = if (active) {
+                            VeilPalette.Brass
+                        } else {
+                            VeilPalette.BorderDark.copy(alpha = 0.40f)
+                        },
+                        start = Offset(0f, size.height - 1.dp.toPx()),
+                        end = Offset(size.width, size.height - 1.dp.toPx()),
+                        strokeWidth = if (active) 1.5.dp.toPx() else 1.dp.toPx()
+                    )
+                }
+
                 Text(
                     label(entry),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
                     style = MaterialTheme.typography.labelMedium,
-                    color = if (active) VeilPalette.Moon
-                    else MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (active) {
+                        VeilPalette.Brass
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
             }
         }
