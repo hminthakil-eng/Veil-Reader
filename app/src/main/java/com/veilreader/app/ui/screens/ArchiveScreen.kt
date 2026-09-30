@@ -62,7 +62,7 @@ fun ArchiveScreen(
     onDeleteBookmark: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.HIGHLIGHTS.name) }
+    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.NOTES.name) }
     var editingHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var noteDraft by rememberSaveable { mutableStateOf("") }
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -70,7 +70,7 @@ fun ArchiveScreen(
     var selectedCapsuleSealCode by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
-        .getOrDefault(NotebookSection.HIGHLIGHTS)
+        .getOrDefault(NotebookSection.NOTES)
     val booksById = remember(books) { books.associateBy { it.id } }
     val archiveNow = remember { System.currentTimeMillis() }
     val echoes = remember(highlights, booksById, archiveNow, passageVisits) {
@@ -178,13 +178,13 @@ fun ArchiveScreen(
 
                 Text(
                     stringResource(R.string.notebook_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
-                    color = VeilPalette.Brass
+                    style = MaterialTheme.typography.headlineLarge,
+                    color = VeilPalette.Moon
                 )
                 Text(
                     stringResource(R.string.archive_fragments_worth_keeping),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = VeilPalette.Moon
+                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.72.sp),
+                    color = VeilPalette.Brass
                 )
                 BrassRule(Modifier.width(92.dp), strong = true)
 
