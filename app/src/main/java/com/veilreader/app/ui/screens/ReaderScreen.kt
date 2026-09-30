@@ -1049,8 +1049,21 @@ fun ReaderScreen(
         }
     }
 
-    LaunchedEffect(navigator, opened.book.id, readerSessionInstanceId) {
+    LaunchedEffect(
+        navigator,
+        readerSessionReady,
+        opened.book.id,
+        readerSessionInstanceId
+    ) {
         val nav = navigator ?: return@LaunchedEffect
+        if (
+            !shouldCollectReaderLocator(
+                sessionReady = readerSessionReady,
+                navigatorAttached = navigatorAttached
+            )
+        ) {
+            return@LaunchedEffect
+        }
         var initialLocatorPending = true
         nav.currentLocator
             .debounce(500)
@@ -1101,8 +1114,9 @@ fun ReaderScreen(
                                     ReaderNavigationMode.PAPER_CURL
                     )
                 }
+                val wasInitialLocator = initialLocatorPending
                 initialLocatorPending = false
-                readerViewModel.onLocatorUpdate(
+                val commit = readerViewModel.onLocatorUpdate(
                     bookId = opened.book.id,
                     expectedOpenInstanceId = readerSessionInstanceId,
                     progression = locator.locations.totalProgression
@@ -1110,8 +1124,26 @@ fun ReaderScreen(
                     locatorJson = json,
                     locationKey = "${opened.book.id}:$json",
                     event = event
-                )?.let { commit ->
-                    onLocatorCheckpoint(commit.locatorJson)
+                )
+                commit?.let { accepted ->
+                    onLocatorCheckpoint(accepted.locatorJson)
+                }
+
+                val lifecycleResumed =
+                    lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+                if (
+                    shouldFlushStartupLocatorInBackground(
+                        sessionReady = readerSessionReady,
+                        lifecycleResumed = lifecycleResumed,
+                        initialLocatorCommitAccepted = wasInitialLocator && commit != null
+                    )
+                ) {
+                    ReaderTrace.event(
+                        "reader_startup_locator_background_flush",
+                        bookId = opened.book.id,
+                        sessionId = readerSessionInstanceId
+                    )
+                    readerViewModel.onPause(readerSessionInstanceId)
                 }
             }
     }
