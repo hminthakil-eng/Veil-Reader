@@ -1137,6 +1137,7 @@
     <string name="mirror_empty_body">در یک کتاب هایلایت یا یادداشت بساز. آرودز فقط با خاطره‌هایی سخن می‌گوید که واقعاً ذخیره کرده‌ای.</string>
     <string name="mirror_content_description_open">بازگشت به متن اصلی در %1$s</string>
     <string name="mirror_content_description_awaken">بیدار کردن آینه</string>
+    <string name="mirror_content_description_transition">آینه در حال شکل‌دادن پژواک ذخیره‌شدهٔ دیگری است</string>
     <string name="mirror_fragment_note">یادداشت ذخیره‌شده</string>
     <string name="mirror_fragment_highlight">هایلایت ذخیره‌شده</string>
     <string name="mirror_open_source_hint">برای بازگشت دقیق به همان بخش، دوباره روی شیشه بزن.</string>
