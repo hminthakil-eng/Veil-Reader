@@ -539,13 +539,13 @@ internal fun shouldCommitSlideTurn(
 ): Boolean {
     if (inwardDistance <= 0f || width <= 0f) return false
     val safeDensity = density.coerceAtLeast(0.1f)
-    val distanceThreshold = max(72f * safeDensity, width * 0.16f)
-    val flickDistance = max(28f * safeDensity, width * 0.03f)
+    val distanceThreshold = max(60f * safeDensity, width * 0.13f)
+    val flickDistance = max(24f * safeDensity, width * 0.026f)
     val fastFlick =
         inwardDistance >= flickDistance &&
-            releaseVelocityPxPerSec >= 850f * safeDensity
+            releaseVelocityPxPerSec >= 760f * safeDensity
 
     return inwardDistance >= distanceThreshold ||
-        slideProgress >= 0.30f ||
+        slideProgress >= 0.26f ||
         fastFlick
 }
