@@ -1160,5 +1160,5 @@
     <string name="manga_hub_empty_title">No local manga yet</string>
     <string name="manga_hub_empty_body">No Manga session is registered yet. Local Manga ingestion and source adapters will connect here while visual reading stays separate from the text-reader experience.</string>
     <string name="manga_hub_open_library">Return to Library</string>
-    <string name="manga_hub_progress">%1$d%% read</string>
+    <string name="manga_hub_progress">%1$d%% read</string>\n    <string name="manga_hub_adapter_pending">Dedicated Manga session adapter pending — this record is not sent to the EPUB/PDF reader.</string>
 </resources>
