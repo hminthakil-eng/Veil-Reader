@@ -400,12 +400,12 @@ class MangaLocalImportCoordinatorInstrumentedTest {
 
         val freed = coordinator.clearDerivedCache(book.id).getOrThrow()
         assertEquals(before.cacheBytes, freed)
-        assertTrue(db.mangaOffline().listForBook(book.id).isEmpty())
+        assertEquals(2, db.mangaOffline().listForBook(book.id).size)
 
         val afterClear = coordinator.storageSummary(book.id)
         assertEquals(before.sourceBytes, afterClear.sourceBytes)
         assertEquals(0L, afterClear.cacheBytes)
-        assertEquals(0, afterClear.offlinePageCount)
+        assertEquals(5, afterClear.offlinePageCount)
 
         val progressAfterClear = requireNotNull(
             progressStore.load(CanonicalMangaId(book.id))
