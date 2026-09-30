@@ -83,26 +83,15 @@ fun ReadingNowScreen(
 
 @Composable
 private fun ThresholdHeader(hasCurrentBook: Boolean) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-    ) {
-        Text(
-            text = if (hasCurrentBook) "Return to your book" else "Build your private library",
-            style = MaterialTheme.typography.headlineLarge,
-            color = MaterialTheme.colorScheme.onBackground
-        )
-        Text(
-            text = if (hasCurrentBook) {
-                "Continue in one tap. Your library and the world around it can wait until you are ready."
-            } else {
-                "Import an EPUB or PDF. Your books, notes, and reading progress stay on this device."
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.widthIn(max = 680.dp)
-        )
-    }
+    ScreenHeader(
+        eyebrow = "The Threshold",
+        title = if (hasCurrentBook) "Return to your book" else "Build your private library",
+        subtitle = if (hasCurrentBook) {
+            "One gesture back into the story. The archive stays quiet until you ask for it."
+        } else {
+            "Import an EPUB or PDF and begin your private archive. Reading data remains on this device."
+        }
+    )
 }
 
 @Composable
@@ -114,23 +103,22 @@ private fun ContinueReadingHero(
     val colors = MaterialTheme.colorScheme
     val progress = current.progress.coerceIn(0f, 1f)
     val progressPercent = (progress * 100).toInt()
-    val shape = MaterialTheme.shapes.extraLarge
+    val shape = MaterialTheme.shapes.large
 
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
             .background(
-                Brush.linearGradient(
+                Brush.verticalGradient(
                     listOf(
-                        colors.primaryContainer.copy(alpha = 0.62f),
-                        colors.surfaceVariant.copy(alpha = 0.76f),
-                        colors.surface.copy(alpha = 0.98f)
+                        colors.surfaceVariant.copy(alpha = 0.94f),
+                        colors.surface.copy(alpha = 0.995f)
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.64f)),
+                BorderStroke(1.dp, colors.primary.copy(alpha = 0.28f)),
                 shape
             )
             .padding(VeilSpacing.xl)
@@ -182,7 +170,7 @@ private fun HeroCover(current: Book) {
                 .background(
                     Brush.radialGradient(
                         listOf(
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.13f),
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                             Color.Transparent
                         )
                     )
@@ -226,7 +214,7 @@ private fun HeroDetails(
         LinearProgressIndicator(
             progress = { progress },
             modifier = Modifier.fillMaxWidth().height(5.dp).clip(CircleShape),
-            color = MaterialTheme.colorScheme.secondary,
+            color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
         )
         Text(
