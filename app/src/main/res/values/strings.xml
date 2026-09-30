@@ -1213,4 +1213,23 @@
     <string name="notice_manga_cache_repair_failed">Local Manga pages could not be rebuilt from the saved CBZ files.</string>
     <string name="notice_manga_chapters_added">Added %1$d chapters to %2$s.</string>
     <string name="notice_manga_chapters_added_with_duplicates">Added %1$d chapters to %3$s; %2$d were already present.</string>
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_rename">Rename</string>
+    <string name="manga_hub_manage_chapters">Manage chapters (%1$d)</string>
+    <string name="manga_hub_hide_chapters">Hide chapters (%1$d)</string>
+    <string name="manga_chapter_rename_title">Rename chapter</string>
+    <string name="manga_chapter_title_label">Chapter title</string>
+    <string name="manga_chapter_delete_title">Delete chapter?</string>
+    <string name="manga_chapter_delete_body">Delete “%1$s” from this Manga? The original CBZ for this added chapter and its generated page cache will be removed.</string>
+    <string name="manga_chapter_metadata">Position %1$d · Ch. %2$s · %3$d pages · %4$s</string>
+    <string name="manga_chapter_unknown_number">—</string>
+    <string name="manga_chapter_primary_badge">Primary chapter · pinned</string>
+    <string name="manga_chapter_move_up">Up</string>
+    <string name="manga_chapter_move_down">Down</string>
+    <string name="notice_manga_chapter_renamed">Chapter title updated.</string>
+    <string name="notice_manga_chapter_reordered">Chapter order updated.</string>
+    <string name="notice_manga_chapter_deleted">Chapter removed.</string>
+    <string name="notice_manga_chapter_update_failed">The Manga chapter change could not be saved.</string>
 </resources>
