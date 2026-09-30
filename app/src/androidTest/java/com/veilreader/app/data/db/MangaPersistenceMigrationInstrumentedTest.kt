@@ -41,6 +41,7 @@ class MangaPersistenceMigrationInstrumentedTest {
         assertCount(migrated, "manga_offline_pages", 0)
         assertCount(migrated, "manga_work_merges", 0)
         assertCount(migrated, "manga_merge_members", 0)
+        assertCount(migrated, "manga_merge_original_chapters", 0)
         assertCount(migrated, "manga_merge_chapters", 0)
 
         migrated.execSQL(
@@ -159,6 +160,15 @@ class MangaPersistenceMigrationInstrumentedTest {
         )
         migrated.execSQL(
             """
+            INSERT INTO manga_merge_original_chapters (
+                mergeId, readingOrder, chapterId, targetBookId, chapterKey
+            ) VALUES (
+                'merge-1', 0, 'chapter-1', 'comic', 'chapter-1'
+            )
+            """.trimIndent()
+        )
+        migrated.execSQL(
+            """
             INSERT INTO manga_merge_chapters (
                 mergeId, sourceChapterId, sourceBookId, targetChapterId,
                 sourceReadingOrder, targetReadingOrder, disposition
@@ -171,6 +181,7 @@ class MangaPersistenceMigrationInstrumentedTest {
 
         assertCount(migrated, "manga_work_merges", 1)
         assertCount(migrated, "manga_merge_members", 1)
+        assertCount(migrated, "manga_merge_original_chapters", 1)
         assertCount(migrated, "manga_merge_chapters", 1)
 
         runCatching {
@@ -189,6 +200,7 @@ class MangaPersistenceMigrationInstrumentedTest {
         assertCount(migrated, "manga_offline_pages", 0)
         assertCount(migrated, "manga_work_merges", 0)
         assertCount(migrated, "manga_merge_members", 0)
+        assertCount(migrated, "manga_merge_original_chapters", 0)
         assertCount(migrated, "manga_merge_chapters", 0)
         assertCount(migrated, "books", 1)
         migrated.close()
