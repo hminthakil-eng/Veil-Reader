@@ -1158,7 +1158,7 @@
     <string name="manga_hub_engine_ready">موتور صفحه، کش، بازیابی، پایش سلامت و لایه‌ی ارائه‌ی فصل اختصاصی مانگا وارد اپ شده‌اند.</string>
     <string name="manga_hub_live_sources_off">منابع زنده‌ی شبکه به‌طور پیش‌فرض خاموش‌اند و این صفحه با هیچ منبعی تماس نمی‌گیرد.</string>
     <string name="manga_hub_empty_title">هنوز مانگای محلی نداری</string>
-    <string name="manga_hub_empty_body">یک فایل کمیک پشتیبانی‌شده را وارد Library کن. Manga Hub تجربه‌ی مطالعه‌ی تصویری را از Reader متنی جدا نگه می‌دارد.</string>
-    <string name="manga_hub_open_library">باز کردن Library</string>
+    <string name="manga_hub_empty_body">هنوز نشست مانگایی ثبت نشده است. مسیر ورود مانگای محلی و آداپتورهای منبع به همین بخش وصل می‌شوند و مطالعه‌ی تصویری از Reader متنی جدا می‌ماند.</string>
+    <string name="manga_hub_open_library">بازگشت به Library</string>
     <string name="manga_hub_progress">%1$d٪ خوانده‌شده</string>
 </resources>
