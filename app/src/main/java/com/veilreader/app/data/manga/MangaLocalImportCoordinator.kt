@@ -415,7 +415,7 @@ class MangaLocalImportCoordinator(
         uris: List<Uri>
     ): Result<MangaLocalBatchImportResult> = runCatching {
         require(bookId.isNotBlank())
-        val distinct = uris.distinctBy(Uri::toString)
+        val distinct = uris.distinctBy { it.toString() }
         require(distinct.isNotEmpty()) { "No Manga chapter files were selected" }
 
         val sorted = withContext(Dispatchers.IO) {
@@ -429,9 +429,11 @@ class MangaLocalImportCoordinator(
                             ?: uri.toString()
                         )
                 }
-                .sortedWith { left, right ->
-                    compareNaturalArchiveNames(left.second, right.second)
-                }
+                .sortedWith(
+                    Comparator { left, right ->
+                        compareNaturalArchiveNames(left.second, right.second)
+                    }
+                )
                 .map { it.first }
         }
 
