@@ -12,6 +12,7 @@ import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.readium.r2.navigator.preferences.ImageFilter
 import org.readium.r2.navigator.preferences.Spread
 import org.junit.Test
