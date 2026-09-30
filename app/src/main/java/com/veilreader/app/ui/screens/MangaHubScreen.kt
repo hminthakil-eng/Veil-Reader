@@ -21,10 +21,12 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -45,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.veilreader.app.R
+import com.veilreader.app.data.manga.MangaLocalChapterSummary
 import com.veilreader.app.data.manga.MangaLocalStorageSummary
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
@@ -67,6 +70,10 @@ fun MangaHubScreen(
     onOpenBook: (Book) -> Unit,
     onAddChapterUris: (Book, List<Uri>) -> Unit,
     storageSummaryProvider: suspend (Book) -> MangaLocalStorageSummary,
+    chapterSummaryProvider: suspend (Book) -> List<MangaLocalChapterSummary>,
+    onRenameChapter: (Book, MangaLocalChapterSummary, String) -> Unit,
+    onMoveChapter: (Book, MangaLocalChapterSummary, Int) -> Unit,
+    onDeleteChapter: (Book, MangaLocalChapterSummary) -> Unit,
     onClearDerivedCache: (Book) -> Unit,
     storageRevision: Int,
     onOpenLibrary: () -> Unit,
@@ -92,6 +99,11 @@ fun MangaHubScreen(
             onAddChapterUris(target, uris)
         }
     }
+
+    var expandedChapterBookId by rememberSaveable { mutableStateOf<String?>(null) }
+    var renameTarget by remember { mutableStateOf<Pair<Book, MangaLocalChapterSummary>?>(null) }
+    var renameValue by remember { mutableStateOf("") }
+    var deleteTarget by remember { mutableStateOf<Pair<Book, MangaLocalChapterSummary>?>(null) }
 
 
     LazyColumn(
@@ -225,6 +237,18 @@ fun MangaHubScreen(
                 ) {
                     value = runCatching { storageSummaryProvider(book) }.getOrNull()
                 }
+                val chapters by produceState<List<MangaLocalChapterSummary>>(
+                    initialValue = emptyList(),
+                    book.id,
+                    storageRevision,
+                    expandedChapterBookId
+                ) {
+                    value = if (expandedChapterBookId == book.id) {
+                        runCatching { chapterSummaryProvider(book) }.getOrDefault(emptyList())
+                    } else {
+                        emptyList()
+                    }
+                }
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -317,6 +341,55 @@ fun MangaHubScreen(
                                 }
                             }
 
+                            TextButton(
+                                onClick = {
+                                    expandedChapterBookId =
+                                        if (expandedChapterBookId == book.id) null else book.id
+                                },
+                                enabled = !isImporting
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (expandedChapterBookId == book.id) {
+                                            R.string.manga_hub_hide_chapters
+                                        } else {
+                                            R.string.manga_hub_manage_chapters
+                                        },
+                                        storage?.chapterCount ?: 0
+                                    )
+                                )
+                            }
+
+                            if (expandedChapterBookId == book.id) {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                                ) {
+                                    chapters.forEachIndexed { index, chapter ->
+                                        MangaChapterManagementRow(
+                                            chapter = chapter,
+                                            canMoveUp = !chapter.isPrimary && chapter.readingOrder > 1,
+                                            canMoveDown =
+                                                !chapter.isPrimary && index < chapters.lastIndex,
+                                            enabled = !isImporting,
+                                            onRename = {
+                                                renameTarget = book to chapter
+                                                renameValue = chapter.title
+                                            },
+                                            onMoveUp = {
+                                                onMoveChapter(book, chapter, -1)
+                                            },
+                                            onMoveDown = {
+                                                onMoveChapter(book, chapter, 1)
+                                            },
+                                            onDelete = {
+                                                deleteTarget = book to chapter
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
@@ -365,7 +438,181 @@ fun MangaHubScreen(
             }
         }
     }
+    renameTarget?.let { (book, chapter) ->
+        AlertDialog(
+            onDismissRequest = {
+                renameTarget = null
+                renameValue = ""
+            },
+            title = {
+                Text(stringResource(R.string.manga_chapter_rename_title))
+            },
+            text = {
+                OutlinedTextField(
+                    value = renameValue,
+                    onValueChange = { renameValue = it },
+                    singleLine = true,
+                    label = {
+                        Text(stringResource(R.string.manga_chapter_title_label))
+                    }
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onRenameChapter(book, chapter, renameValue)
+                        renameTarget = null
+                        renameValue = ""
+                    },
+                    enabled = renameValue.isNotBlank() && !isImporting
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        renameTarget = null
+                        renameValue = ""
+                    }
+                ) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    deleteTarget?.let { (book, chapter) ->
+        AlertDialog(
+            onDismissRequest = { deleteTarget = null },
+            title = {
+                Text(stringResource(R.string.manga_chapter_delete_title))
+            },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.manga_chapter_delete_body,
+                        chapter.title
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDeleteChapter(book, chapter)
+                        deleteTarget = null
+                    },
+                    enabled = !isImporting
+                ) {
+                    Text(stringResource(R.string.action_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { deleteTarget = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 }
+
+
+@Composable
+private fun MangaChapterManagementRow(
+    chapter: MangaLocalChapterSummary,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    enabled: Boolean,
+    onRename: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val context = LocalContext.current
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.42f)
+    ) {
+        Column(
+            modifier = Modifier.padding(VeilSpacing.sm),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        chapter.title,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        stringResource(
+                            R.string.manga_chapter_metadata,
+                            chapter.readingOrder + 1,
+                            chapter.number?.let { formatChapterNumber(it) }
+                                ?: stringResource(R.string.manga_chapter_unknown_number),
+                            chapter.pageCount,
+                            Formatter.formatShortFileSize(
+                                context,
+                                chapter.sourceBytes + chapter.cacheBytes
+                            )
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (chapter.isPrimary) {
+                        Text(
+                            stringResource(R.string.manga_chapter_primary_badge),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = VeilPalette.Brass
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                TextButton(onClick = onRename, enabled = enabled) {
+                    Text(stringResource(R.string.action_rename))
+                }
+                if (!chapter.isPrimary) {
+                    TextButton(
+                        onClick = onMoveUp,
+                        enabled = enabled && canMoveUp
+                    ) {
+                        Text(stringResource(R.string.manga_chapter_move_up))
+                    }
+                    TextButton(
+                        onClick = onMoveDown,
+                        enabled = enabled && canMoveDown
+                    ) {
+                        Text(stringResource(R.string.manga_chapter_move_down))
+                    }
+                    TextButton(onClick = onDelete, enabled = enabled) {
+                        Text(stringResource(R.string.action_delete))
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun formatChapterNumber(value: Double): String =
+    if (value % 1.0 == 0.0) {
+        value.toInt().toString()
+    } else {
+        value.toString().trimEnd('0').trimEnd('.')
+    }
 
 
 @Composable
