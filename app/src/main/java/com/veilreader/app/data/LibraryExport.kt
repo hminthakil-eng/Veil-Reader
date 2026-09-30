@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.manga.MangaLocalChapterMetadata
 import com.veilreader.app.data.manga.MangaLocalImportCoordinator
 import com.veilreader.app.data.manga.MangaLocalRestorePoint
 import com.veilreader.app.domain.Book
@@ -20,6 +21,7 @@ import com.veilreader.app.domain.ReadingMilestoneKind
 import com.veilreader.app.domain.ReadingMilestoneRecord
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.manga.importing.MangaCbzIngestor
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
@@ -42,6 +44,19 @@ class LibraryExport(
     private val mangaImporter by lazy {
         MangaLocalImportCoordinator(context.applicationContext, library, database)
     }
+
+    private data class MangaLocalChapterSnapshot(
+        val bookId: String,
+        val readingOrder: Int,
+        val chapterKey: String,
+        val metadata: MangaLocalChapterMetadata,
+        val archiveFile: File
+    )
+
+    private data class MangaBackupArchive(
+        val chapter: MangaLocalChapterSnapshot,
+        val archivePath: String
+    )
 
     suspend fun writeNotebook(destination: Uri) {
         val snapshot = library.snapshot()
@@ -70,6 +85,7 @@ class LibraryExport(
     suspend fun writeBackup(destination: Uri) {
         val snapshot = library.snapshot()
         val mangaProgress = captureMangaRestorePoints(snapshot.books)
+        val mangaLocalChapters = captureMangaLocalChapters(snapshot.books)
         val gamePrefs = preferencesToJson(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE))
         withContext(Dispatchers.IO) {
             val files = snapshot.books.filter { it.isImported }.mapIndexed { index, book ->
@@ -86,12 +102,28 @@ class LibraryExport(
                     "books/" + (index + 1) + "." + backupExtension(book)
                 )
             }
+            val primaryArchivePaths = files.associate { (book, _, path) -> book.id to path }
+            val bookIndexes = snapshot.books.mapIndexed { index, book -> book.id to index }.toMap()
+            val mangaArchives = mangaLocalChapters.map { chapter ->
+                val archivePath = if (chapter.readingOrder == 0) {
+                    requireNotNull(primaryArchivePaths[chapter.bookId]) {
+                        "Primary Manga archive is missing from backup publications."
+                    }
+                } else {
+                    val bookIndex = requireNotNull(bookIndexes[chapter.bookId])
+                    "books/manga/" + (bookIndex + 1) + "/" +
+                        (chapter.readingOrder + 1) + ".cbz"
+                }
+                MangaBackupArchive(chapter, archivePath)
+            }
+
             val manifest = JSONObject().apply {
                 put("schemaVersion", CURRENT_BACKUP_SCHEMA)
                 put("appVersion", "0.10.0")
                 put("createdAtEpochMs", System.currentTimeMillis())
                 put("library", snapshot.toJson())
                 put("mangaProgress", mangaRestorePointsToJson(mangaProgress))
+                put("mangaLocalChapters", mangaLocalChaptersToJson(mangaArchives))
                 put("gamePreferences", gamePrefs)
                 put("publications", JSONArray().apply {
                     files.forEach { (book, _, path) -> put(JSONObject().apply {
@@ -118,6 +150,13 @@ class LibraryExport(
                     file.inputStream().use { it.copyTo(zip) }
                     zip.closeEntry()
                 }
+                mangaArchives
+                    .filter { it.chapter.readingOrder > 0 }
+                    .forEach { archived ->
+                        zip.putNextEntry(ZipEntry(archived.archivePath))
+                        archived.chapter.archiveFile.inputStream().use { it.copyTo(zip) }
+                        zip.closeEntry()
+                    }
             }
         }
     }
@@ -128,13 +167,16 @@ class LibraryExport(
         for (book in books) {
             if (book.format != BookFormat.COMIC) continue
             val progress = database.mangaProgress().find(book.id) ?: continue
+            val chapter = database.mangaCatalog().findChapter(progress.chapterId)
+                ?: continue
             put(
                 book.id,
                 MangaLocalRestorePoint(
                     pageIndex = progress.pageIndex,
                     pageCount = progress.pageCount,
                     chapterProgression = progress.chapterProgression,
-                    updatedAtEpochMs = progress.updatedAtEpochMs
+                    updatedAtEpochMs = progress.updatedAtEpochMs,
+                    chapterReadingOrder = chapter.readingOrder
                 )
             )
         }
@@ -150,6 +192,7 @@ class LibraryExport(
                 put("pageCount", point.pageCount ?: JSONObject.NULL)
                 put("chapterProgression", point.chapterProgression)
                 put("updatedAtEpochMs", point.updatedAtEpochMs)
+                put("chapterReadingOrder", point.chapterReadingOrder)
             })
         }
     }
@@ -171,13 +214,128 @@ class LibraryExport(
                         record.getInt("pageCount")
                     },
                     chapterProgression = record.getDouble("chapterProgression"),
-                    updatedAtEpochMs = record.getLong("updatedAtEpochMs")
+                    updatedAtEpochMs = record.getLong("updatedAtEpochMs"),
+                    chapterReadingOrder = record.optInt("chapterReadingOrder", 0)
                 )
                 require(put(bookId, point) == null) {
                     "Backup contains duplicate Manga progress for one book."
                 }
             }
         }
+    }
+
+    private suspend fun captureMangaLocalChapters(
+        books: List<Book>
+    ): List<MangaLocalChapterSnapshot> = buildList {
+        for (book in books) {
+            if (book.format != BookFormat.COMIC || !book.isImported) continue
+            val chapters = database.mangaCatalog().listChapters(book.id)
+            for (chapter in chapters) {
+                val localSource = database.mangaCatalog()
+                    .listChapterSources(chapter.id)
+                    .firstOrNull {
+                        it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+                    }
+                    ?: continue
+                val archive = mangaImporter.resolveLocalArchiveFile(
+                    book = book,
+                    chapterKey = localSource.chapterKey,
+                    readingOrder = chapter.readingOrder
+                ) ?: error(
+                    "Cannot back up " + book.title +
+                        ": local Manga chapter " + (chapter.readingOrder + 1) +
+                        " has no source archive."
+                )
+                add(
+                    MangaLocalChapterSnapshot(
+                        bookId = book.id,
+                        readingOrder = chapter.readingOrder,
+                        chapterKey = localSource.chapterKey,
+                        metadata = MangaLocalChapterMetadata(
+                            title = chapter.title ?: chapter.normalizedTitle,
+                            volume = chapter.volume,
+                            number = chapter.number,
+                            languageTag = chapter.languageTag
+                        ),
+                        archiveFile = archive
+                    )
+                )
+            }
+        }
+    }
+
+    private fun mangaLocalChaptersToJson(
+        archives: List<MangaBackupArchive>
+    ): JSONArray = JSONArray().apply {
+        archives
+            .sortedWith(
+                compareBy<MangaBackupArchive> { it.chapter.bookId }
+                    .thenBy { it.chapter.readingOrder }
+            )
+            .forEach { archived ->
+                val chapter = archived.chapter
+                put(JSONObject().apply {
+                    put("bookId", chapter.bookId)
+                    put("readingOrder", chapter.readingOrder)
+                    put("chapterKey", chapter.chapterKey)
+                    put("title", chapter.metadata.title ?: JSONObject.NULL)
+                    put("volume", chapter.metadata.volume ?: JSONObject.NULL)
+                    put("number", chapter.metadata.number ?: JSONObject.NULL)
+                    put("languageTag", chapter.metadata.languageTag ?: JSONObject.NULL)
+                    put("archivePath", archived.archivePath)
+                })
+            }
+    }
+
+    private fun parseMangaLocalChapters(
+        manifest: JSONObject,
+        stagingRoot: File
+    ): Map<String, List<MangaLocalChapterSnapshot>> {
+        val records = manifest.optJSONArray("mangaLocalChapters") ?: return emptyMap()
+        val unique = mutableSetOf<Pair<String, Int>>()
+        val parsed = buildList {
+            for (index in 0 until records.length()) {
+                val record = records.getJSONObject(index)
+                val bookId = record.getString("bookId")
+                val readingOrder = record.getInt("readingOrder")
+                require(bookId.isNotBlank() && readingOrder >= 0) {
+                    "Invalid Manga chapter backup identity."
+                }
+                require(unique.add(bookId to readingOrder)) {
+                    "Backup contains duplicate Manga chapter reading order."
+                }
+                val archivePath = requireSafeArchivePath(record.getString("archivePath"))
+                require(archivePath.startsWith("books/")) {
+                    "A Manga chapter archive is stored outside books/."
+                }
+                val archive = File(stagingRoot, archivePath).canonicalFile
+                require(
+                    archive.toPath().startsWith(stagingRoot.canonicalFile.toPath()) &&
+                        archive.isFile
+                ) {
+                    "A Manga chapter archive referenced by the manifest is missing."
+                }
+                add(
+                    MangaLocalChapterSnapshot(
+                        bookId = bookId,
+                        readingOrder = readingOrder,
+                        chapterKey = record.getString("chapterKey"),
+                        metadata = MangaLocalChapterMetadata(
+                            title = record.optNullableString("title"),
+                            volume = if (record.isNull("volume")) null
+                                else record.getDouble("volume"),
+                            number = if (record.isNull("number")) null
+                                else record.getDouble("number"),
+                            languageTag = record.optNullableString("languageTag")
+                        ),
+                        archiveFile = archive
+                    )
+                )
+            }
+        }
+        return parsed
+            .groupBy { it.bookId }
+            .mapValues { (_, chapters) -> chapters.sortedBy { it.readingOrder } }
     }
 
     private fun backupExtension(book: Book): String = when (book.format) {
@@ -201,19 +359,57 @@ class LibraryExport(
 
     private suspend fun rebuildMangaBooks(
         books: List<Book>,
-        restorePoints: Map<String, MangaLocalRestorePoint>
+        restorePoints: Map<String, MangaLocalRestorePoint>,
+        localChapters: Map<String, List<MangaLocalChapterSnapshot>> = emptyMap()
     ) {
         for (book in books) {
             if (book.format != BookFormat.COMIC || !book.isImported) continue
+
+            val chapters = localChapters[book.id].orEmpty()
+            val restorePoint = restorePoints[book.id]
+            if (chapters.isEmpty()) {
+                mangaImporter.rebuildPersistedManga(
+                    book = book,
+                    restorePoint = restorePoint
+                ).getOrThrow()
+                continue
+            }
+
+            require(chapters.first().readingOrder == 0) {
+                "Restored Manga chapter sequence must start at reading order 0."
+            }
+            chapters.forEachIndexed { expected, chapter ->
+                require(chapter.readingOrder == expected) {
+                    "Restored Manga chapter sequence must be contiguous."
+                }
+            }
+
+            val primary = chapters.first()
             mangaImporter.rebuildPersistedManga(
                 book = book,
-                restorePoint = restorePoints[book.id]
+                restorePoint = restorePoint?.takeIf { it.chapterReadingOrder == 0 },
+                primaryMetadata = primary.metadata
             ).getOrThrow()
+
+            chapters.drop(1).forEach { chapter ->
+                val appended = mangaImporter.appendChapter(
+                    bookId = book.id,
+                    uri = Uri.fromFile(chapter.archiveFile),
+                    metadata = chapter.metadata
+                ).getOrThrow()
+                require(!appended.duplicate && appended.readingOrder == chapter.readingOrder) {
+                    "Restored Manga chapter order diverged from the backup manifest."
+                }
+            }
+
+            restorePoint
+                ?.takeIf { it.chapterReadingOrder > 0 }
+                ?.let { mangaImporter.restoreLocalProgress(book.id, it).getOrThrow() }
         }
         library.flushWrites()
     }
 
-    /** Restores current schema-4 backups and older schema-1/2/3 local backups. */
+    /** Restores current schema-5 backups and older schema-1/2/3/4 local backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-" + UUID.randomUUID()).apply {
             mkdirs()
@@ -234,16 +430,29 @@ class LibraryExport(
 
             val incoming = when (schema) {
                 1 -> parseLegacySchemaOne(manifest.getJSONObject("libraryPreferences"))
-                2, 3, CURRENT_BACKUP_SCHEMA ->
+                2, 3, 4, CURRENT_BACKUP_SCHEMA ->
                     LibrarySnapshot.fromJson(manifest.getJSONObject("library"))
                 else -> error("Unsupported backup schema.")
             }
             val incomingMangaProgress = parseMangaRestorePoints(manifest)
+            val incomingMangaChapters = parseMangaLocalChapters(manifest, stagingRoot)
             val incomingComicIds = incoming.books
                 .filter { it.format == BookFormat.COMIC }
                 .mapTo(mutableSetOf()) { it.id }
             require(incomingMangaProgress.keys.all(incomingComicIds::contains)) {
                 "Manga progress references a book that is not a comic in this backup."
+            }
+            require(incomingMangaChapters.keys.all(incomingComicIds::contains)) {
+                "Manga chapter archives reference a book that is not a comic in this backup."
+            }
+            if (schema >= 5) {
+                incoming.books
+                    .filter { it.format == BookFormat.COMIC && it.isImported }
+                    .forEach { book ->
+                        require(incomingMangaChapters[book.id].orEmpty().isNotEmpty()) {
+                            "Schema-5 Manga backup is missing chapter source metadata."
+                        }
+                    }
             }
             val gamePreferences = JSONObject(
                 manifest.getJSONObject("gamePreferences").toString()
@@ -293,12 +502,19 @@ class LibraryExport(
             val gamePrefs = context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE)
             val oldLibrary = library.snapshot()
             val oldMangaProgress = captureMangaRestorePoints(oldLibrary.books)
+            val oldMangaChapters = captureMangaLocalChapters(oldLibrary.books)
+                .groupBy { it.bookId }
+                .mapValues { (_, chapters) -> chapters.sortedBy { it.readingOrder } }
             val oldGame = gamePrefs.all.toMap()
 
             try {
                 library.replaceAll(restoredSnapshot)
                 resetMangaDerivedCache()
-                rebuildMangaBooks(restoredSnapshot.books, incomingMangaProgress)
+                rebuildMangaBooks(
+                    restoredSnapshot.books,
+                    incomingMangaProgress,
+                    incomingMangaChapters
+                )
                 if (!replacePreferences(gamePrefs, gamePreferences)) {
                     error("Could not commit restored progression data.")
                 }
@@ -306,7 +522,11 @@ class LibraryExport(
                 val rollbackError = runCatching {
                     library.replaceAll(oldLibrary)
                     resetMangaDerivedCache()
-                    rebuildMangaBooks(oldLibrary.books, oldMangaProgress)
+                    rebuildMangaBooks(
+                        oldLibrary.books,
+                        oldMangaProgress,
+                        oldMangaChapters
+                    )
                 }.exceptionOrNull()
                 restorePreferencesSnapshot(gamePrefs, oldGame)
 
@@ -455,8 +675,8 @@ class LibraryExport(
 
     companion object {
         private const val GAME_PREFS = "veil_game_v1"
-        private const val CURRENT_BACKUP_SCHEMA = 4
-        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, 3, CURRENT_BACKUP_SCHEMA)
+        private const val CURRENT_BACKUP_SCHEMA = 5
+        private val SUPPORTED_BACKUP_SCHEMAS = setOf(1, 2, 3, 4, CURRENT_BACKUP_SCHEMA)
         private const val MAX_ENTRIES = 2_000
         private const val MAX_MANIFEST_BYTES = 5L * 1024L * 1024L
         private const val MAX_BACKUP_BYTES = 2L * 1024L * 1024L * 1024L
