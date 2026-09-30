@@ -554,7 +554,7 @@ fun ReaderScreen(
         initialValue = emptyList()
     )
     val bookPassageVisits by bookPassageVisitsFlow.collectAsStateWithLifecycle(
-        initialValue = library.passageVisits.value.filter { it.bookId == opened.book.id }
+        initialValue = library.passageVisitsFor(opened.book.id)
     )
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     var footnote by remember(opened.book.id, readerSessionInstanceId) {
