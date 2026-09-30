@@ -79,6 +79,8 @@ class MangaWorkMergePlanner {
         target.chapters.forEach { chapter ->
             chapter.semanticIdentity()?.let { semanticOwner.putIfAbsent(it, chapter.chapterId) }
         }
+        val projectedTargetIds = target.chapters
+            .mapTo(mutableSetOf(), MangaMergeChapterCandidate::chapterId)
 
         var nextReadingOrder =
             (target.chapters.maxOfOrNull(MangaMergeChapterCandidate::readingOrder) ?: -1) + 1
@@ -135,6 +137,13 @@ class MangaWorkMergePlanner {
                         reason = MangaMergeRejection.UNSTABLE_TARGET_IDENTITY,
                         conflictingSourceChapterId = chapter.chapterId
                     )
+                    if (!projectedTargetIds.add(projectedTargetChapterId)) {
+                        return MangaMergePlanResult.Rejected(
+                            reason = MangaMergeRejection.TARGET_IDENTITY_COLLISION,
+                            conflictingSourceChapterId = chapter.chapterId,
+                            conflictingTargetChapterId = projectedTargetChapterId
+                        )
+                    }
                     actions += MangaMergeChapterAction(
                         sourceBookId = source.bookId,
                         sourceChapterId = chapter.chapterId,
@@ -369,6 +378,7 @@ enum class MangaMergeRejection {
     INVALID_CHAPTER_ORDER,
     UNSTABLE_TARGET_IDENTITY,
     EXACT_ARCHIVE_METADATA_CONFLICT,
+    TARGET_IDENTITY_COLLISION,
     AMBIGUOUS_CHAPTER_COLLISION
 }
 
