@@ -94,6 +94,8 @@
     <string name="settings_theme_system">سیستم</string>
     <string name="settings_theme_light">روشن</string>
     <string name="settings_theme_dark">تیره</string>
+    <string name="settings_high_contrast">کنتراست بالا</string>
+    <string name="settings_high_contrast_description">خوانایی متن، خط‌مرزها، رنگ‌های وضعیت و سطح‌های رابط را تقویت می‌کند، بدون آنکه محتوای خود کتاب را تغییر دهد. قالب کتاب در Reader مستقل می‌ماند.</string>
     <string name="settings_reading_title">تنظیمات مطالعه</string>
     <string name="settings_reading_description">قالب پیش‌فرض، قلم، حرکت صفحه، روشنایی و چیدمان را تنظیم کنید.</string>
     <string name="settings_publication_theme">قالب کتاب</string>
