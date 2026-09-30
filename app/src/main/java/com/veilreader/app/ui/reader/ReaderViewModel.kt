@@ -9,7 +9,10 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReaderProgressWriterLease
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReadingSessionTracker
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,6 +42,8 @@ class ReaderViewModel(
     private var tracker: ReadingSessionTracker? = null
     private var openInstanceId: String? = null
     private var progressWriterLease: ReaderProgressWriterLease? = null
+    private val openAttemptGate = ReaderOpenAttemptGate()
+    private var openConfirmed = false
     private var resumed = false
     private var uncreditedActiveMillis = 0L
     private val locatorDeduplicator = ReaderLocatorDeduplicator()
@@ -54,75 +59,171 @@ class ReaderViewModel(
     }
 
     /**
-     * Idempotent for recomposition/configuration changes. The app-level open-request id is also the
-     * durable reading-session id, allowing the same logical session to survive process recreation.
+     * Prepares one Reader session for UI handoff.
+     *
+     * Suspend storage work happens outside the ViewModel monitor. The attempt generation is checked
+     * again before installing tracker/writer ownership, so an older open that resumes later cannot
+     * overtake a newer request.
+     *
+     * The prepared session is intentionally not written into session history until [confirmOpen].
      */
-    suspend fun openBook(bookId: String, initialProgress: Float, openInstanceId: String) {
-        if (tracker?.bookId == bookId && this.openInstanceId == openInstanceId) return
-        finishCurrentSession()
-
-        val nowWall = System.currentTimeMillis()
-        val nowElapsed = SystemClock.elapsedRealtime()
-        val resumeState = library.loadReadingSessionForResume(
-            sessionId = openInstanceId,
-            bookId = bookId
-        )
-        val restoredTracker = resumeState?.let { state ->
-            ReadingSessionTracker.restore(
-                snapshot = state.snapshot,
+    suspend fun openBook(
+        bookId: String,
+        initialProgress: Float,
+        openInstanceId: String
+    ): Boolean {
+        val attempt = synchronized(this) {
+            if (tracker?.bookId == bookId && this.openInstanceId == openInstanceId) {
+                return true
+            }
+            finishCurrentSession()
+            openAttemptGate.begin(
                 bookId = bookId,
-                startedAtElapsedMs = nowElapsed,
-                notedHighlightIds = state.notedHighlightIds
+                sessionInstanceId = openInstanceId
             )
         }
-        val currentTracker = restoredTracker ?: ReadingSessionTracker(
+
+        ReaderTrace.event(
+            "reader_open_attempt_started",
+            bookId = bookId,
             sessionId = openInstanceId,
-            bookId = bookId,
-            startedAtEpochMs = nowWall,
-            startedAtElapsedMs = nowElapsed
-        )
-        val writerLease = library.beginReaderProgressSession(
-            bookId = bookId,
-            sessionId = currentTracker.sessionId
+            details = "generation=${attempt.generation}"
         )
 
-        this.openInstanceId = openInstanceId
-        progressWriterLease = writerLease
-        tracker = currentTracker
-        ReaderTrace.event(
-            if (restoredTracker != null) "reader_session_restored" else "reader_open",
-            bookId = bookId,
-            sessionId = currentTracker.sessionId,
-            details = buildString {
-                append("initialProgress=")
-                append(initialProgress.coerceIn(0f, 1f))
-                append(" openInstanceId=")
-                append(openInstanceId)
-                if (restoredTracker != null) {
-                    append(" activeMillis=")
-                    append(currentTracker.activeMillis)
-                    append(" pacedPageTurns=")
-                    append(currentTracker.pacedPageTurns)
-                    append(" highlights=")
-                    append(currentTracker.highlightCount)
-                    append(" notes=")
-                    append(currentTracker.noteCount)
-                }
+        try {
+            val nowWall = System.currentTimeMillis()
+            val nowElapsed = SystemClock.elapsedRealtime()
+            val resumeState = library.loadReadingSessionForResume(
+                sessionId = openInstanceId,
+                bookId = bookId
+            )
+            currentCoroutineContext().ensureActive()
+
+            val restoredTracker = resumeState?.let { state ->
+                ReadingSessionTracker.restore(
+                    snapshot = state.snapshot,
+                    bookId = bookId,
+                    startedAtElapsedMs = nowElapsed,
+                    notedHighlightIds = state.notedHighlightIds
+                )
             }
-        )
-        resumed = false
-        uncreditedActiveMillis = currentTracker.activeMillis % ONE_MINUTE_MS
-        locatorDeduplicator.reset()
-        locatorSequence = 0L
-        val startProgress = initialProgress.coerceIn(0f, 1f)
-        _uiState.value = ReaderUiState(
-            bookId = bookId,
-            progress = startProgress,
-            activeMillis = currentTracker.activeMillis,
-            sessionStartProgress = startProgress,
-            sessionProgressDelta = 0f
-        )
+            val preparedTracker = restoredTracker ?: ReadingSessionTracker(
+                sessionId = openInstanceId,
+                bookId = bookId,
+                startedAtEpochMs = nowWall,
+                startedAtElapsedMs = nowElapsed
+            )
+
+            return synchronized(this) {
+                if (!openAttemptGate.complete(attempt)) {
+                    ReaderTrace.event(
+                        "reader_open_attempt_superseded",
+                        bookId = bookId,
+                        sessionId = openInstanceId,
+                        details = "generation=${attempt.generation}"
+                    )
+                    return@synchronized false
+                }
+
+                val writerLease = library.beginReaderProgressSession(
+                    bookId = bookId,
+                    sessionId = preparedTracker.sessionId
+                )
+                this.openInstanceId = openInstanceId
+                progressWriterLease = writerLease
+                tracker = preparedTracker
+                openConfirmed = false
+                resumed = false
+                uncreditedActiveMillis = preparedTracker.activeMillis % ONE_MINUTE_MS
+                locatorDeduplicator.reset()
+                locatorSequence = 0L
+
+                val startProgress = initialProgress.coerceIn(0f, 1f)
+                _uiState.value = ReaderUiState(
+                    bookId = bookId,
+                    progress = startProgress,
+                    activeMillis = preparedTracker.activeMillis,
+                    sessionStartProgress = startProgress,
+                    sessionProgressDelta = 0f
+                )
+
+                ReaderTrace.event(
+                    if (restoredTracker != null) {
+                        "reader_session_prepared_restored"
+                    } else {
+                        "reader_session_prepared"
+                    },
+                    bookId = bookId,
+                    sessionId = preparedTracker.sessionId,
+                    details = buildString {
+                        append("generation=")
+                        append(attempt.generation)
+                        append(" initialProgress=")
+                        append(startProgress)
+                        if (restoredTracker != null) {
+                            append(" activeMillis=")
+                            append(preparedTracker.activeMillis)
+                            append(" pacedPageTurns=")
+                            append(preparedTracker.pacedPageTurns)
+                            append(" highlights=")
+                            append(preparedTracker.highlightCount)
+                            append(" notes=")
+                            append(preparedTracker.noteCount)
+                        }
+                    }
+                )
+                true
+            }
+        } catch (cancelled: CancellationException) {
+            synchronized(this) {
+                openAttemptGate.cancel(attempt)
+            }
+            ReaderTrace.event(
+                "reader_open_attempt_cancelled",
+                bookId = bookId,
+                sessionId = openInstanceId,
+                details = "generation=${attempt.generation}"
+            )
+            throw cancelled
+        }
+    }
+
+    @Synchronized
+    fun confirmOpen(expectedOpenInstanceId: String): Boolean {
+        val current = tracker ?: return false
+        if (
+            openInstanceId != expectedOpenInstanceId ||
+            current.sessionId != expectedOpenInstanceId
+        ) {
+            return false
+        }
+        if (openConfirmed) return true
+
+        openConfirmed = true
         persistSession(immediate = true)
+        ReaderTrace.event(
+            "reader_open_confirmed",
+            bookId = current.bookId,
+            sessionId = current.sessionId
+        )
+        return true
+    }
+
+    @Synchronized
+    fun cancelOpen(expectedOpenInstanceId: String) {
+        openAttemptGate.cancelSession(expectedOpenInstanceId)
+        if (
+            openInstanceId == expectedOpenInstanceId &&
+            tracker != null &&
+            !openConfirmed
+        ) {
+            ReaderTrace.event(
+                "reader_open_preparation_aborted",
+                bookId = tracker?.bookId,
+                sessionId = expectedOpenInstanceId
+            )
+            finishCurrentSession()
+        }
     }
 
     fun onResume(expectedOpenInstanceId: String) {
@@ -288,6 +389,7 @@ class ReaderViewModel(
         expectedOpenInstanceId: String,
         bookId: String? = null
     ): ReadingSessionTracker? {
+        if (!openConfirmed) return null
         val current = tracker ?: return null
         if (
             !readerEventBelongsToSession(
@@ -303,6 +405,7 @@ class ReaderViewModel(
     }
 
     private fun heartbeat() {
+        if (!openConfirmed) return
         val current = tracker ?: return
         if (resumed) {
             creditActive(current.tick(SystemClock.elapsedRealtime()))
@@ -315,24 +418,44 @@ class ReaderViewModel(
     private fun finishCurrentSession() {
         val current = tracker
         val writerLease = progressWriterLease
+        val wasConfirmed = openConfirmed
+
         if (current == null) {
             writerLease?.let(library::endReaderProgressSession)
             progressWriterLease = null
             openInstanceId = null
+            openConfirmed = false
+            resumed = false
             return
         }
-        if (resumed) creditActive(current.onPause(SystemClock.elapsedRealtime()))
-        resumed = false
-        game.pauseReading()
-        publishActiveMillis()
-        library.flushProgress(current.bookId)
-        library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
-        library.flushReadingSession(current.sessionId)
+
+        if (wasConfirmed) {
+            if (resumed) creditActive(current.onPause(SystemClock.elapsedRealtime()))
+            resumed = false
+            game.pauseReading()
+            publishActiveMillis()
+            library.flushProgress(current.bookId)
+            library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
+            library.flushReadingSession(current.sessionId)
+            ReaderTrace.event(
+                "reader_closed",
+                bookId = current.bookId,
+                sessionId = current.sessionId
+            )
+        } else {
+            resumed = false
+            ReaderTrace.event(
+                "reader_prepared_session_discarded",
+                bookId = current.bookId,
+                sessionId = current.sessionId
+            )
+        }
+
         writerLease?.let(library::endReaderProgressSession)
-        ReaderTrace.event("reader_closed", bookId = current.bookId, sessionId = current.sessionId)
         tracker = null
         progressWriterLease = null
         openInstanceId = null
+        openConfirmed = false
         uncreditedActiveMillis = 0L
         locatorDeduplicator.reset()
         locatorSequence = 0L
@@ -353,6 +476,7 @@ class ReaderViewModel(
     }
 
     private fun persistSession(immediate: Boolean = false) {
+        if (!openConfirmed) return
         val current = tracker ?: return
         library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
         if (immediate) library.flushReadingSession(current.sessionId)
