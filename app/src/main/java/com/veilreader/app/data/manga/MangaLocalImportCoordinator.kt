@@ -197,17 +197,26 @@ class MangaLocalImportCoordinator(
     }
 
     private suspend fun materialize(source: Uri): File = withContext(Dispatchers.IO) {
+        val declaredSize = querySize(source)
+        if (declaredSize != null && declaredSize > limits.maxArchiveBytes) {
+            throw MangaLocalImportException(
+                MangaCbzImportFailureReason.ARCHIVE_TOO_LARGE
+            )
+        }
+
         val importsDir = File(appContext.filesDir, "publications").apply { mkdirs() }
         val target = File(importsDir, UUID.randomUUID().toString() + ".cbz")
+        val partial = File(importsDir, target.name + ".partial")
 
         try {
             appContext.contentResolver.openInputStream(source)?.use { input ->
-                target.outputStream().buffered().use { output ->
+                partial.outputStream().buffered().use { output ->
                     val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                     var copied = 0L
                     while (true) {
                         val read = input.read(buffer)
                         if (read < 0) break
+                        if (read == 0) continue
                         copied += read
                         if (copied > limits.maxArchiveBytes) {
                             throw MangaLocalImportException(
@@ -218,11 +227,15 @@ class MangaLocalImportCoordinator(
                     }
                 }
             } ?: throw IOException("Android could not read the selected CBZ")
-            if (target.length() == 0L) {
+            if (partial.length() == 0L) {
                 throw IOException("The selected CBZ is empty")
+            }
+            if (!partial.renameTo(target)) {
+                throw IOException("Could not commit the app-private CBZ copy")
             }
             target
         } catch (error: Throwable) {
+            partial.delete()
             target.delete()
             throw error
         }
@@ -315,6 +328,20 @@ class MangaLocalImportCoordinator(
             }
         }.getOrDefault("")
     }
+
+    private fun querySize(uri: Uri): Long? = runCatching {
+        appContext.contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.SIZE),
+            null,
+            null,
+            null
+        )?.use { cursor ->
+            if (!cursor.moveToFirst()) return@use null
+            val index = cursor.getColumnIndex(OpenableColumns.SIZE)
+            if (index < 0 || cursor.isNull(index)) null else cursor.getLong(index)
+        }
+    }.getOrNull()
 
     private fun displayName(uri: Uri): String? {
         if (uri.scheme == "file") return uri.lastPathSegment
