@@ -99,6 +99,68 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     }
 
     @Test
+    fun mergePreflight_verifiesArchives_andPlansIdentityRebuildWithoutMutation() = runBlocking {
+        val targetArchive = testArchive("Merge target ch 1.cbz") {
+            addPng("001.png")
+        }
+        val sourceArchive = testArchive("Merge source ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val target = coordinator.import(Uri.fromFile(targetArchive)).getOrThrow().book
+        val source = coordinator.import(Uri.fromFile(sourceArchive)).getOrThrow().book
+
+        val beforeTarget = db.mangaCatalog().listChapters(target.id)
+        val beforeSource = db.mangaCatalog().listChapters(source.id)
+
+        val plan = coordinator.preflightLocalMerge(
+            targetBookId = target.id,
+            sourceBookIds = listOf(source.id)
+        ).getOrThrow()
+
+        assertEquals(target.id, plan.targetBookId)
+        assertEquals(listOf(source.id), plan.sourceBookIds)
+        assertEquals(1, plan.chapterActions.size)
+        assertEquals(1, plan.chapterActions.single().targetReadingOrder)
+        assertTrue(plan.chapterActions.single().rebuildDerivedCache)
+        assertFalse(plan.mayDeleteSourceBooksBeforeVerification)
+        assertEquals(source.sourceUri, plan.splitReceiptSeed.sourceSnapshots.single().sourceUri)
+
+        // Preflight is intentionally side-effect free.
+        assertEquals(beforeTarget, db.mangaCatalog().listChapters(target.id))
+        assertEquals(beforeSource, db.mangaCatalog().listChapters(source.id))
+        assertEquals(2, db.books().count())
+    }
+
+    @Test
+    fun mergePreflight_rejectsCorruptedSourceArchiveBeforeAnyMutation() = runBlocking {
+        val targetArchive = testArchive("Integrity target ch 1.cbz") {
+            addPng("001.png")
+        }
+        val sourceArchive = testArchive("Integrity source ch 2.cbz") {
+            addPng("001.png")
+        }
+        val target = coordinator.import(Uri.fromFile(targetArchive)).getOrThrow().book
+        val source = coordinator.import(Uri.fromFile(sourceArchive)).getOrThrow().book
+
+        val sourceFile = File(
+            requireNotNull(Uri.parse(requireNotNull(source.sourceUri)).path)
+        )
+        sourceFile.appendBytes(byteArrayOf(9, 8, 7, 6))
+
+        val result = coordinator.preflightLocalMerge(
+            targetBookId = target.id,
+            sourceBookIds = listOf(source.id)
+        )
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is MangaMergeSourceIntegrityException)
+        assertEquals(1, db.mangaCatalog().listChapters(target.id).size)
+        assertEquals(1, db.mangaCatalog().listChapters(source.id).size)
+        assertEquals(2, db.books().count())
+    }
+
+    @Test
     fun appendingSecondCbzExtendsOneBookAndReopensCompletion() = runBlocking {
         val firstArchive = testArchive("Series ch 1.cbz") {
             addPng("001.png")
