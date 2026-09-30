@@ -931,7 +931,7 @@ fun LibraryScreen(
     }
 
     detailBook?.let { book ->
-        BookDetailSheet(
+        BookDetailDestination(
             book = book,
             archiveMemory = memoryState.memoryFor(book.id),
             artifactMemory = artifactMemoryByBookId[book.id],
@@ -1240,7 +1240,7 @@ private fun DeleteBookDialog(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BookDetailSheet(
+private fun BookDetailDestination(
     book: Book,
     archiveMemory: BookArchiveMemory?,
     artifactMemory: BookArtifactMemory?,
@@ -1471,7 +1471,7 @@ private fun BookDetailSheet(
                         )
 
                         book.currentChapter
-                            .takeIf { it.isNotBlank() && it != "Not started" }
+                            .takeIf { it.isNotBlank() && progress > 0f }
                             ?.let { chapter ->
                                 Text(
                                     chapter,
@@ -1535,25 +1535,6 @@ private fun BookDetailSheet(
                         )
                     ) {
                         Text(stringResource(R.string.book_detail_edit_details))
-                    }
-                }
-
-                if (book.isImported) {
-                    OutlinedButton(
-                        onClick = onDelete,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 48.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.error.copy(alpha = 0.52f)
-                        ),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text(stringResource(R.string.book_detail_delete))
                     }
                 }
 
@@ -1707,6 +1688,21 @@ private fun BookDetailSheet(
                                 }
                             }
                         }
+                    }
+                }
+
+                if (book.isImported) {
+                    BrassRule(Modifier.fillMaxWidth())
+                    TextButton(
+                        onClick = onDelete,
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .heightIn(min = 48.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Text(stringResource(R.string.book_detail_delete))
                     }
                 }
             }
