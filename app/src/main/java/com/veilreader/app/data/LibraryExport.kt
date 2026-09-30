@@ -119,6 +119,85 @@ class LibraryExport(private val context: Context, private val library: LocalLibr
         }
     }
 
+    private suspend fun captureMangaRestorePoints(
+        books: List<Book>
+    ): Map<String, MangaLocalRestorePoint> = buildMap {
+        for (book in books) {
+            if (book.format != BookFormat.COMIC) continue
+            val progress = database.mangaProgress().find(book.id) ?: continue
+            put(
+                book.id,
+                MangaLocalRestorePoint(
+                    pageIndex = progress.pageIndex,
+                    pageCount = progress.pageCount,
+                    chapterProgression = progress.chapterProgression,
+                    updatedAtEpochMs = progress.updatedAtEpochMs
+                )
+            )
+        }
+    }
+
+    private fun mangaRestorePointsToJson(
+        points: Map<String, MangaLocalRestorePoint>
+    ): JSONArray = JSONArray().apply {
+        points.toSortedMap().forEach { (bookId, point) ->
+            put(JSONObject().apply {
+                put("bookId", bookId)
+                put("pageIndex", point.pageIndex)
+                put("pageCount", point.pageCount ?: JSONObject.NULL)
+                put("chapterProgression", point.chapterProgression)
+                put("updatedAtEpochMs", point.updatedAtEpochMs)
+            })
+        }
+    }
+
+    private fun parseMangaRestorePoints(
+        manifest: JSONObject
+    ): Map<String, MangaLocalRestorePoint> {
+        val records = manifest.optJSONArray("mangaProgress") ?: return emptyMap()
+        return buildMap {
+            for (index in 0 until records.length()) {
+                val record = records.getJSONObject(index)
+                val bookId = record.getString("bookId")
+                require(bookId.isNotBlank()) { "Manga progress has an empty book id." }
+                val point = MangaLocalRestorePoint(
+                    pageIndex = record.getInt("pageIndex"),
+                    pageCount = if (record.isNull("pageCount")) {
+                        null
+                    } else {
+                        record.getInt("pageCount")
+                    },
+                    chapterProgression = record.getDouble("chapterProgression"),
+                    updatedAtEpochMs = record.getLong("updatedAtEpochMs")
+                )
+                require(put(bookId, point) == null) {
+                    "Backup contains duplicate Manga progress for one book."
+                }
+            }
+        }
+    }
+
+    private fun backupExtension(book: Book): String = when (book.format) {
+        BookFormat.EPUB -> "epub"
+        BookFormat.PDF -> "pdf"
+        BookFormat.COMIC -> "cbz"
+        BookFormat.AUDIO -> error("Audio publications are not backed up yet.")
+    }
+
+    private suspend fun rebuildMangaBooks(
+        books: List<Book>,
+        restorePoints: Map<String, MangaLocalRestorePoint>
+    ) {
+        for (book in books) {
+            if (book.format != BookFormat.COMIC || !book.isImported) continue
+            mangaImporter.rebuildPersistedManga(
+                book = book,
+                restorePoint = restorePoints[book.id]
+            ).getOrThrow()
+        }
+        library.flushWrites()
+    }
+
     /** Restores current schema-3 backups and older schema-1/2 local backups. */
     suspend fun restoreBackup(source: Uri): BackupRestoreResult = withContext(Dispatchers.IO) {
         val stagingRoot = File(context.cacheDir, "veil-restore-${UUID.randomUUID()}").apply { mkdirs() }
