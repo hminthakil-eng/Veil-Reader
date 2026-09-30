@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class MangaOfflineChapterLocatorTest {
@@ -64,12 +65,9 @@ class MangaOfflineChapterLocatorTest {
     }
 
     @Test
-    fun insufficientChapterIdentitySkipsUnsafeOfflineLookup() {
-        val id = MangaOfflineChapterLocator.idFor(
-            CanonicalMangaId("work"),
+    fun insufficientChapterIdentityIsRejectedBeforeOfflineLookup() {
+        assertThrows(IllegalArgumentException::class.java) {
             MangaChapterAnchor(languageTag = "en")
-        )
-
-        assertNull(id)
+        }
     }
 }
