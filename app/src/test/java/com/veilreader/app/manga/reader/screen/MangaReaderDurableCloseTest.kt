@@ -51,7 +51,8 @@ class MangaReaderDurableCloseTest {
                 store.lastSaved = null
 
                 assertTrue(viewModel.persistForClose())
-                val persisted = assertNotNull(store.lastSaved)
+                assertNotNull(store.lastSaved)
+                val persisted = requireNotNull(store.lastSaved)
                 assertEquals(MANGA_ID, persisted.mangaId)
                 assertEquals(0, persisted.pageIndex)
                 assertEquals(PAGE_COUNT, persisted.pageCount)
