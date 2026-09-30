@@ -1,6 +1,6 @@
 # Veil Manga Source Architecture v1
 
-Status: architecture-first foundation, behind the existing product surface.
+Status: integrated local/offline product foundation; live network sources remain opt-in and disabled.
 
 ## Goal
 
@@ -56,18 +56,16 @@ The coordinator intentionally does **not** choose a different source. Cross-sour
 
 `SourceRegistry` rejects duplicate IDs, provides deterministic ordering and filters providers by capability/language/content type.
 
-## Deliberately not in this slice
+## Current safety exclusions
 
-- no live source website adapter;
-- no network/HTML parser dependency;
-- no concrete WebView/Cloudflare implementation;
-- no Room schema changes;
-- no library migration;
-- no Manga UI;
-- no reader-mode changes;
-- no telemetry/community service.
+- no enabled live source website adapter;
+- no default network/HTML scraping path;
+- no concrete WebView/Cloudflare challenge UI in the product path;
+- no CBR ingestion until a separately reviewed safe archive strategy exists;
+- no source activation without explicit opt-in;
+- no telemetry/community service carrying reading payloads.
 
-That keeps the existing EPUB/PDF release candidate behavior unchanged.
+Manga now has its own Room-backed persistence, local CBZ ingestion, Hub and Reader path. EPUB/PDF ownership is still isolated: COMIC navigation is intercepted before Readium and Manga failures cannot silently fall through into the text reader.
 
 ## Completed foundation
 
@@ -228,14 +226,37 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
    - a failed import leaves the previous committed chapter directory untouched;
    - the resulting manifest remains compatible with the existing offline-first reader loader and canonical session adapter.
 
+15. **Room-backed Manga product persistence**
+   - `books` remains the single user-library catalog authority;
+   - Room v3 adds normalized Manga chapter/source/progress/offline-manifest tables;
+   - canonical session rehydration reads persisted ordered chapters and source links;
+   - detailed Manga progress and the cross-product Book progress summary commit transactionally;
+   - derived cover/fingerprint writes are narrow-column updates and cannot regress newer progress;
+   - Book deletion cascades Manga-owned database state while historical general reading-session policy remains unchanged.
+
+16. **Local CBZ product path**
+   - document picker routes CBZ to the Manga importer instead of Readium;
+   - app-private source copy uses size preflight, bounded streaming and partial-file staging;
+   - content fingerprint deduplicates repeated imports before creating a second catalog identity;
+   - safe CBZ ingestion generates the explicit offline cache + first-page cover;
+   - failures compensate database rows, staged source files and generated cache;
+   - COMIC open routes rehydrate a Manga session and render through the dedicated Manga reader;
+   - Manga Hub exposes real Start / Continue / Read again state from durable progress.
+
+17. **Backup / restore compatibility**
+   - backup schema v4 stores the source CBZ plus compact exact Manga reader progress;
+   - derived image cache and cover are intentionally not backed up;
+   - restore regenerates fingerprint, cover, catalog, offline manifest and page cache from the CBZ source;
+   - schemas 1/2/3 remain accepted;
+   - failed restore attempts rebuild the previous Manga state before returning failure;
+   - instrumentation coverage now includes CBZ import, duplicate prevention, unsafe-archive rollback, Room persistence/migration and Manga backup round-trip; execution remains pending the Android verification gate.
+
 ## Next vertical slices
 
-1. **Durable Manga catalog + product wiring**
-   - persist canonical works and source links;
-   - persist progress and offline manifests;
-   - connect SAF/local document selection to the CBZ ingestor and then to the canonical product-session adapter;
-   - versioned schema migration + backup compatibility;
-   - only land after full Android/Gradle verification is available.
+1. **Richer local Manga catalog**
+   - multi-CBZ series/chapter ingestion with explicit reading order;
+   - series/chapter metadata editing without creating a second Book catalog;
+   - cache-size visibility and per-title offline cleanup controls.
 
 2. **Android challenge UI driver**
    - lifecycle-safe WebView host behind `ChallengeUiDriver`;
@@ -266,8 +287,9 @@ That keeps the existing EPUB/PDF release candidate behavior unchanged.
 - Unnumbered chapter cache identity passed `MANGA_OFFLINE_LOCATOR_SMOKE_OK`: normalized-title identity survives provider-key replacement and distinguishes different specials.
 - Reader image delivery now has unit gates for cache-root confinement, byte-size/hash verification, remote URL/header validation and secret redaction. Full Coil/Compose Android compilation remains pending the Android build gate.
 - Extreme-image strategy has deterministic JVM tests for standard/local-subsampling/remote-preview decisions and dimension-probe planning. Independent pure-Kotlin smoke passed with `EXTREME_IMAGE_STRATEGY_SMOKE_OK`.
-- Reader screen integration now has deterministic unit gates for session identity/source ownership, progress remapping and exclusive gesture ownership. Full ViewModel/Compose/ZoomImage Android verification remains blocked on the Android build gate.
-- GitHub Actions is currently failing before any workflow step starts: the observed jobs have no assigned runner and no step output.
+- Reader screen integration now has deterministic unit gates for session identity/source ownership, progress remapping, exclusive gesture ownership and durable-close success/failure retry behavior.
+- New Android instrumentation coverage is present for Room v3 migration/cascades, Room Manga progress/offline round-trip, local CBZ import/dedup/rollback and schema-v4 Manga backup/restore round-trip. These new instrumentation tests are source-complete but are not claimed as executed in this source-only pass.
+- GitHub Actions was previously observed failing before workflow steps started because no runner was assigned; re-check infrastructure only when the Android verification gate is intentionally opened.
 - Full Android/Gradle verification remains required before merge.
 
 ## Quality gates
