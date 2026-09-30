@@ -39,13 +39,19 @@ internal class ReaderNavigationTransactionGate(
     }
 
     @Synchronized
+    fun isActive(nowElapsedMs: Long): Boolean =
+        freshActive(nowElapsedMs) != null
+
+    @Synchronized
     fun consumeSettled(nowElapsedMs: Long): ReaderNavigationTransaction? {
-        val transaction = active ?: return null
-        val elapsed = nowElapsedMs - transaction.startedAtElapsedMs
-        if (elapsed < 0L || elapsed > timeoutMs.coerceAtLeast(0L)) {
-            active = null
-            return null
-        }
+        val transaction = freshActive(nowElapsedMs) ?: return null
+        active = null
+        return transaction
+    }
+
+    @Synchronized
+    fun cancelActive(nowElapsedMs: Long): ReaderNavigationTransaction? {
+        val transaction = freshActive(nowElapsedMs) ?: return null
         active = null
         return transaction
     }
@@ -53,6 +59,16 @@ internal class ReaderNavigationTransactionGate(
     @Synchronized
     fun reset() {
         active = null
+    }
+
+    private fun freshActive(nowElapsedMs: Long): ReaderNavigationTransaction? {
+        val transaction = active ?: return null
+        val elapsed = nowElapsedMs - transaction.startedAtElapsedMs
+        if (elapsed < 0L || elapsed > timeoutMs.coerceAtLeast(0L)) {
+            active = null
+            return null
+        }
+        return transaction
     }
 
     companion object {
