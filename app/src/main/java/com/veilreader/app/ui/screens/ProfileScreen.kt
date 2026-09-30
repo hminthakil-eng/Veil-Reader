@@ -104,7 +104,7 @@ fun ProfileScreen(
             subtitle = "$pathName · $rankName"
         )
 
-        VeilReveal(delayMillis = 40, distance = 10.dp) {
+        VeilReveal(realm = VeilRealm.ARCHIVE, delayMillis = 40, distance = 10.dp) {
             ArchivistDossierPanel(
                 profile = p,
                 highlightCount = highlightCount,
@@ -185,7 +185,7 @@ fun ProfileScreen(
                 val name = localizedSigilName(id)
                 val (value, target) = progress
                 val earned = id in p.earnedSigils
-                VeilReveal(
+                VeilReveal(realm = VeilRealm.ARCHIVE, 
                     delayMillis = 70 + index * 45,
                     distance = 7.dp
                 ) {
@@ -215,7 +215,7 @@ fun ProfileScreen(
         )
 
         veiledDiscoveries.forEachIndexed { index, discovery ->
-            VeilReveal(
+            VeilReveal(realm = VeilRealm.ARCHIVE, 
                 delayMillis = 60 + index * 40,
                 distance = 8.dp
             ) {
