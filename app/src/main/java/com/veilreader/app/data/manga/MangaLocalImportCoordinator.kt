@@ -1,6 +1,8 @@
 package com.veilreader.app.data.manga
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.room.withTransaction
@@ -20,6 +22,7 @@ import com.veilreader.app.manga.library.CanonicalMangaId
 import com.veilreader.app.manga.library.MangaCacheLayout
 import com.veilreader.app.manga.library.MangaChapterAnchor
 import com.veilreader.app.manga.library.MangaOfflineChapterLocator
+import com.veilreader.app.manga.library.OfflineChapterManifest
 import java.io.File
 import java.io.IOException
 import java.security.MessageDigest
@@ -28,6 +31,7 @@ import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.min
 
 class MangaLocalImportException(
     val reason: MangaCbzImportFailureReason
@@ -153,6 +157,8 @@ class MangaLocalImportCoordinator(
                     throw MangaLocalImportException(ingested.reason)
             }
             RoomMangaOfflineCacheIndex(database).put(manifest)
+            val coverPath = cacheCover(manifest, book.id)
+            library.updateCoverCachePath(book.id, coverPath)
 
             return Result.success(commit)
         } catch (error: Throwable) {
@@ -217,6 +223,79 @@ class MangaLocalImportCoordinator(
         }
     }
 
+    private suspend fun cacheCover(
+        manifest: OfflineChapterManifest,
+        bookId: String
+    ): String = withContext(Dispatchers.IO) {
+        runCatching {
+            val firstPage = manifest.pages.minByOrNull { it.index } ?: return@runCatching ""
+            val root = cacheRoot.canonicalFile
+            val source = File(root, firstPage.relativePath).canonicalFile
+            check(source.toPath().startsWith(root.toPath()) && source.isFile)
+
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            BitmapFactory.decodeFile(source.absolutePath, bounds)
+            check(bounds.outWidth > 0 && bounds.outHeight > 0)
+
+            var sampleSize = 1
+            while (
+                bounds.outWidth / sampleSize > COVER_DECODE_MAX_WIDTH ||
+                bounds.outHeight / sampleSize > COVER_DECODE_MAX_HEIGHT
+            ) {
+                sampleSize *= 2
+            }
+
+            val decoded = BitmapFactory.decodeFile(
+                source.absolutePath,
+                BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = Bitmap.Config.ARGB_8888
+                }
+            ) ?: return@runCatching ""
+
+            val scale = min(
+                COVER_MAX_WIDTH.toFloat() / decoded.width.toFloat(),
+                COVER_MAX_HEIGHT.toFloat() / decoded.height.toFloat()
+            ).coerceAtMost(1f)
+            val output = if (scale < 0.999f) {
+                Bitmap.createScaledBitmap(
+                    decoded,
+                    (decoded.width * scale).toInt().coerceAtLeast(1),
+                    (decoded.height * scale).toInt().coerceAtLeast(1),
+                    true
+                )
+            } else {
+                decoded
+            }
+
+            try {
+                val coversDir = File(appContext.filesDir, "covers").apply { mkdirs() }
+                val safeName = UUID.nameUUIDFromBytes(
+                    "veil-cover:$bookId".toByteArray(Charsets.UTF_8)
+                ).toString()
+                val target = File(coversDir, "$safeName.jpg")
+                val temporary = File(coversDir, "$safeName.tmp")
+
+                temporary.outputStream().buffered().use { stream ->
+                    check(output.compress(Bitmap.CompressFormat.JPEG, COVER_JPEG_QUALITY, stream))
+                }
+                check(temporary.length() > 0L)
+                if (target.exists() && !target.delete()) {
+                    temporary.delete()
+                    return@runCatching ""
+                }
+                if (!temporary.renameTo(target)) {
+                    temporary.delete()
+                    return@runCatching ""
+                }
+                target.absolutePath
+            } finally {
+                if (output !== decoded) output.recycle()
+                decoded.recycle()
+            }
+        }.getOrDefault("")
+    }
+
     private fun displayName(uri: Uri): String? {
         if (uri.scheme == "file") return uri.lastPathSegment
         return runCatching {
@@ -267,5 +346,10 @@ class MangaLocalImportCoordinator(
             CBZ_MEDIA_TYPE,
             "application/x-cbz"
         )
+        const val COVER_MAX_WIDTH = 600
+        const val COVER_MAX_HEIGHT = 900
+        const val COVER_DECODE_MAX_WIDTH = 1_200
+        const val COVER_DECODE_MAX_HEIGHT = 1_800
+        const val COVER_JPEG_QUALITY = 88
     }
 }
