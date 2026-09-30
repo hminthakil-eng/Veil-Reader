@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -21,7 +22,9 @@ import com.veilreader.app.domain.LibraryAtmosphereState
 fun Modifier.libraryArchiveAtmosphere(
     state: LibraryAtmosphereState,
     seed: Int = 0
-): Modifier = drawBehind {
+): Modifier = composed {
+    val quality = qualityPolicyFor(LocalVeilPerformanceTier.current)
+    drawBehind {
     val w = size.width
     val h = size.height
     if (w <= 1f || h <= 1f) return@drawBehind
@@ -36,7 +39,7 @@ fun Modifier.libraryArchiveAtmosphere(
     val vanishingY = h * 0.265f
 
     // Distant stack planes: denser libraries reveal deeper architecture instead of more cards.
-    repeat(state.distantStackLayers) { index ->
+    repeat(scaledDecorativeCount(state.distantStackLayers, quality.geometryMultiplier, 1)) { index ->
         val t = (index + 1f) / (state.distantStackLayers + 1f)
         val left = w * (0.035f + t * 0.115f)
         val right = w - left
@@ -71,7 +74,7 @@ fun Modifier.libraryArchiveAtmosphere(
     }
 
     // Great arches scale with real archive density.
-    repeat(state.archLayers) { index ->
+    repeat(scaledDecorativeCount(state.archLayers, quality.geometryMultiplier, 1)) { index ->
         val inset = w * (0.055f + index * 0.046f)
         val topOffset = -h * (0.105f + index * 0.017f)
         val archHeight = h * (0.42f + index * 0.045f)
@@ -91,7 +94,7 @@ fun Modifier.libraryArchiveAtmosphere(
     }
 
     // Shelf ribs grow from actual archive density. They stay in the periphery.
-    repeat(state.shelfBays) { index ->
+    repeat(scaledDecorativeCount(state.shelfBays, quality.geometryMultiplier, 1)) { index ->
         val y = h * (0.34f + index * 0.045f)
         if (y >= h * 0.88f) return@repeat
         val depth = (index + 1f) / state.shelfBays.coerceAtLeast(1)
@@ -114,7 +117,7 @@ fun Modifier.libraryArchiveAtmosphere(
     }
 
     // Active reading warms a small number of architectural lamps.
-    repeat(state.lampCount) { index ->
+    repeat(scaledDecorativeCount(state.lampCount, quality.geometryMultiplier)) { index ->
         val span = state.lampCount.coerceAtLeast(1)
         val x = w * (0.16f + (index + 0.5f) / span * 0.68f)
         val y = h * (0.115f + (index % 2) * 0.035f)
@@ -140,7 +143,7 @@ fun Modifier.libraryArchiveAtmosphere(
     }
 
     // Completed volumes create distant sealed alcoves, never badges over book covers.
-    repeat(state.completedAlcoves) { index ->
+    repeat(scaledDecorativeCount(state.completedAlcoves, quality.geometryMultiplier)) { index ->
         val side = if (index % 2 == 0) 0 else 1
         val row = index / 2
         val alcoveW = w * 0.055f
@@ -170,7 +173,7 @@ fun Modifier.libraryArchiveAtmosphere(
     }
 
     // Deep Shelf density opens darker side corridors. Deep quiet affects atmosphere, not access.
-    repeat(state.deepCorridors) { index ->
+    repeat(scaledDecorativeCount(state.deepCorridors, quality.geometryMultiplier)) { index ->
         val leftSide = index % 2 == 0
         val row = index / 2
         val corridorW = w * (0.085f + row * 0.012f)
@@ -203,7 +206,7 @@ fun Modifier.libraryArchiveAtmosphere(
     }
 
     // Deterministic dust becomes more legible as the archive gains physical depth and age.
-    repeat(state.dustMotes) { index ->
+    repeat(scaledDecorativeCount(state.dustMotes, quality.particleMultiplier, 1)) { index ->
         val xUnit = ((index * 37 + seed * 13 + 19) % 103) / 102f
         val yUnit = ((index * 61 + seed * 5 + 31) % 107) / 106f
         val larger = index % 7 == 0
@@ -232,8 +235,8 @@ fun Modifier.libraryArchiveAtmosphere(
         brush = Brush.verticalGradient(
             listOf(
                 Color.Transparent,
-                mist.copy(alpha = state.fogAlpha * 0.055f),
-                ink.copy(alpha = state.fogAlpha * 0.62f)
+                mist.copy(alpha = state.fogAlpha * 0.055f * quality.atmosphereMultiplier),
+                ink.copy(alpha = state.fogAlpha * 0.62f * quality.atmosphereMultiplier)
             ),
             startY = h * 0.58f,
             endY = h
@@ -253,4 +256,5 @@ fun Modifier.libraryArchiveAtmosphere(
         ),
         size = size
     )
+    }
 }
