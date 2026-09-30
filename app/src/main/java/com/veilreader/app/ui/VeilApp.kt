@@ -660,7 +660,6 @@ fun VeilApp(
     } else if (route.activeChamber == "manga") {
         MangaHubScreen(
             books = books,
-            onOpenBook = { book -> requestOpenBook(book) },
             onOpenLibrary = { routeViewModel.selectTab(VeilTab.LIBRARY) },
             onClose = routeViewModel::closeChamber
         )
