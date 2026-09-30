@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.theme
 
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.domain.PerformanceTier
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -43,5 +44,31 @@ class DesignSystemTest {
                 VeilLatinTypography.bodyLarge.lineHeight
         )
         assertEquals(0f, VeilPersianTypography.labelSmall.letterSpacing.value, 0f)
+    }
+
+    @Test
+    fun `performance tiers scale decoration monotonically without disabling the visual system`() {
+        val full = qualityPolicyFor(PerformanceTier.FULL)
+        val balanced = qualityPolicyFor(PerformanceTier.BALANCED)
+        val essential = qualityPolicyFor(PerformanceTier.ESSENTIAL)
+
+        assertTrue(full.atmosphereMultiplier > balanced.atmosphereMultiplier)
+        assertTrue(balanced.atmosphereMultiplier > essential.atmosphereMultiplier)
+        assertTrue(full.geometryMultiplier > balanced.geometryMultiplier)
+        assertTrue(balanced.geometryMultiplier > essential.geometryMultiplier)
+        assertTrue(full.particleMultiplier > balanced.particleMultiplier)
+        assertTrue(balanced.particleMultiplier > essential.particleMultiplier)
+
+        assertTrue(essential.atmosphereMultiplier > 0f)
+        assertTrue(essential.ornamentMultiplier > 0f)
+        assertTrue(essential.geometryMultiplier > 0f)
+    }
+
+    @Test
+    fun `decorative counts never exceed source complexity and preserve a minimum when requested`() {
+        assertEquals(14, scaledDecorativeCount(14, 1f, minimumWhenPresent = 2))
+        assertEquals(8, scaledDecorativeCount(14, 0.58f, minimumWhenPresent = 2))
+        assertEquals(3, scaledDecorativeCount(14, 0.18f, minimumWhenPresent = 2))
+        assertEquals(0, scaledDecorativeCount(0, 1f, minimumWhenPresent = 2))
     }
 }
