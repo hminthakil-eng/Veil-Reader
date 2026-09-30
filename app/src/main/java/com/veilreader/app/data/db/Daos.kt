@@ -14,6 +14,25 @@ interface BookDao {
     @Query("SELECT * FROM books ORDER BY lastOpenedAtEpochMs DESC, addedAtEpochMs DESC")
     fun observeAll(): Flow<List<BookWithCollections>>
 
+    /**
+     * User-facing Library projection.
+     *
+     * Source Books participating in an active reversible Manga merge remain fully persisted for
+     * backup/split, but are hidden from ordinary Library surfaces to avoid duplicate works.
+     */
+    @Transaction
+    @Query(
+        """
+        SELECT b.* FROM books b
+        WHERE NOT EXISTS (
+            SELECT 1 FROM manga_merge_members mm
+            WHERE mm.sourceBookId = b.id
+        )
+        ORDER BY b.lastOpenedAtEpochMs DESC, b.addedAtEpochMs DESC
+        """
+    )
+    fun observeVisible(): Flow<List<BookWithCollections>>
+
     @Transaction
     @Query("SELECT * FROM books ORDER BY lastOpenedAtEpochMs DESC, addedAtEpochMs DESC")
     suspend fun listAllWithCollections(): List<BookWithCollections>
@@ -93,6 +112,22 @@ interface BookDao {
 
     @Query("UPDATE books SET finished = 0 WHERE id = :id")
     suspend fun reopenMangaAfterExtension(id: String): Int
+
+    @Query(
+        """
+        UPDATE books
+        SET progress = :progress,
+            lastOpenedAtEpochMs = :lastOpenedAtEpochMs,
+            finished = :finished
+        WHERE id = :id
+        """
+    )
+    suspend fun restoreMangaMergeSummary(
+        id: String,
+        progress: Float,
+        lastOpenedAtEpochMs: Long,
+        finished: Boolean
+    ): Int
 
     @Query("DELETE FROM books WHERE id = :id") suspend fun deleteById(id: String)
     @Query("DELETE FROM books") suspend fun deleteAll()

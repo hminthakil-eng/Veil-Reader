@@ -66,6 +66,56 @@ class MangaWorkMergePlannerTest {
     }
 
     @Test
+    fun plan_rejectsExactArchiveWhenChapterIdentityConflicts() {
+        val shared = "e".repeat(64)
+        val target = member(
+            "target",
+            chapter("target", "t0", 0, shared, number = 1.0)
+        )
+        val source = member(
+            "source",
+            chapter("source", "s0", 0, shared, number = 2.0)
+        )
+
+        val result = planner.plan(target, listOf(source))
+
+        assertTrue(result is MangaMergePlanResult.Rejected)
+        result as MangaMergePlanResult.Rejected
+        assertEquals(MangaMergeRejection.EXACT_ARCHIVE_METADATA_CONFLICT, result.reason)
+        assertEquals("s0", result.conflictingSourceChapterId)
+        assertEquals("t0", result.conflictingTargetChapterId)
+    }
+
+    @Test
+    fun plan_deduplicatesSameArchiveAcrossTwoSources_toProjectedTargetCopy() {
+        val target = member(
+            "target",
+            chapter("target", "t0", 0, "0".repeat(64), number = 1.0)
+        )
+        val shared = "f".repeat(64)
+        val sourceA = member(
+            "source-a",
+            chapter("source-a", "a0", 0, shared, number = 2.0)
+        )
+        val sourceB = member(
+            "source-b",
+            chapter("source-b", "b0", 0, shared, number = 2.0)
+        )
+
+        val plan = (
+            planner.plan(target, listOf(sourceA, sourceB)) as MangaMergePlanResult.Ready
+            ).plan
+
+        val rebuilt = plan.chapterActions.first()
+        val deduped = plan.chapterActions.last()
+        assertEquals(MangaMergeDisposition.REBUILD_FROM_SOURCE_ARCHIVE, rebuilt.disposition)
+        assertEquals(MangaMergeDisposition.DEDUPLICATE_EXACT_ARCHIVE, deduped.disposition)
+        assertEquals(rebuilt.plannedTargetChapterId, deduped.plannedTargetChapterId)
+        assertEquals(rebuilt.plannedTargetChapterId, deduped.matchedTargetChapterId)
+        assertEquals(rebuilt.targetReadingOrder, deduped.targetReadingOrder)
+    }
+
+    @Test
     fun plan_rejectsDifferentArchivesWithSameChapterIdentity() {
         val target = member(
             "target",
