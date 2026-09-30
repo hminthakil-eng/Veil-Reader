@@ -37,16 +37,27 @@ import com.veilreader.app.data.LibraryExport
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
+import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.manga.MangaLocalImportCoordinator
+import com.veilreader.app.data.manga.RoomMangaOfflineCacheIndex
+import com.veilreader.app.data.manga.RoomMangaProgressStore
+import com.veilreader.app.data.manga.RoomMangaSessionRepository
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
+import com.veilreader.app.manga.reader.presentation.MangaReaderChapterLoader
+import com.veilreader.app.manga.reader.screen.MangaReaderIntegratedScreen
+import com.veilreader.app.manga.reader.screen.MangaReaderSession
+import com.veilreader.app.manga.reader.screen.MangaSessionAdapterResult
+import com.veilreader.app.manga.source.SourceExecutionCoordinator
 import com.veilreader.app.ui.navigation.VeilAppViewModel
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.screens.ArchiveScreen
@@ -93,50 +104,64 @@ fun VeilApp(
     DisposableEffect(sensory) {
         onDispose { sensory.dispose() }
     }
+    val database = remember(context) { VeilDatabase.get(context) }
     val library = remember(context) { LocalLibraryRepository(context) }
     val game = remember(context) { GameRepository(context) }
     val readerEngine = remember(context) { ReadiumEngine(context) }
+    val mangaImporter = remember(context, library, database) {
+        MangaLocalImportCoordinator(context, library, database)
+    }
+    val mangaOfflineStore = remember(database) { RoomMangaOfflineCacheIndex(database) }
+    val mangaProgressStore = remember(database) { RoomMangaProgressStore(database) }
+    val mangaSessionRepository = remember(database) { RoomMangaSessionRepository(database) }
+    val mangaLoader = remember(mangaOfflineStore) {
+        MangaReaderChapterLoader(
+            offlineIndex = mangaOfflineStore,
+            sourceExecution = SourceExecutionCoordinator()
+        )
+    }
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
+    var activeMangaSession by remember { mutableStateOf<MangaReaderSession?>(null) }
     var activeContinuity by remember { mutableStateOf<ReadingContinuitySummary?>(null) }
     var activeReturnRitual by remember { mutableStateOf<BookReturnRitual?>(null) }
     var activeReturnLocatorJson by remember { mutableStateOf<String?>(null) }
 
-    // While Readium owns the screen, remove these collectors from composition entirely so
-    // progress/game writes cannot invalidate the app shell. StateFlow immediately supplies its
-    // latest value when these collectors re-enter after the reader closes.
-    val booksState = if (openedPublication == null) {
+    // While either dedicated reader owns the screen, remove shell collectors from composition so
+    // progress writes cannot invalidate the hidden app shell.
+    val readerSurfaceActive = openedPublication != null || activeMangaSession != null
+    val booksState = if (!readerSurfaceActive) {
         library.books.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val highlightsState = if (openedPublication == null) {
+    val highlightsState = if (!readerSurfaceActive) {
         library.highlights.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val bookmarksState = if (openedPublication == null) {
+    val bookmarksState = if (!readerSurfaceActive) {
         library.bookmarks.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val readingSessionsState = if (openedPublication == null) {
+    val readingSessionsState = if (!readerSurfaceActive) {
         library.readingSessions.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val readingCyclesState = if (openedPublication == null) {
+    val readingCyclesState = if (!readerSurfaceActive) {
         library.readingCycles.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val passageVisitsState = if (openedPublication == null) {
+    val passageVisitsState = if (!readerSurfaceActive) {
         library.passageVisits.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val readingMilestonesState = if (openedPublication == null) {
+    val readingMilestonesState = if (!readerSurfaceActive) {
         library.readingMilestones.collectAsStateWithLifecycle()
     } else {
         null
@@ -179,27 +204,27 @@ fun VeilApp(
             ?.let { library.updateContentFingerprint(book.id, it) }
     }
 
-    val profileState = if (openedPublication == null) {
+    val profileState = if (!readerSurfaceActive) {
         game.profile.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val questsState = if (openedPublication == null) {
+    val questsState = if (!readerSurfaceActive) {
         game.quests.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val dailyGoalState = if (openedPublication == null) {
+    val dailyGoalState = if (!readerSurfaceActive) {
         game.dailyGoalMinutes.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val equippedSigilState = if (openedPublication == null) {
+    val equippedSigilState = if (!readerSurfaceActive) {
         game.equippedSigil.collectAsStateWithLifecycle()
     } else {
         null
     }
-    val castleTitleState = if (openedPublication == null) {
+    val castleTitleState = if (!readerSurfaceActive) {
         game.castleTitle.collectAsStateWithLifecycle()
     } else {
         null
