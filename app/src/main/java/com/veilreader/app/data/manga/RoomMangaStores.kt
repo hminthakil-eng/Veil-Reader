@@ -28,6 +28,7 @@ import com.veilreader.app.manga.source.SourceId
 class RoomMangaProgressStore(
     database: VeilDatabase
 ) : MangaProgressStore {
+    private val books = database.books()
     private val catalog = database.mangaCatalog()
     private val progress = database.mangaProgress()
 
@@ -66,6 +67,24 @@ class RoomMangaProgressStore(
                 updatedAtEpochMs = progressValue.updatedAtEpochMs
             )
         )
+
+        val chapters = catalog.listChapters(progressValue.mangaId.value)
+        val chapterIndex = chapters.indexOfFirst { it.id == chapter.id }
+        if (chapterIndex >= 0 && chapters.isNotEmpty()) {
+            val overallProgress = (
+                (chapterIndex.toDouble() + progressValue.chapterProgression) /
+                    chapters.size.toDouble()
+                ).coerceIn(0.0, 1.0)
+            val finished =
+                chapterIndex == chapters.lastIndex &&
+                    progressValue.chapterProgression >= FINISHED_PROGRESSION
+            books.updateMangaProgressSummary(
+                id = progressValue.mangaId.value,
+                progress = overallProgress.toFloat(),
+                updatedAtEpochMs = progressValue.updatedAtEpochMs,
+                finished = finished
+            )
+        }
     }
 
     override suspend fun delete(mangaId: CanonicalMangaId) {
