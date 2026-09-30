@@ -30,6 +30,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ArrodesFragment
@@ -58,6 +60,7 @@ import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveArrodesFragments
+import com.veilreader.app.domain.orderArrodesFragmentsForSession
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -65,6 +68,7 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import kotlinx.coroutines.delay
 
 @Composable
 fun ArrodesMirrorScreen(
@@ -81,23 +85,60 @@ fun ArrodesMirrorScreen(
             passageVisits = passageVisits
         )
     }
+    val sessionSeed = rememberSaveable {
+        (System.currentTimeMillis() xor (fragments.size.toLong() shl 32)).toInt()
+    }
+    val sessionFragments = remember(fragments, sessionSeed) {
+        orderArrodesFragmentsForSession(fragments, sessionSeed)
+    }
     var index by rememberSaveable { mutableIntStateOf(0) }
     var manifested by rememberSaveable { mutableStateOf(false) }
+    var transitionToken by remember { mutableIntStateOf(0) }
+    var transitioning by remember { mutableStateOf(false) }
+    var contentVisible by remember(manifested) { mutableStateOf(manifested) }
     val reducedMotion = LocalVeilReducedMotion.current
     val highContrast = LocalVeilHighContrast.current
-    val safeIndex = if (fragments.isEmpty()) 0 else index % fragments.size
-    val fragment = fragments.getOrNull(safeIndex)
+    val safeIndex = if (sessionFragments.isEmpty()) 0 else index % sessionFragments.size
+    val fragment = sessionFragments.getOrNull(safeIndex)
 
     val revealAlpha by animateFloatAsState(
-        targetValue = if (manifested && fragment != null) 1f else 0.06f,
+        targetValue = if (manifested && contentVisible && fragment != null) 1f else 0.04f,
         animationSpec = if (reducedMotion) snap() else tween(VeilMotion.SPATIAL_MS),
         label = "arrodes-fragment-alpha"
     )
+    val coalescence by animateFloatAsState(
+        targetValue = if (manifested && contentVisible && fragment != null) 1f else 0f,
+        animationSpec = if (reducedMotion) snap() else tween(VeilMotion.SPATIAL_MS),
+        label = "arrodes-glyph-coalescence"
+    )
+
+    LaunchedEffect(transitionToken, sessionFragments, reducedMotion) {
+        if (transitionToken == 0) return@LaunchedEffect
+        if (!reducedMotion) {
+            delay((VeilMotion.SPATIAL_MS / 2L).coerceAtLeast(1L))
+        }
+        if (sessionFragments.isNotEmpty()) {
+            index = (index + 1) % sessionFragments.size
+        }
+        contentVisible = true
+        transitioning = false
+    }
 
     fun summonNext() {
-        if (fragments.isEmpty()) return
-        index = if (!manifested) safeIndex else (safeIndex + 1) % fragments.size
-        manifested = true
+        if (sessionFragments.isEmpty() || transitioning) return
+        if (!manifested) {
+            manifested = true
+            contentVisible = true
+            return
+        }
+        if (reducedMotion) {
+            index = (safeIndex + 1) % sessionFragments.size
+            contentVisible = true
+        } else {
+            transitioning = true
+            contentVisible = false
+            transitionToken += 1
+        }
     }
 
     Box(
@@ -105,7 +146,7 @@ fun ArrodesMirrorScreen(
             .fillMaxSize()
             .grayfogAtmosphere(
                 realm = VeilRealm.THRESHOLD,
-                seed = fragments.size * 41 + safeIndex,
+                seed = sessionFragments.size * 41 + safeIndex,
                 intensity = if (highContrast) 0.72f else 0.92f
             ),
         contentAlignment = Alignment.TopCenter
@@ -203,9 +244,16 @@ fun ArrodesMirrorScreen(
                             )
                         )
                         .semantics { contentDescription = actionDescription }
-                        .clickable(role = Role.Button) {
-                            if (manifested) onOpenSource(fragment)
-                            else manifested = true
+                        .clickable(
+                            enabled = !transitioning,
+                            role = Role.Button
+                        ) {
+                            if (manifested && contentVisible) {
+                                onOpenSource(fragment)
+                            } else {
+                                manifested = true
+                                contentVisible = true
+                            }
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -228,18 +276,43 @@ fun ArrodesMirrorScreen(
                             style = Stroke(width = 1.5f)
                         )
                         if (manifested && !reducedMotion) {
-                            repeat(96) { particle ->
-                                val x = ((particle * 37 + safeIndex * 13) % 101) / 100f
-                                val y = ((particle * 61 + safeIndex * 17) % 103) / 102f
-                                val centrality = 1f - kotlin.math.abs(y - 0.5f) * 1.6f
+                            val fragmentSeed = fragment.id.hashCode()
+                            val characterCount = fragment.text.length.coerceAtLeast(1)
+                            val lineCount = ((characterCount + 27) / 28).coerceIn(2, 7)
+                            val columns = 22
+                            repeat(132) { particle ->
+                                val scatterX =
+                                    ((particle * 37 + fragmentSeed * 13) and 0x7fffffff) % 1009 / 1008f
+                                val scatterY =
+                                    ((particle * 61 + fragmentSeed * 17) and 0x7fffffff) % 1013 / 1012f
+                                val targetColumn =
+                                    ((particle * 11 + fragmentSeed) and 0x7fffffff) % columns
+                                val targetLine =
+                                    ((particle * 7 + fragmentSeed) and 0x7fffffff) % lineCount
+                                val targetX = 0.20f +
+                                    (targetColumn / (columns - 1f)) * 0.60f
+                                val targetY = if (lineCount == 1) {
+                                    0.50f
+                                } else {
+                                    0.40f + (targetLine / (lineCount - 1f)) * 0.20f
+                                }
+                                val scatteredX = 0.11f + scatterX * 0.78f
+                                val scatteredY = 0.14f + scatterY * 0.72f
+                                val x = scatteredX + (targetX - scatteredX) * coalescence
+                                val y = scatteredY + (targetY - scatteredY) * coalescence
+                                val ashBias = 1f - kotlin.math.abs(scatterY - 0.5f) * 1.45f
                                 drawCircle(
                                     color = brass.copy(
-                                        alpha = 0.05f + centrality.coerceAtLeast(0f) * 0.14f
+                                        alpha = (
+                                            0.035f +
+                                                ashBias.coerceAtLeast(0f) * 0.08f +
+                                                coalescence * 0.10f
+                                            ).coerceAtMost(0.22f)
                                     ),
-                                    radius = 1.2f + (particle % 3) * 0.55f,
+                                    radius = 0.9f + (particle % 4) * 0.48f,
                                     center = Offset(
-                                        x = size.width * (0.13f + x * 0.74f),
-                                        y = size.height * (0.16f + y * 0.68f)
+                                        x = size.width * x,
+                                        y = size.height * y
                                     )
                                 )
                             }
@@ -263,11 +336,21 @@ fun ArrodesMirrorScreen(
                             style = MaterialTheme.typography.labelMedium,
                             color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
                         )
+                        val passageStyle = when {
+                            fragment.text.length <= 160 -> MaterialTheme.typography.titleLarge
+                            fragment.text.length <= 320 -> MaterialTheme.typography.titleMedium
+                            else -> MaterialTheme.typography.bodyLarge
+                        }
                         Text(
-                            text = "“${fragment.text}”",
-                            style = MaterialTheme.typography.titleLarge,
+                            text = stringResource(
+                                R.string.mirror_fragment_quote,
+                                fragment.text
+                            ),
+                            style = passageStyle,
                             color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center
+                            textAlign = TextAlign.Center,
+                            maxLines = 10,
+                            overflow = TextOverflow.Ellipsis
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
@@ -301,6 +384,7 @@ fun ArrodesMirrorScreen(
                 ) {
                     Button(
                         onClick = ::summonNext,
+                        enabled = !transitioning,
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text(
@@ -312,6 +396,7 @@ fun ArrodesMirrorScreen(
                     if (manifested) {
                         OutlinedButton(
                             onClick = { onOpenSource(fragment) },
+                            enabled = contentVisible && !transitioning,
                             modifier = Modifier.heightIn(min = 48.dp)
                         ) {
                             Text(stringResource(R.string.mirror_return_to_source))
