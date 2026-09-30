@@ -1259,8 +1259,11 @@ fun ReaderScreen(
                     state = paperCurlState,
                     isEnabled = {
                         latestReaderSessionReady.value &&
-                            !latestAppearance.value.scroll &&
-                            latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
+                            shouldUsePaperCurlNavigation(
+                                format = opened.format,
+                                scroll = latestAppearance.value.scroll,
+                                pageTurnStyle = latestAppearance.value.pageTurnStyle
+                            )
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
