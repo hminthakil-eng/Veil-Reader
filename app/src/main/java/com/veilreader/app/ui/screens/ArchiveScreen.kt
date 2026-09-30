@@ -166,7 +166,7 @@ fun ArchiveScreen(
                 .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-        VeilReveal(delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
+        VeilReveal(realm = VeilRealm.ARCHIVE, delayMillis = 20, modifier = Modifier.fillMaxWidth()) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -209,7 +209,7 @@ fun ArchiveScreen(
             }
         }
 
-        VeilReveal(delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
+        VeilReveal(realm = VeilRealm.ARCHIVE, delayMillis = 90, modifier = Modifier.fillMaxWidth()) {
         OutlinedTextField(
             value = query,
             onValueChange = { query = it },
@@ -235,7 +235,7 @@ fun ArchiveScreen(
         )
         }
 
-        VeilReveal(delayMillis = 150, modifier = Modifier.fillMaxWidth()) {
+        VeilReveal(realm = VeilRealm.ARCHIVE, delayMillis = 150, modifier = Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
