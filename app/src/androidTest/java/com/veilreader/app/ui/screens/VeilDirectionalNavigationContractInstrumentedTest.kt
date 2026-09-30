@@ -83,6 +83,21 @@ class VeilDirectionalNavigationContractInstrumentedTest {
     }
 
     @Test
+    fun startupGate_preventsDirectionalNavigationUntilReaderIsReady() {
+        val navigator = fakeNavigator(ReadingProgression.LTR)
+        val listener = VeilDirectionalNavigationInputListener(
+            navigator = navigator,
+            isAnimated = { true },
+            isEnabled = { false },
+            isTapNavigationEnabled = { true }
+        )
+
+        assertFalse(listener.onTap(TapEvent(PointF(950f, 800f))))
+        assertEquals(0, navigator.forwardCalls)
+        assertEquals(0, navigator.backwardCalls)
+    }
+
+    @Test
     fun explicitTapGate_preventsNavigation_evenWhenPaginated() {
         val navigator = fakeNavigator(ReadingProgression.LTR)
         val listener = VeilDirectionalNavigationInputListener(
