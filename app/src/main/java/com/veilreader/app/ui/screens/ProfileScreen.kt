@@ -34,6 +34,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilTracking
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.DateFormat
 import java.util.Date
@@ -776,7 +777,7 @@ private fun DossierFact(label: String, value: String) {
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+            style = MaterialTheme.typography.labelSmall.withVeilTracking(label, 0.85.sp),
             color = VeilPalette.Mist.copy(alpha = 0.66f),
             modifier = Modifier.width(82.dp)
         )
@@ -1049,7 +1050,7 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Text(
                 eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
+                style = MaterialTheme.typography.labelMedium.withVeilTracking(eyebrow, 1.5.sp),
                 color = VeilPalette.Brass
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
