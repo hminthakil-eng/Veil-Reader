@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
@@ -71,7 +72,7 @@ fun MangaHubScreen(
             .sortedByDescending { maxOf(it.lastOpenedAtEpochMs, it.addedAtEpochMs) }
     }
 
-    var chapterTargetId by remember { mutableStateOf<String?>(null) }
+    var chapterTargetId by rememberSaveable { mutableStateOf<String?>(null) }
     val chapterLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
@@ -285,6 +286,7 @@ fun MangaHubScreen(
                             ) {
                                 Button(
                                     onClick = { onOpenBook(book) },
+                                    enabled = !isImporting,
                                     modifier = Modifier
                                         .weight(1f)
                                         .heightIn(min = 48.dp)
