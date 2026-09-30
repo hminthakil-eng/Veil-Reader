@@ -158,6 +158,19 @@ class ReaderChromePolicyTest {
     }
 
     @Test
+    fun `programmatic navigation suppresses intermediate final snapshot`() {
+        assertFalse(
+            shouldTakeFinalNavigatorSnapshot(
+                format = BookFormat.EPUB,
+                paperPreviewActive = false,
+                slidePreviewActive = false,
+                previewCancelled = false,
+                programmaticNavigationInFlight = true
+            )
+        )
+    }
+
+    @Test
     fun `settled reader can take a final snapshot`() {
         assertTrue(
             shouldTakeFinalNavigatorSnapshot(
