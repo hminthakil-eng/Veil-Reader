@@ -636,6 +636,7 @@ class LibraryExport(
                     sourceChapterId = sourceChapter.id,
                     sourceBookId = chapter.sourceBookId,
                     targetChapterId = targetChapter.id,
+                    targetBookId = backup.targetBookId,
                     sourceReadingOrder = chapter.sourceReadingOrder,
                     targetReadingOrder = chapter.targetReadingOrder,
                     disposition = chapter.disposition
