@@ -39,6 +39,7 @@ import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.ReadiumEngine
 import com.veilreader.app.data.db.VeilDatabase
+import com.veilreader.app.data.manga.MangaLocalChapterMetadata
 import com.veilreader.app.data.manga.MangaLocalChapterSummary
 import com.veilreader.app.data.manga.MangaLocalImportCoordinator
 import com.veilreader.app.data.manga.RoomMangaOfflineCacheIndex
@@ -436,20 +437,24 @@ fun VeilApp(
         }
     }
 
-    fun renameMangaChapter(
+    fun updateMangaChapterMetadata(
         book: Book,
         chapter: MangaLocalChapterSummary,
-        title: String
+        metadata: MangaLocalChapterMetadata
     ) {
         if (isImporting || restoring || book.format != BookFormat.COMIC) return
         isImporting = true
         mangaMutationInProgress = true
         scope.launch {
             try {
-                mangaImporter.renameChapter(book.id, chapter.id, title).getOrThrow()
+                mangaImporter.updateChapterMetadata(
+                    bookId = book.id,
+                    chapterId = chapter.id,
+                    metadata = metadata
+                ).getOrThrow()
                 mangaStorageRevision += 1
                 showNotice(
-                    R.string.notice_manga_chapter_renamed,
+                    R.string.notice_manga_chapter_metadata_updated,
                     VeilNoticeKind.SUCCESS
                 )
             } catch (cancelled: CancellationException) {
@@ -978,7 +983,7 @@ fun VeilApp(
             onAddChapterUris = ::appendMangaChapters,
             storageSummaryProvider = { book -> mangaImporter.storageSummary(book.id) },
             chapterSummaryProvider = { book -> mangaImporter.listChapterSummaries(book.id) },
-            onRenameChapter = ::renameMangaChapter,
+            onUpdateChapterMetadata = ::updateMangaChapterMetadata,
             onMoveChapter = ::moveMangaChapter,
             onDeleteChapter = ::deleteMangaChapter,
             onClearDerivedCache = ::clearMangaDerivedCache,
