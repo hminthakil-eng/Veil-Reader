@@ -66,16 +66,30 @@ The text Reader remains the reliability baseline. Mirror and Manga must integrat
 
 The current `ReadiumEngine` accepts EPUB and PDF only. W11 therefore does **not** route `BookFormat.COMIC` into the text Reader. Manga Hub exposes the product surface without creating a false or broken Readium fallback.
 
+### Additional integrated W11 hardening
+
+- `BookFormat.COMIC` is intercepted before Readium and opens through the dedicated Manga session repository + `MangaReaderIntegratedScreen`.
+- Room schema v3 persists Manga chapter identity/order, source links, source chapter links, detailed progress, offline chapter manifests and offline page manifests while `books` remains the single catalog authority.
+- Migration `2 -> 3` creates Manga tables without rewriting existing EPUB/PDF library data; cascade contracts remove Manga-owned rows when the parent Book is deleted.
+- `RoomMangaProgressStore` synchronizes detailed reader progress and the Library-level progress summary transactionally.
+- Close/back navigation uses a durable-close gate: the Manga screen remains open if the final progress write fails, and retry is explicit.
+- Local CBZ import is wired into the document picker, performs app-private staging, content-fingerprint dedupe, safe extraction, offline-manifest persistence and first-page cover generation.
+- Failed local import compensates across Room, app-private publication files and generated Manga cache; duplicate imports do not fork catalog identity.
+- Manga deletion commits database ownership changes before deleting generated cache directories.
+- Manga Hub now opens real local publications, uses generated covers, shows durable progress and exposes Start / Continue / Read again states.
+- Backup schema v4 archives the source CBZ, stores only compact exact Manga progress metadata, rebuilds derived page cache/cover/fingerprint on restore, and retains restore compatibility for schemas 1/2/3.
+- Restore rollback rebuilds prior Manga catalog/cache/progress from the still-preserved old source publications if the new restore cannot commit.
+- Derived cover/fingerprint updates use narrow Book-column writes so they cannot overwrite newer Reader progress.
+
 ### Next refinement gates
 
-- Wire the canonical Manga session adapter between Manga Hub and `MangaReaderIntegratedScreen` once durable catalog/offline facts exist.
-- Add durable Manga catalog/session persistence to the main app data layer.
-- Wire the safe transactional CBZ ingestor into local document picking/catalog persistence; CBR remains deferred until a safe archive strategy exists.
-- Connect offline cache ownership and cleanup to app storage policy.
-- Add Manga-specific cover/series/chapter metadata.
+- Add richer Manga-specific series/chapter metadata and multi-CBZ series ingestion without duplicating Book catalog ownership.
+- Add explicit storage-management UI for Manga cache size, per-title offline ownership and cleanup.
+- Add CBR only after a safe archive strategy is chosen and verified.
 - Add source adapters only behind explicit opt-in and source-health policy.
 - Keep MangaDex/live providers disabled until separately approved.
-- Apply Grayfog visual language to Manga chrome without harming image fidelity.
+- Device-profile the Grayfog Manga chrome, image decode budgets and subsampling thresholds on 60/90/120 Hz phones/tablets.
+- Execute Room migration/import/backup round-trip instrumentation and full Manga reader device verification once the Android build gate is intentionally opened.
 
 ## Product invariants
 
