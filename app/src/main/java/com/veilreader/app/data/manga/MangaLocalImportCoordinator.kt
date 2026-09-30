@@ -172,6 +172,154 @@ class MangaLocalImportCoordinator(
         }
     }
 
+    /**
+     * Updates identity-bearing local chapter metadata without orphaning the offline cache.
+     *
+     * Chapter number / volume / language participate in OfflineChapterId. When they change, Veil
+     * re-ingests the immutable local CBZ into the new cache identity, swaps Room metadata, replaces
+     * the manifest, and only then removes the old derived directory.
+     */
+    suspend fun updateChapterMetadata(
+        bookId: String,
+        chapterId: String,
+        metadata: MangaLocalChapterMetadata
+    ): Result<Unit> = runCatching {
+        val book = library.getBook(bookId)
+            ?: error("Manga Book is not present in the Library")
+        require(book.format == BookFormat.COMIC)
+
+        val current = database.mangaCatalog().findChapter(chapterId)
+            ?: error("Manga chapter is not present")
+        require(current.bookId == bookId) {
+            "Manga chapter belongs to another book"
+        }
+        val source = database.mangaCatalog()
+            .listChapterSources(chapterId)
+            .firstOrNull { it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value }
+            ?: error("Manga chapter has no local CBZ source")
+        val archive = resolveLocalArchiveFile(
+            book = book,
+            chapterKey = source.chapterKey,
+            readingOrder = current.readingOrder
+        ) ?: error("Manga chapter source archive is missing")
+
+        val title = metadata.title
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: current.title
+            ?.takeIf(String::isNotBlank)
+            ?: current.normalizedTitle
+            ?.takeIf(String::isNotBlank)
+            ?: "Chapter " + (current.readingOrder + 1)
+        val number = metadata.number ?: current.number
+            ?: error("Local Manga chapter number cannot be removed")
+        require(number.isFinite() && number >= 0.0) {
+            "Chapter number must be a finite non-negative value"
+        }
+        val volume = metadata.volume ?: current.volume
+        require(volume == null || (volume.isFinite() && volume >= 0.0)) {
+            "Volume must be a finite non-negative value"
+        }
+        val languageTag = metadata.languageTag
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: current.languageTag
+
+        val newAnchor = MangaChapterAnchor(
+            volume = volume,
+            number = number,
+            languageTag = languageTag,
+            normalizedTitle = title,
+            providerChapterKeyHint = source.chapterKey
+        )
+        val newOfflineId = requireNotNull(
+            MangaOfflineChapterLocator.idFor(CanonicalMangaId(bookId), newAnchor)
+        )
+        val newCacheKey = MangaCacheLayout.chapterDirectory(newOfflineId)
+        val conflict = database.mangaCatalog().findChapterByCacheKey(newCacheKey)
+        require(conflict == null || conflict.id == current.id) {
+            "Another Manga chapter already owns this chapter identity"
+        }
+
+        if (newCacheKey == current.cacheKey) {
+            check(
+                database.mangaCatalog().updateChapterIdentityMetadata(
+                    chapterId = current.id,
+                    cacheKey = current.cacheKey,
+                    title = title,
+                    normalizedTitle = title,
+                    volume = volume,
+                    number = number,
+                    languageTag = languageTag
+                ) == 1
+            )
+            recomputeStoredMangaProgress(bookId)
+            return@runCatching
+        }
+
+        val oldDirectory = File(cacheRoot, current.cacheKey)
+        val newDirectory = File(cacheRoot, newCacheKey)
+        var identityUpdated = false
+        try {
+            database.withTransaction {
+                check(
+                    database.mangaCatalog().updateChapterIdentityMetadata(
+                        chapterId = current.id,
+                        cacheKey = newCacheKey,
+                        title = title,
+                        normalizedTitle = title,
+                        volume = volume,
+                        number = number,
+                        languageTag = languageTag
+                    ) == 1
+                )
+            }
+            identityUpdated = true
+
+            val imported = ingestor.ingest(
+                archiveFile = archive,
+                cacheRoot = cacheRoot,
+                chapterId = newOfflineId,
+                anchor = newAnchor,
+                originChapterKey = source.chapterKey,
+                originSourceId = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+            )
+            val manifest = when (imported) {
+                is MangaCbzImportResult.Success -> imported.manifest
+                is MangaCbzImportResult.Failure ->
+                    throw MangaLocalImportException(imported.reason)
+            }
+            RoomMangaOfflineCacheIndex(database).put(manifest)
+            recomputeStoredMangaProgress(bookId)
+
+            withContext(Dispatchers.IO) {
+                deleteGeneratedChapterDirectory(oldDirectory)
+                pruneEmptyMangaCacheParents(listOf(oldDirectory))
+            }
+        } catch (error: Throwable) {
+            if (identityUpdated) {
+                runCatching {
+                    database.mangaCatalog().updateChapterIdentityMetadata(
+                        chapterId = current.id,
+                        cacheKey = current.cacheKey,
+                        title = current.title ?: current.normalizedTitle ?: title,
+                        normalizedTitle = current.normalizedTitle ?: current.title ?: title,
+                        volume = current.volume,
+                        number = requireNotNull(current.number),
+                        languageTag = current.languageTag
+                    )
+                }
+            }
+            withContext(Dispatchers.IO) {
+                if (newDirectory != oldDirectory) {
+                    deleteGeneratedChapterDirectory(newDirectory)
+                    pruneEmptyMangaCacheParents(listOf(newDirectory))
+                }
+            }
+            throw error
+        }
+    }
+
     suspend fun renameChapter(
         bookId: String,
         chapterId: String,
