@@ -11,6 +11,7 @@ import com.veilreader.app.manga.source.SourceChapter
 import com.veilreader.app.manga.source.SourceId
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
 
@@ -28,6 +29,22 @@ class MangaReaderSessionTest {
 
         assertEquals(2, session.entriesInReadingOrder.size)
         assertEquals("work", session.mangaId.value)
+    }
+
+
+    @Test
+    fun reopeningSameMangaGetsFreshViewModelKey() {
+        val source = provider("source.one")
+        val first = MangaReaderSession(
+            listOf(entry("work", source, 1.0, "one"))
+        )
+        val second = MangaReaderSession(
+            listOf(entry("work", source, 1.0, "one"))
+        )
+
+        assertNotEquals(first.sessionKey, second.sessionKey)
+        assertEquals("work", first.mangaId.value)
+        assertEquals("work", second.mangaId.value)
     }
 
     @Test
