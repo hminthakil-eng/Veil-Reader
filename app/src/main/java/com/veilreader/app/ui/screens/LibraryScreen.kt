@@ -450,15 +450,6 @@ fun LibraryScreen(
             }
         }
 
-        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
-            MangaLibraryPortal(
-                localComicCount = books.count {
-                    it.format == com.veilreader.app.domain.BookFormat.COMIC
-                },
-                onOpenManga = onOpenManga
-            )
-        }
-
         item(key = "library:search", span = { GridItemSpan(maxLineSpan) }) {
             OutlinedTextField(
                 value = query,
@@ -844,6 +835,15 @@ fun LibraryScreen(
                     }
                 }
             }
+        }
+
+        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
+            MangaLibraryPortal(
+                localComicCount = books.count {
+                    it.format == com.veilreader.app.domain.BookFormat.COMIC
+                },
+                onOpenManga = onOpenManga
+            )
         }
 
         if (filtered.isEmpty()) {
@@ -3094,43 +3094,44 @@ private fun BookLibraryRow(
     val registrationColor = when {
         book.finished -> VeilPalette.Brass
         artifact.recentlyOpened -> VeilPalette.Spirit
-        book.favorite -> VeilPalette.Brass.copy(alpha = 0.76f)
+        book.favorite -> VeilPalette.MoonCrimson.copy(alpha = 0.82f)
         book.progress > 0f -> VeilPalette.Mist.copy(alpha = 0.72f)
         else -> VeilPalette.BorderDark
     }
 
-    Surface(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
                 role = Role.Button,
                 onClickLabel = readLabel,
                 onClick = onOpen
-            ),
-        shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.52f),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-        ),
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp
+            )
+            .background(VeilPalette.Ink.copy(alpha = 0.16f))
+            .padding(start = 8.dp, end = 4.dp, top = 7.dp, bottom = 7.dp)
     ) {
+        Canvas(Modifier.matchParentSize()) {
+            drawLine(
+                color = VeilPalette.BorderDark.copy(alpha = 0.68f),
+                start = Offset(0f, size.height),
+                end = Offset(size.width, size.height),
+                strokeWidth = 1.dp.toPx()
+            )
+            drawLine(
+                color = registrationColor,
+                start = Offset(0f, 0f),
+                end = Offset(0f, size.height),
+                strokeWidth = 2.dp.toPx()
+            )
+        }
+
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 68.dp)
-                .padding(start = 8.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
+                .heightIn(min = 68.dp),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                Modifier
-                    .width(3.dp)
-                    .height(46.dp)
-                    .background(registrationColor)
-            )
-
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -3145,9 +3146,7 @@ private fun BookLibraryRow(
 
                 Text(
                     buildString {
-                        append(
-                            book.author.ifBlank { unknownAuthor }
-                        )
+                        append(book.author.ifBlank { unknownAuthor })
                         book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
                             append(" · ").append(series)
                             book.seriesIndex?.let {
@@ -3169,7 +3168,10 @@ private fun BookLibraryRow(
                     Text(
                         when {
                             book.finished -> stringResource(R.string.library_completed)
-                            book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
+                            book.progress > 0f -> stringResource(
+                                R.string.book_detail_percent_read_text,
+                                formatPercent(book.progress.coerceIn(0f, 1f))
+                            )
                             else -> stringResource(R.string.library_unopened)
                         },
                         style = MaterialTheme.typography.labelSmall,
@@ -3190,42 +3192,40 @@ private fun BookLibraryRow(
                         )
                     }
                 }
-            }
 
-            if (
-                showMemorySummary &&
-                artifactMemory != null &&
-                (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
-            ) {
-                val marksText = stringResource(
-                    R.string.library_mark_count,
-                    artifactMemory.highlightCount
-                )
-                val savedText = stringResource(
-                    R.string.library_saved_count,
-                    artifactMemory.bookmarkCount
-                )
-                Text(
-                    buildString {
-                        if (artifactMemory.highlightCount > 0) append(marksText)
-                        if (artifactMemory.bookmarkCount > 0) {
-                            if (isNotEmpty()) append(" · ")
-                            append(savedText)
-                        }
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Spirit.copy(alpha = 0.68f),
-                    maxLines = 1
-                )
+                if (
+                    showMemorySummary &&
+                    artifactMemory != null &&
+                    (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
+                ) {
+                    val marksText = stringResource(
+                        R.string.library_mark_count,
+                        artifactMemory.highlightCount
+                    )
+                    val savedText = stringResource(
+                        R.string.library_saved_count,
+                        artifactMemory.bookmarkCount
+                    )
+                    Text(
+                        buildString {
+                            if (artifactMemory.highlightCount > 0) append(marksText)
+                            if (artifactMemory.bookmarkCount > 0) {
+                                if (isNotEmpty()) append(" · ")
+                                append(savedText)
+                            }
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Spirit.copy(alpha = 0.68f),
+                        maxLines = 1
+                    )
+                }
             }
 
             IconButton(
                 onClick = onFavorite,
                 modifier = Modifier
                     .size(48.dp)
-                    .semantics {
-                        contentDescription = favoriteLabel
-                    }
+                    .semantics { contentDescription = favoriteLabel }
             ) {
                 FavoriteIcon(book.favorite, Modifier.size(17.dp))
             }
@@ -3234,9 +3234,7 @@ private fun BookLibraryRow(
                 onClick = onDetails,
                 modifier = Modifier
                     .size(48.dp)
-                    .semantics {
-                        contentDescription = recordLabel
-                    }
+                    .semantics { contentDescription = recordLabel }
             ) {
                 EllipsisIcon(
                     Modifier.size(17.dp),
