@@ -741,7 +741,6 @@ fun ReaderScreen(
         val cancelledNavigationJump =
             navigationTransactionGate.cancelActive(SystemClock.elapsedRealtime()) != null
         if (
-            !cancelledNavigationJump &&
             shouldTakeFinalNavigatorSnapshot(
                 format = opened.format,
                 paperPreviewActive = paperCurlState.active,
@@ -970,7 +969,6 @@ fun ReaderScreen(
                     val navigationJumpInFlight =
                         navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
                     if (
-                        !navigationJumpInFlight &&
                         shouldTakeFinalNavigatorSnapshot(
                             format = opened.format,
                             paperPreviewActive = paperCurlState.active,
