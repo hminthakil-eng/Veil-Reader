@@ -166,6 +166,7 @@ fun ReaderScreen(
     }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
     val scope = rememberCoroutineScope()
+    val latestReaderSessionInstanceId = rememberUpdatedState(readerSessionInstanceId)
     val formatPercent = rememberVeilPercentFormatter()
     var entryVisible by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(true) }
     var navigatorAttached by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
@@ -358,6 +359,14 @@ fun ReaderScreen(
                 delay(VeilMotion.FRAME_SETTLE_MS)
             }
             delay(VeilMotion.FRAME_SETTLE_MS)
+            if (
+                !readerAsyncResultBelongsToSession(
+                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                    expectedSessionInstanceId = readerSessionInstanceId
+                )
+            ) {
+                return@launch
+            }
             showAppearance = false
             appearanceCloseJob = null
         }
@@ -567,7 +576,7 @@ fun ReaderScreen(
                 selectionModeActive = active
                 if (active) controlsVisible = true
             },
-            onAction = { action, locator, quote ->
+            onAction = onAction@{ action, locator, quote ->
                 try {
                     val locatorJson = locator.toVeilPersistedJson(opened.format)
                     val existing = library.highlightsFor(opened.book.id).firstOrNull {
@@ -581,6 +590,14 @@ fun ReaderScreen(
                     val isNew = existing == null
                     if (isNew) {
                         library.flushWrites()
+                        if (
+                            !readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = readerSessionInstanceId
+                            )
+                        ) {
+                            return@onAction
+                        }
                         readerViewModel.onHighlightAdded(readerSessionInstanceId)
                         onSensoryEvent(VeilSensoryEvent.MARK)
                     } else {
@@ -621,7 +638,15 @@ fun ReaderScreen(
             withDismissAction = true,
             duration = SnackbarDuration.Short
         )
-        if (readerMessage == message) readerMessage = null
+        if (
+            readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            ) &&
+            readerMessage == message
+        ) {
+            readerMessage = null
+        }
     }
 
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
@@ -686,31 +711,40 @@ fun ReaderScreen(
             }
         }
 
+        val expectedSessionId = readerSessionInstanceId
         scope.launch {
             try {
                 ReaderTrace.event(
                     "reader_close_durability_wait",
                     bookId = opened.book.id,
-                    sessionId = readerViewModel.traceSessionId()
+                    sessionId = expectedSessionId
                 )
                 awaitDurableReaderClose(
-                    finalizeSession = { readerViewModel.closeBook(readerSessionInstanceId) },
+                    finalizeSession = { readerViewModel.closeBook(expectedSessionId) },
                     awaitDurability = library::flushWrites,
                     clearRoute = onClose
                 )
                 ReaderTrace.event(
                     "reader_close_durable",
                     bookId = opened.book.id,
-                    sessionId = readerViewModel.traceSessionId()
+                    sessionId = expectedSessionId
                 )
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
+                if (
+                    !readerAsyncResultBelongsToSession(
+                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                        expectedSessionInstanceId = expectedSessionId
+                    )
+                ) {
+                    return@launch
+                }
                 closeInFlight = false
                 ReaderTrace.event(
                     "reader_close_durability_failed",
                     bookId = opened.book.id,
-                    sessionId = readerViewModel.traceSessionId(),
+                    sessionId = expectedSessionId,
                     details = "error=${error::class.java.simpleName}"
                 )
                 readerMessage = closeStorageFailedMessage
@@ -964,6 +998,7 @@ fun ReaderScreen(
                     controlsVisible = false
                     imageLoadSerial += 1
                     val requestSerial = imageLoadSerial
+                    val expectedSessionId = readerSessionInstanceId
                     imageLoadJob?.cancel()
                     imageLoading = true
                     imageLoadJob = scope.launch {
@@ -977,7 +1012,13 @@ fun ReaderScreen(
                                     decodeReaderImage(payload)
                                 }
                             }
-                            if (requestSerial != imageLoadSerial) {
+                            if (
+                                requestSerial != imageLoadSerial ||
+                                !readerAsyncResultBelongsToSession(
+                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                    expectedSessionInstanceId = expectedSessionId
+                                )
+                            ) {
                                 bitmap?.takeIf { !it.isRecycled }?.recycle()
                                 return@launch
                             }
@@ -994,11 +1035,23 @@ fun ReaderScreen(
                         } catch (cancelled: CancellationException) {
                             throw cancelled
                         } catch (error: Exception) {
-                            if (requestSerial == imageLoadSerial) {
+                            if (
+                                requestSerial == imageLoadSerial &&
+                                readerAsyncResultBelongsToSession(
+                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                    expectedSessionInstanceId = expectedSessionId
+                                )
+                            ) {
                                 readerMessage = imageViewerFailedMessage
                             }
                         } finally {
-                            if (requestSerial == imageLoadSerial) {
+                            if (
+                                requestSerial == imageLoadSerial &&
+                                readerAsyncResultBelongsToSession(
+                                    currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                    expectedSessionInstanceId = expectedSessionId
+                                )
+                            ) {
                                 imageLoading = false
                                 imageLoadJob = null
                             }
@@ -1907,18 +1960,30 @@ fun ReaderScreen(
                                 Button(
                                     enabled = !noteSaving,
                                     onClick = {
+                                        val expectedSessionId = readerSessionInstanceId
+                                        val noteToSave = pendingNoteText
                                         scope.launch {
                                             noteSaving = true
                                             try {
                                                 library.updateHighlightNote(
                                                     highlightId,
-                                                    pendingNoteText
+                                                    noteToSave
                                                 )
                                                 library.flushWrites()
+                                                if (
+                                                    !readerAsyncResultBelongsToSession(
+                                                        currentSessionInstanceId =
+                                                            latestReaderSessionInstanceId.value,
+                                                        expectedSessionInstanceId =
+                                                            expectedSessionId
+                                                    )
+                                                ) {
+                                                    return@launch
+                                                }
                                                 readerViewModel.onNoteSaved(
-                                                    readerSessionInstanceId,
+                                                    expectedSessionId,
                                                     highlightId,
-                                                    pendingNoteText
+                                                    noteToSave
                                                 )
                                                 onSensoryEvent(VeilSensoryEvent.NOTE)
                                                 pendingNoteHighlightId = null
@@ -1927,9 +1992,27 @@ fun ReaderScreen(
                                             } catch (cancelled: CancellationException) {
                                                 throw cancelled
                                             } catch (error: Exception) {
-                                                readerMessage = noteSaveFailedMessage
+                                                if (
+                                                    readerAsyncResultBelongsToSession(
+                                                        currentSessionInstanceId =
+                                                            latestReaderSessionInstanceId.value,
+                                                        expectedSessionInstanceId =
+                                                            expectedSessionId
+                                                    )
+                                                ) {
+                                                    readerMessage = noteSaveFailedMessage
+                                                }
                                             } finally {
-                                                noteSaving = false
+                                                if (
+                                                    readerAsyncResultBelongsToSession(
+                                                        currentSessionInstanceId =
+                                                            latestReaderSessionInstanceId.value,
+                                                        expectedSessionInstanceId =
+                                                            expectedSessionId
+                                                    )
+                                                ) {
+                                                    noteSaving = false
+                                                }
                                             }
                                         }
                                     },
@@ -1963,6 +2046,7 @@ fun ReaderScreen(
     if (showNotebook) {
         ReaderNotebook(
             opened = opened,
+            readerSessionInstanceId = readerSessionInstanceId,
             currentHref = currentLocationHref,
             highlights = bookHighlights,
             bookmarks = bookBookmarks,
@@ -1997,10 +2081,19 @@ fun ReaderScreen(
                     readerMessage = chapterFailedMessage
                 }
             },
-            onSaveNote = { id, note ->
+            onSaveNote = onSaveNote@{ id, note ->
+                val expectedSessionId = readerSessionInstanceId
                 library.updateHighlightNote(id, note)
                 library.flushWrites()
-                readerViewModel.onNoteSaved(readerSessionInstanceId, id, note)
+                if (
+                    !readerAsyncResultBelongsToSession(
+                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                        expectedSessionInstanceId = expectedSessionId
+                    )
+                ) {
+                    return@onSaveNote
+                }
+                readerViewModel.onNoteSaved(expectedSessionId, id, note)
                 onSensoryEvent(VeilSensoryEvent.NOTE)
                 readerMessage = noteSavedMessage
             },
