@@ -1158,7 +1158,10 @@ fun ReaderScreen(
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
-                    onBoundaryHit = ::emitBoundaryFeedback
+                    onBoundaryHit = { side ->
+                        navigationTransactionGate.reset()
+                        emitBoundaryFeedback(side)
+                    }
                 )
             } else {
                 null
@@ -1178,6 +1181,7 @@ fun ReaderScreen(
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = {
+                        navigationTransactionGate.reset()
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
                         controlsVisible = false
                     },
@@ -1190,7 +1194,10 @@ fun ReaderScreen(
                             )
                         }
                     },
-                    onBoundaryHit = ::emitBoundaryFeedback
+                    onBoundaryHit = { side ->
+                        navigationTransactionGate.reset()
+                        emitBoundaryFeedback(side)
+                    }
                 )
             } else {
                 null
@@ -1207,6 +1214,7 @@ fun ReaderScreen(
                         )
                     },
                     onInteraction = {
+                        navigationTransactionGate.reset()
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
                         controlsVisible = false
                     },
@@ -1219,7 +1227,10 @@ fun ReaderScreen(
                             )
                         }
                     },
-                    onBoundaryHit = ::emitBoundaryFeedback
+                    onBoundaryHit = { side ->
+                        navigationTransactionGate.reset()
+                        emitBoundaryFeedback(side)
+                    }
                 )
             } else {
                 null
