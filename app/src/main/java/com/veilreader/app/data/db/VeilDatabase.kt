@@ -26,6 +26,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         MangaOfflinePageEntity::class,
         MangaWorkMergeEntity::class,
         MangaMergeMemberEntity::class,
+        MangaMergeOriginalChapterEntity::class,
         MangaMergeChapterEntity::class
     ],
     version = 4,
@@ -331,6 +332,33 @@ abstract class VeilDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE UNIQUE INDEX IF NOT EXISTS index_manga_merge_members_mergeId_sourceOrder " +
                         "ON manga_merge_members(mergeId, sourceOrder)"
+                )
+
+                db.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS manga_merge_original_chapters (
+                        mergeId TEXT NOT NULL,
+                        readingOrder INTEGER NOT NULL,
+                        chapterId TEXT NOT NULL,
+                        targetBookId TEXT NOT NULL,
+                        chapterKey TEXT NOT NULL,
+                        PRIMARY KEY(mergeId, readingOrder),
+                        FOREIGN KEY(mergeId) REFERENCES manga_work_merges(id)
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(chapterId, targetBookId)
+                            REFERENCES manga_chapters(id, bookId)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
+                    )
+                    """.trimIndent()
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS index_manga_merge_original_chapters_mergeId " +
+                        "ON manga_merge_original_chapters(mergeId)"
+                )
+                db.execSQL(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS " +
+                        "index_manga_merge_original_chapters_chapterId_targetBookId " +
+                        "ON manga_merge_original_chapters(chapterId, targetBookId)"
                 )
 
                 db.execSQL(
