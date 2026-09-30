@@ -1188,4 +1188,12 @@
     <string name="manga_reader_error_eyebrow">خوانندهٔ تصویری · وقفه</string>
     <string name="manga_reader_saving_position">در حال ذخیرهٔ جای مطالعه…</string>
     <string name="manga_reader_message_progress_save_failed">آخرین جای مطالعه ذخیره نشد. خواننده باز ماند تا بتوانی دوباره تلاش کنی.</string>
+    <string name="book_detail_delete">حذف از Veil</string>
+    <string name="book_delete_eyebrow">آرشیو · حذف دائمی</string>
+    <string name="book_delete_title">این کتاب حذف شود؟</string>
+    <string name="book_delete_body">%1$s و یادداشت‌ها و نشان‌های ذخیره‌شدهٔ آن از این دستگاه حذف می‌شوند. آمار تاریخی نشست‌های مطالعه در آرشیو باقی می‌ماند. کش صفحه‌های مانگای محلی نیز پاک می‌شود.</string>
+    <string name="book_delete_cancel">نگه‌دار</string>
+    <string name="book_delete_confirm">حذف</string>
+    <string name="notice_book_deleted">%1$s از Veil حذف شد.</string>
+    <string name="notice_book_delete_failed">حذف کامل این کتاب ممکن نشد. بخش دیگری تغییر نکرد.</string>
 </resources>
