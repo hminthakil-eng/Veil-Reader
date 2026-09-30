@@ -132,7 +132,10 @@ fun MangaReaderIntegratedScreen(
         }
     }
 
-    BackHandler(enabled = !closing) {
+    // Keep ownership of system Back for the entire durable-close window. A repeated Back
+    // while persistence is in flight must be swallowed here rather than falling through to
+    // the Activity/navigation stack and dismissing the reader before the final locator lands.
+    BackHandler {
         requestDurableClose()
     }
 
