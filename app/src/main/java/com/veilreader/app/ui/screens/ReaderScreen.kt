@@ -1572,6 +1572,17 @@ fun ReaderScreen(
     }
 
     val readerCanvas = readerCanvasColor(presentedReaderAppearance.theme)
+    val lightReaderChrome =
+        presentedReaderAppearance.theme == ReaderTheme.PAPER ||
+            presentedReaderAppearance.theme == ReaderTheme.SEPIA
+    val readerChromeBackground = if (lightReaderChrome) {
+        Color(0xFFF0E4CC).copy(alpha = 0.97f)
+    } else {
+        VeilPalette.Ink.copy(alpha = 0.96f)
+    }
+    val readerChromeForeground = if (lightReaderChrome) Color(0xFF2B241B) else VeilPalette.Moon
+    val readerChromeMuted = readerChromeForeground.copy(alpha = 0.56f)
+    val readerChromeAccent = if (lightReaderChrome) Color(0xFF8A6630) else VeilPalette.Brass
     val readerSurfaceLabel = stringResource(R.string.reader_surface_label)
     val controlsActionLabel = stringResource(
         if (touchExplorationEnabled) {
@@ -1700,10 +1711,16 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .statusBarsPadding(),
-                color = VeilPalette.Ink,
+                    .statusBarsPadding()
+                    .padding(horizontal = 8.dp, top = 4.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = readerChromeBackground,
                 tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+                shadowElevation = 0.dp,
+                border = BorderStroke(
+                    1.dp,
+                    readerChromeAccent.copy(alpha = 0.34f)
+                )
             ) {
                 Column {
                     Row(
@@ -1716,7 +1733,8 @@ fun ReaderScreen(
                     ) {
                         ReaderChromeButton(
                             ReaderAction.BACK,
-                            stringResource(R.string.reader_close)
+                            stringResource(R.string.reader_close),
+                            tint = readerChromeAccent
                         ) { closeReader() }
 
                         Column(
@@ -1726,7 +1744,7 @@ fun ReaderScreen(
                             Text(
                                 opened.book.title,
                                 style = MaterialTheme.typography.titleSmall,
-                                color = VeilPalette.Moon,
+                                color = readerChromeForeground,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
                             )
@@ -1734,7 +1752,7 @@ fun ReaderScreen(
                                 locationTitle.ifBlank {
                                     opened.book.author.ifBlank { opened.format.name }
                                 },
-                                color = VeilPalette.Moon.copy(alpha = 0.54f),
+                                color = readerChromeMuted,
                                 style = MaterialTheme.typography.labelSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis
@@ -1747,7 +1765,7 @@ fun ReaderScreen(
                                 contentDescription =
                                     progressDescription
                             },
-                            color = VeilPalette.Brass,
+                            color = readerChromeAccent,
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
@@ -1755,8 +1773,8 @@ fun ReaderScreen(
                     LinearProgressIndicator(
                         progress = { progress.coerceIn(0f, 1f) },
                         modifier = Modifier.fillMaxWidth().height(1.dp),
-                        color = VeilPalette.Brass,
-                        trackColor = VeilPalette.Moon.copy(alpha = 0.10f),
+                        color = readerChromeAccent,
+                        trackColor = readerChromeForeground.copy(alpha = 0.10f),
                         drawStopIndicator = {}
                     )
                 }
@@ -1782,10 +1800,16 @@ fun ReaderScreen(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding(),
-                color = VeilPalette.Ink,
+                    .navigationBarsPadding()
+                    .padding(horizontal = 8.dp, bottom = 6.dp),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = readerChromeBackground,
                 tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+                shadowElevation = 0.dp,
+                border = BorderStroke(
+                    1.dp,
+                    readerChromeAccent.copy(alpha = 0.30f)
+                )
             ) {
                 Column {
                     Box(
@@ -1796,7 +1820,7 @@ fun ReaderScreen(
                                 Brush.horizontalGradient(
                                     listOf(
                                         Color.Transparent,
-                                        VeilPalette.Brass.copy(alpha = 0.42f),
+                                        readerChromeAccent.copy(alpha = 0.42f),
                                         Color.Transparent
                                     )
                                 )
@@ -1813,7 +1837,9 @@ fun ReaderScreen(
                         ReaderControl(
                             action = ReaderAction.NOTEBOOK,
                             label = stringResource(R.string.reader_notes),
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            accent = readerChromeAccent,
+                            foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
                             showNotebook = true
@@ -1823,7 +1849,9 @@ fun ReaderScreen(
                             action = ReaderAction.BOOKMARK,
                             label = stringResource(R.string.reader_mark),
                             modifier = Modifier.weight(1f),
-                            enabled = navigator != null
+                            enabled = navigator != null,
+                            accent = readerChromeAccent,
+                            foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
                             val locator = navigator?.currentLocator?.value
@@ -1852,7 +1880,9 @@ fun ReaderScreen(
                             },
                             label = stringResource(if (opened.format == BookFormat.EPUB) R.string.reader_type else R.string.reader_zoom),
                             modifier = Modifier.weight(1f),
-                            enabled = navigator != null
+                            enabled = navigator != null,
+                            accent = readerChromeAccent,
+                            foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
                             if (opened.format == BookFormat.EPUB) {
@@ -2892,6 +2922,7 @@ private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
 private fun ReaderChromeButton(
     action: ReaderAction,
     accessibilityLabel: String,
+    tint: Color = VeilPalette.Brass,
     onClick: () -> Unit
 ) {
     IconButton(
@@ -2903,7 +2934,7 @@ private fun ReaderChromeButton(
         ReaderActionIcon(
             action = action,
             modifier = Modifier.size(21.dp),
-            tint = VeilPalette.Brass
+            tint = tint
         )
     }
 }
@@ -2914,6 +2945,8 @@ private fun ReaderControl(
     label: String,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    accent: Color = VeilPalette.Brass,
+    foreground: Color = VeilPalette.Moon,
     onClick: () -> Unit
 ) {
     TextButton(
@@ -2922,8 +2955,8 @@ private fun ReaderControl(
         modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 48.dp),
         contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
         colors = ButtonDefaults.textButtonColors(
-            contentColor = VeilPalette.Moon,
-            disabledContentColor = VeilPalette.Moon.copy(alpha = 0.28f)
+            contentColor = foreground,
+            disabledContentColor = foreground.copy(alpha = 0.28f)
         )
     ) {
         Column(
@@ -2935,14 +2968,14 @@ private fun ReaderControl(
                 modifier = Modifier.size(
                     if (action == ReaderAction.APPEARANCE) 24.dp else 18.dp
                 ),
-                tint = if (enabled) VeilPalette.Brass else VeilPalette.Moon.copy(alpha = 0.28f)
+                tint = if (enabled) accent else foreground.copy(alpha = 0.28f)
             )
             Text(
                 label,
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Medium,
-                color = if (enabled) VeilPalette.Moon.copy(alpha = 0.78f)
-                    else VeilPalette.Moon.copy(alpha = 0.28f),
+                color = if (enabled) foreground.copy(alpha = 0.78f)
+                    else foreground.copy(alpha = 0.28f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
