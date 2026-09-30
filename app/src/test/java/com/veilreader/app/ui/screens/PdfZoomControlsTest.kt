@@ -31,12 +31,12 @@ class PdfZoomControlsTest {
     @Test
     fun `zoom step normalizes renderer value before scaling`() {
         assertEquals(1.25f, nextPdfZoom(Float.NaN, 1f, 4f, 1.25f), 0.001f)
-   
+        assertEquals(2f, nextPdfZoom(2f, 1f, 4f, Float.NaN), 0.001f)
+    }
+
     @Test
     fun `PDF zoom animation follows reduced motion policy`() {
         assertFalse(shouldAnimatePdfZoom(reducedMotion = true))
         assertTrue(shouldAnimatePdfZoom(reducedMotion = false))
-    }
-     assertEquals(2f, nextPdfZoom(2f, 1f, 4f, Float.NaN), 0.001f)
     }
 }
