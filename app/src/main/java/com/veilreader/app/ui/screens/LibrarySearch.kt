@@ -66,3 +66,61 @@ internal fun parseLocalizedDecimalInput(value: String): Double? {
     return normalized.toDoubleOrNull()?.takeIf(Double::isFinite)
 }
 
+
+
+internal data class NormalizedLibrarySearchDocument(
+    val title: String,
+    val author: String,
+    val series: String?,
+    val language: String?,
+    val collections: List<String>
+)
+
+internal fun normalizedLibrarySearchDocument(
+    title: String,
+    author: String,
+    series: String?,
+    language: String?,
+    collections: List<String>
+): NormalizedLibrarySearchDocument =
+    NormalizedLibrarySearchDocument(
+        title = normalizeLibrarySearchText(title),
+        author = normalizeLibrarySearchText(author),
+        series = series?.let(::normalizeLibrarySearchText),
+        language = language?.let(::normalizeLibrarySearchText),
+        collections = collections.map(::normalizeLibrarySearchText)
+    )
+
+/**
+ * Returns null when the document does not match.
+ *
+ * Scores are deliberately separated into non-overlapping bands so a weak title match always ranks
+ * above an exact author match, an author match above series, series above collection, and
+ * collection above language. This keeps local retrieval deterministic and explainable.
+ */
+internal fun librarySearchRelevance(
+    normalizedQuery: String,
+    document: NormalizedLibrarySearchDocument
+): Int? {
+    if (normalizedQuery.isBlank()) return 0
+
+    fun fieldScore(value: String?, band: Int): Int? {
+        val candidate = value?.takeIf(String::isNotBlank) ?: return null
+        return when {
+            candidate == normalizedQuery -> band + 300
+            candidate.startsWith(normalizedQuery) -> band + 200
+            candidate.contains(normalizedQuery) -> band + 100
+            else -> null
+        }
+    }
+
+    return buildList {
+        fieldScore(document.title, 6_000)?.let(::add)
+        fieldScore(document.author, 5_000)?.let(::add)
+        fieldScore(document.series, 4_000)?.let(::add)
+        document.collections.forEach { collection ->
+            fieldScore(collection, 3_000)?.let(::add)
+        }
+        fieldScore(document.language, 2_000)?.let(::add)
+    }.maxOrNull()
+}
