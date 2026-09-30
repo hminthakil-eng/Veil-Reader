@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.PerformanceTier
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
@@ -95,6 +96,21 @@ class SettingsStoreInstrumentedTest {
         } finally {
             store.setAppThemeMode(AppThemeMode.SYSTEM)
             store.saveReaderAppearance(ReaderAppearance())
+        }
+    }
+
+    @Test
+    fun performanceTier_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+
+        try {
+            store.setPerformanceTier(PerformanceTier.ESSENTIAL)
+
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(PerformanceTier.ESSENTIAL, recreated.performanceTier)
+        } finally {
+            store.setPerformanceTier(PerformanceTier.FULL)
         }
     }
 }
