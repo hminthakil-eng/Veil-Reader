@@ -324,7 +324,7 @@ fun VeilApp(
     }
 
     fun requestOpenBook(book: Book, locatorOverride: String? = null) {
-        if (restoring) return
+        if (restoring || isImporting) return
         if (!book.isImported) {
             showNotice(R.string.notice_sample_no_file)
             return
