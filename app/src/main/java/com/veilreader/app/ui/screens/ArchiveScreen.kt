@@ -46,6 +46,7 @@ import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.withVeilTracking
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.NumberFormat
 import kotlinx.coroutines.delay
@@ -663,7 +664,7 @@ private fun ArchiveRegisterStat(
         )
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
+            style = MaterialTheme.typography.labelSmall.withVeilTracking(label, 0.75.sp),
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
     }
@@ -929,7 +930,7 @@ private fun LivingMarginMemoryStrip(
     ) {
         Text(
             ageLabel,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+            style = MaterialTheme.typography.labelSmall.withVeilTracking(ageLabel, 0.72.sp),
             color = if (echoMode) VeilPalette.Brass
             else VeilPalette.Mist.copy(alpha = 0.64f)
         )
