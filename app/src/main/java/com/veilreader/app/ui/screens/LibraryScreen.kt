@@ -441,7 +441,7 @@ fun LibraryScreen(
                 LibraryHeader(
                     bookCount = books.size,
                     isImporting = isImporting,
-                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
                     onOpenSettings = onOpenSettings
                 )
                 LibraryAtmosphereLedger(atmosphereState)
@@ -849,7 +849,7 @@ fun LibraryScreen(
                 LibraryEmptyState(
                     hasBooks = books.isNotEmpty(),
                     isImporting = isImporting,
-                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf")) },
+                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
                     onReset = {
                         query = ""
                         shelf = "All"
