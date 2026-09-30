@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.veilreader.app.R
+import com.veilreader.app.data.manga.MangaLocalChapterMetadata
 import com.veilreader.app.data.manga.MangaLocalChapterSummary
 import com.veilreader.app.data.manga.MangaLocalStorageSummary
 import com.veilreader.app.domain.Book
@@ -71,7 +72,11 @@ fun MangaHubScreen(
     onAddChapterUris: (Book, List<Uri>) -> Unit,
     storageSummaryProvider: suspend (Book) -> MangaLocalStorageSummary,
     chapterSummaryProvider: suspend (Book) -> List<MangaLocalChapterSummary>,
-    onRenameChapter: (Book, MangaLocalChapterSummary, String) -> Unit,
+    onUpdateChapterMetadata: (
+        Book,
+        MangaLocalChapterSummary,
+        MangaLocalChapterMetadata
+    ) -> Unit,
     onMoveChapter: (Book, MangaLocalChapterSummary, Int) -> Unit,
     onDeleteChapter: (Book, MangaLocalChapterSummary) -> Unit,
     onClearDerivedCache: (Book) -> Unit,
@@ -101,8 +106,11 @@ fun MangaHubScreen(
     }
 
     var expandedChapterBookId by rememberSaveable { mutableStateOf<String?>(null) }
-    var renameTarget by remember { mutableStateOf<Pair<Book, MangaLocalChapterSummary>?>(null) }
-    var renameValue by remember { mutableStateOf("") }
+    var editTarget by remember { mutableStateOf<Pair<Book, MangaLocalChapterSummary>?>(null) }
+    var editTitle by remember { mutableStateOf("") }
+    var editNumber by remember { mutableStateOf("") }
+    var editVolume by remember { mutableStateOf("") }
+    var editLanguage by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<Pair<Book, MangaLocalChapterSummary>?>(null) }
 
 
@@ -372,9 +380,16 @@ fun MangaHubScreen(
                                             canMoveDown =
                                                 !chapter.isPrimary && index < chapters.lastIndex,
                                             enabled = !isImporting,
-                                            onRename = {
-                                                renameTarget = book to chapter
-                                                renameValue = chapter.title
+                                            onEdit = {
+                                                editTarget = book to chapter
+                                                editTitle = chapter.title
+                                                editNumber = chapter.number
+                                                    ?.let(::formatChapterNumber)
+                                                    .orEmpty()
+                                                editVolume = chapter.volume
+                                                    ?.let(::formatChapterNumber)
+                                                    .orEmpty()
+                                                editLanguage = chapter.languageTag.orEmpty()
                                             },
                                             onMoveUp = {
                                                 onMoveChapter(book, chapter, -1)
@@ -438,44 +453,106 @@ fun MangaHubScreen(
             }
         }
     }
-    renameTarget?.let { (book, chapter) ->
+    editTarget?.let { (book, chapter) ->
+        val parsedNumber = editNumber.trim().toDoubleOrNull()
+        val parsedVolume = editVolume
+            .trim()
+            .takeIf { it.isNotEmpty() }
+            ?.toDoubleOrNull()
+        val numberValid = parsedNumber != null && parsedNumber >= 0.0
+        val volumeValid =
+            editVolume.isBlank() || (parsedVolume != null && parsedVolume >= 0.0)
+
         AlertDialog(
             onDismissRequest = {
-                renameTarget = null
-                renameValue = ""
+                editTarget = null
             },
             title = {
-                Text(stringResource(R.string.manga_chapter_rename_title))
+                Text(stringResource(R.string.manga_chapter_edit_title))
             },
             text = {
-                OutlinedTextField(
-                    value = renameValue,
-                    onValueChange = { renameValue = it },
-                    singleLine = true,
-                    label = {
-                        Text(stringResource(R.string.manga_chapter_title_label))
-                    }
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    OutlinedTextField(
+                        value = editTitle,
+                        onValueChange = { editTitle = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_chapter_title_label))
+                        }
+                    )
+                    OutlinedTextField(
+                        value = editNumber,
+                        onValueChange = { editNumber = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_chapter_number_label))
+                        },
+                        supportingText = if (!numberValid && editNumber.isNotBlank()) {
+                            {
+                                Text(stringResource(R.string.manga_chapter_number_invalid))
+                            }
+                        } else {
+                            null
+                        },
+                        isError = !numberValid && editNumber.isNotBlank()
+                    )
+                    OutlinedTextField(
+                        value = editVolume,
+                        onValueChange = { editVolume = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_chapter_volume_label))
+                        },
+                        supportingText = if (!volumeValid) {
+                            {
+                                Text(stringResource(R.string.manga_chapter_volume_invalid))
+                            }
+                        } else {
+                            null
+                        },
+                        isError = !volumeValid
+                    )
+                    OutlinedTextField(
+                        value = editLanguage,
+                        onValueChange = { editLanguage = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_chapter_language_label))
+                        },
+                        supportingText = {
+                            Text(stringResource(R.string.manga_chapter_language_hint))
+                        }
+                    )
+                }
             },
             confirmButton = {
                 TextButton(
                     onClick = {
-                        onRenameChapter(book, chapter, renameValue)
-                        renameTarget = null
-                        renameValue = ""
+                        onUpdateChapterMetadata(
+                            book,
+                            chapter,
+                            MangaLocalChapterMetadata(
+                                title = editTitle,
+                                volume = parsedVolume,
+                                number = parsedNumber,
+                                languageTag = editLanguage
+                            )
+                        )
+                        editTarget = null
                     },
-                    enabled = renameValue.isNotBlank() && !isImporting
+                    enabled =
+                        editTitle.isNotBlank() &&
+                            numberValid &&
+                            volumeValid &&
+                            !isImporting
                 ) {
                     Text(stringResource(R.string.action_save))
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        renameTarget = null
-                        renameValue = ""
-                    }
-                ) {
+                TextButton(onClick = { editTarget = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
@@ -523,7 +600,7 @@ private fun MangaChapterManagementRow(
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     enabled: Boolean,
-    onRename: () -> Unit,
+    onEdit: () -> Unit,
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
     onDelete: () -> Unit
@@ -582,8 +659,8 @@ private fun MangaChapterManagementRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
-                TextButton(onClick = onRename, enabled = enabled) {
-                    Text(stringResource(R.string.action_rename))
+                TextButton(onClick = onEdit, enabled = enabled) {
+                    Text(stringResource(R.string.action_edit))
                 }
                 if (!chapter.isPrimary) {
                     TextButton(onClick = onDelete, enabled = enabled) {
