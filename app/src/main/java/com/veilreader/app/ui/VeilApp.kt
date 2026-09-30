@@ -329,23 +329,10 @@ fun VeilApp(
             showNotice(R.string.notice_sample_no_file)
             return
         }
-        if (book.format == BookFormat.COMIC) {
-            scope.launch {
-                when (val result = mangaSessionRepository.build(book.id)) {
-                    is MangaSessionAdapterResult.Ready -> {
-                        activeMangaSession = result.session
-                    }
-                    is MangaSessionAdapterResult.Unavailable -> {
-                        showNotice(
-                            R.string.notice_manga_open_failed,
-                            VeilNoticeKind.WARNING
-                        )
-                    }
-                }
-            }
-            return
-        }
-        routeViewModel.requestBook(book.id, locatorOverride)
+        routeViewModel.requestBook(
+            bookId = book.id,
+            locatorOverrideJson = locatorOverride.takeUnless { book.format == BookFormat.COMIC }
+        )
     }
 
     fun importBook(uri: Uri) {
@@ -418,6 +405,30 @@ fun VeilApp(
         if (!book.isImported) {
             routeViewModel.bookOpenFailed(targetId)
             showNotice(R.string.notice_book_file_missing)
+            return@LaunchedEffect
+        }
+
+        if (book.format == BookFormat.COMIC) {
+            if (activeMangaSession?.mangaId?.value == targetId) {
+                return@LaunchedEffect
+            }
+            when (val result = mangaSessionRepository.build(targetId)) {
+                is MangaSessionAdapterResult.Ready -> {
+                    if (routeViewModel.route.value.activeBookId != targetId) {
+                        return@LaunchedEffect
+                    }
+                    activeMangaSession = result.session
+                    library.markOpened(targetId)
+                    routeViewModel.readerOpened(targetId)
+                }
+                is MangaSessionAdapterResult.Unavailable -> {
+                    routeViewModel.bookOpenFailed(targetId)
+                    showNotice(
+                        R.string.notice_manga_open_failed,
+                        VeilNoticeKind.WARNING
+                    )
+                }
+            }
             return@LaunchedEffect
         }
 
@@ -646,7 +657,10 @@ fun VeilApp(
                 loader = mangaLoader,
                 progressStore = mangaProgressStore,
                 cacheRoot = mangaImporter.cacheRoot,
-                onClose = { activeMangaSession = null },
+                onClose = {
+                    activeMangaSession = null
+                    routeViewModel.closeReader()
+                },
                 modifier = Modifier.fillMaxSize()
             )
         } else if (opened != null) {
