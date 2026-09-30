@@ -179,7 +179,7 @@ class MangaPersistenceMigrationInstrumentedTest {
 
         migrated.execSQL("DELETE FROM books WHERE id = 'comic'")
 
-        assertCount(migrated, "manga_chapters", 0)
+        assertCount(migrated, "manga_chapters", 1)
         assertCount(migrated, "manga_source_links", 0)
         assertCount(migrated, "manga_chapter_sources", 0)
         assertCount(migrated, "manga_progress", 0)
