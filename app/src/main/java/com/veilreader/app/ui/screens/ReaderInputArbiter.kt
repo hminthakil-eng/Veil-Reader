@@ -55,6 +55,15 @@ internal fun pageTurnTapZonePx(
         .coerceAtMost(upperBound)
 }
 
+internal fun shouldUsePaperCurlNavigation(
+    format: BookFormat,
+    scroll: Boolean,
+    pageTurnStyle: PageTurnStyle
+): Boolean =
+    format == BookFormat.EPUB &&
+        !scroll &&
+        pageTurnStyle == PageTurnStyle.PAPER
+
 internal fun shouldUseDirectionalTapNavigation(
     format: BookFormat,
     scroll: Boolean,
