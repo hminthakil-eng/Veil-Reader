@@ -1302,7 +1302,7 @@ private fun BookDetailDestination(
                     .fillMaxWidth()
                     .heightIn(min = 320.dp)
             ) {
-                val compact = maxWidth < 520.dp
+                val compact = maxWidth < 520.dp || LocalDensity.current.fontScale > 1.28f
 
                 Image(
                     painter = painterResource(R.drawable.grayfog_threshold_v1),
@@ -1340,6 +1340,15 @@ private fun BookDetailDestination(
                 GrayfogOrnamentFrame(
                     modifier = Modifier.matchParentSize(),
                     strength = 0.58f
+                )
+
+                ArtifactChamberSeal(
+                    progress = progress,
+                    favorite = book.favorite,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = VeilSpacing.lg, end = VeilSpacing.lg)
+                        .size(if (compact) 58.dp else 68.dp)
                 )
 
                 Column(
@@ -1429,90 +1438,64 @@ private fun BookDetailDestination(
                     .padding(horizontal = VeilSpacing.lg),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            stringResource(R.string.book_detail_reading_progress),
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                            color = VeilPalette.Brass,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            formatPercent(progress),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                BookDetailReadingLedger(
+                    book = book,
+                    progress = progress,
+                    status = status
+                )
 
-                    LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(3.dp),
-                        color = VeilPalette.Brass,
-                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f),
-                        drawStopIndicator = {}
-                    )
-
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            status,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        book.currentChapter
-                            .takeIf { it.isNotBlank() && progress > 0f }
-                            ?.let { chapter ->
-                                Text(
-                                    chapter,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 240.dp)
-                                )
-                            }
-                    }
-                }
-
-                Button(
+                Surface(
                     onClick = onOpen,
                     enabled = book.isImported,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 54.dp),
+                        .heightIn(min = 56.dp),
                     shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
+                    color = VeilPalette.ReaderPaper,
+                    contentColor = VeilPalette.InkOnPaper,
+                    tonalElevation = 0.dp,
+                    shadowElevation = 0.dp,
+                    border = BorderStroke(
+                        1.dp,
+                        VeilPalette.Brass.copy(alpha = 0.82f)
                     )
                 ) {
-                    Text(
-                        if (book.isImported) primaryAction
-                        else stringResource(R.string.book_detail_publication_unavailable)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = VeilSpacing.md, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            if (book.isImported) primaryAction
+                            else stringResource(R.string.book_detail_publication_unavailable),
+                            modifier = Modifier.weight(1f),
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                        Text(
+                            "›",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = VeilPalette.DeepBrass
+                        )
+                    }
                 }
 
                 Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    OutlinedButton(
+                    TextButton(
                         onClick = onFavorite,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = if (book.favorite) {
+                                VeilPalette.MoonCrimson
+                            } else {
+                                VeilPalette.Mist
+                            }
                         )
                     ) {
                         Text(
@@ -1524,13 +1507,20 @@ private fun BookDetailDestination(
                         )
                     }
 
-                    OutlinedButton(
+                    Box(
+                        Modifier
+                            .width(1.dp)
+                            .height(24.dp)
+                            .background(VeilPalette.BorderDark.copy(alpha = 0.64f))
+                    )
+
+                    TextButton(
                         onClick = onEditMetadata,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp),
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = VeilPalette.Mist
                         )
                     ) {
                         Text(stringResource(R.string.book_detail_edit_details))
@@ -1707,6 +1697,137 @@ private fun BookDetailDestination(
             }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ArtifactChamberSeal(
+    progress: Float,
+    favorite: Boolean,
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val center = Offset(size.width / 2f, size.height / 2f)
+        val outer = size.minDimension * 0.43f
+        val inner = size.minDimension * 0.27f
+        val p = progress.coerceIn(0f, 1f)
+
+        drawCircle(
+            color = VeilPalette.Ink.copy(alpha = 0.72f),
+            radius = outer + 3.dp.toPx(),
+            center = center
+        )
+        drawArc(
+            color = VeilPalette.Brass.copy(alpha = 0.82f),
+            startAngle = -90f,
+            sweepAngle = 360f * p.coerceAtLeast(0.04f),
+            useCenter = false,
+            topLeft = Offset(center.x - outer, center.y - outer),
+            size = androidx.compose.ui.geometry.Size(outer * 2f, outer * 2f),
+            style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round)
+        )
+        drawCircle(
+            color = VeilPalette.Brass.copy(alpha = 0.30f),
+            radius = outer,
+            center = center,
+            style = Stroke(0.8.dp.toPx())
+        )
+        drawCircle(
+            color = VeilPalette.Moon.copy(alpha = 0.24f + p * 0.18f),
+            radius = inner,
+            center = center,
+            style = Stroke(0.7.dp.toPx())
+        )
+
+        repeat(4) { index ->
+            val angle = Math.toRadians(index * 90.0 - 90.0)
+            drawLine(
+                color = VeilPalette.Brass.copy(alpha = 0.22f),
+                start = Offset(
+                    center.x + cos(angle).toFloat() * inner,
+                    center.y + sin(angle).toFloat() * inner
+                ),
+                end = Offset(
+                    center.x + cos(angle).toFloat() * outer,
+                    center.y + sin(angle).toFloat() * outer
+                ),
+                strokeWidth = 0.7.dp.toPx()
+            )
+        }
+
+        drawCircle(
+            color = if (favorite) {
+                VeilPalette.MoonCrimson.copy(alpha = 0.92f)
+            } else {
+                VeilPalette.Brass.copy(alpha = 0.52f)
+            },
+            radius = 2.5.dp.toPx(),
+            center = center
+        )
+    }
+}
+
+@Composable
+private fun BookDetailReadingLedger(
+    book: Book,
+    progress: Float,
+    status: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                stringResource(R.string.book_detail_reading_progress).uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                color = VeilPalette.Brass,
+                modifier = Modifier.weight(1f)
+            )
+            Text(
+                rememberVeilPercentFormatter()(progress),
+                style = MaterialTheme.typography.labelMedium,
+                color = VeilPalette.Moon
+            )
+        }
+
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(2.dp),
+            color = VeilPalette.Brass,
+            trackColor = VeilPalette.BorderDark.copy(alpha = 0.52f),
+            drawStopIndicator = {}
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.Top
+        ) {
+            Text(
+                status,
+                style = MaterialTheme.typography.labelLarge,
+                color = VeilPalette.Mist.copy(alpha = 0.86f)
+            )
+
+            book.currentChapter
+                .takeIf { it.isNotBlank() && progress > 0f }
+                ?.let { chapter ->
+                    Text(
+                        chapter,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass.copy(alpha = 0.82f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn(max = 240.dp)
+                    )
+                }
         }
     }
 }
