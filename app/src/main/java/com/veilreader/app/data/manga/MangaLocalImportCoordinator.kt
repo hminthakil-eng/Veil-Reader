@@ -18,6 +18,7 @@ import com.veilreader.app.manga.importing.MangaCbzImportFailureReason
 import com.veilreader.app.manga.importing.MangaCbzImportLimits
 import com.veilreader.app.manga.importing.MangaCbzImportResult
 import com.veilreader.app.manga.importing.MangaCbzIngestor
+import com.veilreader.app.manga.importing.compareNaturalArchiveNames
 import com.veilreader.app.manga.library.CanonicalMangaId
 import com.veilreader.app.manga.library.MangaCacheLayout
 import com.veilreader.app.manga.library.MangaChapterAnchor
@@ -71,6 +72,12 @@ data class MangaLocalChapterImportResult(
     val duplicate: Boolean
 )
 
+
+data class MangaLocalBatchImportResult(
+    val addedCount: Int,
+    val duplicateCount: Int,
+    val lastReadingOrder: Int?
+)
 
 data class MangaLocalStorageSummary(
     val chapterCount: Int,
@@ -400,6 +407,50 @@ class MangaLocalImportCoordinator(
                 chapterProgression = point.chapterProgression,
                 updatedAtEpochMs = point.updatedAtEpochMs
             )
+        )
+    }
+
+    suspend fun appendChapters(
+        bookId: String,
+        uris: List<Uri>
+    ): Result<MangaLocalBatchImportResult> = runCatching {
+        require(bookId.isNotBlank())
+        val distinct = uris.distinctBy(Uri::toString)
+        require(distinct.isNotEmpty()) { "No Manga chapter files were selected" }
+
+        val sorted = withContext(Dispatchers.IO) {
+            distinct
+                .map { uri ->
+                    uri to (
+                        displayName(uri)
+                            ?.substringBeforeLast('.', missingDelimiterValue = "")
+                            ?.trim()
+                            ?.takeIf { it.isNotEmpty() }
+                            ?: uri.toString()
+                        )
+                }
+                .sortedWith { left, right ->
+                    compareNaturalArchiveNames(left.second, right.second)
+                }
+                .map(Pair<Uri, String>::first)
+        }
+
+        var added = 0
+        var duplicates = 0
+        var lastReadingOrder: Int? = null
+        sorted.forEach { uri ->
+            val result = appendChapter(bookId, uri).getOrThrow()
+            if (result.duplicate) {
+                duplicates += 1
+            } else {
+                added += 1
+                lastReadingOrder = result.readingOrder
+            }
+        }
+        MangaLocalBatchImportResult(
+            addedCount = added,
+            duplicateCount = duplicates,
+            lastReadingOrder = lastReadingOrder
         )
     }
 
