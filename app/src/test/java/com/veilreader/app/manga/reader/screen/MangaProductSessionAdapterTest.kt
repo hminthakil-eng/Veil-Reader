@@ -40,6 +40,24 @@ class MangaProductSessionAdapterTest {
     }
 
     @Test
+    fun suppliedSessionIdentity_isPreservedForProcessRestoreKeying() {
+        val result = MangaProductSessionAdapter().build(
+            mangaId = mangaId,
+            chaptersInReadingOrder = listOf(
+                MangaProductChapter(chapter("c1", number = 1.0))
+            ),
+            instanceId = "restored-open-instance"
+        )
+
+        val session = (result as MangaSessionAdapterResult.Ready).session
+        assertEquals("restored-open-instance", session.instanceId)
+        assertEquals(
+            "manga-reader-canonical-work-restored-open-instance",
+            session.sessionKey
+        )
+    }
+
+    @Test
     fun matchingPagesProviderIsAttachedToReaderEntry() {
         val provider = FixtureProvider(sourceId)
         val result = MangaProductSessionAdapter().build(
