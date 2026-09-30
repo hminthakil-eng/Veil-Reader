@@ -264,12 +264,20 @@ fun VeilApp(
         }
     }
 
-    DisposableEffect(lifecycle) {
+    DisposableEffect(lifecycle, game) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) game.refresh()
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> game.refresh()
+                Lifecycle.Event.ON_STOP,
+                Lifecycle.Event.ON_DESTROY -> game.flushDurably()
+                else -> Unit
+            }
         }
         lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
+        onDispose {
+            game.flushDurably()
+            lifecycle.removeObserver(observer)
+        }
     }
 
     var exporting by remember { mutableStateOf(false) }
