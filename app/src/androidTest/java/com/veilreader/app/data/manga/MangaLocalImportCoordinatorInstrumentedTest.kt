@@ -172,7 +172,7 @@ class MangaLocalImportCoordinatorInstrumentedTest {
 
     @Test
     fun mangaBackupRoundTripRebuildsCatalogCacheAndExactProgress() = runBlocking {
-        val archive = testArchive("backup.cbz") {
+        val archive = testArchive("backup ch 1.cbz") {
             addPng("001.png")
             addPng("002.png")
             addPng("003.png")
@@ -180,19 +180,50 @@ class MangaLocalImportCoordinatorInstrumentedTest {
         val imported = coordinator.import(Uri.fromFile(archive)).getOrThrow()
         val book = imported.book
         val mangaId = CanonicalMangaId(book.id)
+
+        val secondArchive = testArchive("backup ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+            addPng("003.png")
+        }
+        coordinator.appendChapter(
+            bookId = book.id,
+            uri = Uri.fromFile(secondArchive),
+            metadata = MangaLocalChapterMetadata(
+                title = "Second descent",
+                volume = 1.0,
+                number = 2.0,
+                languageTag = "en"
+            )
+        ).getOrThrow()
+
+        val chaptersBefore = db.mangaCatalog().listChapters(book.id)
+        val secondBefore = chaptersBefore.single { it.readingOrder == 1 }
+        val secondSourceBefore = db.mangaCatalog()
+            .listChapterSources(secondBefore.id)
+            .single()
+
         val progressStore = RoomMangaProgressStore(db)
         progressStore.save(
             MangaReadingProgress(
                 mangaId = mangaId,
                 chapter = MangaChapterAnchor(
-                    number = 1.0,
-                    normalizedTitle = book.title
+                    volume = secondBefore.volume,
+                    number = secondBefore.number,
+                    languageTag = secondBefore.languageTag,
+                    normalizedTitle = secondBefore.normalizedTitle,
+                    providerChapterKeyHint = secondSourceBefore.chapterKey
                 ),
                 pageIndex = 1,
                 pageCount = 3,
                 chapterProgression = 0.5,
                 updatedAtEpochMs = 777L
             )
+        )
+        assertEquals(
+            0.75f,
+            requireNotNull(db.books().findEntity(book.id)).progress,
+            0.000001f
         )
 
         val backup = File(context.cacheDir, TEST_ROOT + "/manga-backup.zip")
@@ -221,21 +252,33 @@ class MangaLocalImportCoordinatorInstrumentedTest {
         )
 
         val chapters = db.mangaCatalog().listChapters(book.id)
-        assertEquals(1, chapters.size)
-        val offline = db.mangaOffline().listForBook(book.id).single()
-        assertEquals(listOf(0, 1, 2), offline.pages.map { it.pageIndex })
+        assertEquals(listOf(0, 1), chapters.map { it.readingOrder })
+        val restoredSecond = chapters.single { it.readingOrder == 1 }
+        assertEquals("Second descent", restoredSecond.title)
+        assertEquals(1.0, requireNotNull(restoredSecond.volume), 0.000001)
+        assertEquals(2.0, requireNotNull(restoredSecond.number), 0.000001)
+        assertEquals("en", restoredSecond.languageTag)
+
+        val offline = db.mangaOffline().listForBook(book.id)
+        assertEquals(2, offline.size)
         assertTrue(
-            offline.pages.all { page ->
+            offline.flatMap { it.pages }.all { page ->
                 File(coordinator.cacheRoot, page.relativePath).isFile
             }
         )
 
         val restoredProgress = requireNotNull(progressStore.load(mangaId))
+        assertEquals(2.0, requireNotNull(restoredProgress.chapter.number), 0.000001)
+        assertEquals("Second descent", restoredProgress.chapter.normalizedTitle)
         assertEquals(1, restoredProgress.pageIndex)
         assertEquals(3, restoredProgress.pageCount)
         assertEquals(0.5, restoredProgress.chapterProgression, 0.000001)
         assertEquals(777L, restoredProgress.updatedAtEpochMs)
-        assertEquals(0.5f, requireNotNull(db.books().findEntity(book.id)).progress, 0.000001f)
+        assertEquals(
+            0.75f,
+            requireNotNull(db.books().findEntity(book.id)).progress,
+            0.000001f
+        )
     }
 
     @Test
