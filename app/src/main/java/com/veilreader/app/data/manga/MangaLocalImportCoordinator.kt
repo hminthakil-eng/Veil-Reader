@@ -59,6 +59,26 @@ class MangaLocalImportCoordinator(
         appContext.contentResolver.getType(uri)?.lowercase(Locale.ROOT) in CBZ_MIME_TYPES
     }
 
+    /**
+     * Deletes one persisted Manga through the Book catalog owner, then removes every extracted
+     * chapter directory that belonged to it. Database cascades run before filesystem cleanup so a
+     * failed Room delete never destroys the user's only readable copy.
+     */
+    suspend fun deleteImportedManga(bookId: String): Result<Book?> = runCatching {
+        require(bookId.isNotBlank())
+        val chapterDirectories = database.mangaCatalog()
+            .listChapters(bookId)
+            .map { chapter -> File(cacheRoot, chapter.cacheKey) }
+
+        val deleted = library.deleteImportedBook(bookId) ?: return@runCatching null
+
+        withContext(Dispatchers.IO) {
+            chapterDirectories.forEach(::deleteGeneratedChapterDirectory)
+            pruneEmptyMangaCacheParents(chapterDirectories)
+        }
+        deleted
+    }
+
     suspend fun import(uri: Uri): Result<BookImportResult> {
         if (!canImport(uri)) {
             return Result.failure(
@@ -310,6 +330,27 @@ class MangaLocalImportCoordinator(
                 cursor.getString(cursor.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME))
             }
         }.getOrNull()
+    }
+
+    private fun pruneEmptyMangaCacheParents(chapterDirectories: List<File>) {
+        val root = runCatching { cacheRoot.canonicalFile }.getOrNull() ?: return
+        chapterDirectories.forEach { directory ->
+            var current = runCatching { directory.canonicalFile.parentFile }.getOrNull()
+            while (
+                current != null &&
+                current != root &&
+                current.toPath().startsWith(root.toPath())
+            ) {
+                val children = current.listFiles()
+                if (children != null && children.isEmpty()) {
+                    val parent = current.parentFile
+                    if (!current.delete()) break
+                    current = parent
+                } else {
+                    break
+                }
+            }
+        }
     }
 
     private fun deleteGeneratedChapterDirectory(directory: File) {
