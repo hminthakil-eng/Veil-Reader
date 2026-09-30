@@ -235,7 +235,7 @@ fun ReaderScreen(
         opened.format == BookFormat.EPUB &&
             opened.publication.metadata.layout == Layout.FIXED
     }
-    var activeFixedLayoutSpread by remember(opened.book.id) {
+    var activeFixedLayoutSpread by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(fixedLayoutSpread)
     }
     LaunchedEffect(fixedLayoutSpread, opened.book.id, readerSessionInstanceId) {
@@ -252,10 +252,10 @@ fun ReaderScreen(
             fixedLayout = fixedLayoutPublication
         )
     }
-    var presentedReaderAppearance by remember(opened.book.id) {
+    var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(effectiveReaderAppearance)
     }
-    var rendererPreferencesSettling by remember(opened.book.id) {
+    var rendererPreferencesSettling by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(false)
     }
     val readerModeHandoffState = remember(opened.book.id, readerSessionInstanceId) {
@@ -424,6 +424,7 @@ fun ReaderScreen(
     ReaderBrightnessEffect(activity, readerAppearance.screenBrightness)
 
     LaunchedEffect(
+        readerSessionInstanceId,
         controlsVisible,
         showNotebook,
         showAppearance,
@@ -447,6 +448,7 @@ fun ReaderScreen(
     }
 
     LaunchedEffect(
+        readerSessionInstanceId,
         effectiveReaderAppearance.scroll,
         effectiveReaderAppearance.pageTurnStyle
     ) {
@@ -516,6 +518,14 @@ fun ReaderScreen(
                 ?.recycle()
         }
     }
+    DisposableEffect(readerSessionInstanceId) {
+        onDispose {
+            appearanceCloseJob?.cancel()
+            imageLoadSerial += 1
+            imageLoadJob?.cancel()
+        }
+    }
+
     var pendingNoteHighlightId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
     var pendingNoteText by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
     var noteSaving by remember(readerSessionInstanceId) { mutableStateOf(false) }
@@ -538,6 +548,7 @@ fun ReaderScreen(
 
     val selectionActionModeCallback = remember(
         opened.book.id,
+        readerSessionInstanceId,
         library,
         readerViewModel,
         scope,
@@ -750,6 +761,7 @@ fun ReaderScreen(
 
     val epubNavigatorListener = remember(
         opened.book.id,
+        readerSessionInstanceId,
         activity,
         externalLinkFailedMessage
     ) {
@@ -813,6 +825,7 @@ fun ReaderScreen(
 
     val fragmentFactory = remember(
         opened.book.id,
+        readerSessionInstanceId,
         selectionActionModeCallback,
         epubNavigatorListener
     ) {
@@ -1174,6 +1187,7 @@ fun ReaderScreen(
     }
 
     LaunchedEffect(
+        readerSessionInstanceId,
         navigator,
         effectiveReaderAppearance,
         activeFixedLayoutSpread,
@@ -1272,6 +1286,7 @@ fun ReaderScreen(
     }
 
     LaunchedEffect(
+        readerSessionInstanceId,
         navigator,
         opened.book.id,
         bookHighlights,
