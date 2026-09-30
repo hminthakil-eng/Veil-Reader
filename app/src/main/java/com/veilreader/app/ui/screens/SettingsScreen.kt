@@ -111,10 +111,11 @@ fun SettingsScreen(
     val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
     val context = LocalContext.current
-    val appVersion = remember(context) {
+    val unknownVersion = stringResource(R.string.settings_unknown)
+    val appVersion = remember(context, unknownVersion) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
-        }.getOrDefault("").ifBlank { context.getString(R.string.settings_unknown) }
+        }.getOrDefault("").ifBlank { unknownVersion }
     }
     val backupPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
