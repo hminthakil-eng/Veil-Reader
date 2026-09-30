@@ -42,7 +42,7 @@ class GameRepository(context: Context) {
     private val _castleTitle = MutableStateFlow(prefs.getString("castleTitle", "Reader of the Veil") ?: "Reader of the Veil")
     val castleTitle: StateFlow<String> = _castleTitle
 
-    private val _revealedDiscoveries = MutableStateFlow(
+    private val _revealedDiscoveries = MutableStateFlow<Set<String>>(
         prefs.getStringSet("revealedDiscoveries", emptySet())
             .orEmpty()
             .filterTo(linkedSetOf()) { it in VeiledDiscoveryPolicy.allIds }
