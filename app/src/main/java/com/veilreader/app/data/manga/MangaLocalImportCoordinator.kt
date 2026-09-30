@@ -49,10 +49,10 @@ class MangaLocalImportCoordinator(
     private val appContext = context.applicationContext
     val cacheRoot: File = File(appContext.filesDir, "manga-cache")
 
-    fun canImport(uri: Uri): Boolean {
+    suspend fun canImport(uri: Uri): Boolean = withContext(Dispatchers.IO) {
         val name = displayName(uri)?.lowercase(Locale.ROOT)
-        if (name?.endsWith(".cbz") == true) return true
-        return appContext.contentResolver.getType(uri)?.lowercase(Locale.ROOT) in CBZ_MIME_TYPES
+        if (name?.endsWith(".cbz") == true) return@withContext true
+        appContext.contentResolver.getType(uri)?.lowercase(Locale.ROOT) in CBZ_MIME_TYPES
     }
 
     suspend fun import(uri: Uri): Result<BookImportResult> {
@@ -69,7 +69,7 @@ class MangaLocalImportCoordinator(
         try {
             val localFile = materialize(uri)
             val fingerprint = sha256(localFile)
-            val displayTitle = displayName(uri)
+            val displayTitle = withContext(Dispatchers.IO) { displayName(uri) }
                 ?.substringBeforeLast('.', missingDelimiterValue = "")
                 ?.trim()
                 ?.takeIf { it.isNotEmpty() }
