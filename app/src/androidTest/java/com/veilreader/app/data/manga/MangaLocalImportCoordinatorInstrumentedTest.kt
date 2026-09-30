@@ -172,6 +172,87 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     }
 
     @Test
+    fun derivedCacheCanBeClearedAndSelfHealedWithoutLosingProgress() = runBlocking {
+        val firstArchive = testArchive("cache ch 1.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+        }
+        val book = coordinator.import(Uri.fromFile(firstArchive))
+            .getOrThrow()
+            .book
+        val secondArchive = testArchive("cache ch 2.cbz") {
+            addPng("001.png")
+            addPng("002.png")
+            addPng("003.png")
+        }
+        coordinator.appendChapter(
+            bookId = book.id,
+            uri = Uri.fromFile(secondArchive)
+        ).getOrThrow()
+
+        val second = db.mangaCatalog()
+            .listChapters(book.id)
+            .single { it.readingOrder == 1 }
+        val secondSource = db.mangaCatalog()
+            .listChapterSources(second.id)
+            .single()
+        val progressStore = RoomMangaProgressStore(db)
+        progressStore.save(
+            MangaReadingProgress(
+                mangaId = CanonicalMangaId(book.id),
+                chapter = MangaChapterAnchor(
+                    volume = second.volume,
+                    number = second.number,
+                    languageTag = second.languageTag,
+                    normalizedTitle = second.normalizedTitle,
+                    providerChapterKeyHint = secondSource.chapterKey
+                ),
+                pageIndex = 1,
+                pageCount = 3,
+                chapterProgression = 0.5,
+                updatedAtEpochMs = 999L
+            )
+        )
+
+        val before = coordinator.storageSummary(book.id)
+        assertEquals(2, before.chapterCount)
+        assertEquals(5, before.offlinePageCount)
+        assertTrue(before.sourceBytes > 0L)
+        assertTrue(before.cacheBytes > 0L)
+
+        val freed = coordinator.clearDerivedCache(book.id).getOrThrow()
+        assertEquals(before.cacheBytes, freed)
+        assertTrue(db.mangaOffline().listForBook(book.id).isEmpty())
+
+        val afterClear = coordinator.storageSummary(book.id)
+        assertEquals(before.sourceBytes, afterClear.sourceBytes)
+        assertEquals(0L, afterClear.cacheBytes)
+        assertEquals(0, afterClear.offlinePageCount)
+
+        val progressAfterClear = requireNotNull(
+            progressStore.load(CanonicalMangaId(book.id))
+        )
+        assertEquals(1, progressAfterClear.pageIndex)
+        assertEquals(0.5, progressAfterClear.chapterProgression, 0.000001)
+        assertEquals(999L, progressAfterClear.updatedAtEpochMs)
+
+        assertEquals(2, coordinator.ensureLocalCache(book.id).getOrThrow())
+        assertEquals(2, db.mangaOffline().listForBook(book.id).size)
+
+        val afterRepair = coordinator.storageSummary(book.id)
+        assertEquals(5, afterRepair.offlinePageCount)
+        assertTrue(afterRepair.cacheBytes > 0L)
+        assertEquals(before.sourceBytes, afterRepair.sourceBytes)
+
+        val progressAfterRepair = requireNotNull(
+            progressStore.load(CanonicalMangaId(book.id))
+        )
+        assertEquals(1, progressAfterRepair.pageIndex)
+        assertEquals(0.5, progressAfterRepair.chapterProgression, 0.000001)
+        assertEquals(999L, progressAfterRepair.updatedAtEpochMs)
+    }
+
+    @Test
     fun mangaBackupRoundTripRebuildsCatalogCacheAndExactProgress() = runBlocking {
         val archive = testArchive("backup ch 1.cbz") {
             addPng("001.png")
