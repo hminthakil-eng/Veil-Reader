@@ -205,6 +205,19 @@ class LocalLibraryRepository internal constructor(
     fun getBook(id: String): Book? = _books.value.firstOrNull { it.id == id }
 
     /**
+     * Compensating rollback for a newly committed import when a format-specific post-commit step
+     * fails. The Book row is the persistence owner, so foreign-key cascades remove dependent format
+     * state before the app-private publication file is deleted.
+     */
+    suspend fun rollbackImportedBook(book: Book) {
+        orderedWrite {
+            database.books().deleteById(book.id)
+        }
+        _books.value = _books.value.filterNot { it.id == book.id }
+        discardImportedArtifacts(book)
+    }
+
+    /**
      * Stores a derived app-private cover thumbnail path. An empty string is a terminal sentinel
      * meaning extraction was attempted but this publication has no usable cover.
      */
