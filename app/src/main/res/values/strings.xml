@@ -1202,4 +1202,8 @@
     <string name="manga_hub_continue">Continue</string>
     <string name="manga_hub_start">Start reading</string>
     <string name="manga_hub_read_again">Read again</string>
+    <string name="manga_hub_add_chapter">Add chapter</string>
+    <string name="notice_manga_chapter_added">Added chapter %2$d to %1$s.</string>
+    <string name="notice_manga_chapter_duplicate">That CBZ is already part of %1$s.</string>
+    <string name="notice_manga_chapter_import_failed">The Manga chapter could not be added.</string>
 </resources>
