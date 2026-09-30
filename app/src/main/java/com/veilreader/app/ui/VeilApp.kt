@@ -37,6 +37,7 @@ import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookReturnRitual
+import com.veilreader.app.domain.PerformanceTier
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderAppearanceScope
 import com.veilreader.app.domain.deriveBookReturnRitual
@@ -69,6 +70,7 @@ fun VeilApp(
     onExternalOpenUriConsumed: () -> Unit = {},
     appSettings: AppSettings = AppSettings(),
     onSetAppThemeMode: (AppThemeMode) -> Unit = {},
+    onSetPerformanceTier: (PerformanceTier) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
     onSaveBookReaderAppearance: (String, ReaderAppearance) -> Unit = { _, _ -> },
     onClearBookReaderAppearance: (String) -> Unit = {},
@@ -594,6 +596,7 @@ fun VeilApp(
                 exporting = exporting,
                 restoring = restoring,
                 onSetAppThemeMode = onSetAppThemeMode,
+                onSetPerformanceTier = onSetPerformanceTier,
                 onSaveReaderAppearance = onSaveReaderAppearance,
                 onSaveSensorySettings = onSaveSensorySettings,
                 onExportBackup = { exportData(it, true) },
