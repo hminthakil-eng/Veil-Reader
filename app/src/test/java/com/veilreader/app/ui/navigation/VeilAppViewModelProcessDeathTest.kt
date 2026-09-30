@@ -37,11 +37,11 @@ class VeilAppViewModelProcessDeathTest {
             assertEquals(readerSessionId, recreated.route.value.readerSessionInstanceId)
             assertEquals("{\"href\":\"chapter.xhtml\"}", recreated.route.value.locatorOverrideJson)
 
-            recreated.readerOpened("book-42")
+            recreated.readerOpened("book-42", readerSessionId)
             assertNull(recreated.route.value.locatorOverrideJson)
             assertEquals("book-42", recreated.route.value.activeBookId)
 
-            recreated.closeReader()
+            recreated.closeReader(readerSessionId)
             assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
             assertNull(recreated.route.value.activeBookId)
             assertNull(recreated.route.value.readerSessionInstanceId)
