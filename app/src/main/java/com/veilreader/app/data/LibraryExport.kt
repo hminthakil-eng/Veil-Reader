@@ -361,6 +361,35 @@ class LibraryExport(
         }
     }
 
+    private suspend fun verifyRestoredLocalChapterIdentity(
+        bookId: String,
+        readingOrder: Int,
+        expectedChapterKey: String
+    ) {
+        val expectedFingerprint = expectedChapterKey
+            .takeIf { it.startsWith("cbz-") }
+            ?.removePrefix("cbz-")
+            ?.takeIf { value ->
+                value.length == 64 &&
+                    value.all { it in '0'..'9' || it in 'a'..'f' }
+            }
+            ?: return
+
+        val chapter = database.mangaCatalog()
+            .listChapters(bookId)
+            .firstOrNull { it.readingOrder == readingOrder }
+            ?: error("Restored Manga chapter is missing from the catalog")
+        val source = database.mangaCatalog()
+            .listChapterSources(chapter.id)
+            .firstOrNull {
+                it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value
+            }
+            ?: error("Restored Manga chapter has no local source")
+        require(source.chapterKey == "cbz-" + expectedFingerprint) {
+            "Restored Manga chapter archive does not match its backup fingerprint."
+        }
+    }
+
     private suspend fun rebuildMangaBooks(
         books: List<Book>,
         restorePoints: Map<String, MangaLocalRestorePoint>,
@@ -395,6 +424,12 @@ class LibraryExport(
                 primaryMetadata = primary.metadata
             ).getOrThrow()
 
+            verifyRestoredLocalChapterIdentity(
+                bookId = book.id,
+                readingOrder = 0,
+                expectedChapterKey = primary.chapterKey
+            )
+
             chapters.drop(1).forEach { chapter ->
                 val appended = mangaImporter.appendChapter(
                     bookId = book.id,
@@ -404,6 +439,11 @@ class LibraryExport(
                 require(!appended.duplicate && appended.readingOrder == chapter.readingOrder) {
                     "Restored Manga chapter order diverged from the backup manifest."
                 }
+                verifyRestoredLocalChapterIdentity(
+                    bookId = book.id,
+                    readingOrder = chapter.readingOrder,
+                    expectedChapterKey = chapter.chapterKey
+                )
             }
 
             restorePoint
