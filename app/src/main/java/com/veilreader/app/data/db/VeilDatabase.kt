@@ -286,7 +286,7 @@ abstract class VeilDatabase : RoomDatabase() {
                         targetProgressChapterProgression REAL,
                         targetProgressUpdatedAtEpochMs INTEGER,
                         FOREIGN KEY(targetBookId) REFERENCES books(id)
-                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                            ON UPDATE NO ACTION ON DELETE RESTRICT,
                         FOREIGN KEY(targetProgressChapterId, targetBookId)
                             REFERENCES manga_chapters(id, bookId)
                             ON UPDATE NO ACTION ON DELETE RESTRICT
