@@ -3,6 +3,9 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import com.veilreader.app.data.db.MangaMergeChapterEntity
+import com.veilreader.app.data.db.MangaMergeMemberEntity
+import com.veilreader.app.data.db.MangaWorkMergeEntity
 import com.veilreader.app.data.db.VeilDatabase
 import com.veilreader.app.data.manga.MangaLocalChapterMetadata
 import com.veilreader.app.data.manga.MangaLocalImportCoordinator
@@ -58,6 +61,35 @@ class LibraryExport(
         val archivePath: String
     )
 
+    private data class MangaMergeBackupSnapshot(
+        val id: String,
+        val targetBookId: String,
+        val createdAtEpochMs: Long,
+        val receiptVersion: Int,
+        val targetBookProgress: Float,
+        val targetBookFinished: Boolean,
+        val targetBookLastOpenedAtEpochMs: Long,
+        val targetProgressReadingOrder: Int?,
+        val targetProgressPageIndex: Int?,
+        val targetProgressPageCount: Int?,
+        val targetProgressChapterProgression: Double?,
+        val targetProgressUpdatedAtEpochMs: Long?,
+        val members: List<MangaMergeMemberBackup>,
+        val chapters: List<MangaMergeChapterBackup>
+    )
+
+    private data class MangaMergeMemberBackup(
+        val sourceBookId: String,
+        val sourceOrder: Int
+    )
+
+    private data class MangaMergeChapterBackup(
+        val sourceBookId: String,
+        val sourceReadingOrder: Int,
+        val targetReadingOrder: Int,
+        val disposition: String
+    )
+
     suspend fun writeNotebook(destination: Uri) {
         val snapshot = library.snapshot()
         val books = snapshot.books.associateBy { it.id }
@@ -86,6 +118,7 @@ class LibraryExport(
         val snapshot = library.snapshot()
         val mangaProgress = captureMangaRestorePoints(snapshot.books)
         val mangaLocalChapters = captureMangaLocalChapters(snapshot.books)
+        val mangaMerges = captureMangaMergeBackups()
         val gamePrefs = preferencesToJson(context.getSharedPreferences(GAME_PREFS, Context.MODE_PRIVATE))
         withContext(Dispatchers.IO) {
             val files = snapshot.books.filter { it.isImported }.mapIndexed { index, book ->
@@ -124,6 +157,7 @@ class LibraryExport(
                 put("library", snapshot.toJson())
                 put("mangaProgress", mangaRestorePointsToJson(mangaProgress))
                 put("mangaLocalChapters", mangaLocalChaptersToJson(mangaArchives))
+                put("mangaMerges", mangaMergeBackupsToJson(mangaMerges))
                 put("gamePreferences", gamePrefs)
                 put("publications", JSONArray().apply {
                     files.forEach { (book, _, path) -> put(JSONObject().apply {
@@ -157,6 +191,338 @@ class LibraryExport(
                         archived.chapter.archiveFile.inputStream().use { it.copyTo(zip) }
                         zip.closeEntry()
                     }
+            }
+        }
+    }
+
+    private suspend fun captureMangaMergeBackups(): List<MangaMergeBackupSnapshot> =
+        database.mangaMerges().listAll().map { receipt ->
+            val merge = receipt.merge
+            val targetProgressReadingOrder = merge.targetProgressChapterId?.let { chapterId ->
+                val chapter = database.mangaCatalog().findChapter(chapterId)
+                    ?: error("Manga merge receipt points to a missing target progress chapter")
+                require(chapter.bookId == merge.targetBookId) {
+                    "Manga merge target progress chapter belongs to another Book"
+                }
+                chapter.readingOrder
+            }
+            MangaMergeBackupSnapshot(
+                id = merge.id,
+                targetBookId = merge.targetBookId,
+                createdAtEpochMs = merge.createdAtEpochMs,
+                receiptVersion = merge.receiptVersion,
+                targetBookProgress = merge.targetBookProgress,
+                targetBookFinished = merge.targetBookFinished,
+                targetBookLastOpenedAtEpochMs = merge.targetBookLastOpenedAtEpochMs,
+                targetProgressReadingOrder = targetProgressReadingOrder,
+                targetProgressPageIndex = merge.targetProgressPageIndex,
+                targetProgressPageCount = merge.targetProgressPageCount,
+                targetProgressChapterProgression = merge.targetProgressChapterProgression,
+                targetProgressUpdatedAtEpochMs = merge.targetProgressUpdatedAtEpochMs,
+                members = receipt.members
+                    .sortedBy { it.sourceOrder }
+                    .map {
+                        MangaMergeMemberBackup(
+                            sourceBookId = it.sourceBookId,
+                            sourceOrder = it.sourceOrder
+                        )
+                    },
+                chapters = receipt.chapters
+                    .sortedWith(
+                        compareBy<MangaMergeChapterEntity> { it.sourceBookId }
+                            .thenBy { it.sourceReadingOrder }
+                    )
+                    .map {
+                        MangaMergeChapterBackup(
+                            sourceBookId = it.sourceBookId,
+                            sourceReadingOrder = it.sourceReadingOrder,
+                            targetReadingOrder = it.targetReadingOrder,
+                            disposition = it.disposition
+                        )
+                    }
+            )
+        }
+
+    private fun mangaMergeBackupsToJson(
+        merges: List<MangaMergeBackupSnapshot>
+    ): JSONArray = JSONArray().apply {
+        merges.sortedBy { it.id }.forEach { merge ->
+            put(JSONObject().apply {
+                put("id", merge.id)
+                put("targetBookId", merge.targetBookId)
+                put("createdAtEpochMs", merge.createdAtEpochMs)
+                put("receiptVersion", merge.receiptVersion)
+                put("targetBookProgress", merge.targetBookProgress.toDouble())
+                put("targetBookFinished", merge.targetBookFinished)
+                put(
+                    "targetBookLastOpenedAtEpochMs",
+                    merge.targetBookLastOpenedAtEpochMs
+                )
+                put(
+                    "targetProgressReadingOrder",
+                    merge.targetProgressReadingOrder ?: JSONObject.NULL
+                )
+                put(
+                    "targetProgressPageIndex",
+                    merge.targetProgressPageIndex ?: JSONObject.NULL
+                )
+                put(
+                    "targetProgressPageCount",
+                    merge.targetProgressPageCount ?: JSONObject.NULL
+                )
+                put(
+                    "targetProgressChapterProgression",
+                    merge.targetProgressChapterProgression ?: JSONObject.NULL
+                )
+                put(
+                    "targetProgressUpdatedAtEpochMs",
+                    merge.targetProgressUpdatedAtEpochMs ?: JSONObject.NULL
+                )
+                put("members", JSONArray().apply {
+                    merge.members.forEach { member ->
+                        put(JSONObject().apply {
+                            put("sourceBookId", member.sourceBookId)
+                            put("sourceOrder", member.sourceOrder)
+                        })
+                    }
+                })
+                put("chapters", JSONArray().apply {
+                    merge.chapters.forEach { chapter ->
+                        put(JSONObject().apply {
+                            put("sourceBookId", chapter.sourceBookId)
+                            put("sourceReadingOrder", chapter.sourceReadingOrder)
+                            put("targetReadingOrder", chapter.targetReadingOrder)
+                            put("disposition", chapter.disposition)
+                        })
+                    }
+                })
+            })
+        }
+    }
+
+    private fun parseMangaMergeBackups(
+        manifest: JSONObject
+    ): List<MangaMergeBackupSnapshot> {
+        val records = manifest.optJSONArray("mangaMerges") ?: return emptyList()
+        val mergeIds = mutableSetOf<String>()
+        val targetIds = mutableSetOf<String>()
+        val sourceIds = mutableSetOf<String>()
+        return buildList {
+            for (index in 0 until records.length()) {
+                val record = records.getJSONObject(index)
+                val id = record.getString("id")
+                val targetBookId = record.getString("targetBookId")
+                require(id.isNotBlank() && targetBookId.isNotBlank()) {
+                    "Invalid Manga merge backup identity."
+                }
+                require(mergeIds.add(id)) { "Backup contains duplicate Manga merge ids." }
+                require(targetIds.add(targetBookId)) {
+                    "Backup contains more than one active Manga merge for a target Book."
+                }
+
+                val membersJson = record.getJSONArray("members")
+                val members = buildList {
+                    val orders = mutableSetOf<Int>()
+                    for (memberIndex in 0 until membersJson.length()) {
+                        val member = membersJson.getJSONObject(memberIndex)
+                        val sourceBookId = member.getString("sourceBookId")
+                        val sourceOrder = member.getInt("sourceOrder")
+                        require(sourceBookId.isNotBlank() && sourceOrder >= 0)
+                        require(sourceBookId != targetBookId)
+                        require(sourceIds.add(sourceBookId)) {
+                            "A source Manga Book belongs to more than one merge in this backup."
+                        }
+                        require(orders.add(sourceOrder)) {
+                            "Manga merge backup contains duplicate source order."
+                        }
+                        add(MangaMergeMemberBackup(sourceBookId, sourceOrder))
+                    }
+                }.sortedBy { it.sourceOrder }
+                require(members.isNotEmpty()) { "Manga merge backup has no source Books." }
+                members.forEachIndexed { expected, member ->
+                    require(member.sourceOrder == expected) {
+                        "Manga merge source order must be contiguous."
+                    }
+                }
+
+                val chapterJson = record.getJSONArray("chapters")
+                val chapterKeys = mutableSetOf<Pair<String, Int>>()
+                val chapters = buildList {
+                    for (chapterIndex in 0 until chapterJson.length()) {
+                        val chapter = chapterJson.getJSONObject(chapterIndex)
+                        val sourceBookId = chapter.getString("sourceBookId")
+                        val sourceReadingOrder = chapter.getInt("sourceReadingOrder")
+                        val targetReadingOrder = chapter.getInt("targetReadingOrder")
+                        val disposition = chapter.getString("disposition")
+                        require(
+                            sourceBookId.isNotBlank() &&
+                                sourceReadingOrder >= 0 &&
+                                targetReadingOrder >= 0
+                        )
+                        require(members.any { it.sourceBookId == sourceBookId }) {
+                            "Manga merge chapter references a non-member source Book."
+                        }
+                        require(
+                            disposition in MangaMergeChapterEntity.VALID_DISPOSITIONS
+                        ) {
+                            "Manga merge backup contains an unsupported chapter disposition."
+                        }
+                        require(chapterKeys.add(sourceBookId to sourceReadingOrder)) {
+                            "Manga merge backup contains a duplicate source chapter mapping."
+                        }
+                        add(
+                            MangaMergeChapterBackup(
+                                sourceBookId = sourceBookId,
+                                sourceReadingOrder = sourceReadingOrder,
+                                targetReadingOrder = targetReadingOrder,
+                                disposition = disposition
+                            )
+                        )
+                    }
+                }
+                require(chapters.isNotEmpty()) { "Manga merge backup has no chapter mappings." }
+
+                val progressOrder = if (record.isNull("targetProgressReadingOrder")) {
+                    null
+                } else {
+                    record.getInt("targetProgressReadingOrder")
+                }
+                val progressPageIndex = if (record.isNull("targetProgressPageIndex")) {
+                    null
+                } else {
+                    record.getInt("targetProgressPageIndex")
+                }
+                val progressPageCount = if (record.isNull("targetProgressPageCount")) {
+                    null
+                } else {
+                    record.getInt("targetProgressPageCount")
+                }
+                val progressChapterProgression =
+                    if (record.isNull("targetProgressChapterProgression")) {
+                        null
+                    } else {
+                        record.getDouble("targetProgressChapterProgression")
+                    }
+                val progressUpdatedAt =
+                    if (record.isNull("targetProgressUpdatedAtEpochMs")) {
+                        null
+                    } else {
+                        record.getLong("targetProgressUpdatedAtEpochMs")
+                    }
+
+                require(
+                    if (progressOrder == null) {
+                        progressPageIndex == null &&
+                            progressPageCount == null &&
+                            progressChapterProgression == null &&
+                            progressUpdatedAt == null
+                    } else {
+                        progressOrder >= 0 &&
+                            progressPageIndex != null &&
+                            progressPageIndex >= 0 &&
+                            (progressPageCount == null || progressPageCount > 0) &&
+                            progressChapterProgression != null &&
+                            progressChapterProgression.isFinite() &&
+                            progressChapterProgression in 0.0..1.0 &&
+                            progressUpdatedAt != null
+                    }
+                ) {
+                    "Manga merge backup contains an incomplete target progress receipt."
+                }
+
+                add(
+                    MangaMergeBackupSnapshot(
+                        id = id,
+                        targetBookId = targetBookId,
+                        createdAtEpochMs = record.getLong("createdAtEpochMs"),
+                        receiptVersion = record.optInt("receiptVersion", 1).coerceAtLeast(1),
+                        targetBookProgress = record
+                            .getDouble("targetBookProgress")
+                            .toFloat()
+                            .coerceIn(0f, 1f),
+                        targetBookFinished = record.getBoolean("targetBookFinished"),
+                        targetBookLastOpenedAtEpochMs =
+                            record.getLong("targetBookLastOpenedAtEpochMs").coerceAtLeast(0L),
+                        targetProgressReadingOrder = progressOrder,
+                        targetProgressPageIndex = progressPageIndex,
+                        targetProgressPageCount = progressPageCount,
+                        targetProgressChapterProgression = progressChapterProgression,
+                        targetProgressUpdatedAtEpochMs = progressUpdatedAt,
+                        members = members,
+                        chapters = chapters
+                    )
+                )
+            }
+        }
+    }
+
+    private suspend fun restoreMangaMergeBackups(
+        merges: List<MangaMergeBackupSnapshot>
+    ) {
+        for (backup in merges) {
+            val target = database.books().findEntity(backup.targetBookId)
+                ?: error("Restored Manga merge target Book is missing")
+            require(target.format == BookFormat.COMIC.name) {
+                "Restored Manga merge target is not a comic"
+            }
+            val targetChapters = database.mangaCatalog()
+                .listChapters(backup.targetBookId)
+                .associateBy { it.readingOrder }
+            val progressChapterId = backup.targetProgressReadingOrder?.let { order ->
+                targetChapters[order]?.id
+                    ?: error("Restored Manga merge target progress chapter is missing")
+            }
+
+            val members = backup.members.map { member ->
+                val source = database.books().findEntity(member.sourceBookId)
+                    ?: error("Restored Manga merge source Book is missing")
+                require(source.format == BookFormat.COMIC.name)
+                MangaMergeMemberEntity(
+                    mergeId = backup.id,
+                    sourceBookId = member.sourceBookId,
+                    sourceOrder = member.sourceOrder
+                )
+            }
+            val mappings = backup.chapters.map { chapter ->
+                val sourceChapter = database.mangaCatalog()
+                    .listChapters(chapter.sourceBookId)
+                    .firstOrNull { it.readingOrder == chapter.sourceReadingOrder }
+                    ?: error("Restored Manga merge source chapter is missing")
+                val targetChapter = targetChapters[chapter.targetReadingOrder]
+                    ?: error("Restored Manga merge target chapter is missing")
+                MangaMergeChapterEntity(
+                    mergeId = backup.id,
+                    sourceChapterId = sourceChapter.id,
+                    sourceBookId = chapter.sourceBookId,
+                    targetChapterId = targetChapter.id,
+                    sourceReadingOrder = chapter.sourceReadingOrder,
+                    targetReadingOrder = chapter.targetReadingOrder,
+                    disposition = chapter.disposition
+                )
+            }
+
+            database.withTransaction {
+                database.mangaMerges().upsertMerge(
+                    MangaWorkMergeEntity(
+                        id = backup.id,
+                        targetBookId = backup.targetBookId,
+                        createdAtEpochMs = backup.createdAtEpochMs,
+                        receiptVersion = backup.receiptVersion,
+                        targetBookProgress = backup.targetBookProgress,
+                        targetBookFinished = backup.targetBookFinished,
+                        targetBookLastOpenedAtEpochMs =
+                            backup.targetBookLastOpenedAtEpochMs,
+                        targetProgressChapterId = progressChapterId,
+                        targetProgressPageIndex = backup.targetProgressPageIndex,
+                        targetProgressPageCount = backup.targetProgressPageCount,
+                        targetProgressChapterProgression =
+                            backup.targetProgressChapterProgression,
+                        targetProgressUpdatedAtEpochMs =
+                            backup.targetProgressUpdatedAtEpochMs
+                    )
+                )
+                database.mangaMerges().upsertMembers(members)
+                database.mangaMerges().upsertChapters(mappings)
             }
         }
     }
