@@ -49,22 +49,22 @@ object VeilMeasure {
 /** Semantic shape families: archive plates stay sharp; architectural surfaces can breathe. */
 object VeilShapeLanguage {
     // Plate: metadata, archive rows, precise utility surfaces.
-    val Plate = 2.dp
+    val Plate = ArenaGeometry.PlateRadius
 
     // Folio: paper/document surfaces. Still intentionally sharper than generic Material cards.
-    val Folio = 3.dp
+    val Folio = ArenaGeometry.FolioRadius
 
     // Architectural: structural shell surfaces and navigation.
-    val Architectural = 4.dp
+    val Architectural = ArenaGeometry.ArchitectureRadius
 
     // Chamber: dialogs, book-detail/history regions and contained world surfaces.
-    val Chamber = 8.dp
+    val Chamber = ArenaGeometry.ChamberRadius
 
     // Hero: rare large focal surfaces only.
-    val Hero = 12.dp
+    val Hero = ArenaGeometry.HeroRadius
 
     // Seal: radial/ritual controls. A very high radius keeps size, not radius, authoritative.
-    val Seal = 999.dp
+    val Seal = ArenaGeometry.SealRadius
 }
 
 /**
