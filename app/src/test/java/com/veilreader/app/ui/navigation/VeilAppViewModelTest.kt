@@ -34,12 +34,12 @@ class VeilAppViewModelTest {
             recreated.route.value.readerLocatorCheckpointJson
         )
 
-        recreated.readerOpened("book-42")
+        recreated.readerOpened("book-42", readerSessionId)
         assertNull(recreated.route.value.locatorOverrideJson)
         assertNull(recreated.route.value.readerLocatorCheckpointJson)
         assertEquals("book-42", recreated.route.value.activeBookId)
 
-        recreated.closeReader()
+        recreated.closeReader(readerSessionId)
         assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
         assertNull(recreated.route.value.activeBookId)
         assertNull(recreated.route.value.readerSessionInstanceId)
@@ -67,25 +67,28 @@ class VeilAppViewModelTest {
     fun committedCheckpoint_survivesProcessRecreation_andStaleAckCannotClearNewerState() {
         val beforeKill = VeilAppViewModel(SavedStateHandle())
         beforeKill.requestBook("book-process")
-        beforeKill.checkpointReaderLocator("book-process", "locator-1")
+        val processSessionId = requireNotNull(beforeKill.route.value.readerSessionInstanceId)
+        beforeKill.checkpointReaderLocator("book-process", processSessionId, "locator-1")
 
         val restoredHandle = SavedStateHandle(
             mapOf(
                 "veil.route.tab" to VeilTab.READING.name,
                 "veil.route.book" to "book-process",
+                "veil.route.reader_session" to processSessionId,
                 "veil.route.reader_checkpoint" to "locator-1"
             )
         )
         val restored = VeilAppViewModel(restoredHandle)
 
         assertEquals("book-process", restored.route.value.activeBookId)
+        assertEquals(processSessionId, restored.route.value.readerSessionInstanceId)
         assertEquals("locator-1", restored.route.value.readerLocatorCheckpointJson)
 
-        restored.checkpointReaderLocator("book-process", "locator-2")
-        restored.readerCheckpointPersisted("book-process", "locator-1")
+        restored.checkpointReaderLocator("book-process", processSessionId, "locator-2")
+        restored.readerCheckpointPersisted("book-process", processSessionId, "locator-1")
         assertEquals("locator-2", restored.route.value.readerLocatorCheckpointJson)
 
-        restored.readerCheckpointPersisted("book-process", "locator-2")
+        restored.readerCheckpointPersisted("book-process", processSessionId, "locator-2")
         assertNull(restored.route.value.readerLocatorCheckpointJson)
     }
 
@@ -111,10 +114,11 @@ class VeilAppViewModelTest {
 
         recreated.openSettings()
         recreated.requestBook("book-settings")
+        val settingsSessionId = requireNotNull(recreated.route.value.readerSessionInstanceId)
         assertFalse(recreated.route.value.showSettings)
         assertEquals("book-settings", recreated.route.value.activeBookId)
 
-        recreated.closeReader()
+        recreated.closeReader(settingsSessionId)
         assertFalse(recreated.route.value.showSettings)
         assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
     }
@@ -159,9 +163,10 @@ class VeilAppViewModelTest {
         val model = VeilAppViewModel(handle)
 
         model.requestBook("book-race", "locator-explicit")
-        model.checkpointReaderLocator("book-race", "locator-newer")
+        val sessionId = requireNotNull(model.route.value.readerSessionInstanceId)
+        model.checkpointReaderLocator("book-race", sessionId, "locator-newer")
 
-        model.readerOpened("book-race")
+        model.readerOpened("book-race", sessionId)
 
         assertNull(model.route.value.locatorOverrideJson)
         assertEquals("locator-newer", model.route.value.readerLocatorCheckpointJson)
@@ -177,10 +182,11 @@ class VeilAppViewModelTest {
     fun checkpointUpdates_ignoreBlankAndWrongBook() {
         val model = VeilAppViewModel(SavedStateHandle())
         model.requestBook("book-a")
-        model.checkpointReaderLocator("book-a", "locator-a")
+        val sessionId = requireNotNull(model.route.value.readerSessionInstanceId)
+        model.checkpointReaderLocator("book-a", sessionId, "locator-a")
 
-        model.checkpointReaderLocator("book-a", "   ")
-        model.checkpointReaderLocator("book-b", "locator-b")
+        model.checkpointReaderLocator("book-a", sessionId, "   ")
+        model.checkpointReaderLocator("book-b", sessionId, "locator-b")
 
         assertEquals("locator-a", model.route.value.readerLocatorCheckpointJson)
     }
@@ -193,8 +199,9 @@ class VeilAppViewModelTest {
         val model = VeilAppViewModel(handle)
 
         model.requestBook("book-close")
-        model.checkpointReaderLocator("book-close", "locator-pending")
-        model.closeReader()
+        val sessionId = requireNotNull(model.route.value.readerSessionInstanceId)
+        model.checkpointReaderLocator("book-close", sessionId, "locator-pending")
+        model.closeReader(sessionId)
 
         assertNull(model.route.value.activeBookId)
         assertNull(model.route.value.locatorOverrideJson)
@@ -206,6 +213,34 @@ class VeilAppViewModelTest {
         assertEquals(VeilTab.LIBRARY, recreated.route.value.selectedTab)
     }
 
+
+
+    @Test
+    fun staleSameBookCallbacks_cannotMutateFreshOpenRequest() {
+        val model = VeilAppViewModel(SavedStateHandle())
+
+        model.requestBook("book-race", "old-explicit")
+        val oldSessionId = requireNotNull(model.route.value.readerSessionInstanceId)
+        model.checkpointReaderLocator("book-race", oldSessionId, "old-checkpoint")
+
+        model.requestBook("book-race", "fresh-explicit")
+        val freshSessionId = requireNotNull(model.route.value.readerSessionInstanceId)
+        assertNotEquals(oldSessionId, freshSessionId)
+
+        model.checkpointReaderLocator("book-race", oldSessionId, "stale-checkpoint")
+        model.readerCheckpointPersisted("book-race", oldSessionId, "fresh-explicit")
+        model.readerOpened("book-race", oldSessionId)
+        model.bookOpenFailed("book-race", oldSessionId)
+        model.closeReader(oldSessionId)
+
+        assertEquals("book-race", model.route.value.activeBookId)
+        assertEquals(freshSessionId, model.route.value.readerSessionInstanceId)
+        assertEquals("fresh-explicit", model.route.value.locatorOverrideJson)
+        assertEquals("fresh-explicit", model.route.value.readerLocatorCheckpointJson)
+
+        model.checkpointReaderLocator("book-race", freshSessionId, "fresh-checkpoint")
+        assertEquals("fresh-checkpoint", model.route.value.readerLocatorCheckpointJson)
+    }
 
 
     @Test
