@@ -37,6 +37,19 @@ class MangaLocalImportException(
     val reason: MangaCbzImportFailureReason
 ) : IllegalStateException("Local Manga import failed: $reason")
 
+data class MangaLocalRestorePoint(
+    val pageIndex: Int,
+    val pageCount: Int?,
+    val chapterProgression: Double,
+    val updatedAtEpochMs: Long
+) {
+    init {
+        require(pageIndex >= 0)
+        require(pageCount == null || pageCount > 0)
+        require(chapterProgression.isFinite() && chapterProgression in 0.0..1.0)
+    }
+}
+
 /**
  * Atomic-enough coordinator for local CBZ import across filesystem + Room.
  *
@@ -77,6 +90,100 @@ class MangaLocalImportCoordinator(
             pruneEmptyMangaCacheParents(chapterDirectories)
         }
         deleted
+    }
+
+    /**
+     * Rebuilds Manga-specific catalog/cache state for an already-restored Book row.
+     *
+     * The source CBZ is the backup authority. Extracted pages and cover thumbnails are
+     * regenerated; only the small durable reader restore point is reapplied after ingestion.
+     */
+    suspend fun rebuildPersistedManga(
+        book: Book,
+        restorePoint: MangaLocalRestorePoint? = null
+    ): Result<Unit> = runCatching {
+        require(book.format == BookFormat.COMIC) { "Only COMIC books use Manga rebuild" }
+        val sourceFile = requireAppPrivatePublication(book)
+        val fingerprint = sha256(sourceFile)
+        val mangaId = CanonicalMangaId(book.id)
+        val chapterKey = "cbz-" + fingerprint.take(24)
+        val anchor = MangaChapterAnchor(
+            number = 1.0,
+            normalizedTitle = book.title,
+            providerChapterKeyHint = chapterKey
+        )
+        val offlineId = requireNotNull(
+            MangaOfflineChapterLocator.idFor(mangaId, anchor)
+        )
+        val cacheKey = MangaCacheLayout.chapterDirectory(offlineId)
+        val chapterId = UUID.nameUUIDFromBytes(
+            ("veil-cbz:" + book.id + ":" + cacheKey).toByteArray(Charsets.UTF_8)
+        ).toString()
+        val localSource = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
+        val mangaKey = "cbz-" + fingerprint
+
+        database.withTransaction {
+            database.mangaCatalog().deleteChaptersForBook(book.id)
+            database.mangaCatalog().deleteSourceLinksForBook(book.id)
+            database.mangaCatalog().upsertChapter(
+                MangaChapterEntity(
+                    id = chapterId,
+                    bookId = book.id,
+                    readingOrder = 0,
+                    cacheKey = cacheKey,
+                    title = null,
+                    normalizedTitle = book.title,
+                    number = 1.0
+                )
+            )
+            database.mangaCatalog().upsertSourceLink(
+                MangaSourceLinkEntity(
+                    bookId = book.id,
+                    sourceId = localSource.value,
+                    mangaKey = mangaKey
+                )
+            )
+            database.mangaCatalog().upsertChapterSource(
+                MangaChapterSourceEntity(
+                    chapterId = chapterId,
+                    bookId = book.id,
+                    sourceId = localSource.value,
+                    mangaKey = mangaKey,
+                    chapterKey = chapterKey
+                )
+            )
+        }
+
+        val ingested = ingestor.ingest(
+            archiveFile = sourceFile,
+            cacheRoot = cacheRoot,
+            chapterId = offlineId,
+            anchor = anchor,
+            originChapterKey = chapterKey,
+            originSourceId = localSource
+        )
+        val manifest = when (ingested) {
+            is MangaCbzImportResult.Success -> ingested.manifest
+            is MangaCbzImportResult.Failure ->
+                throw MangaLocalImportException(ingested.reason)
+        }
+        RoomMangaOfflineCacheIndex(database).put(manifest)
+        val coverPath = cacheCover(manifest, book.id)
+        library.updateCoverCachePath(book.id, coverPath)
+        library.updateContentFingerprint(book.id, fingerprint)
+
+        restorePoint?.let { point ->
+            RoomMangaProgressStore(database).save(
+                com.veilreader.app.manga.library.MangaReadingProgress(
+                    mangaId = mangaId,
+                    chapter = anchor,
+                    pageIndex = point.pageIndex,
+                    pageCount = point.pageCount,
+                    chapterProgression = point.chapterProgression,
+                    updatedAtEpochMs = point.updatedAtEpochMs
+                )
+            )
+        }
     }
 
     suspend fun import(uri: Uri): Result<BookImportResult> {
@@ -239,6 +346,18 @@ class MangaLocalImportCoordinator(
             target.delete()
             throw error
         }
+    }
+
+    private fun requireAppPrivatePublication(book: Book): File {
+        val uri = book.sourceUri?.let(Uri::parse)
+            ?: error("Restored Manga has no source file")
+        require(uri.scheme == "file") { "Restored Manga source must be app-private" }
+        val root = File(appContext.filesDir, "publications").canonicalFile
+        val file = File(requireNotNull(uri.path)).canonicalFile
+        require(file.toPath().startsWith(root.toPath()) && file.isFile) {
+            "Restored Manga source is outside app-private publications"
+        }
+        return file
     }
 
     private suspend fun sha256(file: File): String = withContext(Dispatchers.IO) {
