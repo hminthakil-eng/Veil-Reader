@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PerformanceTier
 
 /**
  * Veil Reader visual system.
@@ -179,10 +180,12 @@ private val VeilShapes = Shapes(
 )
 
 val LocalVeilReducedMotion = staticCompositionLocalOf { false }
+val LocalVeilPerformanceTier = staticCompositionLocalOf { PerformanceTier.FULL }
 
 @Composable
 fun VeilTheme(
     themeMode: AppThemeMode = AppThemeMode.SYSTEM,
+    performanceTier: PerformanceTier = PerformanceTier.FULL,
     content: @Composable () -> Unit
 ) {
     val useDarkTheme = when (themeMode) {
@@ -205,7 +208,8 @@ fun VeilTheme(
         CompositionLocalProvider(
             LocalContentColor provides colors.onBackground,
             LocalVeilScriptGroup provides scriptGroup,
-            LocalVeilReducedMotion provides reducedMotion
+            LocalVeilReducedMotion provides reducedMotion,
+            LocalVeilPerformanceTier provides performanceTier
         ) {
             content()
         }
