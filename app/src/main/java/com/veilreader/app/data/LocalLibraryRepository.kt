@@ -336,7 +336,7 @@ class LocalLibraryRepository internal constructor(
      * Any pending write from the previous owner is enqueued before the epoch changes, preserving
      * deterministic queue order across same-book reopen races.
      */
-    fun beginReaderProgressSession(
+    internal fun beginReaderProgressSession(
         bookId: String,
         sessionId: String
     ): ReaderProgressWriterLease {
@@ -368,7 +368,7 @@ class LocalLibraryRepository internal constructor(
         }
     }
 
-    fun endReaderProgressSession(lease: ReaderProgressWriterLease) {
+    internal fun endReaderProgressSession(lease: ReaderProgressWriterLease) {
         synchronized(coalescingLock) {
             if (activeReaderProgressWriters[lease.bookId] != lease) return
             progressFlushJobs.remove(lease.bookId)?.cancel()
@@ -387,7 +387,7 @@ class LocalLibraryRepository internal constructor(
      * Ordered Reader progress path. A stale session lease or an older logical sequence is rejected
      * before it can mutate either the in-memory Book cache or the durable coalescer.
      */
-    fun saveReaderProgress(
+    internal fun saveReaderProgress(
         lease: ReaderProgressWriterLease,
         progression: Double,
         locatorJson: String,
@@ -1005,6 +1005,7 @@ class LocalLibraryRepository internal constructor(
                 "locator_persisted",
                 bookId = value.id,
                 details = buildString {
+                    value.order?.let { append("order=").append(it).append(' ') }
                     value.traceSequence?.let { append("seq=").append(it).append(' ') }
                     append("progress=").append(value.progress)
                     if (completionAt != null) append(" completionSealed=true")
