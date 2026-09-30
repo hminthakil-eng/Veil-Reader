@@ -1,6 +1,7 @@
 package com.veilreader.app.manga.library
 
 import java.util.Locale
+import java.util.UUID
 
 /**
  * Pure preflight contract for explicit local Manga work merges.
@@ -52,18 +53,26 @@ class MangaWorkMergePlanner {
             return MangaMergePlanResult.Rejected(MangaMergeRejection.INVALID_CHAPTER_ORDER)
         }
 
-        val exactOwnerByFingerprint = linkedMapOf<String, MangaMergeChapterCandidate>()
+        data class TargetProjection(
+            val chapterId: String,
+            val readingOrder: Int
+        )
+
+        val exactOwnerByFingerprint = linkedMapOf<String, TargetProjection>()
         target.chapters
             .sortedBy(MangaMergeChapterCandidate::readingOrder)
             .forEach { chapter ->
                 chapter.localArchiveFingerprint()?.let { fingerprint ->
-                    exactOwnerByFingerprint.putIfAbsent(fingerprint, chapter)
+                    exactOwnerByFingerprint.putIfAbsent(
+                        fingerprint,
+                        TargetProjection(chapter.chapterId, chapter.readingOrder)
+                    )
                 }
             }
 
-        val semanticOwner = linkedMapOf<String, MangaMergeChapterCandidate>()
+        val semanticOwner = linkedMapOf<String, String>()
         target.chapters.forEach { chapter ->
-            chapter.semanticIdentity()?.let { semanticOwner.putIfAbsent(it, chapter) }
+            chapter.semanticIdentity()?.let { semanticOwner.putIfAbsent(it, chapter.chapterId) }
         }
 
         var nextReadingOrder =
@@ -83,6 +92,7 @@ class MangaWorkMergePlanner {
                             sourceReadingOrder = chapter.readingOrder,
                             targetReadingOrder = exact.readingOrder,
                             disposition = MangaMergeDisposition.DEDUPLICATE_EXACT_ARCHIVE,
+                            plannedTargetChapterId = exact.chapterId,
                             matchedTargetChapterId = exact.chapterId,
                             rebuildDerivedCache = false
                         )
@@ -95,24 +105,36 @@ class MangaWorkMergePlanner {
                         return MangaMergePlanResult.Rejected(
                             reason = MangaMergeRejection.AMBIGUOUS_CHAPTER_COLLISION,
                             conflictingSourceChapterId = chapter.chapterId,
-                            conflictingTargetChapterId = semanticMatch.chapterId
+                            conflictingTargetChapterId = semanticMatch
                         )
                     }
 
+                    val targetReadingOrder = nextReadingOrder++
+                    val projectedTargetChapterId = projectedTargetChapterId(
+                        targetBookId = target.bookId,
+                        chapter = chapter
+                    ) ?: return MangaMergePlanResult.Rejected(
+                        reason = MangaMergeRejection.UNSTABLE_TARGET_IDENTITY,
+                        conflictingSourceChapterId = chapter.chapterId
+                    )
                     actions += MangaMergeChapterAction(
                         sourceBookId = source.bookId,
                         sourceChapterId = chapter.chapterId,
                         sourceReadingOrder = chapter.readingOrder,
-                        targetReadingOrder = nextReadingOrder++,
+                        targetReadingOrder = targetReadingOrder,
                         disposition = MangaMergeDisposition.REBUILD_FROM_SOURCE_ARCHIVE,
+                        plannedTargetChapterId = projectedTargetChapterId,
                         matchedTargetChapterId = null,
                         rebuildDerivedCache = true
                     )
                     if (fingerprint != null) {
-                        exactOwnerByFingerprint[fingerprint] = chapter
+                        exactOwnerByFingerprint[fingerprint] = TargetProjection(
+                            projectedTargetChapterId,
+                            targetReadingOrder
+                        )
                     }
                     if (semantic != null) {
-                        semanticOwner[semantic] = chapter
+                        semanticOwner[semantic] = projectedTargetChapterId
                     }
                 }
         }
@@ -161,6 +183,26 @@ class MangaWorkMergePlanner {
                 mayDeleteSourceBooksBeforeVerification = false
             )
         )
+    }
+
+    private fun projectedTargetChapterId(
+        targetBookId: String,
+        chapter: MangaMergeChapterCandidate
+    ): String? {
+        val offlineId = MangaOfflineChapterLocator.idFor(
+            mangaId = CanonicalMangaId(targetBookId),
+            anchor = MangaChapterAnchor(
+                volume = chapter.volume,
+                number = chapter.number,
+                languageTag = chapter.languageTag,
+                normalizedTitle = chapter.normalizedTitle,
+                providerChapterKeyHint = chapter.chapterKey
+            )
+        ) ?: return null
+        val cacheKey = MangaCacheLayout.chapterDirectory(offlineId)
+        return UUID.nameUUIDFromBytes(
+            ("veil-cbz:" + targetBookId + ":" + cacheKey).toByteArray(Charsets.UTF_8)
+        ).toString()
     }
 
     private fun hasStableChapterOrder(chapters: List<MangaMergeChapterCandidate>): Boolean {
@@ -250,6 +292,7 @@ data class MangaMergeChapterAction(
     val sourceReadingOrder: Int,
     val targetReadingOrder: Int,
     val disposition: MangaMergeDisposition,
+    val plannedTargetChapterId: String,
     val matchedTargetChapterId: String?,
     /**
      * True means an executor must derive a fresh cache identity under the target canonical Manga id.
@@ -305,6 +348,7 @@ enum class MangaMergeRejection {
     CHAPTER_OWNER_MISMATCH,
     DUPLICATE_CHAPTER_ID,
     INVALID_CHAPTER_ORDER,
+    UNSTABLE_TARGET_IDENTITY,
     AMBIGUOUS_CHAPTER_COLLISION
 }
 
