@@ -20,9 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.ReadingCycleRecord
@@ -37,55 +39,16 @@ import java.util.Date
 
 private data class VeiledDiscovery(
     val id: String,
-    val symbol: String,
-    val title: String,
-    val clue: String,
-    val lore: String
+    val symbol: String
 )
 
 private val veiledDiscoveries = listOf(
-    VeiledDiscovery(
-        id = "patient_flame",
-        symbol = "◈",
-        title = "The Patient Flame",
-        clue = "A flame kept for many returns begins to remember the hand that lit it.",
-        lore = "Consistency leaves a different mark than intensity. The Castle has begun to recognize your return."
-    ),
-    VeiledDiscovery(
-        id = "marginalia_gate",
-        symbol = "✧",
-        title = "The Marginalia Gate",
-        clue = "Some doors are written in the margins rather than printed on the page.",
-        lore = "Enough passages have been preserved that your annotations now form a second text beside the books themselves."
-    ),
-    VeiledDiscovery(
-        id = "deep_shelf",
-        symbol = "▥",
-        title = "The Deep Shelf",
-        clue = "Finished volumes gather weight. Eventually the shelf becomes a foundation.",
-        lore = "Your completed books and first Path threshold now reinforce one another. The archive is becoming a place, not a list."
-    ),
-    VeiledDiscovery(
-        id = "long_watch",
-        symbol = "◐",
-        title = "The Long Watch",
-        clue = "There is a point when time spent reading stops feeling counted.",
-        lore = "Fifty hours have passed inside books. The Castle records the duration, but the deeper change cannot be measured in minutes."
-    ),
-    VeiledDiscovery(
-        id = "veil_thins",
-        symbol = "⌁",
-        title = "When the Veil Thins",
-        clue = "Several marks must awaken before they begin to answer one another.",
-        lore = "Your earned sigils are no longer isolated milestones. Together they form the first readable pattern in the Veil."
-    ),
-    VeiledDiscovery(
-        id = "unnamed_chamber",
-        symbol = "⬡",
-        title = "The Unnamed Chamber",
-        clue = "The deepest chamber does not open to a single achievement.",
-        lore = "A mature Path and a complete core sigil constellation have revealed a chamber that the early Castle could not name."
-    )
+    VeiledDiscovery(VeiledDiscoveryPolicy.PATIENT_FLAME, "◈"),
+    VeiledDiscovery(VeiledDiscoveryPolicy.MARGINALIA_GATE, "✧"),
+    VeiledDiscovery(VeiledDiscoveryPolicy.DEEP_SHELF, "▥"),
+    VeiledDiscovery(VeiledDiscoveryPolicy.LONG_WATCH, "◐"),
+    VeiledDiscovery(VeiledDiscoveryPolicy.VEIL_THINS, "⌁"),
+    VeiledDiscovery(VeiledDiscoveryPolicy.UNNAMED_CHAMBER, "⬡")
 )
 
 @Composable
@@ -130,9 +93,9 @@ fun ProfileScreen(
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
     ) {
         ScreenHeader(
-            eyebrow = "ARCHIVIST DOSSIER",
+            eyebrow = stringResource(R.string.profile_archivist_dossier),
             title = castleTitle,
-            subtitle = "${p.path.name} · ${p.rankName}"
+            subtitle = "${localizedPathName(p.path)} · ${localizedPathRank(p.path, p.rankIndex)}"
         )
 
         VeilReveal(delayMillis = 40, distance = 10.dp) {
@@ -147,8 +110,8 @@ fun ProfileScreen(
         }
 
         ProfileSectionHeading(
-            eyebrow = "Recorded history",
-            title = "Reading record"
+            eyebrow = stringResource(R.string.profile_recorded_history),
+            title = stringResource(R.string.profile_reading_record)
         )
         DossierRecordGrid(
             profile = p,
@@ -158,11 +121,11 @@ fun ProfileScreen(
         DossierHistoryLedger(dossierHistory)
 
         ProfileSectionHeading(
-            eyebrow = "Rhythm",
-            title = "Daily reading goal"
+            eyebrow = stringResource(R.string.profile_rhythm),
+            title = stringResource(R.string.profile_daily_goal)
         )
         Text(
-            "Your first daily quest follows this target. Choose a pace that supports reading instead of turning it into a chore.",
+            stringResource(R.string.profile_daily_goal_body),
             color = VeilPalette.Mist,
             style = MaterialTheme.typography.bodyMedium
         )
@@ -182,7 +145,10 @@ fun ProfileScreen(
                         ),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m · current", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            stringResource(R.string.profile_minutes_current, minutes),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 } else {
                     OutlinedButton(
@@ -191,26 +157,29 @@ fun ProfileScreen(
                         border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
-                        Text("${minutes}m", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            stringResource(R.string.profile_minutes, minutes),
+                            style = MaterialTheme.typography.labelMedium
+                        )
                     }
                 }
             }
         }
 
         ProfileSectionHeading(
-            eyebrow = "Known marks",
-            title = "Sigil registry",
-            trailing = "${p.earnedSigils.size} awakened"
+            eyebrow = stringResource(R.string.profile_known_marks),
+            title = stringResource(R.string.profile_sigil_registry),
+            trailing = stringResource(R.string.profile_awakened_count, p.earnedSigils.size)
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
             listOf(
-                Triple("first_hour", "First Hour", p.minutesRead to 60),
-                Triple("passage_keeper", "Passage Keeper", highlightCount to 10),
-                Triple("seven_days", "Seven-Day Journey", p.streakDays to 7),
-                Triple("ten_tomes", "Ten Tomes", p.booksFinished to 10),
-                Triple("first_threshold", "First Threshold", p.rankIndex to 1)
-            ).forEachIndexed { index, (id, name, progress) ->
+                "first_hour" to (p.minutesRead to 60),
+                "passage_keeper" to (highlightCount to 10),
+                "seven_days" to (p.streakDays to 7),
+                "ten_tomes" to (p.booksFinished to 10),
+                "first_threshold" to (p.rankIndex to 1)
+            ).forEachIndexed { index, (id, progress) ->
                 val (value, target) = progress
                 val earned = id in p.earnedSigils
                 VeilReveal(
@@ -218,7 +187,7 @@ fun ProfileScreen(
                     distance = 7.dp
                 ) {
                     SigilProgressRow(
-                        name = name,
+                        name = localizedSigilName(id),
                         value = value,
                         target = target,
                         earned = earned
@@ -228,12 +197,16 @@ fun ProfileScreen(
         }
 
         ProfileSectionHeading(
-            eyebrow = "Restricted folio",
-            title = "Veiled discoveries",
-            trailing = "$revealedDiscoveries/${veiledDiscoveries.size} revealed"
+            eyebrow = stringResource(R.string.profile_restricted_folio),
+            title = stringResource(R.string.profile_veiled_discoveries),
+            trailing = stringResource(
+                R.string.profile_revealed_count,
+                revealedDiscoveries,
+                veiledDiscoveries.size
+            )
         )
         Text(
-            "Their conditions remain hidden. They surface when separate parts of your reading history begin to form a pattern.",
+            stringResource(R.string.profile_discoveries_body),
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Mist
         )
@@ -259,7 +232,10 @@ fun ProfileScreen(
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
         ) {
-            Text("Open Hidden Archive", style = MaterialTheme.typography.labelMedium)
+            Text(
+                stringResource(R.string.profile_open_hidden_archive),
+                style = MaterialTheme.typography.labelMedium
+            )
         }
     }
     }
@@ -310,6 +286,8 @@ internal fun deriveReaderDossierHistory(
 
 @Composable
 private fun DossierHistoryLedger(history: ReaderDossierHistory) {
+    val firstRecorded = formatDossierDate(history.firstRecordedAtEpochMs)
+    val latestRecorded = formatDossierDate(history.latestRecordedAtEpochMs)
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
@@ -323,18 +301,18 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    "DURABLE LEDGER",
+                    stringResource(R.string.profile_durable_ledger),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
                     color = VeilPalette.Brass
                 )
                 Text(
-                    "Recorded history",
+                    stringResource(R.string.profile_recorded_history),
                     style = MaterialTheme.typography.titleLarge,
                     color = VeilPalette.Moon
                 )
             }
             Text(
-                "${history.recordedSessionCount} sessions",
+                stringResource(R.string.profile_sessions_count, history.recordedSessionCount),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
@@ -343,32 +321,28 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         BrassRule(Modifier.fillMaxWidth())
 
         DossierLedgerLine(
-            label = "Archive span",
-            value = buildString {
-                append(formatDossierDate(history.firstRecordedAtEpochMs))
-                append(" — ")
-                append(formatDossierDate(history.latestRecordedAtEpochMs))
-            }
+            label = stringResource(R.string.profile_archive_span),
+            value = "$firstRecorded — $latestRecorded"
         )
         DossierLedgerLine(
-            label = "Recorded active time",
+            label = stringResource(R.string.profile_recorded_active_time),
             value = formatDossierDuration(history.recordedActiveMillis)
         )
         DossierLedgerLine(
-            label = "Completion records",
+            label = stringResource(R.string.profile_completion_records),
             value = "${history.completionCycleCount}"
         )
         DossierLedgerLine(
-            label = "Reread cycles",
+            label = stringResource(R.string.profile_reread_cycles),
             value = "${history.rereadCycleCount}"
         )
         DossierLedgerLine(
-            label = "Archived volumes",
+            label = stringResource(R.string.profile_archived_volumes),
             value = "${history.archivedVolumeCount}"
         )
 
         Text(
-            "This ledger uses durable local book, session, and completion records; it does not infer missing reading history.",
+            stringResource(R.string.profile_ledger_truth),
             style = MaterialTheme.typography.bodySmall,
             color = VeilPalette.Mist.copy(alpha = 0.58f)
         )
@@ -400,6 +374,7 @@ private fun DossierLedgerLine(
     }
 }
 
+@Composable
 private fun formatDossierDate(epochMs: Long?): String =
     epochMs
         ?.takeIf { it > 0L }
@@ -408,18 +383,23 @@ private fun formatDossierDate(epochMs: Long?): String =
                 .format(Date(it))
                 .uppercase()
         }
-        ?: "NO RECORD"
+        ?: stringResource(R.string.profile_no_record)
 
+@Composable
 private fun formatDossierDuration(activeMillis: Long): String {
     val minutes = activeMillis.coerceAtLeast(0L) / 60_000L
     return when {
         minutes >= 60L -> {
-            val hours = minutes / 60L
-            val rest = minutes % 60L
-            if (rest == 0L) "${hours}h" else "${hours}h ${rest}m"
+            val hours = (minutes / 60L).toInt()
+            val rest = (minutes % 60L).toInt()
+            if (rest == 0) {
+                stringResource(R.string.capsule_duration_hours, hours)
+            } else {
+                stringResource(R.string.capsule_duration_hours_minutes, hours, rest)
+            }
         }
-        minutes > 0L -> "${minutes}m"
-        else -> "<1m"
+        minutes > 0L -> stringResource(R.string.capsule_duration_minutes, minutes.toInt())
+        else -> stringResource(R.string.capsule_duration_less_than_minute)
     }
 }
 
@@ -471,17 +451,17 @@ private fun ArchivistDossierPanel(
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        "PRIVATE READING RECORD",
+                        stringResource(R.string.profile_private_record),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
                         color = VeilPalette.Brass
                     )
                     Text(
-                        profile.rankName,
+                        localizedPathRank(profile.path, profile.rankIndex),
                         style = MaterialTheme.typography.headlineMedium,
                         color = VeilPalette.Moon
                     )
                     Text(
-                        profile.path.epithet,
+                        localizedPathEpithet(profile.path),
                         style = MaterialTheme.typography.bodySmall,
                         color = VeilPalette.Mist
                     )
@@ -493,7 +473,7 @@ private fun ArchivistDossierPanel(
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
                     Text(
-                        "SETTINGS",
+                        stringResource(R.string.profile_settings),
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
                         color = VeilPalette.Brass
                     )
@@ -514,10 +494,21 @@ private fun ArchivistDossierPanel(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    DossierFact("PATH", profile.path.name)
-                    DossierFact("LEVEL", profile.level.toString())
-                    DossierFact("CASTLE TIER", (profile.rankIndex + 1).toString())
-                    equippedSigilName?.let { DossierFact("EQUIPPED SIGIL", it) }
+                    DossierFact(
+                        stringResource(R.string.profile_fact_path),
+                        localizedPathName(profile.path)
+                    )
+                    DossierFact(
+                        stringResource(R.string.profile_fact_level),
+                        profile.level.toString()
+                    )
+                    DossierFact(
+                        stringResource(R.string.profile_fact_castle_tier),
+                        (profile.rankIndex + 1).toString()
+                    )
+                    equippedSigilName?.let {
+                        DossierFact(stringResource(R.string.profile_fact_equipped_sigil), it)
+                    }
                 }
             }
 
@@ -528,12 +519,12 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "EXPERIENCE",
+                    stringResource(R.string.profile_experience),
                     style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
                     color = VeilPalette.Mist
                 )
                 Text(
-                    "${profile.xp}/$xpTarget XP",
+                    stringResource(R.string.profile_xp, profile.xp, xpTarget),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Brass
                 )
@@ -551,17 +542,21 @@ private fun ArchivistDossierPanel(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "${profile.earnedSigils.size} SIGILS",
+                    stringResource(R.string.profile_sigils_count, profile.earnedSigils.size),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$revealedDiscoveries/$totalDiscoveries DISCOVERIES",
+                    stringResource(
+                        R.string.profile_discoveries_count,
+                        revealedDiscoveries,
+                        totalDiscoveries
+                    ),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
                 Text(
-                    "$highlightCount MARKS",
+                    stringResource(R.string.profile_marks_count, highlightCount),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Mist.copy(alpha = 0.78f)
                 )
@@ -693,14 +688,44 @@ private fun DossierRecordGrid(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("RETURN", "${profile.streakDays}d", "current streak", Modifier.weight(1f))
-            DossierStat("VOLUMES", "${profile.booksFinished}", "finished", Modifier.weight(1f))
-            DossierStat("MARKS", "$highlightCount", "highlights", Modifier.weight(1f))
+            DossierStat(
+                stringResource(R.string.profile_stat_return),
+                stringResource(R.string.profile_days_short, profile.streakDays),
+                stringResource(R.string.profile_stat_current_streak),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_volumes),
+                profile.booksFinished.toString(),
+                stringResource(R.string.profile_stat_finished),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_marks),
+                highlightCount.toString(),
+                stringResource(R.string.profile_stat_highlights),
+                Modifier.weight(1f)
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat("PAGES", "${profile.pagesRead}", "turned", Modifier.weight(1f))
-            DossierStat("TIME", formatMinutes(profile.minutesRead), "inside books", Modifier.weight(1f))
-            DossierStat("TIER", "${profile.rankIndex + 1}", "castle", Modifier.weight(1f))
+            DossierStat(
+                stringResource(R.string.profile_stat_pages),
+                profile.pagesRead.toString(),
+                stringResource(R.string.profile_stat_turned),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_time),
+                formatMinutes(profile.minutesRead),
+                stringResource(R.string.profile_stat_inside_books),
+                Modifier.weight(1f)
+            )
+            DossierStat(
+                stringResource(R.string.profile_stat_tier),
+                (profile.rankIndex + 1).toString(),
+                stringResource(R.string.profile_stat_castle),
+                Modifier.weight(1f)
+            )
         }
     }
 }
@@ -801,7 +826,11 @@ private fun SigilProgressRow(name: String, value: Int, target: Int, earned: Bool
                     color = VeilPalette.Moon
                 )
                 Text(
-                    if (earned) "AWAKENED" else "${value.coerceAtMost(target)}/$target",
+                    if (earned) {
+                        stringResource(R.string.profile_awakened)
+                    } else {
+                        "${value.coerceAtMost(target)}/$target"
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     color = if (earned) VeilPalette.Brass else VeilPalette.Mist
                 )
@@ -856,23 +885,35 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 Text(
-                    if (revealed) discovery.title else "Veiled Fragment ${index + 1}",
+                    if (revealed) {
+                        localizedDiscoveryTitle(discovery.id)
+                    } else {
+                        stringResource(R.string.profile_veiled_fragment, index + 1)
+                    },
                     style = MaterialTheme.typography.titleLarge,
                     color = if (revealed) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.62f)
                 )
                 Text(
-                    if (revealed) "REVEALED" else "CLUE",
+                    if (revealed) {
+                        stringResource(R.string.profile_revealed)
+                    } else {
+                        stringResource(R.string.profile_clue)
+                    },
                     style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.3.sp),
                     color = accent
                 )
                 Text(
-                    if (revealed) discovery.lore else discovery.clue,
+                    if (revealed) {
+                        localizedDiscoveryLore(discovery.id)
+                    } else {
+                        localizedDiscoveryClue(discovery.id)
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = VeilPalette.Mist
                 )
                 if (revealed) {
                     Text(
-                        "This discovery emerged from your existing reading history; no action was consumed and nothing expires.",
+                        stringResource(R.string.profile_discovery_persistent),
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Spirit
                     )
@@ -904,7 +945,6 @@ private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: Stri
     }
 }
 
-private fun formatMinutes(minutes: Int): String = when {
-    minutes < 60 -> "${minutes}m"
-    else -> "${minutes / 60}h ${minutes % 60}m"
-}
+@Composable
+private fun formatMinutes(minutes: Int): String =
+    formatDossierDuration(minutes.coerceAtLeast(0).toLong() * 60_000L)
