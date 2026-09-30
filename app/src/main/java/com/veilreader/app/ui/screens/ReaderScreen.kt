@@ -1228,7 +1228,8 @@ fun ReaderScreen(
                     navigator = nav,
                     state = paperCurlState,
                     isEnabled = {
-                        !latestAppearance.value.scroll &&
+                        latestReaderSessionReady.value &&
+                            !latestAppearance.value.scroll &&
                             latestAppearance.value.pageTurnStyle == PageTurnStyle.PAPER
                     },
                     scope = scope,
@@ -1258,7 +1259,8 @@ fun ReaderScreen(
                     navigator = nav,
                     state = slidePageState,
                     isEnabled = {
-                        shouldUseVeilSlideNavigation(
+                        latestReaderSessionReady.value &&
+                            shouldUseVeilSlideNavigation(
                             format = opened.format,
                             scroll = nav.overflow.value.scroll,
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
@@ -1293,7 +1295,8 @@ fun ReaderScreen(
                 StaticPagedNavigationInputListener(
                     navigator = nav,
                     isEnabled = {
-                        shouldUseStaticPagedDragNavigation(
+                        latestReaderSessionReady.value &&
+                            shouldUseStaticPagedDragNavigation(
                             format = opened.format,
                             scroll = nav.overflow.value.scroll,
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
@@ -1332,6 +1335,7 @@ fun ReaderScreen(
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
                         )
                 },
+                isEnabled = { latestReaderSessionReady.value },
                 isTapNavigationEnabled = {
                     shouldUseDirectionalTapNavigation(
                         format = opened.format,
