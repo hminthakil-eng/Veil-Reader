@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
@@ -388,7 +389,7 @@ private fun eventColor(kind: ReadingHistoryEventKind) = when (kind) {
 
 @Composable
 private fun capsuleNumber(value: Number): String {
-    val locale = LocalContext.current.resources.configuration.locales[0]
+    val locale = LocalConfiguration.current.locales[0]
     return NumberFormat.getIntegerInstance(locale).format(value)
 }
 
@@ -447,7 +448,7 @@ private fun formatCapsuleDate(epochMs: Long): String =
     if (epochMs <= 0L) {
         stringResource(R.string.capsule_date_unknown)
     } else {
-        val locale = LocalContext.current.resources.configuration.locales[0]
+        val locale = LocalConfiguration.current.locales[0]
         DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(Date(epochMs))
     }
 
