@@ -187,4 +187,34 @@ class VeilAppViewModelTest {
     }
 
 
+
+    @Test
+    fun mirrorAndMangaChambers_areRestorableAndExclusive() {
+        val mirrorHandle = SavedStateHandle()
+        val mirror = VeilAppViewModel(mirrorHandle)
+        mirror.openArchive()
+        mirror.openChamber("mirror")
+
+        assertEquals("mirror", mirror.route.value.activeChamber)
+        assertFalse(mirror.route.value.showArchive)
+        assertFalse(mirror.route.value.showSettings)
+        assertEquals(
+            "mirror",
+            VeilAppViewModel(mirrorHandle).route.value.activeChamber
+        )
+
+        val mangaHandle = SavedStateHandle()
+        val manga = VeilAppViewModel(mangaHandle)
+        manga.openSettings()
+        manga.openChamber("manga")
+
+        assertEquals("manga", manga.route.value.activeChamber)
+        assertFalse(manga.route.value.showArchive)
+        assertFalse(manga.route.value.showSettings)
+        assertEquals(
+            "manga",
+            VeilAppViewModel(mangaHandle).route.value.activeChamber
+        )
+    }
+
 }
