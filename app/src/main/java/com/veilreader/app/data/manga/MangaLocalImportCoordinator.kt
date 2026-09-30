@@ -136,16 +136,27 @@ class MangaLocalImportCoordinator(
      */
     suspend fun rebuildPersistedManga(
         book: Book,
-        restorePoint: MangaLocalRestorePoint? = null
+        restorePoint: MangaLocalRestorePoint? = null,
+        primaryMetadata: MangaLocalChapterMetadata? = null
     ): Result<Unit> = runCatching {
         require(book.format == BookFormat.COMIC) { "Only COMIC books use Manga rebuild" }
         val sourceFile = requireAppPrivatePublication(book)
         val fingerprint = sha256(sourceFile)
         val mangaId = CanonicalMangaId(book.id)
         val chapterKey = chapterKeyFor(fingerprint)
+        val resolvedPrimary = primaryMetadata ?: MangaLocalChapterMetadata(
+            title = book.title,
+            number = 1.0
+        )
+        val primaryTitle = resolvedPrimary.title
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: book.title
         val anchor = MangaChapterAnchor(
-            number = 1.0,
-            normalizedTitle = book.title,
+            volume = resolvedPrimary.volume,
+            number = resolvedPrimary.number ?: 1.0,
+            languageTag = resolvedPrimary.languageTag,
+            normalizedTitle = primaryTitle,
             providerChapterKeyHint = chapterKey
         )
         val offlineId = requireNotNull(
@@ -167,9 +178,11 @@ class MangaLocalImportCoordinator(
                     bookId = book.id,
                     readingOrder = 0,
                     cacheKey = cacheKey,
-                    title = null,
-                    normalizedTitle = book.title,
-                    number = 1.0
+                    title = primaryTitle,
+                    normalizedTitle = primaryTitle,
+                    volume = resolvedPrimary.volume,
+                    number = resolvedPrimary.number ?: 1.0,
+                    languageTag = resolvedPrimary.languageTag
                 )
             )
             database.mangaCatalog().upsertSourceLink(
@@ -208,18 +221,50 @@ class MangaLocalImportCoordinator(
         library.updateCoverCachePath(book.id, coverPath)
         library.updateContentFingerprint(book.id, fingerprint)
 
-        restorePoint?.let { point ->
-            RoomMangaProgressStore(database).save(
-                com.veilreader.app.manga.library.MangaReadingProgress(
-                    mangaId = mangaId,
-                    chapter = anchor,
-                    pageIndex = point.pageIndex,
-                    pageCount = point.pageCount,
-                    chapterProgression = point.chapterProgression,
-                    updatedAtEpochMs = point.updatedAtEpochMs
+        restorePoint
+            ?.takeIf { it.chapterReadingOrder == 0 }
+            ?.let { point ->
+                RoomMangaProgressStore(database).save(
+                    com.veilreader.app.manga.library.MangaReadingProgress(
+                        mangaId = mangaId,
+                        chapter = anchor,
+                        pageIndex = point.pageIndex,
+                        pageCount = point.pageCount,
+                        chapterProgression = point.chapterProgression,
+                        updatedAtEpochMs = point.updatedAtEpochMs
+                    )
                 )
+            }
+    }
+
+    suspend fun restoreLocalProgress(
+        bookId: String,
+        point: MangaLocalRestorePoint
+    ): Result<Unit> = runCatching {
+        val chapter = database.mangaCatalog()
+            .listChapters(bookId)
+            .firstOrNull { it.readingOrder == point.chapterReadingOrder }
+            ?: error("Restored Manga progress points to a missing chapter")
+        val source = database.mangaCatalog()
+            .listChapterSources(chapter.id)
+            .firstOrNull { it.sourceId == MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID.value }
+            ?: error("Restored Manga chapter has no local source")
+        RoomMangaProgressStore(database).save(
+            com.veilreader.app.manga.library.MangaReadingProgress(
+                mangaId = CanonicalMangaId(bookId),
+                chapter = MangaChapterAnchor(
+                    volume = chapter.volume,
+                    number = chapter.number,
+                    languageTag = chapter.languageTag,
+                    normalizedTitle = chapter.normalizedTitle ?: chapter.title,
+                    providerChapterKeyHint = source.chapterKey
+                ),
+                pageIndex = point.pageIndex,
+                pageCount = point.pageCount,
+                chapterProgression = point.chapterProgression,
+                updatedAtEpochMs = point.updatedAtEpochMs
             )
-        }
+        )
     }
 
     /**
