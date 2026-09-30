@@ -1202,4 +1202,8 @@
     <string name="manga_hub_continue">ادامهٔ مطالعه</string>
     <string name="manga_hub_start">شروع مطالعه</string>
     <string name="manga_hub_read_again">مطالعهٔ دوباره</string>
+    <string name="manga_hub_add_chapter">افزودن فصل</string>
+    <string name="notice_manga_chapter_added">فصل %2$d به %1$s اضافه شد.</string>
+    <string name="notice_manga_chapter_duplicate">این فایل CBZ از قبل بخشی از %1$s است.</string>
+    <string name="notice_manga_chapter_import_failed">افزودن فصل مانگا ممکن نشد.</string>
 </resources>
