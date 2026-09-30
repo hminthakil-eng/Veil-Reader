@@ -75,6 +75,8 @@ class LocalLibraryRepository internal constructor(
     private val coalescingLock = Any()
     private val pendingProgress = mutableMapOf<String, PendingProgressWrite>()
     private val progressFlushJobs = mutableMapOf<String, Job>()
+    private val readerProgressEpochByBook = mutableMapOf<String, Long>()
+    private val activeReaderProgressWriters = mutableMapOf<String, ReaderProgressWriterLease>()
     private val pendingReadingSessions = mutableMapOf<String, ReadingSessionSnapshot>()
     private val sessionFlushJobs = mutableMapOf<String, Job>()
 
@@ -328,11 +330,98 @@ class LocalLibraryRepository internal constructor(
     }
 
     /**
-     * Returns true when this update completed the book for the first time.
+     * Claims progress-write ownership for one logical Reader open request.
      *
-     * The completion edge is special: progress, the latest session snapshot, and the sealed
-     * reading-cycle record are committed in one Room transaction so process death cannot leave
-     * "finished=true" without its historical completion record.
+     * Any pending write from the previous owner is enqueued before the epoch changes, preserving
+     * deterministic queue order across same-book reopen races.
+     */
+    fun beginReaderProgressSession(
+        bookId: String,
+        sessionId: String
+    ): ReaderProgressWriterLease {
+        require(bookId.isNotBlank())
+        require(sessionId.isNotBlank())
+        return synchronized(coalescingLock) {
+            activeReaderProgressWriters[bookId]
+                ?.takeIf { it.sessionId == sessionId }
+                ?.let { return@synchronized it }
+
+            progressFlushJobs.remove(bookId)?.cancel()
+            pendingProgress.remove(bookId)?.let(::enqueueProgressWrite)
+
+            val nextEpoch = (readerProgressEpochByBook[bookId] ?: 0L) + 1L
+            readerProgressEpochByBook[bookId] = nextEpoch
+            ReaderProgressWriterLease(
+                bookId = bookId,
+                sessionId = sessionId,
+                epoch = nextEpoch
+            ).also { lease ->
+                activeReaderProgressWriters[bookId] = lease
+                ReaderTrace.event(
+                    "progress_writer_claimed",
+                    bookId = bookId,
+                    sessionId = sessionId,
+                    details = "epoch=${lease.epoch}"
+                )
+            }
+        }
+    }
+
+    fun endReaderProgressSession(lease: ReaderProgressWriterLease) {
+        synchronized(coalescingLock) {
+            if (activeReaderProgressWriters[lease.bookId] != lease) return
+            progressFlushJobs.remove(lease.bookId)?.cancel()
+            pendingProgress.remove(lease.bookId)?.let(::enqueueProgressWrite)
+            activeReaderProgressWriters.remove(lease.bookId)
+            ReaderTrace.event(
+                "progress_writer_released",
+                bookId = lease.bookId,
+                sessionId = lease.sessionId,
+                details = "epoch=${lease.epoch}"
+            )
+        }
+    }
+
+    /**
+     * Ordered Reader progress path. A stale session lease or an older logical sequence is rejected
+     * before it can mutate either the in-memory Book cache or the durable coalescer.
+     */
+    fun saveReaderProgress(
+        lease: ReaderProgressWriterLease,
+        progression: Double,
+        locatorJson: String,
+        sequence: Long,
+        completionSessionSnapshot: ReadingSessionSnapshot? = null,
+        nowEpochMs: Long = System.currentTimeMillis()
+    ): ReaderProgressSaveOutcome =
+        synchronized(coalescingLock) {
+            if (activeReaderProgressWriters[lease.bookId] != lease) {
+                ReaderTrace.event(
+                    "locator_save_rejected_stale_writer",
+                    bookId = lease.bookId,
+                    sessionId = lease.sessionId,
+                    details = "epoch=${lease.epoch} seq=$sequence"
+                )
+                return@synchronized ReaderProgressSaveOutcome(accepted = false)
+            }
+
+            val newlyFinished = saveProgressLocked(
+                id = lease.bookId,
+                progression = progression,
+                locatorJson = locatorJson,
+                traceSequence = sequence,
+                completionSessionSnapshot = completionSessionSnapshot,
+                nowEpochMs = nowEpochMs,
+                order = ReaderProgressWriteOrder(lease.epoch, sequence)
+            )
+            ReaderProgressSaveOutcome(
+                accepted = true,
+                newlyFinished = newlyFinished
+            )
+        }
+
+    /**
+     * Legacy/internal non-session progress path. Reader code should use [saveReaderProgress].
      */
     fun saveProgress(
         id: String,
@@ -341,6 +430,27 @@ class LocalLibraryRepository internal constructor(
         traceSequence: Long? = null,
         completionSessionSnapshot: ReadingSessionSnapshot? = null,
         nowEpochMs: Long = System.currentTimeMillis()
+    ): Boolean =
+        synchronized(coalescingLock) {
+            saveProgressLocked(
+                id = id,
+                progression = progression,
+                locatorJson = locatorJson,
+                traceSequence = traceSequence,
+                completionSessionSnapshot = completionSessionSnapshot,
+                nowEpochMs = nowEpochMs,
+                order = null
+            )
+        }
+
+    private fun saveProgressLocked(
+        id: String,
+        progression: Double,
+        locatorJson: String,
+        traceSequence: Long?,
+        completionSessionSnapshot: ReadingSessionSnapshot?,
+        nowEpochMs: Long,
+        order: ReaderProgressWriteOrder?
     ): Boolean {
         val current = getBook(id) ?: return false
         val safe = (if (progression.isFinite()) progression else current.progress.toDouble())
@@ -374,6 +484,7 @@ class LocalLibraryRepository internal constructor(
                 lastOpenedAtEpochMs = updated.lastOpenedAtEpochMs,
                 finished = updated.finished,
                 traceSequence = traceSequence,
+                order = order,
                 completionAtEpochMs = nowEpochMs.takeIf { newlyFinished },
                 completionSessionSnapshot = completionSessionSnapshot.takeIf { newlyFinished },
                 completionBookSnapshot = updated.takeIf { newlyFinished },
@@ -713,6 +824,23 @@ class LocalLibraryRepository internal constructor(
     private fun queueProgressWrite(value: PendingProgressWrite, immediate: Boolean) {
         synchronized(coalescingLock) {
             val previous = pendingProgress[value.id]
+            if (
+                previous != null &&
+                !shouldReplacePendingProgress(
+                    current = previous.order,
+                    incoming = value.order
+                )
+            ) {
+                ReaderTrace.event(
+                    "locator_pending_write_rejected_out_of_order",
+                    bookId = value.id,
+                    details = buildString {
+                        append("current=").append(previous.order)
+                        append(" incoming=").append(value.order)
+                    }
+                )
+                return@synchronized
+            }
             val merged = if (previous == null) {
                 value
             } else {
@@ -766,6 +894,8 @@ class LocalLibraryRepository internal constructor(
             progressFlushJobs.values.forEach { it.cancel() }
             progressFlushJobs.clear()
             pendingProgress.clear()
+            activeReaderProgressWriters.clear()
+            readerProgressEpochByBook.clear()
         }
     }
 
@@ -976,6 +1106,7 @@ private data class PendingProgressWrite(
     val lastOpenedAtEpochMs: Long,
     val finished: Boolean,
     val traceSequence: Long? = null,
+    val order: ReaderProgressWriteOrder? = null,
     val completionAtEpochMs: Long? = null,
     val completionSessionSnapshot: ReadingSessionSnapshot? = null,
     val completionBookSnapshot: Book? = null,
