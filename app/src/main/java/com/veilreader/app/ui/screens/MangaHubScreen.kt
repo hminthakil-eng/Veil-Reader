@@ -52,6 +52,7 @@ import com.veilreader.app.data.manga.MangaLocalChapterSummary
 import com.veilreader.app.data.manga.MangaLocalStorageSummary
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.BookMetadataUpdate
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -77,6 +78,7 @@ fun MangaHubScreen(
         MangaLocalChapterSummary,
         MangaLocalChapterMetadata
     ) -> Unit,
+    onUpdateSeriesMetadata: (BookMetadataUpdate) -> Unit,
     onMoveChapter: (Book, MangaLocalChapterSummary, Int) -> Unit,
     onDeleteChapter: (Book, MangaLocalChapterSummary) -> Unit,
     onClearDerivedCache: (Book) -> Unit,
@@ -113,6 +115,14 @@ fun MangaHubScreen(
     var editLanguage by remember { mutableStateOf("") }
     var deleteTarget by remember { mutableStateOf<Pair<Book, MangaLocalChapterSummary>?>(null) }
 
+    var seriesEditTargetId by rememberSaveable { mutableStateOf<String?>(null) }
+    var seriesTitle by rememberSaveable { mutableStateOf("") }
+    var seriesAuthor by rememberSaveable { mutableStateOf("") }
+    var seriesName by rememberSaveable { mutableStateOf("") }
+    var seriesIndex by rememberSaveable { mutableStateOf("") }
+    var seriesLanguage by rememberSaveable { mutableStateOf("") }
+    val seriesEditTarget = seriesEditTargetId
+        ?.let { targetId -> mangaBooks.firstOrNull { it.id == targetId } }
 
     LazyColumn(
         modifier = Modifier
@@ -299,6 +309,28 @@ fun MangaHubScreen(
                                     overflow = TextOverflow.Ellipsis
                                 )
                             }
+                            book.seriesName
+                                ?.takeIf(String::isNotBlank)
+                                ?.let { name ->
+                                    Text(
+                                        text = if (book.seriesIndex != null) {
+                                            stringResource(
+                                                R.string.manga_hub_series_with_index,
+                                                name,
+                                                formatChapterNumber(book.seriesIndex)
+                                            )
+                                        } else {
+                                            stringResource(
+                                                R.string.manga_hub_series_name,
+                                                name
+                                            )
+                                        },
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
 
                             val progress = book.progress.coerceIn(0f, 1f)
                             Text(
@@ -346,6 +378,27 @@ fun MangaHubScreen(
                                     ) {
                                         Text(stringResource(R.string.manga_hub_clear_cache))
                                     }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        seriesEditTargetId = book.id
+                                        seriesTitle = book.title
+                                        seriesAuthor = book.author
+                                        seriesName = book.seriesName.orEmpty()
+                                        seriesIndex = book.seriesIndex
+                                            ?.let(::formatChapterNumber)
+                                            .orEmpty()
+                                        seriesLanguage = book.language.orEmpty()
+                                    },
+                                    enabled = !isImporting
+                                ) {
+                                    Text(stringResource(R.string.manga_hub_edit_series))
                                 }
                             }
 
@@ -552,6 +605,109 @@ fun MangaHubScreen(
             },
             dismissButton = {
                 TextButton(onClick = { editTarget = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    seriesEditTarget?.let { book ->
+        val parsedSeriesIndex = seriesIndex
+            .takeIf { it.isNotBlank() }
+            ?.let(::parseLocalizedChapterDecimal)
+        val seriesIndexValid =
+            seriesIndex.isBlank() || (parsedSeriesIndex != null && parsedSeriesIndex >= 0.0)
+
+        AlertDialog(
+            onDismissRequest = { seriesEditTargetId = null },
+            title = {
+                Text(stringResource(R.string.manga_series_edit_title))
+            },
+            text = {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+                ) {
+                    Text(
+                        stringResource(R.string.manga_series_edit_body),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    OutlinedTextField(
+                        value = seriesTitle,
+                        onValueChange = { seriesTitle = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_series_title_label))
+                        }
+                    )
+                    OutlinedTextField(
+                        value = seriesAuthor,
+                        onValueChange = { seriesAuthor = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_series_creator_label))
+                        }
+                    )
+                    OutlinedTextField(
+                        value = seriesName,
+                        onValueChange = { seriesName = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_series_name_label))
+                        }
+                    )
+                    OutlinedTextField(
+                        value = seriesIndex,
+                        onValueChange = { seriesIndex = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_series_index_label))
+                        },
+                        supportingText = if (!seriesIndexValid) {
+                            {
+                                Text(stringResource(R.string.manga_series_index_invalid))
+                            }
+                        } else {
+                            null
+                        },
+                        isError = !seriesIndexValid
+                    )
+                    OutlinedTextField(
+                        value = seriesLanguage,
+                        onValueChange = { seriesLanguage = it },
+                        singleLine = true,
+                        label = {
+                            Text(stringResource(R.string.manga_series_language_label))
+                        }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onUpdateSeriesMetadata(
+                            BookMetadataUpdate(
+                                bookId = book.id,
+                                title = seriesTitle,
+                                author = seriesAuthor,
+                                collections = book.allCollections,
+                                seriesName = seriesName,
+                                seriesIndex = parsedSeriesIndex,
+                                language = seriesLanguage
+                            )
+                        )
+                        seriesEditTargetId = null
+                    },
+                    enabled =
+                        seriesTitle.isNotBlank() &&
+                            seriesIndexValid &&
+                            !isImporting
+                ) {
+                    Text(stringResource(R.string.action_save))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { seriesEditTargetId = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
