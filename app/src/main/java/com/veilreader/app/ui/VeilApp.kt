@@ -281,7 +281,7 @@ fun VeilApp(
     }
 
     fun exportData(uri: Uri, backup: Boolean) {
-        if (exporting || restoring) return
+        if (exporting || restoring || isImporting || mangaMutationInProgress) return
         exporting = true
         scope.launch {
             try {
@@ -302,7 +302,7 @@ fun VeilApp(
     }
 
     fun restoreData(uri: Uri) {
-        if (restoring || exporting) return
+        if (restoring || exporting || isImporting || mangaMutationInProgress) return
         restoring = true
         scope.launch {
             try {
@@ -340,7 +340,7 @@ fun VeilApp(
     }
 
     fun deleteBook(book: Book) {
-        if (!book.isImported || restoring || isImporting) return
+        if (!book.isImported || restoring || exporting || isImporting) return
         val mangaDelete = book.format == BookFormat.COMIC
         if (mangaDelete) {
             isImporting = true
@@ -553,7 +553,7 @@ fun VeilApp(
     }
 
     fun importBook(uri: Uri) {
-        if (isImporting || restoring) return
+        if (isImporting || restoring || exporting) return
         isImporting = true
         scope.launch {
             try {
