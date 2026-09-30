@@ -290,26 +290,52 @@ fun VeilBottomDock(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
-    Surface(
+    val shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)
+
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .navigationBarsPadding()
-            .padding(top = 4.dp),
-        shape = RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.995f),
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp,
-        border = BorderStroke(
-            if (highContrast) 1.5.dp else 1.dp,
-            accent.copy(alpha = if (highContrast) 0.72f else 0.22f)
-        )
+            .padding(top = 3.dp)
+            .clip(shape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        VeilPalette.Iron.copy(alpha = 0.98f),
+                        VeilPalette.Archive.copy(alpha = 0.995f),
+                        VeilPalette.Ink
+                    )
+                )
+            )
+            .border(
+                BorderStroke(
+                    if (highContrast) 1.5.dp else 1.dp,
+                    accent.copy(alpha = if (highContrast) 0.76f else 0.34f)
+                ),
+                shape
+            )
     ) {
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            accent.copy(alpha = 0.32f),
+                            accent.copy(alpha = 0.76f),
+                            accent.copy(alpha = 0.32f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
         Column(
-            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
+            modifier = Modifier.padding(horizontal = 5.dp, vertical = 3.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            GrayfogRule(Modifier.fillMaxWidth())
             Row(
                 modifier = Modifier.selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
@@ -337,45 +363,65 @@ private fun VeilDockItem(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
-    val background = Color.Transparent
     val foreground = if (selected) {
-        accent
+        VeilPalette.Moon
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f)
     }
 
-    Column(
+    Box(
         modifier = modifier
-            .heightIn(min = 52.dp)
+            .heightIn(min = 56.dp)
             .clip(RoundedCornerShape(2.dp))
-            .background(background)
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(
+                        listOf(
+                            accent.copy(alpha = 0.12f),
+                            accent.copy(alpha = 0.035f),
+                            Color.Transparent
+                        )
+                    )
+                } else {
+                    Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
+                }
+            )
             .selectable(selected = selected, role = Role.Tab, onClick = onClick)
-            .padding(horizontal = 2.dp, vertical = 7.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(horizontal = 2.dp, vertical = 6.dp)
     ) {
-        VeilTabIcon(tab, tint = foreground, modifier = Modifier.size(21.dp))
-        Spacer(Modifier.height(3.dp))
-        Text(
-            tab.label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontSize = 9.5.sp,
-                letterSpacing = 0.48.sp,
-                fontWeight = FontWeight.Medium
-            ),
-            color = foreground,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.Center
-        )
-        // Reserve the marker space in both states so selection does not move the icon.
-        Spacer(Modifier.height(3.dp))
-        Box(
-            Modifier
-                .width(18.dp)
-                .height(1.dp)
-                .background(if (selected) accent.copy(alpha = if (highContrast) 1f else 0.86f) else Color.Transparent)
-        )
+        if (selected) {
+            Box(
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .width(28.dp)
+                    .height(1.dp)
+                    .background(accent.copy(alpha = if (highContrast) 1f else 0.88f))
+            )
+        }
+        Column(
+            modifier = Modifier.align(Alignment.Center),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            VeilTabIcon(
+                tab,
+                tint = if (selected) accent else foreground,
+                modifier = Modifier.size(if (selected) 22.dp else 20.dp)
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                tab.label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 9.2.sp,
+                    letterSpacing = 0.34.sp,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+                ),
+                color = foreground,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+        }
     }
 }
 
