@@ -1197,4 +1197,15 @@
     <string name="book_delete_confirm">Remove</string>
     <string name="notice_book_deleted">Removed %1$s from Veil.</string>
     <string name="notice_book_delete_failed">This publication could not be removed completely. Nothing else was changed.</string>
+    <string name="manga_hub_engine_ready">Your downloaded visual books stay on this device and open directly in Veil’s dedicated visual reader.</string>
+    <string name="manga_hub_live_sources_off">Online sources are off by default. Nothing is fetched unless you explicitly add it.</string>
+    <string name="manga_hub_empty_body">Import a CBZ from the Library to begin. Veil keeps its pages local, remembers your place, and opens it in the visual reader.</string>
+    <string name="manga_hub_open_library">Import from Library</string>
+    <string name="manga_hub_reader_ready">Saved locally and ready for Veil’s visual reader.</string>
+    <string name="manga_hub_read">Read manga</string>
+    <string name="manga_hub_saved_offline">Saved locally · ready offline</string>
+    <string name="manga_hub_finished">Completed · available offline</string>
+    <string name="manga_hub_continue">Continue</string>
+    <string name="manga_hub_start">Start reading</string>
+    <string name="manga_hub_read_again">Read again</string>
 </resources>
