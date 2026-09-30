@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderLayoutMode
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
@@ -14,6 +15,8 @@ class ReaderPreferenceMappingTest {
         val appearance = ReaderAppearance()
 
         assertEquals(ReaderTheme.PAPER, appearance.theme)
+        assertEquals(ReaderLayoutMode.PAGED, appearance.layoutMode)
+        assertEquals(PageTurnStyle.PAPER, appearance.pageTurnStyle)
         assertEquals(ReaderNavigationMode.PAPER_CURL, appearance.navigationMode)
     }
 
@@ -55,46 +58,49 @@ class ReaderPreferenceMappingTest {
     }
 
     @Test
-    fun `navigation modes keep paper curl slide and scroll mutually exclusive`() {
-        val original = ReaderAppearance(scroll = false, pageTurnStyle = PageTurnStyle.PAPER)
+    fun `layout mode and page turn style remain independent`() {
+        val original = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
 
-        val curl = original.withNavigationMode(ReaderNavigationMode.PAPER_CURL)
-        assertEquals(ReaderNavigationMode.PAPER_CURL, curl.navigationMode)
-        assertFalse(curl.scroll)
-        assertEquals(PageTurnStyle.PAPER, curl.pageTurnStyle)
-
-        val slide = curl.withNavigationMode(ReaderNavigationMode.SLIDE)
-        assertEquals(ReaderNavigationMode.SLIDE, slide.navigationMode)
-        assertFalse(slide.scroll)
-        assertEquals(PageTurnStyle.SLIDE, slide.pageTurnStyle)
-
-        val paged = slide.withNavigationMode(ReaderNavigationMode.PAGED)
-        assertEquals(ReaderNavigationMode.PAGED, paged.navigationMode)
-        assertFalse(paged.scroll)
-        assertEquals(PageTurnStyle.NONE, paged.pageTurnStyle)
-
-        val scroll = paged.withNavigationMode(ReaderNavigationMode.SCROLL)
-        assertEquals(ReaderNavigationMode.SCROLL, scroll.navigationMode)
+        val scroll = original.withLayoutMode(ReaderLayoutMode.SCROLL)
+        assertEquals(ReaderLayoutMode.SCROLL, scroll.layoutMode)
         assertEquals(true, scroll.scroll)
-        assertEquals(PageTurnStyle.NONE, scroll.pageTurnStyle)
+        assertEquals(PageTurnStyle.PAPER, scroll.pageTurnStyle)
 
-        val backToCurl = scroll.withNavigationMode(ReaderNavigationMode.PAPER_CURL)
-        assertEquals(ReaderNavigationMode.PAPER_CURL, backToCurl.navigationMode)
-        assertFalse(backToCurl.scroll)
-        assertEquals(PageTurnStyle.PAPER, backToCurl.pageTurnStyle)
+        val slideWhileScrolling = scroll.withPageTurnStyle(PageTurnStyle.SLIDE)
+        assertEquals(ReaderLayoutMode.SCROLL, slideWhileScrolling.layoutMode)
+        assertEquals(PageTurnStyle.SLIDE, slideWhileScrolling.pageTurnStyle)
+
+        val pagedAgain = slideWhileScrolling.withLayoutMode(ReaderLayoutMode.PAGED)
+        assertFalse(pagedAgain.scroll)
+        assertEquals(PageTurnStyle.SLIDE, pagedAgain.pageTurnStyle)
+        assertEquals(ReaderNavigationMode.SLIDE, pagedAgain.navigationMode)
+
+        val noEffect = pagedAgain.withPageTurnStyle(PageTurnStyle.NONE)
+        assertEquals(ReaderLayoutMode.PAGED, noEffect.layoutMode)
+        assertEquals(PageTurnStyle.NONE, noEffect.pageTurnStyle)
+        assertEquals(ReaderNavigationMode.PAGED, noEffect.navigationMode)
     }
 
     @Test
-    fun `legacy scroll state drops hidden paginated transition`() {
-        val legacy = ReaderAppearance(
+    fun `scroll persistence preserves the selected paginated transition`() {
+        val stored = ReaderAppearance(
             scroll = true,
             pageTurnStyle = PageTurnStyle.SLIDE
         )
 
-        val canonical = legacy.canonicalizedNavigation()
+        val canonical = stored.canonicalizedNavigation()
 
+        assertEquals(ReaderLayoutMode.SCROLL, canonical.layoutMode)
         assertEquals(ReaderNavigationMode.SCROLL, canonical.navigationMode)
-        assertEquals(PageTurnStyle.NONE, canonical.pageTurnStyle)
+        assertEquals(PageTurnStyle.SLIDE, canonical.pageTurnStyle)
+
+        val returnedToPages = canonical.withLayoutMode(ReaderLayoutMode.PAGED)
+        assertFalse(returnedToPages.scroll)
+        assertEquals(PageTurnStyle.SLIDE, returnedToPages.pageTurnStyle)
+        assertEquals(ReaderNavigationMode.SLIDE, returnedToPages.navigationMode)
     }
     @Test
     fun `explicit typography overrides disable publisher styles`() {
