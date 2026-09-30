@@ -1011,6 +1011,7 @@ class MangaLocalImportCoordinator(
                             sourceChapterId = action.sourceChapterId,
                             sourceBookId = action.sourceBookId,
                             targetChapterId = action.plannedTargetChapterId,
+                            targetBookId = targetBook.id,
                             sourceReadingOrder = action.sourceReadingOrder,
                             targetReadingOrder = action.targetReadingOrder,
                             disposition = action.disposition.name
