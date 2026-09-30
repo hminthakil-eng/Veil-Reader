@@ -49,6 +49,9 @@ interface MangaCatalogDao {
     @Upsert
     suspend fun upsertSourceLinks(links: List<MangaSourceLinkEntity>)
 
+    @Query("DELETE FROM manga_source_links WHERE bookId = :bookId")
+    suspend fun deleteSourceLinksForBook(bookId: String)
+
     @Query(
         "SELECT * FROM manga_chapter_sources " +
             "WHERE chapterId = :chapterId ORDER BY sourceId ASC"
