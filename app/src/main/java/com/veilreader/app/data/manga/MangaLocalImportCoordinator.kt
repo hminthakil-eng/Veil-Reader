@@ -259,6 +259,19 @@ class MangaLocalImportCoordinator(
             val chapterKey = chapterKeyFor(fingerprint)
             val localSource = MangaCbzIngestor.LOCAL_CBZ_SOURCE_ID
 
+            if (book.contentFingerprint.equals(fingerprint, ignoreCase = true)) {
+                staged.delete()
+                val first = database.mangaCatalog().listChapters(book.id)
+                    .firstOrNull { it.readingOrder == 0 }
+                    ?: error("Primary Manga archive has no persisted chapter")
+                return@runCatching MangaLocalChapterImportResult(
+                    book = book,
+                    chapterId = first.id,
+                    readingOrder = first.readingOrder,
+                    duplicate = true
+                )
+            }
+
             val duplicateSource = database.mangaCatalog().findChapterSourceForBook(
                 bookId = book.id,
                 sourceId = localSource.value,
