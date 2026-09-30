@@ -63,6 +63,20 @@ interface MangaCatalogDao {
 
     @Upsert
     suspend fun upsertChapterSources(sources: List<MangaChapterSourceEntity>)
+
+    @Query(
+        "SELECT * FROM manga_chapter_sources " +
+            "WHERE bookId = :bookId AND sourceId = :sourceId AND chapterKey = :chapterKey LIMIT 1"
+    )
+    suspend fun findChapterSourceForBook(
+        bookId: String,
+        sourceId: String,
+        chapterKey: String
+    ): MangaChapterSourceEntity?
+
+    @Query("DELETE FROM manga_chapters WHERE id = :chapterId")
+    suspend fun deleteChapter(chapterId: String)
+
 }
 
 @Dao
