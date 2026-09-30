@@ -275,8 +275,19 @@ abstract class VeilDatabase : RoomDatabase() {
                         targetBookId TEXT NOT NULL,
                         createdAtEpochMs INTEGER NOT NULL,
                         receiptVersion INTEGER NOT NULL,
+                        targetBookProgress REAL NOT NULL,
+                        targetBookFinished INTEGER NOT NULL,
+                        targetBookLastOpenedAtEpochMs INTEGER NOT NULL,
+                        targetProgressChapterId TEXT,
+                        targetProgressPageIndex INTEGER,
+                        targetProgressPageCount INTEGER,
+                        targetProgressChapterProgression REAL,
+                        targetProgressUpdatedAtEpochMs INTEGER,
                         FOREIGN KEY(targetBookId) REFERENCES books(id)
-                            ON UPDATE NO ACTION ON DELETE CASCADE
+                            ON UPDATE NO ACTION ON DELETE CASCADE,
+                        FOREIGN KEY(targetProgressChapterId, targetBookId)
+                            REFERENCES manga_chapters(id, bookId)
+                            ON UPDATE NO ACTION ON DELETE RESTRICT
                     )
                     """.trimIndent()
                 )
@@ -287,6 +298,11 @@ abstract class VeilDatabase : RoomDatabase() {
                 db.execSQL(
                     "CREATE INDEX IF NOT EXISTS index_manga_work_merges_createdAtEpochMs " +
                         "ON manga_work_merges(createdAtEpochMs)"
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS " +
+                        "index_manga_work_merges_targetProgressChapterId_targetBookId " +
+                        "ON manga_work_merges(targetProgressChapterId, targetBookId)"
                 )
 
                 db.execSQL(
