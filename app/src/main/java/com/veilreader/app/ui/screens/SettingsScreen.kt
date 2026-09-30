@@ -75,6 +75,7 @@ fun SettingsScreen(
     exporting: Boolean,
     restoring: Boolean,
     onSetAppThemeMode: (AppThemeMode) -> Unit,
+    onSetHighContrastEnabled: (Boolean) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
     onExportBackup: (Uri) -> Unit,
@@ -201,6 +202,12 @@ fun SettingsScreen(
                     AppThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
                 } },
                 onSelected = onSetAppThemeMode
+            )
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_high_contrast),
+                subtitle = stringResource(R.string.settings_high_contrast_description),
+                checked = settings.highContrastEnabled,
+                onCheckedChange = onSetHighContrastEnabled
             )
         }
 
