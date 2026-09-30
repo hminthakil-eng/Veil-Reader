@@ -11,20 +11,25 @@ class ReadingSessionTracker(
     val bookId: String,
     val startedAtEpochMs: Long,
     startedAtElapsedMs: Long,
-    private val idleTimeoutMs: Long = DEFAULT_IDLE_TIMEOUT_MS
+    private val idleTimeoutMs: Long = DEFAULT_IDLE_TIMEOUT_MS,
+    initialActiveMillis: Long = 0L,
+    initialPacedPageTurns: Int = 0,
+    initialHighlightCount: Int = 0,
+    initialNoteCount: Int = 0,
+    initialNotedHighlightIds: Set<String> = emptySet()
 ) {
     private var resumed = false
     private var lastTickElapsedMs = startedAtElapsedMs
     private var lastInteractionElapsedMs = startedAtElapsedMs
-    private val notedHighlightIds = linkedSetOf<String>()
+    private val notedHighlightIds = initialNotedHighlightIds.toMutableSet()
 
-    var activeMillis: Long = 0L
+    var activeMillis: Long = initialActiveMillis.coerceAtLeast(0L)
         private set
-    var pacedPageTurns: Int = 0
+    var pacedPageTurns: Int = initialPacedPageTurns.coerceAtLeast(0)
         private set
-    var highlightCount: Int = 0
+    var highlightCount: Int = initialHighlightCount.coerceAtLeast(0)
         private set
-    var noteCount: Int = 0
+    var noteCount: Int = initialNoteCount.coerceAtLeast(0)
         private set
 
     fun onResume(nowElapsedMs: Long): Long {
@@ -90,6 +95,34 @@ class ReadingSessionTracker(
 
     companion object {
         const val DEFAULT_IDLE_TIMEOUT_MS = 5L * 60L * 1000L
+
+        fun restore(
+            snapshot: ReadingSessionSnapshot,
+            bookId: String,
+            startedAtElapsedMs: Long,
+            notedHighlightIds: Set<String> = emptySet(),
+            idleTimeoutMs: Long = DEFAULT_IDLE_TIMEOUT_MS
+        ): ReadingSessionTracker? {
+            if (
+                snapshot.id.isBlank() ||
+                snapshot.bookId != bookId ||
+                snapshot.startedAtEpochMs < 0L
+            ) {
+                return null
+            }
+            return ReadingSessionTracker(
+                sessionId = snapshot.id,
+                bookId = bookId,
+                startedAtEpochMs = snapshot.startedAtEpochMs,
+                startedAtElapsedMs = startedAtElapsedMs,
+                idleTimeoutMs = idleTimeoutMs,
+                initialActiveMillis = snapshot.activeMillis,
+                initialPacedPageTurns = snapshot.pacedPageTurns,
+                initialHighlightCount = snapshot.highlightCount,
+                initialNoteCount = snapshot.noteCount,
+                initialNotedHighlightIds = notedHighlightIds
+            )
+        }
     }
 }
 
