@@ -29,6 +29,7 @@ import androidx.room.Index
     ],
     indices = [
         Index(value = ["targetBookId"], unique = true),
+        Index(value = ["id", "targetBookId"], unique = true),
         Index("createdAtEpochMs"),
         Index(value = ["targetProgressChapterId", "targetBookId"])
     ]
@@ -135,8 +136,8 @@ data class MangaMergeMemberEntity(
     foreignKeys = [
         ForeignKey(
             entity = MangaWorkMergeEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["mergeId"],
+            parentColumns = ["id", "targetBookId"],
+            childColumns = ["mergeId", "targetBookId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
@@ -148,6 +149,7 @@ data class MangaMergeMemberEntity(
     ],
     indices = [
         Index("mergeId"),
+        Index(value = ["mergeId", "targetBookId"]),
         Index(value = ["chapterId", "targetBookId"], unique = true)
     ]
 )
@@ -180,8 +182,14 @@ data class MangaMergeOriginalChapterEntity(
     foreignKeys = [
         ForeignKey(
             entity = MangaWorkMergeEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["mergeId"],
+            parentColumns = ["id", "targetBookId"],
+            childColumns = ["mergeId", "targetBookId"],
+            onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = MangaMergeMemberEntity::class,
+            parentColumns = ["mergeId", "sourceBookId"],
+            childColumns = ["mergeId", "sourceBookId"],
             onDelete = ForeignKey.CASCADE
         ),
         ForeignKey(
@@ -192,15 +200,17 @@ data class MangaMergeOriginalChapterEntity(
         ),
         ForeignKey(
             entity = MangaChapterEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["targetChapterId"],
+            parentColumns = ["id", "bookId"],
+            childColumns = ["targetChapterId", "targetBookId"],
             onDelete = ForeignKey.RESTRICT
         )
     ],
     indices = [
         Index("mergeId"),
+        Index(value = ["mergeId", "targetBookId"]),
+        Index(value = ["mergeId", "sourceBookId"]),
         Index(value = ["sourceChapterId", "sourceBookId"], unique = true),
-        Index("targetChapterId"),
+        Index(value = ["targetChapterId", "targetBookId"]),
         Index(value = ["mergeId", "targetReadingOrder"])
     ]
 )
@@ -209,6 +219,7 @@ data class MangaMergeChapterEntity(
     val sourceChapterId: String,
     val sourceBookId: String,
     val targetChapterId: String,
+    val targetBookId: String,
     val sourceReadingOrder: Int,
     val targetReadingOrder: Int,
     val disposition: String
@@ -218,6 +229,7 @@ data class MangaMergeChapterEntity(
         require(sourceChapterId.isNotBlank())
         require(sourceBookId.isNotBlank())
         require(targetChapterId.isNotBlank())
+        require(targetBookId.isNotBlank())
         require(sourceReadingOrder >= 0)
         require(targetReadingOrder >= 0)
         require(disposition in VALID_DISPOSITIONS)
