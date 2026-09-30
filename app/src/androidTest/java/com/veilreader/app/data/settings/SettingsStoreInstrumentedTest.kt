@@ -87,6 +87,24 @@ class SettingsStoreInstrumentedTest {
         }
     }
     @Test
+    fun highContrastPreference_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+
+        try {
+            store.setHighContrastEnabled(true)
+
+            val immediate = store.settings.first()
+            assertEquals(true, immediate.highContrastEnabled)
+
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(true, recreated.highContrastEnabled)
+        } finally {
+            store.setHighContrastEnabled(false)
+        }
+    }
+
+    @Test
     fun fixedLayoutSpreadOverride_isPublicationSpecific_andAutoRemovesOverride() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val store = SettingsStore(context)
