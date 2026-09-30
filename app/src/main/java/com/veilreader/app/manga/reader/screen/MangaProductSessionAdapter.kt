@@ -7,6 +7,7 @@ import com.veilreader.app.manga.reader.presentation.MangaChapterRoute
 import com.veilreader.app.manga.source.MangaSourceCapability
 import com.veilreader.app.manga.source.MangaSourceProvider
 import com.veilreader.app.manga.source.SourceChapter
+import java.util.UUID
 
 /**
  * Product-boundary chapter description used to build one canonical Manga reader session.
@@ -48,7 +49,8 @@ class MangaProductSessionAdapter {
         mangaId: CanonicalMangaId,
         chaptersInReadingOrder: List<MangaProductChapter>,
         initialAnchor: MangaChapterAnchor? = null,
-        options: MangaReaderSessionOptions = MangaReaderSessionOptions()
+        options: MangaReaderSessionOptions = MangaReaderSessionOptions(),
+        instanceId: String = UUID.randomUUID().toString()
     ): MangaSessionAdapterResult {
         if (chaptersInReadingOrder.isEmpty()) {
             return MangaSessionAdapterResult.Unavailable(
@@ -118,7 +120,8 @@ class MangaProductSessionAdapter {
             MangaReaderSession(
                 entriesInReadingOrder = entries,
                 initialIndex = initialIndex,
-                options = options
+                options = options,
+                instanceId = instanceId
             )
         )
     }
