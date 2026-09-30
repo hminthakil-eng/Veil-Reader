@@ -66,6 +66,27 @@ class MangaWorkMergePlannerTest {
     }
 
     @Test
+    fun plan_rejectsExactArchiveWhenChapterIdentityConflicts() {
+        val shared = "e".repeat(64)
+        val target = member(
+            "target",
+            chapter("target", "t0", 0, shared, number = 1.0)
+        )
+        val source = member(
+            "source",
+            chapter("source", "s0", 0, shared, number = 2.0)
+        )
+
+        val result = planner.plan(target, listOf(source))
+
+        assertTrue(result is MangaMergePlanResult.Rejected)
+        result as MangaMergePlanResult.Rejected
+        assertEquals(MangaMergeRejection.EXACT_ARCHIVE_METADATA_CONFLICT, result.reason)
+        assertEquals("s0", result.conflictingSourceChapterId)
+        assertEquals("t0", result.conflictingTargetChapterId)
+    }
+
+    @Test
     fun plan_deduplicatesSameArchiveAcrossTwoSources_toProjectedTargetCopy() {
         val target = member(
             "target",
