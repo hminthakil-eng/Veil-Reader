@@ -41,6 +41,13 @@ class MangaWorkMergePlanner {
         if (allMembers.any { it.chapters.isEmpty() }) {
             return MangaMergePlanResult.Rejected(MangaMergeRejection.EMPTY_WORK)
         }
+        if (allMembers.any { member -> member.chapters.any { it.bookId != member.bookId } }) {
+            return MangaMergePlanResult.Rejected(MangaMergeRejection.CHAPTER_OWNER_MISMATCH)
+        }
+        val allChapterIds = allMembers.flatMap { member -> member.chapters.map { it.chapterId } }
+        if (allChapterIds.distinct().size != allChapterIds.size) {
+            return MangaMergePlanResult.Rejected(MangaMergeRejection.DUPLICATE_CHAPTER_ID)
+        }
         if (allMembers.any { !hasStableChapterOrder(it.chapters) }) {
             return MangaMergePlanResult.Rejected(MangaMergeRejection.INVALID_CHAPTER_ORDER)
         }
@@ -119,6 +126,13 @@ class MangaWorkMergePlanner {
                 MangaMergeSourceSnapshot(
                     bookId = source.bookId,
                     title = source.title,
+                    author = source.author,
+                    sourceUri = source.sourceUri,
+                    contentFingerprint = source.contentFingerprint,
+                    seriesName = source.seriesName,
+                    seriesIndex = source.seriesIndex,
+                    language = source.language,
+                    collections = source.collections,
                     chapters = source.chapters
                         .sortedBy(MangaMergeChapterCandidate::readingOrder)
                         .map { chapter ->
@@ -152,13 +166,20 @@ class MangaWorkMergePlanner {
     private fun hasStableChapterOrder(chapters: List<MangaMergeChapterCandidate>): Boolean {
         val orders = chapters.map(MangaMergeChapterCandidate::readingOrder)
         if (orders.any { it < 0 } || orders.distinct().size != orders.size) return false
-        return orders.sorted() == (orders.minOrNull()!!..orders.maxOrNull()!!).toList()
+        return orders.sorted() == (0..orders.lastIndex).toList()
     }
 }
 
 data class MangaMergeMember(
     val bookId: String,
     val title: String,
+    val author: String = "",
+    val sourceUri: String? = null,
+    val contentFingerprint: String? = null,
+    val seriesName: String? = null,
+    val seriesIndex: Double? = null,
+    val language: String? = null,
+    val collections: List<String> = emptyList(),
     val chapters: List<MangaMergeChapterCandidate>
 )
 
@@ -255,6 +276,13 @@ data class MangaMergeSplitReceiptSeed(
 data class MangaMergeSourceSnapshot(
     val bookId: String,
     val title: String,
+    val author: String,
+    val sourceUri: String?,
+    val contentFingerprint: String?,
+    val seriesName: String?,
+    val seriesIndex: Double?,
+    val language: String?,
+    val collections: List<String>,
     val chapters: List<MangaMergeSourceChapterSnapshot>
 )
 
@@ -274,6 +302,8 @@ enum class MangaMergeRejection {
     NO_SOURCE_WORKS,
     DUPLICATE_BOOK_ID,
     EMPTY_WORK,
+    CHAPTER_OWNER_MISMATCH,
+    DUPLICATE_CHAPTER_ID,
     INVALID_CHAPTER_ORDER,
     AMBIGUOUS_CHAPTER_COLLISION
 }
