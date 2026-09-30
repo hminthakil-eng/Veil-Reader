@@ -37,6 +37,7 @@ class ReaderViewModel(
     val uiState: StateFlow<ReaderUiState> = _uiState.asStateFlow()
 
     private var tracker: ReadingSessionTracker? = null
+    private var openInstanceId: String? = null
     private var resumed = false
     private var uncreditedActiveMillis = 0L
     private val locatorDeduplicator = ReaderLocatorDeduplicator()
@@ -51,10 +52,14 @@ class ReaderViewModel(
         }
     }
 
-    /** Idempotent across recomposition/configuration changes; starts a new session only per book entry. */
-    fun openBook(bookId: String, initialProgress: Float) {
-        if (tracker?.bookId == bookId) return
+    /**
+     * Idempotent for recomposition/configuration changes, but a fresh app-level open request owns a
+     * fresh reading session even when it targets the same book.
+     */
+    fun openBook(bookId: String, initialProgress: Float, openInstanceId: String) {
+        if (tracker?.bookId == bookId && this.openInstanceId == openInstanceId) return
         finishCurrentSession()
+        this.openInstanceId = openInstanceId
         val nowWall = System.currentTimeMillis()
         val nowElapsed = SystemClock.elapsedRealtime()
         tracker = ReadingSessionTracker(
@@ -67,7 +72,7 @@ class ReaderViewModel(
             "reader_open",
             bookId = bookId,
             sessionId = tracker?.sessionId,
-            details = "initialProgress=${initialProgress.coerceIn(0f, 1f)}"
+            details = "initialProgress=${initialProgress.coerceIn(0f, 1f)} openInstanceId=$openInstanceId"
         )
         resumed = false
         uncreditedActiveMillis = 0L
@@ -223,7 +228,11 @@ class ReaderViewModel(
     }
 
     private fun finishCurrentSession() {
-        val current = tracker ?: return
+        val current = tracker
+        if (current == null) {
+            openInstanceId = null
+            return
+        }
         if (resumed) creditActive(current.onPause(SystemClock.elapsedRealtime()))
         resumed = false
         game.pauseReading()
@@ -233,6 +242,7 @@ class ReaderViewModel(
         library.flushReadingSession(current.sessionId)
         ReaderTrace.event("reader_closed", bookId = current.bookId, sessionId = current.sessionId)
         tracker = null
+        openInstanceId = null
         uncreditedActiveMillis = 0L
         locatorDeduplicator.reset()
         locatorSequence = 0L
