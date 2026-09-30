@@ -62,6 +62,7 @@ fun ReaderNotebook(
 ) {
     val scope = rememberCoroutineScope()
     var searchJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
+    var searchSerial by remember(readerSessionInstanceId) { mutableIntStateOf(0) }
     var noteSaveJob by remember(readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     DisposableEffect(readerSessionInstanceId) {
         onDispose {
@@ -111,6 +112,7 @@ fun ReaderNotebook(
         val term = bookSearchQuery.trim()
         if (term.length < 2 || searchingBook) return
         searchJob?.cancel()
+        val requestSerial = ++searchSerial
         searchJob = scope.launch {
             searchingBook = true
             bookSearchErrorRes = null
@@ -119,7 +121,9 @@ fun ReaderNotebook(
             try {
                 val iterator = opened.publication.search(term)
                 if (iterator == null) {
-                    bookSearchErrorRes = R.string.reader_notebook_search_unavailable
+                    if (requestSerial == searchSerial) {
+                        bookSearchErrorRes = R.string.reader_notebook_search_unavailable
+                    }
                     return@launch
                 }
                 try {
@@ -128,6 +132,7 @@ fun ReaderNotebook(
                     )
                     var failed = false
                     while (
+                        requestSerial == searchSerial &&
                         !failed &&
                         found.size <= READER_SEARCH_RESULT_LIMIT
                     ) {
@@ -143,15 +148,18 @@ fun ReaderNotebook(
                             }
                             .onFailure {
                                 failed = true
-                                bookSearchErrorRes =
-                                    R.string.reader_notebook_search_failed
+                                if (requestSerial == searchSerial) {
+                                    bookSearchErrorRes =
+                                        R.string.reader_notebook_search_failed
+                                }
                             }
 
-                        if (failed || reachedEnd) break
+                        if (failed || reachedEnd || requestSerial != searchSerial) break
                         val remaining =
                             READER_SEARCH_RESULT_LIMIT + 1 - found.size
                         found += pageLocators.orEmpty().take(remaining)
                     }
+                    if (requestSerial != searchSerial) return@launch
                     bookSearchLimited =
                         found.size > READER_SEARCH_RESULT_LIMIT
                     bookSearchResults =
@@ -162,10 +170,14 @@ fun ReaderNotebook(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                bookSearchErrorRes = R.string.reader_notebook_search_failed
+                if (requestSerial == searchSerial) {
+                    bookSearchErrorRes = R.string.reader_notebook_search_failed
+                }
             } finally {
-                searchingBook = false
-                searchJob = null
+                if (requestSerial == searchSerial) {
+                    searchingBook = false
+                    searchJob = null
+                }
             }
         }
     }
@@ -270,7 +282,18 @@ fun ReaderNotebook(
                 ) {
                     OutlinedTextField(
                         value = bookSearchQuery,
-                        onValueChange = { bookSearchQuery = it },
+                        onValueChange = { value ->
+                            bookSearchQuery = value
+                            if (searchingBook) {
+                                searchSerial += 1
+                                searchJob?.cancel()
+                                searchJob = null
+                                searchingBook = false
+                                bookSearchResults = emptyList()
+                                bookSearchLimited = false
+                                bookSearchErrorRes = null
+                            }
+                        },
                         label = { Text(stringResource(R.string.reader_notebook_search_book)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
