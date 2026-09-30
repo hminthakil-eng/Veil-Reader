@@ -264,9 +264,17 @@ class ReaderViewModel(
         expectedOpenInstanceId: String,
         bookId: String? = null
     ): ReadingSessionTracker? {
-        if (openInstanceId != expectedOpenInstanceId) return null
         val current = tracker ?: return null
-        if (bookId != null && current.bookId != bookId) return null
+        if (
+            !readerEventBelongsToSession(
+                activeOpenInstanceId = openInstanceId,
+                expectedOpenInstanceId = expectedOpenInstanceId,
+                activeBookId = current.bookId,
+                expectedBookId = bookId
+            )
+        ) {
+            return null
+        }
         return current
     }
 
@@ -336,3 +344,14 @@ class ReaderViewModel(
         }
     }
 }
+
+
+internal fun readerEventBelongsToSession(
+    activeOpenInstanceId: String?,
+    expectedOpenInstanceId: String,
+    activeBookId: String?,
+    expectedBookId: String? = null
+): Boolean =
+    activeOpenInstanceId == expectedOpenInstanceId &&
+        activeBookId != null &&
+        (expectedBookId == null || activeBookId == expectedBookId)
