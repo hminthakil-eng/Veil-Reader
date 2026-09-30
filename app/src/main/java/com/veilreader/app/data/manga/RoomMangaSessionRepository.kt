@@ -12,6 +12,7 @@ import com.veilreader.app.manga.source.SourceChapter
 import com.veilreader.app.manga.source.SourceId
 import com.veilreader.app.manga.source.SourceRegistry
 import com.veilreader.app.manga.source.supports
+import java.util.UUID
 
 /**
  * Rehydrates the persisted Manga catalog into one reader session.
@@ -29,7 +30,8 @@ class RoomMangaSessionRepository(
 
     suspend fun build(
         bookId: String,
-        options: MangaReaderSessionOptions = MangaReaderSessionOptions()
+        options: MangaReaderSessionOptions = MangaReaderSessionOptions(),
+        instanceId: String = UUID.randomUUID().toString()
     ): MangaSessionAdapterResult {
         val chapters = catalog.listChapters(bookId)
         if (chapters.isEmpty()) {
@@ -78,7 +80,8 @@ class RoomMangaSessionRepository(
         return adapter.build(
             mangaId = CanonicalMangaId(bookId),
             chaptersInReadingOrder = productChapters,
-            options = options
+            options = options,
+            instanceId = instanceId
         )
     }
 }
