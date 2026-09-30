@@ -3,6 +3,7 @@ package com.veilreader.app.data
 import android.content.Context
 import android.content.SharedPreferences
 import android.net.Uri
+import androidx.room.withTransaction
 import com.veilreader.app.data.db.MangaMergeChapterEntity
 import com.veilreader.app.data.db.MangaMergeMemberEntity
 import com.veilreader.app.data.db.MangaWorkMergeEntity
