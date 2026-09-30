@@ -105,9 +105,10 @@ fun MangaReaderIntegratedScreen(
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
-    LaunchedEffect(state.message) {
-        val message = state.message ?: return@LaunchedEffect
-        snackbarHostState.showSnackbar(message.toUiText())
+    val snackbarMessage = state.message?.toUiText()
+    LaunchedEffect(state.message, snackbarMessage) {
+        if (state.message == null || snackbarMessage == null) return@LaunchedEffect
+        snackbarHostState.showSnackbar(snackbarMessage)
         readerViewModel.dismissMessage()
     }
 
@@ -137,7 +138,7 @@ fun MangaReaderIntegratedScreen(
                 },
                 partialOfflineContent = {
                     Text(
-                        "Offline preview · reconnect to load the rest",
+                        stringResource(R.string.manga_reader_partial_offline_notice),
                         modifier = Modifier.padding(12.dp)
                     )
                 },
@@ -233,7 +234,7 @@ private fun MangaAdaptivePage(
         is AdaptivePageState.Error -> {
             Box(modifier, contentAlignment = Alignment.Center) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(current.message)
+                    Text(stringResource(R.string.manga_reader_page_failed))
                     Button(onClick = { retryKey += 1 }) {
                         Text(stringResource(R.string.manga_reader_retry))
                     }
@@ -303,7 +304,15 @@ private fun MangaReaderChrome(
                 )
             }
         ) {
-            Text(\n                stringResource(\n                    if (mode == MangaReaderMode.PAGED) {\n                        R.string.manga_reader_mode_webtoon\n                    } else {\n                        R.string.manga_reader_mode_paged\n                    }\n                )\n            )
+            Text(
+                stringResource(
+                    if (mode == MangaReaderMode.PAGED) {
+                        R.string.manga_reader_mode_webtoon
+                    } else {
+                        R.string.manga_reader_mode_paged
+                    }
+                )
+            )
         }
         Button(
             onClick = {
@@ -318,7 +327,15 @@ private fun MangaReaderChrome(
                 )
             }
         ) {
-            Text(\n                stringResource(\n                    if (direction == MangaPageDirection.RIGHT_TO_LEFT) {\n                        R.string.manga_reader_direction_ltr\n                    } else {\n                        R.string.manga_reader_direction_rtl\n                    }\n                )\n            )
+            Text(
+                stringResource(
+                    if (direction == MangaPageDirection.RIGHT_TO_LEFT) {
+                        R.string.manga_reader_direction_ltr
+                    } else {
+                        R.string.manga_reader_direction_rtl
+                    }
+                )
+            )
         }
     }
 }
@@ -333,7 +350,7 @@ private fun MangaChapterError(
             Text(stringResource(error.kind.toUiMessageRes()))
             if (error.retryable) {
                 Button(onClick = retry) {
-                    Text("Retry")
+                    Text(stringResource(R.string.manga_reader_retry))
                 }
             }
         }
