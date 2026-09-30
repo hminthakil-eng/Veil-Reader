@@ -1,18 +1,24 @@
 package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -20,10 +26,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.veilreader.app.R
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
@@ -186,51 +195,122 @@ fun MangaHubScreen(
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
                     border = BorderStroke(
                         1.dp,
-                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.78f)
+                        if (highContrast) {
+                            MaterialTheme.colorScheme.outline
+                        } else {
+                            VeilPalette.Brass.copy(alpha = 0.24f)
+                        }
                     )
                 ) {
-                    Column(
-                        Modifier.padding(VeilSpacing.md),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(
+                        modifier = Modifier.padding(VeilSpacing.md),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            book.title,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        if (book.author.isNotBlank()) {
+                        MangaHubCover(book)
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                        ) {
                             Text(
-                                book.author,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
+                                book.title,
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 2,
                                 overflow = TextOverflow.Ellipsis
                             )
-                        }
-                        Text(
-                            stringResource(
-                                R.string.manga_hub_progress,
-                                (book.progress.coerceIn(0f, 1f) * 100).toInt()
-                            ),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
-                        )
-                        Text(
-                            stringResource(R.string.manga_hub_reader_ready),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Button(
-                            onClick = { onOpenBook(book) },
-                            modifier = Modifier.heightIn(min = 48.dp)
-                        ) {
-                            Text(stringResource(R.string.manga_hub_read))
+                            if (book.author.isNotBlank()) {
+                                Text(
+                                    book.author,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+
+                            val progress = book.progress.coerceIn(0f, 1f)
+                            Text(
+                                stringResource(
+                                    R.string.manga_hub_progress,
+                                    (progress * 100).toInt()
+                                ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = if (highContrast) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    VeilPalette.Brass
+                                }
+                            )
+                            LinearProgressIndicator(
+                                progress = { progress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                stringResource(
+                                    if (book.finished) {
+                                        R.string.manga_hub_finished
+                                    } else {
+                                        R.string.manga_hub_saved_offline
+                                    }
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Button(
+                                onClick = { onOpenBook(book) },
+                                modifier = Modifier.heightIn(min = 48.dp)
+                            ) {
+                                Text(
+                                    stringResource(
+                                        if (progress > 0f && !book.finished) {
+                                            R.string.manga_hub_continue
+                                        } else if (book.finished) {
+                                            R.string.manga_hub_read_again
+                                        } else {
+                                            R.string.manga_hub_start
+                                        }
+                                    )
+                                )
+                            }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+
+@Composable
+private fun MangaHubCover(book: Book) {
+    val coverPath = book.coverCachePath?.takeIf { it.isNotBlank() }
+    val shape = MaterialTheme.shapes.extraSmall
+    if (coverPath != null) {
+        AsyncImage(
+            model = coverPath,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .width(78.dp)
+                .aspectRatio(2f / 3f)
+                .clip(shape)
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .width(78.dp)
+                .aspectRatio(2f / 3f)
+                .clip(shape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = book.title.trim().take(1).uppercase(),
+                style = MaterialTheme.typography.headlineMedium,
+                color = VeilPalette.Brass
+            )
         }
     }
 }
