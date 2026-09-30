@@ -1158,7 +1158,7 @@
     <string name="manga_hub_engine_ready">The dedicated page engine, cache, recovery, health and chapter presentation stack are integrated.</string>
     <string name="manga_hub_live_sources_off">Live network sources remain disabled by default. No source is contacted from this hub.</string>
     <string name="manga_hub_empty_title">No local manga yet</string>
-    <string name="manga_hub_empty_body">Import a supported comic publication into the Library. Manga Hub will keep visual reading separate from the text-reader experience.</string>
-    <string name="manga_hub_open_library">Open Library</string>
+    <string name="manga_hub_empty_body">No Manga session is registered yet. Local Manga ingestion and source adapters will connect here while visual reading stays separate from the text-reader experience.</string>
+    <string name="manga_hub_open_library">Return to Library</string>
     <string name="manga_hub_progress">%1$d%% read</string>
 </resources>
