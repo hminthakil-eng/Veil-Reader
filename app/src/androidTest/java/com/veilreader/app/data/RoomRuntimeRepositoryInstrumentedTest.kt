@@ -525,6 +525,42 @@ class RoomRuntimeRepositoryInstrumentedTest {
     }
 
     @Test
+    fun derivedMetadataWritesNeverRegressNewerProgress() = runBlocking<Unit> {
+        val repository = repository()
+        repository.addImportedBook(
+            Book(
+                id = "metadata-race-book",
+                title = "Race Guard",
+                author = "Veil",
+                totalPages = 100,
+                sourceUri = "file:///metadata-race.epub"
+            )
+        )
+
+        db.books().updateProgress(
+            id = "metadata-race-book",
+            progress = 0.82f,
+            pagesRead = 82,
+            locatorJson = "{\"href\":\"chapter-82.xhtml\"}",
+            lastOpenedAtEpochMs = 8_200L,
+            finished = false
+        )
+
+        repository.updateCoverCachePath("metadata-race-book", "/tmp/cover.jpg")
+        repository.updateContentFingerprint("metadata-race-book", "ABCDEF")
+        repository.flushWrites()
+
+        val stored = requireNotNull(db.books().findEntity("metadata-race-book"))
+        assertEquals(0.82f, stored.progress, 0.000001f)
+        assertEquals(82, stored.pagesRead)
+        assertEquals("{\"href\":\"chapter-82.xhtml\"}", stored.locatorJson)
+        assertEquals(8_200L, stored.lastOpenedAtEpochMs)
+        assertFalse(stored.finished)
+        assertEquals("/tmp/cover.jpg", stored.coverCachePath)
+        assertEquals("abcdef", stored.contentFingerprint)
+    }
+
+    @Test
     fun rapidProgressEvents_coalesceToOneDatabaseUpdate_withLatestLocator() = runBlocking<Unit> {
         val repository = repository()
         repository.addImportedBook(
