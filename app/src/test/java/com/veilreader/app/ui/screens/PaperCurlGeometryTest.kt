@@ -77,6 +77,46 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun ordinaryPhoneSwipeCommitsPaperWithoutRequiringExtremeTravel() {
+        assertTrue(
+            shouldCommitPaperTurn(
+                inwardDistance = 190f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.12f
+            )
+        )
+        assertFalse(
+            shouldCommitPaperTurn(
+                inwardDistance = 54f,
+                width = 1000f,
+                density = 1f,
+                curlProgress = 0.08f
+            )
+        )
+    }
+
+    @Test
+    fun ordinaryPhoneSwipeCommitsSlideWithoutAccidentalTinyDrag() {
+        assertTrue(
+            shouldCommitSlideTurn(
+                inwardDistance = 140f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.12f
+            )
+        )
+        assertFalse(
+            shouldCommitSlideTurn(
+                inwardDistance = 42f,
+                width = 1000f,
+                density = 1f,
+                slideProgress = 0.08f
+            )
+        )
+    }
+
+    @Test
     fun fastFlickCanCommitBeforeSlowDistanceThreshold() {
         assertTrue(
             shouldCommitPaperTurn(
