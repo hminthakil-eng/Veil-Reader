@@ -67,6 +67,7 @@ class LibraryExport(
         val targetBookId: String,
         val createdAtEpochMs: Long,
         val receiptVersion: Int,
+        val targetOriginalChapterCount: Int,
         val targetBookProgress: Float,
         val targetBookFinished: Boolean,
         val targetBookLastOpenedAtEpochMs: Long,
@@ -212,6 +213,7 @@ class LibraryExport(
                 targetBookId = merge.targetBookId,
                 createdAtEpochMs = merge.createdAtEpochMs,
                 receiptVersion = merge.receiptVersion,
+                targetOriginalChapterCount = merge.targetOriginalChapterCount,
                 targetBookProgress = merge.targetBookProgress,
                 targetBookFinished = merge.targetBookFinished,
                 targetBookLastOpenedAtEpochMs = merge.targetBookLastOpenedAtEpochMs,
@@ -253,6 +255,7 @@ class LibraryExport(
                 put("targetBookId", merge.targetBookId)
                 put("createdAtEpochMs", merge.createdAtEpochMs)
                 put("receiptVersion", merge.receiptVersion)
+                put("targetOriginalChapterCount", merge.targetOriginalChapterCount)
                 put("targetBookProgress", merge.targetBookProgress.toDouble())
                 put("targetBookFinished", merge.targetBookFinished)
                 put(
@@ -431,12 +434,32 @@ class LibraryExport(
                     "Manga merge backup contains an incomplete target progress receipt."
                 }
 
+                val originalChapterCount = record.getInt("targetOriginalChapterCount")
+                require(originalChapterCount > 0) {
+                    "Manga merge backup has an invalid original target chapter count."
+                }
+                require(
+                    chapters
+                        .filter {
+                            it.disposition ==
+                                MangaMergeChapterEntity.REBUILD_FROM_SOURCE_ARCHIVE
+                        }
+                        .all { it.targetReadingOrder >= originalChapterCount }
+                ) {
+                    "Manga merge backup marks an original target chapter as a removable copy."
+                }
+                require(progressOrder == null || progressOrder < originalChapterCount) {
+                    "Manga merge backup progress points outside the original target boundary."
+                }
+
                 add(
                     MangaMergeBackupSnapshot(
                         id = id,
                         targetBookId = targetBookId,
                         createdAtEpochMs = record.getLong("createdAtEpochMs"),
                         receiptVersion = record.optInt("receiptVersion", 1).coerceAtLeast(1),
+                        targetOriginalChapterCount =
+                            record.getInt("targetOriginalChapterCount"),
                         targetBookProgress = record
                             .getDouble("targetBookProgress")
                             .toFloat()
@@ -466,9 +489,20 @@ class LibraryExport(
             require(target.format == BookFormat.COMIC.name) {
                 "Restored Manga merge target is not a comic"
             }
-            val targetChapters = database.mangaCatalog()
+            val targetChapterList = database.mangaCatalog()
                 .listChapters(backup.targetBookId)
-                .associateBy { it.readingOrder }
+            require(targetChapterList.size >= backup.targetOriginalChapterCount) {
+                "Restored Manga merge target is missing original chapters"
+            }
+            require(
+                targetChapterList
+                    .take(backup.targetOriginalChapterCount)
+                    .map { it.readingOrder } ==
+                    (0 until backup.targetOriginalChapterCount).toList()
+            ) {
+                "Restored Manga merge original target boundary is invalid"
+            }
+            val targetChapters = targetChapterList.associateBy { it.readingOrder }
             val progressChapterId = backup.targetProgressReadingOrder?.let { order ->
                 targetChapters[order]?.id
                     ?: error("Restored Manga merge target progress chapter is missing")
@@ -509,6 +543,7 @@ class LibraryExport(
                         targetBookId = backup.targetBookId,
                         createdAtEpochMs = backup.createdAtEpochMs,
                         receiptVersion = backup.receiptVersion,
+                        targetOriginalChapterCount = backup.targetOriginalChapterCount,
                         targetBookProgress = backup.targetBookProgress,
                         targetBookFinished = backup.targetBookFinished,
                         targetBookLastOpenedAtEpochMs =
