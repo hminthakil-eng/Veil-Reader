@@ -101,6 +101,11 @@ class RoomMangaStoresInstrumentedTest {
         assertEquals(expected.chapterProgression, restored.chapterProgression, 0.000001)
         assertEquals(900L, restored.updatedAtEpochMs)
 
+        val bookSummary = requireNotNull(db.books().findEntity(BOOK_ID))
+        assertEquals(expected.chapterProgression.toFloat(), bookSummary.progress, 0.000001f)
+        assertEquals(900L, bookSummary.lastOpenedAtEpochMs)
+        assertEquals(false, bookSummary.finished)
+
         store.delete(MANGA_ID)
         assertNull(store.load(MANGA_ID))
     }
