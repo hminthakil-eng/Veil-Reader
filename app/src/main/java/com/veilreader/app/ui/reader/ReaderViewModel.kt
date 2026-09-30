@@ -174,17 +174,21 @@ class ReaderViewModel(
                 )
                 true
             }
-        } catch (cancelled: CancellationException) {
+        } catch (error: Throwable) {
             synchronized(this) {
                 openAttemptGate.cancel(attempt)
             }
             ReaderTrace.event(
-                "reader_open_attempt_cancelled",
+                if (error is CancellationException) {
+                    "reader_open_attempt_cancelled"
+                } else {
+                    "reader_open_attempt_failed"
+                },
                 bookId = bookId,
                 sessionId = openInstanceId,
-                details = "generation=${attempt.generation}"
+                details = "generation=${attempt.generation} error=${error::class.java.simpleName}"
             )
-            throw cancelled
+            throw error
         }
     }
 
@@ -199,8 +203,9 @@ class ReaderViewModel(
         }
         if (openConfirmed) return true
 
+        library.saveReadingSession(current.snapshot(System.currentTimeMillis()))
+        library.flushReadingSession(current.sessionId)
         openConfirmed = true
-        persistSession(immediate = true)
         ReaderTrace.event(
             "reader_open_confirmed",
             bookId = current.bookId,
@@ -444,6 +449,7 @@ class ReaderViewModel(
             )
         } else {
             resumed = false
+            _uiState.value = ReaderUiState()
             ReaderTrace.event(
                 "reader_prepared_session_discarded",
                 bookId = current.bookId,
