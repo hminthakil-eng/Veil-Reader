@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="observatory_castle">قلعه</string>
+    <string name="observatory_eyebrow">رصدخانه · اطلس حافظه</string>
+    <string name="observatory_title">صورت‌های فلکیِ آنچه خوانده‌اید</string>
+    <string name="observatory_subtitle">نقشه‌ای خصوصی و آفلاین که فقط از فرادادهٔ کتاب، نشست‌های پایدار مطالعه و بخش‌هایی که خودتان حفظ کرده‌اید ساخته می‌شود.</string>
+    <plurals name="observatory_volumes"><item quantity="one">%1$d جلد</item><item quantity="other">%1$d جلد</item></plurals>
+    <plurals name="observatory_recorded_links"><item quantity="one">%1$d پیوند ثبت‌شده</item><item quantity="other">%1$d پیوند ثبت‌شده</item></plurals>
+    <plurals name="observatory_solitary"><item quantity="one">%1$d تنها</item><item quantity="other">%1$d تنها</item></plurals>
+    <string name="observatory_index_eyebrow">فهرست صورت‌های فلکی</string>
+    <string name="observatory_index_title">جلدهای اطلس</string>
+    <string name="observatory_truth">پیوندهای اطلس رابطه‌های ثبت‌شده‌اند، نه ادعاهای هوش مصنوعی: نویسنده، مجموعه، سری مشترک یا واژگان تکرارشونده در بخش‌هایی که خودتان حفظ کرده‌اید.</string>
+    <string name="observatory_atlas_a11y">اطلس حافظه با %1$d جلد و %2$d پیوند ثبت‌شده</string>
+    <string name="observatory_empty_sky">آسمان خالی است</string>
+    <string name="observatory_empty_sky_body">جلدها را وارد و بخش‌ها را حفظ کنید؛ رصدخانه فقط رابطه‌هایی را ترسیم می‌کند که آرشیو شما واقعاً پشتیبانی می‌کند.</string>
+    <string name="observatory_selected">صورت فلکی انتخاب‌شده</string>
+    <plurals name="observatory_selected_links"><item quantity="one">%1$d پیوند ثبت‌شده</item><item quantity="other">%1$d پیوند ثبت‌شده</item></plurals>
+    <string name="observatory_stands_alone">این جلد فعلاً تنهاست. Veil فقط برای پرتر نشان‌دادن صورت فلکی هیچ رابطه‌ای را جعل نمی‌کند.</string>
+    <string name="observatory_enter_volume">ورود به جلد</string>
+    <string name="observatory_source_unavailable">منبع در دسترس نیست</string>
+    <string name="observatory_link_strength">پیوند %1$d/۱۰</string>
+    <string name="observatory_shared_terms">واژگان مشترک حفظ‌شده · %1$s</string>
+    <plurals name="observatory_row_links"><item quantity="one">%1$d پیوند</item><item quantity="other">%1$d پیوند</item></plurals>
+    <string name="observatory_empty_state">رصدخانه برای ترسیم یک اطلس خصوصی دست‌کم به یک جلد نیاز دارد.</string>
+    <string name="observatory_relation_author">نویسنده</string>
+    <string name="observatory_relation_series">سری</string>
+    <string name="observatory_relation_collection">مجموعه</string>
+    <string name="observatory_relation_passage_pattern">الگوی واژگان حفظ‌شده</string>
+</resources>
