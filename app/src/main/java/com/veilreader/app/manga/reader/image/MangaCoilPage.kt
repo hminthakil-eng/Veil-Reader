@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
+import androidx.compose.ui.res.stringResource
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -19,13 +20,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import coil3.ImageLoader
 import coil3.compose.AsyncImage
+import com.veilreader.app.R
 import com.veilreader.app.manga.reader.MangaReaderMode
 import com.veilreader.app.manga.reader.presentation.MangaPageAsset
 
 private sealed interface ResolvedUiPage {
     data object Loading : ResolvedUiPage
     data class Ready(val page: MangaResolvedPage) : ResolvedUiPage
-    data class Error(val message: String) : ResolvedUiPage
+    data object Error : ResolvedUiPage
 }
 
 @Composable
@@ -46,7 +48,7 @@ fun MangaCoilPage(
     ) {
         value = when (val result = resolver.resolve(asset)) {
             is MangaPageResolveResult.Ready -> ResolvedUiPage.Ready(result.page)
-            is MangaPageResolveResult.Error -> ResolvedUiPage.Error(result.message)
+            is MangaPageResolveResult.Error -> ResolvedUiPage.Error
         }
     }
 
@@ -57,9 +59,9 @@ fun MangaCoilPage(
             }
         }
 
-        is ResolvedUiPage.Error -> {
+        ResolvedUiPage.Error -> {
             MangaImageError(
-                message = page.message,
+                message = stringResource(R.string.manga_reader_page_failed),
                 onRetry = { retryKey += 1 },
                 modifier = pageModifier(mode, modifier)
             )
@@ -103,7 +105,7 @@ fun MangaCoilPage(
                 }
                 if (failed) {
                     MangaImageError(
-                        message = "Page image could not be decoded or fetched.",
+                        message = stringResource(R.string.manga_reader_page_failed),
                         onRetry = { retryKey += 1 },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -125,7 +127,7 @@ private fun MangaImageError(
         ) {
             Text(message)
             Button(onClick = onRetry) {
-                Text("Retry")
+                Text(stringResource(R.string.manga_reader_retry))
             }
         }
     }
