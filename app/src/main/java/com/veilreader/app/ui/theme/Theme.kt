@@ -23,37 +23,38 @@ import com.veilreader.app.domain.AppThemeMode
  * carries restrained archival mystery. Publication/Reader themes remain independent.
  */
 object VeilPalette {
-    // Gray Fog semantic foundation.
-    val Ink = Color(0xFF080A0E)
-    val Archive = Color(0xFF0D131B)
-    val Iron = Color(0xFF151E29)
-    val RaisedIron = Color(0xFF202C3B)
+    // W26: Arena is the canonical visual source of truth. Keep these names as compatibility aliases
+    // so reliability work and screen-by-screen migration stay on one branch without a second theme.
+    val Ink = ArenaPalette.Void
+    val Archive = ArenaPalette.Archive
+    val Iron = ArenaPalette.Iron
+    val RaisedIron = ArenaPalette.RaisedArchive
 
-    val Moon = Color(0xFFF1E9DA)
-    val Mist = Color(0xFF9EA3A8)
-    val BorderDark = Color(0xFF293440)
-    val StrongBorderDark = Color(0xFF5B6470)
+    val Moon = ArenaPalette.Moon
+    val Mist = ArenaPalette.Mist
+    val BorderDark = ArenaPalette.Border
+    val StrongBorderDark = ArenaPalette.StrongBorder
 
-    val Brass = Color(0xFFD0AD6C)
-    val DeepBrass = Color(0xFF4B361F)
-    val Spirit = Color(0xFF7BA8B1)
-    val MoonCrimson = Color(0xFF7A2E2E)
+    val Brass = ArenaPalette.AntiqueGold
+    val DeepBrass = ArenaPalette.DeepBrass
+    val Spirit = Color(0xFF789CA5)
+    val MoonCrimson = ArenaPalette.Oxblood
 
-    val LightCanvas = Color(0xFFF2EFE7)
-    val LightSurface = Color(0xFFFBF8F1)
-    val LightElevated = Color(0xFFEEE8DD)
-    val LightInk = Color(0xFF15191F)
-    val LightMist = Color(0xFF67675F)
-    val BorderLight = Color(0xFFC9C1B4)
-    val StrongBorderLight = Color(0xFF81786A)
-    val LightBrass = Color(0xFF8A6A35)
-    val LightSpirit = Color(0xFF2C6E73)
-    val LightCrimson = Color(0xFF7B2838)
+    val LightCanvas = ArenaPalette.Parchment
+    val LightSurface = ArenaPalette.ParchmentLight
+    val LightElevated = Color(0xFFE2D1AF)
+    val LightInk = ArenaPalette.InkOnPaper
+    val LightMist = Color(0xFF6D6357)
+    val BorderLight = ArenaPalette.ParchmentShadow
+    val StrongBorderLight = Color(0xFF806C4D)
+    val LightBrass = Color(0xFF7B5727)
+    val LightSpirit = Color(0xFF315F66)
+    val LightCrimson = Color(0xFF70232D)
 
-    // Reader paper stays separate from the app-shell surfaces.
-    val ReaderPaper = Color(0xFFE9DEC5)
+    // Reader material stays independent from shell dark/light mode.
+    val ReaderPaper = ArenaPalette.Parchment
 
-    // Compatibility aliases: existing screens can migrate incrementally without a parallel theme.
+    // Compatibility aliases while legacy call-sites are rebuilt in place.
     val Obsidian = Archive
     val Slate = Iron
     val RaisedSlate = RaisedIron
