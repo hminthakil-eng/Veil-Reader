@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="observatory_castle">Castle</string>
+    <string name="observatory_eyebrow">OBSERVATORY · MEMORY ATLAS</string>
+    <string name="observatory_title">Constellations of what you read</string>
+    <string name="observatory_subtitle">A private offline map built only from book metadata, durable reading sessions, and passages you chose to preserve.</string>
+    <plurals name="observatory_volumes"><item quantity="one">%1$d volume</item><item quantity="other">%1$d volumes</item></plurals>
+    <plurals name="observatory_recorded_links"><item quantity="one">%1$d recorded link</item><item quantity="other">%1$d recorded links</item></plurals>
+    <plurals name="observatory_solitary"><item quantity="one">%1$d solitary</item><item quantity="other">%1$d solitary</item></plurals>
+    <string name="observatory_index_eyebrow">Constellation index</string>
+    <string name="observatory_index_title">Volumes in the atlas</string>
+    <string name="observatory_truth">Atlas links are recorded relations, not AI claims: shared author, series, collection, or repeated vocabulary inside passages you explicitly preserved.</string>
+    <string name="observatory_atlas_a11y">Memory Atlas with %1$d volumes and %2$d recorded links</string>
+    <string name="observatory_empty_sky">THE SKY IS EMPTY</string>
+    <string name="observatory_empty_sky_body">Import volumes and preserve passages; the Observatory will map only relations your archive can support.</string>
+    <string name="observatory_selected">SELECTED CONSTELLATION</string>
+    <plurals name="observatory_selected_links"><item quantity="one">%1$d recorded link</item><item quantity="other">%1$d recorded links</item></plurals>
+    <string name="observatory_stands_alone">This volume currently stands alone. Veil will not fabricate a relation merely to make the constellation denser.</string>
+    <string name="observatory_enter_volume">Enter volume</string>
+    <string name="observatory_source_unavailable">Source unavailable</string>
+    <string name="observatory_link_strength">LINK %1$d/10</string>
+    <string name="observatory_shared_terms">Shared preserved terms · %1$s</string>
+    <plurals name="observatory_row_links"><item quantity="one">%1$d LINK</item><item quantity="other">%1$d LINKS</item></plurals>
+    <string name="observatory_empty_state">The Observatory needs at least one volume before it can draw a private atlas.</string>
+    <string name="observatory_relation_author">AUTHOR</string>
+    <string name="observatory_relation_series">SERIES</string>
+    <string name="observatory_relation_collection">COLLECTION</string>
+    <string name="observatory_relation_passage_pattern">PRESERVED WORD PATTERN</string>
+</resources>
