@@ -622,9 +622,12 @@ class LocalLibraryRepository internal constructor(
 
                 else ->
                     database.highlights()
-                        .findByBookAndLocator(bookId = bookId, locatorJson = cleanLocator)
+                        .findByBookLocatorAndQuote(
+                            bookId = bookId,
+                            locatorJson = cleanLocator,
+                            quote = cleanQuote
+                        )
                         ?.toDomain()
-                        ?.takeIf { it.quote == cleanQuote }
             }
 
             val created = existing == null
