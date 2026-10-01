@@ -7,6 +7,8 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -794,7 +796,9 @@ fun ReaderNotebook(
                             strength = 0.24f
                         )
                         Column(
-                            modifier = Modifier.padding(20.dp),
+                            modifier = Modifier
+                                .padding(20.dp)
+                                .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
@@ -856,65 +860,63 @@ fun ReaderNotebook(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                OutlinedButton(
-                                    enabled = !savingNote,
-                                    onClick = {
-                                        editingId = null
-                                        noteSaveErrorRes = null
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 48.dp),
-                                    shape = MaterialTheme.shapes.extraSmall
-                                ) {
-                                    Text(stringResource(R.string.common_cancel))
-                                }
-                                Button(
-                                    enabled = !savingNote,
-                                    onClick = {
-                                        noteSaveJob = scope.launch {
-                                            savingNote = true
+                            VeilAdaptiveDialogActions(
+                                spacing = 8.dp,
+                                first = { actionModifier ->
+                                    OutlinedButton(
+                                        enabled = !savingNote,
+                                        onClick = {
+                                            editingId = null
                                             noteSaveErrorRes = null
-                                            try {
-                                                onSaveNote(highlight.id, note)
-                                                editingId = null
-                                            } catch (cancelled: CancellationException) {
-                                                throw cancelled
-                                            } catch (error: Exception) {
-                                                noteSaveErrorRes =
-                                                    R.string.reader_notebook_note_save_failed
-                                            } finally {
-                                                savingNote = false
-                                                noteSaveJob = null
+                                        },
+                                        modifier = actionModifier.heightIn(min = 48.dp),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ) {
+                                        Text(stringResource(R.string.common_cancel))
+                                    }
+                                },
+                                second = { actionModifier ->
+                                    Button(
+                                        enabled = !savingNote,
+                                        onClick = {
+                                            noteSaveJob = scope.launch {
+                                                savingNote = true
+                                                noteSaveErrorRes = null
+                                                try {
+                                                    onSaveNote(highlight.id, note)
+                                                    editingId = null
+                                                } catch (cancelled: CancellationException) {
+                                                    throw cancelled
+                                                } catch (error: Exception) {
+                                                    noteSaveErrorRes =
+                                                        R.string.reader_notebook_note_save_failed
+                                                } finally {
+                                                    savingNote = false
+                                                    noteSaveJob = null
+                                                }
                                             }
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 48.dp),
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = VeilPalette.Brass,
-                                        contentColor = androidx.compose.ui.graphics.Color(
-                                            0xFF17120A
+                                        },
+                                        modifier = actionModifier.heightIn(min = 48.dp),
+                                        shape = MaterialTheme.shapes.extraSmall,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = VeilPalette.Brass,
+                                            contentColor = androidx.compose.ui.graphics.Color(
+                                                0xFF17120A
+                                            )
                                         )
-                                    )
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            if (savingNote) {
-                                                R.string.reader_notebook_saving
-                                            } else {
-                                                R.string.common_save
-                                            }
+                                    ) {
+                                        Text(
+                                            stringResource(
+                                                if (savingNote) {
+                                                    R.string.reader_notebook_saving
+                                                } else {
+                                                    R.string.common_save
+                                                }
+                                            )
                                         )
-                                    )
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                 }
@@ -952,7 +954,9 @@ fun ReaderNotebook(
                     shadowElevation = 0.dp
                 ) {
                     Column(
-                        modifier = Modifier.padding(20.dp),
+                        modifier = Modifier
+                            .padding(20.dp)
+                            .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         Text(
@@ -985,42 +989,40 @@ fun ReaderNotebook(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            OutlinedButton(
-                                onClick = { deletingId = null },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.extraSmall
-                            ) {
-                                Text(
-                                    stringResource(
-                                        R.string.reader_notebook_keep
+                        VeilAdaptiveDialogActions(
+                            spacing = 8.dp,
+                            first = { actionModifier ->
+                                OutlinedButton(
+                                    onClick = { deletingId = null },
+                                    modifier = actionModifier.heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall
+                                ) {
+                                    Text(
+                                        stringResource(
+                                            R.string.reader_notebook_keep
+                                        )
                                     )
-                                )
+                                }
+                            },
+                            second = { actionModifier ->
+                                Button(
+                                    onClick = {
+                                        onDeleteHighlight(highlight.id)
+                                        deletingId = null
+                                    },
+                                    modifier = actionModifier.heightIn(min = 48.dp),
+                                    shape = MaterialTheme.shapes.extraSmall,
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor =
+                                            MaterialTheme.colorScheme.errorContainer,
+                                        contentColor =
+                                            MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.common_delete))
+                                }
                             }
-                            Button(
-                                onClick = {
-                                    onDeleteHighlight(highlight.id)
-                                    deletingId = null
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .heightIn(min = 48.dp),
-                                shape = MaterialTheme.shapes.extraSmall,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor =
-                                        MaterialTheme.colorScheme.errorContainer,
-                                    contentColor =
-                                        MaterialTheme.colorScheme.onErrorContainer
-                                )
-                            ) {
-                                Text(stringResource(R.string.common_delete))
-                            }
-                        }
+                        )
                     }
                 }
             }

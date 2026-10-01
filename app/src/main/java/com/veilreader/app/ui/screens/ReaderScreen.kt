@@ -2214,7 +2214,9 @@ fun ReaderScreen(
                             strength = 0.24f
                         )
                         Column(
-                            modifier = Modifier.padding(VeilSpacing.lg),
+                            modifier = Modifier
+                                .padding(VeilSpacing.lg)
+                                .verticalScroll(rememberScrollState()),
                             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                         ) {
                             VeilMicroLabel(
@@ -2294,102 +2296,100 @@ fun ReaderScreen(
                                 modifier = Modifier.align(Alignment.End)
                             )
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
-                            ) {
-                                OutlinedButton(
-                                    enabled = !noteSaving,
-                                    onClick = {
-                                        pendingNoteHighlightId = null
-                                        pendingNoteText = ""
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 48.dp),
-                                    shape = MaterialTheme.shapes.extraSmall
-                                ) {
-                                    Text(stringResource(R.string.common_cancel))
-                                }
-                                Button(
-                                    enabled = !noteSaving,
-                                    onClick = {
-                                        val expectedSessionId = readerSessionInstanceId
-                                        val noteToSave = pendingNoteText
-                                        scope.launch {
-                                            noteSaving = true
-                                            try {
-                                                library.updateHighlightNote(
-                                                    highlightId,
-                                                    noteToSave
-                                                )
-                                                library.flushWrites()
-                                                if (
-                                                    !readerAsyncResultBelongsToSession(
-                                                        currentSessionInstanceId =
-                                                            latestReaderSessionInstanceId.value,
-                                                        expectedSessionInstanceId =
-                                                            expectedSessionId
+                            VeilAdaptiveDialogActions(
+                                spacing = VeilSpacing.xs,
+                                first = { actionModifier ->
+                                    OutlinedButton(
+                                        enabled = !noteSaving,
+                                        onClick = {
+                                            pendingNoteHighlightId = null
+                                            pendingNoteText = ""
+                                        },
+                                        modifier = actionModifier.heightIn(min = 48.dp),
+                                        shape = MaterialTheme.shapes.extraSmall
+                                    ) {
+                                        Text(stringResource(R.string.common_cancel))
+                                    }
+                                },
+                                second = { actionModifier ->
+                                    Button(
+                                        enabled = !noteSaving,
+                                        onClick = {
+                                            val expectedSessionId = readerSessionInstanceId
+                                            val noteToSave = pendingNoteText
+                                            scope.launch {
+                                                noteSaving = true
+                                                try {
+                                                    library.updateHighlightNote(
+                                                        highlightId,
+                                                        noteToSave
                                                     )
-                                                ) {
-                                                    return@launch
-                                                }
-                                                readerViewModel.onNoteSaved(
-                                                    expectedSessionId,
-                                                    highlightId,
-                                                    noteToSave
-                                                )
-                                                onSensoryEvent(VeilSensoryEvent.NOTE)
-                                                pendingNoteHighlightId = null
-                                                pendingNoteText = ""
-                                                readerMessage = noteSavedMessage
-                                            } catch (cancelled: CancellationException) {
-                                                throw cancelled
-                                            } catch (error: Exception) {
-                                                if (
-                                                    readerAsyncResultBelongsToSession(
-                                                        currentSessionInstanceId =
-                                                            latestReaderSessionInstanceId.value,
-                                                        expectedSessionInstanceId =
-                                                            expectedSessionId
+                                                    library.flushWrites()
+                                                    if (
+                                                        !readerAsyncResultBelongsToSession(
+                                                            currentSessionInstanceId =
+                                                                latestReaderSessionInstanceId.value,
+                                                            expectedSessionInstanceId =
+                                                                expectedSessionId
+                                                        )
+                                                    ) {
+                                                        return@launch
+                                                    }
+                                                    readerViewModel.onNoteSaved(
+                                                        expectedSessionId,
+                                                        highlightId,
+                                                        noteToSave
                                                     )
-                                                ) {
-                                                    readerMessage = noteSaveFailedMessage
-                                                }
-                                            } finally {
-                                                if (
-                                                    readerAsyncResultBelongsToSession(
-                                                        currentSessionInstanceId =
-                                                            latestReaderSessionInstanceId.value,
-                                                        expectedSessionInstanceId =
-                                                            expectedSessionId
-                                                    )
-                                                ) {
-                                                    noteSaving = false
+                                                    onSensoryEvent(VeilSensoryEvent.NOTE)
+                                                    pendingNoteHighlightId = null
+                                                    pendingNoteText = ""
+                                                    readerMessage = noteSavedMessage
+                                                } catch (cancelled: CancellationException) {
+                                                    throw cancelled
+                                                } catch (error: Exception) {
+                                                    if (
+                                                        readerAsyncResultBelongsToSession(
+                                                            currentSessionInstanceId =
+                                                                latestReaderSessionInstanceId.value,
+                                                            expectedSessionInstanceId =
+                                                                expectedSessionId
+                                                        )
+                                                    ) {
+                                                        readerMessage = noteSaveFailedMessage
+                                                    }
+                                                } finally {
+                                                    if (
+                                                        readerAsyncResultBelongsToSession(
+                                                            currentSessionInstanceId =
+                                                                latestReaderSessionInstanceId.value,
+                                                            expectedSessionInstanceId =
+                                                                expectedSessionId
+                                                        )
+                                                    ) {
+                                                        noteSaving = false
+                                                    }
                                                 }
                                             }
-                                        }
-                                    },
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 48.dp),
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = VeilPalette.Brass,
-                                        contentColor = Color(0xFF17120A)
-                                    )
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            if (noteSaving) {
-                                                R.string.reader_saving_note
-                                            } else {
-                                                R.string.reader_save_note
-                                            }
+                                        },
+                                        modifier = actionModifier.heightIn(min = 48.dp),
+                                        shape = MaterialTheme.shapes.extraSmall,
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = VeilPalette.Brass,
+                                            contentColor = Color(0xFF17120A)
                                         )
-                                    )
+                                    ) {
+                                        Text(
+                                            stringResource(
+                                                if (noteSaving) {
+                                                    R.string.reader_saving_note
+                                                } else {
+                                                    R.string.reader_save_note
+                                                }
+                                            )
+                                        )
+                                    }
                                 }
-                            }
+                            )
                         }
                     }
                 }

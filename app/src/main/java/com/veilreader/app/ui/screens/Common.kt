@@ -327,6 +327,46 @@ internal fun shouldStackDenseChoices(
     }
 }
 
+/**
+ * Shared two-action layout for dialogs and constrained panels.
+ *
+ * Buttons stay side-by-side at normal density, then become full-width stacked actions when
+ * available width or font scale makes equal-width labels unsafe. Callers own button styling and
+ * enabled state; this component owns only responsive layout.
+ */
+@Composable
+internal fun VeilAdaptiveDialogActions(
+    modifier: Modifier = Modifier,
+    spacing: Dp = VeilSpacing.xs,
+    first: @Composable (Modifier) -> Unit,
+    second: @Composable (Modifier) -> Unit
+) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = 2
+        )
+        if (stacked) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                first(Modifier.fillMaxWidth())
+                second(Modifier.fillMaxWidth())
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                first(Modifier.weight(1f))
+                second(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
 @Composable
 internal fun VeilMicroLabel(
     text: String,
