@@ -35,8 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
@@ -436,17 +439,24 @@ private fun PdfLayoutChoice(
         else R.string.accessibility_not_selected
     )
 
+    val performSelection = onClick
     Surface(
         modifier = modifier
             .heightIn(min = 72.dp)
             .selectable(
                 selected = selected,
                 role = Role.RadioButton,
-                onClick = onClick
+                onClick = performSelection
             )
-            .semantics {
+            .clearAndSetSemantics {
                 contentDescription = description
                 stateDescription = selectionStateDescription
+                role = Role.RadioButton
+                this.selected = selected
+                onClick {
+                    performSelection()
+                    true
+                }
             },
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
