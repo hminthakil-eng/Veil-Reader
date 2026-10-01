@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -27,6 +28,7 @@ import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilPalette
+import com.veilreader.app.ui.theme.usesArabicScript
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -41,6 +43,84 @@ private enum class ReaderNotebookTab(val labelRes: Int) {
     BOOKMARKS(R.string.reader_notebook_tab_bookmarks),
     NOTES(R.string.reader_notebook_tab_notes),
     SEARCH(R.string.reader_notebook_tab_search)
+}
+
+@Composable
+private fun ReaderNotebookTabButton(
+    tab: ReaderNotebookTab,
+    selected: Boolean,
+    count: Int?,
+    onClick: () -> Unit
+) {
+    val formatInteger = rememberVeilIntegerFormatter()
+    val rawLabel = stringResource(tab.labelRes)
+    val label = if (usesArabicScript(rawLabel)) {
+        rawLabel
+    } else {
+        rawLabel.uppercase()
+    }
+
+    Surface(
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .selectable(
+                selected = selected,
+                role = Role.Tab,
+                onClick = onClick
+            ),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (selected) {
+            VeilPalette.Archive.copy(alpha = 0.52f)
+        } else {
+            androidx.compose.ui.graphics.Color.Transparent
+        },
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (selected) {
+                        VeilPalette.Moon
+                    } else {
+                        VeilPalette.Mist.copy(alpha = 0.74f)
+                    }
+                )
+                count?.let {
+                    Text(
+                        formatInteger(it),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (selected) {
+                            VeilPalette.Brass
+                        } else {
+                            VeilPalette.Mist.copy(alpha = 0.48f)
+                        }
+                    )
+                }
+            }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        if (selected) {
+                            VeilPalette.Brass.copy(alpha = 0.82f)
+                        } else {
+                            androidx.compose.ui.graphics.Color.Transparent
+                        }
+                    )
+            )
+        }
+    }
 }
 
 /** Reading tools stay in a dismissible sheet, away from the reading surface. */
@@ -80,7 +160,7 @@ fun ReaderNotebook(
         }
     }
     var tabName by rememberSaveable(opened.book.id, readerSessionInstanceId, searchable) {
-        mutableStateOf(ReaderNotebookTab.CONTENTS.name)
+        mutableStateOf(ReaderNotebookTab.NOTES.name)
     }
     val tab = ReaderNotebookTab.entries
         .firstOrNull { it.name == tabName && it in tabs }
@@ -210,9 +290,13 @@ fun ReaderNotebook(
                     color = VeilPalette.Moon
                 )
                 Text(
-                    opened.book.title,
+                    opened.book.title.ifBlank {
+                        stringResource(R.string.common_untitled_book)
+                    },
                     style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.74f)
+                    color = VeilPalette.Mist.copy(alpha = 0.74f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
 
@@ -226,42 +310,18 @@ fun ReaderNotebook(
             ) {
                 tabs.forEach { item ->
                     val selected = tab == item
-                    Surface(
-                        modifier = Modifier
-                            .heightIn(min = 48.dp)
-                            .selectable(
-                                selected = selected,
-                                role = Role.Tab
-                            ) { tabName = item.name },
-                        shape = MaterialTheme.shapes.extraSmall,
-                        color = if (selected) {
-                            VeilPalette.DeepBrass.copy(alpha = 0.78f)
-                        } else {
-                            VeilPalette.Archive.copy(alpha = 0.58f)
-                        },
-                        border = BorderStroke(
-                            1.dp,
-                            if (selected) {
-                                VeilPalette.Brass.copy(alpha = 0.76f)
-                            } else {
-                                VeilPalette.BorderDark.copy(alpha = 0.66f)
-                            }
-                        ),
-                        tonalElevation = 0.dp,
-                        shadowElevation = 0.dp
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                stringResource(item.labelRes).uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (selected) VeilPalette.Moon
-                                else VeilPalette.Mist.copy(alpha = 0.74f)
-                            )
-                        }
+                    val count = when (item) {
+                        ReaderNotebookTab.CONTENTS -> chapters.size
+                        ReaderNotebookTab.BOOKMARKS -> bookmarks.size
+                        ReaderNotebookTab.NOTES -> highlights.size
+                        ReaderNotebookTab.SEARCH -> null
                     }
+                    ReaderNotebookTabButton(
+                        tab = item,
+                        selected = selected,
+                        count = count,
+                        onClick = { tabName = item.name }
+                    )
                 }
             }
 
