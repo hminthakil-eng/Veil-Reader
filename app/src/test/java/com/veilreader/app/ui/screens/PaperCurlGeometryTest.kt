@@ -427,6 +427,12 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun `reduced motion disables paper snapshot and boundary animation ownership`() {
+        assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = false))
+        assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
+    }
+
+    @Test
     fun `paper curl render gate rejects zero and non finite resize frames`() {
         val validEdge = PaperCurlEdge(
             top = Offset(1_000f, 0f),
