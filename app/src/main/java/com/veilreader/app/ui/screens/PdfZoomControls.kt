@@ -243,20 +243,44 @@ internal fun PdfZoomControls(
             val maxZoom = view.maxZoom.coerceAtLeast(minZoom + 0.5f)
             val displayedZoom = normalizedPdfZoom(zoomMirror, minZoom, maxZoom)
 
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                VeilMicroLabel(
-                    text = stringResource(R.string.pdf_zoom),
-                    modifier = Modifier.weight(1f),
-                    strong = true
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stackedZoomHeader = shouldStackDenseChoices(
+                    widthDp = maxWidth.value.toInt(),
+                    fontScale = LocalDensity.current.fontScale,
+                    optionCount = 2
                 )
-                Text(
-                    formatPercent(displayedZoom),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
+                if (stackedZoomHeader) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.pdf_zoom),
+                            strong = true
+                        )
+                        Text(
+                            formatPercent(displayedZoom),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.pdf_zoom),
+                            modifier = Modifier.weight(1f),
+                            strong = true
+                        )
+                        Text(
+                            formatPercent(displayedZoom),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
             }
 
             Slider(
