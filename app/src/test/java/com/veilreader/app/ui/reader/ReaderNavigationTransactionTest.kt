@@ -309,6 +309,12 @@ class ReaderNavigationTransactionTest {
                 targetHref = " "
             )
         )
+        assertNull(
+            readerEffectiveTargetHref(
+                currentHref = null,
+                targetHref = "#scene-2"
+            )
+        )
     }
 
     @Test
