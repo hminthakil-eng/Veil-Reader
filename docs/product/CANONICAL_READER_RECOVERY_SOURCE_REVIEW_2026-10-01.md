@@ -327,3 +327,31 @@ Canonical implementation reviewed through head `5931b6bab2b259e086c595ef4e829118
 
 This is committed source and regression coverage only. The exact final head still requires Android CI, Storage Instrumentation and Performance Benchmarks before any GREEN claim. No manual APK/AAB packaging was started.
 
+## W60 follow-up — navigation identity convergence and page-effect memory hygiene
+
+Canonical implementation reviewed through head `454f5a47deb4b4563870522e04a7d35e87bdca41`.
+
+### Semantic no-op prevention
+
+- Location-backed jumps now decide whether to start from stable navigation identity instead of raw serialized JSON.
+- Metadata-only locator differences such as changed title/text no longer open a transaction for the same publication position.
+- A missing origin still permits a known destination; a missing destination never opens a location transaction.
+
+### Internal-link convergence
+
+- In-content EPUB links now use target-aware settlement, including fragment-only links resolved against the current resource.
+- Equivalent resource paths are normalized before no-op and target comparison.
+- Saved passage revisit evidence is emitted only after the target actually settles.
+
+### Full-screen page-effect buffer hygiene
+
+- Paper and Slide continue reusing their bitmap while they own the active page-turn mode for smooth repeated turns.
+- Once the Reader switches away from a mode and any preview has been restored/cleared, that mode's full-screen backing bitmap is recycled instead of remaining resident until Reader close.
+- Mode-handoff snapshots are recycled after their fade/clear and one safe frame, preventing Compose from drawing a recycled bitmap.
+- Resize-triggered handoff cleanup uses the same one-frame safety boundary.
+- This bounds retained page-effect bitmap memory after users experiment with Paper, Slide, and mode changes on high-resolution phones/tablets without trading away active-mode smoothness.
+
+### Verification boundary
+
+The final canonical head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No manual APK/AAB packaging was started.
+
