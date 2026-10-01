@@ -47,7 +47,9 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     @Test
     fun importedPdf_exposesFitLayoutAndSurvivesRotation() {
-        uiAutomation.executeShellCommand("pm clear com.google.android.documentsui").close()
+        DOCUMENTS_UI_PACKAGES.forEach { packageName ->
+            uiAutomation.executeShellCommand("pm clear $packageName").close()
+        }
         SystemClock.sleep(500)
         seedPdfFixture()
 
@@ -66,7 +68,7 @@ class ReaderPdfReliabilityInstrumentedTest {
 
         clickText("Library")
         clickFirstText("Import", "Import a book")
-        waitForPackage("com.google.android.documentsui")
+        waitForDocumentsUi()
 
         clickDescription("Show roots")
         clickText("Downloads")
@@ -535,6 +537,12 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForNode("package=$packageName") { it.packageName?.toString() == packageName }
     }
 
+    private fun waitForDocumentsUi() {
+        waitForNode("DocumentsUI package") {
+            it.packageName?.toString() in DOCUMENTS_UI_PACKAGES
+        }
+    }
+
     private fun waitForNode(
         label: String,
         predicate: (AccessibilityNodeInfo) -> Boolean
@@ -602,6 +610,11 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private companion object {
+        val DOCUMENTS_UI_PACKAGES = setOf(
+            "com.android.documentsui",
+            "com.google.android.documentsui"
+        )
+
         const val TIMEOUT_MS = 20_000L
         const val POLL_MS = 250L
 
