@@ -39,4 +39,13 @@ class PdfZoomControlsTest {
         assertFalse(shouldAnimatePdfZoom(reducedMotion = true))
         assertTrue(shouldAnimatePdfZoom(reducedMotion = false))
     }
+    @Test
+    fun `PDF renderer probing is bounded and stops after discovery`() {
+        assertTrue(shouldProbePdfView(attempt = 0, maxAttempts = 40, hasView = false))
+        assertTrue(shouldProbePdfView(attempt = 39, maxAttempts = 40, hasView = false))
+        assertFalse(shouldProbePdfView(attempt = 40, maxAttempts = 40, hasView = false))
+        assertFalse(shouldProbePdfView(attempt = 0, maxAttempts = 40, hasView = true))
+        assertFalse(shouldProbePdfView(attempt = 0, maxAttempts = 0, hasView = false))
+    }
+
 }
