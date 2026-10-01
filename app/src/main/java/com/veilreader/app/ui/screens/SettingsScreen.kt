@@ -83,6 +83,7 @@ fun SettingsScreen(
     onSetHighContrastEnabled: (Boolean) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
+    onSetGameVisible: (Boolean) -> Unit,
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
     onExportNotes: (Uri) -> Unit,
@@ -548,6 +549,18 @@ fun SettingsScreen(
                 stringResource(R.string.settings_audio_silence_hint),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
+            )
+        }
+
+        SettingsSection(
+            title = stringResource(R.string.settings_world_title),
+            description = stringResource(R.string.settings_world_description)
+        ) {
+            SettingsSwitchRow(
+                title = stringResource(R.string.settings_world_visible),
+                subtitle = stringResource(R.string.settings_world_visible_description),
+                checked = settings.gameVisible,
+                onCheckedChange = onSetGameVisible
             )
         }
 
