@@ -299,13 +299,12 @@ private fun ThresholdHeader(
                 waking = (bookCount.coerceIn(0, 12) / 12f)
             )
 
-            Text(
-                stringResource(R.string.app_name).uppercase(),
+            VeilMicroLabel(
+                text = stringResource(R.string.app_name),
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(start = VeilSpacing.md, top = VeilSpacing.md),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.9.sp),
-                color = VeilPalette.Brass
+                strong = true
             )
 
             Text(
@@ -546,10 +545,9 @@ private fun ContinueReadingHero(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.library_continue_reading).uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.55.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.library_continue_reading),
+                        strong = true
                     )
                     Text(
                         heroProgressLabel(current, progress),
@@ -733,10 +731,9 @@ private fun RecentBooksShelf(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(
-                    stringResource(R.string.threshold_recent_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.5.sp),
-                    color = VeilPalette.Brass
+                VeilMicroLabel(
+                    text = stringResource(R.string.threshold_recent_eyebrow),
+                    strong = true
                 )
                 Text(
                     stringResource(R.string.threshold_recent_title),
@@ -846,12 +843,10 @@ private fun RecentBookCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            Text(
-                recentBookStatus(book).uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.55.sp),
+            VeilMicroLabel(
+                text = recentBookStatus(book),
                 color = VeilPalette.Mist.copy(alpha = 0.80f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                modifier = Modifier.fillMaxWidth()
             )
 
             if (book.progress > 0f && !book.finished) {
@@ -1072,11 +1067,10 @@ private fun ReadingPulse(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                stringResource(R.string.profile_reading_record).uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                color = VeilPalette.Brass,
-                modifier = Modifier.weight(1f)
+            VeilMicroLabel(
+                text = stringResource(R.string.profile_reading_record),
+                modifier = Modifier.weight(1f),
+                strong = true
             )
             TextButton(
                 onClick = onOpenCastle,
@@ -1129,12 +1123,10 @@ private fun ReadingPulseValue(value: String, label: String, modifier: Modifier =
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-        Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
+        VeilMicroLabel(
+            text = label,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            modifier = Modifier.fillMaxWidth()
         )
     }
 }
@@ -1163,10 +1155,9 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
-                Text(
-                    stringResource(R.string.threshold_first_eyebrow).uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                    color = VeilPalette.Brass
+                VeilMicroLabel(
+                    text = stringResource(R.string.threshold_first_eyebrow),
+                    strong = true
                 )
                 Text(
                     stringResource(R.string.threshold_first_title),
