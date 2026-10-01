@@ -2120,12 +2120,9 @@ fun ReaderScreen(
                             modifier = Modifier.padding(VeilSpacing.lg),
                             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                         ) {
-                            Text(
-                                stringResource(R.string.reader_note_eyebrow),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 1.25.sp
-                                ),
-                                color = VeilPalette.Brass
+                            VeilMicroLabel(
+                                text = stringResource(R.string.reader_note_eyebrow),
+                                strong = true
                             )
                             Text(
                                 stringResource(R.string.notebook_note_dialog_title),
@@ -3178,10 +3175,9 @@ private fun EpubAppearancePanel(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                stringResource(R.string.reader_instruments),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.reader_instruments),
+                strong = true
             )
             BrassRule(Modifier.width(76.dp))
             Text(
@@ -3211,10 +3207,9 @@ private fun EpubAppearancePanel(
         }
 
         if (capabilities.fixedLayout) {
-            Text(
-                stringResource(R.string.reader_fixed_spread_title),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.reader_fixed_spread_title),
+                strong = true
             )
             Row(
                 modifier = Modifier
@@ -3277,11 +3272,13 @@ private fun EpubAppearancePanel(
                     )
                 ) {
                     Box(contentAlignment = Alignment.Center) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                            color = if (selected) VeilPalette.Moon
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        VeilMicroLabel(
+                            text = label,
+                            color = if (selected) {
+                                VeilPalette.Moon
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
                         )
                     }
                 }
@@ -3291,10 +3288,9 @@ private fun EpubAppearancePanel(
 
         if (!showAdvanced) {
             if (!capabilities.fixedLayout) {
-            Text(
-                stringResource(R.string.settings_publication_theme),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.settings_publication_theme),
+                strong = true
             )
 
             listOf(
@@ -3330,11 +3326,10 @@ private fun EpubAppearancePanel(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.settings_text_size),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                    color = VeilPalette.Brass,
-                    modifier = Modifier.weight(1f)
+                VeilMicroLabel(
+                    text = stringResource(R.string.settings_text_size),
+                    modifier = Modifier.weight(1f),
+                    strong = true
                 )
                 Text(
                     formatPercent(draft.fontScale.toFloat()),
@@ -3357,10 +3352,9 @@ private fun EpubAppearancePanel(
             BrassRule(Modifier.fillMaxWidth())
             }
 
-            Text(
-                stringResource(R.string.settings_reading_mode_title),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.settings_reading_mode_title),
+                strong = true
             )
             ReaderReadingModeSelector(
                 selected = quickReadingMode,
@@ -3383,10 +3377,9 @@ private fun EpubAppearancePanel(
 
             BrassRule(Modifier.fillMaxWidth())
 
-            Text(
-                stringResource(R.string.settings_page_turn_title),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.settings_page_turn_title),
+                strong = true
             )
             if (quickReadingMode == ReaderReadingMode.SCROLL) {
                 ReaderCapabilityNotice(
@@ -3406,10 +3399,9 @@ private fun EpubAppearancePanel(
                 )
             }
         } else {
-            Text(
-                stringResource(R.string.reader_typography_layout),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.reader_typography_layout),
+                strong = true
             )
 
             if (draft.publisherStyles) {
@@ -3548,10 +3540,9 @@ private fun EpubAppearancePanel(
 
             BrassRule(Modifier.fillMaxWidth())
 
-            Text(
-                stringResource(R.string.reader_spacing_shaping),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.reader_spacing_shaping),
+                strong = true
             )
             if (capabilities.rtlPublication && !capabilities.fixedLayout) {
                 ReaderCapabilityNotice(
@@ -3865,9 +3856,7 @@ private fun ReaderAppearanceChoice(
         ) {
             Text(
                 label,
-                style = MaterialTheme.typography.labelLarge.copy(
-                    letterSpacing = if (selected) 0.34.sp else 0.18.sp
-                ),
+                style = MaterialTheme.typography.labelLarge,
                 color = foreground,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -4038,11 +4027,10 @@ private fun ReaderAppearancePreview(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.reader_sample_preview),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                    color = VeilPalette.Brass,
-                    modifier = Modifier.weight(1f)
+                VeilMicroLabel(
+                    text = stringResource(R.string.reader_sample_preview),
+                    modifier = Modifier.weight(1f),
+                    strong = true
                 )
                 Text(
                     localizedReaderMotionSummary(appearance),
@@ -4083,7 +4071,7 @@ private fun ReaderAppearancePreview(
                 ) {
                     Text(
                         stringResource(R.string.reader_sample_chapter),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                        style = MaterialTheme.typography.labelSmall,
                         color = ink.copy(alpha = 0.58f)
                     )
                     Text(
