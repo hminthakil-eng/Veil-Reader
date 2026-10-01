@@ -413,7 +413,7 @@ fun ReaderNotebook(
                                             Arrangement.spacedBy(8.dp)
                                     ) {
                                         Text(
-                                            link.title ?: stringResource(
+                                            link.title?.takeIf { it.isNotBlank() } ?: stringResource(
                                                 R.string.reader_notebook_untitled_section
                                             ),
                                             modifier = Modifier.weight(1f),
@@ -464,7 +464,9 @@ fun ReaderNotebook(
                                         color = VeilPalette.Brass
                                     )
                                     Text(
-                                        bookmark.label,
+                                        bookmark.label.ifBlank {
+                                            stringResource(R.string.reader_notebook_saved_place)
+                                        },
                                         style = MaterialTheme.typography.titleSmall,
                                         color = VeilPalette.Moon
                                     )
