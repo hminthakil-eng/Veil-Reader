@@ -5,6 +5,7 @@ Base reviewed: `2f2802aabdbdc910509d72a888608a66be17da65`
 Branch: `alpha/w26-arena-canonical-ui-rebuild-v1`
 PR: #349, OPEN / DRAFT
 Status: SOURCE-REVIEWED; reconstruction remains active.
+Review extended through canonical head `e9b0ee7ccc87d186283b208276d2d34a8f468b4e` for W50 adaptive Reader controls.
 
 This is a focused W39–W47 follow-up, not full-app or release certification.
 The governing single-branch contract remains unchanged.
@@ -15,7 +16,7 @@ The governing single-branch contract remains unchanged.
 - PDF layout callbacks copy only `scroll`. They preserve the retained EPUB `pageTurnStyle`. Paper/Slide overlays explicitly require EPUB and non-scroll presentation in ReaderScreen. The existing preference mapping tests protect EPUB mode independence.
 - Missing Library records call the owned `bookOpenFailed(targetId, openRequestId)` path and show resource-based recovery copy instead of leaving the open route waiting.
 - Image-viewer caption fallback, pan clamping and decode sampling have existing regression tests. Those Android/Kotlin suites were inspected, not executed locally.
-- Reading mode, Page turn, spread and Advanced Appearance use the existing dense-choice policy. PDF layout choices were still always equal-width horizontal controls: this was the concrete gap selected for repair.
+- Reading mode, Page turn, spread, Advanced Appearance, Settings dense choices and Reader Notebook rails now use the existing dense-choice policy against measured container width rather than whole-screen width. PDF layout choices use the same measured-width rule.
 - VeilMicroLabel detects Arabic-script labels and avoids Latin uppercase/tracking. PDF layout choices retain that primitive and localized Page/Continuous semantics.
 - Shell rail width and RTL transition direction have existing policy tests. Canonical chamber SavedState restoration/exclusivity is covered by VeilAppViewModelTest.
 - Sensory execution already checks foreground state and audio volume. This change adds no sensory layer or decorative Reader animation.
@@ -26,6 +27,9 @@ The governing single-branch contract remains unchanged.
 - Both layouts share one private PDF choice renderer, radio-button semantics, localized descriptions and a minimum 72dp target.
 - Renderer connecting/delayed copy has a polite live region so the transition to explicit recovery can be announced without moving focus.
 - Added a PDF preference round-trip matrix across Paper, Slide and None, checking both retained decoration and PDF fit/axis mapping.
+- Reader Notebook tabs and bookmark/note action rails no longer depend on horizontal scrolling; narrow containers and large text stack controls at full width.
+- Settings dense choices and Reader Appearance selectors now derive breakpoints from their actual available width. This covers constrained dialogs, tablet split layouts and foldable/windowed surfaces without changing preference semantics.
+- PDF zoom header now stacks at narrow measured width or large font scale. Zoom behavior itself is unchanged.
 
 No persistence, schema, reader-session, renderer, navigation transaction or zoom behavior was changed.
 
@@ -49,8 +53,8 @@ These runs are executing useful steps, not empty runner-allocation failures. The
 
 ## Remaining review targets
 
-1. Reader Notebook note/bookmark action rails still use horizontal scrolling. Review full-width actions at large text and long Persian labels before adapting them.
-2. Several EPUB/Settings selectors use screen width rather than their measured content width. Review constrained dialog/tablet widths before changing their existing breakpoints.
-3. PDF zoom header/reset controls still need device inspection at narrow widths and 200% text; source review alone cannot prove fit.
-4. Continue selection/live-preview/previous-location/chapter-boundary/process-recreation interaction review. This focused pass does not certify those paths.
+1. Device-inspect Reader Notebook tabs/action rails with long Persian labels at 200% text. Source layout is now measured-width and scroll-free, but runtime fit is not yet certified.
+2. Device-inspect Settings/Reader measured-width breakpoints on phone, tablet, foldable and constrained dialog surfaces. Source-level screen-width dependency has been removed from the reviewed controls.
+3. PDF zoom header/reset controls still need device inspection at narrow widths and 200% text; the header is now adaptive, but source review alone cannot prove the three-button zoom rail on every device/font combination.
+4. Continue selection/live-preview/previous-location/chapter-boundary interaction review. Process-recreation ownership already has SavedState/checkpoint regression coverage; this focused pass still does not certify the complete interaction matrix.
 5. Full-app visual reference fidelity and release gates #261/#262/#263 remain open. Keep #349 Draft.
