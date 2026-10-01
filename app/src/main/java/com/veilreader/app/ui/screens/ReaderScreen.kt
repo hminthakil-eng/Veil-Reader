@@ -3211,26 +3211,57 @@ private fun EpubAppearancePanel(
                 text = stringResource(R.string.reader_fixed_spread_title),
                 strong = true
             )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderFixedLayoutSpread.entries.forEach { mode ->
-                    ReaderAppearanceChoice(
-                        label = when (mode) {
-                            ReaderFixedLayoutSpread.AUTO ->
-                                stringResource(R.string.reader_fixed_spread_auto)
-                            ReaderFixedLayoutSpread.SINGLE ->
-                                stringResource(R.string.reader_fixed_spread_single)
-                            ReaderFixedLayoutSpread.DUAL ->
-                                stringResource(R.string.reader_fixed_spread_dual)
-                        },
-                        selected = fixedLayoutSpread == mode,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onSpreadChange(mode) }
-                    )
+            val configuration = LocalConfiguration.current
+            val stackedSpreadChoices = shouldStackDenseChoices(
+                widthDp = configuration.screenWidthDp,
+                fontScale = configuration.fontScale,
+                optionCount = ReaderFixedLayoutSpread.entries.size
+            )
+            if (stackedSpreadChoices) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ReaderFixedLayoutSpread.entries.forEach { mode ->
+                        ReaderAppearanceChoice(
+                            label = when (mode) {
+                                ReaderFixedLayoutSpread.AUTO ->
+                                    stringResource(R.string.reader_fixed_spread_auto)
+                                ReaderFixedLayoutSpread.SINGLE ->
+                                    stringResource(R.string.reader_fixed_spread_single)
+                                ReaderFixedLayoutSpread.DUAL ->
+                                    stringResource(R.string.reader_fixed_spread_dual)
+                            },
+                            selected = fixedLayoutSpread == mode,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onSpreadChange(mode) }
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ReaderFixedLayoutSpread.entries.forEach { mode ->
+                        ReaderAppearanceChoice(
+                            label = when (mode) {
+                                ReaderFixedLayoutSpread.AUTO ->
+                                    stringResource(R.string.reader_fixed_spread_auto)
+                                ReaderFixedLayoutSpread.SINGLE ->
+                                    stringResource(R.string.reader_fixed_spread_single)
+                                ReaderFixedLayoutSpread.DUAL ->
+                                    stringResource(R.string.reader_fixed_spread_dual)
+                            },
+                            selected = fixedLayoutSpread == mode,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSpreadChange(mode) }
+                        )
+                    }
                 }
             }
             Text(
