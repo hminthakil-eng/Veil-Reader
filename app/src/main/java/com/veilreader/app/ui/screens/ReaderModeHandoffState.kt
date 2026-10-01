@@ -120,10 +120,11 @@ internal fun ReaderModeHandoffOverlay(
 internal fun shouldCaptureReaderModeHandoff(
     format: BookFormat,
     previousMode: ReaderNavigationMode,
-    requestedMode: ReaderNavigationMode
+    requestedMode: ReaderNavigationMode,
+    fixedLayoutSpreadChanged: Boolean = false
 ): Boolean =
     format == BookFormat.EPUB &&
-        previousMode != requestedMode
+        (previousMode != requestedMode || fixedLayoutSpreadChanged)
 
 internal fun readerPreferenceSettleFrames(
     previousMode: ReaderNavigationMode,
