@@ -112,6 +112,11 @@
     <string name="settings_line_height">Line height</string>
     <string name="settings_page_margins">Page margins</string>
     <string name="settings_reading_motion">Reading motion</string>
+    <string name="settings_reading_mode_title">Reading mode</string>
+    <string name="settings_reading_mode_paged_description">Discrete pages. Choose the page-turn feel separately.</string>
+    <string name="settings_page_turn_title">Page turn</string>
+    <string name="settings_page_turn_none">None</string>
+    <string name="settings_page_turn_scroll_hint">Page-turn style is remembered and resumes when you return to Paged mode.</string>
     <string name="settings_publisher_styles">Publisher styles</string>
     <string name="settings_publisher_styles_description">Keep the publication typography and styling when available. This can override Veil theme colors.</string>
     <string name="settings_brightness">Reading brightness</string>
