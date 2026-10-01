@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.ui.theme.VeilAdaptiveClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -198,6 +199,11 @@ fun TreasuryScreen(
         LocalConfiguration.current.screenWidthDp.toFloat()
     )
     val treasuryLayout = castleLayoutPolicyFor(treasuryAdaptiveClass)
+    val relicRows = if (treasuryAdaptiveClass == VeilAdaptiveClass.COMPACT) {
+        readingRelics.map { listOf(it) }
+    } else {
+        readingRelics.chunked(2)
+    }
 
     Box(
         modifier = Modifier
@@ -272,7 +278,7 @@ fun TreasuryScreen(
         )
 
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            readingRelics.chunked(2).forEachIndexed { rowIndex, row ->
+            relicRows.forEachIndexed { rowIndex, row ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
