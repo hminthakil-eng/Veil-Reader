@@ -2984,7 +2984,7 @@ private fun BookLibraryTile(
                 )
             }
 
-            if (artifact.hasHistory) {
+            if (artifact.progress > 0f) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -2993,7 +2993,7 @@ private fun BookLibraryTile(
                 ) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth(artifact.progress.coerceIn(0.04f, 1f))
+                            .fillMaxWidth(artifact.progress.coerceIn(0f, 1f))
                             .fillMaxHeight()
                             .background(registrationColor)
                     )
