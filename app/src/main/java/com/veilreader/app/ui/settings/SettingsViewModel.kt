@@ -53,4 +53,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun saveSensorySettings(settings: SensorySettings) {
         viewModelScope.launch { store.saveSensorySettings(settings) }
     }
+
+    fun setGameVisible(visible: Boolean) {
+        viewModelScope.launch { store.setGameVisible(visible) }
+    }
 }
