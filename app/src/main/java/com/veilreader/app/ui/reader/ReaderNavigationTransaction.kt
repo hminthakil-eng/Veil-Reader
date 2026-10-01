@@ -1,7 +1,7 @@
 package com.veilreader.app.ui.reader
 
 import kotlin.math.abs
-import org.json.JSONObject
+import org.readium.r2.shared.publication.Locator
 
 /**
  * Owns one programmatic Reader jump until the debounced navigator stream publishes its settled
@@ -14,7 +14,7 @@ import org.json.JSONObject
 internal data class ReaderNavigationTransaction(
     val token: Long,
     val originLocatorJson: String?,
-    val targetLocatorJson: String?,
+    val targetIdentity: ReaderNavigationIdentity?,
     val targetHref: String?,
     val passageVisitLocatorJson: String?,
     val startedAtElapsedMs: Long
@@ -44,98 +44,76 @@ internal fun shouldStartReaderLinkJump(
     return current == null || current != target
 }
 
+internal data class ReaderNavigationIdentity(
+    val href: String?,
+    val position: Int?,
+    val cssSelector: String?,
+    val totalProgression: Double?
+)
+
+internal fun Locator.toReaderNavigationIdentity(): ReaderNavigationIdentity =
+    ReaderNavigationIdentity(
+        href = href.toString(),
+        position = locations.position,
+        cssSelector = (locations["cssSelector"] as? String)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() },
+        totalProgression = locations.totalProgression
+    )
+
 internal fun readerNavigationTargetMatches(
-    observedLocatorJson: String?,
-    targetLocatorJson: String?,
+    observed: ReaderNavigationIdentity?,
+    target: ReaderNavigationIdentity?,
     targetHref: String?
 ): Boolean {
-    if (!targetLocatorJson.isNullOrBlank()) {
-        return readerLocatorMatchesTarget(
-            observedLocatorJson = observedLocatorJson,
-            targetLocatorJson = targetLocatorJson
+    if (target != null) {
+        return readerNavigationIdentityMatchesTarget(
+            observed = observed,
+            target = target
         )
     }
     if (!targetHref.isNullOrBlank()) {
-        val observedHref = locatorHref(observedLocatorJson) ?: return false
+        val observedHref = observed?.href?.trim()?.takeIf { it.isNotEmpty() } ?: return false
         return readerResourceHref(observedHref) == readerResourceHref(targetHref)
     }
     return true
 }
 
-internal fun readerLocatorMatchesTarget(
-    observedLocatorJson: String?,
-    targetLocatorJson: String?
+internal fun readerNavigationIdentityMatchesTarget(
+    observed: ReaderNavigationIdentity?,
+    target: ReaderNavigationIdentity
 ): Boolean {
-    val observedRaw = observedLocatorJson?.trim()?.takeIf { it.isNotEmpty() } ?: return false
-    val targetRaw = targetLocatorJson?.trim()?.takeIf { it.isNotEmpty() } ?: return false
-    if (observedRaw == targetRaw) return true
+    observed ?: return false
 
-    val observed = runCatching { JSONObject(observedRaw) }.getOrNull() ?: return false
-    val target = runCatching { JSONObject(targetRaw) }.getOrNull() ?: return false
-
-    val targetHref = target.optString("href").trim().takeIf { it.isNotEmpty() }
-    val observedHref = observed.optString("href").trim().takeIf { it.isNotEmpty() }
+    val targetHref = target.href?.trim()?.takeIf { it.isNotEmpty() }
+    val observedHref = observed.href?.trim()?.takeIf { it.isNotEmpty() }
     if (targetHref != null) {
         if (observedHref == null) return false
         if (readerResourceHref(observedHref) != readerResourceHref(targetHref)) return false
     }
 
-    val observedLocations = observed.optJSONObject("locations")
-    val targetLocations = target.optJSONObject("locations")
-
-    val targetPosition = targetLocations?.numberOrNull("position")?.toInt()
-    val observedPosition = observedLocations?.numberOrNull("position")?.toInt()
-    if (targetPosition != null && observedPosition != null) {
-        return targetPosition == observedPosition
+    if (target.position != null && observed.position != null) {
+        return target.position == observed.position
     }
 
-    val targetCss = targetLocations
-        ?.optString("cssSelector")
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
-    val observedCss = observedLocations
-        ?.optString("cssSelector")
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
-    if (targetCss != null && observedCss != null) {
-        return targetCss == observedCss
+    if (target.cssSelector != null && observed.cssSelector != null) {
+        return target.cssSelector == observed.cssSelector
     }
 
-    val targetProgression = targetLocations?.numberOrNull("progression")?.toDouble()
-    val observedProgression = observedLocations?.numberOrNull("progression")?.toDouble()
-    if (targetProgression != null && observedProgression != null) {
-        return abs(targetProgression - observedProgression) <= LOCATOR_PROGRESSION_TOLERANCE
-    }
-
-    val targetTotalProgression = targetLocations?.numberOrNull("totalProgression")?.toDouble()
-    val observedTotalProgression = observedLocations?.numberOrNull("totalProgression")?.toDouble()
-    if (targetTotalProgression != null && observedTotalProgression != null) {
-        return abs(targetTotalProgression - observedTotalProgression) <=
+    if (target.totalProgression != null && observed.totalProgression != null) {
+        return abs(target.totalProgression - observed.totalProgression) <=
             LOCATOR_PROGRESSION_TOLERANCE
     }
 
     val targetHasLocationDiscriminator =
-        targetPosition != null ||
-            targetCss != null ||
-            targetProgression != null ||
-            targetTotalProgression != null
+        target.position != null ||
+            target.cssSelector != null ||
+            target.totalProgression != null
     return !targetHasLocationDiscriminator
-}
-
-private fun locatorHref(locatorJson: String?): String? {
-    val raw = locatorJson?.trim()?.takeIf { it.isNotEmpty() } ?: return null
-    return runCatching { JSONObject(raw) }
-        .getOrNull()
-        ?.optString("href")
-        ?.trim()
-        ?.takeIf { it.isNotEmpty() }
 }
 
 private fun readerResourceHref(href: String): String =
     href.trim().substringBefore('#')
-
-private fun JSONObject.numberOrNull(name: String): Number? =
-    if (has(name) && !isNull(name)) opt(name) as? Number else null
 
 private const val LOCATOR_PROGRESSION_TOLERANCE = 0.0025
 
@@ -149,14 +127,14 @@ internal class ReaderNavigationTransactionGate(
     fun begin(
         originLocatorJson: String?,
         nowElapsedMs: Long,
-        targetLocatorJson: String? = null,
+        targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
         passageVisitLocatorJson: String? = null
     ): ReaderNavigationTransaction {
         val transaction = ReaderNavigationTransaction(
             token = ++nextToken,
             originLocatorJson = originLocatorJson,
-            targetLocatorJson = targetLocatorJson,
+            targetIdentity = targetIdentity,
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson,
             startedAtElapsedMs = nowElapsedMs
@@ -177,7 +155,8 @@ internal class ReaderNavigationTransactionGate(
     @Synchronized
     fun consumeSettled(
         observedLocatorJson: String?,
-        nowElapsedMs: Long
+        nowElapsedMs: Long,
+        observedIdentity: ReaderNavigationIdentity? = null
     ): ReaderNavigationTransaction? {
         val transaction = freshActive(nowElapsedMs) ?: return null
 
@@ -195,8 +174,8 @@ internal class ReaderNavigationTransactionGate(
         // the original first-different-locator behavior.
         if (
             !readerNavigationTargetMatches(
-                observedLocatorJson = observedLocatorJson,
-                targetLocatorJson = transaction.targetLocatorJson,
+                observed = observedIdentity,
+                target = transaction.targetIdentity,
                 targetHref = transaction.targetHref
             )
         ) {
