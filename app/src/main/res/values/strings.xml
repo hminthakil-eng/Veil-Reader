@@ -224,6 +224,8 @@
     <string name="pdf_page_description">Single-page focus · pages remain contained in the viewport.</string>
     <string name="pdf_preparing">PREPARING DOCUMENT</string>
     <string name="pdf_renderer_connecting">Connecting to the PDF renderer…</string>
+    <string name="pdf_renderer_delayed">The PDF renderer is taking longer than expected. Your document is still safe; retry the connection.</string>
+    <string name="pdf_renderer_retry">Retry renderer</string>
     <string name="pdf_zoom">ZOOM</string>
     <string name="pdf_zoom_out">Zoom out</string>
     <string name="pdf_zoom_in">Zoom in</string>
