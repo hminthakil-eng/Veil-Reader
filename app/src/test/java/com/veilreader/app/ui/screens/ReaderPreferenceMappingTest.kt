@@ -25,6 +25,22 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35])
 class ReaderPreferenceMappingTest {
     @Test
+    fun `dense reading controls stack for large text and narrow widths`() {
+        assertTrue(shouldStackDenseChoices(widthDp = 412, fontScale = 2.0f, optionCount = 2))
+        assertTrue(shouldStackDenseChoices(widthDp = 412, fontScale = 1.35f, optionCount = 3))
+        assertTrue(shouldStackDenseChoices(widthDp = 340, fontScale = 1.0f, optionCount = 3))
+        assertTrue(shouldStackDenseChoices(widthDp = 300, fontScale = 1.0f, optionCount = 2))
+    }
+
+    @Test
+    fun `dense reading controls remain inline when there is safe room`() {
+        assertFalse(shouldStackDenseChoices(widthDp = 412, fontScale = 1.0f, optionCount = 2))
+        assertFalse(shouldStackDenseChoices(widthDp = 412, fontScale = 1.0f, optionCount = 3))
+        assertFalse(shouldStackDenseChoices(widthDp = 700, fontScale = 1.3f, optionCount = 3))
+    }
+
+
+    @Test
     fun `new reader sessions default to the paper sanctuary`() {
         val appearance = ReaderAppearance()
 
