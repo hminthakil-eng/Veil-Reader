@@ -49,6 +49,20 @@ internal data class PaperPageStackDepth(
     val rightDp: Float
 )
 
+internal fun isRenderablePaperCurlFrame(
+    width: Float,
+    height: Float,
+    edge: PaperCurlEdge
+): Boolean =
+    width.isFinite() &&
+        height.isFinite() &&
+        width > 0f &&
+        height > 0f &&
+        edge.top.x.isFinite() &&
+        edge.top.y.isFinite() &&
+        edge.bottom.x.isFinite() &&
+        edge.bottom.y.isFinite()
+
 internal data class PaperCurlPolygon(
     val vertices: List<Offset>
 ) {
