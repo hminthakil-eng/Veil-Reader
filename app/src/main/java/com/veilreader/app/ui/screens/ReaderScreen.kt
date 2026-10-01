@@ -1584,6 +1584,9 @@ fun ReaderScreen(
     val readerChromeForeground = if (lightReaderChrome) Color(0xFF2B241B) else VeilPalette.Moon
     val readerChromeMuted = readerChromeForeground.copy(alpha = 0.56f)
     val readerChromeAccent = if (lightReaderChrome) Color(0xFF8A6630) else VeilPalette.Brass
+    val readerBookTitle = opened.book.title.ifBlank {
+        stringResource(R.string.common_untitled_book)
+    }
     val readerSurfaceLabel = stringResource(R.string.reader_surface_label)
     val controlsActionLabel = stringResource(
         if (touchExplorationEnabled) {
@@ -1742,9 +1745,7 @@ fun ReaderScreen(
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             Text(
-                                opened.book.title.ifBlank {
-                                    stringResource(R.string.common_untitled_book)
-                                },
+                                readerBookTitle,
                                 style = MaterialTheme.typography.titleSmall,
                                 color = readerChromeForeground,
                                 maxLines = 1,
@@ -1861,7 +1862,7 @@ fun ReaderScreen(
                             if (locator != null) {
                                 val added = library.addBookmark(
                                     opened.book.id,
-                                    "${formatPercent(progress)} · ${locator.title ?: opened.book.title}",
+                                    "${formatPercent(progress)} · ${locator.title?.takeIf { it.isNotBlank() } ?: readerBookTitle}",
                                     locator.toVeilPersistedJson(opened.format)
                                 )
                                 if (added) {
