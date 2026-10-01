@@ -96,7 +96,6 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
-import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.readerObservedLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
