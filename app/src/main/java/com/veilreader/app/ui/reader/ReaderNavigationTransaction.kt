@@ -16,6 +16,7 @@ internal data class ReaderNavigationTransaction(
     val originLocatorJson: String?,
     val targetLocatorJson: String?,
     val targetHref: String?,
+    val passageVisitLocatorJson: String?,
     val startedAtElapsedMs: Long
 )
 
@@ -149,13 +150,15 @@ internal class ReaderNavigationTransactionGate(
         originLocatorJson: String?,
         nowElapsedMs: Long,
         targetLocatorJson: String? = null,
-        targetHref: String? = null
+        targetHref: String? = null,
+        passageVisitLocatorJson: String? = null
     ): ReaderNavigationTransaction {
         val transaction = ReaderNavigationTransaction(
             token = ++nextToken,
             originLocatorJson = originLocatorJson,
             targetLocatorJson = targetLocatorJson,
             targetHref = targetHref,
+            passageVisitLocatorJson = passageVisitLocatorJson,
             startedAtElapsedMs = nowElapsedMs
         )
         active = transaction
