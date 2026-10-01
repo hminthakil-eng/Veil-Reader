@@ -3878,19 +3878,42 @@ private fun ReaderAppearanceSlider(
     val safeValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
     val valueDescription = valueLabel(safeValue)
 
+    val configuration = LocalConfiguration.current
+    val stackedHeader = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = 2
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-            Text(
-                valueDescription,
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                    alpha = if (enabled) 1f else 0.48f
+        if (stackedHeader) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(label, style = MaterialTheme.typography.titleSmall)
+                Text(
+                    valueDescription,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                        alpha = if (enabled) 1f else 0.48f
+                    )
                 )
-            )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(
+                    valueDescription,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                        alpha = if (enabled) 1f else 0.48f
+                    )
+                )
+            }
         }
         Slider(
             value = safeValue,
@@ -3926,12 +3949,19 @@ private fun ReaderAppearanceNullableSlider(
         valueLabel(safeValue)
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+    val configuration = LocalConfiguration.current
+    val stackedHeader = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = 3
+    )
+
+    @Composable
+    fun ValueAndReset() {
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
             Text(
                 valueDescription,
                 style = MaterialTheme.typography.labelSmall,
@@ -3943,6 +3973,26 @@ private fun ReaderAppearanceNullableSlider(
                 modifier = Modifier.heightIn(min = 48.dp)
             ) {
                 Text(stringResource(R.string.reader_value_reset))
+            }
+        }
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        if (stackedHeader) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(label, style = MaterialTheme.typography.titleSmall)
+                ValueAndReset()
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                ValueAndReset()
             }
         }
         Slider(
@@ -3966,24 +4016,52 @@ private fun ReaderAppearanceTriState(
     onChange: (ReaderPreferenceToggle) -> Unit,
     enabled: Boolean = true
 ) {
+    val configuration = LocalConfiguration.current
+    val stacked = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = ReaderPreferenceToggle.entries.size
+    )
+
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title, style = MaterialTheme.typography.titleSmall)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            ReaderPreferenceToggle.entries.forEach { option ->
-                ReaderAppearanceChoice(
-                    label = when (option) {
-                        ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
-                        ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
-                        ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
-                    },
-                    selected = value == option,
-                    enabled = enabled,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onChange(option) }
-                )
+        if (stacked) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderPreferenceToggle.entries.forEach { option ->
+                    ReaderAppearanceChoice(
+                        label = when (option) {
+                            ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
+                            ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
+                            ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
+                        },
+                        selected = value == option,
+                        enabled = enabled,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onChange(option) }
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                ReaderPreferenceToggle.entries.forEach { option ->
+                    ReaderAppearanceChoice(
+                        label = when (option) {
+                            ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
+                            ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
+                            ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
+                        },
+                        selected = value == option,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onChange(option) }
+                    )
+                }
             }
         }
     }
