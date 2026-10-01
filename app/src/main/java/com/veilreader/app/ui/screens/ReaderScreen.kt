@@ -1841,7 +1841,10 @@ fun ReaderScreen(
                 BookFormat.PDF -> PdfNavigatorFragment::class.java.name
                 else -> error("Unsupported reader format")
             },
-            tag = "reader-${opened.book.id}",
+            tag = readerFragmentTag(
+                bookId = opened.book.id,
+                readerSessionInstanceId = readerSessionInstanceId
+            ),
             onNavigatorReady = onNavigatorReady,
             onDisposePublication = onDisposePublication,
             modifier = Modifier.fillMaxSize()
@@ -3181,6 +3184,12 @@ private fun ReaderFragmentHost(
         }
     }
 }
+
+internal fun readerFragmentTag(
+    bookId: String,
+    readerSessionInstanceId: String
+): String =
+    "reader-${bookId.trim()}-${readerSessionInstanceId.trim()}"
 
 private data class ReaderFootnote(
     val title: String?,
