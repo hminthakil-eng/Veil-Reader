@@ -8,6 +8,24 @@ import org.junit.Test
 
 class VeilAppAdaptiveLayoutTest {
     @Test
+    fun `navigation rail widens for accessibility font scale`() {
+        assertEquals(88, navigationRailWidthDp(1.0f))
+        assertEquals(88, navigationRailWidthDp(1.59f))
+        assertEquals(112, navigationRailWidthDp(1.6f))
+        assertEquals(112, navigationRailWidthDp(2.0f))
+        assertEquals(88, navigationRailWidthDp(Float.NaN))
+    }
+
+    @Test
+    fun `tab slide direction mirrors in RTL`() {
+        assertEquals(1, tabSlideDirection(initialOrdinal = 0, targetOrdinal = 1, rtl = false))
+        assertEquals(-1, tabSlideDirection(initialOrdinal = 0, targetOrdinal = 1, rtl = true))
+        assertEquals(-1, tabSlideDirection(initialOrdinal = 3, targetOrdinal = 1, rtl = false))
+        assertEquals(1, tabSlideDirection(initialOrdinal = 3, targetOrdinal = 1, rtl = true))
+    }
+
+
+    @Test
     fun `compact width keeps bottom dock`() {
         assertFalse(shouldUseNavigationRail(size(width = 599, height = 800)))
     }
