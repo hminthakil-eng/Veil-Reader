@@ -122,6 +122,31 @@ internal data class LibraryShelfLabels(
     val waitingOnShelf: String
 )
 
+internal data class LibraryNamedBookGroup(
+    val name: String,
+    val books: List<Book>
+)
+
+internal fun groupLibraryBooksByLabel(
+    entries: List<Pair<String, Book>>
+): List<LibraryNamedBookGroup> =
+    entries
+        .mapNotNull { (rawName, book) ->
+            rawName.trim().takeIf { it.isNotEmpty() }?.let { it to book }
+        }
+        .groupBy { (name, _) -> name.lowercase(Locale.ROOT) }
+        .map { (_, taggedBooks) ->
+            val displayName = taggedBooks
+                .map { it.first }
+                .distinct()
+                .sortedWith(compareBy<String> { it.lowercase(Locale.ROOT) }.thenBy { it })
+                .first()
+            LibraryNamedBookGroup(
+                name = displayName,
+                books = taggedBooks.map { it.second }.distinctBy { it.id }
+            )
+        }
+
 internal fun deriveLibraryShelfGroups(
     books: List<Book>,
     filtered: List<Book>,
