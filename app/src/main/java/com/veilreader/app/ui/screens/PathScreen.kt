@@ -225,10 +225,9 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                identity.aspect,
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.75.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = identity.aspect,
+                strong = true
             )
 
             PathSigil(
@@ -263,9 +262,8 @@ private fun PathIdentityPanel(profile: ReaderProfile) {
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    stringResource(R.string.path_level, profile.level),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+                VeilMicroLabel(
+                    text = stringResource(R.string.path_level, profile.level),
                     color = VeilPalette.Brass.copy(alpha = 0.84f)
                 )
                 Text(
@@ -603,13 +601,12 @@ private fun RitualPanel(
             modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text(
-                stringResource(
+            VeilMicroLabel(
+                text = stringResource(
                     if (nextRankLabel == null) R.string.path_complete
                     else R.string.path_next_threshold
                 ),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                color = VeilPalette.Brass
+                strong = true
             )
 
             Text(
@@ -1040,12 +1037,9 @@ private fun AdvancementCeremonyDialog(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
-                    Text(
-                        pathName.uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            letterSpacing = 1.5.sp
-                        ),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = pathName,
+                        strong = true
                     )
 
                     PathSigil(
@@ -1196,10 +1190,9 @@ private fun CheckMarkIcon(modifier: Modifier, tint: Color) {
 @Composable
 private fun SectionHeading(eyebrow: String, title: String) {
     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(
-            eyebrow.uppercase(),
-            style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
-            color = VeilPalette.Brass
+        VeilMicroLabel(
+            text = eyebrow,
+            strong = true
         )
         Text(title, style = MaterialTheme.typography.titleLarge)
     }
