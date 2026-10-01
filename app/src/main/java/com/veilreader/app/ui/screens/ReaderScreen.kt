@@ -1011,7 +1011,7 @@ fun ReaderScreen(
             !imageLoading &&
             imageViewer == null &&
             footnote == null &&
-            pendingNoteHighlightId == null
+            pendingNoteLocatorJson == null
     ) {
         when (
             readerBackDisposition(
@@ -1548,7 +1548,7 @@ fun ReaderScreen(
                                 showNotebook ||
                                 showAppearance ||
                                 showPdfZoom ||
-                                pendingNoteHighlightId != null ||
+                                pendingNoteLocatorJson != null ||
                                 footnote != null ||
                                 imageLoading ||
                                 imageViewer != null,
