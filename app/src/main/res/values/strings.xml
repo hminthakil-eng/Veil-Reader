@@ -332,6 +332,7 @@
     <string name="book_detail_place_many">%1$d saved places</string>
     <string name="book_detail_preserved_memory">PRESERVED MEMORY</string>
     <string name="book_detail_preserved_fragments">Preserved fragments</string>
+    <string name="book_detail_preserved_note_only">Preserved note</string>
     <string name="book_detail_more_preserved">+%1$d more preserved in Hidden Archive</string>
     <string name="book_detail_favorite_badge">FAVORITE</string>
     <string name="book_detail_archive_surface">Surface shelf</string>
