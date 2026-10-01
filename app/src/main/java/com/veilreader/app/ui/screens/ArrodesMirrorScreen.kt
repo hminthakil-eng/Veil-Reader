@@ -229,8 +229,8 @@ fun ArrodesMirrorScreen(
 
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .widthIn(max = 430.dp)
+                        .fillMaxWidth()
                         .aspectRatio(0.72f)
                         .clip(RoundedCornerShape(percent = 50))
                         .background(
