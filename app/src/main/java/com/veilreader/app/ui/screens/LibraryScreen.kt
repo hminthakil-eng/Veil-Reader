@@ -2883,6 +2883,7 @@ private fun BookLibraryTile(
     onDetails: () -> Unit
 ) {
     val formatPercent = rememberVeilPercentFormatter()
+    val artifact = bookArtifactState(book, memory = artifactMemory)
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
     val favoriteLabel = stringResource(
         if (book.favorite) R.string.library_remove_favorite_semantics
@@ -2890,83 +2891,185 @@ private fun BookLibraryTile(
         book.title
     )
     val detailsLabel = stringResource(R.string.library_book_details_semantics, book.title)
+    val registrationColor = when {
+        artifact.finished -> VeilPalette.Brass
+        artifact.recentlyOpened -> VeilPalette.Spirit
+        artifact.favorite -> VeilPalette.Brass.copy(alpha = 0.78f)
+        artifact.readingState == BookReadingState.ACTIVE -> VeilPalette.Mist.copy(alpha = 0.72f)
+        else -> VeilPalette.BorderDark
+    }
+    val borderAlpha = (0.24f + artifact.patina.level * 0.055f).coerceAtMost(0.46f)
 
-    Column(
-        Modifier
+    Surface(
+        modifier = Modifier
             .fillMaxWidth()
             .clickable(
                 role = Role.Button,
                 onClickLabel = readLabel,
                 onClick = onOpen
             ),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        shape = MaterialTheme.shapes.extraSmall,
+        color = VeilPalette.Archive.copy(alpha = 0.50f),
+        border = BorderStroke(
+            1.dp,
+            VeilPalette.Brass.copy(alpha = borderAlpha)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        BookCover(
-            title = book.title,
-            subtitle = book.author,
-            imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book, memory = artifactMemory),
-            modifier = Modifier
-                .fillMaxWidth()
-                .aspectRatio(0.69f)
-        )
-
-        Text(
-            book.title,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        Text(
-            book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.labelMedium,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis
-        )
-
-        ArchiveDepthMark(archiveMemory)
-
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            Text(
-                when {
-                    book.finished -> stringResource(R.string.book_detail_finished)
-                    book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
-                    else -> book.format.name
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass.copy(alpha = 0.88f),
-                modifier = Modifier.weight(1f)
-            )
-
-            IconButton(
-                onClick = onFavorite,
+            Box(
                 modifier = Modifier
-                    .size(48.dp)
-                    .semantics {
-                        contentDescription = favoriteLabel
-                    }
+                    .fillMaxWidth()
+                    .aspectRatio(0.69f)
+                    .padding(7.dp)
             ) {
-                FavoriteIcon(book.favorite, Modifier.size(15.dp))
+                BookCover(
+                    title = book.title,
+                    subtitle = book.author,
+                    imagePath = book.coverCachePath,
+                    artifact = artifact,
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.CenterStart)
+                        .width(3.dp)
+                        .fillMaxHeight()
+                        .background(registrationColor)
+                )
             }
 
-            IconButton(
-                onClick = onDetails,
-                modifier = Modifier
-                    .size(48.dp)
-                    .semantics {
-                        contentDescription = detailsLabel
-                    }
+            if (artifact.hasHistory) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(2.dp)
+                        .background(VeilPalette.BorderDark.copy(alpha = 0.70f))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(artifact.progress.coerceIn(0.04f, 1f))
+                            .fillMaxHeight()
+                            .background(registrationColor)
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier.padding(
+                    start = VeilSpacing.sm,
+                    end = VeilSpacing.sm,
+                    top = VeilSpacing.sm,
+                    bottom = 4.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                EllipsisIcon(
-                    Modifier.size(15.dp),
-                    MaterialTheme.colorScheme.onSurfaceVariant
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        when {
+                            book.finished -> stringResource(R.string.library_completed)
+                            book.progress > 0f -> stringResource(
+                                R.string.book_detail_percent_read_text,
+                                formatPercent(book.progress.coerceIn(0f, 1f))
+                            )
+                            else -> stringResource(R.string.library_unopened)
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.55.sp),
+                        color = registrationColor,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (artifact.recentlyOpened) {
+                        Box(
+                            modifier = Modifier
+                                .size(5.dp)
+                                .clip(CircleShape)
+                                .background(VeilPalette.Spirit.copy(alpha = 0.90f))
+                        )
+                    }
+                }
+
+                Text(
+                    book.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.Moon,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
+
+                Text(
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
+                    color = VeilPalette.Mist.copy(alpha = 0.78f),
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                ArchiveDepthMark(archiveMemory)
+            }
+
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                VeilPalette.Brass.copy(alpha = 0.34f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .padding(start = 4.dp, end = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(
+                    onClick = onDetails,
+                    modifier = Modifier
+                        .weight(1f)
+                        .heightIn(min = 48.dp)
+                        .semantics {
+                            contentDescription = detailsLabel
+                        },
+                    contentPadding = PaddingValues(horizontal = 6.dp),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = VeilPalette.Brass
+                    )
+                ) {
+                    Text(
+                        stringResource(R.string.library_archive_record_button).uppercase(),
+                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.58.sp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                IconButton(
+                    onClick = onFavorite,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .semantics {
+                            contentDescription = favoriteLabel
+                        }
+                ) {
+                    FavoriteIcon(book.favorite, Modifier.size(15.dp))
+                }
             }
         }
     }
