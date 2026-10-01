@@ -49,6 +49,10 @@
     <string name="book_detail_edit_details">ویرایش جزئیات</string>
     <string name="book_detail_publication_details">جزئیات کتاب</string>
     <string name="book_detail_format">فرمت</string>
+    <string name="book_format_epub">EPUB</string>
+    <string name="book_format_pdf">PDF</string>
+    <string name="book_format_audio">صوتی</string>
+    <string name="book_format_comic">کمیک</string>
     <string name="book_detail_language">زبان</string>
     <string name="book_detail_pages">صفحات</string>
     <string name="book_detail_page_progress">%1$d / %2$d</string>
@@ -308,6 +312,7 @@
     <string name="capsule_event_completed">کتاب پایان یافت</string>
     <string name="capsule_event_latest">آخرین فعالیت ثبت‌شدهٔ کتاب</string>
     <string name="book_detail_artifact_chamber">تالار کتاب · %1$s</string>
+    <string name="book_detail_current_journey">مسیر فعلی</string>
     <string name="book_detail_reading_progress">پیشرفت مطالعه</string>
     <string name="book_detail_archive_history">تاریخچهٔ آرشیو</string>
     <string name="book_detail_archived">بایگانی‌شده</string>
