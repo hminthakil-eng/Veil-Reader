@@ -591,7 +591,15 @@ class LocalLibraryRepository internal constructor(
         return record
     }
 
-    internal fun commitSelectionNote(
+    /**
+     * Commits a selection note against durable Room state, never the eventually-consistent Flow
+     * projection. An older observer emission can temporarily repopulate [_highlights] after a
+     * delete; using that cache as edit authority would resurrect a record the user already removed.
+     *
+     * The read and upsert share the serialized write queue, so an existing-highlight edit is valid
+     * only if that exact row still exists when the commit reaches Room.
+     */
+    internal suspend fun commitSelectionNote(
         bookId: String,
         quote: String,
         locatorJson: String,
@@ -603,44 +611,59 @@ class LocalLibraryRepository internal constructor(
         val cleanNote = note.trim()
         if (bookId.isBlank() || cleanQuote.isBlank() || cleanLocator.isBlank()) return null
 
-        val currentHighlights = _highlights.value
-        val existing = when {
-            !existingHighlightId.isNullOrBlank() ->
-                currentHighlights.firstOrNull {
-                    it.id == existingHighlightId &&
-                        it.bookId == bookId
-                } ?: return null
-            else ->
-                currentHighlights.firstOrNull {
-                    it.bookId == bookId &&
-                        it.locatorJson == cleanLocator &&
-                        it.quote == cleanQuote
-                }
+        val result = orderedWrite {
+            val existing = when {
+                !existingHighlightId.isNullOrBlank() ->
+                    database.highlights()
+                        .findById(existingHighlightId)
+                        ?.toDomain()
+                        ?.takeIf { it.bookId == bookId }
+                        ?: return@orderedWrite null
+
+                else ->
+                    database.highlights()
+                        .findByBookAndLocator(bookId = bookId, locatorJson = cleanLocator)
+                        ?.toDomain()
+                        ?.takeIf { it.quote == cleanQuote }
+            }
+
+            val created = existing == null
+            val committed = existing
+                ?.copy(note = cleanNote)
+                ?: Highlight(
+                    id = UUID.randomUUID().toString(),
+                    bookId = bookId,
+                    quote = cleanQuote,
+                    locatorJson = cleanLocator,
+                    note = cleanNote
+                )
+
+            database.highlights().upsert(committed.toEntity())
+            SelectionNoteCommit(
+                highlight = committed,
+                created = created
+            )
         }
 
-        val created = existing == null
-        val committed = existing
-            ?.copy(note = cleanNote)
-            ?: Highlight(
-                id = UUID.randomUUID().toString(),
-                bookId = bookId,
-                quote = cleanQuote,
-                locatorJson = cleanLocator,
-                note = cleanNote
-            )
+        if (result == null) {
+            existingHighlightId?.takeIf { it.isNotBlank() }?.let { missingId ->
+                _highlights.value = _highlights.value.filterNot { it.id == missingId }
+            }
+            return null
+        }
 
-        _highlights.value = if (created) {
-            listOf(committed) + currentHighlights
-        } else {
+        val committed = result.highlight
+        val currentHighlights = _highlights.value
+        _highlights.value = if (result.created) {
+            listOf(committed) + currentHighlights.filterNot { it.id == committed.id }
+        } else if (currentHighlights.any { it.id == committed.id }) {
             currentHighlights.map { item ->
                 if (item.id == committed.id) committed else item
             }
+        } else {
+            listOf(committed) + currentHighlights
         }
-        enqueue { database.highlights().upsert(committed.toEntity()) }
-        return SelectionNoteCommit(
-            highlight = committed,
-            created = created
-        )
+        return result
     }
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
