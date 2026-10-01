@@ -498,7 +498,8 @@ fun BookCover(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     imagePath: String? = null,
-    artifact: BookArtifactState? = null
+    artifact: BookArtifactState? = null,
+    focusArtifact: Boolean = false
 ) {
     var coverSize by remember { mutableStateOf(IntSize.Zero) }
     val cachedCover by produceState<CachedCoverVisual?>(
@@ -529,8 +530,9 @@ fun BookCover(
         label = "cover-fade"
     )
 
+    val displayTitle = title.ifBlank { stringResource(R.string.common_untitled_book) }
     val aura = cachedCover?.aura
-        ?: fallbackBookAura(title)
+        ?: fallbackBookAura(displayTitle)
     val auraStrength = when {
         artifact?.recentlyOpened == true -> 0.40f
         artifact?.favorite == true -> 0.30f
@@ -542,17 +544,33 @@ fun BookCover(
         modifier = modifier
             .onSizeChanged { coverSize = it }
             .shadow(
-                elevation = if (artifact?.recentlyOpened == true) 9.dp else 7.dp,
+                elevation = when {
+                    focusArtifact -> 18.dp
+                    artifact?.recentlyOpened == true -> 9.dp
+                    else -> 7.dp
+                },
                 shape = shape,
-                ambientColor = aura.copy(alpha = auraStrength),
-                spotColor = Color.Black.copy(alpha = 0.32f)
+                ambientColor = aura.copy(
+                    alpha = if (focusArtifact) {
+                        (auraStrength + 0.18f).coerceAtMost(0.58f)
+                    } else {
+                        auraStrength
+                    }
+                ),
+                spotColor = Color.Black.copy(alpha = if (focusArtifact) 0.48f else 0.32f)
             )
             .clip(shape)
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(
                 BorderStroke(
                     1.dp,
-                    aura.copy(alpha = if (artifact == null) 0.48f else 0.56f)
+                    aura.copy(
+                        alpha = when {
+                            focusArtifact -> 0.82f
+                            artifact == null -> 0.48f
+                            else -> 0.56f
+                        }
+                    )
                 ),
                 shape
             )
@@ -560,7 +578,7 @@ fun BookCover(
             // Keep the image layers decorative so TalkBack does not announce the same title twice.
             .clearAndSetSemantics { }
     ) {
-        GeneratedBookCover(title = title, subtitle = subtitle)
+        GeneratedBookCover(title = displayTitle, subtitle = subtitle)
         cachedCover?.let { cover ->
             Image(
                 bitmap = cover.bitmap,
