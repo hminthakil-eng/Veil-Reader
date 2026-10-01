@@ -36,6 +36,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -4135,32 +4136,68 @@ internal fun ReaderReadingModeSelector(
     scrollEnabled: Boolean,
     onSelect: (ReaderReadingMode) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        listOf(
-            ReaderReadingMode.PAGED to ReaderNavigationMode.PAGED,
-            ReaderReadingMode.SCROLL to ReaderNavigationMode.SCROLL
-        ).forEach { (mode, previewMode) ->
-            val active = selected == mode
-            val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
-            ReaderModeChoice(
-                label = stringResource(
-                    if (mode == ReaderReadingMode.SCROLL) {
-                        R.string.settings_mode_scroll
-                    } else {
-                        R.string.settings_mode_paged
-                    }
-                ),
-                previewMode = previewMode,
-                active = active,
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-                onClick = { onSelect(mode) }
-            )
+    val configuration = LocalConfiguration.current
+    val choices = listOf(
+        ReaderReadingMode.PAGED to ReaderNavigationMode.PAGED,
+        ReaderReadingMode.SCROLL to ReaderNavigationMode.SCROLL
+    )
+    val stacked = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = choices.size
+    )
+
+    if (stacked) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            choices.forEach { (mode, previewMode) ->
+                val active = selected == mode
+                val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
+                ReaderModeChoice(
+                    label = stringResource(
+                        if (mode == ReaderReadingMode.SCROLL) {
+                            R.string.settings_mode_scroll
+                        } else {
+                            R.string.settings_mode_paged
+                        }
+                    ),
+                    previewMode = previewMode,
+                    active = active,
+                    enabled = enabled,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onSelect(mode) }
+                )
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            choices.forEach { (mode, previewMode) ->
+                val active = selected == mode
+                val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
+                ReaderModeChoice(
+                    label = stringResource(
+                        if (mode == ReaderReadingMode.SCROLL) {
+                            R.string.settings_mode_scroll
+                        } else {
+                            R.string.settings_mode_paged
+                        }
+                    ),
+                    previewMode = previewMode,
+                    active = active,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onSelect(mode) }
+                )
+            }
         }
     }
 }
@@ -4171,37 +4208,65 @@ internal fun ReaderPageTurnSelector(
     enabled: Boolean = true,
     onSelect: (PageTurnStyle) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        listOf(
-            Triple(
-                PageTurnStyle.PAPER,
-                ReaderNavigationMode.PAPER_CURL,
-                stringResource(R.string.settings_mode_curl)
-            ),
-            Triple(
-                PageTurnStyle.SLIDE,
-                ReaderNavigationMode.SLIDE,
-                stringResource(R.string.settings_mode_slide)
-            ),
-            Triple(
-                PageTurnStyle.NONE,
-                ReaderNavigationMode.PAGED,
-                stringResource(R.string.settings_page_turn_none)
-            )
-        ).forEach { (style, previewMode, label) ->
-            ReaderModeChoice(
-                label = label,
-                previewMode = previewMode,
-                active = selected == style,
-                enabled = enabled,
-                modifier = Modifier.weight(1f),
-                onClick = { onSelect(style) }
-            )
+    val configuration = LocalConfiguration.current
+    val choices = listOf(
+        Triple(
+            PageTurnStyle.PAPER,
+            ReaderNavigationMode.PAPER_CURL,
+            stringResource(R.string.settings_mode_curl)
+        ),
+        Triple(
+            PageTurnStyle.SLIDE,
+            ReaderNavigationMode.SLIDE,
+            stringResource(R.string.settings_mode_slide)
+        ),
+        Triple(
+            PageTurnStyle.NONE,
+            ReaderNavigationMode.PAGED,
+            stringResource(R.string.settings_page_turn_none)
+        )
+    )
+    val stacked = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = choices.size
+    )
+
+    if (stacked) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            choices.forEach { (style, previewMode, label) ->
+                ReaderModeChoice(
+                    label = label,
+                    previewMode = previewMode,
+                    active = selected == style,
+                    enabled = enabled,
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onSelect(style) }
+                )
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            choices.forEach { (style, previewMode, label) ->
+                ReaderModeChoice(
+                    label = label,
+                    previewMode = previewMode,
+                    active = selected == style,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f),
+                    onClick = { onSelect(style) }
+                )
+            }
         }
     }
 }
