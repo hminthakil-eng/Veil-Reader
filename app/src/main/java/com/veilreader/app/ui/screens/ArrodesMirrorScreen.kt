@@ -218,10 +218,12 @@ fun ArrodesMirrorScreen(
                     }
                 }
             } else {
+                val sourceBookTitle = fragment.book.title.trim().takeIf { it.isNotBlank() }
+                    ?: stringResource(R.string.common_untitled_book)
                 val actionDescription = if (manifested) {
                     stringResource(
                         R.string.mirror_content_description_open,
-                        fragment.book.title
+                        sourceBookTitle
                     )
                 } else {
                     stringResource(R.string.mirror_content_description_awaken)
@@ -353,7 +355,7 @@ fun ArrodesMirrorScreen(
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            fragment.book.title,
+                            sourceBookTitle,
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = TextAlign.Center
