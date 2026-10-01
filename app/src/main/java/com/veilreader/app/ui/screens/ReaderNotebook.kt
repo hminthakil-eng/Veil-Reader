@@ -2,18 +2,17 @@ package com.veilreader.app.ui.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,11 +44,67 @@ private enum class ReaderNotebookTab(val labelRes: Int) {
     SEARCH(R.string.reader_notebook_tab_search)
 }
 
+
+private data class ReaderNotebookAction(
+    val label: String,
+    val onClick: () -> Unit
+)
+
+@Composable
+private fun ReaderNotebookActionRail(
+    actions: List<ReaderNotebookAction>
+) {
+    if (actions.isEmpty()) return
+
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = actions.size
+        )
+
+        if (stacked) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                actions.forEach { action ->
+                    TextButton(
+                        onClick = action.onClick,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Text(action.label)
+                    }
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                actions.forEach { action ->
+                    TextButton(
+                        onClick = action.onClick,
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 48.dp)
+                    ) {
+                        Text(action.label)
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ReaderNotebookTabButton(
     tab: ReaderNotebookTab,
     selected: Boolean,
     count: Int?,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val formatInteger = rememberVeilIntegerFormatter()
@@ -61,7 +116,7 @@ private fun ReaderNotebookTabButton(
     }
 
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .heightIn(min = 48.dp)
             .selectable(
                 selected = selected,
@@ -300,28 +355,65 @@ fun ReaderNotebook(
                 )
             }
 
-            Row(
+            BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .selectableGroup()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    .padding(vertical = 8.dp)
             ) {
-                tabs.forEach { item ->
-                    val selected = tab == item
-                    val count = when (item) {
-                        ReaderNotebookTab.CONTENTS -> chapters.size
-                        ReaderNotebookTab.BOOKMARKS -> bookmarks.size
-                        ReaderNotebookTab.NOTES -> highlights.size
-                        ReaderNotebookTab.SEARCH -> null
+                val stackedTabs = shouldStackDenseChoices(
+                    widthDp = maxWidth.value.toInt(),
+                    fontScale = LocalDensity.current.fontScale,
+                    optionCount = tabs.size
+                )
+
+                if (stackedTabs) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectableGroup(),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        tabs.forEach { item ->
+                            val selected = tab == item
+                            val count = when (item) {
+                                ReaderNotebookTab.CONTENTS -> chapters.size
+                                ReaderNotebookTab.BOOKMARKS -> bookmarks.size
+                                ReaderNotebookTab.NOTES -> highlights.size
+                                ReaderNotebookTab.SEARCH -> null
+                            }
+                            ReaderNotebookTabButton(
+                                tab = item,
+                                selected = selected,
+                                count = count,
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = { tabName = item.name }
+                            )
+                        }
                     }
-                    ReaderNotebookTabButton(
-                        tab = item,
-                        selected = selected,
-                        count = count,
-                        onClick = { tabName = item.name }
-                    )
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        tabs.forEach { item ->
+                            val selected = tab == item
+                            val count = when (item) {
+                                ReaderNotebookTab.CONTENTS -> chapters.size
+                                ReaderNotebookTab.BOOKMARKS -> bookmarks.size
+                                ReaderNotebookTab.NOTES -> highlights.size
+                                ReaderNotebookTab.SEARCH -> null
+                            }
+                            ReaderNotebookTabButton(
+                                tab = item,
+                                selected = selected,
+                                count = count,
+                                modifier = Modifier.weight(1f),
+                                onClick = { tabName = item.name }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -470,19 +562,18 @@ fun ReaderNotebook(
                                         style = MaterialTheme.typography.titleSmall,
                                         color = VeilPalette.Moon
                                     )
-                                    Row(
-                                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        TextButton(
-                                            onClick = { onGo(bookmark.locatorJson) },
-                                            modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text(stringResource(R.string.reader_notebook_return)) }
-                                        TextButton(
-                                            onClick = { onDeleteBookmark(bookmark.id) },
-                                            modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text(stringResource(R.string.reader_notebook_remove)) }
-                                    }
+                                    ReaderNotebookActionRail(
+                                        actions = listOf(
+                                            ReaderNotebookAction(
+                                                label = stringResource(R.string.reader_notebook_return),
+                                                onClick = { onGo(bookmark.locatorJson) }
+                                            ),
+                                            ReaderNotebookAction(
+                                                label = stringResource(R.string.reader_notebook_remove),
+                                                onClick = { onDeleteBookmark(bookmark.id) }
+                                            )
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -566,34 +657,29 @@ fun ReaderNotebook(
                                             color = VeilPalette.Brass.copy(alpha = 0.88f)
                                         )
                                     }
-                                    Row(
-                                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                                        horizontalArrangement = Arrangement.spacedBy(2.dp)
-                                    ) {
-                                        TextButton(
-                                            onClick = { onGo(highlight.locatorJson) },
-                                            modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text(stringResource(R.string.archive_return_to_passage)) }
-                                        TextButton(
-                                            onClick = {
-                                                editingId = highlight.id
-                                                note = highlight.note
-                                                noteSaveErrorRes = null
-                                            },
-                                            modifier = Modifier.heightIn(min = 48.dp)
-                                        ) {
-                                            Text(
-                                                stringResource(
+                                    ReaderNotebookActionRail(
+                                        actions = listOf(
+                                            ReaderNotebookAction(
+                                                label = stringResource(R.string.archive_return_to_passage),
+                                                onClick = { onGo(highlight.locatorJson) }
+                                            ),
+                                            ReaderNotebookAction(
+                                                label = stringResource(
                                                     if (highlight.note.isBlank()) R.string.reader_notebook_annotate
                                                     else R.string.reader_notebook_edit_annotation
-                                                )
+                                                ),
+                                                onClick = {
+                                                    editingId = highlight.id
+                                                    note = highlight.note
+                                                    noteSaveErrorRes = null
+                                                }
+                                            ),
+                                            ReaderNotebookAction(
+                                                label = stringResource(R.string.common_delete),
+                                                onClick = { deletingId = highlight.id }
                                             )
-                                        }
-                                        TextButton(
-                                            onClick = { deletingId = highlight.id },
-                                            modifier = Modifier.heightIn(min = 48.dp)
-                                        ) { Text(stringResource(R.string.common_delete)) }
-                                    }
+                                        )
+                                    )
                                 }
                             }
                         }
