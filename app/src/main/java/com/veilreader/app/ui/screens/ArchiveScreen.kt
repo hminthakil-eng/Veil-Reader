@@ -65,7 +65,7 @@ fun ArchiveScreen(
     onDeleteBookmark: (String) -> Unit
 ) {
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.HIGHLIGHTS.name) }
+    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.NOTES.name) }
     var editingHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var noteDraft by rememberSaveable { mutableStateOf("") }
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -73,7 +73,7 @@ fun ArchiveScreen(
     var selectedCapsuleSealCode by rememberSaveable { mutableStateOf<String?>(null) }
 
     val selectedSection = runCatching { NotebookSection.valueOf(selectedSectionName) }
-        .getOrDefault(NotebookSection.HIGHLIGHTS)
+        .getOrDefault(NotebookSection.NOTES)
     val booksById = remember(books) { books.associateBy { it.id } }
     val archiveNow by produceState(initialValue = System.currentTimeMillis()) {
         while (true) {
