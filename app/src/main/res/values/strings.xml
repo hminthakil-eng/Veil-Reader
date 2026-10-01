@@ -864,6 +864,7 @@
     <string name="notice_import_failed">Could not import this publication. Check that the file is a valid EPUB or PDF and try again.</string>
     <string name="notice_duplicate_book">%1$s is already in your library. The existing copy was opened.</string>
     <string name="notice_book_file_missing">This book no longer has a local publication file. Import it again to read.</string>
+    <string name="notice_book_record_missing">This book is no longer in the local library. Return to the Archive and import it again if you still have the file.</string>
     <string name="notice_open_failed">Could not open this book. Check its local file and try again.</string>
     <string name="notice_pdf_migration_failed">The book opened, but an older PDF reading position could not be restored. Check your place before continuing.</string>
     <string name="notice_position_save_failed">The requested reading position is open, but could not be saved. Keep this book open and check device storage.</string>
