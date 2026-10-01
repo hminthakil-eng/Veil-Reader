@@ -26,6 +26,13 @@ class DenseChoiceLayoutPolicyTest {
     }
 
     @Test
+    fun `many-option controls abandon horizontal browsing at accessibility scale`() {
+        assertFalse(shouldStackDenseChoices(widthDp = 720, fontScale = 1f, optionCount = 7))
+        assertTrue(shouldStackDenseChoices(widthDp = 720, fontScale = 1.35f, optionCount = 7))
+        assertTrue(shouldStackDenseChoices(widthDp = 720, fontScale = 2f, optionCount = 7))
+    }
+
+    @Test
     fun `invalid font scale falls back to normal density behavior`() {
         assertFalse(shouldStackDenseChoices(widthDp = 411, fontScale = Float.NaN, optionCount = 3))
     }

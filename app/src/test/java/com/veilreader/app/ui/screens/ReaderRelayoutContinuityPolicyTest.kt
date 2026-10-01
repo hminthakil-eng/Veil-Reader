@@ -49,6 +49,28 @@ class ReaderRelayoutContinuityPolicyTest {
     }
 
     @Test
+    fun `later EPUB preference effects can finish an interrupted relayout checkpoint`() {
+        assertTrue(
+            shouldRefreshPendingEpubRelayout(
+                format = com.veilreader.app.domain.BookFormat.EPUB,
+                hasPendingAnchor = true
+            )
+        )
+        assertFalse(
+            shouldRefreshPendingEpubRelayout(
+                format = com.veilreader.app.domain.BookFormat.EPUB,
+                hasPendingAnchor = false
+            )
+        )
+        assertFalse(
+            shouldRefreshPendingEpubRelayout(
+                format = com.veilreader.app.domain.BookFormat.PDF,
+                hasPendingAnchor = true
+            )
+        )
+    }
+
+    @Test
     fun `stable anchor falls back to nearest non-exceeding total progression`() {
         val positions = listOf(
             EpubPositionAnchorSample(1, 0.0),

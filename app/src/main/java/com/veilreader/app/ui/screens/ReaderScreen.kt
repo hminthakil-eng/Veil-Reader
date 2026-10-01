@@ -1599,7 +1599,12 @@ fun ReaderScreen(
                 delay(VeilMotion.FRAME_SETTLE_MS)
             }
 
-            if (epubRelayoutRisk && pendingEpubRelayoutSourceJson != null) {
+            if (
+                shouldRefreshPendingEpubRelayout(
+                    format = opened.format,
+                    hasPendingAnchor = pendingEpubRelayoutSourceJson != null
+                )
+            ) {
                 val refreshed = try {
                     (nav as? EpubNavigatorFragment)?.firstVisibleElementLocator()
                 } catch (cancelled: CancellationException) {
@@ -3545,29 +3550,24 @@ private fun EpubAppearancePanel(
             }
 
             Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.titleSmall)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderFontFamily.entries.forEach { family ->
-                    ReaderAppearanceChoice(
-                        label = when (family) {
-                            ReaderFontFamily.PUBLISHER -> stringResource(R.string.settings_book_default)
-                            ReaderFontFamily.SERIF -> stringResource(R.string.settings_font_serif)
-                            ReaderFontFamily.SANS_SERIF -> stringResource(R.string.settings_font_sans)
-                            ReaderFontFamily.MONOSPACE -> stringResource(R.string.settings_font_mono)
-                            ReaderFontFamily.OPEN_DYSLEXIC -> stringResource(R.string.settings_font_opendyslexic)
-                            ReaderFontFamily.ACCESSIBLE_DFA -> stringResource(R.string.settings_font_accessible)
-                            ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
-                        },
-                        selected = draft.fontFamily == family,
-                        enabled = capabilities.typographyEditable,
-                        onClick = { updateDraft(draft.withFontFamily(family)) }
-                    )
-                }
-            }
+            ReaderAppearanceChoiceGroup(
+                entries = ReaderFontFamily.entries.toList(),
+                selected = draft.fontFamily,
+                label = { family ->
+                    when (family) {
+                        ReaderFontFamily.PUBLISHER -> stringResource(R.string.settings_book_default)
+                        ReaderFontFamily.SERIF -> stringResource(R.string.settings_font_serif)
+                        ReaderFontFamily.SANS_SERIF -> stringResource(R.string.settings_font_sans)
+                        ReaderFontFamily.MONOSPACE -> stringResource(R.string.settings_font_mono)
+                        ReaderFontFamily.OPEN_DYSLEXIC -> stringResource(R.string.settings_font_opendyslexic)
+                        ReaderFontFamily.ACCESSIBLE_DFA -> stringResource(R.string.settings_font_accessible)
+                        ReaderFontFamily.IA_WRITER_DUOSPACE -> stringResource(R.string.settings_font_duospace)
+                    }
+                },
+                enabled = { capabilities.typographyEditable },
+                scrollWhenInline = true,
+                onSelect = { family -> updateDraft(draft.withFontFamily(family)) }
+            )
 
             ReaderAppearanceNullableSlider(
                 label = stringResource(R.string.settings_font_weight),
@@ -3604,56 +3604,46 @@ private fun EpubAppearancePanel(
             )
 
             Text(stringResource(R.string.settings_text_alignment), style = MaterialTheme.typography.titleSmall)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderTextAlignment.entries.forEach { alignment ->
-                    ReaderAppearanceChoice(
-                        label = when (alignment) {
-                            ReaderTextAlignment.PUBLISHER -> stringResource(R.string.settings_book_default)
-                            ReaderTextAlignment.START -> stringResource(R.string.settings_align_start)
-                            ReaderTextAlignment.JUSTIFY -> stringResource(R.string.settings_align_justify)
-                            ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
-                        },
-                        selected = draft.textAlignment == alignment,
-                        enabled = capabilities.textAlignmentEditable,
-                        modifier = Modifier.weight(1f),
-                        onClick = { updateDraft(draft.withTextAlignment(alignment)) }
-                    )
-                }
-            }
+            ReaderAppearanceChoiceGroup(
+                entries = ReaderTextAlignment.entries.toList(),
+                selected = draft.textAlignment,
+                label = { alignment ->
+                    when (alignment) {
+                        ReaderTextAlignment.PUBLISHER -> stringResource(R.string.settings_book_default)
+                        ReaderTextAlignment.START -> stringResource(R.string.settings_align_start)
+                        ReaderTextAlignment.JUSTIFY -> stringResource(R.string.settings_align_justify)
+                        ReaderTextAlignment.CENTER -> stringResource(R.string.settings_align_center)
+                    }
+                },
+                enabled = { capabilities.textAlignmentEditable },
+                onSelect = { alignment -> updateDraft(draft.withTextAlignment(alignment)) }
+            )
 
             Text(stringResource(R.string.settings_columns), style = MaterialTheme.typography.titleSmall)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderColumnMode.entries.forEach { mode ->
-                    ReaderAppearanceChoice(
-                        label = when (mode) {
-                            ReaderColumnMode.AUTO -> stringResource(R.string.settings_column_auto)
-                            ReaderColumnMode.ONE -> stringResource(R.string.settings_column_one)
-                            ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
-                        },
-                        selected = draft.columnMode == mode,
-                        enabled = capabilities.columnsEditable,
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            updateDraft(
-                                draft.copy(
-                                    columnMode = mode,
-                                    publisherStyles = if (mode == ReaderColumnMode.AUTO) {
-                                        draft.publisherStyles
-                                    } else {
-                                        false
-                                    }
-                                )
-                            )
-                        }
+            ReaderAppearanceChoiceGroup(
+                entries = ReaderColumnMode.entries.toList(),
+                selected = draft.columnMode,
+                label = { mode ->
+                    when (mode) {
+                        ReaderColumnMode.AUTO -> stringResource(R.string.settings_column_auto)
+                        ReaderColumnMode.ONE -> stringResource(R.string.settings_column_one)
+                        ReaderColumnMode.TWO -> stringResource(R.string.settings_column_two)
+                    }
+                },
+                enabled = { capabilities.columnsEditable },
+                onSelect = { mode ->
+                    updateDraft(
+                        draft.copy(
+                            columnMode = mode,
+                            publisherStyles = if (mode == ReaderColumnMode.AUTO) {
+                                draft.publisherStyles
+                            } else {
+                                false
+                            }
+                        )
                     )
                 }
-            }
+            )
             if (!capabilities.columnsEditable && !capabilities.fixedLayout) {
                 Text(
                     stringResource(R.string.reader_columns_paged_only),
@@ -3806,24 +3796,19 @@ private fun EpubAppearancePanel(
 
             val darkTheme = draft.theme == ReaderTheme.DUSK || draft.theme == ReaderTheme.OLED
             Text(stringResource(R.string.settings_dark_images), style = MaterialTheme.typography.titleSmall)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderDarkImageTreatment.entries.forEach { treatment ->
-                    ReaderAppearanceChoice(
-                        label = when (treatment) {
-                            ReaderDarkImageTreatment.NONE -> stringResource(R.string.settings_dark_images_original)
-                            ReaderDarkImageTreatment.DARKEN -> stringResource(R.string.settings_dark_images_darken)
-                            ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
-                        },
-                        selected = draft.darkImageTreatment == treatment,
-                        enabled = darkTheme && !capabilities.fixedLayout,
-                        modifier = Modifier.weight(1f),
-                        onClick = { updateDraft(draft.withDarkImageTreatment(treatment)) }
-                    )
-                }
-            }
+            ReaderAppearanceChoiceGroup(
+                entries = ReaderDarkImageTreatment.entries.toList(),
+                selected = draft.darkImageTreatment,
+                label = { treatment ->
+                    when (treatment) {
+                        ReaderDarkImageTreatment.NONE -> stringResource(R.string.settings_dark_images_original)
+                        ReaderDarkImageTreatment.DARKEN -> stringResource(R.string.settings_dark_images_darken)
+                        ReaderDarkImageTreatment.INVERT -> stringResource(R.string.settings_dark_images_invert)
+                    }
+                },
+                enabled = { darkTheme && !capabilities.fixedLayout },
+                onSelect = { treatment -> updateDraft(draft.withDarkImageTreatment(treatment)) }
+            )
             Text(
                 stringResource(
                     if (darkTheme) R.string.settings_dark_images_hint
@@ -3934,6 +3919,80 @@ internal fun ReaderCapabilityNotice(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+    }
+}
+
+@Composable
+private fun <T> ReaderAppearanceChoiceGroup(
+    entries: List<T>,
+    selected: T,
+    label: @Composable (T) -> String,
+    enabled: (T) -> Boolean = { true },
+    scrollWhenInline: Boolean = false,
+    onSelect: (T) -> Unit
+) {
+    if (entries.isEmpty()) return
+
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = entries.size
+        )
+
+        when {
+            stacked -> {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    entries.forEach { entry ->
+                        ReaderAppearanceChoice(
+                            label = label(entry),
+                            selected = selected == entry,
+                            enabled = enabled(entry),
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onSelect(entry) }
+                        )
+                    }
+                }
+            }
+
+            scrollWhenInline -> {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    entries.forEach { entry ->
+                        ReaderAppearanceChoice(
+                            label = label(entry),
+                            selected = selected == entry,
+                            enabled = enabled(entry),
+                            onClick = { onSelect(entry) }
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    entries.forEach { entry ->
+                        ReaderAppearanceChoice(
+                            label = label(entry),
+                            selected = selected == entry,
+                            enabled = enabled(entry),
+                            modifier = Modifier.weight(1f),
+                            onClick = { onSelect(entry) }
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -4932,3 +4991,10 @@ private fun Locator.withEpubCssSelectorFrom(precise: Locator?): Locator {
         )
     )
 }
+
+
+internal fun shouldRefreshPendingEpubRelayout(
+    format: BookFormat,
+    hasPendingAnchor: Boolean
+): Boolean =
+    format == BookFormat.EPUB && hasPendingAnchor
