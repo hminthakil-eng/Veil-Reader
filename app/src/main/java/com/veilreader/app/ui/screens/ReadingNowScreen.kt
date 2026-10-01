@@ -998,15 +998,14 @@ private fun ThresholdWhisperCard(
             modifier = Modifier.padding(VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-            Text(
-                stringResource(
+            VeilMicroLabel(
+                text = stringResource(
                     when (whisper.kind) {
                         ThresholdWhisperKind.PRESERVED_PASSAGE -> R.string.threshold_whisper_preserved
                         ThresholdWhisperKind.READING_PROMPT -> R.string.threshold_whisper_optional
                     }
                 ),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                color = VeilPalette.Brass
+                strong = true
             )
             Text(
                 displayTitle,
