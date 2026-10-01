@@ -80,5 +80,13 @@ class ReaderModeHandoffPolicyTest {
                 requestedMode = ReaderNavigationMode.PAPER_CURL
             )
         )
+        assertEquals(
+            2,
+            readerPreferenceSettleFrames(
+                previousMode = ReaderNavigationMode.PAGED,
+                requestedMode = ReaderNavigationMode.PAGED,
+                fixedLayoutSpreadChanged = true
+            )
+        )
     }
 }
