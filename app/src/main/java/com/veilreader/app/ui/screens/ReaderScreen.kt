@@ -316,6 +316,8 @@ fun ReaderScreen(
         stringResource(R.string.reader_external_link_failed)
     val imageViewerFailedMessage =
         stringResource(R.string.reader_image_viewer_failed)
+    val appearanceApplyFailedMessage =
+        stringResource(R.string.reader_appearance_apply_failed)
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
     var paperInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlInputListener?>(null)
@@ -1711,6 +1713,18 @@ fun ReaderScreen(
         } catch (cancelled: CancellationException) {
             readerModeHandoffState.clearImmediately()
             throw cancelled
+        } catch (error: Exception) {
+            pendingEpubRelayoutSourceJson = null
+            pendingEpubRelayoutAnchor = null
+            readerModeHandoffState.clearImmediately()
+            presentedReaderAppearance = previousPresented
+            readerMessage = appearanceApplyFailedMessage
+            ReaderTrace.event(
+                "appearance_submit_failed",
+                bookId = opened.book.id,
+                sessionId = readerViewModel.traceSessionId(),
+                details = "error=${error::class.java.simpleName} ${traceDetails}"
+            )
         } finally {
             rendererPreferencesSettling = false
         }
