@@ -303,6 +303,7 @@ class RoomRuntimeRepositoryInstrumentedTest {
         val locator = "{\"href\":\"chapter.xhtml\"}"
         val highlight = repository.addHighlight("history-book", "Preserved line", locator)
         repository.flushWrites()
+        val completionAtEpochMs = highlight.createdAtEpochMs + 60_000L
 
         val visit = repository.recordPassageVisitForLocator(
             bookId = "history-book",
@@ -314,8 +315,8 @@ class RoomRuntimeRepositoryInstrumentedTest {
         val completionSession = ReadingSessionSnapshot(
             id = "completion-session",
             bookId = "history-book",
-            startedAtEpochMs = 200L,
-            endedAtEpochMs = 900L,
+            startedAtEpochMs = highlight.createdAtEpochMs + 1_000L,
+            endedAtEpochMs = completionAtEpochMs - 1_000L,
             activeMillis = 700L,
             pacedPageTurns = 12,
             highlightCount = 1,
@@ -327,14 +328,14 @@ class RoomRuntimeRepositoryInstrumentedTest {
                 progression = 1.0,
                 locatorJson = "{\"href\":\"end.xhtml\"}",
                 completionSessionSnapshot = completionSession,
-                nowEpochMs = 1_000L
+                nowEpochMs = completionAtEpochMs
             )
         )
         repository.flushWrites()
 
         val sealed = db.readingCycles().listAll().single()
         assertEquals(1, sealed.cycleIndex)
-        assertEquals(1_000L, sealed.completedAtEpochMs)
+        assertEquals(completionAtEpochMs, sealed.completedAtEpochMs)
         assertEquals(1, sealed.sessionCount)
         assertEquals(12, sealed.pacedPageTurns)
         assertEquals(1, db.passageVisits().listAll().size)
