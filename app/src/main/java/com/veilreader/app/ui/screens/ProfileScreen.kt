@@ -92,8 +92,8 @@ fun ProfileScreen(
     ) {
     Column(
         Modifier
-            .fillMaxSize()
             .widthIn(max = 920.dp)
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
