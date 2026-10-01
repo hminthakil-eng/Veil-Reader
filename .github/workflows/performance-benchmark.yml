@@ -64,6 +64,9 @@ jobs:
       - name: Warm performance build dependencies
         run: gradle :benchmark:assembleBenchmarkBenchmark --stacktrace
 
+      - name: Release warm-build Gradle daemon
+        run: gradle --stop
+
       - name: Load persisted performance history
         run: |
           mkdir -p performance/history-input
@@ -90,6 +93,8 @@ jobs:
           api-level: 35
           arch: x86_64
           profile: pixel_6
+          ram-size: 2048M
+          heap-size: 512M
           disable-animations: true
           script: |
             gradle :app:generateBaselineProfile --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR

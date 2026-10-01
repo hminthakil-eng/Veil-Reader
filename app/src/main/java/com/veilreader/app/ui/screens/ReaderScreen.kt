@@ -150,6 +150,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 import org.readium.r2.shared.publication.Layout
 import org.readium.r2.shared.publication.Link
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.publication.services.positions
 import org.readium.r2.shared.util.AbsoluteUrl
 
 @OptIn(ExperimentalReadiumApi::class, ExperimentalMaterial3Api::class, FlowPreview::class)
@@ -276,6 +277,9 @@ fun ReaderScreen(
     }
     var rendererPreferencesSettling by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(false)
+    }
+    var pendingEpubRelayoutSourceJson by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<String?>(null)
     }
     val readerModeHandoffState = remember(opened.book.id, readerSessionInstanceId) {
         ReaderModeHandoffState()
@@ -817,6 +821,7 @@ fun ReaderScreen(
         val cancelledNavigationJump =
             navigationTransactionGate.cancelActive(SystemClock.elapsedRealtime()) != null
         if (
+            pendingEpubRelayoutSourceJson == null &&
             shouldTakeFinalNavigatorSnapshot(
                 format = opened.format,
                 paperPreviewActive = paperCurlState.active,
@@ -1050,6 +1055,7 @@ fun ReaderScreen(
                         val navigationJumpInFlight =
                             navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
                         if (
+                            pendingEpubRelayoutSourceJson == null &&
                             shouldTakeFinalNavigatorSnapshot(
                                 format = opened.format,
                                 paperPreviewActive = paperCurlState.active,
@@ -1113,6 +1119,22 @@ fun ReaderScreen(
                 if (pagePreviewActive) return@collect
 
                 val json = locator.toVeilPersistedJson(opened.format)
+                pendingEpubRelayoutSourceJson?.let { staleSourceJson ->
+                    if (json == staleSourceJson) {
+                        ReaderTrace.event(
+                            "locator_relayout_stale_suppressed",
+                            bookId = opened.book.id,
+                            sessionId = readerSessionInstanceId
+                        )
+                        return@collect
+                    }
+                    pendingEpubRelayoutSourceJson = null
+                    ReaderTrace.event(
+                        "locator_relayout_fresh_observed",
+                        bookId = opened.book.id,
+                        sessionId = readerSessionInstanceId
+                    )
+                }
                 ReaderTrace.event(
                     "locator_observed",
                     bookId = opened.book.id,
@@ -1476,6 +1498,10 @@ fun ReaderScreen(
             previousMode = previousPresented.navigationMode,
             requestedMode = requested.navigationMode
         )
+        val epubRelayoutRisk =
+            opened.format == BookFormat.EPUB &&
+                !fixedLayoutPublication &&
+                epubPreferencesMayRelayout(previousPresented, requested)
 
         // Preference changes must never race a half-committed page gesture.
         paperInputListener?.forceCancelPendingTurn()
@@ -1507,6 +1533,38 @@ fun ReaderScreen(
         )
 
         try {
+            if (epubRelayoutRisk) {
+                val epubNavigator = nav as? EpubNavigatorFragment
+                val staleSourceJson = nav.currentLocator.value.toVeilPersistedJson(opened.format)
+                val sourceLocator = try {
+                    epubNavigator?.firstVisibleElementLocator() ?: nav.currentLocator.value
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    nav.currentLocator.value
+                }
+                val anchor = try {
+                    val positions = withContext(Dispatchers.IO) {
+                        opened.publication.positions()
+                    }
+                    stableEpubPositionAnchor(sourceLocator, positions)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
+                }
+                if (anchor != null) {
+                    recordLocator(anchor, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    pendingEpubRelayoutSourceJson = staleSourceJson
+                    ReaderTrace.event(
+                        "locator_relayout_anchor_committed",
+                        bookId = opened.book.id,
+                        sessionId = readerSessionInstanceId,
+                        details = "position=${anchor.locations.position}"
+                    )
+                }
+            }
+
             when (opened.format) {
                 BookFormat.EPUB ->
                     (nav as? EpubNavigatorFragment)
@@ -1531,6 +1589,26 @@ fun ReaderScreen(
             )
             repeat(settleFrames) {
                 delay(VeilMotion.FRAME_SETTLE_MS)
+            }
+
+            if (epubRelayoutRisk && pendingEpubRelayoutSourceJson != null) {
+                val refreshed = try {
+                    (nav as? EpubNavigatorFragment)?.firstVisibleElementLocator()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
+                }
+                if (refreshed != null) {
+                    recordLocator(refreshed, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    pendingEpubRelayoutSourceJson = null
+                    ReaderTrace.event(
+                        "locator_relayout_refreshed",
+                        bookId = opened.book.id,
+                        sessionId = readerSessionInstanceId,
+                        details = "progress=${refreshed.locations.totalProgression}"
+                    )
+                }
             }
 
             // Switch Veil-owned visuals/input only after the renderer has had time to paint.
@@ -4759,3 +4837,43 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
 private const val READER_HIGHLIGHT_ALPHA = 0.34
+
+
+internal fun epubPreferencesMayRelayout(
+    previous: ReaderAppearance,
+    requested: ReaderAppearance
+): Boolean =
+    previous.scroll != requested.scroll ||
+        previous.publisherStyles != requested.publisherStyles ||
+        previous.fontFamily != requested.fontFamily ||
+        previous.fontScale != requested.fontScale ||
+        previous.fontWeight != requested.fontWeight ||
+        previous.lineHeight != requested.lineHeight ||
+        previous.pageMargins != requested.pageMargins ||
+        previous.paragraphSpacing != requested.paragraphSpacing ||
+        previous.paragraphIndent != requested.paragraphIndent ||
+        previous.letterSpacing != requested.letterSpacing ||
+        previous.wordSpacing != requested.wordSpacing ||
+        previous.typeScale != requested.typeScale ||
+        previous.textAlignment != requested.textAlignment ||
+        previous.columnMode != requested.columnMode ||
+        previous.hyphenation != requested.hyphenation ||
+        previous.ligatures != requested.ligatures ||
+        previous.textNormalization != requested.textNormalization
+
+internal fun stableEpubPositionAnchor(
+    current: Locator,
+    positions: List<Locator>
+): Locator? {
+    if (positions.isEmpty()) return null
+    current.locations.position?.let { position ->
+        positions.firstOrNull { it.locations.position == position }?.let { return it }
+    }
+    val progression = current.locations.totalProgression ?: return null
+    return positions
+        .filter { candidate ->
+            candidate.locations.totalProgression?.let { it <= progression } == true
+        }
+        .maxByOrNull { it.locations.totalProgression ?: Double.NEGATIVE_INFINITY }
+        ?: positions.firstOrNull()
+}

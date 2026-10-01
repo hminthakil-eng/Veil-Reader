@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.readium.r2.navigator.SelectableNavigator
@@ -54,15 +55,27 @@ internal class ReaderSelectionActionModeCallback(
 
         coroutineScope.launch {
             // Capture first because finishing ActionMode can clear the WebView selection
-            // immediately on some devices. Once captured, dismiss native selection chrome before
-            // durable annotation work so a storage flush never leaves the toolbar hanging.
-            val selection = navigator.currentSelection()
-            val quote = selection?.locator?.text?.highlight.orEmpty().trim()
-            try {
-                navigator.clearSelection()
+            // immediately on some devices. Cleanup is unconditional: renderer disposal or a
+            // selection-query failure must never leave Android's native toolbar orphaned.
+            val selection = try {
+                navigator.currentSelection()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                null
             } finally {
-                mode.finish()
+                try {
+                    navigator.clearSelection()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // The navigator can disappear while ActionMode is closing. The toolbar still
+                    // belongs to this callback and must be dismissed.
+                } finally {
+                    mode.finish()
+                }
             }
+            val quote = selection?.locator?.text?.highlight.orEmpty().trim()
             if (selection == null || quote.isBlank()) return@launch
             onAction(action, selection.locator, quote)
         }
