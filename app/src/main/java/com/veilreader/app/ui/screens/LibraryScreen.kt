@@ -85,7 +85,6 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
-import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
