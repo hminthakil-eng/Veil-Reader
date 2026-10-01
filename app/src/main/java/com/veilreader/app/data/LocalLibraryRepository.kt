@@ -591,7 +591,7 @@ class LocalLibraryRepository internal constructor(
         return record
     }
 
-    fun commitSelectionNote(
+    internal fun commitSelectionNote(
         bookId: String,
         quote: String,
         locatorJson: String,
