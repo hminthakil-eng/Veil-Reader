@@ -1720,8 +1720,10 @@ fun ReaderScreen(
                     .statusBarsPadding()
                     .padding(horizontal = 6.dp, top = 2.dp),
                 shape = RoundedCornerShape(
-                    bottomStart = 10.dp,
-                    bottomEnd = 10.dp
+                    topStart = 0.dp,
+                    topEnd = 0.dp,
+                    bottomEnd = 10.dp,
+                    bottomStart = 10.dp
                 ),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
@@ -1811,7 +1813,9 @@ fun ReaderScreen(
                     .padding(horizontal = 6.dp, bottom = 4.dp),
                 shape = RoundedCornerShape(
                     topStart = 10.dp,
-                    topEnd = 10.dp
+                    topEnd = 10.dp,
+                    bottomEnd = 0.dp,
+                    bottomStart = 0.dp
                 ),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
