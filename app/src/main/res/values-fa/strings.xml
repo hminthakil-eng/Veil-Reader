@@ -1272,4 +1272,6 @@
     <string name="manga_chapter_language_label">زبان (اختیاری)</string>
     <string name="manga_chapter_language_hint">برچسب BCP-47؛ برای مثال fa، en یا ja.</string>
     <string name="notice_manga_chapter_metadata_updated">جزئیات فصل به‌روزرسانی شد.</string>
+    <string name="accessibility_selected">انتخاب‌شده</string>
+    <string name="accessibility_not_selected">انتخاب‌نشده</string>
 </resources>
