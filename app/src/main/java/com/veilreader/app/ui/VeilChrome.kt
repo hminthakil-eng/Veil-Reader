@@ -446,6 +446,11 @@ private fun VeilNavigationLabel(
     )
 }
 
+internal fun navigationRailWidthDp(fontScale: Float): Int {
+    val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    return if (safeScale >= 1.6f) 112 else 88
+}
+
 @Composable
 fun VeilNavigationRail(
     selected: VeilTab,
@@ -455,7 +460,7 @@ fun VeilNavigationRail(
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     val fontScale = LocalConfiguration.current.fontScale
-    val railWidth = if (fontScale >= 1.6f) 112.dp else 88.dp
+    val railWidth = navigationRailWidthDp(fontScale).dp
     Surface(
         modifier = modifier
             .fillMaxHeight()
