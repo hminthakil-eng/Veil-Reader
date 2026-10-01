@@ -309,13 +309,12 @@ fun BookThresholdTransitionOverlay(
 
                 if (ritual != null) {
                     Text(
-                        localizedReturnRitualTitle(ritual).uppercase(),
+                        localizedReturnRitualTitle(ritual),
                         style = MaterialTheme.typography.titleMedium,
                         color = VeilPalette.Brass
                     )
-                    Text(
-                        localizedReturnRitualSilence(ritual.silenceMillis),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.05.sp),
+                    VeilMicroLabel(
+                        text = localizedReturnRitualSilence(ritual.silenceMillis),
                         color = VeilPalette.Moon.copy(alpha = 0.82f)
                     )
                     if (stage == BookEntryStage.PREPARING) {
@@ -342,22 +341,16 @@ fun BookThresholdTransitionOverlay(
                     }
                 } else {
                     returnGap?.let { returnLabel ->
-                        Text(
-                            returnLabel,
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
-                            color = VeilPalette.Brass.copy(alpha = 0.86f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                        VeilMicroLabel(
+                            text = returnLabel,
+                            color = VeilPalette.Brass.copy(alpha = 0.86f)
                         )
                     }
                 }
 
-                Text(
-                    entryStatus,
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
-                    color = aura.copy(alpha = 0.92f),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
+                VeilMicroLabel(
+                    text = entryStatus,
+                    color = aura.copy(alpha = 0.92f)
                 )
 
                 history?.let { historyLabel ->
@@ -565,9 +558,8 @@ private fun ReturnRitualFragmentPanel(
             .padding(horizontal = 12.dp, vertical = 9.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+        VeilMicroLabel(
+            text = label,
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
         Text(
