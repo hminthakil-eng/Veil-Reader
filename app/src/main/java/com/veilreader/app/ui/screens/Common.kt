@@ -311,6 +311,27 @@ fun ArchivePanel(
 }
 
 @Composable
+internal fun VeilMicroLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = VeilPalette.Brass,
+    strong: Boolean = false
+) {
+    val arabicScript = usesArabicScript(text)
+    Text(
+        text = if (arabicScript) text else text.uppercase(),
+        modifier = modifier,
+        color = color,
+        style = if (arabicScript) {
+            if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall
+        } else {
+            (if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall)
+                .copy(letterSpacing = if (strong) 1.45.sp else 0.95.sp)
+        }
+    )
+}
+
+@Composable
 fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
     Column(
         modifier = Modifier.fillMaxWidth(),
