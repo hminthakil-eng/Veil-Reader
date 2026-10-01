@@ -93,6 +93,7 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
@@ -596,7 +597,44 @@ fun ReaderScreen(
 
     var pendingNoteHighlightId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
     var pendingNoteText by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
+    var pendingNoteCreatedHighlight by rememberSaveable(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(false)
+    }
     var noteSaving by remember(readerSessionInstanceId) { mutableStateOf(false) }
+
+    fun dismissPendingSelectionNote() {
+        val highlightId = pendingNoteHighlightId
+        val discardCreatedHighlight = shouldDiscardPendingSelectionNoteHighlight(
+            createdForNote = pendingNoteCreatedHighlight,
+            noteSaving = noteSaving
+        )
+
+        pendingNoteHighlightId = null
+        pendingNoteText = ""
+        pendingNoteCreatedHighlight = false
+
+        if (discardCreatedHighlight && highlightId != null) {
+            library.deleteHighlight(highlightId)
+            val expectedSessionId = readerSessionInstanceId
+            scope.launch {
+                try {
+                    library.flushWrites()
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    if (
+                        readerAsyncResultBelongsToSession(
+                            currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                            expectedSessionInstanceId = expectedSessionId
+                        )
+                    ) {
+                        readerMessage = passageSaveFailedMessage
+                    }
+                }
+            }
+        }
+    }
+
     var locationTitle by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(opened.book.currentChapter.takeUnless { it == "Not started" }.orEmpty())
     }
@@ -647,27 +685,29 @@ fun ReaderScreen(
                         locatorJson = locatorJson
                     )
                     val isNew = existing == null
-                    if (isNew) {
-                        library.flushWrites()
-                        if (
-                            !readerAsyncResultBelongsToSession(
-                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                                expectedSessionInstanceId = readerSessionInstanceId
-                            )
-                        ) {
-                            return@onAction
-                        }
-                        readerViewModel.onHighlightAdded(readerSessionInstanceId)
-                        onSensoryEvent(VeilSensoryEvent.MARK)
-                    } else {
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
-                    }
 
                     when (action) {
                         ReaderSelectionAction.HIGHLIGHT -> {
+                            if (isNew) {
+                                library.flushWrites()
+                                if (
+                                    !readerAsyncResultBelongsToSession(
+                                        currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                        expectedSessionInstanceId = readerSessionInstanceId
+                                    )
+                                ) {
+                                    return@onAction
+                                }
+                                readerViewModel.onHighlightAdded(readerSessionInstanceId)
+                                onSensoryEvent(VeilSensoryEvent.MARK)
+                            } else {
+                                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            }
                             readerMessage = if (isNew) highlightedMessage else alreadyHighlightedMessage
                         }
                         ReaderSelectionAction.NOTE -> {
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            pendingNoteCreatedHighlight = isNew
                             pendingNoteHighlightId = highlight.id
                             pendingNoteText = highlight.note
                         }
@@ -796,6 +836,12 @@ fun ReaderScreen(
         }
 
         val originJson = currentLocatorJson()
+        if (!shouldStartReaderLocationJump(originJson, targetJson)) {
+            previousLocationJson = null
+            controlsVisible = false
+            return
+        }
+
         readerViewModel.onUserInteraction(readerSessionInstanceId)
         game.rebasePagePacing()
         val transactionToken = beginProgrammaticNavigation(originJson)
@@ -2177,8 +2223,7 @@ fun ReaderScreen(
         Dialog(
             onDismissRequest = {
                 if (!noteSaving) {
-                    pendingNoteHighlightId = null
-                    pendingNoteText = ""
+                    dismissPendingSelectionNote()
                 }
             },
             properties = DialogProperties(
@@ -2301,10 +2346,7 @@ fun ReaderScreen(
                                 first = { actionModifier ->
                                     OutlinedButton(
                                         enabled = !noteSaving,
-                                        onClick = {
-                                            pendingNoteHighlightId = null
-                                            pendingNoteText = ""
-                                        },
+                                        onClick = ::dismissPendingSelectionNote,
                                         modifier = actionModifier.heightIn(min = 48.dp),
                                         shape = MaterialTheme.shapes.extraSmall
                                     ) {
@@ -2313,10 +2355,15 @@ fun ReaderScreen(
                                 },
                                 second = { actionModifier ->
                                     Button(
-                                        enabled = !noteSaving,
+                                        enabled = !noteSaving &&
+                                            canSavePendingSelectionNote(
+                                                createdForNote = pendingNoteCreatedHighlight,
+                                                note = pendingNoteText
+                                            ),
                                         onClick = {
                                             val expectedSessionId = readerSessionInstanceId
                                             val noteToSave = pendingNoteText
+                                            val createdHighlightForNote = pendingNoteCreatedHighlight
                                             scope.launch {
                                                 noteSaving = true
                                                 try {
@@ -2335,6 +2382,11 @@ fun ReaderScreen(
                                                     ) {
                                                         return@launch
                                                     }
+                                                    if (createdHighlightForNote) {
+                                                        readerViewModel.onHighlightAdded(
+                                                            expectedSessionId
+                                                        )
+                                                    }
                                                     readerViewModel.onNoteSaved(
                                                         expectedSessionId,
                                                         highlightId,
@@ -2343,6 +2395,7 @@ fun ReaderScreen(
                                                     onSensoryEvent(VeilSensoryEvent.NOTE)
                                                     pendingNoteHighlightId = null
                                                     pendingNoteText = ""
+                                                    pendingNoteCreatedHighlight = false
                                                     readerMessage = noteSavedMessage
                                                 } catch (cancelled: CancellationException) {
                                                     throw cancelled
@@ -2414,19 +2467,24 @@ fun ReaderScreen(
                     showNotebook = false
                     readerMessage = savedLocationFailedMessage
                 } else {
-                    readerViewModel.onUserInteraction(readerSessionInstanceId)
-                    game.rebasePagePacing()
-                    val transactionToken = beginProgrammaticNavigation(currentLocatorJson())
-                    if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
-                        library.recordPassageVisitForLocator(
-                            bookId = opened.book.id,
-                            locatorJson = json
-                        )
+                    val originJson = currentLocatorJson()
+                    if (!shouldStartReaderLocationJump(originJson, json)) {
                         showNotebook = false
                     } else {
-                        cancelProgrammaticNavigation(transactionToken)
-                        showNotebook = false
-                        readerMessage = savedLocationFailedMessage
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                        game.rebasePagePacing()
+                        val transactionToken = beginProgrammaticNavigation(originJson)
+                        if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
+                            library.recordPassageVisitForLocator(
+                                bookId = opened.book.id,
+                                locatorJson = json
+                            )
+                            showNotebook = false
+                        } else {
+                            cancelProgrammaticNavigation(transactionToken)
+                            showNotebook = false
+                            readerMessage = savedLocationFailedMessage
+                        }
                     }
                 }
             },
