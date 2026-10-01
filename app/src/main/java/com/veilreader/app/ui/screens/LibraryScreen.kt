@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,6 +86,7 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.DateFormat
 import java.util.Date
 import java.util.Locale
@@ -1296,6 +1298,9 @@ private fun BookDetailDestination(
 ) {
     val formatPercent = rememberVeilPercentFormatter()
     val progress = bookArtifactState(book, memory = artifactMemory).progress
+    val preservedFragments = remember(preservedHighlights) {
+        preservedHighlights.filter { it.quote.isNotBlank() || it.note.isNotBlank() }
+    }
     val status = when {
         book.finished -> stringResource(R.string.book_detail_finished)
         progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(progress))
@@ -1395,15 +1400,11 @@ private fun BookDetailDestination(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            stringResource(
+                        BookDetailEyebrow(
+                            text = stringResource(
                                 R.string.book_detail_artifact_chamber,
                                 localizedBookFormat(book.format)
                             ),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                letterSpacing = 1.45.sp
-                            ),
-                            color = VeilPalette.Brass,
                             modifier = Modifier.weight(1f)
                         )
                         TextButton(
@@ -1415,9 +1416,7 @@ private fun BookDetailDestination(
                         ) {
                             Text(
                                 stringResource(R.string.book_detail_close),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 1.1.sp
-                                )
+                                style = MaterialTheme.typography.labelSmall
                             )
                         }
                     }
@@ -1428,12 +1427,12 @@ private fun BookDetailDestination(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                         ) {
-                            BookCover(
-                                title = book.title,
-                                subtitle = book.author,
-                                imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book, memory = artifactMemory),
-                                modifier = Modifier.width(142.dp).height(208.dp)
+                            BookDetailArtifactStand(
+                                book = book,
+                                artifactMemory = artifactMemory,
+                                modifier = Modifier
+                                    .width(184.dp)
+                                    .height(258.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
@@ -1446,12 +1445,12 @@ private fun BookDetailDestination(
                             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            BookCover(
-                                title = book.title,
-                                subtitle = book.author,
-                                imagePath = book.coverCachePath,
-                artifact = bookArtifactState(book, memory = artifactMemory),
-                                modifier = Modifier.width(154.dp).height(226.dp)
+                            BookDetailArtifactStand(
+                                book = book,
+                                artifactMemory = artifactMemory,
+                                modifier = Modifier
+                                    .width(198.dp)
+                                    .height(276.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
@@ -1483,10 +1482,8 @@ private fun BookDetailDestination(
                             modifier = Modifier.weight(1f),
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Text(
-                                stringResource(R.string.book_detail_current_journey),
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                                color = VeilPalette.Brass
+                            BookDetailEyebrow(
+                                text = stringResource(R.string.book_detail_current_journey)
                             )
                             Text(
                                 stringResource(R.string.book_detail_reading_progress),
@@ -1511,13 +1508,16 @@ private fun BookDetailDestination(
 
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
                         verticalAlignment = Alignment.Top
                     ) {
                         Text(
                             status,
                             style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f)
                         )
 
                         book.currentChapter
@@ -1531,9 +1531,10 @@ private fun BookDetailDestination(
                                     chapter,
                                     style = MaterialTheme.typography.labelMedium,
                                     color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                    maxLines = 1,
+                                    maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.widthIn(max = 240.dp)
+                                    textAlign = TextAlign.End,
+                                    modifier = Modifier.weight(1f)
                                 )
                             }
                     }
@@ -1594,9 +1595,9 @@ private fun BookDetailDestination(
 
                 BrassRule(Modifier.fillMaxWidth())
 
-                if (preservedHighlights.isNotEmpty()) {
+                if (preservedFragments.isNotEmpty()) {
                     BookDetailFragments(
-                        highlights = preservedHighlights
+                        highlights = preservedFragments
                     )
                     BrassRule(Modifier.fillMaxWidth())
                 }
@@ -1605,10 +1606,8 @@ private fun BookDetailDestination(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
-                    Text(
-                        stringResource(R.string.book_detail_archive_history),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
-                        color = VeilPalette.Brass
+                    BookDetailEyebrow(
+                        text = stringResource(R.string.book_detail_archive_history)
                     )
                     BookDetailFact(stringResource(R.string.book_detail_format), localizedBookFormat(book.format))
                     book.language?.takeIf { it.isNotBlank() }?.let {
@@ -1712,10 +1711,8 @@ private fun BookDetailDestination(
                         modifier = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                     ) {
-                        Text(
-                            stringResource(R.string.book_detail_collections).uppercase(),
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
-                            color = VeilPalette.Brass
+                        BookDetailEyebrow(
+                            text = stringResource(R.string.book_detail_collections)
                         )
 
                         Row(
