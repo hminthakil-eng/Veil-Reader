@@ -10,7 +10,6 @@ import kotlinx.coroutines.launch
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
-import org.readium.r2.navigator.input.Key
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -59,23 +58,19 @@ internal class SlideNavigationInputListener(
     override fun onKey(event: KeyEvent): Boolean {
         if (!slideModeEnabled()) return cancelPendingTurn()
         if (completionJob != null || state.active || reserved) return true
-        if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) return false
+        if (event.type != KeyEvent.Type.Down) return false
 
-        val progression = navigator.overflow.value.readingProgression
-        val spec = when (event.key) {
-            Key.ArrowUp -> turnSpecFor(PaperTurnDirection.BACKWARD, progression)
-            Key.ArrowDown, Key.Space -> turnSpecFor(PaperTurnDirection.FORWARD, progression)
-            Key.ArrowLeft -> TurnSpec(
-                paperTurnDirectionFor(PaperCurlSide.LEFT, progression),
-                PaperCurlSide.LEFT
+        val turn = readerKeyTurn(
+            key = event.key,
+            modifiers = event.modifiers,
+            progression = navigator.overflow.value.readingProgression
+        ) ?: return false
+        performDiscreteTurn(
+            TurnSpec(
+                direction = turn.direction,
+                side = turn.side
             )
-            Key.ArrowRight -> TurnSpec(
-                paperTurnDirectionFor(PaperCurlSide.RIGHT, progression),
-                PaperCurlSide.RIGHT
-            )
-            else -> return false
-        }
-        performDiscreteTurn(spec)
+        )
         return true
     }
 
@@ -373,21 +368,6 @@ internal class SlideNavigationInputListener(
             paperTurnDirectionFor(side, navigator.overflow.value.readingProgression),
             side
         )
-    }
-
-    private fun turnSpecFor(
-        direction: PaperTurnDirection,
-        progression: ReadingProgression
-    ): TurnSpec {
-        val side = when (direction) {
-            PaperTurnDirection.FORWARD ->
-                if (progression == ReadingProgression.RTL) PaperCurlSide.LEFT
-                else PaperCurlSide.RIGHT
-            PaperTurnDirection.BACKWARD ->
-                if (progression == ReadingProgression.RTL) PaperCurlSide.RIGHT
-                else PaperCurlSide.LEFT
-        }
-        return TurnSpec(direction, side)
     }
 
     private fun constrainedOffset(side: PaperCurlSide, rawOffsetX: Float): Float =
