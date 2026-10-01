@@ -60,11 +60,25 @@ internal fun PdfZoomControls(
     var pdfView by remember(navigator) {
         mutableStateOf(navigator.findPdfView())
     }
-    LaunchedEffect(navigator) {
-        while (pdfView == null) {
+    var probeGeneration by remember(navigator) { mutableStateOf(0) }
+    var probeExhausted by remember(navigator) { mutableStateOf(false) }
+
+    LaunchedEffect(navigator, probeGeneration) {
+        probeExhausted = false
+        pdfView = navigator.findPdfView()
+        var attempt = 0
+        while (
+            shouldProbePdfView(
+                attempt = attempt,
+                maxAttempts = PDF_VIEW_PROBE_ATTEMPTS,
+                hasView = pdfView != null
+            )
+        ) {
+            delay(PDF_VIEW_PROBE_INTERVAL_MS)
+            attempt += 1
             pdfView = navigator.findPdfView()
-            if (pdfView == null) delay(100)
         }
+        probeExhausted = pdfView == null
     }
 
     val scrollLabel = stringResource(R.string.pdf_scroll)
@@ -95,10 +109,9 @@ internal fun PdfZoomControls(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            Text(
-                stringResource(R.string.pdf_controls_eyebrow),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.pdf_controls_eyebrow),
+                strong = true
             )
             BrassRule(Modifier.fillMaxWidth())
             Text(
@@ -112,10 +125,9 @@ internal fun PdfZoomControls(
             )
         }
 
-        Text(
-            stringResource(R.string.pdf_layout),
-            style = MaterialTheme.typography.labelSmall,
-            color = VeilPalette.Brass
+        VeilMicroLabel(
+            text = stringResource(R.string.pdf_layout),
+            strong = true
         )
 
         Row(
@@ -204,23 +216,47 @@ internal fun PdfZoomControls(
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.42f),
                 border = BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+                    if (probeExhausted) {
+                        VeilPalette.Brass.copy(alpha = 0.42f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
+                    }
                 )
             ) {
                 Column(
                     modifier = Modifier.padding(VeilSpacing.md),
-                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
-                    Text(
-                        stringResource(R.string.pdf_preparing),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.pdf_preparing),
+                        strong = true
                     )
                     Text(
-                        stringResource(R.string.pdf_renderer_connecting),
+                        stringResource(
+                            if (probeExhausted) {
+                                R.string.pdf_renderer_delayed
+                            } else {
+                                R.string.pdf_renderer_connecting
+                            }
+                        ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
                     )
+                    if (probeExhausted) {
+                        OutlinedButton(
+                            onClick = { probeGeneration += 1 },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 48.dp),
+                            shape = MaterialTheme.shapes.extraSmall,
+                            border = BorderStroke(
+                                1.dp,
+                                VeilPalette.Brass.copy(alpha = 0.44f)
+                            )
+                        ) {
+                            Text(stringResource(R.string.pdf_renderer_retry))
+                        }
+                    }
                 }
             }
         } else {
@@ -232,11 +268,10 @@ internal fun PdfZoomControls(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.pdf_zoom),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Brass,
-                    modifier = Modifier.weight(1f)
+                VeilMicroLabel(
+                    text = stringResource(R.string.pdf_zoom),
+                    modifier = Modifier.weight(1f),
+                    strong = true
                 )
                 Text(
                     formatPercent(displayedZoom),
@@ -409,7 +444,16 @@ internal fun nextPdfZoom(
     return normalizedPdfZoom(safeCurrent * safeFactor, min, max)
 }
 
+internal fun shouldProbePdfView(
+    attempt: Int,
+    maxAttempts: Int,
+    hasView: Boolean
+): Boolean =
+    !hasView && attempt >= 0 && attempt < maxAttempts.coerceAtLeast(0)
+
 private const val PDF_ZOOM_MIRROR_INTERVAL_MS = 80L
+private const val PDF_VIEW_PROBE_INTERVAL_MS = 100L
+private const val PDF_VIEW_PROBE_ATTEMPTS = 40
 
 @OptIn(ExperimentalReadiumApi::class)
 private fun Navigator?.findPdfView(): PDFView? {
