@@ -24,6 +24,11 @@ import org.readium.r2.shared.publication.Locator
  * persistence/counting is deferred until commit and an exact start locator is restored on cancel.
  */
 @OptIn(ExperimentalReadiumApi::class)
+internal fun shouldCapturePaperTurnSnapshot(
+    reducedMotion: Boolean
+): Boolean =
+    !reducedMotion
+
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
     private val state: PaperCurlState,
@@ -52,11 +57,13 @@ internal class PaperCurlInputListener(
         if (state.active) return true
 
         val spec = resolveEdgeTurn(event.point.x) ?: return false
-        val visualReady = state.begin(
-            view = navigator.publicationView,
-            side = spec.side,
-            direction = spec.direction
-        )
+        val visualReady =
+            shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
+                state.begin(
+                    view = navigator.publicationView,
+                    side = spec.side,
+                    direction = spec.direction
+                )
 
         onInteraction()
 
@@ -294,11 +301,13 @@ internal class PaperCurlInputListener(
         lastInwardDistance = inwardDistance(spec, event)
         releaseVelocityPxPerSec = 0f
 
-        val visualReady = state.begin(
-            navigator.publicationView,
-            spec.side,
-            spec.direction
-        )
+        val visualReady =
+            shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
+                state.begin(
+                    navigator.publicationView,
+                    spec.side,
+                    spec.direction
+                )
         if (visualReady) {
             state.updateDrag(event.start, event.offset)
         }
