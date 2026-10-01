@@ -176,9 +176,6 @@ fun CastleScreen(
 
         CastleMemoryInscription(memoryState)
         CastleWorldProgressionInscription(worldProjection)
-        CastleMutationInscription(memoryState)
-        CastleRitualAftermath(profile, ritualAfterglow)
-        CastleMutationLedgerSummary(mutationLedger)
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             VeilMicroLabel(
@@ -204,6 +201,10 @@ fun CastleScreen(
             chamberMinHeightDp = castleLayout.chamberMinHeightDp,
             onOpenRoom = onOpenRoom
         )
+
+        CastleMutationInscription(memoryState)
+        CastleRitualAftermath(profile, ritualAfterglow)
+        CastleMutationLedgerSummary(mutationLedger)
 
         BrassRule(Modifier.fillMaxWidth())
 
