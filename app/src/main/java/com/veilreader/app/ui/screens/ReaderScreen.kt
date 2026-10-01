@@ -2915,6 +2915,15 @@ private fun ReaderBoundaryPulse(
     }
 }
 
+internal fun isRenderableReaderViewport(
+    width: Float,
+    height: Float
+): Boolean =
+    width.isFinite() &&
+        height.isFinite() &&
+        width > 0f &&
+        height > 0f
+
 @Composable
 private fun ReaderPageAtmosphere(
     theme: ReaderTheme,
@@ -2931,6 +2940,9 @@ private fun ReaderPageAtmosphere(
     val patina = surface.patina
 
     Canvas(modifier) {
+        if (!isRenderableReaderViewport(size.width, size.height)) {
+            return@Canvas
+        }
         val agedTone = when (theme) {
             ReaderTheme.PAPER -> Color(0xFF73562F)
             ReaderTheme.SEPIA -> Color(0xFF65431F)
