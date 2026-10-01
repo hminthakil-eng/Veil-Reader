@@ -644,7 +644,12 @@ fun VeilApp(
         activeReturnRitual = null
         activeReturnLocatorJson = null
 
-        val book = library.getBook(targetId) ?: targetBook ?: return@LaunchedEffect
+        val book = library.getBook(targetId) ?: targetBook
+        if (book == null) {
+            routeViewModel.bookOpenFailed(targetId, openRequestId)
+            showNotice(R.string.notice_book_record_missing, VeilNoticeKind.WARNING)
+            return@LaunchedEffect
+        }
         if (!book.isImported) {
             routeViewModel.bookOpenFailed(targetId, openRequestId)
             showNotice(R.string.notice_book_file_missing)
