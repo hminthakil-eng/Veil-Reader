@@ -31,8 +31,8 @@ class ReaderRelayoutContinuityPolicyTest {
         }
 
         assertFalse(epubPreferencesMayRelayout(base, base.copy(pageTurnStyle = alternateTurn)))
-        assertFalse(epubPreferencesMayRelayout(base, base.copy(screenBrightness = 0.42f)))
-        assertFalse(epubPreferencesMayRelayout(base, base.copy(paperPatina = 0.73f)))
+        assertFalse(epubPreferencesMayRelayout(base, base.copy(screenBrightness = 0.42)))
+        assertFalse(epubPreferencesMayRelayout(base, base.copy(paperPatina = 0.73)))
     }
 
     @Test
