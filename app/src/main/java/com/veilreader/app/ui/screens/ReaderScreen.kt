@@ -99,6 +99,7 @@ import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
+import com.veilreader.app.ui.reader.readerEffectiveTargetHref
 import com.veilreader.app.ui.reader.readerObservedLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
@@ -1080,25 +1081,37 @@ fun ReaderScreen(
                     else -> {
                         paperInputListener?.forceCancelPendingTurn()
                         slideInputListener?.forceCancelPendingTurn()
-                        val origin = latestNavigator.value
+                        val currentLocator = latestNavigator.value
                             ?.currentLocator
                             ?.value
+                        val origin = currentLocator
                             ?.toVeilPersistedJson(opened.format)
-                        val transaction = navigationTransactionGate.begin(
-                            originLocatorJson = origin,
-                            nowElapsedMs = SystemClock.elapsedRealtime()
+                        val targetHref = readerEffectiveTargetHref(
+                            currentHref = currentLocator?.href?.toString(),
+                            targetHref = link.href.toString()
                         )
-                        ReaderTrace.event(
-                            "navigation_jump_requested",
-                            bookId = opened.book.id,
-                            sessionId = readerSessionInstanceId,
-                            details = "token=${transaction.token} source=internal_link"
+                        val trackJump = shouldStartReaderLinkJump(
+                            currentHref = currentLocator?.href?.toString(),
+                            targetHref = targetHref
                         )
+                        if (trackJump) {
+                            val transaction = navigationTransactionGate.begin(
+                                originLocatorJson = origin,
+                                nowElapsedMs = SystemClock.elapsedRealtime(),
+                                targetHref = targetHref
+                            )
+                            ReaderTrace.event(
+                                "navigation_jump_requested",
+                                bookId = opened.book.id,
+                                sessionId = readerSessionInstanceId,
+                                details = "token=${transaction.token} source=internal_link"
+                            )
+                            game.rebasePagePacing()
+                        }
                         activity.runOnUiThread {
                             controlsVisible = false
                         }
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
-                        game.rebasePagePacing()
                         true
                     }
                 }
@@ -2681,7 +2694,10 @@ fun ReaderScreen(
             },
             onChapter = { link ->
                 val nav = navigator
-                val targetHref = link.href.toString()
+                val targetHref = readerEffectiveTargetHref(
+                    currentHref = currentLocationHref,
+                    targetHref = link.href.toString()
+                )
                 if (nav == null) {
                     showNotebook = false
                     readerMessage = chapterFailedMessage
