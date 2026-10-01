@@ -6,6 +6,9 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.readium.r2.navigator.input.InputModifier
+import org.readium.r2.navigator.input.Key
+import org.readium.r2.navigator.preferences.ReadingProgression
 
 class ReaderInputArbiterTest {
 
@@ -352,6 +355,42 @@ class ReaderInputArbiterTest {
     }
 
 
+
+    @Test
+    fun `shared keyboard mapping covers page keys shift space and RTL`() {
+        assertEquals(
+            ReaderKeyTurn(PaperTurnDirection.FORWARD, PaperCurlSide.RIGHT),
+            readerKeyTurn(Key.PageDown, emptySet(), ReadingProgression.LTR)
+        )
+        assertEquals(
+            ReaderKeyTurn(PaperTurnDirection.BACKWARD, PaperCurlSide.LEFT),
+            readerKeyTurn(Key.PageUp, emptySet(), ReadingProgression.LTR)
+        )
+        assertEquals(
+            ReaderKeyTurn(PaperTurnDirection.BACKWARD, PaperCurlSide.LEFT),
+            readerKeyTurn(
+                Key.Space,
+                setOf(InputModifier.Shift),
+                ReadingProgression.LTR
+            )
+        )
+        assertEquals(
+            ReaderKeyTurn(PaperTurnDirection.FORWARD, PaperCurlSide.LEFT),
+            readerKeyTurn(Key.PageDown, emptySet(), ReadingProgression.RTL)
+        )
+        assertEquals(
+            ReaderKeyTurn(PaperTurnDirection.BACKWARD, PaperCurlSide.RIGHT),
+            readerKeyTurn(Key.ArrowRight, emptySet(), ReadingProgression.RTL)
+        )
+        assertEquals(
+            null,
+            readerKeyTurn(
+                Key.Space,
+                setOf(InputModifier.Control),
+                ReadingProgression.LTR
+            )
+        )
+    }
 
     @Test
     fun `accessibility and selection keys stay with renderer while blocked mode consumes`() {
