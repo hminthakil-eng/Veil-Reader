@@ -124,19 +124,21 @@ class ReaderSafImportInstrumentedTest {
     }
 
     private fun waitForPackage(packageName: String) {
-        waitForNode("package=$packageName") { it.packageName?.toString() == packageName }
+        waitForNode("package=$packageName") {
+            it.packageName?.toString() == packageName
+        }.recycleSafely()
     }
 
     private fun waitForDocumentsUi() {
         waitForNode("DocumentsUI package") {
             it.packageName?.toString() in DOCUMENTS_UI_PACKAGES
-        }
+        }.recycleSafely()
     }
 
     private fun waitForViewId(vararg ids: String) {
         waitForNode("viewId=${ids.joinToString()}") {
             it.viewIdResourceName in ids
-        }
+        }.recycleSafely()
     }
 
     private fun waitForNode(
@@ -160,10 +162,21 @@ class ReaderSafImportInstrumentedTest {
 
         while (queue.isNotEmpty()) {
             val node = queue.removeFirst()
-            if (predicate(node)) return node
+            val matches = try {
+                predicate(node)
+            } catch (error: Throwable) {
+                node.recycleSafely()
+                recycleQueuedNodes(queue)
+                throw error
+            }
+            if (matches) {
+                recycleQueuedNodes(queue)
+                return node
+            }
             for (index in 0 until node.childCount) {
                 node.getChild(index)?.let(queue::add)
             }
+            node.recycleSafely()
         }
         return null
     }
@@ -171,21 +184,38 @@ class ReaderSafImportInstrumentedTest {
     private fun clickNode(node: AccessibilityNodeInfo) {
         var current: AccessibilityNodeInfo? = node
         while (current != null && !current.isClickable) {
-            current = current.parent
+            val parent = current.parent
+            if (current !== node) current.recycleSafely()
+            current = parent
         }
 
-        val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
-        if (!clicked) {
-            val bounds = android.graphics.Rect()
-            (current ?: node).getBoundsInScreen(bounds)
-            check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
-            uiAutomation.executeShellCommand(
-                "input tap ${bounds.centerX()} ${bounds.centerY()}"
-            ).close()
+        try {
+            val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+            if (!clicked) {
+                val bounds = android.graphics.Rect()
+                (current ?: node).getBoundsInScreen(bounds)
+                check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
+                uiAutomation.executeShellCommand(
+                    "input tap ${bounds.centerX()} ${bounds.centerY()}"
+                ).close()
+            }
+        } finally {
+            if (current != null && current !== node) current.recycleSafely()
+            node.recycleSafely()
         }
         SystemClock.sleep(750)
     }
 
+    private fun recycleQueuedNodes(queue: ArrayDeque<AccessibilityNodeInfo>) {
+        while (queue.isNotEmpty()) {
+            queue.removeFirst().recycleSafely()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun AccessibilityNodeInfo.recycleSafely() {
+        recycle()
+    }
 
     private fun seedEpubFixture() {
         val resolver = instrumentation.targetContext.contentResolver

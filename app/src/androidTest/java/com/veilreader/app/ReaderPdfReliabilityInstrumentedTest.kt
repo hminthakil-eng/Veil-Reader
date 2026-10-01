@@ -85,19 +85,26 @@ class ReaderPdfReliabilityInstrumentedTest {
         exerciseNativePdfGestures(pdfView)
         clickText(appString(R.string.reader_chrome_pdf_view))
         waitForText(appString(R.string.pdf_zoom))
-        waitForTextWithScroll(appString(R.string.pdf_fit_width))
 
+        val pageLayout = appString(R.string.pdf_paginated_layout)
+        val scrollLayout = appString(R.string.pdf_continuous_scroll)
         val before = currentPdfLayoutLabel()
-        clickDescription(appString(R.string.pdf_continuous_scroll))
+        val targetLayout = if (before == scrollLayout) pageLayout else scrollLayout
+        clickDescription(targetLayout)
         val after = waitForPdfLayoutLabel(excluding = before)
-        assertNotEquals("PDF layout toggle did not change mode", before, after)
+        assertEquals("PDF layout toggle selected the wrong mode", targetLayout, after)
+
+        // Restore the original layout before the sheet is scrolled away from the layout controls.
+        clickDescription(before)
+        assertEquals(
+            "PDF layout did not restore its initial mode",
+            before,
+            waitForPdfLayoutLabel(excluding = after)
+        )
 
         // Exercise the renderer's manual fit path while the real PDFView is attached.
+        waitForTextWithScroll(appString(R.string.pdf_fit_width))
         clickTextWithScroll(appString(R.string.pdf_fit_width))
-
-        // Restore the original layout so this test does not leak reader preference state.
-        clickDescription(appString(R.string.pdf_continuous_scroll))
-        waitForPdfLayoutLabel(excluding = after)
         pressAndroidBack()
 
         instrumentation.runOnMainSync { pdfView.jumpTo(1, false) }
@@ -447,22 +454,34 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     private fun revealReaderChrome(view: PDFView) {
         val pdfViewLabel = appString(R.string.reader_chrome_pdf_view)
-        if (findClickableNode { it.text?.toString() == pdfViewLabel } != null) return
+        findClickableNode { it.text?.toString() == pdfViewLabel }?.let {
+            it.recycleSafely()
+            return
+        }
 
         val readerSurfaceLabel = appString(R.string.reader_surface_label)
         val readerSurface = waitForNode("reader surface=$readerSurfaceLabel") {
             it.contentDescription?.toString() == readerSurfaceLabel
         }
 
-        check(readerSurface.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            "$readerSurfaceLabel rejected ACTION_CLICK; actions=" +
-                readerSurface.actionList.joinToString { it.label?.toString() ?: it.id.toString() }
+        try {
+            check(readerSurface.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                "$readerSurfaceLabel rejected ACTION_CLICK; actions=" +
+                    readerSurface.actionList.joinToString {
+                        it.label?.toString() ?: it.id.toString()
+                    }
+            }
+        } finally {
+            readerSurface.recycleSafely()
         }
 
         uiAutomation.waitForIdle(250, 2_000)
         val deadline = SystemClock.elapsedRealtime() + 5_000L
         while (SystemClock.elapsedRealtime() < deadline) {
-            if (findClickableNode { it.text?.toString() == pdfViewLabel } != null) return
+            findClickableNode { it.text?.toString() == pdfViewLabel }?.let {
+                it.recycleSafely()
+                return
+            }
             SystemClock.sleep(POLL_MS)
         }
 
@@ -489,21 +508,34 @@ class ReaderPdfReliabilityInstrumentedTest {
     private fun currentPdfLayoutLabel(): String {
         val page = appString(R.string.pdf_paginated_layout)
         val scroll = appString(R.string.pdf_continuous_scroll)
-        return waitForNode("selected PDF layout") {
+        val node = waitForNode("selected PDF layout") {
             val description = it.contentDescription?.toString().orEmpty()
-            it.isChecked && (description == page || description == scroll)
-        }.contentDescription.toString()
+            it.isCheckable &&
+                !it.isClickable &&
+                (description == page || description == scroll)
+        }
+        return try {
+            node.contentDescription.toString()
+        } finally {
+            node.recycleSafely()
+        }
     }
 
     private fun waitForPdfLayoutLabel(excluding: String): String {
         val page = appString(R.string.pdf_paginated_layout)
         val scroll = appString(R.string.pdf_continuous_scroll)
-        return waitForNode("changed selected PDF layout") {
+        val node = waitForNode("changed selected PDF layout") {
             val description = it.contentDescription?.toString().orEmpty()
-            it.isChecked &&
+            it.isCheckable &&
+                !it.isClickable &&
                 (description == page || description == scroll) &&
                 description != excluding
-        }.contentDescription.toString()
+        }
+        return try {
+            node.contentDescription.toString()
+        } finally {
+            node.recycleSafely()
+        }
     }
 
     private fun appString(resId: Int): String =
@@ -536,11 +568,13 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun waitForText(text: String) {
-        waitForNode("text=$text") { it.text?.toString() == text }
+        waitForNode("text=$text") { it.text?.toString() == text }.recycleSafely()
     }
 
     private fun waitForTextWithScroll(text: String) {
-        waitForNodeWithScroll("text=$text") { it.text?.toString() == text }
+        waitForNodeWithScroll("text=$text") {
+            it.text?.toString() == text
+        }.recycleSafely()
     }
 
     private fun clickTextWithScroll(text: String) {
@@ -566,21 +600,30 @@ class ReaderPdfReliabilityInstrumentedTest {
                         action.id == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
                     }
             }
-            val scrolled =
-                scrollable?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) == true
+            val scrolled = scrollable?.let { node ->
+                try {
+                    node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+                } finally {
+                    node.recycleSafely()
+                }
+            } == true
 
             if (!scrolled) {
                 uiAutomation.rootInActiveWindow?.let { root ->
-                    val bounds = android.graphics.Rect()
-                    root.getBoundsInScreen(bounds)
-                    if (!bounds.isEmpty) {
-                        uiAutomation.executeShellCommand(
-                            "input swipe " +
-                                bounds.centerX() + " " +
-                                (bounds.bottom - bounds.height() / 4) + " " +
-                                bounds.centerX() + " " +
-                                (bounds.top + bounds.height() / 3) + " 250"
-                        ).close()
+                    try {
+                        val bounds = android.graphics.Rect()
+                        root.getBoundsInScreen(bounds)
+                        if (!bounds.isEmpty) {
+                            uiAutomation.executeShellCommand(
+                                "input swipe " +
+                                    bounds.centerX() + " " +
+                                    (bounds.bottom - bounds.height() / 4) + " " +
+                                    bounds.centerX() + " " +
+                                    (bounds.top + bounds.height() / 3) + " 250"
+                            ).close()
+                        }
+                    } finally {
+                        root.recycleSafely()
                     }
                 }
             }
@@ -596,13 +639,15 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun waitForPackage(packageName: String) {
-        waitForNode("package=$packageName") { it.packageName?.toString() == packageName }
+        waitForNode("package=$packageName") {
+            it.packageName?.toString() == packageName
+        }.recycleSafely()
     }
 
     private fun waitForDocumentsUi() {
         waitForNode("DocumentsUI package") {
             it.packageName?.toString() in DOCUMENTS_UI_PACKAGES
-        }
+        }.recycleSafely()
     }
 
     private fun waitForNode(
@@ -619,26 +664,7 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     private fun findClickableNode(
         predicate: (AccessibilityNodeInfo) -> Boolean
-    ): AccessibilityNodeInfo? {
-        val root = uiAutomation.rootInActiveWindow ?: return null
-        val queue = ArrayDeque<AccessibilityNodeInfo>()
-        queue.add(root)
-
-        while (queue.isNotEmpty()) {
-            val node = queue.removeFirst()
-            if (predicate(node)) return node
-            for (index in 0 until node.childCount) {
-                node.getChild(index)?.let(queue::add)
-            }
-        }
-        return null
-    }
-
-    private fun clickableAncestor(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
-        var current: AccessibilityNodeInfo? = node
-        while (current != null && !current.isClickable) current = current.parent
-        return current
-    }
+    ): AccessibilityNodeInfo? = findNode(predicate)
 
     private fun findNode(
         predicate: (AccessibilityNodeInfo) -> Boolean
@@ -649,26 +675,59 @@ class ReaderPdfReliabilityInstrumentedTest {
 
         while (queue.isNotEmpty()) {
             val node = queue.removeFirst()
-            if (predicate(node)) return node
+            val matches = try {
+                predicate(node)
+            } catch (error: Throwable) {
+                node.recycleSafely()
+                recycleQueuedNodes(queue)
+                throw error
+            }
+            if (matches) {
+                recycleQueuedNodes(queue)
+                return node
+            }
             for (index in 0 until node.childCount) {
                 node.getChild(index)?.let(queue::add)
             }
+            node.recycleSafely()
         }
         return null
     }
 
     private fun clickNode(node: AccessibilityNodeInfo) {
-        val current = clickableAncestor(node)
-        val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
-        if (!clicked) {
-            val bounds = android.graphics.Rect()
-            (current ?: node).getBoundsInScreen(bounds)
-            check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
-            uiAutomation.executeShellCommand(
-                "input tap ${bounds.centerX()} ${bounds.centerY()}"
-            ).close()
+        var current: AccessibilityNodeInfo? = node
+        while (current != null && !current.isClickable) {
+            val parent = current.parent
+            if (current !== node) current.recycleSafely()
+            current = parent
+        }
+
+        try {
+            val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+            if (!clicked) {
+                val bounds = android.graphics.Rect()
+                (current ?: node).getBoundsInScreen(bounds)
+                check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
+                uiAutomation.executeShellCommand(
+                    "input tap ${bounds.centerX()} ${bounds.centerY()}"
+                ).close()
+            }
+        } finally {
+            if (current != null && current !== node) current.recycleSafely()
+            node.recycleSafely()
         }
         SystemClock.sleep(750)
+    }
+
+    private fun recycleQueuedNodes(queue: ArrayDeque<AccessibilityNodeInfo>) {
+        while (queue.isNotEmpty()) {
+            queue.removeFirst().recycleSafely()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun AccessibilityNodeInfo.recycleSafely() {
+        recycle()
     }
 
     private companion object {
