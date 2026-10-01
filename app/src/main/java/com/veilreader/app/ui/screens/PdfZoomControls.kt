@@ -431,6 +431,11 @@ private fun PdfLayoutChoice(
     modifier: Modifier,
     onClick: () -> Unit
 ) {
+    val selectionStateDescription = stringResource(
+        if (selected) R.string.accessibility_selected
+        else R.string.accessibility_not_selected
+    )
+
     Surface(
         modifier = modifier
             .heightIn(min = 72.dp)
@@ -441,6 +446,7 @@ private fun PdfLayoutChoice(
             )
             .semantics {
                 contentDescription = description
+                stateDescription = selectionStateDescription
             },
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
