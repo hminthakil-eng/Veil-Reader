@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
+import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -62,6 +63,17 @@ import java.text.NumberFormat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+
+@Composable
+internal fun localizedBookFormatLabel(format: BookFormat): String =
+    stringResource(
+        when (format) {
+            BookFormat.EPUB -> R.string.book_format_epub
+            BookFormat.PDF -> R.string.book_format_pdf
+            BookFormat.AUDIO -> R.string.book_format_audio
+            BookFormat.COMIC -> R.string.book_format_comic
+        }
+    )
 
 @Composable
 internal fun rememberVeilPercentFormatter(): (Float) -> String {
