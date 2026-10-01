@@ -310,6 +310,23 @@ fun ArchivePanel(
     }
 }
 
+internal fun shouldStackDenseChoices(
+    widthDp: Int,
+    fontScale: Float,
+    optionCount: Int
+): Boolean {
+    val safeWidth = widthDp.coerceAtLeast(0)
+    val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    val safeCount = optionCount.coerceAtLeast(1)
+
+    return when {
+        safeScale >= 1.75f -> true
+        safeCount >= 3 && (safeScale >= 1.35f || safeWidth < 360) -> true
+        safeCount == 2 && (safeScale >= 1.60f || safeWidth < 320) -> true
+        else -> false
+    }
+}
+
 @Composable
 internal fun VeilMicroLabel(
     text: String,
