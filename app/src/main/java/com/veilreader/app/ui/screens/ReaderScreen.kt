@@ -463,29 +463,40 @@ fun ReaderScreen(
         }
     }
     val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
-    val paperCurlConfig = remember(presentedReaderAppearance.theme) {
+    val paperCurlConfig = remember(
+        presentedReaderAppearance.theme,
+        presentedReaderAppearance.paperPatina
+    ) {
+        val agedPaper =
+            paperCurlMaterialAge(presentedReaderAppearance.paperPatina.toFloat())
         when (presentedReaderAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFFE3D3B5),
-                backPageContentAlpha = 0.10f,
+                backPageContentAlpha = agedPaper.backPageContentAlpha,
                 shadowAlpha = 0.40f,
                 shadowRadius = 30.dp,
                 edgeHighlight = Color(0xFFFFF6E5),
                 creaseHighlightAlpha = 0.28f,
                 creaseShadowAlpha = 0.22f,
-                backPageShadeAlpha = 0.17f,
-                contactShadowAlpha = 0.20f
+                backPageShadeAlpha = agedPaper.backPageShadeAlpha,
+                contactShadowAlpha = agedPaper.contactShadowAlpha,
+                edgeThicknessAlpha = agedPaper.edgeThicknessAlpha,
+                backsideFiberAlpha = agedPaper.backsideFiberAlpha
             )
             ReaderTheme.SEPIA -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFFD8C39D),
-                backPageContentAlpha = 0.11f,
+                backPageContentAlpha = agedPaper.backPageContentAlpha,
                 shadowAlpha = 0.38f,
                 shadowRadius = 29.dp,
                 edgeHighlight = Color(0xFFF8E7C8),
                 creaseHighlightAlpha = 0.26f,
                 creaseShadowAlpha = 0.22f,
-                backPageShadeAlpha = 0.18f,
-                contactShadowAlpha = 0.20f
+                backPageShadeAlpha = agedPaper.backPageShadeAlpha
+                    .coerceAtLeast(0.15f),
+                contactShadowAlpha = agedPaper.contactShadowAlpha,
+                edgeThicknessAlpha = agedPaper.edgeThicknessAlpha,
+                backsideFiberAlpha = (agedPaper.backsideFiberAlpha * 1.08f)
+                    .coerceAtMost(0.07f)
             )
             ReaderTheme.DUSK -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFF27222C),
@@ -496,7 +507,9 @@ fun ReaderScreen(
                 creaseHighlightAlpha = 0.18f,
                 creaseShadowAlpha = 0.18f,
                 backPageShadeAlpha = 0.12f,
-                contactShadowAlpha = 0.14f
+                contactShadowAlpha = 0.14f,
+                edgeThicknessAlpha = 0.16f,
+                backsideFiberAlpha = 0.018f
             )
             ReaderTheme.OLED -> PaperCurlVisualConfig(
                 backPageColor = Color(0xFF111111),
@@ -507,7 +520,9 @@ fun ReaderScreen(
                 creaseHighlightAlpha = 0.14f,
                 creaseShadowAlpha = 0.16f,
                 backPageShadeAlpha = 0.10f,
-                contactShadowAlpha = 0.12f
+                contactShadowAlpha = 0.12f,
+                edgeThicknessAlpha = 0.14f,
+                backsideFiberAlpha = 0.012f
             )
         }
     }
