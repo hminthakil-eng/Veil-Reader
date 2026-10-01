@@ -1280,16 +1280,10 @@ private fun BookDetailEyebrow(
     text: String,
     modifier: Modifier = Modifier
 ) {
-    val arabicScript = usesArabicScript(text)
-    Text(
-        text = if (arabicScript) text else text.uppercase(Locale.ROOT),
+    VeilMicroLabel(
+        text = text,
         modifier = modifier,
-        style = if (arabicScript) {
-            MaterialTheme.typography.labelSmall
-        } else {
-            MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp)
-        },
-        color = VeilPalette.Brass
+        strong = true
     )
 }
 
@@ -2002,13 +1996,8 @@ private fun BookDetailIdentity(
         val recordLabel = localizedBookArtifactRecordLabel(
             bookArtifactState(book, memory = artifactMemory)
         )
-        Text(
-            recordLabel,
-            style = if (usesArabicScript(recordLabel)) {
-                MaterialTheme.typography.labelSmall
-            } else {
-                MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp)
-            },
+        VeilMicroLabel(
+            text = recordLabel,
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
 
