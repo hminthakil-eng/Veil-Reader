@@ -43,7 +43,8 @@ class MainActivity : FragmentActivity() {
                     onSetHighContrastEnabled = settingsViewModel::setHighContrastEnabled,
                     onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
                     onSaveFixedLayoutSpread = settingsViewModel::saveFixedLayoutSpread,
-                    onSaveSensorySettings = settingsViewModel::saveSensorySettings
+                    onSaveSensorySettings = settingsViewModel::saveSensorySettings,
+                    onSetGameVisible = settingsViewModel::setGameVisible
                 )
             }
         }
