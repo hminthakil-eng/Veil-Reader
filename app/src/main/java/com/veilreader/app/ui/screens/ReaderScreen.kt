@@ -1531,15 +1531,6 @@ fun ReaderScreen(
                             VeilSensoryEvent.PAGED_TURN
                     }
                     onSensoryEvent(sensoryEvent)
-                    directionalReaderCommitEvent(
-                        format = opened.format,
-                        navigationMode = navigationMode
-                    )?.let { locatorEvent ->
-                        recordLocator(
-                            nav.currentLocator.value,
-                            locatorEvent
-                        )
-                    }
                 },
                 onBoundaryHit = { side ->
                     navigationTransactionGate.reset()
@@ -2828,19 +2819,6 @@ internal fun readerBoundaryKind(
         PaperTurnDirection.FORWARD -> ReaderBoundaryKind.END
     }
 
-
-internal fun directionalReaderCommitEvent(
-    format: BookFormat,
-    navigationMode: ReaderNavigationMode
-): ReaderLocatorEvent? =
-    if (
-        format == BookFormat.EPUB &&
-        navigationMode == ReaderNavigationMode.PAPER_CURL
-    ) {
-        ReaderLocatorEvent.PAPER_COMMIT
-    } else {
-        null
-    }
 
 
 internal fun shouldAwaitReaderAppearanceClose(
