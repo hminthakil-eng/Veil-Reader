@@ -260,6 +260,7 @@
     <string name="archive_annotated">یادداشت‌دار</string>
     <string name="archive_passage">متن</string>
     <string name="archive_annotation">یادداشت</string>
+    <string name="archive_note_only">یادداشت محفوظ</string>
     <string name="archive_return_to_passage">بازگشت به متن</string>
     <string name="archive_annotate">یادداشت‌گذاری</string>
     <string name="archive_edit_annotation">ویرایش یادداشت</string>
