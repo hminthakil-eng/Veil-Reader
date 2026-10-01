@@ -260,6 +260,7 @@
     <string name="archive_annotated">ANNOTATED</string>
     <string name="archive_passage">PASSAGE</string>
     <string name="archive_annotation">ANNOTATION</string>
+    <string name="archive_note_only">Preserved note</string>
     <string name="archive_return_to_passage">Return to passage</string>
     <string name="archive_annotate">Annotate</string>
     <string name="archive_edit_annotation">Edit annotation</string>
