@@ -48,11 +48,11 @@ private data class SigilPresentation(
     val descriptionRes: Int
 )
 
-internal enum class RelicRarity(val label: String) {
-    FOUNDATION("FOUNDATION"),
-    RESONANT("RESONANT"),
-    ASCENDANT("ASCENDANT"),
-    SOVEREIGN("SOVEREIGN")
+internal enum class RelicRarity {
+    FOUNDATION,
+    RESONANT,
+    ASCENDANT,
+    SOVEREIGN
 }
 
 internal fun relicRarityFor(relicId: String): RelicRarity =
@@ -211,8 +211,8 @@ fun TreasuryScreen(
     ) {
     Column(
         Modifier
-            .fillMaxSize()
             .widthIn(max = treasuryLayout.contentMaxWidthDp.dp)
+            .fillMaxSize()
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(
@@ -351,10 +351,9 @@ private fun TreasuryPedestal(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Text(
-                stringResource(R.string.treasury_display_pedestal),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.treasury_display_pedestal),
+                strong = true
             )
 
             SigilPedestalSeal(
@@ -600,9 +599,8 @@ private fun BookplateRecord(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    stringResource(R.string.treasury_ex_libris),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                VeilMicroLabel(
+                    text = stringResource(R.string.treasury_ex_libris),
                     color = Color(0xFF6B5332)
                 )
                 Text(
@@ -619,9 +617,8 @@ private fun BookplateRecord(
             }
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(
-                    stringResource(R.string.treasury_sealed_bookplate),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
+                VeilMicroLabel(
+                    text = stringResource(R.string.treasury_sealed_bookplate),
                     color = VeilPalette.Mist.copy(alpha = 0.44f)
                 )
                 Text(
@@ -665,8 +662,8 @@ fun SanctumScreen(
     ) {
     Column(
         Modifier
-            .fillMaxSize()
             .widthIn(max = sanctumLayout.contentMaxWidthDp.dp)
+            .fillMaxSize()
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(
@@ -828,13 +825,12 @@ private fun SanctumSealPanel(
             verticalArrangement = Arrangement.spacedBy(9.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                stringResource(
+            VeilMicroLabel(
+                text = stringResource(
                     if (sovereignReady) R.string.sanctum_seal_open
                     else R.string.sanctum_sixth_door
                 ),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                color = VeilPalette.Brass
+                strong = true
             )
 
             SanctumGlyph(
@@ -887,9 +883,8 @@ private fun DossierProgressLine(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp),
+            VeilMicroLabel(
+                text = label,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
             Text(
@@ -983,12 +978,11 @@ private fun HiddenSanctumRecord(sovereignReady: Boolean) {
                 .padding(VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            Text(
-                stringResource(
+            VeilMicroLabel(
+                text = stringResource(
                     if (sovereignReady) R.string.sanctum_record_open
                     else R.string.sanctum_record_sealed
                 ),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
                 color = if (sovereignReady) {
                     VeilPalette.Brass
                 } else {
@@ -1063,10 +1057,9 @@ private fun ArchiveChamberHeading(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
-            Text(
-                eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = eyebrow,
+                strong = true
             )
             Text(
                 title,
