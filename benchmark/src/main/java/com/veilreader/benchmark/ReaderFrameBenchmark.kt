@@ -30,16 +30,18 @@ class ReaderFrameBenchmark {
         setupBlock = {
             pressHome()
             startActivityAndWait(readerIntent())
-            val targetContext = InstrumentationRegistry.getInstrumentation().targetContext
-            val surfaceLabelId = targetContext.resources.getIdentifier(
+            val instrumentation = InstrumentationRegistry.getInstrumentation()
+            val appResources = instrumentation.context.packageManager
+                .getResourcesForApplication(TARGET_PACKAGE)
+            val surfaceLabelId = appResources.getIdentifier(
                 "reader_surface_label",
                 "string",
                 TARGET_PACKAGE
             )
             check(surfaceLabelId != 0) {
-                "Reader surface accessibility resource is missing from benchmark target"
+                "Reader surface accessibility resource is missing from $TARGET_PACKAGE"
             }
-            val surfaceLabel = targetContext.getString(surfaceLabelId)
+            val surfaceLabel = appResources.getString(surfaceLabelId)
             check(device.wait(Until.hasObject(By.desc(surfaceLabel)), 20_000)) {
                 "Reader surface did not become ready for frame benchmark"
             }
