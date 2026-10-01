@@ -2,13 +2,14 @@ package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
-import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.readium.r2.shared.publication.Locator
+import org.readium.r2.shared.util.Url
+import org.readium.r2.shared.util.mediatype.MediaType
 
 class ReaderRelayoutContinuityPolicyTest {
 
@@ -68,20 +69,14 @@ class ReaderRelayoutContinuityPolicyTest {
         position: Int?,
         total: Double?,
         progression: Double
-    ): Locator {
-        val locations = JSONObject().apply {
-            put("progression", progression)
-            position?.let { put("position", it) }
-            total?.let { put("totalProgression", it) }
-        }
-        return requireNotNull(
-            Locator.fromJSON(
-                JSONObject().apply {
-                    put("href", "chapter.xhtml")
-                    put("type", "application/xhtml+xml")
-                    put("locations", locations)
-                }
+    ): Locator =
+        Locator(
+            href = requireNotNull(Url("chapter.xhtml")),
+            mediaType = MediaType.XHTML,
+            locations = Locator.Locations(
+                progression = progression,
+                position = position,
+                totalProgression = total
             )
         )
-    }
 }
