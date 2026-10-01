@@ -52,6 +52,9 @@ internal fun Modifier.paperCurl(
     edgeProvider: () -> PaperCurlEdge
 ): Modifier = drawWithCache {
     val edge = edgeProvider()
+    if (!isRenderablePaperCurlFrame(size.width, size.height, edge)) {
+        return@drawWithCache drawOnlyContent()
+    }
     val posA = edge.top
     val posB = edge.bottom
 
