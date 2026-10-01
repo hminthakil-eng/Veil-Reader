@@ -7,9 +7,9 @@ import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -828,13 +829,6 @@ private fun <T> ChoiceRow(
     label: @Composable (T) -> String,
     onSelected: (T) -> Unit
 ) {
-    val configuration = LocalConfiguration.current
-    val stacked = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = entries.size
-    )
-
     @Composable
     fun Choice(entry: T, modifier: Modifier = Modifier) {
         val active = entry == selected
@@ -869,27 +863,34 @@ private fun <T> ChoiceRow(
         }
     }
 
-    if (stacked) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            entries.forEach { entry ->
-                Choice(entry, Modifier.fillMaxWidth())
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = entries.size
+        )
+
+        if (stacked) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                entries.forEach { entry ->
+                    Choice(entry, Modifier.fillMaxWidth())
+                }
             }
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            entries.forEach { entry ->
-                Choice(entry)
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                entries.forEach { entry ->
+                    Choice(entry, Modifier.weight(1f))
+                }
             }
         }
     }
@@ -903,13 +904,6 @@ private fun SettingsSliderHeader(
     resetEnabled: Boolean = false,
     onReset: (() -> Unit)? = null
 ) {
-    val configuration = LocalConfiguration.current
-    val stacked = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = if (onReset == null) 2 else 3
-    )
-
     @Composable
     fun ValueAndReset() {
         Row(
@@ -933,26 +927,34 @@ private fun SettingsSliderHeader(
         }
     }
 
-    if (stacked) {
-        Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
-        ) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            ValueAndReset()
-        }
-    } else {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                label,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelLarge
-            )
-            ValueAndReset()
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = if (onReset == null) 2 else 3
+        )
+
+        if (stacked) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(label, style = MaterialTheme.typography.labelLarge)
+                ValueAndReset()
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    label,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                ValueAndReset()
+            }
         }
     }
 }
