@@ -79,6 +79,7 @@ import com.veilreader.app.ui.screens.ReadingNowScreen
 import com.veilreader.app.ui.screens.SanctumScreen
 import com.veilreader.app.ui.screens.SettingsScreen
 import com.veilreader.app.ui.screens.TreasuryScreen
+import com.veilreader.app.ui.screens.VeilMicroLabel
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.sensory.VeilSensoryFeedback
 import com.veilreader.app.ui.theme.VeilPalette
@@ -1225,6 +1226,7 @@ fun VeilApp(
             VeilNoticeKind.ERROR -> R.string.notice_error_title
         }
         VeilNoticeDialog(
+            kind = currentNotice.kind,
             eyebrow = stringResource(eyebrow),
             title = stringResource(heading),
             message = currentNotice.message,
@@ -1237,12 +1239,18 @@ fun VeilApp(
 
 @Composable
 private fun VeilNoticeDialog(
+    kind: VeilNoticeKind,
     eyebrow: String,
     title: String,
     message: String,
     actionLabel: String,
     onDismiss: () -> Unit
 ) {
+    val accent = when (kind) {
+        VeilNoticeKind.SUCCESS -> VeilPalette.Spirit
+        VeilNoticeKind.WARNING -> VeilPalette.Brass
+        VeilNoticeKind.ERROR -> MaterialTheme.colorScheme.error
+    }
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -1265,7 +1273,7 @@ private fun VeilNoticeDialog(
                 color = VeilPalette.Archive,
                 border = BorderStroke(
                     1.dp,
-                    VeilPalette.Brass.copy(alpha = 0.46f)
+                    accent.copy(alpha = 0.52f)
                 ),
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp
@@ -1274,10 +1282,10 @@ private fun VeilNoticeDialog(
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(
-                        eyebrow,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = eyebrow,
+                        color = accent,
+                        strong = true
                     )
                     Text(
                         title,
@@ -1288,7 +1296,7 @@ private fun VeilNoticeDialog(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(1.dp),
-                        color = VeilPalette.Brass.copy(alpha = 0.24f)
+                        color = accent.copy(alpha = 0.28f)
                     ) {}
                     Text(
                         message,
