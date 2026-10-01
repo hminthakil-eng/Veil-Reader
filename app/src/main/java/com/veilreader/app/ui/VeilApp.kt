@@ -95,7 +95,8 @@ fun VeilApp(
     onSetHighContrastEnabled: (Boolean) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
     onSaveFixedLayoutSpread: (String, ReaderFixedLayoutSpread) -> Unit = { _, _ -> },
-    onSaveSensorySettings: (SensorySettings) -> Unit = {}
+    onSaveSensorySettings: (SensorySettings) -> Unit = {},
+    onSetGameVisible: (Boolean) -> Unit = {}
 ) {
     val context = LocalContext.current.applicationContext
     val activity = LocalActivity.current
