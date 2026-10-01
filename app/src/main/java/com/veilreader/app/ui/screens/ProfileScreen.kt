@@ -273,10 +273,9 @@ private fun ProfileMasteryPanel(profile: ReaderProfile) {
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.profile_mastery_eyebrow),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.profile_mastery_eyebrow),
+                        strong = true
                     )
                     Text(
                         stringResource(R.string.profile_mastery_title),
@@ -399,10 +398,9 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(
-                    stringResource(R.string.profile_ledger_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.3.sp),
-                    color = VeilPalette.Brass
+                VeilMicroLabel(
+                    text = stringResource(R.string.profile_ledger_eyebrow),
+                    strong = true
                 )
                 Text(
                     stringResource(R.string.profile_ledger_title),
@@ -458,11 +456,10 @@ private fun DossierLedgerLine(
         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            color = VeilPalette.Mist.copy(alpha = 0.62f),
-            modifier = Modifier.weight(1f)
+        VeilMicroLabel(
+            text = label,
+            modifier = Modifier.weight(1f),
+            color = VeilPalette.Mist.copy(alpha = 0.62f)
         )
         Text(
             value,
@@ -552,10 +549,9 @@ private fun ArchivistDossierPanel(
                 verticalAlignment = Alignment.Top
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        stringResource(R.string.profile_private_record),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.profile_private_record),
+                        strong = true
                     )
                     Text(
                         rankName,
@@ -574,10 +570,8 @@ private fun ArchivistDossierPanel(
                     modifier = Modifier.heightIn(min = 48.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.profile_settings),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.profile_settings)
                     )
                 }
             }
@@ -614,9 +608,8 @@ private fun ArchivistDossierPanel(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text(
-                    stringResource(R.string.profile_experience),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.10.sp),
+                VeilMicroLabel(
+                    text = stringResource(R.string.profile_experience),
                     color = VeilPalette.Mist
                 )
                 Text(
