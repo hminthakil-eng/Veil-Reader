@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,9 +53,11 @@ import com.veilreader.app.data.manga.MangaLocalStorageSummary
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
+import com.veilreader.app.ui.theme.VeilAdaptiveClass
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.adaptiveClassFor
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 
 /**
@@ -86,6 +89,10 @@ fun MangaHubScreen(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val context = LocalContext.current
+    val adaptiveClass = adaptiveClassFor(
+        LocalConfiguration.current.screenWidthDp.toFloat()
+    )
+    val compactLayout = adaptiveClass == VeilAdaptiveClass.COMPACT
     val mangaBooks = remember(books) {
         books
             .filter { it.format == BookFormat.COMIC }
@@ -131,8 +138,8 @@ fun MangaHubScreen(
         item(key = "manga:header") {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 860.dp),
+                    .widthIn(max = 860.dp)
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -140,10 +147,10 @@ fun MangaHubScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.manga_hub_eyebrow),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.manga_hub_eyebrow),
+                        color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass,
+                        strong = true
                     )
                     Text(
                         stringResource(R.string.manga_hub_title),
@@ -165,8 +172,8 @@ fun MangaHubScreen(
         item(key = "manga:policy") {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 860.dp),
+                    .widthIn(max = 860.dp)
+                    .fillMaxWidth(),
                 shape = MaterialTheme.shapes.small,
                 color = MaterialTheme.colorScheme.surface.copy(alpha = 0.76f),
                 border = BorderStroke(
@@ -283,7 +290,9 @@ fun MangaHubScreen(
                             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                         ) {
                             Text(
-                                book.title,
+                                book.title.ifBlank {
+                                    stringResource(R.string.common_untitled_book)
+                                },
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 2,
@@ -404,48 +413,31 @@ fun MangaHubScreen(
                                 }
                             }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                            ) {
-                                Button(
-                                    onClick = { onOpenBook(book) },
-                                    enabled = !isImporting,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 48.dp)
-                                ) {
-                                    Text(
-                                        stringResource(
-                                            if (progress > 0f && !book.finished) {
-                                                R.string.manga_hub_continue
-                                            } else if (book.finished) {
-                                                R.string.manga_hub_read_again
-                                            } else {
-                                                R.string.manga_hub_start
-                                            }
+                            MangaHubActions(
+                                compact = compactLayout,
+                                enabled = !isImporting,
+                                primaryLabel = stringResource(
+                                    if (progress > 0f && !book.finished) {
+                                        R.string.manga_hub_continue
+                                    } else if (book.finished) {
+                                        R.string.manga_hub_read_again
+                                    } else {
+                                        R.string.manga_hub_start
+                                    }
+                                ),
+                                secondaryLabel = stringResource(R.string.manga_hub_add_chapter),
+                                onOpen = { onOpenBook(book) },
+                                onAddChapter = {
+                                    chapterTargetId = book.id
+                                    chapterLauncher.launch(
+                                        arrayOf(
+                                            "application/vnd.comicbook+zip",
+                                            "application/x-cbz",
+                                            "application/zip"
                                         )
                                     )
                                 }
-                                OutlinedButton(
-                                    onClick = {
-                                        chapterTargetId = book.id
-                                        chapterLauncher.launch(
-                                            arrayOf(
-                                                "application/vnd.comicbook+zip",
-                                                "application/x-cbz",
-                                                "application/zip"
-                                            )
-                                        )
-                                    },
-                                    enabled = !isImporting,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .heightIn(min = 48.dp)
-                                ) {
-                                    Text(stringResource(R.string.manga_hub_add_chapter))
-                                }
-                            }
+                            )
                         }
                     }
                 }
@@ -713,6 +705,58 @@ private fun formatChapterNumber(value: Double): String =
         value.toString().trimEnd('0').trimEnd('.')
     }
 
+
+@Composable
+private fun MangaHubActions(
+    compact: Boolean,
+    enabled: Boolean,
+    primaryLabel: String,
+    secondaryLabel: String,
+    onOpen: () -> Unit,
+    onAddChapter: () -> Unit
+) {
+    if (compact) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
+            Button(
+                onClick = onOpen,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text(primaryLabel)
+            }
+            OutlinedButton(
+                onClick = onAddChapter,
+                enabled = enabled,
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text(secondaryLabel)
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            Button(
+                onClick = onOpen,
+                enabled = enabled,
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+            ) {
+                Text(primaryLabel)
+            }
+            OutlinedButton(
+                onClick = onAddChapter,
+                enabled = enabled,
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+            ) {
+                Text(secondaryLabel)
+            }
+        }
+    }
+}
 
 @Composable
 private fun MangaHubCover(book: Book) {
