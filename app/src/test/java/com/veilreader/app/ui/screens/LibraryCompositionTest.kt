@@ -131,4 +131,60 @@ class LibraryCompositionTest {
         )
     }
 
+
+    @Test
+    fun `normalized shelf identity collapses case and whitespace variants`() {
+        val first = Book(
+            id = "first",
+            title = "First",
+            author = "Shared Author",
+            collections = listOf("Mystery"),
+            seriesName = "Veil",
+            seriesIndex = 2.0
+        )
+        val second = Book(
+            id = "second",
+            title = "Second",
+            author = " shared author ",
+            collections = listOf(" mystery "),
+            seriesName = " veil ",
+            seriesIndex = 1.0
+        )
+
+        val groups = deriveLibraryShelfGroups(
+            books = listOf(first, second),
+            filtered = listOf(first, second),
+            filterActive = false,
+            labels = labels
+        )
+
+        val collectionGroups = groups.filter { it.eyebrow == "Collection" }
+        val seriesGroups = groups.filter { it.eyebrow == "Series" }
+        val authorGroups = groups.filter { it.eyebrow == "Author" }
+
+        assertEquals(1, collectionGroups.size)
+        assertEquals(setOf("first", "second"), collectionGroups.single().books.map { it.id }.toSet())
+
+        assertEquals(1, seriesGroups.size)
+        assertEquals(listOf("second", "first"), seriesGroups.single().books.map { it.id })
+
+        assertEquals(1, authorGroups.size)
+        assertEquals(setOf("first", "second"), authorGroups.single().books.map { it.id }.toSet())
+    }
+
+    @Test
+    fun `label grouping keeps one copy of each volume`() {
+        val book = Book(id = "same", title = "Same", author = "Author")
+        val groups = groupLibraryBooksByLabel(
+            listOf(
+                "Shelf" to book,
+                " shelf " to book,
+                "SHELF" to book
+            )
+        )
+
+        assertEquals(1, groups.size)
+        assertEquals(listOf("same"), groups.single().books.map { it.id })
+    }
+
 }
