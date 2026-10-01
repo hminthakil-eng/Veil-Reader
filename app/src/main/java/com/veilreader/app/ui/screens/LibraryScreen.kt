@@ -187,32 +187,41 @@ internal fun deriveLibraryShelfGroups(
             )
         }
 
-    books
-        .filter { !it.seriesName.isNullOrBlank() }
-        .groupBy { requireNotNull(it.seriesName) }
-        .toList()
-        .sortedByDescending { it.second.size }
+    groupLibraryBooksByLabel(
+        books.mapNotNull { book -> book.seriesName?.let { it to book } }
+    )
+        .sortedWith(
+            compareByDescending<LibraryNamedBookGroup> { it.books.size }
+                .thenBy { it.name.lowercase(Locale.ROOT) }
+        )
         .take(6)
-        .forEach { (name, volumes) ->
+        .forEach { group ->
             groups += LibraryShelfGroup(
                 eyebrow = labels.series,
-                title = name,
-                books = volumes.sortedWith(
+                title = group.name,
+                books = group.books.sortedWith(
                     compareBy<Book> { it.seriesIndex ?: Double.MAX_VALUE }
                         .thenBy { it.title.lowercase(Locale.ROOT) }
+                        .thenBy { it.id }
                 )
             )
         }
 
-    books
-        .filter { it.author.isNotBlank() }
-        .groupBy { it.author }
-        .filterValues { it.size >= 2 }
-        .toList()
-        .sortedByDescending { it.second.size }
+    groupLibraryBooksByLabel(
+        books.map { it.author to it }
+    )
+        .filter { it.books.size >= 2 }
+        .sortedWith(
+            compareByDescending<LibraryNamedBookGroup> { it.books.size }
+                .thenBy { it.name.lowercase(Locale.ROOT) }
+        )
         .take(4)
-        .forEach { (name, volumes) ->
-            groups += LibraryShelfGroup(labels.author, name, volumes)
+        .forEach { group ->
+            groups += LibraryShelfGroup(
+                eyebrow = labels.author,
+                title = group.name,
+                books = group.books
+            )
         }
 
     books
