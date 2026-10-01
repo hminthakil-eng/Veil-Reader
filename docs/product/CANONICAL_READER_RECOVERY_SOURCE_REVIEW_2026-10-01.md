@@ -265,3 +265,30 @@ The existing repository completion contract remains authoritative: progress beco
 
 The final canonical head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No manual release packaging was started.
 
+## W57/W58 follow-up — unified keyboard ownership and atomic selection Notes
+
+Canonical implementation reviewed through head `5ca4a237a27dd9d86f2dfbeda4f1a18e7037a018`.
+
+### One keyboard contract across Reader page-turn modes
+
+- Paper now owns keyboard navigation directly instead of relying on the generic directional fallback. A Paper key press therefore follows the same commit/boundary path as Paper tap navigation, and a key cannot create a second navigation while a curl drag/animation already owns the page.
+- `ReaderInputArbiter` routes keys in explicit ownership order: Paper → Slide → directional fallback after accessibility/selection/blocking policy is applied.
+- Paper, Slide and static/directional Paged behavior now share one pure `readerKeyTurn` mapping instead of maintaining divergent switch statements.
+- The shared map supports `ArrowLeft/Right/Up/Down`, `PageUp/PageDown`, `Space`, and `Shift+Space`, with physical left/right correctly mapped through LTR/RTL reading progression. Unsupported modifiers remain renderer-owned.
+- JVM coverage locks shared key semantics; Android instrumentation exercises Paper key ownership, terminal boundary consumption, `PageUp`, and `Shift+Space`.
+
+### Atomic selection Note transaction
+
+- A fresh selection Note no longer creates a Highlight when the note dialog opens.
+- The draft now retains only the selected quote, persisted locator, optional existing Highlight id, and note text in saveable UI state.
+- Cancelling a fresh draft performs no repository write or compensating delete. Process death while the dialog is open therefore cannot strand a newly-created empty Highlight in Room.
+- The Reader's Back/input overlay gates use the draft locator as the dialog-ownership signal; a fresh draft intentionally has no Highlight id.
+- `LocalLibraryRepository.commitSelectionNote()` performs the final annotation commit: it updates an explicitly-existing Highlight in place, deduplicates an equivalent existing selection, or creates one new Highlight already carrying the final note. The durable operation is one final Highlight upsert.
+- If an explicitly-targeted existing Highlight disappeared before Save, the commit returns no result and never resurrects it under a new id.
+- Highlight and Note gamification/session credit occurs only after the final annotation has been flushed durably; fresh commits receive Highlight + Note credit, existing edits receive only Note semantics.
+- Stale discard-on-cancel policy/tests were removed. Room-backed instrumentation verifies fresh durable creation, in-place edit with one record, and non-resurrection of a deleted target.
+
+### Verification boundary
+
+These changes are committed on the canonical branch with JVM and Android/Room regression coverage. The exact final head still requires Android CI, Storage Instrumentation and Performance Benchmarks before any GREEN claim. No manual APK/AAB packaging was started.
+
