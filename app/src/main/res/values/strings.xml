@@ -1272,4 +1272,6 @@
     <string name="manga_chapter_language_label">Language (optional)</string>
     <string name="manga_chapter_language_hint">BCP-47 tag, for example en, fa, ja.</string>
     <string name="notice_manga_chapter_metadata_updated">Chapter details updated.</string>
+    <string name="accessibility_selected">Selected</string>
+    <string name="accessibility_not_selected">Not selected</string>
 </resources>
