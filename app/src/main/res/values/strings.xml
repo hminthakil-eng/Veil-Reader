@@ -1084,6 +1084,7 @@
     <string name="reader_notebook_search_match">Search match</string>
     <string name="reader_notebook_return_match">Return to match</string>
     <string name="reader_notebook_passage_note">Passage note</string>
+    <string name="reader_notebook_note_only">Preserved note</string>
     <string name="reader_notebook_your_thoughts">Your thoughts</string>
     <string name="reader_notebook_note_save_failed">Could not save this note.</string>
     <string name="reader_notebook_saving">Saving…</string>
