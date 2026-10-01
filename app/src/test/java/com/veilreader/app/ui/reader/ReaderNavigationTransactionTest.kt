@@ -133,6 +133,38 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun sameLocation_doesNotStartProgrammaticTransaction() {
+        assertFalse(
+            shouldStartReaderLocationJump(
+                originLocatorJson = "same",
+                targetLocatorJson = "same"
+            )
+        )
+    }
+
+    @Test
+    fun missingOrigin_stillAllowsKnownDestinationJump() {
+        assertTrue(
+            shouldStartReaderLocationJump(
+                originLocatorJson = null,
+                targetLocatorJson = "destination"
+            )
+        )
+        assertFalse(
+            shouldStartReaderLocationJump(
+                originLocatorJson = "origin",
+                targetLocatorJson = null
+            )
+        )
+        assertFalse(
+            shouldStartReaderLocationJump(
+                originLocatorJson = "origin",
+                targetLocatorJson = ""
+            )
+        )
+    }
+
+    @Test
     fun jumpCommit_persistsWithoutPageTurnCredit() {
         assertTrue(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.countsPageTurn)
