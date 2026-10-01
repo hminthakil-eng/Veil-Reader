@@ -1535,19 +1535,21 @@ fun ReaderScreen(
         try {
             if (epubRelayoutRisk) {
                 val epubNavigator = nav as? EpubNavigatorFragment
-                val staleSourceJson = nav.currentLocator.value.toVeilPersistedJson(opened.format)
-                val sourceLocator = try {
-                    epubNavigator?.firstVisibleElementLocator() ?: nav.currentLocator.value
+                val rendererLocator = nav.currentLocator.value
+                val staleSourceJson = rendererLocator.toVeilPersistedJson(opened.format)
+                val preciseSourceLocator = try {
+                    epubNavigator?.firstVisibleElementLocator()
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
-                    nav.currentLocator.value
+                    null
                 }
                 val anchor = try {
                     val positions = withContext(Dispatchers.IO) {
                         opened.publication.positions()
                     }
-                    stableEpubPositionAnchor(sourceLocator, positions)
+                    stableEpubPositionAnchor(rendererLocator, positions)
+                        ?.withEpubCssSelectorFrom(preciseSourceLocator)
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (_: Exception) {
@@ -4861,19 +4863,60 @@ internal fun epubPreferencesMayRelayout(
         previous.ligatures != requested.ligatures ||
         previous.textNormalization != requested.textNormalization
 
+internal data class EpubPositionAnchorSample(
+    val position: Int?,
+    val totalProgression: Double?
+)
+
+internal fun stableEpubPositionAnchorIndex(
+    currentPosition: Int?,
+    currentTotalProgression: Double?,
+    positions: List<EpubPositionAnchorSample>
+): Int? {
+    if (positions.isEmpty()) return null
+
+    currentPosition?.let { position ->
+        positions.indexOfFirst { it.position == position }
+            .takeIf { it >= 0 }
+            ?.let { return it }
+    }
+
+    val progression = currentTotalProgression ?: return null
+    var bestIndex = -1
+    var bestProgression = Double.NEGATIVE_INFINITY
+    positions.forEachIndexed { index, candidate ->
+        val candidateProgression = candidate.totalProgression ?: return@forEachIndexed
+        if (candidateProgression <= progression && candidateProgression > bestProgression) {
+            bestIndex = index
+            bestProgression = candidateProgression
+        }
+    }
+    return bestIndex.takeIf { it >= 0 } ?: 0
+}
+
 internal fun stableEpubPositionAnchor(
     current: Locator,
     positions: List<Locator>
 ): Locator? {
-    if (positions.isEmpty()) return null
-    current.locations.position?.let { position ->
-        positions.firstOrNull { it.locations.position == position }?.let { return it }
-    }
-    val progression = current.locations.totalProgression ?: return null
-    return positions
-        .filter { candidate ->
-            candidate.locations.totalProgression?.let { it <= progression } == true
+    val index = stableEpubPositionAnchorIndex(
+        currentPosition = current.locations.position,
+        currentTotalProgression = current.locations.totalProgression,
+        positions = positions.map { candidate ->
+            EpubPositionAnchorSample(
+                position = candidate.locations.position,
+                totalProgression = candidate.locations.totalProgression
+            )
         }
-        .maxByOrNull { it.locations.totalProgression ?: Double.NEGATIVE_INFINITY }
-        ?: positions.firstOrNull()
+    ) ?: return null
+    return positions.getOrNull(index)
+}
+
+private fun Locator.withEpubCssSelectorFrom(precise: Locator?): Locator {
+    val selector = precise?.locations?.get("cssSelector") as? String
+    if (selector.isNullOrBlank()) return this
+    return copy(
+        locations = locations.copy(
+            otherLocations = locations.otherLocations + ("cssSelector" to selector)
+        )
+    )
 }

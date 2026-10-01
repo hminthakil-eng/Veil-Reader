@@ -7,17 +7,18 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   recover:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - name: Checkout full history
+      - name: Checkout canonical head
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
       - name: Set up JDK 17
         uses: actions/setup-java@v6
@@ -61,3 +62,25 @@ jobs:
           path: room-schema-recovery/
           if-no-files-found: error
           retention-days: 1
+
+      - name: Commit recovered schemas and retire recovery workflow
+        env:
+          TARGET_BRANCH: ${{ github.event.pull_request.head.ref || github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          schema_dir="app/schemas/com.veilreader.app.data.db.VeilDatabase"
+          mkdir -p "$schema_dir"
+          cp room-schema-recovery/com.veilreader.app.data.db.VeilDatabase/2.json "$schema_dir/2.json"
+          cp room-schema-recovery/com.veilreader.app.data.db.VeilDatabase/3.json "$schema_dir/3.json"
+          rm -f .github/workflows/room-schema-recovery.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$schema_dir/2.json" "$schema_dir/3.json" .github/workflows/room-schema-recovery.yml
+          if git diff --cached --quiet; then
+            echo "Room schema history is already canonical."
+            exit 0
+          fi
+          git commit -m "fix(room): commit generated migration schema history"
+          git push origin HEAD:"$TARGET_BRANCH"

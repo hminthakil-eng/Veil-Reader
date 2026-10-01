@@ -9,6 +9,7 @@ on:
       - "app/build.gradle.kts"
       - "build.gradle.kts"
       - ".github/workflows/storage-instrumentation.yml"
+      - "tools/run_android_ci_emulator.sh"
   workflow_dispatch:
 
 permissions:
@@ -44,15 +45,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run Room instrumentation tests
-        uses: ReactiveCircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_6
-          ram-size: 2048M
-          heap-size: 512M
-          disable-animations: true
-          script: gradle :app:connectedDebugAndroidTest --stacktrace
+        run: bash tools/run_android_ci_emulator.sh storage
 
       - name: Upload instrumentation reports on failure only
         if: failure()
@@ -62,5 +55,6 @@ jobs:
           path: |
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
+            build/reports/
           if-no-files-found: ignore
           retention-days: 1

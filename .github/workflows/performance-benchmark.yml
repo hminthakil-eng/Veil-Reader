@@ -16,6 +16,7 @@ on:
       - "tools/check_performance_*.py"
       - "tools/snapshot_performance.py"
       - "tools/build_performance_dashboard.py"
+      - "tools/run_android_ci_emulator.sh"
       - ".github/workflows/performance-benchmark.yml"
   push:
     branches: [ "main" ]
@@ -32,6 +33,7 @@ on:
       - "tools/check_performance_*.py"
       - "tools/snapshot_performance.py"
       - "tools/build_performance_dashboard.py"
+      - "tools/run_android_ci_emulator.sh"
       - ".github/workflows/performance-benchmark.yml"
 
 permissions:
@@ -88,17 +90,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Generate profile and run benchmark smoke
-        uses: ReactiveCircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          arch: x86_64
-          profile: pixel_6
-          ram-size: 2048M
-          heap-size: 512M
-          disable-animations: true
-          script: |
-            gradle :app:generateBaselineProfile --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
-            gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
+        run: bash tools/run_android_ci_emulator.sh performance
 
       - name: Print benchmark instrumentation failures
         if: failure()
@@ -112,7 +104,7 @@ jobs:
 
       - name: Snapshot normalized performance
         env:
-          VEIL_PERF_DEVICE: github-actions-api35-x86_64
+          VEIL_PERF_DEVICE: github-actions-api35-x86_64-lavapipe
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           COMMIT_SHA="$GITHUB_SHA"
@@ -194,6 +186,7 @@ jobs:
             performance/current-smoke.json
             performance/dashboard-smoke.md
             performance/dashboard-smoke.json
+            build/reports/
           if-no-files-found: warn
           retention-days: 1
 
