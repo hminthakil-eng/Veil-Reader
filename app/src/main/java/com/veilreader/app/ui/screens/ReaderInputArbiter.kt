@@ -188,6 +188,7 @@ internal class ReaderInputArbiter(
             ReaderKeyRoute.NAVIGATION -> Unit
         }
 
+        if (paper?.onKey(event) == true) return true
         if (slide?.onKey(event) == true) return true
         return directional.onKey(event)
     }
