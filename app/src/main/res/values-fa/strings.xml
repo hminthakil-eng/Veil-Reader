@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Veil Reader</string>
+    <string name="nav_reading">مطالعه</string>
+    <string name="nav_library">کتابخانه</string>
+    <string name="nav_castle">قلعه</string>
+    <string name="nav_path">مسیر</string>
+    <string name="nav_profile">پروفایل</string>
     <string name="common_back">بازگشت</string>
     <string name="common_read">مطالعه</string>
     <string name="common_delete">حذف</string>
