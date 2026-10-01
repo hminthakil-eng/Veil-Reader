@@ -93,10 +93,12 @@ import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
+import com.veilreader.app.ui.reader.ReaderNavigationIdentity
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
+import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import com.veilreader.app.ui.reader.readerObservedLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
@@ -349,7 +351,7 @@ fun ReaderScreen(
 
     fun beginProgrammaticNavigation(
         originLocatorJson: String?,
-        targetLocatorJson: String? = null,
+        targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
         passageVisitLocatorJson: String? = null
     ): Long {
@@ -358,7 +360,7 @@ fun ReaderScreen(
         val transaction = navigationTransactionGate.begin(
             originLocatorJson = originLocatorJson,
             nowElapsedMs = SystemClock.elapsedRealtime(),
-            targetLocatorJson = targetLocatorJson,
+            targetIdentity = targetIdentity,
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson
         )
@@ -921,7 +923,7 @@ fun ReaderScreen(
         game.rebasePagePacing()
         val transactionToken = beginProgrammaticNavigation(
             originLocatorJson = originJson,
-            targetLocatorJson = targetJson
+            targetIdentity = locator.toReaderNavigationIdentity()
         )
 
         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
@@ -1271,7 +1273,8 @@ fun ReaderScreen(
                 )
                 val settledNavigation = navigationTransactionGate.consumeSettled(
                     observedLocatorJson = json,
-                    nowElapsedMs = SystemClock.elapsedRealtime()
+                    nowElapsedMs = SystemClock.elapsedRealtime(),
+                    observedIdentity = locator.toReaderNavigationIdentity()
                 )
                 if (settledNavigation != null) {
                     previousLocationJson = settledNavigation.originLocatorJson
@@ -2663,7 +2666,7 @@ fun ReaderScreen(
                         game.rebasePagePacing()
                         val transactionToken = beginProgrammaticNavigation(
                             originLocatorJson = originJson,
-                            targetLocatorJson = json,
+                            targetIdentity = locator.toReaderNavigationIdentity(),
                             passageVisitLocatorJson = json
                         )
                         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
