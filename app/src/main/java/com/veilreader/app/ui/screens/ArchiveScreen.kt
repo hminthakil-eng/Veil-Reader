@@ -45,10 +45,29 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
+import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.NumberFormat
 import kotlinx.coroutines.delay
 
 private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
+
+@Composable
+private fun ArchiveMicroLabel(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = VeilPalette.Brass
+) {
+    Text(
+        text = text,
+        modifier = modifier,
+        style = if (usesArabicScript(text)) {
+            MaterialTheme.typography.labelSmall
+        } else {
+            MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp)
+        },
+        color = color
+    )
+}
 
 @Composable
 fun ArchiveScreen(
@@ -177,17 +196,14 @@ fun ArchiveScreen(
                         Text(VeilBackLabel(stringResource(R.string.archive_back)))
                     }
                     Spacer(Modifier.weight(1f))
-                    Text(
-                        stringResource(R.string.archive_privacy),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+                    ArchiveMicroLabel(
+                        text = stringResource(R.string.archive_privacy),
                         color = VeilPalette.Mist.copy(alpha = 0.70f)
                     )
                 }
 
-                Text(
-                    stringResource(R.string.notebook_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
-                    color = VeilPalette.Brass
+                ArchiveMicroLabel(
+                    text = stringResource(R.string.notebook_eyebrow)
                 )
                 Text(
                     stringResource(R.string.archive_title),
@@ -515,12 +531,8 @@ fun ArchiveScreen(
                             ),
                             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                         ) {
-                            Text(
-                                stringResource(R.string.archive_manuscript_note),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 1.25.sp
-                                ),
-                                color = VeilPalette.Brass
+                            ArchiveMicroLabel(
+                                text = stringResource(R.string.archive_manuscript_note)
                             )
                             Text(
                                 stringResource(R.string.notebook_note_dialog_title),
@@ -820,10 +832,17 @@ private fun NotebookHighlightCard(
                             .heightIn(min = 54.dp)
                             .background(VeilPalette.Brass.copy(alpha = 0.48f))
                     )
-                    Text(
-                        "“${highlight.quote}”",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = VeilPalette.Moon.copy(alpha = 0.90f),
+                    highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
+                        Text(
+                            "“$quote”",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = VeilPalette.Moon.copy(alpha = 0.90f),
+                            modifier = Modifier.weight(1f)
+                        )
+                    } ?: Text(
+                        stringResource(R.string.archive_note_only),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass.copy(alpha = 0.82f),
                         modifier = Modifier.weight(1f)
                     )
                 }
