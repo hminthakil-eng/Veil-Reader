@@ -883,6 +883,68 @@ private fun <T> ChoiceRow(
 }
 
 @Composable
+private fun SettingsSliderHeader(
+    label: String,
+    valueDescription: String,
+    valueColor: androidx.compose.ui.graphics.Color,
+    resetEnabled: Boolean = false,
+    onReset: (() -> Unit)? = null
+) {
+    val configuration = LocalConfiguration.current
+    val stacked = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = if (onReset == null) 2 else 3
+    )
+
+    @Composable
+    fun ValueAndReset() {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+        ) {
+            Text(
+                valueDescription,
+                color = valueColor,
+                style = MaterialTheme.typography.labelMedium
+            )
+            onReset?.let { reset ->
+                TextButton(
+                    onClick = reset,
+                    enabled = resetEnabled,
+                    modifier = Modifier.heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.reader_value_reset))
+                }
+            }
+        }
+    }
+
+    if (stacked) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            ValueAndReset()
+        }
+    } else {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ValueAndReset()
+        }
+    }
+}
+
+@Composable
 private fun ReaderOptionalSlider(
     label: String,
     value: Double?,
@@ -905,30 +967,16 @@ private fun ReaderOptionalSlider(
     }
 
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    valueDescription,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                TextButton(
-                    onClick = {
-                        draft = defaultValue.coerceIn(valueRange.start, valueRange.endInclusive)
-                        onCommit(null)
-                    },
-                    enabled = value != null,
-                    modifier = Modifier.heightIn(min = 48.dp)
-                ) {
-                    Text(stringResource(R.string.reader_value_reset))
-                }
+        SettingsSliderHeader(
+            label = label,
+            valueDescription = valueDescription,
+            valueColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            resetEnabled = value != null,
+            onReset = {
+                draft = defaultValue.coerceIn(valueRange.start, valueRange.endInclusive)
+                onCommit(null)
             }
-        }
+        )
         Slider(
             value = draft,
             onValueChange = { draft = it },
@@ -954,18 +1002,11 @@ private fun ReaderSlider(
     val valueDescription = displayValue(draft)
 
     Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            Text(
-                valueDescription,
-                color = VeilPalette.Brass,
-                style = MaterialTheme.typography.labelLarge
-            )
-        }
+        SettingsSliderHeader(
+            label = label,
+            valueDescription = valueDescription,
+            valueColor = VeilPalette.Brass
+        )
         Slider(
             value = draft,
             onValueChange = { draft = it },
