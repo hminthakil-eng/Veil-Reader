@@ -127,6 +127,10 @@
     <string name="settings_brightness">Reading brightness</string>
     <string name="settings_sound_title">Sound &amp; touch</string>
     <string name="settings_sound_description">Keep feedback subtle, optional, and fully local. Haptics never require sound; ambient playback is off by default.</string>
+    <string name="settings_world_title">World &amp; progression</string>
+    <string name="settings_world_description">Castle, Path, rituals, and relics are optional layers built from your local reading history.</string>
+    <string name="settings_world_visible">Show Castle &amp; Path</string>
+    <string name="settings_world_visible_description">Hide or show the world layer without deleting XP, ranks, relics, or reading history.</string>
     <string name="settings_haptics">Haptic feedback</string>
     <string name="settings_haptics_description">A restrained tactile cue for page turns, saved marks, and major unlocks.</string>
     <string name="settings_interaction_sounds">Interaction sounds</string>
