@@ -8,6 +8,7 @@
     <string name="common_cancel">Cancel</string>
     <string name="common_unknown_book">Unknown book</string>
     <string name="common_unknown_author">Unknown author</string>
+    <string name="common_untitled_book">Untitled book</string>
 
     <string name="notebook_eyebrow">HIDDEN ARCHIVE</string>
     <string name="notebook_title">Notebook</string>
