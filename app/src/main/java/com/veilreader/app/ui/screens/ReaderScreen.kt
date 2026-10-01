@@ -1928,6 +1928,10 @@ fun ReaderScreen(
                 ) {
                     if (readerModeHandoffState.snapshot != null) {
                         readerModeHandoffState.clearImmediately()
+                        scope.launch {
+                            delay(VeilMotion.FRAME_SETTLE_MS)
+                            readerModeHandoffState.releaseBufferIfIdle()
+                        }
                     }
                     viewportRelayoutPending = true
                     viewportRelayoutJob?.cancel()
