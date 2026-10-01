@@ -36,8 +36,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -3211,56 +3211,57 @@ private fun EpubAppearancePanel(
                 text = stringResource(R.string.reader_fixed_spread_title),
                 strong = true
             )
-            val configuration = LocalConfiguration.current
-            val stackedSpreadChoices = shouldStackDenseChoices(
-                widthDp = configuration.screenWidthDp,
-                fontScale = configuration.fontScale,
-                optionCount = ReaderFixedLayoutSpread.entries.size
-            )
-            if (stackedSpreadChoices) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectableGroup(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    ReaderFixedLayoutSpread.entries.forEach { mode ->
-                        ReaderAppearanceChoice(
-                            label = when (mode) {
-                                ReaderFixedLayoutSpread.AUTO ->
-                                    stringResource(R.string.reader_fixed_spread_auto)
-                                ReaderFixedLayoutSpread.SINGLE ->
-                                    stringResource(R.string.reader_fixed_spread_single)
-                                ReaderFixedLayoutSpread.DUAL ->
-                                    stringResource(R.string.reader_fixed_spread_dual)
-                            },
-                            selected = fixedLayoutSpread == mode,
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { onSpreadChange(mode) }
-                        )
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stackedSpreadChoices = shouldStackDenseChoices(
+                    widthDp = maxWidth.value.toInt(),
+                    fontScale = LocalDensity.current.fontScale,
+                    optionCount = ReaderFixedLayoutSpread.entries.size
+                )
+                if (stackedSpreadChoices) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectableGroup(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        ReaderFixedLayoutSpread.entries.forEach { mode ->
+                            ReaderAppearanceChoice(
+                                label = when (mode) {
+                                    ReaderFixedLayoutSpread.AUTO ->
+                                        stringResource(R.string.reader_fixed_spread_auto)
+                                    ReaderFixedLayoutSpread.SINGLE ->
+                                        stringResource(R.string.reader_fixed_spread_single)
+                                    ReaderFixedLayoutSpread.DUAL ->
+                                        stringResource(R.string.reader_fixed_spread_dual)
+                                },
+                                selected = fixedLayoutSpread == mode,
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = { onSpreadChange(mode) }
+                            )
+                        }
                     }
-                }
-            } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .selectableGroup(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    ReaderFixedLayoutSpread.entries.forEach { mode ->
-                        ReaderAppearanceChoice(
-                            label = when (mode) {
-                                ReaderFixedLayoutSpread.AUTO ->
-                                    stringResource(R.string.reader_fixed_spread_auto)
-                                ReaderFixedLayoutSpread.SINGLE ->
-                                    stringResource(R.string.reader_fixed_spread_single)
-                                ReaderFixedLayoutSpread.DUAL ->
-                                    stringResource(R.string.reader_fixed_spread_dual)
-                            },
-                            selected = fixedLayoutSpread == mode,
-                            modifier = Modifier.weight(1f),
-                            onClick = { onSpreadChange(mode) }
-                        )
+                } else {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        ReaderFixedLayoutSpread.entries.forEach { mode ->
+                            ReaderAppearanceChoice(
+                                label = when (mode) {
+                                    ReaderFixedLayoutSpread.AUTO ->
+                                        stringResource(R.string.reader_fixed_spread_auto)
+                                    ReaderFixedLayoutSpread.SINGLE ->
+                                        stringResource(R.string.reader_fixed_spread_single)
+                                    ReaderFixedLayoutSpread.DUAL ->
+                                        stringResource(R.string.reader_fixed_spread_dual)
+                                },
+                                selected = fixedLayoutSpread == mode,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onSpreadChange(mode) }
+                            )
+                        }
                     }
                 }
             }
@@ -3909,54 +3910,58 @@ private fun ReaderAppearanceSlider(
     val safeValue = value.coerceIn(valueRange.start, valueRange.endInclusive)
     val valueDescription = valueLabel(safeValue)
 
-    val configuration = LocalConfiguration.current
-    val stackedHeader = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = 2
-    )
-
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        if (stackedHeader) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(label, style = MaterialTheme.typography.titleSmall)
-                Text(
-                    valueDescription,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (enabled) 1f else 0.48f
-                    )
-                )
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                Text(
-                    valueDescription,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
-                        alpha = if (enabled) 1f else 0.48f
-                    )
-                )
-            }
-        }
-        Slider(
-            value = safeValue,
-            onValueChange = onValueChange,
-            onValueChangeFinished = onValueChangeFinished,
-            valueRange = valueRange,
-            enabled = enabled,
-            modifier = Modifier.semantics {
-                contentDescription = label
-                stateDescription = valueDescription
-            }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stackedHeader = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = 2
         )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            if (stackedHeader) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(label, style = MaterialTheme.typography.titleSmall)
+                    Text(
+                        valueDescription,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (enabled) 1f else 0.48f
+                        )
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(
+                        valueDescription,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                            alpha = if (enabled) 1f else 0.48f
+                        )
+                    )
+                }
+            }
+            Slider(
+                value = safeValue,
+                onValueChange = onValueChange,
+                onValueChangeFinished = onValueChangeFinished,
+                valueRange = valueRange,
+                enabled = enabled,
+                modifier = Modifier.semantics {
+                    contentDescription = label
+                    stateDescription = valueDescription
+                }
+            )
+        }
     }
 }
 
@@ -3980,13 +3985,6 @@ private fun ReaderAppearanceNullableSlider(
         valueLabel(safeValue)
     }
 
-    val configuration = LocalConfiguration.current
-    val stackedHeader = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = 3
-    )
-
     @Composable
     fun ValueAndReset() {
         Row(
@@ -4008,35 +4006,46 @@ private fun ReaderAppearanceNullableSlider(
         }
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        if (stackedHeader) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(label, style = MaterialTheme.typography.titleSmall)
-                ValueAndReset()
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-                ValueAndReset()
-            }
-        }
-        Slider(
-            value = safeValue,
-            onValueChange = onValueChange,
-            onValueChangeFinished = onValueChangeFinished,
-            valueRange = valueRange,
-            enabled = enabled,
-            modifier = Modifier.semantics {
-                contentDescription = label
-                stateDescription = valueDescription
-            }
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stackedHeader = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = 3
         )
+
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            if (stackedHeader) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(label, style = MaterialTheme.typography.titleSmall)
+                    ValueAndReset()
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(label, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    ValueAndReset()
+                }
+            }
+            Slider(
+                value = safeValue,
+                onValueChange = onValueChange,
+                onValueChangeFinished = onValueChangeFinished,
+                valueRange = valueRange,
+                enabled = enabled,
+                modifier = Modifier.semantics {
+                    contentDescription = label
+                    stateDescription = valueDescription
+                }
+            )
+        }
     }
 }
 
@@ -4047,51 +4056,52 @@ private fun ReaderAppearanceTriState(
     onChange: (ReaderPreferenceToggle) -> Unit,
     enabled: Boolean = true
 ) {
-    val configuration = LocalConfiguration.current
-    val stacked = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = ReaderPreferenceToggle.entries.size
-    )
-
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(title, style = MaterialTheme.typography.titleSmall)
-        if (stacked) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderPreferenceToggle.entries.forEach { option ->
-                    ReaderAppearanceChoice(
-                        label = when (option) {
-                            ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
-                            ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
-                            ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
-                        },
-                        selected = value == option,
-                        enabled = enabled,
-                        modifier = Modifier.fillMaxWidth(),
-                        onClick = { onChange(option) }
-                    )
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stacked = shouldStackDenseChoices(
+                widthDp = maxWidth.value.toInt(),
+                fontScale = LocalDensity.current.fontScale,
+                optionCount = ReaderPreferenceToggle.entries.size
+            )
+
+            if (stacked) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ReaderPreferenceToggle.entries.forEach { option ->
+                        ReaderAppearanceChoice(
+                            label = when (option) {
+                                ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
+                                ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
+                                ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
+                            },
+                            selected = value == option,
+                            enabled = enabled,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onChange(option) }
+                        )
+                    }
                 }
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                ReaderPreferenceToggle.entries.forEach { option ->
-                    ReaderAppearanceChoice(
-                        label = when (option) {
-                            ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
-                            ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
-                            ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
-                        },
-                        selected = value == option,
-                        enabled = enabled,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onChange(option) }
-                    )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ReaderPreferenceToggle.entries.forEach { option ->
+                        ReaderAppearanceChoice(
+                            label = when (option) {
+                                ReaderPreferenceToggle.DEFAULT -> stringResource(R.string.settings_book_default)
+                                ReaderPreferenceToggle.ON -> stringResource(R.string.reader_value_on)
+                                ReaderPreferenceToggle.OFF -> stringResource(R.string.reader_value_off)
+                            },
+                            selected = value == option,
+                            enabled = enabled,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onChange(option) }
+                        )
+                    }
                 }
             }
         }
@@ -4233,67 +4243,69 @@ internal fun ReaderReadingModeSelector(
     scrollEnabled: Boolean,
     onSelect: (ReaderReadingMode) -> Unit
 ) {
-    val configuration = LocalConfiguration.current
     val choices = listOf(
         ReaderReadingMode.PAGED to ReaderNavigationMode.PAGED,
         ReaderReadingMode.SCROLL to ReaderNavigationMode.SCROLL
     )
-    val stacked = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = choices.size
-    )
 
-    if (stacked) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            choices.forEach { (mode, previewMode) ->
-                val active = selected == mode
-                val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
-                ReaderModeChoice(
-                    label = stringResource(
-                        if (mode == ReaderReadingMode.SCROLL) {
-                            R.string.settings_mode_scroll
-                        } else {
-                            R.string.settings_mode_paged
-                        }
-                    ),
-                    previewMode = previewMode,
-                    active = active,
-                    enabled = enabled,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onSelect(mode) }
-                )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = choices.size
+        )
+
+        if (stacked) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                choices.forEach { (mode, previewMode) ->
+                    val active = selected == mode
+                    val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
+                    ReaderModeChoice(
+                        label = stringResource(
+                            if (mode == ReaderReadingMode.SCROLL) {
+                                R.string.settings_mode_scroll
+                            } else {
+                                R.string.settings_mode_paged
+                            }
+                        ),
+                        previewMode = previewMode,
+                        active = active,
+                        enabled = enabled,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onSelect(mode) }
+                    )
+                }
             }
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            choices.forEach { (mode, previewMode) ->
-                val active = selected == mode
-                val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
-                ReaderModeChoice(
-                    label = stringResource(
-                        if (mode == ReaderReadingMode.SCROLL) {
-                            R.string.settings_mode_scroll
-                        } else {
-                            R.string.settings_mode_paged
-                        }
-                    ),
-                    previewMode = previewMode,
-                    active = active,
-                    enabled = enabled,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onSelect(mode) }
-                )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                choices.forEach { (mode, previewMode) ->
+                    val active = selected == mode
+                    val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
+                    ReaderModeChoice(
+                        label = stringResource(
+                            if (mode == ReaderReadingMode.SCROLL) {
+                                R.string.settings_mode_scroll
+                            } else {
+                                R.string.settings_mode_paged
+                            }
+                        ),
+                        previewMode = previewMode,
+                        active = active,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSelect(mode) }
+                    )
+                }
             }
         }
     }
@@ -4305,7 +4317,6 @@ internal fun ReaderPageTurnSelector(
     enabled: Boolean = true,
     onSelect: (PageTurnStyle) -> Unit
 ) {
-    val configuration = LocalConfiguration.current
     val choices = listOf(
         Triple(
             PageTurnStyle.PAPER,
@@ -4323,46 +4334,49 @@ internal fun ReaderPageTurnSelector(
             stringResource(R.string.settings_page_turn_none)
         )
     )
-    val stacked = shouldStackDenseChoices(
-        widthDp = configuration.screenWidthDp,
-        fontScale = configuration.fontScale,
-        optionCount = choices.size
-    )
 
-    if (stacked) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .selectableGroup(),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            choices.forEach { (style, previewMode, label) ->
-                ReaderModeChoice(
-                    label = label,
-                    previewMode = previewMode,
-                    active = selected == style,
-                    enabled = enabled,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { onSelect(style) }
-                )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = choices.size
+        )
+
+        if (stacked) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                choices.forEach { (style, previewMode, label) ->
+                    ReaderModeChoice(
+                        label = label,
+                        previewMode = previewMode,
+                        active = selected == style,
+                        enabled = enabled,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onSelect(style) }
+                    )
+                }
             }
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            choices.forEach { (style, previewMode, label) ->
-                ReaderModeChoice(
-                    label = label,
-                    previewMode = previewMode,
-                    active = selected == style,
-                    enabled = enabled,
-                    modifier = Modifier.weight(1f),
-                    onClick = { onSelect(style) }
-                )
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                choices.forEach { (style, previewMode, label) ->
+                    ReaderModeChoice(
+                        label = label,
+                        previewMode = previewMode,
+                        active = selected == style,
+                        enabled = enabled,
+                        modifier = Modifier.weight(1f),
+                        onClick = { onSelect(style) }
+                    )
+                }
             }
         }
     }
