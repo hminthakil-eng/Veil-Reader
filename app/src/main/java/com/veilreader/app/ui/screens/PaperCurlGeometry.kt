@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Path
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.sin
 import com.veilreader.app.ui.theme.VeilSanctuary
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -215,28 +216,39 @@ internal fun paperLineIntersection(
     line2a: Offset,
     line2b: Offset
 ): Offset? {
-    val denominator =
-        (line1a.x - line1b.x) * (line2a.y - line2b.y) -
-            (line1a.y - line1b.y) * (line2a.x - line2b.x)
-    if (denominator == 0f) return null
+    if (
+        !line1a.isFinite ||
+        !line1b.isFinite ||
+        !line2a.isFinite ||
+        !line2b.isFinite
+    ) {
+        return null
+    }
 
-    val first =
-        (line1a.x * line1b.y - line1a.y * line1b.x) *
-            (line2a.x - line2b.x)
-    val second =
-        (line1a.x - line1b.x) *
-            (line2a.x * line2b.y - line2a.y * line2b.x)
-    val x = (first - second) / denominator
+    val line1Dx = line1a.x - line1b.x
+    val line1Dy = line1a.y - line1b.y
+    val line2Dx = line2a.x - line2b.x
+    val line2Dy = line2a.y - line2b.y
+    val denominator = line1Dx * line2Dy - line1Dy * line2Dx
+    val magnitude = hypot(line1Dx, line1Dy) * hypot(line2Dx, line2Dy)
+    if (
+        magnitude <= PAPER_INTERSECTION_MIN_VECTOR_MAGNITUDE ||
+        kotlin.math.abs(denominator) <=
+            magnitude * PAPER_INTERSECTION_PARALLEL_TOLERANCE
+    ) {
+        return null
+    }
 
-    val third =
-        (line1a.x * line1b.y - line1a.y * line1b.x) *
-            (line2a.y - line2b.y)
-    val fourth =
-        (line1a.y - line1b.y) *
-            (line2a.x * line2b.y - line2a.y * line2b.x)
-    val y = (third - fourth) / denominator
+    val determinant1 = line1a.x * line1b.y - line1a.y * line1b.x
+    val determinant2 = line2a.x * line2b.y - line2a.y * line2b.x
+    val x = (determinant1 * line2Dx - line1Dx * determinant2) / denominator
+    val y = (determinant1 * line2Dy - line1Dy * determinant2) / denominator
+    if (!x.isFinite() || !y.isFinite()) return null
     return Offset(x, y)
 }
+
+private const val PAPER_INTERSECTION_PARALLEL_TOLERANCE = 0.00001f
+private const val PAPER_INTERSECTION_MIN_VECTOR_MAGNITUDE = 0.0001f
 
 private fun Offset.normalized(): Offset {
     val distance = getDistance()
