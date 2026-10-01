@@ -106,7 +106,12 @@ class PerformanceBudgetTest(unittest.TestCase):
             "classSuffix": ".ReaderFrameBenchmark",
             "benchmarkNameSuffix": "pageTurns",
         }
-        self.assertTrue(budget.matches(SAMPLE["benchmarks"][1], check))
+        frame_benchmark = next(
+            item
+            for item in SAMPLE["benchmarks"]
+            if item["className"].endswith(".ReaderFrameBenchmark")
+        )
+        self.assertTrue(budget.matches(frame_benchmark, check))
 
     def test_smoke_style_checks_pass_for_gfxinfo_sample(self):
         checks = [
