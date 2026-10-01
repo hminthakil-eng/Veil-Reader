@@ -617,7 +617,7 @@ private fun RitualPanel(
 
             Text(
                 doctrine.maxim,
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
+                style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Spirit.copy(alpha = 0.82f)
             )
 
@@ -821,13 +821,16 @@ private fun RankConstellation(profile: ReaderProfile) {
                             horizontalAlignment = if (alignLeft) Alignment.Start else Alignment.End,
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            Text(
-                                stringResource(
+                            VeilMicroLabel(
+                                text = stringResource(
                                     R.string.path_rank_number,
                                     (index + 1).toString().padStart(2, '0')
                                 ),
-                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
-                                color = if (awakened) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.46f)
+                                color = if (awakened) {
+                                    VeilPalette.Brass
+                                } else {
+                                    VeilPalette.Mist.copy(alpha = 0.46f)
+                                }
                             )
                             Text(
                                 localizedRank,
