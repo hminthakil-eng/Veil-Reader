@@ -45,9 +45,9 @@ internal fun readerEffectiveTargetHref(
     val targetResource = target.substringBefore('#')
     if (targetResource.isNotEmpty() || fragment.isEmpty()) return target
 
-    val current = currentHref?.trim()?.takeIf { it.isNotEmpty() } ?: return target
+    val current = currentHref?.trim()?.takeIf { it.isNotEmpty() } ?: return null
     val currentResource = readerResourceHref(current)
-    return if (currentResource.isEmpty()) target else "$currentResource#$fragment"
+    return if (currentResource.isEmpty()) null else "$currentResource#$fragment"
 }
 
 internal fun shouldStartReaderLinkJump(
