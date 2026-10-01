@@ -4040,14 +4040,10 @@ private fun ReaderAppearancePreview(
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    when (appearance.navigationMode) {
-                        ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
-                        ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
-                        ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
-                        ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
-                    },
+                    localizedReaderMotionSummary(appearance),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.End
                 )
             }
 
