@@ -55,6 +55,11 @@ import kotlinx.coroutines.withContext
  * share one queue so progress, annotations, derived metadata and backup snapshots have deterministic
  * ordering.
  */
+internal data class SelectionNoteCommit(
+    val highlight: Highlight,
+    val created: Boolean
+)
+
 class LocalLibraryRepository internal constructor(
     private val appContext: Context,
     private val database: VeilDatabase,
@@ -584,6 +589,58 @@ class LocalLibraryRepository internal constructor(
         _highlights.value = listOf(record) + _highlights.value
         enqueue { database.highlights().upsert(record.toEntity()) }
         return record
+    }
+
+    fun commitSelectionNote(
+        bookId: String,
+        quote: String,
+        locatorJson: String,
+        existingHighlightId: String?,
+        note: String
+    ): SelectionNoteCommit? {
+        val cleanQuote = quote.trim()
+        val cleanLocator = locatorJson.trim()
+        val cleanNote = note.trim()
+        if (bookId.isBlank() || cleanQuote.isBlank() || cleanLocator.isBlank()) return null
+
+        val currentHighlights = _highlights.value
+        val existing = when {
+            !existingHighlightId.isNullOrBlank() ->
+                currentHighlights.firstOrNull {
+                    it.id == existingHighlightId &&
+                        it.bookId == bookId
+                } ?: return null
+            else ->
+                currentHighlights.firstOrNull {
+                    it.bookId == bookId &&
+                        it.locatorJson == cleanLocator &&
+                        it.quote == cleanQuote
+                }
+        }
+
+        val created = existing == null
+        val committed = existing
+            ?.copy(note = cleanNote)
+            ?: Highlight(
+                id = UUID.randomUUID().toString(),
+                bookId = bookId,
+                quote = cleanQuote,
+                locatorJson = cleanLocator,
+                note = cleanNote
+            )
+
+        _highlights.value = if (created) {
+            listOf(committed) + currentHighlights
+        } else {
+            currentHighlights.map { item ->
+                if (item.id == committed.id) committed else item
+            }
+        }
+        enqueue { database.highlights().upsert(committed.toEntity()) }
+        return SelectionNoteCommit(
+            highlight = committed,
+            created = created
+        )
     }
 
     fun highlightsFor(bookId: String): List<Highlight> = _highlights.value.filter { it.bookId == bookId }
