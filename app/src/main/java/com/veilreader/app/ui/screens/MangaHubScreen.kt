@@ -761,6 +761,8 @@ private fun MangaHubActions(
 @Composable
 private fun MangaHubCover(book: Book) {
     val coverPath = book.coverCachePath?.takeIf { it.isNotBlank() }
+    val fallbackTitle = book.title.trim().takeIf { it.isNotBlank() }
+        ?: stringResource(R.string.common_untitled_book)
     val shape = MaterialTheme.shapes.extraSmall
     if (coverPath != null) {
         AsyncImage(
@@ -782,7 +784,7 @@ private fun MangaHubCover(book: Book) {
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = book.title.trim().take(1).uppercase(),
+                text = fallbackTitle.take(1),
                 style = MaterialTheme.typography.headlineMedium,
                 color = VeilPalette.Brass
             )
