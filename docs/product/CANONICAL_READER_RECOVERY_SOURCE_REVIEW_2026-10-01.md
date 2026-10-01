@@ -122,3 +122,32 @@ Source-level review and regression tests were added, but this follow-up does **n
 
 Keep PR #349 Draft until those gates and later visual/device inspection are complete. Do not claim BUILD GREEN, STORAGE GREEN, PERFORMANCE GREEN, DEVICE GREEN or RELEASE READY from this source review alone.
 
+## W52 follow-up — overlay ownership, appearance settle, and terminal-boundary behavior
+
+Canonical implementation reviewed through head `0078d0d9588ad9674c17adaa6bd255055e391fbc`.
+
+### Selection and overlay ownership
+
+- Reader-owned chrome actions now dismiss Readium's native EPUB selection before opening Notebook, Appearance/PDF View, or performing a page Bookmark action.
+- The selection callback retains the exact active Android ActionMode, clears Readium selection first, and then finishes that owned toolbar even when renderer teardown races the overlay transition.
+- This prevents a native selection toolbar or selection handles from floating above a Veil modal surface and keeps gesture ownership unambiguous.
+
+### Appearance close and renderer failure
+
+- The Appearance chamber now receives the final local draft on Done and waits for that exact effective appearance to become the presented renderer state before closing.
+- A final slider commit gets an explicit propagation frame before close eligibility is evaluated.
+- The wait has a defensive two-second ceiling; a renderer fault cannot trap the user in Appearance.
+- Renderer preference submission now fails calm: relayout-temporary state and handoff imagery are cleared, the last successfully presented appearance remains on screen, and a localized recovery message is shown instead of allowing a preference exception to escape the Reader effect.
+- English and Persian recovery copy were added.
+
+### First/last-page boundary ownership
+
+- Static Paged directional edge taps and keys now remain consumed when Readium reports that navigation cannot move beyond the publication boundary.
+- The boundary still emits the existing throttled visual/sensory response, but the failed navigation no longer falls through to the center-tap chrome handler and unexpectedly opens Reader controls.
+- Paper Curl and Slide were source-reviewed in the same pass. Their edge taps/drags already consume the handled boundary path and did not require this change.
+- Android contract coverage now verifies that a failed directional page turn is consumed and emits exactly one boundary callback.
+
+### Verification boundary
+
+Pure JVM regression coverage was added for Appearance close synchronization. Android instrumentation coverage was extended for terminal directional ownership. These source changes still require the final-head Android CI, Storage Instrumentation and Performance gates before any GREEN claim. No manual APK/AAB build was started.
+
