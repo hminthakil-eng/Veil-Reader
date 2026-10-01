@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.reader
 
+import java.net.URI
 import kotlin.math.abs
 import org.readium.r2.shared.publication.Locator
 
@@ -40,8 +41,13 @@ internal fun shouldStartReaderLinkJump(
     targetHref: String?
 ): Boolean {
     val target = targetHref?.trim()?.takeIf { it.isNotEmpty() } ?: return false
-    val current = currentHref?.trim()?.takeIf { it.isNotEmpty() }
-    return current == null || current != target
+    val current = currentHref?.trim()?.takeIf { it.isNotEmpty() } ?: return true
+    if (current == target) return false
+
+    val targetFragment = target.substringAfter('#', missingDelimiterValue = "")
+    if (targetFragment.isNotEmpty()) return true
+
+    return readerResourceHref(current) != readerResourceHref(target)
 }
 
 internal data class ReaderNavigationIdentity(
@@ -112,8 +118,13 @@ internal fun readerNavigationIdentityMatchesTarget(
     return !targetHasLocationDiscriminator
 }
 
-private fun readerResourceHref(href: String): String =
-    href.trim().substringBefore('#')
+private fun readerResourceHref(href: String): String {
+    val resource = href.trim().substringBefore('#')
+    if (resource.isEmpty()) return resource
+    return runCatching { URI(resource).normalize().toString() }
+        .getOrDefault(resource)
+        .removePrefix("./")
+}
 
 private const val LOCATOR_PROGRESSION_TOLERANCE = 0.0025
 
