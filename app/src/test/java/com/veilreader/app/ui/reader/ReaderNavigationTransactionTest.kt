@@ -9,15 +9,58 @@ import org.junit.Test
 class ReaderNavigationTransactionTest {
 
     @Test
-    fun firstSettledLocator_consumesProgrammaticTransactionOnce() {
+    fun firstDifferentLocator_consumesProgrammaticTransactionOnce() {
         val gate = ReaderNavigationTransactionGate()
         val started = gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
 
-        val settled = gate.consumeSettled(nowElapsedMs = 600L)
+        val settled = gate.consumeSettled(
+            observedLocatorJson = "destination",
+            nowElapsedMs = 600L
+        )
 
         assertEquals(started.token, settled?.token)
         assertEquals("origin", settled?.originLocatorJson)
-        assertNull(gate.consumeSettled(nowElapsedMs = 500L))
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson = "later",
+                nowElapsedMs = 700L
+            )
+        )
+    }
+
+    @Test
+    fun originReEmission_doesNotPrematurelySettleJump() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
+        val started = gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
+
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson = "origin",
+                nowElapsedMs = 400L
+            )
+        )
+        assertTrue(gate.isActive(nowElapsedMs = 450L))
+
+        val settled = gate.consumeSettled(
+            observedLocatorJson = "destination",
+            nowElapsedMs = 600L
+        )
+        assertEquals(started.token, settled?.token)
+        assertFalse(gate.isActive(nowElapsedMs = 650L))
+    }
+
+    @Test
+    fun missingOrigin_allowsFirstObservedLocatorToSettle() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin(originLocatorJson = null, nowElapsedMs = 100L)
+
+        assertEquals(
+            started.token,
+            gate.consumeSettled(
+                observedLocatorJson = "destination",
+                nowElapsedMs = 300L
+            )?.token
+        )
     }
 
     @Test
@@ -28,7 +71,13 @@ class ReaderNavigationTransactionTest {
 
         gate.cancel(first.token)
 
-        assertEquals(second.token, gate.consumeSettled(nowElapsedMs = 500L)?.token)
+        assertEquals(
+            second.token,
+            gate.consumeSettled(
+                observedLocatorJson = "destination",
+                nowElapsedMs = 500L
+            )?.token
+        )
     }
 
     @Test
@@ -38,7 +87,12 @@ class ReaderNavigationTransactionTest {
 
         gate.cancel(current.token)
 
-        assertNull(gate.consumeSettled(nowElapsedMs = 500L))
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson = "destination",
+                nowElapsedMs = 500L
+            )
+        )
     }
 
     @Test
@@ -47,7 +101,13 @@ class ReaderNavigationTransactionTest {
         val transaction = gate.begin("origin", nowElapsedMs = 100L)
 
         assertTrue(gate.isActive(nowElapsedMs = 500L))
-        assertEquals(transaction.token, gate.consumeSettled(nowElapsedMs = 600L)?.token)
+        assertEquals(
+            transaction.token,
+            gate.consumeSettled(
+                observedLocatorJson = "destination",
+                nowElapsedMs = 600L
+            )?.token
+        )
     }
 
     @Test
@@ -64,7 +124,12 @@ class ReaderNavigationTransactionTest {
         val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
         gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
 
-        assertNull(gate.consumeSettled(nowElapsedMs = 1_101L))
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson = "destination",
+                nowElapsedMs = 1_101L
+            )
+        )
     }
 
     @Test

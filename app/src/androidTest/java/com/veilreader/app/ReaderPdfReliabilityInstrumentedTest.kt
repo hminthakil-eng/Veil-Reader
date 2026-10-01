@@ -448,12 +448,14 @@ class ReaderPdfReliabilityInstrumentedTest {
     private fun revealReaderChrome(view: PDFView) {
         if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
 
-        val readerSurface = waitForNode("Reader surface") {
-            it.contentDescription?.toString() == "Reader surface"
+        val readerSurfaceLabel =
+            instrumentation.targetContext.getString(R.string.reader_surface_label)
+        val readerSurface = waitForNode("reader surface=$readerSurfaceLabel") {
+            it.contentDescription?.toString() == readerSurfaceLabel
         }
 
         check(readerSurface.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            "Reader surface rejected ACTION_CLICK; actions=" +
+            "$readerSurfaceLabel rejected ACTION_CLICK; actions=" +
                 readerSurface.actionList.joinToString { it.label?.toString() ?: it.id.toString() }
         }
 

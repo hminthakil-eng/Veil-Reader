@@ -2,7 +2,8 @@ package com.veilreader.app.ui.reader
 
 /**
  * Owns one programmatic Reader jump until the debounced navigator stream publishes its settled
- * destination. Intermediate navigator positions must not be treated as user page turns.
+ * destination. A re-emitted origin locator is still part of the handoff and must not consume the
+ * transaction; intermediate navigator positions must not be treated as user page turns.
  *
  * The transaction expires defensively. If a navigator accepts a no-op jump and emits nothing,
  * a later real user page turn must not be misclassified forever.
@@ -43,8 +44,21 @@ internal class ReaderNavigationTransactionGate(
         freshActive(nowElapsedMs) != null
 
     @Synchronized
-    fun consumeSettled(nowElapsedMs: Long): ReaderNavigationTransaction? {
+    fun consumeSettled(
+        observedLocatorJson: String?,
+        nowElapsedMs: Long
+    ): ReaderNavigationTransaction? {
         val transaction = freshActive(nowElapsedMs) ?: return null
+
+        // Readium may re-publish the pre-jump currentLocator while go() is still moving the
+        // resource/page. That emission is not the destination and must not consume the jump.
+        if (
+            transaction.originLocatorJson != null &&
+            observedLocatorJson == transaction.originLocatorJson
+        ) {
+            return null
+        }
+
         active = null
         return transaction
     }

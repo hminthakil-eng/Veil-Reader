@@ -281,6 +281,9 @@ fun ReaderScreen(
     var pendingEpubRelayoutSourceJson by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<String?>(null)
     }
+    var pendingEpubRelayoutAnchor by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<Locator?>(null)
+    }
     val readerModeHandoffState = remember(opened.book.id, readerSessionInstanceId) {
         ReaderModeHandoffState()
     }
@@ -1129,6 +1132,7 @@ fun ReaderScreen(
                         return@collect
                     }
                     pendingEpubRelayoutSourceJson = null
+                    pendingEpubRelayoutAnchor = null
                     ReaderTrace.event(
                         "locator_relayout_fresh_observed",
                         bookId = opened.book.id,
@@ -1142,6 +1146,7 @@ fun ReaderScreen(
                     details = "progress=${locator.locations.totalProgression}"
                 )
                 val settledNavigation = navigationTransactionGate.consumeSettled(
+                    observedLocatorJson = json,
                     nowElapsedMs = SystemClock.elapsedRealtime()
                 )
                 if (settledNavigation != null) {
@@ -1558,6 +1563,7 @@ fun ReaderScreen(
                 if (anchor != null) {
                     recordLocator(anchor, ReaderLocatorEvent.FINAL_SNAPSHOT)
                     pendingEpubRelayoutSourceJson = staleSourceJson
+                    pendingEpubRelayoutAnchor = anchor
                     ReaderTrace.event(
                         "locator_relayout_anchor_committed",
                         bookId = opened.book.id,
@@ -1602,13 +1608,19 @@ fun ReaderScreen(
                     null
                 }
                 if (refreshed != null) {
-                    recordLocator(refreshed, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                    val refreshedCheckpoint =
+                        pendingEpubRelayoutAnchor?.withEpubCssSelectorFrom(refreshed)
+                            ?: refreshed
+                    recordLocator(refreshedCheckpoint, ReaderLocatorEvent.FINAL_SNAPSHOT)
                     pendingEpubRelayoutSourceJson = null
+                    pendingEpubRelayoutAnchor = null
                     ReaderTrace.event(
                         "locator_relayout_refreshed",
                         bookId = opened.book.id,
                         sessionId = readerSessionInstanceId,
-                        details = "progress=${refreshed.locations.totalProgression}"
+                        details =
+                            "position=${refreshedCheckpoint.locations.position} " +
+                                "progress=${refreshedCheckpoint.locations.totalProgression}"
                     )
                 }
             }
