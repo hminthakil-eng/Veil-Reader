@@ -170,6 +170,10 @@
     <string name="reader_mark">Mark</string>
     <string name="reader_type">Type</string>
     <string name="reader_zoom">Zoom</string>
+    <string name="reader_chrome_notebook">Notebook</string>
+    <string name="reader_chrome_bookmark">Bookmark</string>
+    <string name="reader_chrome_appearance">Appearance</string>
+    <string name="reader_chrome_pdf_view">PDF view</string>
     <string name="reader_return">RETURN</string>
     <string name="reader_previous_location">Previous location</string>
     <string name="reader_note_eyebrow">HIDDEN ARCHIVE · PASSAGE NOTE</string>
