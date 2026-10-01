@@ -17,6 +17,27 @@ internal enum class ReaderSelectionAction {
 }
 
 /**
+ * A newly-created highlight belongs to the pending Note transaction until the note is saved.
+ * Cancelling that transaction must not leave an accidental highlight behind. Existing highlights
+ * are never deleted by dismissing the note editor.
+ */
+internal fun shouldDiscardPendingSelectionNoteHighlight(
+    createdForNote: Boolean,
+    noteSaving: Boolean
+): Boolean =
+    createdForNote && !noteSaving
+
+/**
+ * A fresh Note action must contain note text before it can commit. Existing highlights may save an
+ * empty note deliberately, which removes only their annotation while preserving the highlight.
+ */
+internal fun canSavePendingSelectionNote(
+    createdForNote: Boolean,
+    note: String
+): Boolean =
+    !createdForNote || note.isNotBlank()
+
+/**
  * Adds Veil's annotation actions to Android's native EPUB text-selection toolbar.
  *
  * Readium owns selection handles and the underlying WebView action mode. This callback only adds
