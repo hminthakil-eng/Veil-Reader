@@ -128,6 +128,17 @@ fun VeilApp(
     }
     val routeViewModel: VeilAppViewModel = viewModel()
     val route by routeViewModel.route.collectAsStateWithLifecycle()
+    val shellTabs = visibleVeilTabs(appSettings.gameVisible)
+    val selectedShellTab = route.selectedTab.takeIf { it in shellTabs } ?: VeilTab.READING
+    LaunchedEffect(appSettings.gameVisible, route.selectedTab, route.activeChamber) {
+        val hiddenWorldRoute =
+            route.selectedTab == VeilTab.CASTLE ||
+                route.selectedTab == VeilTab.PATH ||
+                route.activeChamber in setOf("observatory", "treasury", "sanctum")
+        if (!appSettings.gameVisible && hiddenWorldRoute) {
+            routeViewModel.selectTab(VeilTab.READING)
+        }
+    }
     var openedPublication by remember { mutableStateOf<OpenedPublication?>(null) }
     var openedPublicationSessionId by remember { mutableStateOf<String?>(null) }
     var activeMangaSession by remember { mutableStateOf<MangaReaderSession?>(null) }
@@ -1040,6 +1051,7 @@ fun VeilApp(
                 onSetHighContrastEnabled = onSetHighContrastEnabled,
                 onSaveReaderAppearance = onSaveReaderAppearance,
                 onSaveSensorySettings = onSaveSensorySettings,
+                onSetGameVisible = onSetGameVisible,
                 onExportBackup = { exportData(it, true) },
                 onRestoreBackup = ::restoreData,
                 onExportNotes = { exportData(it, false) },
@@ -1109,7 +1121,7 @@ fun VeilApp(
                 )
             )
         }
-    } else if (route.activeChamber == "observatory") {
+    } else if (appSettings.gameVisible && route.activeChamber == "observatory") {
         ObservatoryScreen(
             books = books,
             highlights = highlights,
@@ -1117,7 +1129,7 @@ fun VeilApp(
             onOpenBook = { book -> requestOpenBook(book) },
             onClose = routeViewModel::closeChamber
         )
-    } else if (route.activeChamber == "treasury") {
+    } else if (appSettings.gameVisible && route.activeChamber == "treasury") {
         TreasuryScreen(
             profile = requireNotNull(profile),
             equippedSigil = equippedSigil,
@@ -1130,7 +1142,7 @@ fun VeilApp(
             },
             onClose = routeViewModel::closeChamber
         )
-    } else if (route.activeChamber == "sanctum") {
+    } else if (appSettings.gameVisible && route.activeChamber == "sanctum") {
         SanctumScreen(
             profile = requireNotNull(profile),
             castleTitle = requireNotNull(castleTitle),
@@ -1160,8 +1172,9 @@ fun VeilApp(
                         .systemBarsPadding()
                 ) {
                     VeilNavigationRail(
-                        selected = route.selectedTab,
-                        onSelect = routeViewModel::selectTab
+                        selected = selectedShellTab,
+                        onSelect = routeViewModel::selectTab,
+                        tabs = shellTabs
                     )
                     Box(
                         modifier = Modifier
@@ -1171,7 +1184,7 @@ fun VeilApp(
                         contentAlignment = Alignment.TopCenter
                     ) {
                         VeilAnimatedTabHost(
-                            selectedTab = route.selectedTab,
+                            selectedTab = selectedShellTab,
                             modifier = Modifier
                                 .fillMaxHeight()
                                 .widthIn(max = contentMaxWidth)
@@ -1184,7 +1197,7 @@ fun VeilApp(
             } else {
                 Column(Modifier.fillMaxSize()) {
                     VeilAnimatedTabHost(
-                        selectedTab = route.selectedTab,
+                        selectedTab = selectedShellTab,
                         modifier = Modifier
                             .weight(1f)
                             .fillMaxWidth()
@@ -1193,9 +1206,10 @@ fun VeilApp(
                         mainContent(tab)
                     }
                     VeilBottomDock(
-                        selected = route.selectedTab,
+                        selected = selectedShellTab,
                         onSelect = routeViewModel::selectTab,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        tabs = shellTabs
                     )
                 }
             }
