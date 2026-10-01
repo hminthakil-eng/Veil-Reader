@@ -2525,7 +2525,7 @@ fun ReaderScreen(
                                     Button(
                                         enabled = !noteSaving &&
                                             canSavePendingSelectionNote(
-                                                createdForNote = isNewNoteDraft,
+                                                isNewNote = isNewNoteDraft,
                                                 note = pendingNoteText
                                             ),
                                         onClick = {
