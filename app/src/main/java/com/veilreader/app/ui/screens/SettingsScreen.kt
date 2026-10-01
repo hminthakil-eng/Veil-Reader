@@ -381,6 +381,7 @@ fun SettingsScreen(
             )
             ReaderPageTurnSelector(
                 selected = appearance.pageTurnStyle,
+                enabled = appearance.readingMode == ReaderReadingMode.PAGED,
                 onSelect = { style ->
                     commitReaderAppearance { current -> current.withPageTurnStyle(style) }
                 }
