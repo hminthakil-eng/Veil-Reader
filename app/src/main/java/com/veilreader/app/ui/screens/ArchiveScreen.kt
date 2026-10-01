@@ -687,34 +687,52 @@ private fun ArchiveSectionTab(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.52f)
+            VeilPalette.Archive.copy(alpha = 0.48f)
         } else {
-            VeilPalette.Ink.copy(alpha = 0.24f)
+            Color.Transparent
         },
-        border = BorderStroke(
-            1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.84f)
-            else VeilPalette.BorderDark.copy(alpha = 0.62f)
-        ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 5.dp),
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(1.dp)
+            verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                color = if (selected) VeilPalette.Moon
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                archiveNumber(count),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (selected) VeilPalette.Brass
-                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (selected) {
+                        VeilPalette.Moon
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+                Text(
+                    archiveNumber(count),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (selected) {
+                        VeilPalette.Brass
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.60f)
+                    }
+                )
+            }
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        if (selected) {
+                            VeilPalette.Brass.copy(alpha = 0.82f)
+                        } else {
+                            Color.Transparent
+                        }
+                    )
             )
         }
     }
@@ -759,7 +777,7 @@ private fun NotebookHighlightCard(
                         color = VeilPalette.Brass
                     )
                     Text(
-                        book?.title ?: stringResource(R.string.common_unknown_book),
+                        book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
                         style = MaterialTheme.typography.titleMedium,
                         color = VeilPalette.Moon,
                         maxLines = 1,
@@ -990,7 +1008,7 @@ private fun NotebookBookmarkCard(
                         color = VeilPalette.Brass
                     )
                     Text(
-                        book?.title ?: stringResource(R.string.common_unknown_book),
+                        book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
                         style = MaterialTheme.typography.titleMedium,
                         color = VeilPalette.Moon,
                         maxLines = 1,
