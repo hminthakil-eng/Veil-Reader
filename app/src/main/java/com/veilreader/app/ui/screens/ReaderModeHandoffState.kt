@@ -46,9 +46,14 @@ internal class ReaderModeHandoffState {
     }
 
     suspend fun release(reducedMotion: Boolean) {
-        if (snapshot == null) return
+        if (snapshot == null) {
+            releaseBufferIfIdle()
+            return
+        }
         if (reducedMotion) {
             clearImmediately()
+            kotlinx.coroutines.delay(VeilMotion.FRAME_SETTLE_MS)
+            releaseBufferIfIdle()
             return
         }
 
@@ -61,6 +66,8 @@ internal class ReaderModeHandoffState {
         }
         snapshot = null
         alpha = 0f
+        kotlinx.coroutines.delay(VeilMotion.FRAME_SETTLE_MS)
+        releaseBufferIfIdle()
     }
 
     fun clearImmediately() {
@@ -68,10 +75,15 @@ internal class ReaderModeHandoffState {
         alpha = 0f
     }
 
-    fun dispose() {
-        clearImmediately()
+    fun releaseBufferIfIdle() {
+        if (snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
+    }
+
+    fun dispose() {
+        clearImmediately()
+        releaseBufferIfIdle()
     }
 
     private fun captureBitmap(view: View): Bitmap? =
