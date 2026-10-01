@@ -864,6 +864,7 @@
     <string name="notice_import_failed">این کتاب افزوده نشد. از معتبر بودن فایل EPUB یا PDF مطمئن شوید و دوباره تلاش کنید.</string>
     <string name="notice_duplicate_book">%1$s از قبل در کتابخانه بود. همان نسخهٔ موجود باز شد.</string>
     <string name="notice_book_file_missing">فایل محلی این کتاب دیگر در دسترس نیست. برای مطالعه، دوباره آن را اضافه کنید.</string>
+    <string name="notice_book_record_missing">این کتاب دیگر در کتابخانهٔ محلی وجود ندارد. به آرشیو برگردید و اگر فایل را دارید دوباره آن را اضافه کنید.</string>
     <string name="notice_open_failed">کتاب باز نشد. فایل محلی آن را بررسی و دوباره تلاش کنید.</string>
     <string name="notice_pdf_migration_failed">کتاب باز شد، اما جای مطالعهٔ قدیمی PDF بازیابی نشد. پیش از ادامه، صفحهٔ خود را بررسی کنید.</string>
     <string name="notice_position_save_failed">جای درخواستی باز است، اما ذخیره نشد. کتاب را باز نگه دارید و فضای دستگاه را بررسی کنید.</string>
