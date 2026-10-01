@@ -47,6 +47,7 @@ internal class ReaderModeHandoffState {
 
     suspend fun release(reducedMotion: Boolean) {
         if (snapshot == null) {
+            kotlinx.coroutines.delay(VeilMotion.FRAME_SETTLE_MS)
             releaseBufferIfIdle()
             return
         }
