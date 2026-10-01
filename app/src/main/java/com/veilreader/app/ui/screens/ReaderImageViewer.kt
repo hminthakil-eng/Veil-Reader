@@ -73,6 +73,7 @@ internal fun ReaderImageViewer(
     var scale by remember(content.bitmap) { mutableFloatStateOf(1f) }
     var pan by remember(content.bitmap) { mutableStateOf(Offset.Zero) }
     var viewport by remember(content.bitmap) { mutableStateOf(IntSize.Zero) }
+    val imageDescription = content.caption?.takeIf { it.isNotBlank() } ?: title
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -97,7 +98,7 @@ internal fun ReaderImageViewer(
             ) {
                 Image(
                     bitmap = content.bitmap.asImageBitmap(),
-                    contentDescription = content.caption,
+                    contentDescription = imageDescription,
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .fillMaxSize()
@@ -137,10 +138,9 @@ internal fun ReaderImageViewer(
                     Column(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = VeilPalette.Brass
+                        VeilMicroLabel(
+                            text = title,
+                            strong = true
                         )
                         content.caption?.takeIf { it.isNotBlank() }?.let { caption ->
                             Text(
