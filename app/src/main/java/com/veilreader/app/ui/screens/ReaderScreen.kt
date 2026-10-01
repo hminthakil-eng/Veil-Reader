@@ -350,7 +350,8 @@ fun ReaderScreen(
     fun beginProgrammaticNavigation(
         originLocatorJson: String?,
         targetLocatorJson: String? = null,
-        targetHref: String? = null
+        targetHref: String? = null,
+        passageVisitLocatorJson: String? = null
     ): Long {
         paperInputListener?.forceCancelPendingTurn()
         slideInputListener?.forceCancelPendingTurn()
@@ -358,7 +359,8 @@ fun ReaderScreen(
             originLocatorJson = originLocatorJson,
             nowElapsedMs = SystemClock.elapsedRealtime(),
             targetLocatorJson = targetLocatorJson,
-            targetHref = targetHref
+            targetHref = targetHref,
+            passageVisitLocatorJson = passageVisitLocatorJson
         )
         ReaderTrace.event(
             "navigation_jump_requested",
@@ -1274,6 +1276,14 @@ fun ReaderScreen(
                 if (settledNavigation != null) {
                     previousLocationJson = settledNavigation.originLocatorJson
                         ?.takeIf { origin -> origin != json }
+                    settledNavigation.passageVisitLocatorJson
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { visitedLocatorJson ->
+                            library.recordPassageVisitForLocator(
+                                bookId = opened.book.id,
+                                locatorJson = visitedLocatorJson
+                            )
+                        }
                     ReaderTrace.event(
                         "navigation_jump_settled",
                         bookId = opened.book.id,
@@ -2653,13 +2663,10 @@ fun ReaderScreen(
                         game.rebasePagePacing()
                         val transactionToken = beginProgrammaticNavigation(
                             originLocatorJson = originJson,
-                            targetLocatorJson = json
+                            targetLocatorJson = json,
+                            passageVisitLocatorJson = json
                         )
                         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
-                            library.recordPassageVisitForLocator(
-                                bookId = opened.book.id,
-                                locatorJson = json
-                            )
                             showNotebook = false
                         } else {
                             cancelProgrammaticNavigation(transactionToken)
