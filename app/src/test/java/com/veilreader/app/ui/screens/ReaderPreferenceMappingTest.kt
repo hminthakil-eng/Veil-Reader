@@ -8,6 +8,7 @@ import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
@@ -66,6 +67,39 @@ class ReaderPreferenceMappingTest {
         assertEquals(0.05, ReaderAppearance().withScreenBrightness(0.01).screenBrightness!!, 0.0001)
         assertEquals(0.42, ReaderAppearance().withScreenBrightness(0.42).screenBrightness!!, 0.0001)
         assertEquals(1.0, ReaderAppearance().withScreenBrightness(2.0).screenBrightness!!, 0.0001)
+    }
+
+    @Test
+    fun `Reading mode preserves the retained Page turn choice`() {
+        val original = ReaderAppearance(
+            scroll = false,
+            pageTurnStyle = PageTurnStyle.SLIDE
+        )
+
+        val scrolling = original.withReadingMode(ReaderReadingMode.SCROLL)
+        assertEquals(ReaderReadingMode.SCROLL, scrolling.readingMode)
+        assertTrue(scrolling.scroll)
+        assertEquals(PageTurnStyle.SLIDE, scrolling.pageTurnStyle)
+
+        val pagedAgain = scrolling.withReadingMode(ReaderReadingMode.PAGED)
+        assertEquals(ReaderReadingMode.PAGED, pagedAgain.readingMode)
+        assertFalse(pagedAgain.scroll)
+        assertEquals(PageTurnStyle.SLIDE, pagedAgain.pageTurnStyle)
+    }
+
+    @Test
+    fun `Page turn selection affects paged motion without becoming Reading mode`() {
+        val scrolling = ReaderAppearance(
+            scroll = true,
+            pageTurnStyle = PageTurnStyle.PAPER
+        )
+
+        val slide = scrolling.withPageTurnStyle(PageTurnStyle.SLIDE)
+
+        assertEquals(ReaderReadingMode.PAGED, slide.readingMode)
+        assertFalse(slide.scroll)
+        assertEquals(PageTurnStyle.SLIDE, slide.pageTurnStyle)
+        assertEquals(ReaderNavigationMode.SLIDE, slide.navigationMode)
     }
 
     @Test
