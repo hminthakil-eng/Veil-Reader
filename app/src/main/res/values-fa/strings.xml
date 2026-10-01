@@ -203,6 +203,8 @@
     <string name="reader_image_viewer_hint">برای بزرگ‌نمایی نیشگون بگیرید · برای بررسی جابه‌جا کنید</string>
     <string name="reader_image_viewer_failed">باز کردن این تصویر ممکن نشد.</string>
     <string name="reader_appearance_apply_failed">اعمال ظاهر مطالعه در حال حاضر ممکن نشد.</string>
+    <string name="reader_boundary_beginning">ابتدای کتاب.</string>
+    <string name="reader_boundary_end">پایان کتاب.</string>
     <string name="reader_footnote_eyebrow">یادداشت حاشیه</string>
     <string name="reader_footnote_title">پانویس</string>
     <string name="reader_footnote_close">بستن</string>
