@@ -14,6 +14,21 @@ internal data class ReaderNavigationTransaction(
     val startedAtElapsedMs: Long
 )
 
+/**
+ * Starts a location-backed jump only when it can actually move away from the current locator.
+ *
+ * Readium may accept a no-op `go()` without publishing a new locator. Avoiding a transaction for
+ * that case prevents the user's next real page turn from being mistaken for a delayed jump settle.
+ */
+internal fun shouldStartReaderLocationJump(
+    originLocatorJson: String?,
+    targetLocatorJson: String?
+): Boolean {
+    val target = targetLocatorJson?.takeIf { it.isNotBlank() } ?: return false
+    val origin = originLocatorJson?.takeIf { it.isNotBlank() }
+    return origin == null || origin != target
+}
+
 internal class ReaderNavigationTransactionGate(
     private val timeoutMs: Long = DEFAULT_TIMEOUT_MS
 ) {
