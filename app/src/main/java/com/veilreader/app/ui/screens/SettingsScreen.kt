@@ -63,6 +63,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -351,18 +352,51 @@ fun SettingsScreen(
                 }
             )
 
-            Text(stringResource(R.string.settings_reading_motion), style = MaterialTheme.typography.labelLarge)
-            ReaderMotionSelector(
-                selected = appearance.navigationMode,
+            Text(
+                stringResource(R.string.settings_reading_mode_title),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ReaderReadingModeSelector(
+                selected = appearance.readingMode,
+                scrollEnabled = true,
                 onSelect = { mode ->
-                    commitReaderAppearance { current -> current.withNavigationMode(mode) }
+                    commitReaderAppearance { current -> current.withReadingMode(mode) }
                 }
             )
             Text(
-                localizedReaderNavigationModeDescription(appearance.navigationMode),
+                stringResource(
+                    if (appearance.readingMode == ReaderReadingMode.SCROLL) {
+                        R.string.settings_mode_scroll_description
+                    } else {
+                        R.string.settings_reading_mode_paged_description
+                    }
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall
             )
+
+            Text(
+                stringResource(R.string.settings_page_turn_title),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ReaderPageTurnSelector(
+                selected = appearance.pageTurnStyle,
+                onSelect = { style ->
+                    commitReaderAppearance { current -> current.withPageTurnStyle(style) }
+                }
+            )
+            Text(
+                localizedPageTurnStyleDescription(appearance.pageTurnStyle),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (appearance.readingMode == ReaderReadingMode.SCROLL) {
+                Text(
+                    stringResource(R.string.settings_page_turn_scroll_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_publisher_styles),
                 subtitle = stringResource(R.string.settings_publisher_styles_description),
