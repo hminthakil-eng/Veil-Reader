@@ -1913,21 +1913,41 @@ private fun BookDetailFragments(
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Brass.copy(alpha = 0.78f)
                     )
-                    Text(
-                        "“${highlight.quote}”",
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = VeilPalette.Moon,
-                        maxLines = 5,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    highlight.note.takeIf { it.isNotBlank() }?.let { note ->
+                    highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
                         Text(
-                            note,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = VeilPalette.Mist.copy(alpha = 0.82f),
-                            maxLines = 3,
+                            "“$quote”",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = VeilPalette.Moon,
+                            maxLines = 5,
                             overflow = TextOverflow.Ellipsis
                         )
+                    } ?: Text(
+                        stringResource(R.string.book_detail_preserved_note_only),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.Brass.copy(alpha = 0.80f)
+                    )
+
+                    highlight.note.trim().takeIf { it.isNotBlank() }?.let { note ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Box(
+                                Modifier
+                                    .width(2.dp)
+                                    .heightIn(min = 34.dp)
+                                    .background(VeilPalette.Brass.copy(alpha = 0.36f))
+                            )
+                            Text(
+                                note,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = VeilPalette.Mist.copy(alpha = 0.82f),
+                                maxLines = 4,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
             }
