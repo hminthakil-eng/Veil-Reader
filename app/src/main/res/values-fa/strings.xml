@@ -224,6 +224,8 @@
     <string name="pdf_page_description">تمرکز روی یک صفحه؛ صفحه در محدودهٔ نمایش جا می‌گیرد.</string>
     <string name="pdf_preparing">آماده‌سازی سند</string>
     <string name="pdf_renderer_connecting">در حال اتصال به نمایشگر PDF…</string>
+    <string name="pdf_renderer_delayed">اتصال به نمایشگر PDF بیشتر از حد معمول طول کشیده است. سند شما محفوظ است؛ اتصال را دوباره امتحان کنید.</string>
+    <string name="pdf_renderer_retry">تلاش دوباره برای نمایشگر</string>
     <string name="pdf_zoom">بزرگ‌نمایی</string>
     <string name="pdf_zoom_out">کم‌کردن بزرگ‌نمایی</string>
     <string name="pdf_zoom_in">افزایش بزرگ‌نمایی</string>
