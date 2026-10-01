@@ -29,6 +29,15 @@ internal fun shouldStartReaderLocationJump(
     return origin == null || origin != target
 }
 
+internal fun shouldStartReaderLinkJump(
+    currentHref: String?,
+    targetHref: String?
+): Boolean {
+    val target = targetHref?.trim()?.takeIf { it.isNotEmpty() } ?: return false
+    val current = currentHref?.trim()?.takeIf { it.isNotEmpty() }
+    return current == null || current != target
+}
+
 internal class ReaderNavigationTransactionGate(
     private val timeoutMs: Long = DEFAULT_TIMEOUT_MS
 ) {
