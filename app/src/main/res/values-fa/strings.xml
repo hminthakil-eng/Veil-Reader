@@ -127,6 +127,10 @@
     <string name="settings_brightness">روشنایی مطالعه</string>
     <string name="settings_sound_title">صدا و لمس</string>
     <string name="settings_sound_description">بازخورد ظریف، اختیاری و کاملاً محلی است. لرزش به صدا نیاز ندارد و صدای محیط در ابتدا خاموش است.</string>
+    <string name="settings_world_title">جهان و پیشرفت</string>
+    <string name="settings_world_description">قلعه، مسیر، آیین‌ها و یادگارها لایه‌هایی اختیاری‌اند که از تاریخچهٔ محلی مطالعهٔ شما ساخته می‌شوند.</string>
+    <string name="settings_world_visible">نمایش قلعه و مسیر</string>
+    <string name="settings_world_visible_description">لایهٔ جهان را بدون پاک‌شدن XP، رتبه‌ها، یادگارها یا تاریخچهٔ مطالعه پنهان یا نمایش دهید.</string>
     <string name="settings_haptics">بازخورد لرزشی</string>
     <string name="settings_haptics_description">لرزش کوتاه برای ورق‌زدن، ذخیرهٔ نشان و دستاوردهای مهم.</string>
     <string name="settings_interaction_sounds">صدای تعامل</string>
