@@ -217,10 +217,10 @@ internal fun paperLineIntersection(
     line2b: Offset
 ): Offset? {
     if (
-        !line1a.isFinite ||
-        !line1b.isFinite ||
-        !line2a.isFinite ||
-        !line2b.isFinite
+        !line1a.x.isFinite() || !line1a.y.isFinite() ||
+        !line1b.x.isFinite() || !line1b.y.isFinite() ||
+        !line2a.x.isFinite() || !line2a.y.isFinite() ||
+        !line2b.x.isFinite() || !line2b.y.isFinite()
     ) {
         return null
     }
