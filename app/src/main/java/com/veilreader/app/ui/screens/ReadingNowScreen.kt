@@ -307,12 +307,11 @@ private fun ThresholdHeader(
                 strong = true
             )
 
-            Text(
-                stringResource(R.string.threshold_grayfog_archive),
+            VeilMicroLabel(
+                text = stringResource(R.string.threshold_grayfog_archive),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = VeilSpacing.md, top = VeilSpacing.md),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
                 color = VeilPalette.Moon.copy(alpha = 0.72f)
             )
 
@@ -639,7 +638,7 @@ private fun ContinueReadingHero(
                             }
                         ),
                         modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 0.36.sp)
+                        style = MaterialTheme.typography.labelLarge
                     )
                     Text(
                         "›",
