@@ -84,6 +84,7 @@ import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderReadingMode
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
@@ -3115,7 +3116,11 @@ private fun EpubAppearancePanel(
     )
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
     val textSizeLabel = stringResource(R.string.settings_text_size)
-    val quickReadingScroll = draft.scroll && capabilities.continuousScrollEditable
+    val quickReadingMode = if (capabilities.continuousScrollEditable) {
+        draft.readingMode
+    } else {
+        ReaderReadingMode.PAGED
+    }
 
     LaunchedEffect(appearance) {
         when {
@@ -3353,15 +3358,15 @@ private fun EpubAppearancePanel(
                 color = VeilPalette.Brass
             )
             ReaderReadingModeSelector(
-                scroll = quickReadingScroll,
+                selected = quickReadingMode,
                 scrollEnabled = capabilities.continuousScrollEditable,
-                onScrollChange = { scroll ->
-                    updateDraft(draft.copy(scroll = scroll))
+                onSelect = { mode ->
+                    updateDraft(draft.withReadingMode(mode))
                 }
             )
             Text(
                 stringResource(
-                    if (quickReadingScroll) {
+                    if (quickReadingMode == ReaderReadingMode.SCROLL) {
                         R.string.settings_mode_scroll_description
                     } else {
                         R.string.settings_reading_mode_paged_description
@@ -3378,7 +3383,7 @@ private fun EpubAppearancePanel(
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
-            if (quickReadingScroll) {
+            if (quickReadingMode == ReaderReadingMode.SCROLL) {
                 ReaderCapabilityNotice(
                     text = stringResource(R.string.settings_page_turn_scroll_hint)
                 )
@@ -3386,12 +3391,7 @@ private fun EpubAppearancePanel(
                 ReaderPageTurnSelector(
                     selected = draft.pageTurnStyle,
                     onSelect = { style ->
-                        updateDraft(
-                            draft.copy(
-                                scroll = false,
-                                pageTurnStyle = style
-                            )
-                        )
+                        updateDraft(draft.withPageTurnStyle(style))
                     }
                 )
                 Text(
@@ -4114,9 +4114,9 @@ internal fun localizedPageTurnStyleDescription(style: PageTurnStyle): String =
 
 @Composable
 internal fun ReaderReadingModeSelector(
-    scroll: Boolean,
+    selected: ReaderReadingMode,
     scrollEnabled: Boolean,
-    onScrollChange: (Boolean) -> Unit
+    onSelect: (ReaderReadingMode) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -4125,14 +4125,14 @@ internal fun ReaderReadingModeSelector(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         listOf(
-            false to ReaderNavigationMode.PAGED,
-            true to ReaderNavigationMode.SCROLL
-        ).forEach { (candidateScroll, previewMode) ->
-            val active = scroll == candidateScroll
-            val enabled = !candidateScroll || scrollEnabled
+            ReaderReadingMode.PAGED to ReaderNavigationMode.PAGED,
+            ReaderReadingMode.SCROLL to ReaderNavigationMode.SCROLL
+        ).forEach { (mode, previewMode) ->
+            val active = selected == mode
+            val enabled = mode != ReaderReadingMode.SCROLL || scrollEnabled
             ReaderModeChoice(
                 label = stringResource(
-                    if (candidateScroll) {
+                    if (mode == ReaderReadingMode.SCROLL) {
                         R.string.settings_mode_scroll
                     } else {
                         R.string.settings_mode_paged
@@ -4142,7 +4142,7 @@ internal fun ReaderReadingModeSelector(
                 active = active,
                 enabled = enabled,
                 modifier = Modifier.weight(1f),
-                onClick = { onScrollChange(candidateScroll) }
+                onClick = { onSelect(mode) }
             )
         }
     }
