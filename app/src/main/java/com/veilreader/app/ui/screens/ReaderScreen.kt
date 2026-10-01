@@ -52,6 +52,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -1742,7 +1743,9 @@ fun ReaderScreen(
                             verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             Text(
-                                opened.book.title,
+                                opened.book.title.ifBlank {
+                                    stringResource(R.string.common_untitled_book)
+                                },
                                 style = MaterialTheme.typography.titleSmall,
                                 color = readerChromeForeground,
                                 maxLines = 1,
@@ -1750,7 +1753,9 @@ fun ReaderScreen(
                             )
                             Text(
                                 locationTitle.ifBlank {
-                                    opened.book.author.ifBlank { opened.format.name }
+                                    opened.book.author.trim().ifBlank {
+                                        localizedBookFormatLabel(opened.format)
+                                    }
                                 },
                                 color = readerChromeMuted,
                                 style = MaterialTheme.typography.labelSmall,
@@ -1836,7 +1841,7 @@ fun ReaderScreen(
                     ) {
                         ReaderControl(
                             action = ReaderAction.NOTEBOOK,
-                            label = stringResource(R.string.reader_notes),
+                            label = stringResource(R.string.reader_chrome_notebook),
                             modifier = Modifier.weight(1f),
                             accent = readerChromeAccent,
                             foreground = readerChromeForeground
@@ -1847,7 +1852,7 @@ fun ReaderScreen(
 
                         ReaderControl(
                             action = ReaderAction.BOOKMARK,
-                            label = stringResource(R.string.reader_mark),
+                            label = stringResource(R.string.reader_chrome_bookmark),
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null,
                             accent = readerChromeAccent,
@@ -1878,7 +1883,13 @@ fun ReaderScreen(
                             } else {
                                 ReaderAction.ZOOM
                             },
-                            label = stringResource(if (opened.format == BookFormat.EPUB) R.string.reader_type else R.string.reader_zoom),
+                            label = stringResource(
+                                if (opened.format == BookFormat.EPUB) {
+                                    R.string.reader_chrome_appearance
+                                } else {
+                                    R.string.reader_chrome_pdf_view
+                                }
+                            ),
                             modifier = Modifier.weight(1f),
                             enabled = navigator != null,
                             accent = readerChromeAccent,
@@ -2952,7 +2963,7 @@ private fun ReaderControl(
     TextButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 48.dp),
+        modifier = modifier.defaultMinSize(minWidth = 0.dp, minHeight = 56.dp),
         contentPadding = PaddingValues(horizontal = 2.dp, vertical = 5.dp),
         colors = ButtonDefaults.textButtonColors(
             contentColor = foreground,
@@ -2976,8 +2987,9 @@ private fun ReaderControl(
                 fontWeight = FontWeight.Medium,
                 color = if (enabled) foreground.copy(alpha = 0.78f)
                     else foreground.copy(alpha = 0.28f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
             )
         }
     }
