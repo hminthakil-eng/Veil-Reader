@@ -170,6 +170,10 @@
     <string name="reader_mark">نشانک</string>
     <string name="reader_type">ظاهر متن</string>
     <string name="reader_zoom">بزرگ‌نمایی</string>
+    <string name="reader_chrome_notebook">دفترچه</string>
+    <string name="reader_chrome_bookmark">نشانک</string>
+    <string name="reader_chrome_appearance">ظاهر</string>
+    <string name="reader_chrome_pdf_view">نمای PDF</string>
     <string name="reader_return">بازگشت</string>
     <string name="reader_previous_location">موقعیت پیشین</string>
     <string name="reader_note_eyebrow">آرشیو پنهان · یادداشت متن</string>
