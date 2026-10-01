@@ -16,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.InputListener
+import org.readium.r2.navigator.input.InputModifier
 import org.readium.r2.navigator.input.Key
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
@@ -130,6 +131,34 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         assertEquals(2, interactions)
         assertEquals(2, commits)
         assertEquals(0, boundaries)
+
+        navigator.reset()
+
+        assertTrue(
+            listener.onKey(
+                KeyEvent(
+                    type = KeyEvent.Type.Down,
+                    key = Key.PageUp,
+                    modifiers = emptySet(),
+                    characters = null
+                )
+            )
+        )
+        assertEquals(1, navigator.backwardCalls)
+
+        navigator.reset()
+
+        assertTrue(
+            listener.onKey(
+                KeyEvent(
+                    type = KeyEvent.Type.Down,
+                    key = Key.Space,
+                    modifiers = setOf(InputModifier.Shift),
+                    characters = " "
+                )
+            )
+        )
+        assertEquals(1, navigator.backwardCalls)
     }
 
     @Test
