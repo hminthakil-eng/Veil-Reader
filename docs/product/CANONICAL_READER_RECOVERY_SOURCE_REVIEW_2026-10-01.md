@@ -93,3 +93,32 @@ Canonical implementation reviewed immediately before this documentation stamp: `
 - This documentation commit intentionally advances the canonical branch through the connected GitHub actor so Android CI, Storage Instrumentation, and Performance Benchmarks can execute normally against the final schema-bearing source.
 
 Until those final-head gates complete, keep PR #349 Draft and do not claim BUILD GREEN, STORAGE GREEN, PERFORMANCE GREEN, DEVICE GREEN, or RELEASE READY.
+
+## W51 follow-up — selection-note atomicity and no-op jump integrity
+
+Canonical implementation reviewed through head `2f0236d497d83855006e26c982c782a26b68d5f5`.
+
+### Selection → Note transaction
+
+- The native EPUB selection toolbar still uses Readium's selection ownership; Veil only adds Highlight and Note actions.
+- A fresh Note action no longer becomes a durable/credited highlight before the note is confirmed.
+- A newly created highlight is treated as draft-owned state while the Note dialog is open. Cancelling or dismissing the draft removes that temporary highlight and flushes the deletion through the repository write barrier.
+- Existing highlights are never deleted by cancelling a Note edit.
+- A fresh Note requires non-blank note text before Save is enabled. An existing highlight may intentionally save an empty annotation, preserving the highlight while clearing its note.
+- Session/game highlight credit is emitted only after the new Note transaction has durably saved. Note credit remains separate, preventing abandoned drafts from inflating reading history or progression.
+- Pure policy regression coverage now locks draft-discard and save-eligibility behavior.
+
+### Previous-location and saved-location jumps
+
+- Location-backed programmatic jumps now compare the current persisted locator JSON with their target before opening a navigation transaction.
+- A same-location Previous Location action collapses the stale return affordance instead of asking Readium to perform a no-op jump.
+- Reader Notebook returns to the already-current saved location without starting a transaction or recording a false revisit.
+- This closes the failure mode where Readium could accept a no-op `go()` without publishing a locator, leaving the transaction alive long enough for the user's next real page turn to be misclassified as the delayed jump destination.
+- The pure location-jump policy is covered for same-target, missing-origin and missing/blank-target cases.
+
+### Verification boundary
+
+Source-level review and regression tests were added, but this follow-up does **not** establish a compiled or device-verified result by itself. The final canonical head still requires its normal Android CI, storage/instrumentation and performance gates. Manual APK/AAB packaging was not requested and was not started.
+
+Keep PR #349 Draft until those gates and later visual/device inspection are complete. Do not claim BUILD GREEN, STORAGE GREEN, PERFORMANCE GREEN, DEVICE GREEN or RELEASE READY from this source review alone.
+
