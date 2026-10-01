@@ -1718,7 +1718,7 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 6.dp, top = 2.dp),
+                    .padding(start = 6.dp, top = 2.dp, end = 6.dp),
                 shape = RoundedCornerShape(
                     topStart = 0.dp,
                     topEnd = 0.dp,
@@ -1810,7 +1810,7 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 6.dp, bottom = 4.dp),
+                    .padding(start = 6.dp, end = 6.dp, bottom = 4.dp),
                 shape = RoundedCornerShape(
                     topStart = 10.dp,
                     topEnd = 10.dp,
