@@ -60,6 +60,25 @@ class VeilDirectionalNavigationContractInstrumentedTest {
     }
 
     @Test
+    fun publicationBoundary_isConsumed_withoutLeakingIntoChromeFallback() {
+        val navigator = fakeNavigator(
+            progression = ReadingProgression.LTR,
+            navigationSucceeds = false
+        )
+        var boundaryHits = 0
+        val listener = VeilDirectionalNavigationInputListener(
+            navigator = navigator,
+            isAnimated = { true },
+            isTapNavigationEnabled = { true },
+            onBoundaryHit = { boundaryHits += 1 }
+        )
+
+        assertTrue(listener.onTap(TapEvent(PointF(950f, 800f))))
+        assertEquals(1, navigator.forwardCalls)
+        assertEquals(1, boundaryHits)
+    }
+
+    @Test
     fun centerTap_isNotConsumedByDirectionalNavigation() {
         val navigator = fakeNavigator(ReadingProgression.LTR)
         val listener = listener(navigator)
@@ -134,17 +153,20 @@ class VeilDirectionalNavigationContractInstrumentedTest {
 
     private fun fakeNavigator(
         progression: ReadingProgression,
-        scroll: Boolean = false
+        scroll: Boolean = false,
+        navigationSucceeds: Boolean = true
     ) = FakeNavigator(
         context = ApplicationProvider.getApplicationContext(),
         progression = progression,
-        scroll = scroll
+        scroll = scroll,
+        navigationSucceeds = navigationSucceeds
     )
 
     private class FakeNavigator(
         context: Context,
         progression: ReadingProgression,
-        scroll: Boolean = false
+        scroll: Boolean = false,
+        private val navigationSucceeds: Boolean = true
     ) : OverflowableNavigator {
         override val publicationView: View = View(context).apply {
             layout(0, 0, 1000, 1600)
@@ -171,13 +193,13 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         override fun goForward(animated: Boolean): Boolean {
             forwardCalls += 1
             lastAnimated = animated
-            return true
+            return navigationSucceeds
         }
 
         override fun goBackward(animated: Boolean): Boolean {
             backwardCalls += 1
             lastAnimated = animated
-            return true
+            return navigationSucceeds
         }
 
         override fun go(locator: Locator, animated: Boolean): Boolean = false
