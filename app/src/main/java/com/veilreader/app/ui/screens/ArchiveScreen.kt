@@ -45,7 +45,6 @@ import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.grayfogAtmosphere
-import com.veilreader.app.ui.theme.usesArabicScript
 import java.text.NumberFormat
 import kotlinx.coroutines.delay
 
@@ -57,14 +56,9 @@ private fun ArchiveMicroLabel(
     modifier: Modifier = Modifier,
     color: Color = VeilPalette.Brass
 ) {
-    Text(
+    VeilMicroLabel(
         text = text,
         modifier = modifier,
-        style = if (usesArabicScript(text)) {
-            MaterialTheme.typography.labelSmall
-        } else {
-            MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp)
-        },
         color = color
     )
 }
@@ -662,9 +656,8 @@ private fun ArchiveRegisterStat(
             style = MaterialTheme.typography.titleSmall,
             color = VeilPalette.Moon
         )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
+        VeilMicroLabel(
+            text = label,
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
     }
@@ -783,10 +776,11 @@ private fun NotebookHighlightCard(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.archive_folio, archiveNumber(recordNumber, minimumDigits = 3)),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(
+                            R.string.archive_folio,
+                            archiveNumber(recordNumber, minimumDigits = 3)
+                        )
                     )
                     Text(
                         book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
@@ -805,11 +799,10 @@ private fun NotebookHighlightCard(
                         )
                     }
                 }
-                Text(
-                    if (echoMode) stringResource(R.string.archive_echo)
+                VeilMicroLabel(
+                    text = if (echoMode) stringResource(R.string.archive_echo)
                     else if (highlight.note.isNotBlank()) stringResource(R.string.archive_annotated)
                     else stringResource(R.string.archive_passage),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.75.sp),
                     color = if (echoMode) VeilPalette.Brass
                     else VeilPalette.Mist.copy(alpha = 0.64f)
                 )
@@ -928,9 +921,8 @@ private fun LivingMarginMemoryStrip(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(
-            ageLabel,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+        VeilMicroLabel(
+            text = ageLabel,
             color = if (echoMode) VeilPalette.Brass
             else VeilPalette.Mist.copy(alpha = 0.64f)
         )
@@ -1021,10 +1013,11 @@ private fun NotebookBookmarkCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.archive_folio, archiveNumber(recordNumber, minimumDigits = 3)),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(
+                            R.string.archive_folio,
+                            archiveNumber(recordNumber, minimumDigits = 3)
+                        )
                     )
                     Text(
                         book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
@@ -1034,9 +1027,8 @@ private fun NotebookBookmarkCard(
                         overflow = TextOverflow.Ellipsis
                     )
                 }
-                Text(
-                    stringResource(R.string.archive_bookmark),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.65.sp),
+                VeilMicroLabel(
+                    text = stringResource(R.string.archive_bookmark),
                     color = VeilPalette.Mist.copy(alpha = 0.64f)
                 )
             }
@@ -1154,12 +1146,9 @@ private fun DeleteNotebookItemDialog(
                     ),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                 ) {
-                    Text(
-                        stringResource(R.string.archive_remove_record),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            letterSpacing = 1.20.sp
-                        ),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.archive_remove_record),
+                        strong = true
                     )
                     Text(
                         title,
