@@ -2427,8 +2427,8 @@ fun ReaderScreen(
                         },
                         onDone = ::closeAppearanceAfterRendererSettles,
                         modifier = Modifier
-                            .fillMaxSize()
                             .widthIn(max = 720.dp)
+                            .fillMaxSize()
                     )
                 }
             }
