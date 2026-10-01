@@ -156,12 +156,14 @@ fun PathScreen(
                 style = MaterialTheme.typography.bodyMedium,
                 color = VeilPalette.Mist
             )
-            SampleData.paths.filterNot { it.id == profile.path.id }.forEach { path ->
-                PathChoiceCard(
-                    path = path,
-                    enabled = profile.rankIndex == 0,
-                    onChoose = { onChoosePath(path.id) }
-                )
+            if (profile.rankIndex == 0) {
+                SampleData.paths.filterNot { it.id == profile.path.id }.forEach { path ->
+                    PathChoiceCard(
+                        path = path,
+                        enabled = true,
+                        onChoose = { onChoosePath(path.id) }
+                    )
+                }
             }
         }
     }
