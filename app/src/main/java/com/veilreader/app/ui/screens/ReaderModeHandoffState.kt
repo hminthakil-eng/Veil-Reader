@@ -128,6 +128,7 @@ internal fun shouldCaptureReaderModeHandoff(
 
 internal fun readerPreferenceSettleFrames(
     previousMode: ReaderNavigationMode,
-    requestedMode: ReaderNavigationMode
+    requestedMode: ReaderNavigationMode,
+    fixedLayoutSpreadChanged: Boolean = false
 ): Int =
-    if (previousMode != requestedMode) 2 else 1
+    if (previousMode != requestedMode || fixedLayoutSpreadChanged) 2 else 1
