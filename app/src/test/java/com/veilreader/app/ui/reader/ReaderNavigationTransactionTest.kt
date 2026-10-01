@@ -288,6 +288,30 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun fragmentOnlyTarget_resolvesAgainstCurrentResourceForTracking() {
+        assertEquals(
+            "text/chapter-04.xhtml#scene-2",
+            readerEffectiveTargetHref(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = "#scene-2"
+            )
+        )
+        assertEquals(
+            "text/chapter-05.xhtml#scene-2",
+            readerEffectiveTargetHref(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = "text/chapter-05.xhtml#scene-2"
+            )
+        )
+        assertNull(
+            readerEffectiveTargetHref(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = " "
+            )
+        )
+    }
+
+    @Test
     fun sameChapterHref_doesNotStartNoOpLinkTransaction() {
         assertFalse(
             shouldStartReaderLinkJump(
