@@ -1975,10 +1975,10 @@ private fun BookDetailIdentity(
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Text(
-            book.title,
+            book.title.ifBlank { stringResource(R.string.common_untitled_book) },
             style = MaterialTheme.typography.headlineMedium,
             color = VeilPalette.Moon,
-            maxLines = 4,
+            maxLines = 6,
             overflow = TextOverflow.Ellipsis
         )
 
