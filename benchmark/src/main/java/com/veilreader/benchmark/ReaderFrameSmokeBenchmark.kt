@@ -1,0 +1,45 @@
+package com.veilreader.benchmark
+
+import androidx.benchmark.macro.BaselineProfileMode
+import androidx.benchmark.macro.CompilationMode
+import androidx.benchmark.macro.ExperimentalMetricApi
+import androidx.benchmark.macro.FrameTimingGfxInfoMetric
+import androidx.benchmark.macro.junit4.MacrobenchmarkRule
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/**
+ * GitHub-hosted emulator smoke lane.
+ *
+ * The API 35 lavapipe emulator used in CI does not reliably emit the Perfetto frame-timeline
+ * expect/actual slices required by FrameTimingMetric. This lane uses AndroidX's gfxinfo-backed
+ * frame metric to keep a real catastrophic-regression guardrail without manufacturing missing
+ * Perfetto samples. ReaderFrameBenchmark remains the canonical trace-based physical-device gate.
+ */
+@LargeTest
+@RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalMetricApi::class)
+class ReaderFrameSmokeBenchmark {
+    @get:Rule
+    val benchmarkRule = MacrobenchmarkRule()
+
+    @Test
+    fun pageTurns() = benchmarkRule.measureRepeated(
+        packageName = TARGET_PACKAGE,
+        metrics = listOf(FrameTimingGfxInfoMetric()),
+        compilationMode = CompilationMode.Partial(
+            baselineProfileMode = BaselineProfileMode.UseIfAvailable
+        ),
+        iterations = 6,
+        setupBlock = {
+            pressHome()
+            startActivityAndWait(readerIntent())
+            awaitReaderSurface()
+        }
+    ) {
+        turnReaderPages(turns = 8)
+    }
+}
