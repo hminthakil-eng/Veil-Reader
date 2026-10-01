@@ -5,6 +5,8 @@ import android.graphics.PointF
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Assert.assertEquals
@@ -14,6 +16,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.InputListener
+import org.readium.r2.navigator.input.Key
+import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -76,6 +80,90 @@ class VeilDirectionalNavigationContractInstrumentedTest {
         assertTrue(listener.onTap(TapEvent(PointF(950f, 800f))))
         assertEquals(1, navigator.forwardCalls)
         assertEquals(1, boundaryHits)
+    }
+
+    @Test
+    fun paperKeyboard_ownsArrowAndSpace_andCommitsExactlyOnce() {
+        val navigator = fakeNavigator(ReadingProgression.LTR)
+        var interactions = 0
+        var commits = 0
+        var boundaries = 0
+        val listener = PaperCurlInputListener(
+            navigator = navigator,
+            state = PaperCurlState(),
+            isEnabled = { true },
+            scope = CoroutineScope(Dispatchers.Unconfined),
+            isReducedMotion = { true },
+            onInteraction = { interactions += 1 },
+            onCommittedTurn = { commits += 1 },
+            onBoundaryHit = { boundaries += 1 }
+        )
+
+        assertTrue(
+            listener.onKey(
+                KeyEvent(
+                    type = KeyEvent.Type.Down,
+                    key = Key.ArrowRight,
+                    modifiers = emptySet(),
+                    characters = null
+                )
+            )
+        )
+        assertEquals(1, navigator.forwardCalls)
+        assertEquals(1, interactions)
+        assertEquals(1, commits)
+        assertEquals(0, boundaries)
+
+        navigator.reset()
+
+        assertTrue(
+            listener.onKey(
+                KeyEvent(
+                    type = KeyEvent.Type.Down,
+                    key = Key.Space,
+                    modifiers = emptySet(),
+                    characters = " "
+                )
+            )
+        )
+        assertEquals(1, navigator.forwardCalls)
+        assertEquals(2, interactions)
+        assertEquals(2, commits)
+        assertEquals(0, boundaries)
+    }
+
+    @Test
+    fun paperKeyboard_terminalBoundary_isConsumed_withoutFalseCommit() {
+        val navigator = fakeNavigator(
+            progression = ReadingProgression.LTR,
+            navigationSucceeds = false
+        )
+        var commits = 0
+        var boundaries = 0
+        val listener = PaperCurlInputListener(
+            navigator = navigator,
+            state = PaperCurlState(),
+            isEnabled = { true },
+            scope = CoroutineScope(Dispatchers.Unconfined),
+            isReducedMotion = { true },
+            onInteraction = {},
+            onCommittedTurn = { commits += 1 },
+            onBoundaryHit = { boundaries += 1 }
+        )
+
+        assertTrue(
+            listener.onKey(
+                KeyEvent(
+                    type = KeyEvent.Type.Down,
+                    key = Key.ArrowRight,
+                    modifiers = emptySet(),
+                    characters = null
+                )
+            )
+        )
+        assertEquals(1, navigator.forwardCalls)
+        assertEquals(0, commits)
+        assertEquals(1, boundaries)
     }
 
     @Test
