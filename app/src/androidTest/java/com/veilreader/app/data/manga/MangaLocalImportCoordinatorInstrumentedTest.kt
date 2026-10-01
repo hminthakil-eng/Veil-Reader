@@ -679,16 +679,17 @@ class MangaLocalImportCoordinatorInstrumentedTest {
         val root = File(context.cacheDir, TEST_ROOT).apply { mkdirs() }
         val file = File(root, name)
         ZipOutputStream(FileOutputStream(file)).use { zip ->
-            ArchiveBuilder(zip).block()
+            ArchiveBuilder(zip, name).block()
         }
         return file
     }
 
     private class ArchiveBuilder(
-        private val zip: ZipOutputStream
+        private val zip: ZipOutputStream,
+        private val archiveSeed: String
     ) {
         fun addPng(name: String) {
-            addRaw(name, validPngBytes())
+            addRaw(name, validPngBytes("$archiveSeed/$name"))
         }
 
         fun addRaw(name: String, bytes: ByteArray) {
@@ -701,8 +702,10 @@ class MangaLocalImportCoordinatorInstrumentedTest {
     private companion object {
         const val TEST_ROOT = "manga-local-import-test"
 
-        fun validPngBytes(): ByteArray {
-            val bitmap = Bitmap.createBitmap(4, 6, Bitmap.Config.ARGB_8888)
+        fun validPngBytes(seed: String = "fixture"): ByteArray {
+            val bitmap = Bitmap.createBitmap(4, 6, Bitmap.Config.ARGB_8888).apply {
+                eraseColor(0xFF000000.toInt() or (seed.hashCode() and 0x00FFFFFF))
+            }
             return try {
                 java.io.ByteArrayOutputStream().use { output ->
                     check(bitmap.compress(Bitmap.CompressFormat.PNG, 100, output))
