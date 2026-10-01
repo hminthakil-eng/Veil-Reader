@@ -1683,7 +1683,8 @@ fun ReaderScreen(
 
             val settleFrames = readerPreferenceSettleFrames(
                 previousMode = previousPresented.navigationMode,
-                requestedMode = requested.navigationMode
+                requestedMode = requested.navigationMode,
+                fixedLayoutSpreadChanged = fixedLayoutSpreadChanged
             )
             repeat(settleFrames) {
                 delay(VeilMotion.FRAME_SETTLE_MS)
