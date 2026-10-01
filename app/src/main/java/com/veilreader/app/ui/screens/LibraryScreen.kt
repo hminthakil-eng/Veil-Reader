@@ -646,10 +646,8 @@ fun LibraryScreen(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        stringResource(R.string.library_filtered_volume_count, filtered.size),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
-                        color = VeilPalette.Brass,
+                    VeilMicroLabel(
+                        text = stringResource(R.string.library_filtered_volume_count, filtered.size),
                         modifier = Modifier.padding(end = 4.dp)
                     )
 
@@ -1062,12 +1060,9 @@ fun LibraryScreen(
                                 .padding(VeilSpacing.lg),
                             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
                         ) {
-                            Text(
-                                stringResource(R.string.library_archive_record),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    letterSpacing = 1.25.sp
-                                ),
-                                color = VeilPalette.Brass
+                            VeilMicroLabel(
+                                text = stringResource(R.string.library_archive_record),
+                                strong = true
                             )
                             Text(
                                 stringResource(R.string.book_metadata_dialog_title),
@@ -2203,10 +2198,9 @@ private fun LibraryHeader(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.app_name).uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.7.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.app_name),
+                        strong = true
                     )
                     Text(
                         stringResource(R.string.library_header_title),
@@ -2215,7 +2209,7 @@ private fun LibraryHeader(
                     )
                     Text(
                         stringResource(R.string.library_header_tagline),
-                        style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 0.9.sp),
+                        style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Moon.copy(alpha = 0.78f)
                     )
                     Box(
@@ -2452,10 +2446,9 @@ private fun LibraryShelfCard(
 private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: String? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(
-                eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.35.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = eyebrow,
+                strong = true
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
         }
@@ -2646,14 +2639,13 @@ private fun ArchiveWingPortal(
                     .fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(
-                    stringResource(
+                VeilMicroLabel(
+                    text = stringResource(
                         when (wing.kind) {
                             ArchiveWingKind.COLLECTION -> R.string.library_wing_collection
                             ArchiveWingKind.SERIES -> R.string.library_wing_series
                         }
                     ),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.82.sp),
                     color = VeilPalette.Brass.copy(alpha = if (selected) 0.96f else 0.72f)
                 )
                 Text(
@@ -2796,12 +2788,8 @@ private fun MemoryReturnCard(
                     modifier = Modifier.size(22.dp)
                 )
                 Spacer(Modifier.width(8.dp))
-                Text(
-                    eyebrow,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 1.08.sp
-                    ),
-                    color = VeilPalette.Brass,
+                VeilMicroLabel(
+                    text = eyebrow,
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -2896,12 +2884,9 @@ private fun DeepShelfPortal(
             Column(
                 verticalArrangement = Arrangement.spacedBy(3.dp)
             ) {
-                Text(
-                    stringResource(R.string.library_deep_shelf),
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        letterSpacing = 1.32.sp
-                    ),
-                    color = VeilPalette.Brass
+                VeilMicroLabel(
+                    text = stringResource(R.string.library_deep_shelf),
+                    strong = true
                 )
                 Text(
                     stringResource(
@@ -2941,16 +2926,13 @@ private fun ArchiveDepthMark(memory: BookArchiveMemory?) {
         it.depth == ArchiveDepth.DEEP_SHELF || it.depth == ArchiveDepth.FORGOTTEN
     } ?: return
 
-    Text(
-        archiveDepthRecord(visible).uppercase(Locale.ROOT),
-        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.68.sp),
+    VeilMicroLabel(
+        text = archiveDepthRecord(visible),
         color = if (visible.depth == ArchiveDepth.FORGOTTEN) {
             VeilPalette.Brass.copy(alpha = 0.78f)
         } else {
             VeilPalette.Mist.copy(alpha = 0.58f)
-        },
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
+        }
     )
 }
 
@@ -3131,8 +3113,8 @@ private fun BookLibraryTile(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(
-                        when {
+                    VeilMicroLabel(
+                        text = when {
                             book.finished -> stringResource(R.string.library_completed)
                             book.progress > 0f -> stringResource(
                                 R.string.book_detail_percent_read_text,
@@ -3140,9 +3122,7 @@ private fun BookLibraryTile(
                             )
                             else -> stringResource(R.string.library_unopened)
                         },
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.55.sp),
                         color = registrationColor,
-                        maxLines = 1,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -3209,11 +3189,8 @@ private fun BookLibraryTile(
                         contentColor = VeilPalette.Brass
                     )
                 ) {
-                    Text(
-                        stringResource(R.string.library_archive_record_button).uppercase(),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.58.sp),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    VeilMicroLabel(
+                        text = stringResource(R.string.library_archive_record_button)
                     )
                 }
 
@@ -3482,10 +3459,9 @@ private fun LibraryImportStatus() {
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(
-                    stringResource(R.string.library_import_preparing_label),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
-                    color = VeilPalette.Brass
+                VeilMicroLabel(
+                    text = stringResource(R.string.library_import_preparing_label),
+                    strong = true
                 )
                 Text(
                     stringResource(R.string.library_import_preparing_body),
@@ -3545,13 +3521,12 @@ private fun LibraryEmptyState(
                 )
             }
 
-            Text(
-                stringResource(
+            VeilMicroLabel(
+                text = stringResource(
                     if (hasBooks) R.string.library_empty_no_match_eyebrow
                     else R.string.library_empty_archive_eyebrow
                 ),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
-                color = VeilPalette.Brass
+                strong = true
             )
 
             Text(
@@ -3722,9 +3697,9 @@ private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) ->
                     }
                 )
             ) {
-                Text(
-                    label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.7.sp)
+                VeilMicroLabel(
+                    text = label,
+                    color = LocalContentColor.current
                 )
             }
         }
