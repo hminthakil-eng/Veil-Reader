@@ -604,6 +604,7 @@ fun ReaderScreen(
             if (!cancelingDrag && paperCurlState.active) {
                 paperCurlState.clear()
             }
+            paperCurlState.releaseBufferIfIdle()
         }
         if (
             effectiveReaderAppearance.scroll ||
@@ -614,6 +615,7 @@ fun ReaderScreen(
             if (!cancelingSlide && slidePageState.active) {
                 slidePageState.clear()
             }
+            slidePageState.releaseBufferIfIdle()
         }
     }
 
