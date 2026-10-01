@@ -512,24 +512,20 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForSelectedPdfLayoutLabel(excluding = excluding)
 
     /**
-     * Compose exposes PdfLayoutChoice through selectable(role = RadioButton): the accessibility
-     * node is intentionally clickable, checkable, and checked only for the selected choice.
-     *
-     * Keep this instrumentation contract on public accessibility semantics. In particular, do not
-     * depend on whether Compose merges descendants or on a selected node being non-clickable; those
-     * are implementation details and previously caused this gate to time out before it could test
-     * the actual PDF layout transition.
+     * PdfLayoutChoice publishes an explicit localized stateDescription on the same semantics node
+     * as its stable contentDescription. Assert that public accessibility contract instead of
+     * depending on Compose's internal node merging or framework checked/clickable mapping.
      */
     private fun waitForSelectedPdfLayoutLabel(excluding: String? = null): String {
         val page = appString(R.string.pdf_paginated_layout)
         val scroll = appString(R.string.pdf_continuous_scroll)
+        val selectedState = appString(R.string.accessibility_selected)
         val node = waitForNode(
             if (excluding == null) "selected PDF layout" else "changed selected PDF layout"
         ) {
             val description = it.contentDescription?.toString().orEmpty()
             it.isVisibleToUser &&
-                it.isCheckable &&
-                it.isChecked &&
+                it.stateDescription?.toString() == selectedState &&
                 (description == page || description == scroll) &&
                 description != excluding
         }
