@@ -1219,9 +1219,8 @@ private fun CastleChamberNode(
 
         Spacer(Modifier.height(5.dp))
 
-        Text(
-            actionLabel,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
+        VeilMicroLabel(
+            text = actionLabel,
             color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.44f)
         )
     }
@@ -1239,10 +1238,10 @@ private fun CastleGateLabel(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-            color = VeilPalette.Brass.copy(alpha = 0.80f)
+        VeilMicroLabel(
+            text = title,
+            color = VeilPalette.Brass.copy(alpha = 0.80f),
+            strong = true
         )
         Text(
             subtitle,
