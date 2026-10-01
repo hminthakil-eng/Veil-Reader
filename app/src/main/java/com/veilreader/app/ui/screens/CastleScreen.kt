@@ -149,8 +149,8 @@ fun CastleScreen(
     ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .widthIn(max = castleLayout.contentMaxWidthDp.dp)
+            .fillMaxSize()
             .verticalScroll(rememberScrollState())
             .padding(
                 horizontal = castleLayout.horizontalPaddingDp.dp,
