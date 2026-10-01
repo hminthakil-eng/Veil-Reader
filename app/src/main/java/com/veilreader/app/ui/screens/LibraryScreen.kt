@@ -54,6 +54,7 @@ import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.ArchiveWing
 import com.veilreader.app.domain.ArchiveWingKind
 import com.veilreader.app.domain.Book
+import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookArchiveMemory
 import com.veilreader.app.domain.BookArtifactMemory
 import com.veilreader.app.domain.BookMetadataUpdate
@@ -1397,7 +1398,7 @@ private fun BookDetailDestination(
                         Text(
                             stringResource(
                                 R.string.book_detail_artifact_chamber,
-                                book.format.name
+                                localizedBookFormat(book.format)
                             ),
                             style = MaterialTheme.typography.labelSmall.copy(
                                 letterSpacing = 1.45.sp
@@ -1478,12 +1479,21 @@ private fun BookDetailDestination(
                         Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            stringResource(R.string.book_detail_reading_progress),
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
-                            color = VeilPalette.Brass,
-                            modifier = Modifier.weight(1f)
-                        )
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                stringResource(R.string.book_detail_current_journey),
+                                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.45.sp),
+                                color = VeilPalette.Brass
+                            )
+                            Text(
+                                stringResource(R.string.book_detail_reading_progress),
+                                style = MaterialTheme.typography.titleMedium,
+                                color = VeilPalette.Moon
+                            )
+                        }
                         Text(
                             formatPercent(progress),
                             style = MaterialTheme.typography.labelMedium,
@@ -1596,7 +1606,7 @@ private fun BookDetailDestination(
                         style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
                         color = VeilPalette.Brass
                     )
-                    BookDetailFact(stringResource(R.string.book_detail_format), book.format.name)
+                    BookDetailFact(stringResource(R.string.book_detail_format), localizedBookFormat(book.format))
                     book.language?.takeIf { it.isNotBlank() }?.let {
                         BookDetailFact(stringResource(R.string.book_detail_language), it)
                     }
@@ -1904,7 +1914,7 @@ private fun BookDetailIdentity(
                 border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.32f))
             ) {
                 Text(
-                    book.format.name,
+                    localizedBookFormat(book.format),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Moon.copy(alpha = 0.84f)
@@ -1928,6 +1938,17 @@ private fun BookDetailIdentity(
         }
     }
 }
+
+@Composable
+private fun localizedBookFormat(format: BookFormat): String =
+    stringResource(
+        when (format) {
+            BookFormat.EPUB -> R.string.book_format_epub
+            BookFormat.PDF -> R.string.book_format_pdf
+            BookFormat.AUDIO -> R.string.book_format_audio
+            BookFormat.COMIC -> R.string.book_format_comic
+        }
+    )
 
 @Composable
 private fun localizedBookArtifactRecordLabel(state: BookArtifactState): String {
@@ -3221,7 +3242,7 @@ private fun BookLibraryRow(
                         color = VeilPalette.Brass.copy(alpha = 0.84f)
                     )
                     Text(
-                        book.format.name,
+                        localizedBookFormat(book.format),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Mist.copy(alpha = 0.62f)
                     )
@@ -3553,7 +3574,7 @@ private fun LibraryShelvesView(
                                     when {
                                         book.finished -> stringResource(R.string.book_detail_finished)
                                         book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
-                                        else -> book.format.name
+                                        else -> localizedBookFormat(book.format)
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = VeilPalette.Brass.copy(alpha = 0.82f),
