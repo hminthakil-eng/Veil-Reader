@@ -2009,8 +2009,8 @@ fun ReaderScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .widthIn(max = 620.dp)
+                        .fillMaxWidth()
                         .heightIn(max = 680.dp),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
@@ -2100,8 +2100,8 @@ fun ReaderScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
