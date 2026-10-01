@@ -4168,6 +4168,7 @@ internal fun ReaderReadingModeSelector(
 @Composable
 internal fun ReaderPageTurnSelector(
     selected: PageTurnStyle,
+    enabled: Boolean = true,
     onSelect: (PageTurnStyle) -> Unit
 ) {
     Row(
@@ -4197,7 +4198,7 @@ internal fun ReaderPageTurnSelector(
                 label = label,
                 previewMode = previewMode,
                 active = selected == style,
-                enabled = true,
+                enabled = enabled,
                 modifier = Modifier.weight(1f),
                 onClick = { onSelect(style) }
             )
