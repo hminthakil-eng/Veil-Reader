@@ -67,14 +67,13 @@ fun ReadingTimeCapsuleCard(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sealed_cycle, capsuleNumber(capsule.cycleIndex))
-                        else stringResource(R.string.capsule_sealed_record),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.0.sp),
-                        color = VeilPalette.Brass,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                    VeilMicroLabel(
+                        text = if (capsule.cycleIndex > 1) {
+                            stringResource(R.string.capsule_sealed_cycle, capsuleNumber(capsule.cycleIndex))
+                        } else {
+                            stringResource(R.string.capsule_sealed_record)
+                        },
+                        modifier = Modifier.weight(1f)
                     )
                     Text(
                         capsule.sealCode,
@@ -112,9 +111,11 @@ fun ReadingTimeCapsuleCard(
                 capsule.completedAtEpochMs
                     ?.takeIf { capsule.exactCompletionTimeKnown && it > 0L }
                     ?.let { completedAt ->
-                        Text(
-                            stringResource(R.string.capsule_completed_at, formatCapsuleDate(completedAt)),
-                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+                        VeilMicroLabel(
+                            text = stringResource(
+                                R.string.capsule_completed_at,
+                                formatCapsuleDate(completedAt)
+                            ),
                             color = VeilPalette.Brass.copy(alpha = 0.78f)
                         )
                     }
@@ -169,14 +170,18 @@ fun ReadingTimeCapsuleSheet(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Text(
-                        if (capsule.cycleIndex > 1) stringResource(R.string.capsule_sheet_cycle, capsuleNumber(capsule.cycleIndex))
-                        else stringResource(R.string.capsule_sheet_title),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = if (capsule.cycleIndex > 1) {
+                            stringResource(R.string.capsule_sheet_cycle, capsuleNumber(capsule.cycleIndex))
+                        } else {
+                            stringResource(R.string.capsule_sheet_title)
+                        },
+                        strong = true
                     )
                     Text(
-                        capsule.book.title,
+                        capsule.book.title.ifBlank {
+                            stringResource(R.string.common_untitled_book)
+                        },
                         style = MaterialTheme.typography.headlineSmall,
                         color = VeilPalette.Moon,
                         maxLines = 3,
@@ -223,10 +228,9 @@ fun ReadingTimeCapsuleSheet(
                 )
             }
 
-            Text(
-                stringResource(R.string.capsule_history),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.15.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.capsule_history),
+                strong = true
             )
 
             if (capsule.timeline.isEmpty()) {
@@ -301,9 +305,8 @@ private fun CapsuleMetric(
                 style = MaterialTheme.typography.titleSmall,
                 color = VeilPalette.Moon
             )
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+            VeilMicroLabel(
+                text = label,
                 color = VeilPalette.Brass.copy(alpha = 0.72f)
             )
         }
