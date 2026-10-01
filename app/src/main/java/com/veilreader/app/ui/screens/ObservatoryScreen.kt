@@ -149,7 +149,7 @@ fun ObservatoryScreen(
                     atlas.edges.size
                 )
             },
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.72.sp),
+            style = MaterialTheme.typography.labelSmall,
             color = VeilPalette.Mist.copy(alpha = 0.66f)
         )
 
