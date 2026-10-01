@@ -1,6 +1,7 @@
 package com.veilreader.app.ui
 
 import androidx.window.core.layout.WindowSizeClass
+import com.veilreader.app.ui.navigation.VeilTab
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -54,6 +55,17 @@ class VeilAppAdaptiveLayoutTest {
         assertEquals(1040, contentMaxWidthDp(size(width = 839, height = 800)))
         assertEquals(1280, contentMaxWidthDp(size(width = 840, height = 800)))
         assertEquals(1280, contentMaxWidthDp(size(width = 1200, height = 800)))
+    }
+
+    @Test
+    fun `world visibility keeps core tabs and removes only gamification tabs`() {
+        assertEquals(VeilTab.entries, visibleVeilTabs(gameVisible = true))
+        assertEquals(
+            listOf(VeilTab.READING, VeilTab.LIBRARY, VeilTab.PROFILE),
+            visibleVeilTabs(gameVisible = false)
+        )
+        assertFalse(VeilTab.CASTLE in visibleVeilTabs(gameVisible = false))
+        assertFalse(VeilTab.PATH in visibleVeilTabs(gameVisible = false))
     }
 
     private fun size(width: Int, height: Int): WindowSizeClass =
