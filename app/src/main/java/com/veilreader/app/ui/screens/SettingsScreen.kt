@@ -71,6 +71,7 @@ import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.usesArabicScript
 
 @Composable
 fun SettingsScreen(
@@ -316,6 +317,7 @@ fun SettingsScreen(
                 }
             )
             if (showAdvancedReadingSettings) {
+            BrassRule(Modifier.fillMaxWidth())
             Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = ReaderFontFamily.entries,
@@ -779,7 +781,7 @@ private fun SettingsSection(
             verticalAlignment = Alignment.Bottom
         ) {
             Text(
-                title.uppercase(),
+                if (usesArabicScript(title)) title else title.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 color = VeilPalette.Brass,
                 modifier = Modifier.weight(1f)
@@ -794,23 +796,13 @@ private fun SettingsSection(
             style = MaterialTheme.typography.bodySmall
         )
 
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraSmall,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
-            border = BorderStroke(
-                1.dp,
-                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.40f)
-            ),
-            tonalElevation = 0.dp,
-            shadowElevation = 0.dp
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.xs),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
         ) {
-            Column(
-                modifier = Modifier.padding(VeilSpacing.md),
-                verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
-            ) {
-                content()
-            }
+            content()
         }
     }
 }
