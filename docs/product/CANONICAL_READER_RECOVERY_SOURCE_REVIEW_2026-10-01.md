@@ -151,3 +151,41 @@ Canonical implementation reviewed through head `0078d0d9588ad9674c17adaa6bd25505
 
 Pure JVM regression coverage was added for Appearance close synchronization. Android instrumentation coverage was extended for terminal directional ownership. These source changes still require the final-head Android CI, Storage Instrumentation and Performance gates before any GREEN claim. No manual APK/AAB build was started.
 
+## W53 follow-up — preference rollback, spread continuity, and resize-safe paper
+
+Canonical implementation reviewed through head `c72581e7d31c6f78c80c5520f06ab6884f6bbbfe`.
+
+### Renderer-truthful preference state
+
+- Reader now tracks the last renderer-accepted raw Appearance separately from the effective visual Appearance.
+- If preference submission fails, the persisted/global Appearance callback is rolled back to the last accepted value instead of leaving Settings state ahead of the actual renderer.
+- Fixed-layout spread state receives the same rollback discipline: failed `AUTO/SINGLE/DUAL` submission restores the last presented spread and writes that rollback through the existing settings path.
+- This preserves retained global preferences such as Scroll while a fixed-layout publication temporarily forces an effective paged presentation.
+
+### Fixed-layout spread continuity
+
+- A fixed-layout spread change now receives a Reader handoff snapshot even when the navigation mode itself is unchanged.
+- The current locator is committed as a non-page-turn checkpoint immediately before spread submission and again after the renderer settles.
+- Spread changes receive the same two-frame settle budget as a navigation-mode transition, reducing one-frame `SINGLE ↔ DUAL` flashes while keeping the publication location durable.
+- Regression coverage locks both the handoff decision and the heavier settle budget.
+
+### Session-scoped Fragment ownership
+
+- Navigator Fragment tags now include both book id and Reader session instance id.
+- Reopening the same book under a fresh open request cannot accidentally identify an older navigator Fragment as the current one merely because the book id matches.
+- Configuration/process restoration keeps the same session id and therefore keeps deterministic identity, while a genuinely fresh session receives a distinct tag.
+- Regression coverage locks this ownership rule.
+
+### Paper geometry and adaptive resize
+
+- Curl line intersection now rejects non-finite inputs, degenerate vectors, and nearly parallel lines using a relative geometric tolerance before coordinates can explode into GPU clip/shadow artifacts.
+- Ordinary intersections remain exact under regression coverage.
+- Paper Curl drawing now refuses transient zero-size/non-finite frames and falls back to ordinary content.
+- Reader parchment atmosphere likewise refuses transient invalid viewport dimensions before fibre generation performs modulo arithmetic.
+- This specifically hardens orientation changes, split-window resizing, tablets and foldable transitions where a layout may briefly report zero width or height.
+- JVM regression coverage protects both curl-frame and Reader-material viewport gates.
+
+### Verification boundary
+
+This remains source-level hardening plus regression coverage. The final canonical head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No APK/AAB packaging was started.
+
