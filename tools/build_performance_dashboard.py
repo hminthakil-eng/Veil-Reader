@@ -112,6 +112,14 @@ def append_snapshot(
     }, previous
 
 
+def baseline_is_compatible(previous: dict[str, Any], current: dict[str, Any]) -> bool:
+    previous_metrics = previous.get("metrics", {})
+    current_metrics = current.get("metrics", {})
+    if not isinstance(previous_metrics, dict) or not isinstance(current_metrics, dict):
+        return False
+    return set(current_metrics).issubset(previous_metrics)
+
+
 def build_dashboard(
     history: dict[str, Any],
     policy: dict[str, Any],
@@ -229,11 +237,17 @@ def main() -> int:
     )
 
     if args.baseline_output and previous is not None:
-        args.baseline_output.parent.mkdir(parents=True, exist_ok=True)
-        args.baseline_output.write_text(
-            json.dumps(previous, indent=2, sort_keys=True) + "\n",
-            encoding="utf-8",
-        )
+        if baseline_is_compatible(previous, snapshot):
+            args.baseline_output.parent.mkdir(parents=True, exist_ok=True)
+            args.baseline_output.write_text(
+                json.dumps(previous, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        else:
+            print(
+                "Previous performance snapshot uses an incompatible metric schema; "
+                "relative delta is skipped until a compatible main baseline exists."
+            )
 
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if summary_path:
