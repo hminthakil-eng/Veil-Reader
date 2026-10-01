@@ -667,44 +667,29 @@ fun ReaderScreen(
         }
     }
 
-    var pendingNoteHighlightId by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf<String?>(null) }
-    var pendingNoteText by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf("") }
-    var pendingNoteCreatedHighlight by rememberSaveable(opened.book.id, readerSessionInstanceId) {
-        mutableStateOf(false)
+    var pendingNoteHighlightId by rememberSaveable(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<String?>(null)
+    }
+    var pendingNoteLocatorJson by rememberSaveable(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<String?>(null)
+    }
+    var pendingNoteQuote by rememberSaveable(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf("")
+    }
+    var pendingNoteText by rememberSaveable(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf("")
     }
     var noteSaving by remember(readerSessionInstanceId) { mutableStateOf(false) }
 
-    fun dismissPendingSelectionNote() {
-        val highlightId = pendingNoteHighlightId
-        val discardCreatedHighlight = shouldDiscardPendingSelectionNoteHighlight(
-            createdForNote = pendingNoteCreatedHighlight,
-            noteSaving = noteSaving
-        )
-
+    fun clearPendingSelectionNoteDraft() {
         pendingNoteHighlightId = null
+        pendingNoteLocatorJson = null
+        pendingNoteQuote = ""
         pendingNoteText = ""
-        pendingNoteCreatedHighlight = false
+    }
 
-        if (discardCreatedHighlight && highlightId != null) {
-            library.deleteHighlight(highlightId)
-            val expectedSessionId = readerSessionInstanceId
-            scope.launch {
-                try {
-                    library.flushWrites()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Exception) {
-                    if (
-                        readerAsyncResultBelongsToSession(
-                            currentSessionInstanceId = latestReaderSessionInstanceId.value,
-                            expectedSessionInstanceId = expectedSessionId
-                        )
-                    ) {
-                        readerMessage = passageSaveFailedMessage
-                    }
-                }
-            }
-        }
+    fun dismissPendingSelectionNote() {
+        if (!noteSaving) clearPendingSelectionNoteDraft()
     }
 
     var locationTitle by remember(opened.book.id, readerSessionInstanceId) {
@@ -751,15 +736,14 @@ fun ReaderScreen(
                     val existing = library.highlightsFor(opened.book.id).firstOrNull {
                         it.locatorJson == locatorJson && it.quote == quote
                     }
-                    val highlight = existing ?: library.addHighlight(
-                        bookId = opened.book.id,
-                        quote = quote,
-                        locatorJson = locatorJson
-                    )
-                    val isNew = existing == null
-
                     when (action) {
                         ReaderSelectionAction.HIGHLIGHT -> {
+                            val highlight = existing ?: library.addHighlight(
+                                bookId = opened.book.id,
+                                quote = quote,
+                                locatorJson = locatorJson
+                            )
+                            val isNew = existing == null
                             if (isNew) {
                                 library.flushWrites()
                                 if (
@@ -775,13 +759,19 @@ fun ReaderScreen(
                             } else {
                                 readerViewModel.onUserInteraction(readerSessionInstanceId)
                             }
-                            readerMessage = if (isNew) highlightedMessage else alreadyHighlightedMessage
+                            readerMessage =
+                                if (highlight.id.isNotBlank() && isNew) {
+                                    highlightedMessage
+                                } else {
+                                    alreadyHighlightedMessage
+                                }
                         }
                         ReaderSelectionAction.NOTE -> {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            pendingNoteCreatedHighlight = isNew
-                            pendingNoteHighlightId = highlight.id
-                            pendingNoteText = highlight.note
+                            pendingNoteHighlightId = existing?.id
+                            pendingNoteLocatorJson = locatorJson
+                            pendingNoteQuote = quote
+                            pendingNoteText = existing?.note.orEmpty()
                         }
                     }
                 } catch (cancelled: CancellationException) {
@@ -2394,8 +2384,9 @@ fun ReaderScreen(
         }
     }
 
-    pendingNoteHighlightId?.let { highlightId ->
-        val pendingHighlight = bookHighlights.firstOrNull { it.id == highlightId }
+    pendingNoteLocatorJson?.let { pendingLocatorJson ->
+        val existingHighlightId = pendingNoteHighlightId
+        val isNewNoteDraft = existingHighlightId == null
 
         Dialog(
             onDismissRequest = {
@@ -2452,8 +2443,8 @@ fun ReaderScreen(
                             )
                             BrassRule(Modifier.fillMaxWidth())
 
-                            pendingHighlight?.quote
-                                ?.takeIf { it.isNotBlank() }
+                            pendingNoteQuote
+                                .takeIf { it.isNotBlank() }
                                 ?.let { quote ->
                                     Surface(
                                         shape = MaterialTheme.shapes.extraSmall,
@@ -2534,20 +2525,27 @@ fun ReaderScreen(
                                     Button(
                                         enabled = !noteSaving &&
                                             canSavePendingSelectionNote(
-                                                createdForNote = pendingNoteCreatedHighlight,
+                                                createdForNote = isNewNoteDraft,
                                                 note = pendingNoteText
                                             ),
                                         onClick = {
                                             val expectedSessionId = readerSessionInstanceId
                                             val noteToSave = pendingNoteText
-                                            val createdHighlightForNote = pendingNoteCreatedHighlight
+                                            val quoteToSave = pendingNoteQuote
+                                            val existingId = existingHighlightId
                                             scope.launch {
                                                 noteSaving = true
                                                 try {
-                                                    library.updateHighlightNote(
-                                                        highlightId,
-                                                        noteToSave
-                                                    )
+                                                    val committed =
+                                                        library.commitSelectionNote(
+                                                            bookId = opened.book.id,
+                                                            quote = quoteToSave,
+                                                            locatorJson = pendingLocatorJson,
+                                                            existingHighlightId = existingId,
+                                                            note = noteToSave
+                                                        ) ?: error(
+                                                            "Selection note target is no longer available."
+                                                        )
                                                     library.flushWrites()
                                                     if (
                                                         !readerAsyncResultBelongsToSession(
@@ -2559,20 +2557,18 @@ fun ReaderScreen(
                                                     ) {
                                                         return@launch
                                                     }
-                                                    if (createdHighlightForNote) {
+                                                    if (committed.created) {
                                                         readerViewModel.onHighlightAdded(
                                                             expectedSessionId
                                                         )
                                                     }
                                                     readerViewModel.onNoteSaved(
                                                         expectedSessionId,
-                                                        highlightId,
+                                                        committed.highlight.id,
                                                         noteToSave
                                                     )
                                                     onSensoryEvent(VeilSensoryEvent.NOTE)
-                                                    pendingNoteHighlightId = null
-                                                    pendingNoteText = ""
-                                                    pendingNoteCreatedHighlight = false
+                                                    clearPendingSelectionNoteDraft()
                                                     readerMessage = noteSavedMessage
                                                 } catch (cancelled: CancellationException) {
                                                     throw cancelled
