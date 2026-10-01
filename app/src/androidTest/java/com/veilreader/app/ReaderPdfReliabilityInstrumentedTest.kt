@@ -83,20 +83,20 @@ class ReaderPdfReliabilityInstrumentedTest {
         // coverage and must not be allowed to poison the Readium tap-arbiter state used by this gate.
         revealReaderChrome(pdfView)
         exerciseNativePdfGestures(pdfView)
-        clickText("Zoom")
-        waitForText("PDF zoom")
-        waitForText("Fit page width")
+        clickText(appString(R.string.reader_chrome_pdf_view))
+        waitForText(appString(R.string.pdf_zoom))
+        waitForText(appString(R.string.pdf_fit_width))
 
         val before = currentPdfLayoutLabel()
-        clickDescription("PDF continuous scroll")
+        clickDescription(appString(R.string.pdf_continuous_scroll))
         val after = waitForPdfLayoutLabel(excluding = before)
         assertNotEquals("PDF layout toggle did not change mode", before, after)
 
         // Exercise the renderer's manual fit path while the real PDFView is attached.
-        clickText("Fit page width")
+        clickText(appString(R.string.pdf_fit_width))
 
         // Restore the original layout so this test does not leak reader preference state.
-        clickDescription("PDF continuous scroll")
+        clickDescription(appString(R.string.pdf_continuous_scroll))
         waitForPdfLayoutLabel(excluding = after)
         pressAndroidBack()
 
@@ -111,7 +111,7 @@ class ReaderPdfReliabilityInstrumentedTest {
             val rotatedPdfView = waitForPdfView(rotatedActivity)
             waitForPdfPage(rotatedPdfView, 1)
             revealReaderChrome(rotatedPdfView)
-            waitForText("Zoom")
+            waitForText(appString(R.string.reader_chrome_pdf_view))
         } finally {
             uiAutomation.setRotation(UiAutomation.ROTATION_UNFREEZE)
         }
@@ -446,10 +446,10 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun revealReaderChrome(view: PDFView) {
-        if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+        val pdfViewLabel = appString(R.string.reader_chrome_pdf_view)
+        if (findClickableNode { it.text?.toString() == pdfViewLabel } != null) return
 
-        val readerSurfaceLabel =
-            instrumentation.targetContext.getString(R.string.reader_surface_label)
+        val readerSurfaceLabel = appString(R.string.reader_surface_label)
         val readerSurface = waitForNode("reader surface=$readerSurfaceLabel") {
             it.contentDescription?.toString() == readerSurfaceLabel
         }
@@ -462,7 +462,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         uiAutomation.waitForIdle(250, 2_000)
         val deadline = SystemClock.elapsedRealtime() + 5_000L
         while (SystemClock.elapsedRealtime() < deadline) {
-            if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+            if (findClickableNode { it.text?.toString() == pdfViewLabel } != null) return
             SystemClock.sleep(POLL_MS)
         }
 
@@ -486,18 +486,28 @@ class ReaderPdfReliabilityInstrumentedTest {
         SystemClock.sleep(500)
     }
 
-    private fun currentPdfLayoutLabel(): String =
-        waitForNode("PDF layout label") {
-            val text = it.text?.toString().orEmpty()
-            text.startsWith("Paginated") || text.startsWith("Vertical flow")
-        }.text.toString()
+    private fun currentPdfLayoutLabel(): String {
+        val page = appString(R.string.pdf_paginated_layout)
+        val scroll = appString(R.string.pdf_continuous_scroll)
+        return waitForNode("selected PDF layout") {
+            val description = it.contentDescription?.toString().orEmpty()
+            it.isChecked && (description == page || description == scroll)
+        }.contentDescription.toString()
+    }
 
-    private fun waitForPdfLayoutLabel(excluding: String): String =
-        waitForNode("changed PDF layout label") {
-            val text = it.text?.toString().orEmpty()
-            (text.startsWith("Paginated") || text.startsWith("Vertical flow")) &&
-                text != excluding
-        }.text.toString()
+    private fun waitForPdfLayoutLabel(excluding: String): String {
+        val page = appString(R.string.pdf_paginated_layout)
+        val scroll = appString(R.string.pdf_continuous_scroll)
+        return waitForNode("changed selected PDF layout") {
+            val description = it.contentDescription?.toString().orEmpty()
+            it.isChecked &&
+                (description == page || description == scroll) &&
+                description != excluding
+        }.contentDescription.toString()
+    }
+
+    private fun appString(resId: Int): String =
+        instrumentation.targetContext.getString(resId)
 
     private fun clickFirstText(vararg candidates: String) {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS

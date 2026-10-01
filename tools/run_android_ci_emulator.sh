@@ -142,7 +142,7 @@ case "$MODE" in
   performance)
     run_gradle :app:generateBaselineProfile --stacktrace       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
     assert_emulator_alive
-    run_gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
+    run_gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace
     ;;
 esac
 
