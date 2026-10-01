@@ -40,6 +40,18 @@ class PerformanceDashboardTest(unittest.TestCase):
         self.assertEqual(2, len(updated["snapshots"]))
         self.assertEqual(110.0, updated["snapshots"][-1]["metrics"]["startup_ttid_median"]["value"])
 
+    def test_metric_schema_compatibility_is_explicit(self):
+        previous = snap("a", "1")
+        current = snap("b", "2")
+        self.assertTrue(dash.baseline_is_compatible(previous, current))
+
+        migrated = snap("c", "3")
+        migrated["metrics"] = {
+            "startup_ttid_median": {"value": 100.0},
+            "reader_gfx_frame_p95": {"value": 18.0},
+        }
+        self.assertFalse(dash.baseline_is_compatible(previous, migrated))
+
     def test_device_mismatch_fails_closed(self):
         history = {
             "schemaVersion": 1,
