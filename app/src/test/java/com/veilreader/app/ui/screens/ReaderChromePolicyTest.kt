@@ -278,4 +278,17 @@ class ReaderChromePolicyTest {
         )
     }
 
+
+    @Test
+    fun `Reader context control matches publication surface`() {
+        assertEquals(
+            ReaderContextControl.APPEARANCE,
+            readerContextControlFor(BookFormat.EPUB)
+        )
+        assertEquals(
+            ReaderContextControl.PDF_VIEW,
+            readerContextControlFor(BookFormat.PDF)
+        )
+    }
+
 }
