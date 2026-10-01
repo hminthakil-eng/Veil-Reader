@@ -53,6 +53,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 VeilTheme {
                     ReaderScreen(
                         opened = opened,
+                        readerSessionInstanceId = BENCHMARK_READER_SESSION_ID,
                         library = library,
                         game = game,
                         readerAppearance = readerAppearance.value,
@@ -62,6 +63,10 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    private companion object {
+        const val BENCHMARK_READER_SESSION_ID = "benchmark-reader-session"
     }
 
     private fun ensureFixture(): File {
