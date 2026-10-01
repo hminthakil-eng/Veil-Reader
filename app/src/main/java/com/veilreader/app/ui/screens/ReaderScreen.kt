@@ -47,6 +47,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
@@ -55,6 +56,7 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -606,6 +608,9 @@ fun ReaderScreen(
     var imageLoadJob by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     var imageLoadSerial by remember(opened.book.id, readerSessionInstanceId) { mutableIntStateOf(0) }
     var closeInFlight by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
+    var readerViewportSize by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(IntSize.Zero)
+    }
 
     DisposableEffect(imageViewer?.bitmap) {
         val ownedBitmap = imageViewer?.bitmap
@@ -1824,6 +1829,44 @@ fun ReaderScreen(
     Box(
         Modifier
             .fillMaxSize()
+            .onSizeChanged { newSize ->
+                val previousSize = readerViewportSize
+                if (
+                    shouldCancelReaderPreviewForViewportChange(
+                        previousSize = previousSize,
+                        newSize = newSize,
+                        paperPreviewActive = paperCurlState.active,
+                        slidePreviewActive = slidePageState.active
+                    )
+                ) {
+                    val paperCancelled =
+                        paperInputListener?.forceCancelPendingTurn() == true
+                    val slideCancelled =
+                        slideInputListener?.forceCancelPendingTurn() == true
+                    if (!paperCancelled && paperCurlState.active) {
+                        paperCurlState.clearImmediately()
+                    }
+                    if (!slideCancelled && slidePageState.active) {
+                        slidePageState.clearImmediately()
+                    }
+                    ReaderTrace.event(
+                        "reader_preview_cancelled_for_resize",
+                        bookId = opened.book.id,
+                        sessionId = readerSessionInstanceId,
+                        details =
+                            "from=${previousSize.width}x${previousSize.height} " +
+                                "to=${newSize.width}x${newSize.height}"
+                    )
+                }
+                if (
+                    previousSize != IntSize.Zero &&
+                    previousSize != newSize &&
+                    readerModeHandoffState.snapshot != null
+                ) {
+                    readerModeHandoffState.clearImmediately()
+                }
+                readerViewportSize = newSize
+            }
             .background(readerCanvas)
             .semantics {
                 contentDescription = readerSurfaceLabel
@@ -2915,6 +2958,16 @@ private fun ReaderBoundaryPulse(
         )
     }
 }
+
+internal fun shouldCancelReaderPreviewForViewportChange(
+    previousSize: IntSize,
+    newSize: IntSize,
+    paperPreviewActive: Boolean,
+    slidePreviewActive: Boolean
+): Boolean =
+    previousSize != IntSize.Zero &&
+        newSize != previousSize &&
+        (paperPreviewActive || slidePreviewActive)
 
 internal fun isRenderableReaderViewport(
     width: Float,
