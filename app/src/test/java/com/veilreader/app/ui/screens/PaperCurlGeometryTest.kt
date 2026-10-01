@@ -427,6 +427,19 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun `paper age deepens lifted sheet material without leaving safe bounds`() {
+        val fresh = paperCurlMaterialAge(0f)
+        val aged = paperCurlMaterialAge(1f)
+        val fallback = paperCurlMaterialAge(Float.NaN)
+
+        assertTrue(aged.backPageShadeAlpha > fresh.backPageShadeAlpha)
+        assertTrue(aged.backsideFiberAlpha > fresh.backsideFiberAlpha)
+        assertTrue(aged.edgeThicknessAlpha > fresh.edgeThicknessAlpha)
+        assertTrue(aged.contactShadowAlpha > fresh.contactShadowAlpha)
+        assertTrue(fallback.backsideFiberAlpha in fresh.backsideFiberAlpha..aged.backsideFiberAlpha)
+    }
+
+    @Test
     fun `reduced motion disables paper snapshot and boundary animation ownership`() {
         assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = false))
         assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
