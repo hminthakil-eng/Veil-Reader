@@ -760,11 +760,7 @@ fun ReaderScreen(
                                 readerViewModel.onUserInteraction(readerSessionInstanceId)
                             }
                             readerMessage =
-                                if (highlight.id.isNotBlank() && isNew) {
-                                    highlightedMessage
-                                } else {
-                                    alreadyHighlightedMessage
-                                }
+                                if (isNew) highlightedMessage else alreadyHighlightedMessage
                         }
                         ReaderSelectionAction.NOTE -> {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
