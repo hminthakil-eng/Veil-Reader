@@ -96,7 +96,7 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationIdentity
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
-import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
+import com.veilreader.app.ui.reader.shouldStartReaderIdentityJump
 import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
 import com.veilreader.app.ui.reader.toReaderNavigationIdentity
 import com.veilreader.app.ui.reader.readerEffectiveTargetHref
@@ -913,8 +913,15 @@ fun ReaderScreen(
             return
         }
 
-        val originJson = currentLocatorJson()
-        if (!shouldStartReaderLocationJump(originJson, targetJson)) {
+        val originLocator = nav.currentLocator.value
+        val originJson = originLocator.toVeilPersistedJson(opened.format)
+        val targetIdentity = locator.toReaderNavigationIdentity()
+        if (
+            !shouldStartReaderIdentityJump(
+                origin = originLocator.toReaderNavigationIdentity(),
+                target = targetIdentity
+            )
+        ) {
             previousLocationJson = null
             controlsVisible = false
             return
@@ -924,7 +931,7 @@ fun ReaderScreen(
         game.rebasePagePacing()
         val transactionToken = beginProgrammaticNavigation(
             originLocatorJson = originJson,
-            targetIdentity = locator.toReaderNavigationIdentity()
+            targetIdentity = targetIdentity
         )
 
         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
@@ -2671,15 +2678,22 @@ fun ReaderScreen(
                     showNotebook = false
                     readerMessage = savedLocationFailedMessage
                 } else {
-                    val originJson = currentLocatorJson()
-                    if (!shouldStartReaderLocationJump(originJson, json)) {
+                    val originLocator = nav.currentLocator.value
+                    val originJson = originLocator.toVeilPersistedJson(opened.format)
+                    val targetIdentity = locator.toReaderNavigationIdentity()
+                    if (
+                        !shouldStartReaderIdentityJump(
+                            origin = originLocator.toReaderNavigationIdentity(),
+                            target = targetIdentity
+                        )
+                    ) {
                         showNotebook = false
                     } else {
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
                         game.rebasePagePacing()
                         val transactionToken = beginProgrammaticNavigation(
                             originLocatorJson = originJson,
-                            targetIdentity = locator.toReaderNavigationIdentity(),
+                            targetIdentity = targetIdentity,
                             passageVisitLocatorJson = json
                         )
                         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
