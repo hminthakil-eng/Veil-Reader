@@ -410,12 +410,32 @@ fun ReaderScreen(
     var appearanceCloseJob by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Job?>(null) }
     var showPdfZoom by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
 
-    fun closeAppearanceAfterRendererSettles() {
+    fun closeAppearanceAfterRendererSettles(
+        expectedAppearance: ReaderAppearance? = null
+    ) {
         appearanceCloseJob?.cancel()
+        val normalizedExpected = expectedAppearance?.let {
+            effectiveReaderAppearanceForPublication(
+                appearance = it,
+                fixedLayout = fixedLayoutPublication
+            )
+        }
         appearanceCloseJob = scope.launch {
-            // The renderer handoff owns the real settle window. Keep the instrument chamber above
-            // it until the snapshot has faded and navigation ownership has moved to the new mode.
-            while (rendererPreferencesSettling) {
+            // Give a final slider commit one frame to propagate into the parent state before
+            // deciding whether the renderer is settled. Then keep the chamber above the renderer
+            // until the exact requested appearance is presented, with a defensive ceiling so a
+            // renderer failure can never trap the user inside Settings.
+            delay(VeilMotion.FRAME_SETTLE_MS)
+            val startedAt = SystemClock.elapsedRealtime()
+            while (
+                shouldAwaitReaderAppearanceClose(
+                    rendererPreferencesSettling = rendererPreferencesSettling,
+                    presented = presentedReaderAppearance,
+                    expected = normalizedExpected
+                ) &&
+                SystemClock.elapsedRealtime() - startedAt <
+                    READER_APPEARANCE_CLOSE_TIMEOUT_MS
+            ) {
                 delay(VeilMotion.FRAME_SETTLE_MS)
             }
             delay(VeilMotion.FRAME_SETTLE_MS)
@@ -1996,6 +2016,7 @@ fun ReaderScreen(
                             foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            selectionActionModeCallback.dismissSelection()
                             showNotebook = true
                         }
 
@@ -2008,6 +2029,7 @@ fun ReaderScreen(
                             foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            selectionActionModeCallback.dismissSelection()
                             val locator = navigator?.currentLocator?.value
                             if (locator != null) {
                                 val added = library.addBookmark(
@@ -2043,6 +2065,7 @@ fun ReaderScreen(
                             foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            selectionActionModeCallback.dismissSelection()
                             when (contextControl) {
                                 ReaderContextControl.APPEARANCE -> {
                                     appearanceCloseJob?.cancel()
@@ -2577,7 +2600,9 @@ fun ReaderScreen(
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
                             onReaderAppearanceChange(it)
                         },
-                        onDone = ::closeAppearanceAfterRendererSettles,
+                        onDone = { finalAppearance ->
+                            closeAppearanceAfterRendererSettles(finalAppearance)
+                        },
                         modifier = Modifier
                             .widthIn(max = 720.dp)
                             .fillMaxSize()
@@ -2617,6 +2642,16 @@ fun ReaderScreen(
 
 internal fun shouldAnimateReaderJump(reducedMotion: Boolean): Boolean =
     !reducedMotion
+
+internal fun shouldAwaitReaderAppearanceClose(
+    rendererPreferencesSettling: Boolean,
+    presented: ReaderAppearance,
+    expected: ReaderAppearance?
+): Boolean =
+    rendererPreferencesSettling ||
+        (expected != null && presented != expected)
+
+private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
 
 internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
@@ -3257,7 +3292,7 @@ private fun EpubAppearancePanel(
     publicationLanguage: String?,
     onSpreadChange: (ReaderFixedLayoutSpread) -> Unit,
     onChange: (ReaderAppearance) -> Unit,
-    onDone: () -> Unit,
+    onDone: (ReaderAppearance) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val formatPercent = rememberVeilPercentFormatter()
@@ -3939,7 +3974,7 @@ private fun EpubAppearancePanel(
         Button(
             onClick = {
                 commitDraft()
-                onDone()
+                onDone(draft)
             },
             modifier = Modifier
                 .fillMaxWidth()
