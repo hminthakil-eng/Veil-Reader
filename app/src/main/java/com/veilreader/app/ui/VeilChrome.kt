@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
@@ -38,12 +39,16 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.veilreader.app.R
 import com.veilreader.app.ui.navigation.VeilTab
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
@@ -577,14 +582,18 @@ fun VeilSigilMark(
 
 @Composable
 fun VeilLoadingState(
-    label: String = "Opening the archive",
+    label: String? = null,
     modifier: Modifier = Modifier
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
+    val displayLabel = label ?: stringResource(R.string.notice_loading_open)
     Column(
         modifier = modifier
             .fillMaxSize()
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+            }
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -595,15 +604,16 @@ fun VeilLoadingState(
         )
         Spacer(Modifier.height(18.dp))
         Text(
-            "VEIL READER",
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.8.sp),
+            stringResource(R.string.app_name),
+            style = MaterialTheme.typography.labelSmall,
             color = accent
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            label,
+            displayLabel,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
+            textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(18.dp))
         LinearProgressIndicator(
@@ -611,7 +621,9 @@ fun VeilLoadingState(
                 .width(132.dp)
                 .height(2.dp),
             color = accent,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = if (highContrast) 0.52f else 0.24f)
+            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(
+                alpha = if (highContrast) 0.52f else 0.24f
+            )
         )
     }
 }
