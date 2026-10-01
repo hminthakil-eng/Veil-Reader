@@ -221,3 +221,47 @@ Canonical implementation reviewed through head `c42a1f45c9140cfbc91a5ca425250f67
 
 The current head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No manual APK/AAB packaging was started.
 
+## W55/W56 follow-up — keyboard parity, accessible boundaries, and patina-faithful Paper
+
+Canonical implementation reviewed through head `844ff7b3c0f89202a0d7fdaa9019b7c1e8bde6dc`.
+
+### CI correction
+
+- The W54 Android CI failure was traced to a missing `ReaderAppearance` import in a newly-added policy test, not a Reader runtime defect.
+- The missing test import is restored on the canonical branch before this wave's additional work.
+
+### Keyboard and accessibility ownership
+
+- `RENDERER_ACCESSIBILITY` now returns directional key ownership to the renderer instead of allowing Veil page-turn handlers to intercept accessibility navigation.
+- Selection mode retains the same renderer-owned key behavior; blocked overlays still consume keys; ordinary navigation and visible non-accessibility chrome retain navigation semantics.
+- Paper mode keyboard turns (`Arrow` / `Space`) now explicitly commit the current locator as `PAPER_COMMIT`. Previously the navigator moved, but the locator stream intentionally treated Paper emissions as observations because touch/drag Paper normally commits itself; keyboard therefore risked losing progress and page-turn credit.
+- Regression coverage locks key routing and Paper keyboard commit semantics.
+
+### Chapter navigation transactions
+
+- Selecting a TOC link whose exact href already matches the current Reader href no longer starts a programmatic navigation transaction.
+- Fragment-distinct links still navigate, so an in-document section jump such as `chapter.xhtml#scene-2` is preserved.
+- This prevents a no-op chapter selection from leaving a transaction alive long enough to misclassify the user's next real turn.
+
+### Accessible publication boundaries
+
+- Physical left/right boundary hits are resolved through the publication reading progression into semantic `BEGINNING` or `END`.
+- Under touch exploration, the Reader surfaces localized `Beginning of book` / `End of book` feedback through the existing accessible snackbar path in addition to the sensory boundary event.
+- LTR and RTL mappings are covered by regression tests.
+- Ordinary non-accessibility reading keeps the quiet pulse/haptic behavior without adding textual interruption.
+
+### Patina-faithful Paper Curl
+
+- `Paper Age` now influences the lifted sheet itself, not only the static parchment atmosphere.
+- Higher patina progressively deepens reverse-side shade, contact shadow, visible edge thickness and sparse backside fibres while keeping all values clamped and deterministic.
+- Paper and Sepia use the age profile; Dusk/OLED keep restrained dark-material constants so a hidden paper-age preference cannot pollute dark themes.
+- Regression coverage verifies that aged material increases the intended cues and that non-finite input falls back to the canonical safe patina.
+
+### Completion boundary
+
+The existing repository completion contract remains authoritative: progress becomes finished at a safe progression of at least `0.995`. This wave deliberately does not force progress to `1.0` merely because the user presses beyond the terminal page; doing so would fabricate completion if a publication's locator semantics were inconsistent.
+
+### Verification boundary
+
+The final canonical head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No manual release packaging was started.
+
