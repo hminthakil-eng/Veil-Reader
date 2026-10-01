@@ -53,7 +53,10 @@ internal class ReaderSelectionActionModeCallback(
     private val onAction: suspend (ReaderSelectionAction, Locator, String) -> Unit
 ) : BaseActionModeCallback() {
 
+    private var activeMode: ActionMode? = null
+
     override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+        activeMode = mode
         onModeChanged(true)
         if (menu.findItem(ACTION_HIGHLIGHT) == null) {
             menu.add(Menu.NONE, ACTION_HIGHLIGHT, 0, highlightLabel)
@@ -104,7 +107,27 @@ internal class ReaderSelectionActionModeCallback(
         return true
     }
 
+    /**
+     * Reader-owned overlays must not leave Android's native selection toolbar floating above them.
+     * Clear Readium's selection first, then finish the exact ActionMode owned by this callback.
+     */
+    fun dismissSelection() {
+        val mode = activeMode
+        coroutineScope.launch {
+            try {
+                navigatorProvider()?.clearSelection()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                // Renderer teardown can race an overlay opening. The ActionMode is still ours.
+            } finally {
+                mode?.finish()
+            }
+        }
+    }
+
     override fun onDestroyActionMode(mode: ActionMode) {
+        if (activeMode === mode) activeMode = null
         onModeChanged(false)
     }
 
