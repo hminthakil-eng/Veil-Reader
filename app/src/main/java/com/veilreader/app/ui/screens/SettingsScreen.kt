@@ -260,6 +260,61 @@ fun SettingsScreen(
                 }
             )
 
+            Text(
+                stringResource(R.string.settings_reading_mode_title),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ReaderReadingModeSelector(
+                selected = appearance.readingMode,
+                scrollEnabled = true,
+                onSelect = { mode ->
+                    commitReaderAppearance { current -> current.withReadingMode(mode) }
+                }
+            )
+            Text(
+                stringResource(
+                    if (appearance.readingMode == ReaderReadingMode.SCROLL) {
+                        R.string.settings_mode_scroll_description
+                    } else {
+                        R.string.settings_reading_mode_paged_description
+                    }
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+
+            Text(
+                stringResource(R.string.settings_page_turn_title),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ReaderPageTurnSelector(
+                selected = appearance.pageTurnStyle,
+                enabled = appearance.readingMode == ReaderReadingMode.PAGED,
+                onSelect = { style ->
+                    commitReaderAppearance { current -> current.withPageTurnStyle(style) }
+                }
+            )
+            Text(
+                localizedPageTurnStyleDescription(appearance.pageTurnStyle),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (appearance.readingMode == ReaderReadingMode.SCROLL) {
+                Text(
+                    stringResource(R.string.settings_page_turn_scroll_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+            Text(stringResource(R.string.settings_brightness), style = MaterialTheme.typography.labelLarge)
+            ReaderBrightnessControls(
+                appearance = appearance,
+                onChange = { proposed ->
+                    commitReaderAppearance { current ->
+                        current.withScreenBrightness(proposed.screenBrightness)
+                    }
+                }
+            )
             if (showAdvancedReadingSettings) {
             Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
@@ -360,55 +415,6 @@ fun SettingsScreen(
                 }
             )
 
-            }
-
-            Text(
-                stringResource(R.string.settings_reading_mode_title),
-                style = MaterialTheme.typography.labelLarge
-            )
-            ReaderReadingModeSelector(
-                selected = appearance.readingMode,
-                scrollEnabled = true,
-                onSelect = { mode ->
-                    commitReaderAppearance { current -> current.withReadingMode(mode) }
-                }
-            )
-            Text(
-                stringResource(
-                    if (appearance.readingMode == ReaderReadingMode.SCROLL) {
-                        R.string.settings_mode_scroll_description
-                    } else {
-                        R.string.settings_reading_mode_paged_description
-                    }
-                ),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            Text(
-                stringResource(R.string.settings_page_turn_title),
-                style = MaterialTheme.typography.labelLarge
-            )
-            ReaderPageTurnSelector(
-                selected = appearance.pageTurnStyle,
-                enabled = appearance.readingMode == ReaderReadingMode.PAGED,
-                onSelect = { style ->
-                    commitReaderAppearance { current -> current.withPageTurnStyle(style) }
-                }
-            )
-            Text(
-                localizedPageTurnStyleDescription(appearance.pageTurnStyle),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodySmall
-            )
-            if (appearance.readingMode == ReaderReadingMode.SCROLL) {
-                Text(
-                    stringResource(R.string.settings_page_turn_scroll_hint),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-            if (showAdvancedReadingSettings) {
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_publisher_styles),
                 subtitle = stringResource(R.string.settings_publisher_styles_description),
@@ -472,15 +478,6 @@ fun SettingsScreen(
 
             }
 
-            Text(stringResource(R.string.settings_brightness), style = MaterialTheme.typography.labelLarge)
-            ReaderBrightnessControls(
-                appearance = appearance,
-                onChange = { proposed ->
-                    commitReaderAppearance { current ->
-                        current.withScreenBrightness(proposed.screenBrightness)
-                    }
-                }
-            )
         }
 
         SettingsSection(
