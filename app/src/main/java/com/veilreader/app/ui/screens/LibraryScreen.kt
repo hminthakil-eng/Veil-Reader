@@ -1521,7 +1521,11 @@ private fun BookDetailDestination(
                         )
 
                         book.currentChapter
-                            .takeIf { it.isNotBlank() && progress > 0f }
+                            .takeIf {
+                                it.isNotBlank() &&
+                                    progress > 0f &&
+                                    !it.equals("Not started", ignoreCase = true)
+                            }
                             ?.let { chapter ->
                                 Text(
                                     chapter,
