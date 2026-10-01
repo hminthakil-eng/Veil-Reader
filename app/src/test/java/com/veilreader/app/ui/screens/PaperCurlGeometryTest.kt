@@ -427,6 +427,42 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun `paper line intersection rejects nearly parallel geometry before coordinates explode`() {
+        val intersection = paperLineIntersection(
+            line1a = Offset(0f, 0f),
+            line1b = Offset(4_000f, 0.001f),
+            line2a = Offset(0f, 1f),
+            line2b = Offset(4_000f, 1.002f)
+        )
+
+        assertEquals(null, intersection)
+    }
+
+    @Test
+    fun `paper line intersection rejects non finite input and keeps ordinary crossings exact`() {
+        assertEquals(
+            null,
+            paperLineIntersection(
+                line1a = Offset(Float.NaN, 0f),
+                line1b = Offset(1f, 1f),
+                line2a = Offset.Zero,
+                line2b = Offset(1f, 0f)
+            )
+        )
+
+        val crossing = requireNotNull(
+            paperLineIntersection(
+                line1a = Offset(0f, 0f),
+                line1b = Offset(10f, 10f),
+                line2a = Offset(0f, 10f),
+                line2b = Offset(10f, 0f)
+            )
+        )
+        assertEquals(5f, crossing.x, 0.0001f)
+        assertEquals(5f, crossing.y, 0.0001f)
+    }
+
+    @Test
     fun `physical boundary side mirrors turn direction across reading progression`() {
         assertEquals(
             PaperCurlSide.RIGHT,
