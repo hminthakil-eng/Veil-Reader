@@ -222,8 +222,8 @@ fun BookThresholdTransitionOverlay(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    stringResource(
+                VeilMicroLabel(
+                    text = stringResource(
                         when {
                             ritual != null && stage == BookEntryStage.PREPARING ->
                                 R.string.entry_return_ritual_deep_shelf
@@ -232,8 +232,7 @@ fun BookThresholdTransitionOverlay(
                             else -> R.string.entry_entering_sanctuary
                         }
                     ),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.65.sp),
-                    color = VeilPalette.Brass
+                    strong = true
                 )
 
                 Box(
