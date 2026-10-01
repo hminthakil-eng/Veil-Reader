@@ -171,11 +171,14 @@ internal fun PdfZoomControls(
                                 .width(48.dp)
                                 .height(28.dp)
                         )
-                        Text(
-                            label.uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (selected) VeilPalette.Moon
-                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        VeilMicroLabel(
+                            text = label,
+                            color = if (selected) {
+                                VeilPalette.Moon
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            },
+                            strong = true
                         )
                     }
                 }
