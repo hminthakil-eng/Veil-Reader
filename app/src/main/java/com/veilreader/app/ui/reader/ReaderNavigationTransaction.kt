@@ -36,6 +36,20 @@ internal fun shouldStartReaderLocationJump(
     return origin == null || origin != target
 }
 
+internal fun readerEffectiveTargetHref(
+    currentHref: String?,
+    targetHref: String?
+): String? {
+    val target = targetHref?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    val fragment = target.substringAfter('#', missingDelimiterValue = "")
+    val targetResource = target.substringBefore('#')
+    if (targetResource.isNotEmpty() || fragment.isEmpty()) return target
+
+    val current = currentHref?.trim()?.takeIf { it.isNotEmpty() } ?: return target
+    val currentResource = readerResourceHref(current)
+    return if (currentResource.isEmpty()) target else "$currentResource#$fragment"
+}
+
 internal fun shouldStartReaderLinkJump(
     currentHref: String?,
     targetHref: String?
