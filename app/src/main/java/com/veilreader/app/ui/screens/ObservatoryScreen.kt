@@ -99,8 +99,8 @@ fun ObservatoryScreen(
     ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
             .widthIn(max = observatoryLayout.contentMaxWidthDp.dp)
+            .fillMaxSize()
             .systemBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(
