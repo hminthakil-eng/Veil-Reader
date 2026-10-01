@@ -8,8 +8,8 @@ import androidx.compose.ui.graphics.Path
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.hypot
 import kotlin.math.sin
+import kotlin.math.sqrt
 import com.veilreader.app.ui.theme.VeilSanctuary
 import org.readium.r2.navigator.preferences.ReadingProgression
 
@@ -230,7 +230,9 @@ internal fun paperLineIntersection(
     val line2Dx = line2a.x - line2b.x
     val line2Dy = line2a.y - line2b.y
     val denominator = line1Dx * line2Dy - line1Dy * line2Dx
-    val magnitude = hypot(line1Dx, line1Dy) * hypot(line2Dx, line2Dy)
+    val magnitude =
+        sqrt(line1Dx * line1Dx + line1Dy * line1Dy) *
+            sqrt(line2Dx * line2Dx + line2Dy * line2Dy)
     if (
         magnitude <= PAPER_INTERSECTION_MIN_VECTOR_MAGNITUDE ||
         kotlin.math.abs(denominator) <=
