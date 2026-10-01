@@ -1084,6 +1084,7 @@
     <string name="reader_notebook_search_match">نتیجهٔ جست‌وجو</string>
     <string name="reader_notebook_return_match">بازگشت به نتیجه</string>
     <string name="reader_notebook_passage_note">یادداشت این بخش</string>
+    <string name="reader_notebook_note_only">یادداشت محفوظ</string>
     <string name="reader_notebook_your_thoughts">یادداشت تو</string>
     <string name="reader_notebook_note_save_failed">ذخیرهٔ این یادداشت انجام نشد.</string>
     <string name="reader_notebook_saving">در حال ذخیره…</string>
