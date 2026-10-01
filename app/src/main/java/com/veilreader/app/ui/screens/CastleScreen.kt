@@ -181,10 +181,9 @@ fun CastleScreen(
         CastleMutationLedgerSummary(mutationLedger)
 
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                stringResource(R.string.castle_inner_keep_eyebrow),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.55.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.castle_inner_keep_eyebrow),
+                strong = true
             )
             Text(
                 stringResource(R.string.castle_awakened_chambers_title),
@@ -305,10 +304,9 @@ private fun CastleKeep(
                     Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.castle_keep_tier, profile.rankIndex + 1),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.30.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.castle_keep_tier, profile.rankIndex + 1),
+                        strong = true
                     )
                     Text(
                         localizedRank,
@@ -334,9 +332,8 @@ private fun CastleKeep(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(R.string.castle_awakened_chambers_eyebrow),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.20.sp),
+                VeilMicroLabel(
+                    text = stringResource(R.string.castle_awakened_chambers_eyebrow),
                     color = VeilPalette.Mist.copy(alpha = 0.72f)
                 )
                 Text(
@@ -398,9 +395,8 @@ private fun CastleMemoryInscription(memory: CastleMemoryState) {
             .padding(horizontal = 2.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            stringResource(R.string.castle_foundation_memory),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+        VeilMicroLabel(
+            text = stringResource(R.string.castle_foundation_memory),
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
         Text(
@@ -434,9 +430,8 @@ private fun CastleWorldProgressionInscription(world: WorldProgressionProjection)
             .padding(horizontal = 2.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            stringResource(R.string.castle_world_label, stage),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.35.sp),
+        VeilMicroLabel(
+            text = stringResource(R.string.castle_world_label, stage),
             color = VeilPalette.Brass.copy(alpha = 0.82f)
         )
         Text(
@@ -504,10 +499,9 @@ private fun CastleRitualAftermath(
             modifier = Modifier.padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp)
         ) {
-            Text(
-                stringResource(R.string.castle_sealed_advancement),
-                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.25.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = stringResource(R.string.castle_sealed_advancement),
+                strong = true
             )
             Text(
                 "$fromRank → $toRank",
@@ -533,9 +527,8 @@ private fun CastleMutationLedgerSummary(ledger: WorldMutationLedger) {
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            stringResource(R.string.castle_world_mutations, ledger.durableCount),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+        VeilMicroLabel(
+            text = stringResource(R.string.castle_world_mutations, ledger.durableCount),
             color = VeilPalette.Brass.copy(alpha = 0.80f)
         )
         ledger.entries.take(3).forEach { entry ->
@@ -1076,9 +1069,8 @@ private fun FloorInscription(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+        VeilMicroLabel(
+            text = stringResource(R.string.castle_floor, floor.toString().padStart(2, '0')),
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
             } else {
