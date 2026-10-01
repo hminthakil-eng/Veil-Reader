@@ -123,6 +123,55 @@ class AnnotationDurabilityInstrumentedTest {
         }
 
     @Test
+    fun selectionNote_matchesExactDurablePassage_whenOneLocatorHasMultipleSelections() = runBlocking {
+        repository.addImportedBook(
+            Book(
+                id = "shared-locator-book",
+                title = "Shared Locator",
+                author = "QA",
+                format = BookFormat.EPUB,
+                sourceUri = "file:///shared-locator.epub",
+                mediaType = "application/epub+zip",
+                addedAtEpochMs = 1L
+            )
+        )
+
+        val locator = "{\"href\":\"chapter.xhtml\",\"locations\":{\"progression\":0.5}}"
+        val first = repository.addHighlight(
+            bookId = "shared-locator-book",
+            quote = "First selected sentence.",
+            locatorJson = locator
+        )
+        val second = repository.addHighlight(
+            bookId = "shared-locator-book",
+            quote = "Second selected sentence.",
+            locatorJson = locator
+        )
+        repository.flushWrites()
+
+        val committed = requireNotNull(
+            repository.commitSelectionNote(
+                bookId = "shared-locator-book",
+                quote = second.quote,
+                locatorJson = locator,
+                existingHighlightId = null,
+                note = "Belongs only to the second passage"
+            )
+        )
+        assertFalse(committed.created)
+        assertEquals(second.id, committed.highlight.id)
+
+        repository.flushWrites()
+        val persisted = db.highlights().listAll().associateBy { it.id }
+        assertEquals(2, persisted.size)
+        assertEquals("", persisted.getValue(first.id).note)
+        assertEquals(
+            "Belongs only to the second passage",
+            persisted.getValue(second.id).note
+        )
+    }
+
+    @Test
     fun highlightAndNote_areDurableWhenSaveAcknowledgementIsAllowed() = runBlocking {
         repository.addImportedBook(
             Book(
