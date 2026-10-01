@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -814,43 +815,68 @@ private fun <T> ChoiceRow(
     label: @Composable (T) -> String,
     onSelected: (T) -> Unit
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        entries.forEach { entry ->
-            val active = entry == selected
-            Surface(
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .selectable(
-                        selected = active,
-                        role = Role.RadioButton
-                    ) { onSelected(entry) },
-                shape = MaterialTheme.shapes.extraSmall,
-                color = if (active) {
-                    VeilPalette.DeepBrass.copy(alpha = 0.78f)
-                } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
-                },
-                border = BorderStroke(
-                    1.dp,
-                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                ),
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
-            ) {
-                Text(
-                    label(entry),
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (active) VeilPalette.Moon
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
+    val configuration = LocalConfiguration.current
+    val stacked = shouldStackDenseChoices(
+        widthDp = configuration.screenWidthDp,
+        fontScale = configuration.fontScale,
+        optionCount = entries.size
+    )
+
+    @Composable
+    fun Choice(entry: T, modifier: Modifier = Modifier) {
+        val active = entry == selected
+        Surface(
+            modifier = modifier
+                .heightIn(min = 48.dp)
+                .selectable(
+                    selected = active,
+                    role = Role.RadioButton
+                ) { onSelected(entry) },
+            shape = MaterialTheme.shapes.extraSmall,
+            color = if (active) {
+                VeilPalette.DeepBrass.copy(alpha = 0.78f)
+            } else {
+                MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
+            },
+            border = BorderStroke(
+                1.dp,
+                if (active) VeilPalette.Brass.copy(alpha = 0.82f)
+                else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+            ),
+            tonalElevation = 0.dp,
+            shadowElevation = 0.dp
+        ) {
+            Text(
+                label(entry),
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                style = MaterialTheme.typography.labelMedium,
+                color = if (active) VeilPalette.Moon
+                else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+
+    if (stacked) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .selectableGroup(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            entries.forEach { entry ->
+                Choice(entry, Modifier.fillMaxWidth())
+            }
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .selectableGroup(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            entries.forEach { entry ->
+                Choice(entry)
             }
         }
     }
