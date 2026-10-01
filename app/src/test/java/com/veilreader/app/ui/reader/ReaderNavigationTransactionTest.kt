@@ -29,6 +29,85 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun targetLocator_ignoresIntermediateResource_untilTargetPositionArrives() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
+        val origin = """{"href":"chapter-01.xhtml","locations":{"position":1}}"""
+        val target = """{"href":"chapter-04.xhtml","locations":{"position":12},"title":"Saved"}"""
+        val started = gate.begin(
+            originLocatorJson = origin,
+            nowElapsedMs = 100L,
+            targetLocatorJson = target
+        )
+
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson =
+                    """{"href":"chapter-02.xhtml","locations":{"position":6}}""",
+                nowElapsedMs = 300L
+            )
+        )
+        assertTrue(gate.isActive(nowElapsedMs = 350L))
+
+        val settled = gate.consumeSettled(
+            observedLocatorJson =
+                """{"href":"chapter-04.xhtml","locations":{"position":12},"title":"Renderer title"}""",
+            nowElapsedMs = 600L
+        )
+        assertEquals(started.token, settled?.token)
+    }
+
+    @Test
+    fun locatorTarget_matchesStableProgression_whenPresentationMetadataChanges() {
+        val target =
+            """{"href":"chapter.xhtml","locations":{"totalProgression":0.421},"text":{"highlight":"old"}}"""
+        val observed =
+            """{"href":"chapter.xhtml","locations":{"totalProgression":0.422},"title":"Current"}"""
+
+        assertTrue(
+            readerLocatorMatchesTarget(
+                observedLocatorJson = observed,
+                targetLocatorJson = target
+            )
+        )
+        assertFalse(
+            readerLocatorMatchesTarget(
+                observedLocatorJson =
+                    """{"href":"chapter.xhtml","locations":{"totalProgression":0.44}}""",
+                targetLocatorJson = target
+            )
+        )
+    }
+
+    @Test
+    fun linkTarget_waitsForDestinationResource_andAllowsFragmentTarget() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
+        val origin =
+            """{"href":"chapter-01.xhtml","locations":{"position":1}}"""
+        val started = gate.begin(
+            originLocatorJson = origin,
+            nowElapsedMs = 100L,
+            targetHref = "chapter-04.xhtml#scene-2"
+        )
+
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson =
+                    """{"href":"chapter-02.xhtml","locations":{"position":5}}""",
+                nowElapsedMs = 300L
+            )
+        )
+
+        assertEquals(
+            started.token,
+            gate.consumeSettled(
+                observedLocatorJson =
+                    """{"href":"chapter-04.xhtml","locations":{"position":12}}""",
+                nowElapsedMs = 500L
+            )?.token
+        )
+    }
+
+    @Test
     fun originReEmission_doesNotPrematurelySettleJump() {
         val gate = ReaderNavigationTransactionGate(timeoutMs = 1_000L)
         val started = gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
