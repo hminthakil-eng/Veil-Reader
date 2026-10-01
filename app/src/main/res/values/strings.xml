@@ -49,6 +49,10 @@
     <string name="book_detail_edit_details">Edit details</string>
     <string name="book_detail_publication_details">Publication details</string>
     <string name="book_detail_format">Format</string>
+    <string name="book_format_epub">EPUB</string>
+    <string name="book_format_pdf">PDF</string>
+    <string name="book_format_audio">Audio</string>
+    <string name="book_format_comic">Comic</string>
     <string name="book_detail_language">Language</string>
     <string name="book_detail_pages">Pages</string>
     <string name="book_detail_page_progress">%1$d / %2$d</string>
@@ -308,6 +312,7 @@
     <string name="capsule_event_completed">Volume completed</string>
     <string name="capsule_event_latest">Latest recorded volume activity</string>
     <string name="book_detail_artifact_chamber">ARTIFACT CHAMBER · %1$s</string>
+    <string name="book_detail_current_journey">CURRENT JOURNEY</string>
     <string name="book_detail_reading_progress">READING PROGRESS</string>
     <string name="book_detail_archive_history">ARCHIVE HISTORY</string>
     <string name="book_detail_archived">Archived</string>
