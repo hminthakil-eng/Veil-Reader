@@ -3,8 +3,8 @@ package com.veilreader.app.ui.screens
 import android.view.View
 import android.view.ViewGroup
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,9 +29,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -130,67 +133,42 @@ internal fun PdfZoomControls(
             strong = true
         )
 
-        Row(
-            Modifier.fillMaxWidth().selectableGroup(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            listOf(
-                false to pageLabel,
-                true to scrollLabel
-            ).forEach { (scrollMode, label) ->
-                val selected = appearance.scroll == scrollMode
-                Surface(
-                    modifier = Modifier
-                        .weight(1f)
-                        .heightIn(min = 72.dp)
-                        .selectable(
-                            selected = selected,
-                            role = Role.RadioButton
-                        ) {
-                            onAppearanceChange(appearance.copy(scroll = scrollMode))
-                        }
-                        .semantics {
-                            contentDescription =
-                                if (scrollMode) scrollSemantics else pageSemantics
-                        },
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = if (selected) {
-                        VeilPalette.DeepBrass.copy(alpha = 0.76f)
-                    } else {
-                        MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
-                    },
-                    border = BorderStroke(
-                        1.dp,
-                        if (selected) VeilPalette.Brass.copy(alpha = 0.82f)
-                        else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
-                    ),
-                    tonalElevation = 0.dp,
-                    shadowElevation = 0.dp
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val stacked = shouldStackDenseChoices(
+                widthDp = maxWidth.value.toInt(),
+                fontScale = LocalDensity.current.fontScale,
+                optionCount = 2
+            )
+            val choices = listOf(false to pageLabel, true to scrollLabel)
+            if (stacked) {
+                Column(
+                    Modifier.fillMaxWidth().selectableGroup(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        ReaderMotionPreview(
-                            mode = if (scrollMode) {
-                                ReaderNavigationMode.SCROLL
-                            } else {
-                                ReaderNavigationMode.PAGED
-                            },
-                            active = selected,
-                            modifier = Modifier
-                                .width(48.dp)
-                                .height(28.dp)
+                    choices.forEach { (scrollMode, label) ->
+                        PdfLayoutChoice(
+                            scrollMode = scrollMode,
+                            label = label,
+                            description = if (scrollMode) scrollSemantics else pageSemantics,
+                            selected = appearance.scroll == scrollMode,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = { onAppearanceChange(appearance.copy(scroll = scrollMode)) }
                         )
-                        VeilMicroLabel(
-                            text = label,
-                            color = if (selected) {
-                                VeilPalette.Moon
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            },
-                            strong = true
+                    }
+                }
+            } else {
+                Row(
+                    Modifier.fillMaxWidth().selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    choices.forEach { (scrollMode, label) ->
+                        PdfLayoutChoice(
+                            scrollMode = scrollMode,
+                            label = label,
+                            description = if (scrollMode) scrollSemantics else pageSemantics,
+                            selected = appearance.scroll == scrollMode,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onAppearanceChange(appearance.copy(scroll = scrollMode)) }
                         )
                     }
                 }
@@ -239,6 +217,7 @@ internal fun PdfZoomControls(
                                 R.string.pdf_renderer_connecting
                             }
                         ),
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -415,6 +394,69 @@ internal fun PdfZoomControls(
             )
         ) {
             Text(stringResource(R.string.reader_back_to_reading))
+        }
+    }
+}
+
+@Composable
+private fun PdfLayoutChoice(
+    scrollMode: Boolean,
+    label: String,
+    description: String,
+    selected: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .heightIn(min = 72.dp)
+            .selectable(
+                selected = selected,
+                role = Role.RadioButton,
+                onClick = onClick
+            )
+            .semantics {
+                contentDescription = description
+            },
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (selected) {
+            VeilPalette.DeepBrass.copy(alpha = 0.76f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (selected) VeilPalette.Brass.copy(alpha = 0.82f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.48f)
+        ),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 9.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            ReaderMotionPreview(
+                mode = if (scrollMode) {
+                    ReaderNavigationMode.SCROLL
+                } else {
+                    ReaderNavigationMode.PAGED
+                },
+                active = selected,
+                modifier = Modifier
+                    .width(48.dp)
+                    .height(28.dp)
+            )
+            VeilMicroLabel(
+                text = label,
+                color = if (selected) {
+                    VeilPalette.Moon
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                strong = true
+            )
         }
     }
 }
