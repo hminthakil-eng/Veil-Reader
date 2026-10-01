@@ -112,6 +112,11 @@
     <string name="settings_line_height">فاصلهٔ سطرها</string>
     <string name="settings_page_margins">حاشیهٔ صفحه</string>
     <string name="settings_reading_motion">حالت جابه‌جایی</string>
+    <string name="settings_reading_mode_title">حالت مطالعه</string>
+    <string name="settings_reading_mode_paged_description">مطالعه به‌صورت صفحه‌های جدا؛ نوع ورق‌زدن را جداگانه انتخاب کنید.</string>
+    <string name="settings_page_turn_title">ورق‌زدن</string>
+    <string name="settings_page_turn_none">بدون انیمیشن</string>
+    <string name="settings_page_turn_scroll_hint">نوع ورق‌زدن حفظ می‌شود و با بازگشت به حالت صفحه‌ای دوباره فعال خواهد شد.</string>
     <string name="settings_publisher_styles">سبک ناشر</string>
     <string name="settings_publisher_styles_description">در صورت وجود، قلم و سبک کتاب را حفظ می‌کند. ممکن است رنگ‌های قالب Veil را تغییر دهد.</string>
     <string name="settings_brightness">روشنایی مطالعه</string>
