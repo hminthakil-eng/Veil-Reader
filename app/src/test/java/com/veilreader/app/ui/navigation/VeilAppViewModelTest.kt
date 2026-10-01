@@ -216,6 +216,30 @@ class VeilAppViewModelTest {
 
 
     @Test
+    fun currentBookOpenFailure_clearsOwnedRequestAndSavedRecoveryState() {
+        val handle = SavedStateHandle()
+        val model = VeilAppViewModel(handle)
+
+        model.requestBook("missing-book", "explicit-locator")
+        val sessionId = requireNotNull(model.route.value.readerSessionInstanceId)
+        model.checkpointReaderLocator("missing-book", sessionId, "checkpoint-locator")
+
+        model.bookOpenFailed("missing-book", sessionId)
+
+        assertNull(model.route.value.activeBookId)
+        assertNull(model.route.value.readerSessionInstanceId)
+        assertNull(model.route.value.locatorOverrideJson)
+        assertNull(model.route.value.readerLocatorCheckpointJson)
+
+        val recreated = VeilAppViewModel(handle)
+        assertNull(recreated.route.value.activeBookId)
+        assertNull(recreated.route.value.readerSessionInstanceId)
+        assertNull(recreated.route.value.locatorOverrideJson)
+        assertNull(recreated.route.value.readerLocatorCheckpointJson)
+    }
+
+
+    @Test
     fun staleSameBookCallbacks_cannotMutateFreshOpenRequest() {
         val model = VeilAppViewModel(SavedStateHandle())
 
