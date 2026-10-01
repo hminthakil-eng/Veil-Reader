@@ -754,9 +754,8 @@ private fun DossierFact(label: String, value: String) {
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+        VeilMicroLabel(
+            text = label,
             color = VeilPalette.Mist.copy(alpha = 0.66f),
             modifier = Modifier.width(82.dp)
         )
@@ -837,9 +836,8 @@ private fun DossierStat(
             .padding(horizontal = 10.dp, vertical = 9.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
-        Text(
-            eyebrow,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.85.sp),
+        VeilMicroLabel(
+            text = eyebrow,
             color = VeilPalette.Brass.copy(alpha = 0.78f)
         )
         Text(
@@ -980,12 +978,12 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
                     style = MaterialTheme.typography.titleLarge,
                     color = if (revealed) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.62f)
                 )
-                Text(
-                    stringResource(
+                VeilMicroLabel(
+                    text = stringResource(
                         if (revealed) R.string.profile_revealed else R.string.profile_clue
                     ),
-                    style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.3.sp),
-                    color = accent
+                    color = accent,
+                    strong = true
                 )
                 Text(
                     if (revealed) copy.lore else copy.clue,
@@ -1008,10 +1006,9 @@ private fun DiscoveryCard(index: Int, discovery: VeiledDiscovery, revealed: Bool
 private fun ProfileSectionHeading(eyebrow: String, title: String, trailing: String? = null) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            Text(
-                eyebrow.uppercase(),
-                style = MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.5.sp),
-                color = VeilPalette.Brass
+            VeilMicroLabel(
+                text = eyebrow,
+                strong = true
             )
             Text(title, style = MaterialTheme.typography.titleLarge)
         }
