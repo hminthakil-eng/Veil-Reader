@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Brush
@@ -87,6 +88,7 @@ fun SettingsScreen(
 ) {
     var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
+    var showAdvancedReadingSettings by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(settings.readerAppearance) {
         val persisted = settings.readerAppearance
@@ -228,6 +230,11 @@ fun SettingsScreen(
             title = stringResource(R.string.settings_reading_title),
             description = stringResource(R.string.settings_reading_description)
         ) {
+            SettingsReadingDisclosureToggle(
+                advanced = showAdvancedReadingSettings,
+                onChange = { showAdvancedReadingSettings = it }
+            )
+
             Text(stringResource(R.string.settings_publication_theme), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = ReaderTheme.entries,
@@ -253,6 +260,7 @@ fun SettingsScreen(
                 }
             )
 
+            if (showAdvancedReadingSettings) {
             Text(stringResource(R.string.settings_font_family), style = MaterialTheme.typography.labelLarge)
             ChoiceRow(
                 entries = ReaderFontFamily.entries,
@@ -352,6 +360,8 @@ fun SettingsScreen(
                 }
             )
 
+            }
+
             Text(
                 stringResource(R.string.settings_reading_mode_title),
                 style = MaterialTheme.typography.labelLarge
@@ -398,6 +408,7 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall
                 )
             }
+            if (showAdvancedReadingSettings) {
             SettingsSwitchRow(
                 title = stringResource(R.string.settings_publisher_styles),
                 subtitle = stringResource(R.string.settings_publisher_styles_description),
@@ -457,6 +468,8 @@ fun SettingsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall
                 )
+            }
+
             }
 
             Text(stringResource(R.string.settings_brightness), style = MaterialTheme.typography.labelLarge)
@@ -687,6 +700,67 @@ fun SettingsScreen(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsReadingDisclosureToggle(
+    advanced: Boolean,
+    onChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        listOf(
+            false to stringResource(R.string.reader_quick),
+            true to stringResource(R.string.reader_advanced)
+        ).forEach { (candidate, label) ->
+            val selected = advanced == candidate
+            Surface(
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = 48.dp)
+                    .selectable(
+                        selected = selected,
+                        role = Role.Tab,
+                        onClick = { onChange(candidate) }
+                    ),
+                shape = MaterialTheme.shapes.extraSmall,
+                color = if (selected) {
+                    VeilPalette.Archive.copy(alpha = 0.56f)
+                } else {
+                    androidx.compose.ui.graphics.Color.Transparent
+                },
+                border = BorderStroke(
+                    1.dp,
+                    if (selected) {
+                        VeilPalette.Brass.copy(alpha = 0.62f)
+                    } else {
+                        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f)
+                    }
+                ),
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                Box(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 9.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (selected) {
+                            VeilPalette.Moon
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        }
+                    )
                 }
             }
         }
