@@ -1039,8 +1039,8 @@ fun LibraryScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
                         .widthIn(max = 620.dp)
+                        .fillMaxWidth()
                         .heightIn(max = 720.dp),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
@@ -1216,8 +1216,8 @@ private fun DeleteBookDialog(
         ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 520.dp),
+                    .widthIn(max = 520.dp)
+                    .fillMaxWidth(),
                 shape = MaterialTheme.shapes.small,
                 color = VeilPalette.Archive,
                 border = BorderStroke(
