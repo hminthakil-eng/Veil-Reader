@@ -594,35 +594,44 @@ class LocalLibraryRepository internal constructor(
     /**
      * Records only a verified return to an already-preserved locator.
      *
-     * The locator must match an existing highlight exactly. Recomposition, process restoration,
-     * and repeated taps inside a short window are deduplicated so "revisit" remains a factual event.
+     * Historical memory must be derived from durable Room state, not from the eventually-consistent
+     * UI projections. This work is placed on the same serialized queue as highlight creation, so a
+     * revisit requested immediately after saving a highlight cannot be lost if a Room Flow emits an
+     * older snapshot while the write is still settling.
      */
     fun recordPassageVisitForLocator(
         bookId: String,
         locatorJson: String,
         viewedAtEpochMs: Long = System.currentTimeMillis()
-    ): PassageVisit? {
-        val highlight = _highlights.value.firstOrNull {
-            it.bookId == bookId && it.locatorJson == locatorJson
-        } ?: return null
-        if (viewedAtEpochMs <= highlight.createdAtEpochMs + PASSAGE_REVISIT_MIN_AGE_MS) return null
+    ) {
+        enqueue {
+            val highlight = database.highlights()
+                .findByBookAndLocator(bookId = bookId, locatorJson = locatorJson)
+                ?.toDomain()
+                ?: return@enqueue
 
-        val lastVisit = _passageVisits.value
-            .asSequence()
-            .filter { it.highlightId == highlight.id }
-            .maxOfOrNull { it.viewedAtEpochMs }
-        if (lastVisit != null && viewedAtEpochMs - lastVisit < PASSAGE_REVISIT_DEDUPE_MS) return null
+            if (viewedAtEpochMs <= highlight.createdAtEpochMs + PASSAGE_REVISIT_MIN_AGE_MS) {
+                return@enqueue
+            }
 
-        val visit = PassageVisit(
-            id = UUID.randomUUID().toString(),
-            highlightId = highlight.id,
-            bookId = bookId,
-            locatorJson = locatorJson,
-            viewedAtEpochMs = viewedAtEpochMs
-        )
-        _passageVisits.value = listOf(visit) + _passageVisits.value
-        enqueue { database.passageVisits().upsert(visit.toEntity()) }
-        return visit
+            val lastVisit = database.passageVisits().latestViewedAt(highlight.id)
+            if (
+                lastVisit != null &&
+                viewedAtEpochMs - lastVisit < PASSAGE_REVISIT_DEDUPE_MS
+            ) {
+                return@enqueue
+            }
+
+            database.passageVisits().upsert(
+                PassageVisit(
+                    id = UUID.randomUUID().toString(),
+                    highlightId = highlight.id,
+                    bookId = bookId,
+                    locatorJson = locatorJson,
+                    viewedAtEpochMs = viewedAtEpochMs
+                ).toEntity()
+            )
+        }
     }
 
     suspend fun readingContinuity(

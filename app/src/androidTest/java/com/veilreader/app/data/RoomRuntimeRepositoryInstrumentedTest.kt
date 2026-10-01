@@ -305,12 +305,13 @@ class RoomRuntimeRepositoryInstrumentedTest {
         repository.flushWrites()
         val completionAtEpochMs = highlight.createdAtEpochMs + 60_000L
 
-        val visit = repository.recordPassageVisitForLocator(
+        repository.recordPassageVisitForLocator(
             bookId = "history-book",
             locatorJson = locator,
             viewedAtEpochMs = highlight.createdAtEpochMs + 31_000L
         )
-        assertTrue(visit != null)
+        repository.flushWrites()
+        assertEquals(1, db.passageVisits().listForHighlight(highlight.id).size)
 
         val completionSession = ReadingSessionSnapshot(
             id = "completion-session",

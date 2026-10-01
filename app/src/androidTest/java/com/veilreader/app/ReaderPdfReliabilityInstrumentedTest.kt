@@ -85,7 +85,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         exerciseNativePdfGestures(pdfView)
         clickText(appString(R.string.reader_chrome_pdf_view))
         waitForText(appString(R.string.pdf_zoom))
-        waitForText(appString(R.string.pdf_fit_width))
+        waitForTextWithScroll(appString(R.string.pdf_fit_width))
 
         val before = currentPdfLayoutLabel()
         clickDescription(appString(R.string.pdf_continuous_scroll))
@@ -93,7 +93,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         assertNotEquals("PDF layout toggle did not change mode", before, after)
 
         // Exercise the renderer's manual fit path while the real PDFView is attached.
-        clickText(appString(R.string.pdf_fit_width))
+        clickTextWithScroll(appString(R.string.pdf_fit_width))
 
         // Restore the original layout so this test does not leak reader preference state.
         clickDescription(appString(R.string.pdf_continuous_scroll))
@@ -537,6 +537,56 @@ class ReaderPdfReliabilityInstrumentedTest {
 
     private fun waitForText(text: String) {
         waitForNode("text=$text") { it.text?.toString() == text }
+    }
+
+    private fun waitForTextWithScroll(text: String) {
+        waitForNodeWithScroll("text=$text") { it.text?.toString() == text }
+    }
+
+    private fun clickTextWithScroll(text: String) {
+        clickNode(
+            waitForNodeWithScroll("clickable text=$text") {
+                it.text?.toString() == text
+            }
+        )
+    }
+
+    private fun waitForNodeWithScroll(
+        label: String,
+        predicate: (AccessibilityNodeInfo) -> Boolean
+    ): AccessibilityNodeInfo {
+        val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
+        while (SystemClock.elapsedRealtime() < deadline) {
+            findNode(predicate)?.let { return it }
+
+            val scrollable = findNode {
+                it.isVisibleToUser &&
+                    it.isScrollable &&
+                    it.actionList.any { action ->
+                        action.id == AccessibilityNodeInfo.ACTION_SCROLL_FORWARD
+                    }
+            }
+            val scrolled =
+                scrollable?.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD) == true
+
+            if (!scrolled) {
+                uiAutomation.rootInActiveWindow?.let { root ->
+                    val bounds = android.graphics.Rect()
+                    root.getBoundsInScreen(bounds)
+                    if (!bounds.isEmpty) {
+                        uiAutomation.executeShellCommand(
+                            "input swipe " +
+                                bounds.centerX() + " " +
+                                (bounds.bottom - bounds.height() / 4) + " " +
+                                bounds.centerX() + " " +
+                                (bounds.top + bounds.height() / 3) + " 250"
+                        ).close()
+                    }
+                }
+            }
+            SystemClock.sleep(POLL_MS)
+        }
+        error("Timed out waiting for $label after scrolling")
     }
 
     private fun clickDescription(description: String) {
