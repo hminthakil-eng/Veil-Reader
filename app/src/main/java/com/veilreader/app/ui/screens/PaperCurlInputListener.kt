@@ -11,6 +11,8 @@ import com.veilreader.app.ui.theme.VeilMotion
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
+import org.readium.r2.navigator.input.Key
+import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -54,9 +56,43 @@ internal class PaperCurlInputListener(
 
     override fun onTap(event: TapEvent): Boolean {
         if (!paperModeEnabled()) return false
-        if (state.active) return true
+        if (paperInputBusy()) return true
 
         val spec = resolveEdgeTurn(event.point.x) ?: return false
+        performDiscreteTurn(spec)
+        return true
+    }
+
+    override fun onKey(event: KeyEvent): Boolean {
+        if (!paperModeEnabled()) return cancelPendingTurn()
+        if (paperInputBusy()) return true
+        if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) return false
+
+        val progression = navigator.overflow.value.readingProgression
+        val spec = when (event.key) {
+            Key.ArrowUp -> turnSpecFor(PaperTurnDirection.BACKWARD, progression)
+            Key.ArrowDown, Key.Space -> turnSpecFor(PaperTurnDirection.FORWARD, progression)
+            Key.ArrowLeft -> TurnSpec(
+                direction = paperTurnDirectionFor(PaperCurlSide.LEFT, progression),
+                side = PaperCurlSide.LEFT
+            )
+            Key.ArrowRight -> TurnSpec(
+                direction = paperTurnDirectionFor(PaperCurlSide.RIGHT, progression),
+                side = PaperCurlSide.RIGHT
+            )
+            else -> return false
+        }
+        performDiscreteTurn(spec)
+        return true
+    }
+
+    private fun paperInputBusy(): Boolean =
+        completionJob != null ||
+            dragReserved ||
+            activeDrag != null ||
+            state.active
+
+    private fun performDiscreteTurn(spec: TurnSpec) {
         val visualReady =
             shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
                 state.begin(
@@ -66,35 +102,33 @@ internal class PaperCurlInputListener(
                 )
 
         onInteraction()
-
-        // Navigation must never depend on the visual layer succeeding.
         val moved = navigate(spec.direction)
         if (!moved) {
             onBoundaryHit(spec.side)
             if (visualReady) {
-                scope.launch {
+                completionJob = scope.launch {
                     state.animateBoundaryBounce()
                     state.clear()
+                    resetDrag()
                 }
+            } else {
+                resetDrag()
             }
-            return true
+            return
         }
 
-        // The Reader's sensory layer gates feedback with the user's settings.
+        turnCommitted = true
         onCommittedTurn()
-
         if (visualReady) {
-            scope.launch {
-                if (isReducedMotion()) {
-                    state.clear()
-                } else {
-                    delay(VeilMotion.PAGE_REVEAL_MS)
-                    state.animateTapTurn()
-                    state.clear()
-                }
+            completionJob = scope.launch {
+                delay(VeilMotion.PAGE_REVEAL_MS)
+                state.animateTapTurn()
+                state.clear()
+                resetDrag()
             }
+        } else {
+            resetDrag()
         }
-        return true
     }
 
     override fun onDrag(event: DragEvent): Boolean {
@@ -383,6 +417,15 @@ internal class PaperCurlInputListener(
             side = side
         )
     }
+
+    private fun turnSpecFor(
+        direction: PaperTurnDirection,
+        progression: ReadingProgression
+    ): TurnSpec =
+        TurnSpec(
+            direction = direction,
+            side = paperTurnSideFor(direction, progression)
+        )
 
     private fun resolveEdgeTurn(x: Float): TurnSpec? {
         val view = navigator.publicationView
