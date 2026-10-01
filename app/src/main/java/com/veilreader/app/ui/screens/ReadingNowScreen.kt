@@ -508,34 +508,47 @@ private fun ContinueReadingHero(
             .background(
                 Brush.verticalGradient(
                     listOf(
-                        VeilPalette.Archive.copy(alpha = 0.96f),
-                        VeilPalette.Ink.copy(alpha = 0.99f)
+                        VeilPalette.LightSurface,
+                        VeilPalette.ReaderPaper,
+                        VeilPalette.LightElevated
                     )
                 )
             )
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.48f)),
+                BorderStroke(
+                    1.dp,
+                    VeilPalette.LightBrass.copy(alpha = 0.82f)
+                ),
                 shellShape
             )
-            .padding(18.dp)
     ) {
         val stacked = maxWidth < 300.dp || fontScale > 1.45f
 
+        ThresholdParchmentTexture(
+            modifier = Modifier.matchParentSize()
+        )
+
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
-            strength = 0.58f
+            strength = 0.30f
         )
 
         Box(
             Modifier
                 .align(Alignment.TopEnd)
-                .padding(10.dp)
+                .padding(11.dp)
                 .size(7.dp)
                 .rotate(45f)
-                .background(VeilPalette.MoonCrimson.copy(alpha = 0.88f))
+                .background(VeilPalette.LightCrimson.copy(alpha = 0.88f))
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+        Column(
+            modifier = Modifier.padding(
+                horizontal = 18.dp,
+                vertical = 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -546,13 +559,14 @@ private fun ContinueReadingHero(
                 ) {
                     VeilMicroLabel(
                         text = stringResource(R.string.library_continue_reading),
+                        color = VeilPalette.LightBrass,
                         strong = true
                     )
                     Text(
                         heroProgressLabel(current, progress),
                         style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.Mist.copy(alpha = 0.82f),
-                        maxLines = 1,
+                        color = VeilPalette.LightMist.copy(alpha = 0.92f),
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
@@ -561,40 +575,76 @@ private fun ContinueReadingHero(
                     modifier = Modifier
                         .size(50.dp)
                         .border(
-                            BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.44f)),
-                            MaterialTheme.shapes.extraSmall
+                            BorderStroke(
+                                1.dp,
+                                VeilPalette.LightBrass.copy(alpha = 0.58f)
+                            ),
+                            shellShape
+                        )
+                        .background(
+                            VeilPalette.LightSurface.copy(alpha = 0.44f),
+                            shellShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         formatPercent(progress),
                         style = MaterialTheme.typography.labelLarge,
-                        color = VeilPalette.Moon
+                        color = VeilPalette.LightInk
                     )
                 }
             }
 
-            BrassRule(Modifier.fillMaxWidth())
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                VeilPalette.LightBrass.copy(alpha = 0.58f),
+                                VeilPalette.LightBrass.copy(alpha = 0.82f),
+                                VeilPalette.LightBrass.copy(alpha = 0.58f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
 
             if (stacked) {
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
+                    HeroCover(
+                        current,
+                        artifactMemory,
+                        coverWidthDp,
+                        coverHeightDp
+                    )
                 }
-                HeroDetails(current, VeilPalette.Moon, VeilPalette.Mist)
+                HeroDetails(
+                    current = current,
+                    ink = VeilPalette.LightInk,
+                    secondaryInk = VeilPalette.LightMist
+                )
             } else {
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    HeroCover(current, artifactMemory, coverWidthDp, coverHeightDp)
+                    HeroCover(
+                        current,
+                        artifactMemory,
+                        coverWidthDp,
+                        coverHeightDp
+                    )
                     HeroDetails(
                         current = current,
-                        ink = VeilPalette.Moon,
-                        secondaryInk = VeilPalette.Mist,
+                        ink = VeilPalette.LightInk,
+                        secondaryInk = VeilPalette.LightMist,
                         modifier = Modifier.weight(1f)
                     )
                 }
@@ -602,9 +652,11 @@ private fun ContinueReadingHero(
 
             LinearProgressIndicator(
                 progress = { progress },
-                modifier = Modifier.fillMaxWidth().height(2.dp),
-                color = VeilPalette.Brass,
-                trackColor = VeilPalette.BorderDark.copy(alpha = 0.52f),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp),
+                color = VeilPalette.LightBrass,
+                trackColor = VeilPalette.BorderLight.copy(alpha = 0.58f),
                 drawStopIndicator = {}
             )
 
@@ -613,20 +665,25 @@ private fun ContinueReadingHero(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 52.dp),
-                shape = MaterialTheme.shapes.extraSmall,
-                color = VeilPalette.ReaderPaper,
-                contentColor = VeilPalette.InkOnPaper,
+                shape = shellShape,
+                color = Color.Transparent,
+                contentColor = VeilPalette.LightInk,
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 border = BorderStroke(
                     1.dp,
-                    VeilPalette.Brass.copy(alpha = 0.80f)
+                    VeilPalette.LightBrass.copy(alpha = 0.60f)
                 )
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = VeilSpacing.md, vertical = 13.dp),
+                        .padding(
+                            start = VeilSpacing.md,
+                            end = 7.dp,
+                            top = 7.dp,
+                            bottom = 7.dp
+                        ),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
@@ -640,14 +697,100 @@ private fun ContinueReadingHero(
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.labelLarge
                     )
-                    Text(
-                        "›",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = VeilPalette.DeepBrass
-                    )
+
+                    Box(
+                        modifier = Modifier
+                            .size(38.dp)
+                            .border(
+                                BorderStroke(
+                                    1.dp,
+                                    VeilPalette.LightBrass.copy(alpha = 0.72f)
+                                ),
+                                RoundedCornerShape(19.dp)
+                            )
+                            .background(
+                                VeilPalette.LightSurface.copy(alpha = 0.54f),
+                                RoundedCornerShape(19.dp)
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            "›",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = VeilPalette.LightBrass
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ThresholdParchmentTexture(
+    modifier: Modifier = Modifier
+) {
+    Canvas(modifier) {
+        val ink = VeilPalette.LightInk
+        val brass = VeilPalette.LightBrass
+
+        repeat(9) { index ->
+            val y = size.height * ((index + 1f) / 10f)
+            val inset = size.width * (0.018f + (index % 3) * 0.008f)
+            drawLine(
+                color = ink.copy(alpha = 0.022f + (index % 2) * 0.006f),
+                start = Offset(inset, y),
+                end = Offset(size.width - inset, y + (index % 3 - 1) * 0.7f),
+                strokeWidth = 0.55.dp.toPx()
+            )
+        }
+
+        repeat(6) { index ->
+            val x = size.width * ((index + 1f) / 7f)
+            drawLine(
+                color = brass.copy(alpha = 0.016f),
+                start = Offset(x, size.height * 0.03f),
+                end = Offset(x + ((index % 2) * 2 - 1) * 1.2f, size.height * 0.97f),
+                strokeWidth = 0.45.dp.toPx()
+            )
+        }
+
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(
+                    VeilPalette.LightSurface.copy(alpha = 0.16f),
+                    Color.Transparent,
+                    VeilPalette.LightInk.copy(alpha = 0.035f)
+                )
+            )
+        )
+
+        val corner = 12.dp.toPx()
+        val cornerInk = VeilPalette.LightBrass.copy(alpha = 0.34f)
+        drawLine(
+            cornerInk,
+            Offset(0f, corner),
+            Offset(corner, 0f),
+            0.8.dp.toPx()
+        )
+        drawLine(
+            cornerInk,
+            Offset(size.width - corner, 0f),
+            Offset(size.width, corner),
+            0.8.dp.toPx()
+        )
+        drawLine(
+            cornerInk,
+            Offset(0f, size.height - corner),
+            Offset(corner, size.height),
+            0.8.dp.toPx()
+        )
+        drawLine(
+            cornerInk,
+            Offset(size.width - corner, size.height),
+            Offset(size.width, size.height - corner),
+            0.8.dp.toPx()
+        )
     }
 }
 
