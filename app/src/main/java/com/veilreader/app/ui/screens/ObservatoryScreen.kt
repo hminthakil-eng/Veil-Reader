@@ -369,10 +369,9 @@ private fun ObservatoryAtlasPanel(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Text(
-                    stringResource(R.string.observatory_sky_empty),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
-                    color = VeilPalette.Brass
+                VeilMicroLabel(
+                    text = stringResource(R.string.observatory_sky_empty),
+                    strong = true
                 )
                 Text(
                     stringResource(R.string.observatory_sky_empty_body),
@@ -422,10 +421,8 @@ private fun ObservatorySelection(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.observatory_selected_constellation),
-                        style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.92.sp),
-                        color = VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.observatory_selected_constellation)
                     )
                     Text(
                         node.book.title,
@@ -594,10 +591,9 @@ private fun ObservatorySectionHeading(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            eyebrow,
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.1.sp),
-            color = VeilPalette.Brass
+        VeilMicroLabel(
+            text = eyebrow,
+            strong = true
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
