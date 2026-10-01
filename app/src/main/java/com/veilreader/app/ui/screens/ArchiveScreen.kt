@@ -508,8 +508,8 @@ fun ArchiveScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 560.dp),
+                        .widthIn(max = 560.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
@@ -1136,8 +1136,8 @@ private fun DeleteNotebookItemDialog(
         ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 520.dp),
+                    .widthIn(max = 520.dp)
+                    .fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
                 color = VeilPalette.Archive,
                 border = BorderStroke(
