@@ -98,7 +98,11 @@ internal class VeilDirectionalNavigationInputListener(
         } else {
             onBoundaryHit(side)
         }
-        return committed
+
+        // The directional gesture/key was owned even when the navigator hit a publication
+        // boundary. Returning false here would leak an edge tap into the chrome fallback and make
+        // the controls appear just because the reader reached the first/last page.
+        return true
     }
 
     private companion object {
