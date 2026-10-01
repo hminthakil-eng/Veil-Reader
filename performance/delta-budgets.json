@@ -1,40 +1,40 @@
 {
   "schemaVersion": 1,
   "notes": {
-    "smoke": "Relative emulator regression guardrails. Absolute smoke budgets still apply first.",
+    "smoke": "Relative GitHub-emulator regression guardrails for startup and gfxinfo Reader frame smoke. Absolute smoke budgets still apply first; trace-based frame deltas remain a physical-device concern.",
     "physical": "Relative regression limits for the stable representative physical-device lane."
   },
   "modes": {
     "smoke": [
       {
         "id": "startup_ttid_median",
-        "maxRegressionPercent": 25.0
+        "maxRegressionPercent": 25
       },
       {
-        "id": "reader_frame_overrun_p95",
-        "maxIncrease": 25.0
+        "id": "reader_gfx_frame_p95",
+        "maxIncrease": 50
       },
       {
-        "id": "reader_frame_overrun_p99",
-        "maxIncrease": 50.0
+        "id": "reader_gfx_frame_p99",
+        "maxIncrease": 100
       }
     ],
     "physical": [
       {
         "id": "startup_ttid_median",
-        "maxRegressionPercent": 10.0
+        "maxRegressionPercent": 10
       },
       {
         "id": "reader_frame_overrun_p95",
-        "maxIncrease": 2.0
+        "maxIncrease": 2
       },
       {
         "id": "reader_frame_overrun_p99",
-        "maxIncrease": 4.0
+        "maxIncrease": 4
       },
       {
         "id": "reader_cpu_frame_p95",
-        "maxRegressionPercent": 10.0
+        "maxRegressionPercent": 10
       },
       {
         "id": "reader_cpu_frame_p99",
