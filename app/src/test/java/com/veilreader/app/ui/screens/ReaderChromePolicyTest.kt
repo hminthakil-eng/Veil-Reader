@@ -324,6 +324,15 @@ class ReaderChromePolicyTest {
     }
 
     @Test
+    fun `reader material viewport rejects transient zero or non finite resize frames`() {
+        assertTrue(isRenderableReaderViewport(1_080f, 2_400f))
+        assertFalse(isRenderableReaderViewport(0f, 2_400f))
+        assertFalse(isRenderableReaderViewport(1_080f, 0f))
+        assertFalse(isRenderableReaderViewport(Float.NaN, 2_400f))
+        assertFalse(isRenderableReaderViewport(1_080f, Float.POSITIVE_INFINITY))
+    }
+
+    @Test
     fun `Reader context control matches publication surface`() {
         assertEquals(
             ReaderContextControl.APPEARANCE,
