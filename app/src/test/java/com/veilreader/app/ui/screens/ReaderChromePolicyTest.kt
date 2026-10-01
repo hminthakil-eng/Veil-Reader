@@ -229,6 +229,41 @@ class ReaderChromePolicyTest {
     }
 
     @Test
+    fun `appearance chamber waits for renderer settle and exact final draft`() {
+        val expected = ReaderAppearance().copy(fontScale = 1.25)
+
+        assertTrue(
+            shouldAwaitReaderAppearanceClose(
+                rendererPreferencesSettling = true,
+                presented = expected,
+                expected = expected
+            )
+        )
+        assertTrue(
+            shouldAwaitReaderAppearanceClose(
+                rendererPreferencesSettling = false,
+                presented = ReaderAppearance(),
+                expected = expected
+            )
+        )
+        assertFalse(
+            shouldAwaitReaderAppearanceClose(
+                rendererPreferencesSettling = false,
+                presented = expected,
+                expected = expected
+            )
+        )
+        assertFalse(
+            shouldAwaitReaderAppearanceClose(
+                rendererPreferencesSettling = false,
+                presented = ReaderAppearance(),
+                expected = null
+            )
+        )
+    }
+
+
+    @Test
     fun `table of contents current section ignores fragment differences within one resource`() {
         assertTrue(
             isCurrentReaderSection(
