@@ -278,11 +278,23 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
-    fun sameLocation_doesNotStartProgrammaticTransaction() {
+    fun sameStableLocation_doesNotStartProgrammaticTransaction_whenMetadataDiffers() {
+        val target = ReaderNavigationIdentity(
+            href = "chapter.xhtml",
+            position = 12,
+            cssSelector = null,
+            totalProgression = 0.42
+        )
         assertFalse(
-            shouldStartReaderLocationJump(
-                originLocatorJson = "same",
-                targetLocatorJson = "same"
+            shouldStartReaderIdentityJump(
+                origin = target.copy(totalProgression = 0.421),
+                target = target
+            )
+        )
+        assertTrue(
+            shouldStartReaderIdentityJump(
+                origin = target.copy(position = 11),
+                target = target
             )
         )
     }
@@ -353,22 +365,22 @@ class ReaderNavigationTransactionTest {
 
     @Test
     fun missingOrigin_stillAllowsKnownDestinationJump() {
+        val target = ReaderNavigationIdentity(
+            href = "destination.xhtml",
+            position = 4,
+            cssSelector = null,
+            totalProgression = 0.4
+        )
         assertTrue(
-            shouldStartReaderLocationJump(
-                originLocatorJson = null,
-                targetLocatorJson = "destination"
+            shouldStartReaderIdentityJump(
+                origin = null,
+                target = target
             )
         )
         assertFalse(
-            shouldStartReaderLocationJump(
-                originLocatorJson = "origin",
-                targetLocatorJson = null
-            )
-        )
-        assertFalse(
-            shouldStartReaderLocationJump(
-                originLocatorJson = "origin",
-                targetLocatorJson = ""
+            shouldStartReaderIdentityJump(
+                origin = target,
+                target = null
             )
         )
     }
