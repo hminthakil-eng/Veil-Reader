@@ -3115,6 +3115,7 @@ private fun EpubAppearancePanel(
     )
     val publisherStyleLabel = stringResource(R.string.reader_publisher_styling)
     val textSizeLabel = stringResource(R.string.settings_text_size)
+    val quickReadingScroll = draft.scroll && capabilities.continuousScrollEditable
 
     LaunchedEffect(appearance) {
         when {
@@ -3347,24 +3348,58 @@ private fun EpubAppearancePanel(
             }
 
             Text(
-                stringResource(R.string.settings_reading_motion),
+                stringResource(R.string.settings_reading_mode_title),
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
                 color = VeilPalette.Brass
             )
-            ReaderMotionSelector(
-                selected = draft.navigationMode,
-                disabledModes = if (capabilities.continuousScrollEditable) {
-                    emptySet()
-                } else {
-                    setOf(ReaderNavigationMode.SCROLL)
-                },
-                onSelect = { updateDraft(draft.withNavigationMode(it)) }
+            ReaderReadingModeSelector(
+                scroll = quickReadingScroll,
+                scrollEnabled = capabilities.continuousScrollEditable,
+                onScrollChange = { scroll ->
+                    updateDraft(draft.copy(scroll = scroll))
+                }
             )
             Text(
-                localizedReaderNavigationModeDescription(draft.navigationMode),
+                stringResource(
+                    if (quickReadingScroll) {
+                        R.string.settings_mode_scroll_description
+                    } else {
+                        R.string.settings_reading_mode_paged_description
+                    }
+                ),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+
+            BrassRule(Modifier.fillMaxWidth())
+
+            Text(
+                stringResource(R.string.settings_page_turn_title),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                color = VeilPalette.Brass
+            )
+            if (quickReadingScroll) {
+                ReaderCapabilityNotice(
+                    text = stringResource(R.string.settings_page_turn_scroll_hint)
+                )
+            } else {
+                ReaderPageTurnSelector(
+                    selected = draft.pageTurnStyle,
+                    onSelect = { style ->
+                        updateDraft(
+                            draft.copy(
+                                scroll = false,
+                                pageTurnStyle = style
+                            )
+                        )
+                    }
+                )
+                Text(
+                    localizedPageTurnStyleDescription(draft.pageTurnStyle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         } else {
             Text(
                 stringResource(R.string.reader_typography_layout),
