@@ -189,3 +189,35 @@ Canonical implementation reviewed through head `c72581e7d31c6f78c80c5520f06ab688
 
 This remains source-level hardening plus regression coverage. The final canonical head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No APK/AAB packaging was started.
 
+## W54 follow-up — reduced motion and resize-owned locator accounting
+
+Canonical implementation reviewed through head `c42a1f45c9140cfbc91a5ca425250f67c413e1fb`.
+
+### Reduced-motion Paper contract
+
+- Paper mode no longer captures a publication bitmap when reduced motion is enabled.
+- Tap turns and drag turns continue to navigate and commit normally, but the lifted-sheet animation path is bypassed.
+- Terminal Paper boundaries keep their semantic boundary feedback while the visual bounce is omitted under reduced motion.
+- This removes a previously inconsistent case where a first/last-page tap could still animate a Paper boundary despite reduced-motion preference.
+- Regression coverage locks snapshot ownership off under reduced motion.
+
+### Mid-gesture adaptive resize
+
+- Reader tracks the measured viewport and cancels any active Paper or Slide preview when the viewport dimensions change after initial measurement.
+- A cancelled preview restores its drag-start locator before the resized surface continues, preventing stale snapshots from stretching across orientation, split-window, or foldable transitions.
+- Reader mode-handoff imagery is dropped when dimensions change so an old-size continuity bitmap cannot be stretched over the new viewport.
+- Regression coverage verifies that initial measurement is ignored, an active preview is cancelled on size change, and ordinary resize without a preview remains non-disruptive.
+
+### Resize relayout accounting
+
+- Viewport changes open a short relayout window because Readium may emit a new locator solely from reflow.
+- Locator emissions during that window are committed as `FINAL_SNAPSHOT` checkpoints and never count as page turns.
+- Paper, Slide, static Paged and directional navigation explicitly mark real user interaction, immediately cancelling the resize-relayout suppression before user navigation.
+- The final post-resize locator is sampled after a quiet window and committed as a non-page-turn checkpoint.
+- The locator event decision is now a pure policy with regression coverage, including the rule that an explicit programmatic jump still outranks resize classification.
+- This prevents split-window/foldable reflow from generating false XP/page-turn history while preserving real navigation immediately after resize.
+
+### Verification boundary
+
+The current head still requires Android CI, Storage Instrumentation and Performance Benchmarks. No manual APK/AAB packaging was started.
+
