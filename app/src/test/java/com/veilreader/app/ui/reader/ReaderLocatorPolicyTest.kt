@@ -70,6 +70,38 @@ class ReaderLocatorPolicyTest {
     }
 
     @Test
+    fun viewportRelayout_isCheckpointWithoutPageTurnCredit() {
+        val relayout = readerObservedLocatorEvent(
+            programmaticNavigationSettled = false,
+            viewportRelayoutPending = true,
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false
+        )
+        assertTrue(relayout.commitsLocator)
+        assertFalse(relayout.countsPageTurn)
+
+        val userTurn = readerObservedLocatorEvent(
+            programmaticNavigationSettled = false,
+            viewportRelayoutPending = false,
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false
+        )
+        assertTrue(userTurn.countsPageTurn)
+
+        val jumpWins = readerObservedLocatorEvent(
+            programmaticNavigationSettled = true,
+            viewportRelayoutPending = true,
+            isInitialEmission = false,
+            isContinuousScroll = false,
+            isPaperMode = false
+        )
+        assertTrue(jumpWins.commitsLocator)
+        assertFalse(jumpWins.countsPageTurn)
+    }
+
+    @Test
     fun locatorCommitAndPageTurnSemantics_areIndependent() {
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATOR_POSITION.countsPageTurn)
