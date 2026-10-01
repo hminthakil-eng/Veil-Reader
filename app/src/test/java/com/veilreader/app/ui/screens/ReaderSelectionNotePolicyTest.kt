@@ -7,50 +7,28 @@ import org.junit.Test
 class ReaderSelectionNotePolicyTest {
 
     @Test
-    fun `new note highlight is discarded when draft is abandoned`() {
-        assertTrue(
-            shouldDiscardPendingSelectionNoteHighlight(
-                createdForNote = true,
-                noteSaving = false
-            )
-        )
-        assertFalse(
-            shouldDiscardPendingSelectionNoteHighlight(
-                createdForNote = false,
-                noteSaving = false
-            )
-        )
-        assertFalse(
-            shouldDiscardPendingSelectionNoteHighlight(
-                createdForNote = true,
-                noteSaving = true
-            )
-        )
-    }
-
-    @Test
-    fun `new note requires text while existing highlight may clear its annotation`() {
+    fun `fresh note requires text while existing highlight may clear its annotation`() {
         assertFalse(
             canSavePendingSelectionNote(
-                createdForNote = true,
+                isNewNote = true,
                 note = ""
             )
         )
         assertFalse(
             canSavePendingSelectionNote(
-                createdForNote = true,
+                isNewNote = true,
                 note = "   "
             )
         )
         assertTrue(
             canSavePendingSelectionNote(
-                createdForNote = true,
+                isNewNote = true,
                 note = "A durable margin note"
             )
         )
         assertTrue(
             canSavePendingSelectionNote(
-                createdForNote = false,
+                isNewNote = false,
                 note = ""
             )
         )
