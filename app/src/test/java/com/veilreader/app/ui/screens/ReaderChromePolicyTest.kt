@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.ReaderAppearance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
