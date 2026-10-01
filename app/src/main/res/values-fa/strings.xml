@@ -8,6 +8,7 @@
     <string name="common_cancel">لغو</string>
     <string name="common_unknown_book">کتاب ناشناخته</string>
     <string name="common_unknown_author">نویسنده نامشخص</string>
+    <string name="common_untitled_book">کتاب بدون عنوان</string>
 
     <string name="notebook_eyebrow">آرشیو پنهان</string>
     <string name="notebook_title">دفتر یادداشت</string>
