@@ -3943,7 +3943,9 @@ private fun <T> ReaderAppearanceChoiceGroup(
         when {
             stacked -> {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     entries.forEach { entry ->
@@ -3962,7 +3964,8 @@ private fun <T> ReaderAppearanceChoiceGroup(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                        .horizontalScroll(rememberScrollState())
+                        .selectableGroup(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     entries.forEach { entry ->
@@ -3978,7 +3981,9 @@ private fun <T> ReaderAppearanceChoiceGroup(
 
             else -> {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     entries.forEach { entry ->
@@ -4010,9 +4015,14 @@ private fun ReaderAppearanceChoice(
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
     Surface(
-        onClick = onClick,
-        enabled = enabled,
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .selectable(
+                selected = selected,
+                enabled = enabled,
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
             VeilPalette.DeepBrass.copy(alpha = 0.82f)
@@ -4041,8 +4051,7 @@ private fun ReaderAppearanceChoice(
                 label,
                 style = MaterialTheme.typography.labelLarge,
                 color = foreground,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -4218,7 +4227,9 @@ private fun ReaderAppearanceTriState(
 
             if (stacked) {
                 Column(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     ReaderPreferenceToggle.entries.forEach { option ->
@@ -4237,7 +4248,9 @@ private fun ReaderAppearanceTriState(
                 }
             } else {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectableGroup(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     ReaderPreferenceToggle.entries.forEach { option ->
@@ -4293,21 +4306,45 @@ private fun ReaderAppearancePreview(
             Modifier.padding(10.dp),
             verticalArrangement = Arrangement.spacedBy(7.dp)
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                VeilMicroLabel(
-                    text = stringResource(R.string.reader_sample_preview),
-                    modifier = Modifier.weight(1f),
-                    strong = true
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val stackPreviewHeader = shouldStackDenseChoices(
+                    widthDp = maxWidth.value.toInt(),
+                    fontScale = LocalDensity.current.fontScale,
+                    optionCount = 2
                 )
-                Text(
-                    localizedReaderMotionSummary(appearance),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.End
-                )
+                if (stackPreviewHeader) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(2.dp)
+                    ) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.reader_sample_preview),
+                            strong = true
+                        )
+                        Text(
+                            localizedReaderMotionSummary(appearance),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.reader_sample_preview),
+                            modifier = Modifier.weight(1f),
+                            strong = true
+                        )
+                        Text(
+                            localizedReaderMotionSummary(appearance),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.End
+                        )
+                    }
+                }
             }
 
             Box(
