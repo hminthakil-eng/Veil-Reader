@@ -57,6 +57,43 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun passageRevisit_metadata_survivesOnlyUntilTheTargetSettles() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
+        val origin = """{"href":"chapter-01.xhtml","locations":{"position":1}}"""
+        val target = """{"href":"chapter-08.xhtml","locations":{"position":22}}"""
+        gate.begin(
+            originLocatorJson = origin,
+            nowElapsedMs = 100L,
+            targetLocatorJson = target,
+            passageVisitLocatorJson = target
+        )
+
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson =
+                    """{"href":"chapter-05.xhtml","locations":{"position":12}}""",
+                nowElapsedMs = 300L
+            )
+        )
+
+        val settled = requireNotNull(
+            gate.consumeSettled(
+                observedLocatorJson =
+                    """{"href":"chapter-08.xhtml","locations":{"position":22},"title":"Landed"}""",
+                nowElapsedMs = 500L
+            )
+        )
+        assertEquals(target, settled.passageVisitLocatorJson)
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson =
+                    """{"href":"chapter-09.xhtml","locations":{"position":24}}""",
+                nowElapsedMs = 700L
+            )
+        )
+    }
+
+    @Test
     fun locatorTarget_matchesStableProgression_whenPresentationMetadataChanges() {
         val target =
             """{"href":"chapter.xhtml","locations":{"totalProgression":0.421},"text":{"highlight":"old"}}"""
