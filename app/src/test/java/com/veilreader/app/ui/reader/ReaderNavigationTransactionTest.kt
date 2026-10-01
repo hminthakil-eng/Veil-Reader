@@ -295,6 +295,12 @@ class ReaderNavigationTransactionTest {
                 targetHref = "text/chapter-04.xhtml"
             )
         )
+        assertFalse(
+            shouldStartReaderLinkJump(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = "text/./chapter-04.xhtml"
+            )
+        )
         assertTrue(
             shouldStartReaderLinkJump(
                 currentHref = "text/chapter-04.xhtml",
