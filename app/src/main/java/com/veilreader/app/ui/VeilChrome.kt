@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.LayoutDirection
@@ -55,6 +56,7 @@ import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
+import com.veilreader.app.ui.theme.usesArabicScript
 
 /**
  * Calm world chrome for everything around the actual publication.
@@ -414,20 +416,34 @@ private fun VeilDockItem(
                 modifier = Modifier.size(if (selected) 22.dp else 20.dp)
             )
             Spacer(Modifier.height(4.dp))
-            Text(
-                veilTabLabel(tab),
-                style = MaterialTheme.typography.labelMedium.copy(
-                    fontSize = 9.2.sp,
-                    letterSpacing = 0.34.sp,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
-                ),
-                color = foreground,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
+            VeilNavigationLabel(
+                label = veilTabLabel(tab),
+                selected = selected,
+                color = foreground
             )
         }
     }
+}
+
+@Composable
+private fun VeilNavigationLabel(
+    label: String,
+    selected: Boolean,
+    color: Color
+) {
+    val arabicScript = usesArabicScript(label)
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelMedium.copy(
+            fontSize = if (arabicScript) 10.4.sp else 9.5.sp,
+            letterSpacing = if (arabicScript) 0.sp else 0.30.sp,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
+        ),
+        color = color,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center
+    )
 }
 
 @Composable
@@ -438,10 +454,12 @@ fun VeilNavigationRail(
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
+    val fontScale = LocalConfiguration.current.fontScale
+    val railWidth = if (fontScale >= 1.6f) 112.dp else 88.dp
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(88.dp)
+            .width(railWidth)
             .padding(start = 10.dp, top = 10.dp, bottom = 10.dp),
         shape = RoundedCornerShape(4.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.975f),
@@ -479,16 +497,10 @@ fun VeilNavigationRail(
                     ) {
                         VeilTabIcon(tab, foreground, Modifier.size(22.dp))
                         Spacer(Modifier.height(5.dp))
-                        Text(
-                            veilTabLabel(tab),
-                            style = MaterialTheme.typography.labelMedium.copy(
-                                fontSize = 9.5.sp,
-                                letterSpacing = 0.36.sp
-                            ),
-                            color = foreground,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
+                        VeilNavigationLabel(
+                            label = veilTabLabel(tab),
+                            selected = isSelected,
+                            color = foreground
                         )
                     }
                 }
