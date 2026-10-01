@@ -152,8 +152,8 @@ fun ArrodesMirrorScreen(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
                 .widthIn(max = 760.dp)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
                 .padding(
                     horizontal = VeilSpacing.lg,
@@ -171,10 +171,10 @@ fun ArrodesMirrorScreen(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
-                    Text(
-                        stringResource(R.string.mirror_eyebrow),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
+                    VeilMicroLabel(
+                        text = stringResource(R.string.mirror_eyebrow),
+                        color = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass,
+                        strong = true
                     )
                     Text(
                         stringResource(R.string.mirror_title),
