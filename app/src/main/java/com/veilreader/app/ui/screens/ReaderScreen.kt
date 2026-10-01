@@ -1577,9 +1577,9 @@ fun ReaderScreen(
         presentedReaderAppearance.theme == ReaderTheme.PAPER ||
             presentedReaderAppearance.theme == ReaderTheme.SEPIA
     val readerChromeBackground = if (lightReaderChrome) {
-        Color(0xFFF0E4CC).copy(alpha = 0.97f)
+        Color(0xFFF0E4CC).copy(alpha = 0.94f)
     } else {
-        VeilPalette.Ink.copy(alpha = 0.96f)
+        VeilPalette.Ink.copy(alpha = 0.94f)
     }
     val readerChromeForeground = if (lightReaderChrome) Color(0xFF2B241B) else VeilPalette.Moon
     val readerChromeMuted = readerChromeForeground.copy(alpha = 0.56f)
@@ -1713,15 +1713,14 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .statusBarsPadding()
-                    .padding(horizontal = 8.dp, top = 4.dp),
-                shape = MaterialTheme.shapes.extraSmall,
+                    .padding(horizontal = 6.dp, top = 2.dp),
+                shape = RoundedCornerShape(
+                    bottomStart = 10.dp,
+                    bottomEnd = 10.dp
+                ),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
-                shadowElevation = 0.dp,
-                border = BorderStroke(
-                    1.dp,
-                    readerChromeAccent.copy(alpha = 0.34f)
-                )
+                shadowElevation = 0.dp
             ) {
                 Column {
                     Row(
@@ -1806,15 +1805,14 @@ fun ReaderScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 8.dp, bottom = 6.dp),
-                shape = MaterialTheme.shapes.extraSmall,
+                    .padding(horizontal = 6.dp, bottom = 4.dp),
+                shape = RoundedCornerShape(
+                    topStart = 10.dp,
+                    topEnd = 10.dp
+                ),
                 color = readerChromeBackground,
                 tonalElevation = 0.dp,
-                shadowElevation = 0.dp,
-                border = BorderStroke(
-                    1.dp,
-                    readerChromeAccent.copy(alpha = 0.30f)
-                )
+                shadowElevation = 0.dp
             ) {
                 Column {
                     Box(
@@ -1931,10 +1929,10 @@ fun ReaderScreen(
             OutlinedButton(
                 onClick = ::returnToPreviousLocation,
                 shape = MaterialTheme.shapes.extraSmall,
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
+                border = BorderStroke(1.dp, readerChromeAccent.copy(alpha = 0.34f)),
                 colors = ButtonDefaults.outlinedButtonColors(
-                    containerColor = VeilPalette.Ink.copy(alpha = 0.96f),
-                    contentColor = VeilPalette.Moon
+                    containerColor = readerChromeBackground,
+                    contentColor = readerChromeForeground
                 ),
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 5.dp),
                 modifier = Modifier.heightIn(min = 48.dp)
