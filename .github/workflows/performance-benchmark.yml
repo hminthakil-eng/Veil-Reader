@@ -92,7 +92,7 @@ jobs:
           profile: pixel_6
           disable-animations: true
           script: |
-            gradle :app:generateBaselineProfile --stacktrace
+            gradle :app:generateBaselineProfile --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
             gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=Macrobenchmark -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
 
       - name: Print benchmark instrumentation failures
