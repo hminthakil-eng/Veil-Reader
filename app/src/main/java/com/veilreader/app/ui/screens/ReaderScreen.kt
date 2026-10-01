@@ -347,12 +347,18 @@ fun ReaderScreen(
         onDispose { navigationTransactionGate.reset() }
     }
 
-    fun beginProgrammaticNavigation(originLocatorJson: String?): Long {
+    fun beginProgrammaticNavigation(
+        originLocatorJson: String?,
+        targetLocatorJson: String? = null,
+        targetHref: String? = null
+    ): Long {
         paperInputListener?.forceCancelPendingTurn()
         slideInputListener?.forceCancelPendingTurn()
         val transaction = navigationTransactionGate.begin(
             originLocatorJson = originLocatorJson,
-            nowElapsedMs = SystemClock.elapsedRealtime()
+            nowElapsedMs = SystemClock.elapsedRealtime(),
+            targetLocatorJson = targetLocatorJson,
+            targetHref = targetHref
         )
         ReaderTrace.event(
             "navigation_jump_requested",
@@ -911,7 +917,10 @@ fun ReaderScreen(
 
         readerViewModel.onUserInteraction(readerSessionInstanceId)
         game.rebasePagePacing()
-        val transactionToken = beginProgrammaticNavigation(originJson)
+        val transactionToken = beginProgrammaticNavigation(
+            originLocatorJson = originJson,
+            targetLocatorJson = targetJson
+        )
 
         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
             controlsVisible = false
@@ -2642,7 +2651,10 @@ fun ReaderScreen(
                     } else {
                         readerViewModel.onUserInteraction(readerSessionInstanceId)
                         game.rebasePagePacing()
-                        val transactionToken = beginProgrammaticNavigation(originJson)
+                        val transactionToken = beginProgrammaticNavigation(
+                            originLocatorJson = originJson,
+                            targetLocatorJson = json
+                        )
                         if (nav.go(locator, animated = shouldAnimateReaderJump(reducedMotion))) {
                             library.recordPassageVisitForLocator(
                                 bookId = opened.book.id,
@@ -2673,7 +2685,10 @@ fun ReaderScreen(
                 } else {
                     readerViewModel.onUserInteraction(readerSessionInstanceId)
                     game.rebasePagePacing()
-                    val transactionToken = beginProgrammaticNavigation(currentLocatorJson())
+                    val transactionToken = beginProgrammaticNavigation(
+                        originLocatorJson = currentLocatorJson(),
+                        targetHref = targetHref
+                    )
                     if (nav.go(link, animated = shouldAnimateReaderJump(reducedMotion))) {
                         showNotebook = false
                     } else {
