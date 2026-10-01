@@ -1167,8 +1167,8 @@ fun VeilApp(
                             selectedTab = route.selectedTab,
                             modifier = Modifier
                                 .fillMaxHeight()
-                                .fillMaxWidth()
                                 .widthIn(max = contentMaxWidth)
+                                .fillMaxWidth()
                         ) { tab ->
                             mainContent(tab)
                         }
@@ -1254,8 +1254,8 @@ private fun VeilNoticeDialog(
         ) {
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .widthIn(max = 520.dp),
+                    .widthIn(max = 520.dp)
+                    .fillMaxWidth(),
                 shape = MaterialTheme.shapes.medium,
                 color = VeilPalette.Archive,
                 border = BorderStroke(
