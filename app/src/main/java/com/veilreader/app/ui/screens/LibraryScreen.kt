@@ -171,14 +171,20 @@ internal fun deriveLibraryShelfGroups(
         .takeIf { it.isNotEmpty() }
         ?.let { groups += LibraryShelfGroup(labels.journey, labels.currentlyReading, it) }
 
-    books
-        .flatMap { book -> book.allCollections.map { it to book } }
-        .groupBy({ it.first }, { it.second })
-        .toList()
-        .sortedByDescending { it.second.size }
+    groupLibraryBooksByLabel(
+        books.flatMap { book -> book.allCollections.map { it to book } }
+    )
+        .sortedWith(
+            compareByDescending<LibraryNamedBookGroup> { it.books.size }
+                .thenBy { it.name.lowercase(Locale.ROOT) }
+        )
         .take(6)
-        .forEach { (name, volumes) ->
-            groups += LibraryShelfGroup(labels.collection, name, volumes)
+        .forEach { group ->
+            groups += LibraryShelfGroup(
+                eyebrow = labels.collection,
+                title = group.name,
+                books = group.books
+            )
         }
 
     books
