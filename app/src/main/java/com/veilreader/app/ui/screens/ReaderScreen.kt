@@ -1597,6 +1597,7 @@ fun ReaderScreen(
             R.string.reader_show_controls
         }
     )
+    val contextControl = readerContextControlFor(opened.format)
     val progressLabel = formatPercent(progress.coerceIn(0f, 1f))
     val progressDescription = stringResource(R.string.reader_percent_read_text, progressLabel)
 
@@ -1877,16 +1878,14 @@ fun ReaderScreen(
                         }
 
                         ReaderControl(
-                            action = if (opened.format == BookFormat.EPUB) {
-                                ReaderAction.APPEARANCE
-                            } else {
-                                ReaderAction.ZOOM
+                            action = when (contextControl) {
+                                ReaderContextControl.APPEARANCE -> ReaderAction.APPEARANCE
+                                ReaderContextControl.PDF_VIEW -> ReaderAction.ZOOM
                             },
                             label = stringResource(
-                                if (opened.format == BookFormat.EPUB) {
-                                    R.string.reader_chrome_appearance
-                                } else {
-                                    R.string.reader_chrome_pdf_view
+                                when (contextControl) {
+                                    ReaderContextControl.APPEARANCE -> R.string.reader_chrome_appearance
+                                    ReaderContextControl.PDF_VIEW -> R.string.reader_chrome_pdf_view
                                 }
                             ),
                             modifier = Modifier.weight(1f),
@@ -1895,12 +1894,15 @@ fun ReaderScreen(
                             foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            if (opened.format == BookFormat.EPUB) {
-                                appearanceCloseJob?.cancel()
-                                appearanceCloseJob = null
-                                showAppearance = true
-                            } else {
-                                showPdfZoom = true
+                            when (contextControl) {
+                                ReaderContextControl.APPEARANCE -> {
+                                    appearanceCloseJob?.cancel()
+                                    appearanceCloseJob = null
+                                    showAppearance = true
+                                }
+                                ReaderContextControl.PDF_VIEW -> {
+                                    showPdfZoom = true
+                                }
                             }
                         }
                     }
@@ -2567,6 +2569,18 @@ internal fun shouldTakeFinalNavigatorSnapshot(
             paperPreviewActive = paperPreviewActive,
             slidePreviewActive = slidePreviewActive
         )
+
+internal enum class ReaderContextControl {
+    APPEARANCE,
+    PDF_VIEW
+}
+
+internal fun readerContextControlFor(format: BookFormat): ReaderContextControl =
+    when (format) {
+        BookFormat.EPUB -> ReaderContextControl.APPEARANCE
+        BookFormat.PDF -> ReaderContextControl.PDF_VIEW
+        else -> error("Unsupported Reader context-control format: $format")
+    }
 
 internal enum class ReaderBackDisposition {
     SWALLOW,
