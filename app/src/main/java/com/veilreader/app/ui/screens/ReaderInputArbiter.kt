@@ -26,6 +26,21 @@ internal enum class ReaderInteractionMode {
     BLOCKED
 }
 
+internal enum class ReaderKeyRoute {
+    NAVIGATION,
+    RENDERER,
+    BLOCKED
+}
+
+internal fun readerKeyRoute(mode: ReaderInteractionMode): ReaderKeyRoute =
+    when (mode) {
+        ReaderInteractionMode.RENDERER_SELECTION,
+        ReaderInteractionMode.RENDERER_ACCESSIBILITY -> ReaderKeyRoute.RENDERER
+        ReaderInteractionMode.BLOCKED -> ReaderKeyRoute.BLOCKED
+        ReaderInteractionMode.NAVIGATION,
+        ReaderInteractionMode.CHROME_PRIORITY -> ReaderKeyRoute.NAVIGATION
+    }
+
 internal fun readerInteractionMode(
     selectionModeActive: Boolean,
     overlayVisible: Boolean,
@@ -167,12 +182,10 @@ internal class ReaderInputArbiter(
     }
 
     override fun onKey(event: KeyEvent): Boolean {
-        when (interactionMode()) {
-            ReaderInteractionMode.RENDERER_SELECTION -> return false
-            ReaderInteractionMode.BLOCKED -> return true
-            ReaderInteractionMode.RENDERER_ACCESSIBILITY,
-            ReaderInteractionMode.NAVIGATION,
-            ReaderInteractionMode.CHROME_PRIORITY -> Unit
+        when (readerKeyRoute(interactionMode())) {
+            ReaderKeyRoute.RENDERER -> return false
+            ReaderKeyRoute.BLOCKED -> return true
+            ReaderKeyRoute.NAVIGATION -> Unit
         }
 
         if (slide?.onKey(event) == true) return true
