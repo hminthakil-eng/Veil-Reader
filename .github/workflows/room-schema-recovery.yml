@@ -32,7 +32,7 @@ jobs:
 
       - name: Generate current v3 schema
         run: |
-          gradle :app:compileDebugKotlin --stacktrace
+          gradle :app:kspDebugKotlin --stacktrace
           test -s app/schemas/com.veilreader.app.data.db.VeilDatabase/3.json
 
       - name: Generate historical v2 schema
@@ -42,7 +42,7 @@ jobs:
           git worktree add --detach /tmp/veil-room-v2 cf5d523ff61be5a5823c041be8b1573e58667699
           (
             cd /tmp/veil-room-v2
-            gradle :app:compileDebugKotlin --stacktrace
+            gradle :app:kspDebugKotlin --stacktrace
             test -s app/schemas/com.veilreader.app.data.db.VeilDatabase/2.json
           )
 
