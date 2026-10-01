@@ -292,3 +292,38 @@ Canonical implementation reviewed through head `5ca4a237a27dd9d86f2dfbeda4f1a18e
 
 These changes are committed on the canonical branch with JVM and Android/Room regression coverage. The exact final head still requires Android CI, Storage Instrumentation and Performance Benchmarks before any GREEN claim. No manual APK/AAB packaging was started.
 
+## W59 follow-up — target-aware jump settlement and truthful passage revisits
+
+Canonical implementation reviewed through head `5931b6bab2b259e086c595ef4e829118c3c3f69d`.
+
+### Target-aware navigation transactions
+
+- Programmatic jumps no longer settle on the first navigator locator that merely differs from the origin.
+- Locator-backed jumps carry a compact pure target identity: resource href, publication position, optional CSS selector, and total progression.
+- The gate prefers strong stable discriminators in order: matching resource + position, matching CSS selector, then tightly-bounded total progression; presentation metadata such as title/text does not affect destination identity.
+- Link-backed jumps require the observed locator to reach the intended resource before settling. Transient locators in intermediate resources leave the transaction active.
+- Transactions with no known target retain the prior first-different-locator fallback for compatibility.
+- Target matching is scalar/pure JVM policy; JSON parsing is not part of the gate or its unit tests.
+
+### Link normalization and in-content EPUB links
+
+- Resource hrefs are normalized with `java.net.URI.normalize()` before no-op/target comparison, so equivalent forms such as `text/./chapter.xhtml` and `text/chapter.xhtml` do not create false jumps.
+- Fragment-only links such as `#scene-2` are resolved against the current resource for tracking while the original Readium `Link` remains untouched.
+- If a fragment-only target cannot be resolved because the current locator is unavailable, Readium is still allowed to follow the link but Veil does not create an unresolvable transaction.
+- The EPUB in-content hyperlink listener now receives the same target-aware protection as Notebook TOC, saved-location, and Previous Location jumps.
+
+### Passage revisit truthfulness
+
+- Notebook saved-passage navigation no longer records a historical revisit merely because `nav.go()` returned true.
+- The requested passage locator travels with the navigation transaction and is recorded only after the target-aware gate confirms the observed destination.
+- Intermediate positions, accepted-but-never-settled jumps, cancelled jumps, and expired transactions therefore cannot create false passage-memory evidence.
+
+### Regression coverage
+
+- Tests cover intermediate-resource suppression, target settlement despite presentation metadata changes, progression tolerance, link resource matching, fragment-only target resolution, normalized href no-ops, and delayed passage-revisit metadata.
+- Existing timeout/origin re-emission/no-op compatibility tests remain intact.
+
+### Verification boundary
+
+This is committed source and regression coverage only. The exact final head still requires Android CI, Storage Instrumentation and Performance Benchmarks before any GREEN claim. No manual APK/AAB packaging was started.
+
