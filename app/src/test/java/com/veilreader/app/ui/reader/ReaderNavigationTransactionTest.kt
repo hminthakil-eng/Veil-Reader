@@ -143,6 +143,34 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun sameChapterHref_doesNotStartNoOpLinkTransaction() {
+        assertFalse(
+            shouldStartReaderLinkJump(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = "text/chapter-04.xhtml"
+            )
+        )
+        assertTrue(
+            shouldStartReaderLinkJump(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = "text/chapter-04.xhtml#scene-2"
+            )
+        )
+        assertTrue(
+            shouldStartReaderLinkJump(
+                currentHref = null,
+                targetHref = "text/chapter-04.xhtml"
+            )
+        )
+        assertFalse(
+            shouldStartReaderLinkJump(
+                currentHref = "text/chapter-04.xhtml",
+                targetHref = " "
+            )
+        )
+    }
+
+    @Test
     fun missingOrigin_stillAllowsKnownDestinationJump() {
         assertTrue(
             shouldStartReaderLocationJump(
