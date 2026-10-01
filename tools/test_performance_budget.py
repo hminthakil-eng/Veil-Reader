@@ -31,6 +31,31 @@ SAMPLE = {
         },
         {
             "name": "EMULATOR_pageTurns",
+            "className": "com.veilreader.benchmark.ReaderFrameSmokeBenchmark",
+            "metrics": {
+                "gfxFrameTime95thPercentileMs": {
+                    "minimum": 12.0,
+                    "maximum": 24.0,
+                    "median": 18.0,
+                    "runs": [12.0, 18.0, 24.0],
+                },
+                "gfxFrameTime99thPercentileMs": {
+                    "minimum": 18.0,
+                    "maximum": 36.0,
+                    "median": 26.0,
+                    "runs": [18.0, 26.0, 36.0],
+                },
+                "gfxFrameTotalCount": {
+                    "minimum": 70.0,
+                    "maximum": 90.0,
+                    "median": 82.0,
+                    "runs": [70.0, 82.0, 90.0],
+                },
+            },
+            "sampledMetrics": {},
+        },
+        {
+            "name": "EMULATOR_pageTurns",
             "className": "com.veilreader.benchmark.ReaderFrameBenchmark",
             "metrics": {
                 "frameCount": {
@@ -82,6 +107,40 @@ class PerformanceBudgetTest(unittest.TestCase):
             "benchmarkNameSuffix": "pageTurns",
         }
         self.assertTrue(budget.matches(SAMPLE["benchmarks"][1], check))
+
+    def test_smoke_style_checks_pass_for_gfxinfo_sample(self):
+        checks = [
+            {
+                "id": "gfx_p95",
+                "classSuffix": ".ReaderFrameSmokeBenchmark",
+                "benchmarkNameSuffix": "pageTurns",
+                "metricGroup": "metrics",
+                "metric": "gfxFrameTime95thPercentileMs",
+                "stat": "median",
+                "max": 400.0,
+            },
+            {
+                "id": "gfx_p99",
+                "classSuffix": ".ReaderFrameSmokeBenchmark",
+                "benchmarkNameSuffix": "pageTurns",
+                "metricGroup": "metrics",
+                "metric": "gfxFrameTime99thPercentileMs",
+                "stat": "median",
+                "max": 600.0,
+            },
+            {
+                "id": "gfx_count",
+                "classSuffix": ".ReaderFrameSmokeBenchmark",
+                "benchmarkNameSuffix": "pageTurns",
+                "metricGroup": "metrics",
+                "metric": "gfxFrameTotalCount",
+                "stat": "median",
+                "min": 20.0,
+            },
+        ]
+        passes, failures = budget.evaluate(SAMPLE["benchmarks"], checks)
+        self.assertEqual(3, len(passes))
+        self.assertEqual([], failures)
 
     def test_physical_style_checks_pass_for_good_sample(self):
         checks = [
