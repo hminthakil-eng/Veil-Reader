@@ -22,19 +22,18 @@ internal data class ReaderNavigationTransaction(
 )
 
 /**
- * Starts a location-backed jump only when it can actually move away from the current locator.
+ * Starts a location-backed jump only when the stable navigation identity can actually move.
  *
- * Readium may accept a no-op `go()` without publishing a new locator. Avoiding a transaction for
- * that case prevents the user's next real page turn from being mistaken for a delayed jump settle.
+ * Persisted locators can differ in title/text metadata while pointing at the same publication
+ * position. Readium may accept that semantic no-op without emitting another locator, so compare
+ * navigation identity rather than raw JSON before opening a transaction.
  */
-internal fun shouldStartReaderLocationJump(
-    originLocatorJson: String?,
-    targetLocatorJson: String?
-): Boolean {
-    val target = targetLocatorJson?.takeIf { it.isNotBlank() } ?: return false
-    val origin = originLocatorJson?.takeIf { it.isNotBlank() }
-    return origin == null || origin != target
-}
+internal fun shouldStartReaderIdentityJump(
+    origin: ReaderNavigationIdentity?,
+    target: ReaderNavigationIdentity?
+): Boolean =
+    target != null &&
+        (origin == null || !readerNavigationIdentityMatchesTarget(origin, target))
 
 internal fun readerEffectiveTargetHref(
     currentHref: String?,
