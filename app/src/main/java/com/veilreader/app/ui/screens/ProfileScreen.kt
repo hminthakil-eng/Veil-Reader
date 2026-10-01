@@ -93,6 +93,7 @@ fun ProfileScreen(
     Column(
         Modifier
             .fillMaxSize()
+            .widthIn(max = 920.dp)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)
@@ -126,6 +127,17 @@ fun ProfileScreen(
         )
 
         DossierHistoryLedger(dossierHistory)
+
+        OutlinedButton(
+            onClick = onOpenArchive,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
+        ) {
+            Text(stringResource(R.string.profile_open_hidden_archive), style = MaterialTheme.typography.labelMedium)
+        }
 
         ProfileSectionHeading(
             eyebrow = stringResource(R.string.profile_rhythm),
@@ -226,16 +238,6 @@ fun ProfileScreen(
             }
         }
 
-        OutlinedButton(
-            onClick = onOpenArchive,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp),
-            shape = MaterialTheme.shapes.extraSmall,
-            border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
-        ) {
-            Text(stringResource(R.string.profile_open_hidden_archive), style = MaterialTheme.typography.labelMedium)
-        }
     }
     }
 }
