@@ -4103,78 +4103,149 @@ private fun ReaderAppearancePreview(
 }
 
 @Composable
-internal fun localizedReaderNavigationModeDescription(mode: ReaderNavigationMode): String =
-    stringResource(when (mode) {
-        ReaderNavigationMode.PAPER_CURL -> R.string.settings_mode_curl_description
-        ReaderNavigationMode.SLIDE -> R.string.settings_mode_slide_description
-        ReaderNavigationMode.PAGED -> R.string.settings_mode_paged_description
-        ReaderNavigationMode.SCROLL -> R.string.settings_mode_scroll_description
-    })
+internal fun localizedPageTurnStyleDescription(style: PageTurnStyle): String =
+    stringResource(
+        when (style) {
+            PageTurnStyle.PAPER -> R.string.settings_mode_curl_description
+            PageTurnStyle.SLIDE -> R.string.settings_mode_slide_description
+            PageTurnStyle.NONE -> R.string.settings_mode_paged_description
+        }
+    )
 
 @Composable
-internal fun ReaderMotionSelector(
-    selected: ReaderNavigationMode,
-    disabledModes: Set<ReaderNavigationMode> = emptySet(),
-    onSelect: (ReaderNavigationMode) -> Unit
+internal fun ReaderReadingModeSelector(
+    scroll: Boolean,
+    scrollEnabled: Boolean,
+    onScrollChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(4.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        ReaderNavigationMode.entries.forEach { mode ->
-            val active = selected == mode
-            val enabled = mode !in disabledModes
-            val label = when (mode) {
-                ReaderNavigationMode.PAPER_CURL -> stringResource(R.string.settings_mode_curl)
-                ReaderNavigationMode.SLIDE -> stringResource(R.string.settings_mode_slide)
-                ReaderNavigationMode.PAGED -> stringResource(R.string.settings_mode_paged)
-                ReaderNavigationMode.SCROLL -> stringResource(R.string.settings_mode_scroll)
+        listOf(
+            false to ReaderNavigationMode.PAGED,
+            true to ReaderNavigationMode.SCROLL
+        ).forEach { (candidateScroll, previewMode) ->
+            val active = scroll == candidateScroll
+            val enabled = !candidateScroll || scrollEnabled
+            ReaderModeChoice(
+                label = stringResource(
+                    if (candidateScroll) {
+                        R.string.settings_mode_scroll
+                    } else {
+                        R.string.settings_mode_paged
+                    }
+                ),
+                previewMode = previewMode,
+                active = active,
+                enabled = enabled,
+                modifier = Modifier.weight(1f),
+                onClick = { onScrollChange(candidateScroll) }
+            )
+        }
+    }
+}
+
+@Composable
+internal fun ReaderPageTurnSelector(
+    selected: PageTurnStyle,
+    onSelect: (PageTurnStyle) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        listOf(
+            Triple(
+                PageTurnStyle.PAPER,
+                ReaderNavigationMode.PAPER_CURL,
+                stringResource(R.string.settings_mode_curl)
+            ),
+            Triple(
+                PageTurnStyle.SLIDE,
+                ReaderNavigationMode.SLIDE,
+                stringResource(R.string.settings_mode_slide)
+            ),
+            Triple(
+                PageTurnStyle.NONE,
+                ReaderNavigationMode.PAGED,
+                stringResource(R.string.settings_page_turn_none)
+            )
+        ).forEach { (style, previewMode, label) ->
+            ReaderModeChoice(
+                label = label,
+                previewMode = previewMode,
+                active = selected == style,
+                enabled = true,
+                modifier = Modifier.weight(1f),
+                onClick = { onSelect(style) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun ReaderModeChoice(
+    label: String,
+    previewMode: ReaderNavigationMode,
+    active: Boolean,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .heightIn(min = 58.dp)
+            .selectable(
+                selected = active,
+                enabled = enabled,
+                role = Role.RadioButton,
+                onClick = onClick
+            ),
+        shape = MaterialTheme.shapes.extraSmall,
+        color = if (active) {
+            VeilPalette.DeepBrass.copy(alpha = 0.76f)
+        } else {
+            MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (active) {
+                VeilPalette.Brass.copy(alpha = 0.82f)
+            } else {
+                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
             }
-            Surface(
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(3.dp)
+        ) {
+            ReaderMotionPreview(
+                mode = previewMode,
+                active = active,
                 modifier = Modifier
-                    .weight(1f)
-                    .heightIn(min = 52.dp)
-                    .selectable(
-                        selected = active,
-                        enabled = enabled,
-                        role = Role.RadioButton
-                    ) { onSelect(mode) },
-                shape = MaterialTheme.shapes.extraSmall,
-                color = if (active) {
-                    VeilPalette.DeepBrass.copy(alpha = 0.76f)
-                } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
+                    .width(44.dp)
+                    .height(28.dp)
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                color = when {
+                    !enabled ->
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                    active -> VeilPalette.Moon
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
                 },
-                border = BorderStroke(
-                    1.dp,
-                    if (active) VeilPalette.Brass.copy(alpha = 0.82f)
-                    else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    ReaderMotionPreview(
-                        mode = mode,
-                        active = active,
-                        modifier = Modifier
-                            .width(44.dp)
-                            .height(28.dp)
-                    )
-                    Text(
-                        label,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = when {
-                            !enabled ->
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            active -> VeilPalette.Moon
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        }
-                    )
-                }
-            }
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
