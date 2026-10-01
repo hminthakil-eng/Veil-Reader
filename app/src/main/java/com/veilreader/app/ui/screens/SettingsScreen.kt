@@ -623,8 +623,8 @@ fun SettingsScreen(
             ) {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 520.dp),
+                        .widthIn(max = 520.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.medium,
                     color = VeilPalette.Archive,
                     border = BorderStroke(
