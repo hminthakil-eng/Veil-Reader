@@ -354,6 +354,26 @@ class ReaderInputArbiterTest {
 
 
     @Test
+    fun `accessibility and selection keys stay with renderer while blocked mode consumes`() {
+        assertEquals(
+            ReaderKeyRoute.RENDERER,
+            readerKeyRoute(ReaderInteractionMode.RENDERER_ACCESSIBILITY)
+        )
+        assertEquals(
+            ReaderKeyRoute.RENDERER,
+            readerKeyRoute(ReaderInteractionMode.RENDERER_SELECTION)
+        )
+        assertEquals(
+            ReaderKeyRoute.BLOCKED,
+            readerKeyRoute(ReaderInteractionMode.BLOCKED)
+        )
+        assertEquals(
+            ReaderKeyRoute.NAVIGATION,
+            readerKeyRoute(ReaderInteractionMode.NAVIGATION)
+        )
+    }
+
+    @Test
     fun `touch exploration returns touch ownership to renderer`() {
         assertEquals(
             ReaderInteractionMode.RENDERER_ACCESSIBILITY,
