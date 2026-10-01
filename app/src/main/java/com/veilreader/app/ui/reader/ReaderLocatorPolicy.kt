@@ -30,6 +30,23 @@ internal fun navigatorLocatorEvent(
     else -> ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
 }
 
+internal fun readerObservedLocatorEvent(
+    programmaticNavigationSettled: Boolean,
+    viewportRelayoutPending: Boolean,
+    isInitialEmission: Boolean,
+    isContinuousScroll: Boolean,
+    isPaperMode: Boolean
+): ReaderLocatorEvent =
+    when {
+        programmaticNavigationSettled -> ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+        viewportRelayoutPending -> ReaderLocatorEvent.FINAL_SNAPSHOT
+        else -> navigatorLocatorEvent(
+            isInitialEmission = isInitialEmission,
+            isContinuousScroll = isContinuousScroll,
+            isPaperMode = isPaperMode
+        )
+    }
+
 internal data class ReaderLocatorCommit(
     val sequence: Long,
     val locatorJson: String,
