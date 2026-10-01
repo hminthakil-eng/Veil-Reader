@@ -332,6 +332,7 @@
     <string name="book_detail_place_many">%1$d جای ذخیره‌شده</string>
     <string name="book_detail_preserved_memory">حافظهٔ ماندگار</string>
     <string name="book_detail_preserved_fragments">بریده‌های نگه‌داشته‌شده</string>
+    <string name="book_detail_preserved_note_only">یادداشت محفوظ</string>
     <string name="book_detail_more_preserved">%1$d بریدهٔ دیگر در آرشیو پنهان</string>
     <string name="book_detail_favorite_badge">علاقه‌مندی</string>
     <string name="book_detail_archive_surface">قفسهٔ آغازین</string>
