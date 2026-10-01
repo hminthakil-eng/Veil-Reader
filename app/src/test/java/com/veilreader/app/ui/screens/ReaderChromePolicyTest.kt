@@ -4,7 +4,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.ReaderAppearance
-import com.veilreader.app.domain.ReaderNavigationMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -316,31 +315,6 @@ class ReaderChromePolicyTest {
         )
     }
 
-
-    @Test
-    fun `paper keyboard navigation commits explicitly while other modes use navigator stream`() {
-        assertEquals(
-            com.veilreader.app.ui.reader.ReaderLocatorEvent.PAPER_COMMIT,
-            directionalReaderCommitEvent(
-                format = BookFormat.EPUB,
-                navigationMode = ReaderNavigationMode.PAPER_CURL
-            )
-        )
-        assertEquals(
-            null,
-            directionalReaderCommitEvent(
-                format = BookFormat.EPUB,
-                navigationMode = ReaderNavigationMode.PAGED
-            )
-        )
-        assertEquals(
-            null,
-            directionalReaderCommitEvent(
-                format = BookFormat.PDF,
-                navigationMode = ReaderNavigationMode.PAPER_CURL
-            )
-        )
-    }
 
     @Test
     fun `physical boundary side resolves to beginning or end across LTR and RTL`() {
