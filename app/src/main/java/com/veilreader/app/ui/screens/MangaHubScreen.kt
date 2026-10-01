@@ -212,8 +212,8 @@ fun MangaHubScreen(
             item(key = "manga:empty") {
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 860.dp),
+                        .widthIn(max = 860.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.68f)
                 ) {
@@ -265,8 +265,8 @@ fun MangaHubScreen(
                 }
                 Surface(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .widthIn(max = 860.dp),
+                        .widthIn(max = 860.dp)
+                        .fillMaxWidth(),
                     shape = MaterialTheme.shapes.small,
                     color = MaterialTheme.colorScheme.surface.copy(alpha = 0.78f),
                     border = BorderStroke(
