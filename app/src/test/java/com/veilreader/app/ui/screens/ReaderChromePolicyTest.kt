@@ -9,6 +9,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.readium.r2.navigator.preferences.ReadingProgression
 
 class ReaderChromePolicyTest {
     @Test
@@ -338,6 +339,26 @@ class ReaderChromePolicyTest {
                 format = BookFormat.PDF,
                 navigationMode = ReaderNavigationMode.PAPER_CURL
             )
+        )
+    }
+
+    @Test
+    fun `physical boundary side resolves to beginning or end across LTR and RTL`() {
+        assertEquals(
+            ReaderBoundaryKind.END,
+            readerBoundaryKind(PaperCurlSide.RIGHT, ReadingProgression.LTR)
+        )
+        assertEquals(
+            ReaderBoundaryKind.BEGINNING,
+            readerBoundaryKind(PaperCurlSide.LEFT, ReadingProgression.LTR)
+        )
+        assertEquals(
+            ReaderBoundaryKind.END,
+            readerBoundaryKind(PaperCurlSide.LEFT, ReadingProgression.RTL)
+        )
+        assertEquals(
+            ReaderBoundaryKind.BEGINNING,
+            readerBoundaryKind(PaperCurlSide.RIGHT, ReadingProgression.RTL)
         )
     }
 
