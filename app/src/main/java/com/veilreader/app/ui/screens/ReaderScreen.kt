@@ -611,6 +611,12 @@ fun ReaderScreen(
     var readerViewportSize by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(IntSize.Zero)
     }
+    var viewportRelayoutPending by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(false)
+    }
+    var viewportRelayoutJob by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<Job?>(null)
+    }
 
     DisposableEffect(imageViewer?.bitmap) {
         val ownedBitmap = imageViewer?.bitmap
@@ -623,6 +629,7 @@ fun ReaderScreen(
     DisposableEffect(readerSessionInstanceId) {
         onDispose {
             appearanceCloseJob?.cancel()
+            viewportRelayoutJob?.cancel()
             imageLoadSerial += 1
             imageLoadJob?.cancel()
         }
@@ -856,6 +863,15 @@ fun ReaderScreen(
 
     fun currentLocatorJson(): String? =
         navigator?.currentLocator?.value?.toVeilPersistedJson(opened.format)
+
+    fun markReaderNavigationInteraction() {
+        viewportRelayoutPending = false
+        viewportRelayoutJob?.cancel()
+        viewportRelayoutJob = null
+        navigationTransactionGate.reset()
+        readerViewModel.onUserInteraction(readerSessionInstanceId)
+        controlsVisible = false
+    }
 
     fun returnToPreviousLocation() {
         val targetJson = previousLocationJson ?: return
@@ -1241,10 +1257,12 @@ fun ReaderScreen(
 
                 val continuousScroll =
                     (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
-                val event = if (settledNavigation != null) {
-                    ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
-                } else {
-                    navigatorLocatorEvent(
+                val event = when {
+                    settledNavigation != null ->
+                        ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+                    viewportRelayoutPending ->
+                        ReaderLocatorEvent.FINAL_SNAPSHOT
+                    else -> navigatorLocatorEvent(
                         isInitialEmission = initialLocatorPending,
                         isContinuousScroll = continuousScroll,
                         isPaperMode =
@@ -1373,11 +1391,7 @@ fun ReaderScreen(
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
-                    onInteraction = {
-                        navigationTransactionGate.reset()
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
-                        controlsVisible = false
-                    },
+                    onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
                         onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         val locator = nav.currentLocator.value
@@ -1407,11 +1421,7 @@ fun ReaderScreen(
                     },
                     scope = scope,
                     isReducedMotion = { latestReducedMotion.value },
-                    onInteraction = {
-                        navigationTransactionGate.reset()
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
-                        controlsVisible = false
-                    },
+                    onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
                         onSensoryEvent(VeilSensoryEvent.SLIDE_TURN)
                         nav.currentLocator.value.let { locator ->
@@ -1441,11 +1451,7 @@ fun ReaderScreen(
                             pageTurnStyle = latestAppearance.value.pageTurnStyle
                         )
                     },
-                    onInteraction = {
-                        navigationTransactionGate.reset()
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
-                        controlsVisible = false
-                    },
+                    onInteraction = ::markReaderNavigationInteraction,
                     onNavigationCommitted = {
                         onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
                         nav.currentLocator.value.let { locator ->
@@ -1482,6 +1488,7 @@ fun ReaderScreen(
                         pageTurnStyle = latestAppearance.value.pageTurnStyle
                     )
                 },
+                onInteraction = ::markReaderNavigationInteraction,
                 onNavigationCommitted = {
                     navigationTransactionGate.reset()
                     val event = when {
@@ -1860,10 +1867,29 @@ fun ReaderScreen(
                 }
                 if (
                     previousSize != IntSize.Zero &&
-                    previousSize != newSize &&
-                    readerModeHandoffState.snapshot != null
+                    previousSize != newSize
                 ) {
-                    readerModeHandoffState.clearImmediately()
+                    if (readerModeHandoffState.snapshot != null) {
+                        readerModeHandoffState.clearImmediately()
+                    }
+                    viewportRelayoutPending = true
+                    viewportRelayoutJob?.cancel()
+                    val expectedSessionId = readerSessionInstanceId
+                    viewportRelayoutJob = scope.launch {
+                        delay(READER_VIEWPORT_REFLOW_QUIET_MS)
+                        if (
+                            readerAsyncResultBelongsToSession(
+                                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                                expectedSessionInstanceId = expectedSessionId
+                            )
+                        ) {
+                            latestNavigator.value?.currentLocator?.value?.let { locator ->
+                                recordLocator(locator, ReaderLocatorEvent.FINAL_SNAPSHOT)
+                            }
+                            viewportRelayoutPending = false
+                            viewportRelayoutJob = null
+                        }
+                    }
                 }
                 readerViewportSize = newSize
             }
@@ -2753,6 +2779,7 @@ internal fun shouldAwaitReaderAppearanceClose(
         (expected != null && presented != expected)
 
 private const val READER_APPEARANCE_CLOSE_TIMEOUT_MS = 2_000L
+private const val READER_VIEWPORT_REFLOW_QUIET_MS = 650L
 
 internal fun effectiveReaderAppearanceForPublication(
     appearance: ReaderAppearance,
