@@ -31,86 +31,60 @@ class ReaderNavigationTransactionTest {
     @Test
     fun targetLocator_ignoresIntermediateResource_untilTargetPositionArrives() {
         val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
-        val origin = """{"href":"chapter-01.xhtml","locations":{"position":1}}"""
-        val target = """{"href":"chapter-04.xhtml","locations":{"position":12},"title":"Saved"}"""
+        val origin = "origin"
+        val target = ReaderNavigationIdentity(
+            href = "chapter-04.xhtml",
+            position = 12,
+            cssSelector = null,
+            totalProgression = 0.42
+        )
         val started = gate.begin(
             originLocatorJson = origin,
             nowElapsedMs = 100L,
-            targetLocatorJson = target
+            targetIdentity = target
         )
 
         assertNull(
             gate.consumeSettled(
-                observedLocatorJson =
-                    """{"href":"chapter-02.xhtml","locations":{"position":6}}""",
-                nowElapsedMs = 300L
+                observedLocatorJson = "intermediate",
+                nowElapsedMs = 300L,
+                observedIdentity = ReaderNavigationIdentity(
+                    href = "chapter-02.xhtml",
+                    position = 6,
+                    cssSelector = null,
+                    totalProgression = 0.20
+                )
             )
         )
         assertTrue(gate.isActive(nowElapsedMs = 350L))
 
         val settled = gate.consumeSettled(
-            observedLocatorJson =
-                """{"href":"chapter-04.xhtml","locations":{"position":12},"title":"Renderer title"}""",
-            nowElapsedMs = 600L
+            observedLocatorJson = "destination-with-renderer-metadata",
+            nowElapsedMs = 600L,
+            observedIdentity = target.copy(totalProgression = 0.421)
         )
         assertEquals(started.token, settled?.token)
     }
 
     @Test
-    fun passageRevisit_metadata_survivesOnlyUntilTheTargetSettles() {
-        val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
-        val origin = """{"href":"chapter-01.xhtml","locations":{"position":1}}"""
-        val target = """{"href":"chapter-08.xhtml","locations":{"position":22}}"""
-        gate.begin(
-            originLocatorJson = origin,
-            nowElapsedMs = 100L,
-            targetLocatorJson = target,
-            passageVisitLocatorJson = target
-        )
-
-        assertNull(
-            gate.consumeSettled(
-                observedLocatorJson =
-                    """{"href":"chapter-05.xhtml","locations":{"position":12}}""",
-                nowElapsedMs = 300L
-            )
-        )
-
-        val settled = requireNotNull(
-            gate.consumeSettled(
-                observedLocatorJson =
-                    """{"href":"chapter-08.xhtml","locations":{"position":22},"title":"Landed"}""",
-                nowElapsedMs = 500L
-            )
-        )
-        assertEquals(target, settled.passageVisitLocatorJson)
-        assertNull(
-            gate.consumeSettled(
-                observedLocatorJson =
-                    """{"href":"chapter-09.xhtml","locations":{"position":24}}""",
-                nowElapsedMs = 700L
-            )
-        )
-    }
-
-    @Test
     fun locatorTarget_matchesStableProgression_whenPresentationMetadataChanges() {
-        val target =
-            """{"href":"chapter.xhtml","locations":{"totalProgression":0.421},"text":{"highlight":"old"}}"""
-        val observed =
-            """{"href":"chapter.xhtml","locations":{"totalProgression":0.422},"title":"Current"}"""
+        val target = ReaderNavigationIdentity(
+            href = "chapter.xhtml",
+            position = null,
+            cssSelector = null,
+            totalProgression = 0.421
+        )
 
         assertTrue(
-            readerLocatorMatchesTarget(
-                observedLocatorJson = observed,
-                targetLocatorJson = target
+            readerNavigationIdentityMatchesTarget(
+                observed = target.copy(totalProgression = 0.422),
+                target = target
             )
         )
         assertFalse(
-            readerLocatorMatchesTarget(
-                observedLocatorJson =
-                    """{"href":"chapter.xhtml","locations":{"totalProgression":0.44}}""",
-                targetLocatorJson = target
+            readerNavigationIdentityMatchesTarget(
+                observed = target.copy(totalProgression = 0.44),
+                target = target
             )
         )
     }
@@ -118,29 +92,84 @@ class ReaderNavigationTransactionTest {
     @Test
     fun linkTarget_waitsForDestinationResource_andAllowsFragmentTarget() {
         val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
-        val origin =
-            """{"href":"chapter-01.xhtml","locations":{"position":1}}"""
         val started = gate.begin(
-            originLocatorJson = origin,
+            originLocatorJson = "origin",
             nowElapsedMs = 100L,
             targetHref = "chapter-04.xhtml#scene-2"
         )
 
         assertNull(
             gate.consumeSettled(
-                observedLocatorJson =
-                    """{"href":"chapter-02.xhtml","locations":{"position":5}}""",
-                nowElapsedMs = 300L
+                observedLocatorJson = "intermediate",
+                nowElapsedMs = 300L,
+                observedIdentity = ReaderNavigationIdentity(
+                    href = "chapter-02.xhtml",
+                    position = 5,
+                    cssSelector = null,
+                    totalProgression = 0.20
+                )
             )
         )
 
         assertEquals(
             started.token,
             gate.consumeSettled(
-                observedLocatorJson =
-                    """{"href":"chapter-04.xhtml","locations":{"position":12}}""",
-                nowElapsedMs = 500L
+                observedLocatorJson = "destination",
+                nowElapsedMs = 500L,
+                observedIdentity = ReaderNavigationIdentity(
+                    href = "chapter-04.xhtml",
+                    position = 12,
+                    cssSelector = null,
+                    totalProgression = 0.42
+                )
             )?.token
+        )
+    }
+
+    @Test
+    fun passageRevisit_metadata_survivesOnlyUntilTheTargetSettles() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 2_000L)
+        val targetJson = """{"href":"chapter-08.xhtml","locations":{"position":22}}"""
+        val target = ReaderNavigationIdentity(
+            href = "chapter-08.xhtml",
+            position = 22,
+            cssSelector = null,
+            totalProgression = 0.80
+        )
+        gate.begin(
+            originLocatorJson = "origin",
+            nowElapsedMs = 100L,
+            targetIdentity = target,
+            passageVisitLocatorJson = targetJson
+        )
+
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson = "intermediate",
+                nowElapsedMs = 300L,
+                observedIdentity = ReaderNavigationIdentity(
+                    href = "chapter-05.xhtml",
+                    position = 12,
+                    cssSelector = null,
+                    totalProgression = 0.50
+                )
+            )
+        )
+
+        val settled = requireNotNull(
+            gate.consumeSettled(
+                observedLocatorJson = "destination",
+                nowElapsedMs = 500L,
+                observedIdentity = target
+            )
+        )
+        assertEquals(targetJson, settled.passageVisitLocatorJson)
+        assertNull(
+            gate.consumeSettled(
+                observedLocatorJson = "later",
+                nowElapsedMs = 700L,
+                observedIdentity = target.copy(position = 24)
+            )
         )
     }
 
