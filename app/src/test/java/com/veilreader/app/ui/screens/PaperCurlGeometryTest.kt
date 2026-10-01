@@ -427,6 +427,24 @@ class PaperCurlGeometryTest {
     }
 
     @Test
+    fun `paper curl render gate rejects zero and non finite resize frames`() {
+        val validEdge = PaperCurlEdge(
+            top = Offset(1_000f, 0f),
+            bottom = Offset(1_000f, 1_600f)
+        )
+        assertTrue(isRenderablePaperCurlFrame(1_000f, 1_600f, validEdge))
+        assertFalse(isRenderablePaperCurlFrame(0f, 1_600f, validEdge))
+        assertFalse(isRenderablePaperCurlFrame(1_000f, 0f, validEdge))
+        assertFalse(
+            isRenderablePaperCurlFrame(
+                1_000f,
+                1_600f,
+                validEdge.copy(top = Offset(Float.NaN, 0f))
+            )
+        )
+    }
+
+    @Test
     fun `paper line intersection rejects nearly parallel geometry before coordinates explode`() {
         val intersection = paperLineIntersection(
             line1a = Offset(0f, 0f),
