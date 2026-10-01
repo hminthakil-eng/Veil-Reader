@@ -134,10 +134,15 @@ internal class SlidePageState {
         active = false
     }
 
-    fun dispose() {
-        clearImmediately()
+    fun releaseBufferIfIdle() {
+        if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
+    }
+
+    fun dispose() {
+        clearImmediately()
+        releaseBufferIfIdle()
     }
 
     private fun capture(view: View): Bitmap? =
