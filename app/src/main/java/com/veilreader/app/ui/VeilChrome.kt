@@ -293,11 +293,13 @@ fun VeilAnimatedTabHost(
 fun VeilBottomDock(
     selected: VeilTab,
     onSelect: (VeilTab) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tabs: List<VeilTab> = VeilTab.entries
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     val shape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)
+    val renderedTabs = tabs.ifEmpty { listOf(VeilTab.READING) }
 
     Box(
         modifier = modifier
@@ -348,7 +350,7 @@ fun VeilBottomDock(
                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                VeilTab.entries.forEach { tab ->
+                renderedTabs.forEach { tab ->
                     VeilDockItem(
                         tab = tab,
                         selected = selected == tab,
@@ -446,6 +448,17 @@ private fun VeilNavigationLabel(
     )
 }
 
+internal fun visibleVeilTabs(gameVisible: Boolean): List<VeilTab> =
+    if (gameVisible) {
+        VeilTab.entries
+    } else {
+        listOf(
+            VeilTab.READING,
+            VeilTab.LIBRARY,
+            VeilTab.PROFILE
+        )
+    }
+
 internal fun navigationRailWidthDp(fontScale: Float): Int {
     val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
     return if (safeScale >= 1.6f) 112 else 88
@@ -455,12 +468,14 @@ internal fun navigationRailWidthDp(fontScale: Float): Int {
 fun VeilNavigationRail(
     selected: VeilTab,
     onSelect: (VeilTab) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    tabs: List<VeilTab> = VeilTab.entries
 ) {
     val highContrast = LocalVeilHighContrast.current
     val accent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
     val fontScale = LocalConfiguration.current.fontScale
     val railWidth = navigationRailWidthDp(fontScale).dp
+    val renderedTabs = tabs.ifEmpty { listOf(VeilTab.READING) }
     Surface(
         modifier = modifier
             .fillMaxHeight()
@@ -484,7 +499,7 @@ fun VeilNavigationRail(
                 modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).selectableGroup(),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
-                VeilTab.entries.forEach { tab ->
+                renderedTabs.forEach { tab ->
                     val isSelected = selected == tab
                     val foreground = if (isSelected) {
                         accent
