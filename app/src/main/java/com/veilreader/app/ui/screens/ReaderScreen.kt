@@ -2553,7 +2553,7 @@ fun ReaderScreen(
 
     if (showAppearance) {
         Dialog(
-            onDismissRequest = ::closeAppearanceAfterRendererSettles,
+            onDismissRequest = { closeAppearanceAfterRendererSettles() },
             properties = DialogProperties(
                 dismissOnBackPress = true,
                 dismissOnClickOutside = false,
