@@ -505,29 +505,31 @@ class ReaderPdfReliabilityInstrumentedTest {
         SystemClock.sleep(500)
     }
 
-    private fun currentPdfLayoutLabel(): String {
-        val page = appString(R.string.pdf_paginated_layout)
-        val scroll = appString(R.string.pdf_continuous_scroll)
-        val node = waitForNode("selected PDF layout") {
-            val description = it.contentDescription?.toString().orEmpty()
-            it.isCheckable &&
-                !it.isClickable &&
-                (description == page || description == scroll)
-        }
-        return try {
-            node.contentDescription.toString()
-        } finally {
-            node.recycleSafely()
-        }
-    }
+    private fun currentPdfLayoutLabel(): String =
+        waitForSelectedPdfLayoutLabel()
 
-    private fun waitForPdfLayoutLabel(excluding: String): String {
+    private fun waitForPdfLayoutLabel(excluding: String): String =
+        waitForSelectedPdfLayoutLabel(excluding = excluding)
+
+    /**
+     * Compose exposes PdfLayoutChoice through selectable(role = RadioButton): the accessibility
+     * node is intentionally clickable, checkable, and checked only for the selected choice.
+     *
+     * Keep this instrumentation contract on public accessibility semantics. In particular, do not
+     * depend on whether Compose merges descendants or on a selected node being non-clickable; those
+     * are implementation details and previously caused this gate to time out before it could test
+     * the actual PDF layout transition.
+     */
+    private fun waitForSelectedPdfLayoutLabel(excluding: String? = null): String {
         val page = appString(R.string.pdf_paginated_layout)
         val scroll = appString(R.string.pdf_continuous_scroll)
-        val node = waitForNode("changed selected PDF layout") {
+        val node = waitForNode(
+            if (excluding == null) "selected PDF layout" else "changed selected PDF layout"
+        ) {
             val description = it.contentDescription?.toString().orEmpty()
-            it.isCheckable &&
-                !it.isClickable &&
+            it.isVisibleToUser &&
+                it.isCheckable &&
+                it.isChecked &&
                 (description == page || description == scroll) &&
                 description != excluding
         }
