@@ -315,6 +315,15 @@ class ReaderChromePolicyTest {
 
 
     @Test
+    fun `reader fragment tag changes for a fresh session of the same book`() {
+        val first = readerFragmentTag("book-42", "session-a")
+        val second = readerFragmentTag("book-42", "session-b")
+
+        assertEquals("reader-book-42-session-a", first)
+        assertFalse(first == second)
+    }
+
+    @Test
     fun `Reader context control matches publication surface`() {
         assertEquals(
             ReaderContextControl.APPEARANCE,
