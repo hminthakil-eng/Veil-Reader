@@ -327,6 +327,11 @@ fun ReaderScreen(
         stringResource(R.string.reader_image_viewer_failed)
     val appearanceApplyFailedMessage =
         stringResource(R.string.reader_appearance_apply_failed)
+    val boundaryBeginningMessage =
+        stringResource(R.string.reader_boundary_beginning)
+    val boundaryEndMessage =
+        stringResource(R.string.reader_boundary_end)
+    var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
     var paperInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlInputListener?>(null)
@@ -391,6 +396,18 @@ fun ReaderScreen(
         boundaryPulseSide = side
         boundaryPulseSerial += 1
         onSensoryEvent(VeilSensoryEvent.BOUNDARY)
+        if (touchExplorationEnabled) {
+            val progression =
+                (navigator as? OverflowableNavigator)
+                    ?.overflow
+                    ?.value
+                    ?.readingProgression
+                    ?: ReadingProgression.LTR
+            readerMessage = when (readerBoundaryKind(side, progression)) {
+                ReaderBoundaryKind.BEGINNING -> boundaryBeginningMessage
+                ReaderBoundaryKind.END -> boundaryEndMessage
+            }
+        }
     }
 
     LaunchedEffect(boundaryPulseSerial, opened.book.id, readerSessionInstanceId) {
@@ -613,7 +630,6 @@ fun ReaderScreen(
     val bookPassageVisits by bookPassageVisitsFlow.collectAsStateWithLifecycle(
         initialValue = library.passageVisitsFor(opened.book.id)
     )
-    var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     var footnote by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<ReaderFootnote?>(null)
     }
@@ -2797,6 +2813,21 @@ fun ReaderScreen(
 
 internal fun shouldAnimateReaderJump(reducedMotion: Boolean): Boolean =
     !reducedMotion
+
+internal enum class ReaderBoundaryKind {
+    BEGINNING,
+    END
+}
+
+internal fun readerBoundaryKind(
+    side: PaperCurlSide,
+    progression: ReadingProgression
+): ReaderBoundaryKind =
+    when (paperTurnDirectionFor(side, progression)) {
+        PaperTurnDirection.BACKWARD -> ReaderBoundaryKind.BEGINNING
+        PaperTurnDirection.FORWARD -> ReaderBoundaryKind.END
+    }
+
 
 internal fun directionalReaderCommitEvent(
     format: BookFormat,
