@@ -239,10 +239,15 @@ internal class PaperCurlState {
         edge = PaperCurlEdge(Offset.Zero, Offset.Zero)
     }
 
-    fun dispose() {
-        clearImmediately()
+    fun releaseBufferIfIdle() {
+        if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
+    }
+
+    fun dispose() {
+        clearImmediately()
+        releaseBufferIfIdle()
     }
     private suspend fun animateTo(
         target: PaperCurlEdge,
