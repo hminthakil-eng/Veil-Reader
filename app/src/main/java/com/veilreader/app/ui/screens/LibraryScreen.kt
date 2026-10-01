@@ -491,15 +491,6 @@ fun LibraryScreen(
             }
         }
 
-        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
-            MangaLibraryPortal(
-                localComicCount = books.count {
-                    it.format == com.veilreader.app.domain.BookFormat.COMIC
-                },
-                onOpenManga = onOpenManga
-            )
-        }
-
         item(key = "library:search", span = { GridItemSpan(maxLineSpan) }) {
             OutlinedTextField(
                 value = query,
@@ -606,6 +597,15 @@ fun LibraryScreen(
                     )
                 }
             }
+        }
+
+        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
+            MangaLibraryPortal(
+                localComicCount = books.count {
+                    it.format == com.veilreader.app.domain.BookFormat.COMIC
+                },
+                onOpenManga = onOpenManga
+            )
         }
 
         item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
@@ -2374,18 +2374,21 @@ private fun LibraryShelfCard(
     Surface(
         onClick = onClick,
         modifier = Modifier
-            .width(142.dp)
-            .heightIn(min = 78.dp),
+            .width(138.dp)
+            .heightIn(min = 56.dp),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.62f)
+            VeilPalette.MoonCrimson.copy(alpha = 0.34f)
         } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.48f)
+            VeilPalette.Ink.copy(alpha = 0.58f)
         },
         border = BorderStroke(
             1.dp,
-            if (selected) VeilPalette.Brass.copy(alpha = 0.88f)
-            else VeilPalette.Brass.copy(alpha = 0.30f)
+            if (selected) {
+                VeilPalette.Brass.copy(alpha = 0.92f)
+            } else {
+                VeilPalette.BorderDark.copy(alpha = 0.82f)
+            }
         ),
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
@@ -2394,37 +2397,84 @@ private fun LibraryShelfCard(
             Modifier
                 .fillMaxWidth()
                 .background(
-                    Brush.verticalGradient(
+                    Brush.horizontalGradient(
                         listOf(
-                            VeilPalette.RaisedIron.copy(alpha = if (selected) 0.44f else 0.26f),
+                            if (selected) {
+                                VeilPalette.MoonCrimson.copy(alpha = 0.16f)
+                            } else {
+                                VeilPalette.RaisedIron.copy(alpha = 0.18f)
+                            },
                             Color.Transparent
                         )
                     )
                 )
-                .padding(horizontal = VeilSpacing.sm, vertical = 10.dp)
+                .padding(horizontal = 10.dp, vertical = 8.dp)
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+            if (selected) {
+                Box(
+                    Modifier
+                        .align(Alignment.CenterStart)
+                        .width(2.dp)
+                        .fillMaxHeight()
+                        .background(VeilPalette.Brass.copy(alpha = 0.84f))
+                )
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = if (selected) 7.dp else 0.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    count.toString().padStart(2, '0'),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Brass
-                )
-                Text(
-                    title,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = if (selected) VeilPalette.Moon
-                    else MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .border(
+                            BorderStroke(
+                                1.dp,
+                                VeilPalette.Brass.copy(
+                                    alpha = if (selected) 0.70f else 0.30f
+                                )
+                            ),
+                            MaterialTheme.shapes.extraSmall
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        count.toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (selected) {
+                            VeilPalette.Moon
+                        } else {
+                            VeilPalette.Brass.copy(alpha = 0.82f)
+                        }
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = if (selected) {
+                            VeilPalette.Moon
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        subtitle,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
