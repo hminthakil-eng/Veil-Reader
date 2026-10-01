@@ -1281,6 +1281,95 @@ private fun DeleteBookDialog(
     }
 }
 
+@Composable
+private fun BookDetailEyebrow(
+    text: String,
+    modifier: Modifier = Modifier
+) {
+    val arabicScript = usesArabicScript(text)
+    Text(
+        text = if (arabicScript) text else text.uppercase(Locale.ROOT),
+        modifier = modifier,
+        style = if (arabicScript) {
+            MaterialTheme.typography.labelSmall
+        } else {
+            MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp)
+        },
+        color = VeilPalette.Brass
+    )
+}
+
+@Composable
+private fun BookDetailArtifactStand(
+    book: Book,
+    artifactMemory: BookArtifactMemory?,
+    modifier: Modifier = Modifier
+) {
+    val artifact = bookArtifactState(book, memory = artifactMemory)
+    val fieldColor = when {
+        artifact.recentlyOpened -> VeilPalette.Spirit
+        artifact.finished -> VeilPalette.Brass
+        artifact.favorite -> VeilPalette.Brass.copy(alpha = 0.92f)
+        else -> VeilPalette.Mist
+    }
+
+    Box(
+        modifier = modifier.background(
+            Brush.radialGradient(
+                listOf(
+                    fieldColor.copy(alpha = 0.16f),
+                    VeilPalette.Ink.copy(alpha = 0.04f),
+                    Color.Transparent
+                )
+            )
+        ),
+        contentAlignment = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(0.82f)
+                .height(12.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            fieldColor.copy(alpha = 0.10f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(0.72f)
+                .height(1.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(
+                            Color.Transparent,
+                            VeilPalette.Brass.copy(alpha = 0.72f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
+        BookCover(
+            title = book.title,
+            subtitle = book.author.takeIf { it.isNotBlank() },
+            imagePath = book.coverCachePath,
+            artifact = artifact,
+            focusArtifact = true,
+            modifier = Modifier
+                .fillMaxHeight(0.86f)
+                .aspectRatio(0.69f)
+                .align(Alignment.TopCenter)
+                .offset(y = 7.dp)
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookDetailDestination(
@@ -1779,10 +1868,8 @@ private fun BookDetailFragments(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
-                Text(
-                    stringResource(R.string.book_detail_preserved_memory),
-                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
-                    color = VeilPalette.Brass
+                BookDetailEyebrow(
+                    text = stringResource(R.string.book_detail_preserved_memory)
                 )
                 Text(
                     stringResource(R.string.book_detail_preserved_fragments),
@@ -1876,18 +1963,16 @@ private fun BookDetailIdentity(
         )
 
         Text(
-            if (book.author.isBlank()) {
+            book.author.trim().ifBlank {
                 stringResource(R.string.common_unknown_author)
-            } else {
-                book.author
             },
             style = MaterialTheme.typography.bodyMedium,
             color = VeilPalette.Moon.copy(alpha = 0.76f),
-            maxLines = 2,
+            maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
 
-        book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+        book.seriesName?.trim()?.takeIf { it.isNotBlank() }?.let { series ->
             Text(
                 buildString {
                     append(series)
@@ -1900,11 +1985,16 @@ private fun BookDetailIdentity(
             )
         }
 
+        val recordLabel = localizedBookArtifactRecordLabel(
+            bookArtifactState(book, memory = artifactMemory)
+        )
         Text(
-            localizedBookArtifactRecordLabel(
-                bookArtifactState(book, memory = artifactMemory)
-            ),
-            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp),
+            recordLabel,
+            style = if (usesArabicScript(recordLabel)) {
+                MaterialTheme.typography.labelSmall
+            } else {
+                MaterialTheme.typography.labelSmall.copy(letterSpacing = 0.90.sp)
+            },
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
 
@@ -1973,22 +2063,19 @@ private fun localizedBookArtifactRecordLabel(state: BookArtifactState): String {
 
 @Composable
 private fun BookDetailFact(label: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-        verticalAlignment = Alignment.Top
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(0.38f)
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilPalette.Brass.copy(alpha = 0.72f)
         )
         Text(
             value,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(0.62f)
+            color = MaterialTheme.colorScheme.onSurface
         )
     }
 }
