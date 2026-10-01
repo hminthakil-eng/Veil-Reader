@@ -20,6 +20,7 @@ internal class VeilDirectionalNavigationInputListener(
     private val isAnimated: () -> Boolean,
     private val isEnabled: () -> Boolean = { true },
     private val isTapNavigationEnabled: () -> Boolean = { true },
+    private val onInteraction: () -> Unit = {},
     private val onNavigationCommitted: () -> Unit = {},
     private val onBoundaryHit: (PaperCurlSide) -> Unit = {}
 ) : InputListener {
@@ -92,6 +93,7 @@ internal class VeilDirectionalNavigationInputListener(
         side: PaperCurlSide,
         block: () -> Boolean
     ): Boolean {
+        onInteraction()
         val committed = block()
         if (committed) {
             onNavigationCommitted()
