@@ -31,6 +31,25 @@ import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.max
 
+internal data class PaperCurlMaterialAge(
+    val backPageContentAlpha: Float,
+    val backPageShadeAlpha: Float,
+    val contactShadowAlpha: Float,
+    val edgeThicknessAlpha: Float,
+    val backsideFiberAlpha: Float
+)
+
+internal fun paperCurlMaterialAge(patina: Float): PaperCurlMaterialAge {
+    val age = patina.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.72f
+    return PaperCurlMaterialAge(
+        backPageContentAlpha = 0.085f + age * 0.035f,
+        backPageShadeAlpha = 0.13f + age * 0.07f,
+        contactShadowAlpha = 0.17f + age * 0.05f,
+        edgeThicknessAlpha = 0.16f + age * 0.08f,
+        backsideFiberAlpha = 0.018f + age * 0.047f
+    )
+}
+
 internal data class PaperCurlVisualConfig(
     val backPageColor: Color,
     val backPageContentAlpha: Float = 0.11f,
