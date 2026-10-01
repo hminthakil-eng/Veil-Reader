@@ -4,8 +4,11 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import org.readium.r2.navigator.input.DragEvent
 import org.readium.r2.navigator.input.InputListener
+import org.readium.r2.navigator.input.InputModifier
+import org.readium.r2.navigator.input.Key
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
+import org.readium.r2.navigator.preferences.ReadingProgression
 import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
@@ -40,6 +43,53 @@ internal fun readerKeyRoute(mode: ReaderInteractionMode): ReaderKeyRoute =
         ReaderInteractionMode.NAVIGATION,
         ReaderInteractionMode.CHROME_PRIORITY -> ReaderKeyRoute.NAVIGATION
     }
+
+internal data class ReaderKeyTurn(
+    val direction: PaperTurnDirection,
+    val side: PaperCurlSide
+)
+
+internal fun readerKeyTurn(
+    key: Key,
+    modifiers: Set<InputModifier>,
+    progression: ReadingProgression
+): ReaderKeyTurn? {
+    val shiftSpace =
+        key == Key.Space && modifiers == setOf(InputModifier.Shift)
+    if (modifiers.isNotEmpty() && !shiftSpace) return null
+
+    return when (key) {
+        Key.ArrowUp,
+        Key.PageUp -> ReaderKeyTurn(
+            direction = PaperTurnDirection.BACKWARD,
+            side = paperTurnSideFor(PaperTurnDirection.BACKWARD, progression)
+        )
+        Key.ArrowDown,
+        Key.PageDown -> ReaderKeyTurn(
+            direction = PaperTurnDirection.FORWARD,
+            side = paperTurnSideFor(PaperTurnDirection.FORWARD, progression)
+        )
+        Key.Space -> {
+            val direction =
+                if (shiftSpace) PaperTurnDirection.BACKWARD
+                else PaperTurnDirection.FORWARD
+            ReaderKeyTurn(
+                direction = direction,
+                side = paperTurnSideFor(direction, progression)
+            )
+        }
+        Key.ArrowLeft -> ReaderKeyTurn(
+            direction = paperTurnDirectionFor(PaperCurlSide.LEFT, progression),
+            side = PaperCurlSide.LEFT
+        )
+        Key.ArrowRight -> ReaderKeyTurn(
+            direction = paperTurnDirectionFor(PaperCurlSide.RIGHT, progression),
+            side = PaperCurlSide.RIGHT
+        )
+        else -> null
+    }
+}
+
 
 internal fun readerInteractionMode(
     selectionModeActive: Boolean,
