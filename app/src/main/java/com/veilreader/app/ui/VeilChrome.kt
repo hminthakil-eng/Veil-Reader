@@ -415,7 +415,7 @@ private fun VeilDockItem(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                tab.label,
+                veilTabLabel(tab),
                 style = MaterialTheme.typography.labelMedium.copy(
                     fontSize = 9.2.sp,
                     letterSpacing = 0.34.sp,
@@ -480,7 +480,7 @@ fun VeilNavigationRail(
                         VeilTabIcon(tab, foreground, Modifier.size(22.dp))
                         Spacer(Modifier.height(5.dp))
                         Text(
-                            tab.label,
+                            veilTabLabel(tab),
                             style = MaterialTheme.typography.labelMedium.copy(
                                 fontSize = 9.5.sp,
                                 letterSpacing = 0.36.sp
@@ -646,6 +646,18 @@ private fun GrayfogRule(modifier: Modifier = Modifier) {
             )
     )
 }
+
+@Composable
+private fun veilTabLabel(tab: VeilTab): String =
+    stringResource(
+        when (tab) {
+            VeilTab.READING -> R.string.nav_reading
+            VeilTab.LIBRARY -> R.string.nav_library
+            VeilTab.CASTLE -> R.string.nav_castle
+            VeilTab.PATH -> R.string.nav_path
+            VeilTab.PROFILE -> R.string.nav_profile
+        }
+    )
 
 @Composable
 private fun VeilTabIcon(
