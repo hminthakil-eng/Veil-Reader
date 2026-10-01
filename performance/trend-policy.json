@@ -6,37 +6,37 @@
     "smoke": [
       {
         "id": "startup_ttid_median",
-        "warnRegressionPercent": 15.0
+        "warnRegressionPercent": 15
       },
       {
-        "id": "reader_frame_overrun_p95",
-        "warnIncrease": 10.0
+        "id": "reader_gfx_frame_p95",
+        "warnIncrease": 20
       },
       {
-        "id": "reader_frame_overrun_p99",
-        "warnIncrease": 20.0
+        "id": "reader_gfx_frame_p99",
+        "warnIncrease": 40
       }
     ],
     "physical": [
       {
         "id": "startup_ttid_median",
-        "warnRegressionPercent": 5.0
+        "warnRegressionPercent": 5
       },
       {
         "id": "reader_frame_overrun_p95",
-        "warnIncrease": 1.0
+        "warnIncrease": 1
       },
       {
         "id": "reader_frame_overrun_p99",
-        "warnIncrease": 2.0
+        "warnIncrease": 2
       },
       {
         "id": "reader_cpu_frame_p95",
-        "warnRegressionPercent": 5.0
+        "warnRegressionPercent": 5
       },
       {
         "id": "reader_cpu_frame_p99",
-        "warnRegressionPercent": 8.0
+        "warnRegressionPercent": 8
       }
     ]
   }
