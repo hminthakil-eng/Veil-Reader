@@ -2,7 +2,6 @@ package com.veilreader.app.ui.screens
 
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.InputListener
-import org.readium.r2.navigator.input.Key
 import org.readium.r2.navigator.input.KeyEvent
 import org.readium.r2.navigator.input.TapEvent
 import org.readium.r2.navigator.preferences.ReadingProgression
@@ -47,21 +46,20 @@ internal class VeilDirectionalNavigationInputListener(
 
     override fun onKey(event: KeyEvent): Boolean {
         if (!isEnabled()) return false
-        if (event.type != KeyEvent.Type.Down || event.modifiers.isNotEmpty()) {
-            return false
-        }
+        if (event.type != KeyEvent.Type.Down) return false
 
-        val progression = navigator.overflow.value.readingProgression
-        return when (event.key) {
-            Key.ArrowUp -> navigate(
-                side = paperTurnSideFor(PaperTurnDirection.BACKWARD, progression)
-            ) { navigator.goBackward(animated = isAnimated()) }
-            Key.ArrowDown, Key.Space -> navigate(
-                side = paperTurnSideFor(PaperTurnDirection.FORWARD, progression)
-            ) { navigator.goForward(animated = isAnimated()) }
-            Key.ArrowLeft -> goLeft()
-            Key.ArrowRight -> goRight()
-            else -> false
+        val turn = readerKeyTurn(
+            key = event.key,
+            modifiers = event.modifiers,
+            progression = navigator.overflow.value.readingProgression
+        ) ?: return false
+        return navigate(turn.side) {
+            when (turn.direction) {
+                PaperTurnDirection.FORWARD ->
+                    navigator.goForward(animated = isAnimated())
+                PaperTurnDirection.BACKWARD ->
+                    navigator.goBackward(animated = isAnimated())
+            }
         }
     }
 
