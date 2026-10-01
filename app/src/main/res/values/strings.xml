@@ -202,6 +202,7 @@
     <string name="reader_image_viewer_close">Close</string>
     <string name="reader_image_viewer_hint">Pinch to zoom · drag to inspect</string>
     <string name="reader_image_viewer_failed">Could not open this illustration.</string>
+    <string name="reader_appearance_apply_failed">The reading appearance could not be applied right now.</string>
     <string name="reader_footnote_eyebrow">MARGIN NOTE</string>
     <string name="reader_footnote_title">Footnote</string>
     <string name="reader_footnote_close">Close</string>
