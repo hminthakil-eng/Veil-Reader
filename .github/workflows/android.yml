@@ -71,7 +71,13 @@ jobs:
         run: gradle :app:testDebugUnitTest --stacktrace
 
       - name: Verify committed Room schema
-        run: git diff --exit-code -- app/schemas/
+        run: |
+          schema_status="$(git status --porcelain --untracked-files=all -- app/schemas/)"
+          if [ -n "$schema_status" ]; then
+            echo "::error::Room schema history is not fully committed."
+            printf '%s\n' "$schema_status"
+            exit 1
+          fi
 
       - name: Android lint
         run: gradle :app:lintDebug --stacktrace
