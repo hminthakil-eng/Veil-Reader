@@ -55,7 +55,6 @@ import com.veilreader.app.domain.ArchiveDepth
 import com.veilreader.app.domain.ArchiveWing
 import com.veilreader.app.domain.ArchiveWingKind
 import com.veilreader.app.domain.Book
-import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookArchiveMemory
 import com.veilreader.app.domain.BookArtifactMemory
 import com.veilreader.app.domain.BookMetadataUpdate
@@ -1492,7 +1491,7 @@ private fun BookDetailDestination(
                         BookDetailEyebrow(
                             text = stringResource(
                                 R.string.book_detail_artifact_chamber,
-                                localizedBookFormat(book.format)
+                                localizedBookFormatLabel(book.format)
                             ),
                             modifier = Modifier.weight(1f)
                         )
@@ -1698,7 +1697,7 @@ private fun BookDetailDestination(
                     BookDetailEyebrow(
                         text = stringResource(R.string.book_detail_archive_history)
                     )
-                    BookDetailFact(stringResource(R.string.book_detail_format), localizedBookFormat(book.format))
+                    BookDetailFact(stringResource(R.string.book_detail_format), localizedBookFormatLabel(book.format))
                     book.language?.takeIf { it.isNotBlank() }?.let {
                         BookDetailFact(stringResource(R.string.book_detail_language), it)
                     }
@@ -2025,7 +2024,7 @@ private fun BookDetailIdentity(
                 border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.32f))
             ) {
                 Text(
-                    localizedBookFormat(book.format),
+                    localizedBookFormatLabel(book.format),
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
                     style = MaterialTheme.typography.labelSmall,
                     color = VeilPalette.Moon.copy(alpha = 0.84f)
@@ -2049,17 +2048,6 @@ private fun BookDetailIdentity(
         }
     }
 }
-
-@Composable
-private fun localizedBookFormat(format: BookFormat): String =
-    stringResource(
-        when (format) {
-            BookFormat.EPUB -> R.string.book_format_epub
-            BookFormat.PDF -> R.string.book_format_pdf
-            BookFormat.AUDIO -> R.string.book_format_audio
-            BookFormat.COMIC -> R.string.book_format_comic
-        }
-    )
 
 @Composable
 private fun localizedBookArtifactRecordLabel(state: BookArtifactState): String {
@@ -3350,7 +3338,7 @@ private fun BookLibraryRow(
                         color = VeilPalette.Brass.copy(alpha = 0.84f)
                     )
                     Text(
-                        localizedBookFormat(book.format),
+                        localizedBookFormatLabel(book.format),
                         style = MaterialTheme.typography.labelSmall,
                         color = VeilPalette.Mist.copy(alpha = 0.62f)
                     )
@@ -3682,7 +3670,7 @@ private fun LibraryShelvesView(
                                     when {
                                         book.finished -> stringResource(R.string.book_detail_finished)
                                         book.progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(book.progress.coerceIn(0f, 1f)))
-                                        else -> localizedBookFormat(book.format)
+                                        else -> localizedBookFormatLabel(book.format)
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = VeilPalette.Brass.copy(alpha = 0.82f),
