@@ -259,6 +259,9 @@ fun ReaderScreen(
     var activeFixedLayoutSpread by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(fixedLayoutSpread)
     }
+    var presentedFixedLayoutSpread by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(fixedLayoutSpread)
+    }
     LaunchedEffect(fixedLayoutSpread, opened.book.id, readerSessionInstanceId) {
         if (activeFixedLayoutSpread != fixedLayoutSpread) {
             activeFixedLayoutSpread = fixedLayoutSpread
@@ -275,6 +278,9 @@ fun ReaderScreen(
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(effectiveReaderAppearance)
+    }
+    var acceptedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(readerAppearance)
     }
     var rendererPreferencesSettling by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(false)
@@ -1559,17 +1565,26 @@ fun ReaderScreen(
         val nav = navigator
         if (nav == null) {
             presentedReaderAppearance = effectiveReaderAppearance
+            acceptedReaderAppearance = readerAppearance
+            presentedFixedLayoutSpread = activeFixedLayoutSpread
             rendererPreferencesSettling = false
             readerModeHandoffState.clearImmediately()
             return@LaunchedEffect
         }
 
         val previousPresented = presentedReaderAppearance
+        val previousAccepted = acceptedReaderAppearance
+        val previousPresentedSpread = presentedFixedLayoutSpread
+        val requestedSource = readerAppearance
         val requested = effectiveReaderAppearance
+        val requestedSpread = activeFixedLayoutSpread
+        val fixedLayoutSpreadChanged =
+            fixedLayoutPublication && previousPresentedSpread != requestedSpread
         val captureModeHandoff = shouldCaptureReaderModeHandoff(
             format = opened.format,
             previousMode = previousPresented.navigationMode,
-            requestedMode = requested.navigationMode
+            requestedMode = requested.navigationMode,
+            fixedLayoutSpreadChanged = fixedLayoutSpreadChanged
         )
         val epubRelayoutRisk =
             opened.format == BookFormat.EPUB &&
@@ -1641,12 +1656,19 @@ fun ReaderScreen(
                 }
             }
 
+            if (fixedLayoutSpreadChanged) {
+                recordLocator(
+                    nav.currentLocator.value,
+                    ReaderLocatorEvent.FINAL_SNAPSHOT
+                )
+            }
+
             when (opened.format) {
                 BookFormat.EPUB ->
                     (nav as? EpubNavigatorFragment)
                         ?.submitPreferences(
                             requested.toEpubPreferences(
-                                fixedLayoutSpread = activeFixedLayoutSpread
+                                fixedLayoutSpread = requestedSpread
                             )
                         )
 
@@ -1698,8 +1720,17 @@ fun ReaderScreen(
                 }
             }
 
+            if (fixedLayoutSpreadChanged) {
+                recordLocator(
+                    nav.currentLocator.value,
+                    ReaderLocatorEvent.FINAL_SNAPSHOT
+                )
+            }
+
             // Switch Veil-owned visuals/input only after the renderer has had time to paint.
             presentedReaderAppearance = requested
+            acceptedReaderAppearance = requestedSource
+            presentedFixedLayoutSpread = requestedSpread
             if (captured) {
                 readerModeHandoffState.release(reducedMotion)
             }
@@ -1718,6 +1749,15 @@ fun ReaderScreen(
             pendingEpubRelayoutAnchor = null
             readerModeHandoffState.clearImmediately()
             presentedReaderAppearance = previousPresented
+            acceptedReaderAppearance = previousAccepted
+            presentedFixedLayoutSpread = previousPresentedSpread
+            if (requestedSource != previousAccepted) {
+                onReaderAppearanceChange(previousAccepted)
+            }
+            if (requestedSpread != previousPresentedSpread) {
+                activeFixedLayoutSpread = previousPresentedSpread
+                onFixedLayoutSpreadChange(previousPresentedSpread)
+            }
             readerMessage = appearanceApplyFailedMessage
             ReaderTrace.event(
                 "appearance_submit_failed",
