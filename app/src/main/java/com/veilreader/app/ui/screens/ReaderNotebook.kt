@@ -547,10 +547,16 @@ fun ReaderNotebook(
                                             color = VeilPalette.Mist.copy(alpha = 0.52f)
                                         )
                                     }
-                                    Text(
-                                        "“${highlight.quote}”",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = VeilPalette.Moon
+                                    highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
+                                        Text(
+                                            "“$quote”",
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            color = VeilPalette.Moon
+                                        )
+                                    } ?: Text(
+                                        stringResource(R.string.reader_notebook_note_only),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = VeilPalette.Brass.copy(alpha = 0.82f)
                                     )
                                     if (highlight.note.isNotBlank()) {
                                         Text(
@@ -724,13 +730,20 @@ fun ReaderNotebook(
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {
-                                Text(
-                                    "“${highlight.quote}”",
+                                highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
+                                    Text(
+                                        "“$quote”",
+                                        modifier = Modifier.padding(12.dp),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = VeilPalette.Moon.copy(alpha = 0.78f),
+                                        maxLines = 4,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                } ?: Text(
+                                    stringResource(R.string.reader_notebook_note_only),
                                     modifier = Modifier.padding(12.dp),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = VeilPalette.Moon.copy(alpha = 0.78f),
-                                    maxLines = 4,
-                                    overflow = TextOverflow.Ellipsis
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = VeilPalette.Brass.copy(alpha = 0.82f)
                                 )
                             }
                             OutlinedTextField(
@@ -864,12 +877,18 @@ fun ReaderNotebook(
                             style = MaterialTheme.typography.titleLarge,
                             color = VeilPalette.Moon
                         )
-                        Text(
-                            "“${highlight.quote}”",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = VeilPalette.Moon.copy(alpha = 0.72f),
-                            maxLines = 3,
-                            overflow = TextOverflow.Ellipsis
+                        highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
+                            Text(
+                                "“$quote”",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = VeilPalette.Moon.copy(alpha = 0.72f),
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        } ?: Text(
+                            stringResource(R.string.reader_notebook_note_only),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = VeilPalette.Brass.copy(alpha = 0.82f)
                         )
                         Text(
                             stringResource(
