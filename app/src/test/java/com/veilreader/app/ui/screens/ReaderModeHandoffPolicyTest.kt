@@ -27,6 +27,26 @@ class ReaderModeHandoffPolicyTest {
     }
 
     @Test
+    fun `fixed-layout spread change captures continuity even when navigation mode is unchanged`() {
+        assertTrue(
+            shouldCaptureReaderModeHandoff(
+                format = BookFormat.EPUB,
+                previousMode = ReaderNavigationMode.PAGED,
+                requestedMode = ReaderNavigationMode.PAGED,
+                fixedLayoutSpreadChanged = true
+            )
+        )
+        assertFalse(
+            shouldCaptureReaderModeHandoff(
+                format = BookFormat.PDF,
+                previousMode = ReaderNavigationMode.PAGED,
+                requestedMode = ReaderNavigationMode.PAGED,
+                fixedLayoutSpreadChanged = true
+            )
+        )
+    }
+
+    @Test
     fun `same mode and non EPUB formats do not allocate a handoff snapshot`() {
         assertFalse(
             shouldCaptureReaderModeHandoff(
