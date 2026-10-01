@@ -324,6 +324,42 @@ class ReaderChromePolicyTest {
     }
 
     @Test
+    fun `viewport resize cancels only an active page preview after initial measurement`() {
+        assertFalse(
+            shouldCancelReaderPreviewForViewportChange(
+                previousSize = IntSize.Zero,
+                newSize = IntSize(1_080, 2_400),
+                paperPreviewActive = true,
+                slidePreviewActive = false
+            )
+        )
+        assertTrue(
+            shouldCancelReaderPreviewForViewportChange(
+                previousSize = IntSize(1_080, 2_400),
+                newSize = IntSize(2_400, 1_080),
+                paperPreviewActive = true,
+                slidePreviewActive = false
+            )
+        )
+        assertTrue(
+            shouldCancelReaderPreviewForViewportChange(
+                previousSize = IntSize(1_080, 2_400),
+                newSize = IntSize.Zero,
+                paperPreviewActive = false,
+                slidePreviewActive = true
+            )
+        )
+        assertFalse(
+            shouldCancelReaderPreviewForViewportChange(
+                previousSize = IntSize(1_080, 2_400),
+                newSize = IntSize(2_400, 1_080),
+                paperPreviewActive = false,
+                slidePreviewActive = false
+            )
+        )
+    }
+
+    @Test
     fun `reader material viewport rejects transient zero or non finite resize frames`() {
         assertTrue(isRenderableReaderViewport(1_080f, 2_400f))
         assertFalse(isRenderableReaderViewport(0f, 2_400f))
