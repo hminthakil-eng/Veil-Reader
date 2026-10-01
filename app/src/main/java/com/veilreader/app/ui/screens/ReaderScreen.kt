@@ -97,6 +97,7 @@ import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
+import com.veilreader.app.ui.reader.readerObservedLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
@@ -1257,20 +1258,16 @@ fun ReaderScreen(
 
                 val continuousScroll =
                     (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
-                val event = when {
-                    settledNavigation != null ->
-                        ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
-                    viewportRelayoutPending ->
-                        ReaderLocatorEvent.FINAL_SNAPSHOT
-                    else -> navigatorLocatorEvent(
-                        isInitialEmission = initialLocatorPending,
-                        isContinuousScroll = continuousScroll,
-                        isPaperMode =
-                            opened.format == BookFormat.EPUB &&
-                                latestAppearance.value.navigationMode ==
-                                    ReaderNavigationMode.PAPER_CURL
-                    )
-                }
+                val event = readerObservedLocatorEvent(
+                    programmaticNavigationSettled = settledNavigation != null,
+                    viewportRelayoutPending = viewportRelayoutPending,
+                    isInitialEmission = initialLocatorPending,
+                    isContinuousScroll = continuousScroll,
+                    isPaperMode =
+                        opened.format == BookFormat.EPUB &&
+                            latestAppearance.value.navigationMode ==
+                                ReaderNavigationMode.PAPER_CURL
+                )
                 val wasInitialLocator = initialLocatorPending
                 initialLocatorPending = false
                 val commit = readerViewModel.onLocatorUpdate(
