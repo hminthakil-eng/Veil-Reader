@@ -96,6 +96,7 @@ import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.shouldStartReaderLocationJump
+import com.veilreader.app.ui.reader.shouldStartReaderLinkJump
 import com.veilreader.app.ui.reader.readerObservedLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
@@ -1487,19 +1488,27 @@ fun ReaderScreen(
                 onInteraction = ::markReaderNavigationInteraction,
                 onNavigationCommitted = {
                     navigationTransactionGate.reset()
-                    val event = when {
+                    val navigationMode = latestAppearance.value.navigationMode
+                    val sensoryEvent = when {
                         opened.format != BookFormat.EPUB ->
                             VeilSensoryEvent.PAGED_TURN
-                        latestAppearance.value.navigationMode ==
-                            ReaderNavigationMode.SLIDE ->
+                        navigationMode == ReaderNavigationMode.SLIDE ->
                             VeilSensoryEvent.SLIDE_TURN
-                        latestAppearance.value.navigationMode ==
-                            ReaderNavigationMode.PAPER_CURL ->
+                        navigationMode == ReaderNavigationMode.PAPER_CURL ->
                             VeilSensoryEvent.PAGE_TURN
                         else ->
                             VeilSensoryEvent.PAGED_TURN
                     }
-                    onSensoryEvent(event)
+                    onSensoryEvent(sensoryEvent)
+                    directionalReaderCommitEvent(
+                        format = opened.format,
+                        navigationMode = navigationMode
+                    )?.let { locatorEvent ->
+                        recordLocator(
+                            nav.currentLocator.value,
+                            locatorEvent
+                        )
+                    }
                 },
                 onBoundaryHit = { side ->
                     navigationTransactionGate.reset()
@@ -2636,9 +2645,17 @@ fun ReaderScreen(
             },
             onChapter = { link ->
                 val nav = navigator
+                val targetHref = link.href.toString()
                 if (nav == null) {
                     showNotebook = false
                     readerMessage = chapterFailedMessage
+                } else if (
+                    !shouldStartReaderLinkJump(
+                        currentHref = currentLocationHref,
+                        targetHref = targetHref
+                    )
+                ) {
+                    showNotebook = false
                 } else {
                     readerViewModel.onUserInteraction(readerSessionInstanceId)
                     game.rebasePagePacing()
@@ -2765,6 +2782,20 @@ fun ReaderScreen(
 
 internal fun shouldAnimateReaderJump(reducedMotion: Boolean): Boolean =
     !reducedMotion
+
+internal fun directionalReaderCommitEvent(
+    format: BookFormat,
+    navigationMode: ReaderNavigationMode
+): ReaderLocatorEvent? =
+    if (
+        format == BookFormat.EPUB &&
+        navigationMode == ReaderNavigationMode.PAPER_CURL
+    ) {
+        ReaderLocatorEvent.PAPER_COMMIT
+    } else {
+        null
+    }
+
 
 internal fun shouldAwaitReaderAppearanceClose(
     rendererPreferencesSettling: Boolean,
