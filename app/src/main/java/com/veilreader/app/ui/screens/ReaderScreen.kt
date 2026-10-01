@@ -4099,6 +4099,23 @@ private fun ReaderAppearancePreview(
 }
 
 @Composable
+internal fun localizedReaderMotionSummary(appearance: ReaderAppearance): String {
+    if (appearance.readingMode == ReaderReadingMode.SCROLL) {
+        return stringResource(R.string.settings_mode_scroll)
+    }
+
+    val readingMode = stringResource(R.string.settings_mode_paged)
+    val pageTurn = stringResource(
+        when (appearance.pageTurnStyle) {
+            PageTurnStyle.PAPER -> R.string.settings_mode_curl
+            PageTurnStyle.SLIDE -> R.string.settings_mode_slide
+            PageTurnStyle.NONE -> R.string.settings_page_turn_none
+        }
+    )
+    return "$readingMode · $pageTurn"
+}
+
+@Composable
 internal fun localizedPageTurnStyleDescription(style: PageTurnStyle): String =
     stringResource(
         when (style) {
