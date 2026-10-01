@@ -139,6 +139,24 @@ class SettingsStoreInstrumentedTest {
     }
 
     @Test
+    fun gameVisibility_survivesSettingsStoreRecreation_withoutResettingData() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+
+        try {
+            store.setGameVisible(false)
+
+            val immediate = store.settings.first()
+            assertEquals(false, immediate.gameVisible)
+
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(false, recreated.gameVisible)
+        } finally {
+            store.setGameVisible(true)
+        }
+    }
+
+    @Test
     fun malformedSpreadPreferencePayload_failsCalm() {
         assertEquals(emptyMap<String, ReaderFixedLayoutSpread>(), decodeFixedLayoutSpreadOverrides(null))
         assertEquals(emptyMap<String, ReaderFixedLayoutSpread>(), decodeFixedLayoutSpreadOverrides("{bad"))
