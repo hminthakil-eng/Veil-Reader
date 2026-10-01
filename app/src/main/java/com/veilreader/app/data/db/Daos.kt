@@ -120,6 +120,22 @@ interface HighlightDao {
     )
     suspend fun findByBookAndLocator(bookId: String, locatorJson: String): HighlightEntity?
 
+    @Query(
+        """
+        SELECT * FROM highlights
+        WHERE bookId = :bookId
+          AND locatorJson = :locatorJson
+          AND quote = :quote
+        ORDER BY createdAtEpochMs DESC
+        LIMIT 1
+        """
+    )
+    suspend fun findByBookLocatorAndQuote(
+        bookId: String,
+        locatorJson: String,
+        quote: String
+    ): HighlightEntity?
+
     @Query("SELECT * FROM highlights WHERE bookId = :bookId ORDER BY createdAtEpochMs DESC")
     fun observeForBook(bookId: String): Flow<List<HighlightEntity>>
 
