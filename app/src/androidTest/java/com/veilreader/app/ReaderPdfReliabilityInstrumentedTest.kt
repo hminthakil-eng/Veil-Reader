@@ -512,20 +512,19 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForSelectedPdfLayoutLabel(excluding = excluding)
 
     /**
-     * PdfLayoutChoice publishes an explicit localized stateDescription on the same semantics node
-     * as its stable contentDescription. Assert that public accessibility contract instead of
-     * depending on Compose's internal node merging or framework checked/clickable mapping.
+     * PdfLayoutChoice owns one explicit accessibility node via clearAndSetSemantics. The selected
+     * state is published through the platform's standard AccessibilityNodeInfo.isSelected contract;
+     * the localized stateDescription remains spoken UX, not a test locator.
      */
     private fun waitForSelectedPdfLayoutLabel(excluding: String? = null): String {
         val page = appString(R.string.pdf_paginated_layout)
         val scroll = appString(R.string.pdf_continuous_scroll)
-        val selectedState = appString(R.string.accessibility_selected)
         val node = waitForNode(
             if (excluding == null) "selected PDF layout" else "changed selected PDF layout"
         ) {
             val description = it.contentDescription?.toString().orEmpty()
             it.isVisibleToUser &&
-                it.stateDescription?.toString() == selectedState &&
+                it.isSelected &&
                 (description == page || description == scroll) &&
                 description != excluding
         }
