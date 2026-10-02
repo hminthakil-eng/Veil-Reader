@@ -17,6 +17,8 @@ on:
       - "tools/snapshot_performance.py"
       - "tools/build_performance_dashboard.py"
       - "tools/run_android_ci_emulator.sh"
+      - "tools/verify_release_artifact.py"
+      - "tools/test_release_artifact.py"
       - ".github/workflows/performance-benchmark.yml"
   push:
     branches: [ "main" ]
@@ -34,6 +36,8 @@ on:
       - "tools/snapshot_performance.py"
       - "tools/build_performance_dashboard.py"
       - "tools/run_android_ci_emulator.sh"
+      - "tools/verify_release_artifact.py"
+      - "tools/test_release_artifact.py"
       - ".github/workflows/performance-benchmark.yml"
 
 permissions:

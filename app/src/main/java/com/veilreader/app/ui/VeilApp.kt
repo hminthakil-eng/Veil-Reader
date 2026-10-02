@@ -612,7 +612,7 @@ fun VeilApp(
                     val importError = imported.exceptionOrNull()
                     if (importError != null) {
                         if (importError is CancellationException) throw importError
-                        showNotice(R.string.notice_import_failed)
+                        showNotice(R.string.notice_import_failed, category = VeilIssueCategory.IMPORT)
                         return@launch
                     }
                     imported.getOrThrow()
@@ -621,7 +621,7 @@ fun VeilApp(
                     val inspectionError = inspected.exceptionOrNull()
                     if (inspectionError != null) {
                         if (inspectionError is CancellationException) throw inspectionError
-                        showNotice(R.string.notice_import_failed)
+                        showNotice(R.string.notice_import_failed, category = VeilIssueCategory.IMPORT)
                         return@launch
                     }
                     library.addImportedBook(inspected.getOrThrow())
@@ -639,7 +639,7 @@ fun VeilApp(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                showNotice(R.string.notice_import_failed)
+                showNotice(R.string.notice_import_failed, category = VeilIssueCategory.IMPORT)
             } finally {
                 isImporting = false
             }
@@ -687,7 +687,7 @@ fun VeilApp(
         }
         if (!book.isImported) {
             routeViewModel.bookOpenFailed(targetId, openRequestId)
-            showNotice(R.string.notice_book_file_missing)
+            showNotice(R.string.notice_book_file_missing, category = VeilIssueCategory.MISSING_FILE)
             return@LaunchedEffect
         }
 
@@ -777,7 +777,7 @@ fun VeilApp(
             onFailure = { error ->
                 if (error is CancellationException) throw error
                 routeViewModel.bookOpenFailed(targetId, openRequestId)
-                showNotice(R.string.notice_open_failed)
+                showNotice(R.string.notice_open_failed, category = VeilIssueCategory.READER_OPEN)
                 return@LaunchedEffect
             }
         )
@@ -797,7 +797,7 @@ fun VeilApp(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING)
+                showNotice(R.string.notice_pdf_migration_failed, VeilNoticeKind.WARNING, VeilIssueCategory.PERSISTENCE)
             }
 
             val routeBeforeCommit = routeViewModel.route.value
