@@ -142,8 +142,42 @@ case "$MODE" in
   performance)
     run_gradle :app:generateBaselineProfile --stacktrace       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.enabledRules=BaselineProfile       -Pandroid.testInstrumentationRunnerArguments.androidx.benchmark.suppressErrors=EMULATOR
     assert_emulator_alive
-    run_gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace \
-      -Pandroid.testInstrumentationRunnerArguments.class=com.veilreader.benchmark.StartupBenchmark,com.veilreader.benchmark.ReaderFrameSmokeBenchmark
+
+    PERF_RESULTS_DIR="benchmark/build/perf-results"
+    rm -rf "$PERF_RESULTS_DIR"
+    mkdir -p "$PERF_RESULTS_DIR"
+
+    preserve_benchmark_result() {
+      local label="$1"
+      local source_file
+      source_file="$(
+        find benchmark/build/outputs/connected_android_test_additional_output/benchmarkBenchmark \
+          -type f -name '*-benchmarkData.json' -printf '%T@ %p\n' 2>/dev/null \
+          | sort -nr \
+          | head -1 \
+          | cut -d' ' -f2-
+      )"
+      [[ -n "$source_file" && -f "$source_file" ]] || {
+        echo "No AndroidX benchmarkData JSON was produced for $label." >&2
+        exit 1
+      }
+      cp "$source_file" "$PERF_RESULTS_DIR/${label}-benchmarkData.json"
+    }
+
+    run_benchmark_class() {
+      local class_name="$1"
+      local label="$2"
+      run_gradle :benchmark:connectedBenchmarkBenchmarkAndroidTest --stacktrace \
+        "-Pandroid.testInstrumentationRunnerArguments.class=${class_name}"
+      preserve_benchmark_result "$label"
+      assert_emulator_alive
+    }
+
+    # Run independently: this self-instrumenting benchmark module only executed the first entry
+    # when a comma-separated class list was supplied. Independent runs also preserve auditable JSON
+    # for both Startup and Reader frame-smoke budget groups.
+    run_benchmark_class com.veilreader.benchmark.StartupBenchmark startup
+    run_benchmark_class com.veilreader.benchmark.ReaderFrameSmokeBenchmark reader-frame-smoke
     ;;
 esac
 
