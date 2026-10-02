@@ -1357,6 +1357,62 @@ private fun BookDetailArtifactStand(
     }
 }
 
+internal enum class BookDetailJourneyPhase {
+    NOT_STARTED,
+    READING,
+    COMPLETED
+}
+
+internal enum class BookDetailJourneyAction {
+    OPEN,
+    CONTINUE,
+    READ_AGAIN,
+    UNAVAILABLE
+}
+
+internal data class BookDetailJourneyState(
+    val progress: Float,
+    val phase: BookDetailJourneyPhase,
+    val action: BookDetailJourneyAction,
+    val chapter: String?
+)
+
+internal fun bookDetailJourneyState(
+    book: Book,
+    progress: Float
+): BookDetailJourneyState {
+    val safeProgress = when {
+        book.finished -> 1f
+        progress.isFinite() -> progress.coerceIn(0f, 1f)
+        else -> 0f
+    }
+    val phase = when {
+        book.finished -> BookDetailJourneyPhase.COMPLETED
+        safeProgress > 0f -> BookDetailJourneyPhase.READING
+        else -> BookDetailJourneyPhase.NOT_STARTED
+    }
+    val action = when {
+        !book.isImported -> BookDetailJourneyAction.UNAVAILABLE
+        phase == BookDetailJourneyPhase.COMPLETED -> BookDetailJourneyAction.READ_AGAIN
+        phase == BookDetailJourneyPhase.READING -> BookDetailJourneyAction.CONTINUE
+        else -> BookDetailJourneyAction.OPEN
+    }
+    val chapter = book.currentChapter
+        .trim()
+        .takeIf {
+            phase == BookDetailJourneyPhase.READING &&
+                it.isNotBlank() &&
+                !it.equals("Not started", ignoreCase = true)
+        }
+
+    return BookDetailJourneyState(
+        progress = safeProgress,
+        phase = phase,
+        action = action,
+        chapter = chapter
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookDetailDestination(
@@ -1373,19 +1429,36 @@ private fun BookDetailDestination(
     onDelete: () -> Unit
 ) {
     val formatPercent = rememberVeilPercentFormatter()
-    val progress = bookArtifactState(book, memory = artifactMemory).progress
+    val artifactState = bookArtifactState(book, memory = artifactMemory)
+    val journey = remember(book, artifactState.progress) {
+        bookDetailJourneyState(
+            book = book,
+            progress = artifactState.progress
+        )
+    }
     val preservedFragments = remember(preservedHighlights) {
         preservedHighlights.filter { it.quote.isNotBlank() || it.note.isNotBlank() }
     }
-    val status = when {
-        book.finished -> stringResource(R.string.book_detail_finished)
-        progress > 0f -> stringResource(R.string.book_detail_percent_read_text, formatPercent(progress))
-        else -> stringResource(R.string.book_detail_not_started)
+    val status = when (journey.phase) {
+        BookDetailJourneyPhase.COMPLETED ->
+            stringResource(R.string.book_detail_finished)
+        BookDetailJourneyPhase.READING ->
+            stringResource(
+                R.string.book_detail_percent_read_text,
+                formatPercent(journey.progress)
+            )
+        BookDetailJourneyPhase.NOT_STARTED ->
+            stringResource(R.string.book_detail_not_started)
     }
-    val primaryAction = when {
-        book.finished -> stringResource(R.string.book_detail_read_again)
-        progress > 0f -> stringResource(R.string.book_detail_continue_reading)
-        else -> stringResource(R.string.book_detail_open_book)
+    val primaryAction = when (journey.action) {
+        BookDetailJourneyAction.READ_AGAIN ->
+            stringResource(R.string.book_detail_read_again)
+        BookDetailJourneyAction.CONTINUE ->
+            stringResource(R.string.book_detail_continue_reading)
+        BookDetailJourneyAction.OPEN ->
+            stringResource(R.string.book_detail_open_book)
+        BookDetailJourneyAction.UNAVAILABLE ->
+            stringResource(R.string.book_detail_publication_unavailable)
     }
 
     Dialog(
@@ -1574,17 +1647,19 @@ private fun BookDetailDestination(
                             )
                         }
                         Text(
-                            formatPercent(progress),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            formatPercent(journey.progress),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = VeilPalette.Brass
                         )
                     }
 
                     LinearProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.fillMaxWidth().height(3.dp),
+                        progress = { journey.progress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(4.dp),
                         color = VeilPalette.Brass,
-                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.34f),
+                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.26f),
                         drawStopIndicator = {}
                     )
 
@@ -1602,29 +1677,23 @@ private fun BookDetailDestination(
                             modifier = Modifier.weight(1f)
                         )
 
-                        book.currentChapter
-                            .takeIf {
-                                it.isNotBlank() &&
-                                    progress > 0f &&
-                                    !it.equals("Not started", ignoreCase = true)
-                            }
-                            ?.let { chapter ->
-                                Text(
-                                    chapter,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.End,
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
+                        journey.chapter?.let { chapter ->
+                            Text(
+                                chapter,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = VeilPalette.Brass.copy(alpha = 0.82f),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                textAlign = TextAlign.End,
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
 
                 Button(
                     onClick = onOpen,
-                    enabled = book.isImported,
+                    enabled = journey.action != BookDetailJourneyAction.UNAVAILABLE,
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(min = 54.dp),
@@ -1634,10 +1703,7 @@ private fun BookDetailDestination(
                         contentColor = Color(0xFF17120A)
                     )
                 ) {
-                    Text(
-                        if (book.isImported) primaryAction
-                        else stringResource(R.string.book_detail_publication_unavailable)
-                    )
+                    Text(primaryAction)
                 }
 
                 Row(

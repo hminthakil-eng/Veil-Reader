@@ -196,4 +196,99 @@ class BookArtifactTest {
         assertNull(identity.seriesIndex)
     }
 
+
+    @Test
+    fun `book detail journey never invents active progress for an unopened book`() {
+        val state = bookDetailJourneyState(
+            book = Book(
+                id = "journey-new",
+                title = "New",
+                author = "Reader",
+                currentChapter = "Chapter 1"
+            ),
+            progress = 0f
+        )
+
+        assertEquals(BookDetailJourneyPhase.NOT_STARTED, state.phase)
+        assertEquals(BookDetailJourneyAction.UNAVAILABLE, state.action)
+        assertEquals(0f, state.progress, 0f)
+        assertNull(state.chapter)
+    }
+
+    @Test
+    fun `active journey exposes only meaningful chapter context`() {
+        val state = bookDetailJourneyState(
+            book = Book(
+                id = "journey-active",
+                title = "Active",
+                author = "Reader",
+                sourceUri = "file:///reader.epub",
+                currentChapter = "  فصل پنجم — The Fifth Threshold  "
+            ),
+            progress = 0.42f
+        )
+
+        assertEquals(BookDetailJourneyPhase.READING, state.phase)
+        assertEquals(BookDetailJourneyAction.CONTINUE, state.action)
+        assertEquals(0.42f, state.progress, 0.0001f)
+        assertEquals("فصل پنجم — The Fifth Threshold", state.chapter)
+    }
+
+    @Test
+    fun `completed journey owns full progress and read-again action`() {
+        val state = bookDetailJourneyState(
+            book = Book(
+                id = "journey-complete",
+                title = "Complete",
+                author = "Reader",
+                sourceUri = "file:///reader.epub",
+                currentChapter = "Finale",
+                progress = 0.61f,
+                finished = true
+            ),
+            progress = 0.61f
+        )
+
+        assertEquals(BookDetailJourneyPhase.COMPLETED, state.phase)
+        assertEquals(BookDetailJourneyAction.READ_AGAIN, state.action)
+        assertEquals(1f, state.progress, 0f)
+        assertNull(state.chapter)
+    }
+
+    @Test
+    fun `unavailable publication keeps truthful reading history but disables open action`() {
+        val state = bookDetailJourneyState(
+            book = Book(
+                id = "journey-missing",
+                title = "Missing",
+                author = "Archive",
+                progress = 0.57f,
+                currentChapter = "Chapter 9"
+            ),
+            progress = 0.57f
+        )
+
+        assertEquals(BookDetailJourneyPhase.READING, state.phase)
+        assertEquals(BookDetailJourneyAction.UNAVAILABLE, state.action)
+        assertEquals(0.57f, state.progress, 0.0001f)
+        assertEquals("Chapter 9", state.chapter)
+    }
+
+    @Test
+    fun `journey clamps invalid progress without fabricating a reading state`() {
+        val state = bookDetailJourneyState(
+            book = Book(
+                id = "journey-invalid",
+                title = "Invalid",
+                author = "Archive",
+                sourceUri = "file:///reader.epub"
+            ),
+            progress = Float.NaN
+        )
+
+        assertEquals(BookDetailJourneyPhase.NOT_STARTED, state.phase)
+        assertEquals(BookDetailJourneyAction.OPEN, state.action)
+        assertEquals(0f, state.progress, 0f)
+    }
+
 }
