@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.FocusGuideStyle
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -36,6 +37,9 @@ class SettingsStore(private val context: Context) {
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
+        val focusGuideStyle = stringPreferencesKey("reader_focus_guide_style")
+        val focusGuideStrength = doublePreferencesKey("reader_focus_guide_strength")
+        val focusGuideHeight = doublePreferencesKey("reader_focus_guide_height")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
@@ -61,7 +65,12 @@ class SettingsStore(private val context: Context) {
                 }.getOrDefault(PageTurnStyle.PAPER),
                 screenBrightness = prefs[Keys.screenBrightness]
                     ?.takeIf { it.isFinite() }
-                    ?.coerceIn(0.05, 1.0)
+                    ?.coerceIn(0.05, 1.0),
+                focusGuideStyle = runCatching {
+                    FocusGuideStyle.valueOf(prefs[Keys.focusGuideStyle] ?: FocusGuideStyle.OFF.name)
+                }.getOrDefault(FocusGuideStyle.OFF),
+                focusGuideStrength = (prefs[Keys.focusGuideStrength] ?: 0.42).coerceIn(0.15, 0.80),
+                focusGuideHeight = (prefs[Keys.focusGuideHeight] ?: 0.18).coerceIn(0.08, 0.30)
             ),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
@@ -86,6 +95,9 @@ class SettingsStore(private val context: Context) {
             value.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
+            prefs[Keys.focusGuideStyle] = value.focusGuideStyle.name
+            prefs[Keys.focusGuideStrength] = value.focusGuideStrength.coerceIn(0.15, 0.80)
+            prefs[Keys.focusGuideHeight] = value.focusGuideHeight.coerceIn(0.08, 0.30)
         }
     }
 
