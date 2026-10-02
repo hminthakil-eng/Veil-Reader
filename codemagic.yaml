@@ -193,22 +193,34 @@ workflows:
           cd "$CM_BUILD_DIR"
 
           APP_APK="app/build/outputs/apk/debug/app-debug.apk"
-          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' | head -n 1)"
+          TEST_APK="$(find app/build/outputs/apk/androidTest -type f -name '*androidTest*.apk' -print -quit)"
 
           test -f "$APP_APK"
           test -n "$TEST_APK"
           test -f "$TEST_APK"
 
-          RUNNER_FOUND=0
-          for DEX in $(unzip -Z1 "$TEST_APK" | grep '^classes.*\.dex$'); do
-            if unzip -p "$TEST_APK" "$DEX" | strings | grep -q 'Landroidx/test/runner/AndroidJUnitRunner;'; then
-              RUNNER_FOUND=1
-              break
-            fi
-          done
+          MANIFEST_XML="$(apkanalyzer manifest print "$TEST_APK")"
 
-          [ "$RUNNER_FOUND" -eq 1 ]
-          echo "AndroidJUnitRunner packaged: yes"
+          case "$MANIFEST_XML" in
+            *"androidx.test.runner.AndroidJUnitRunner"*)
+              ;;
+            *)
+              echo "AndroidJUnitRunner is not declared in the instrumentation APK manifest."
+              exit 1
+              ;;
+          esac
+
+          case "$MANIFEST_XML" in
+            *"com.veilreader.app"*)
+              ;;
+            *)
+              echo "Veil Reader target package is not declared in the instrumentation APK manifest."
+              exit 1
+              ;;
+          esac
+
+          echo "AndroidJUnitRunner manifest registration: yes"
+          echo "Instrumentation APK: $TEST_APK"
 
       - name: Compile performance harness
         script: |
