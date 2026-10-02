@@ -126,7 +126,7 @@ internal class PaperCurlState {
             PaperCurlEdge.VisibilityThreshold
         )
         anim.animateTo(
-            targetValue = leftEdge(),
+            targetValue = terminalTurnEdge(),
             animationSpec = keyframes {
                 durationMillis = VeilMotion.PAPER_TAP_TURN_MS
                 rightEdge() at 0
