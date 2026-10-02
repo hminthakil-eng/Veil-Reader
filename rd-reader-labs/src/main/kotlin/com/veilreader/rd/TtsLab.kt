@@ -29,7 +29,7 @@ object TtsChunker {
         for (sentence in sentences) {
             if (sentence.length > maxChars) {
                 flush()
-                sentence.chunked(maxChars).map(String::trim).filter(String::isNotEmpty).forEach(out::add)
+                sentence.chunked(maxChars).map { it.trim() }.filter { it.isNotEmpty() }.forEach(out::add)
             } else if (current.isEmpty()) {
                 current.append(sentence)
             } else if (current.length + 1 + sentence.length <= maxChars) {
