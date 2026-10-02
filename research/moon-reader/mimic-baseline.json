@@ -1,0 +1,93 @@
+{
+  "schema": "veil.mimic.android-reference.v1",
+  "generated_at": "2026-10-02",
+  "source": {
+    "kind": "user_supplied_apk",
+    "app": "Moon+ Reader Pro",
+    "version": "10.7",
+    "package_observed": "com.flyersoft.moonreaderp",
+    "sha256": "d676b16ff18c2496ab35d1306fd195e7fba491bc8260cfd368ab973c7bc09d08"
+  },
+  "methodology": {
+    "upstream": "sumanrox/mimic",
+    "mode": "D+E adapted for Android",
+    "evidence_labels": [
+      "OBSERVED",
+      "INFERRED",
+      "APPROXIMATE",
+      "UNVERIFIABLE"
+    ]
+  },
+  "static_inventory": {
+    "layouts_base": 356,
+    "layouts_v22": 95,
+    "drawables_base": 458,
+    "drawables_hdpi": 310,
+    "drawables_xhdpi": 126,
+    "drawables_xxhdpi": 114,
+    "anim_resources": 60,
+    "animator_resources": 33,
+    "reader_backgrounds": 33,
+    "bundled_themes": 12
+  },
+  "observed_theme_schema": [
+    "pUseBackgroundImage",
+    "pBackgroundImage",
+    "pBackgroundColor",
+    "pFontColor",
+    "pFontName",
+    "pFontSize",
+    "pFontBold",
+    "pFontItalic",
+    "pFontShadow",
+    "pLeftMargin",
+    "pRightMargin",
+    "pTopMargin",
+    "pBottomMargin",
+    "pLineSpace",
+    "pTextJustified",
+    "pRightTextAlignment",
+    "pFontSpace",
+    "pFadingEdgeLength",
+    "flip_curl_color"
+  ],
+  "observed_reference_colors": {
+    "day_surface": "#DCD7D1",
+    "night_surface": "#000000",
+    "night_text": "#CCCCCC",
+    "nature_surface": "#E6EACF",
+    "nature_text": "#082D52",
+    "day_curl_tint": "#C6C5AA"
+  },
+  "observed_capabilities": [
+    "separate page/scroll-oriented resources",
+    "3D/page curl implementation signals",
+    "multiple page flip modes",
+    "dual-page reader",
+    "RTL PDF/comic reading",
+    "gesture mapping",
+    "nine-zone tap grid",
+    "left-edge brightness gesture",
+    "theme import/export",
+    "font replacement",
+    "hyphenation",
+    "highlights and notes",
+    "PDF annotation and handwriting",
+    "reading ruler",
+    "reading statistics/calendar",
+    "TTS",
+    "auto-scroll",
+    "foldable support"
+  ],
+  "live_capture": {
+    "status": "pending",
+    "reason": "no connected online desktop/emulator during audit",
+    "required_before_fidelity_claims": true
+  },
+  "veil_reuse_policy": {
+    "copy_proprietary_assets": false,
+    "copy_proprietary_code": false,
+    "copy_branding": false,
+    "reuse_behavioral_patterns_only": true
+  }
+}
