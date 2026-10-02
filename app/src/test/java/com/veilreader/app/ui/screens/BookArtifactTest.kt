@@ -3,6 +3,7 @@ package com.veilreader.app.ui.screens
 import com.veilreader.app.domain.Book
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
