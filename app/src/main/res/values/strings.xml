@@ -358,7 +358,7 @@
     <string name="book_detail_preserved_fragments">Preserved fragments</string>
     <string name="book_detail_preserved_note_only">Preserved note</string>
     <string name="book_detail_more_preserved">+%1$d more preserved in Hidden Archive</string>
-    <string name="book_detail_favorite_badge">FAVORITE</string>
+    <string name="book_detail_favorite_badge">FAVORITE</string>\n    <string name="book_detail_series_index">#%1$s</string>\n    <string name="book_detail_collection_identity">Collections · %1$s</string>\n    <string name="book_detail_more_collections">+%1$s more collections</string>
     <string name="book_detail_archive_surface">Surface shelf</string>
     <string name="book_detail_archive_settled">Settled · %1$s</string>
     <string name="book_detail_archive_deep">Deep Shelf · %1$s silent</string>

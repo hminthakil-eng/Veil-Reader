@@ -1956,6 +1956,29 @@ private fun BookDetailFragments(
     }
 }
 
+internal data class BookDetailIdentityText(
+    val title: String,
+    val author: String,
+    val seriesName: String?,
+    val seriesIndex: Double?,
+    val collections: List<String>
+)
+
+internal fun bookDetailIdentityText(
+    book: Book,
+    untitledBook: String,
+    unknownAuthor: String
+): BookDetailIdentityText {
+    val seriesName = book.seriesName?.trim()?.takeIf(String::isNotBlank)
+    return BookDetailIdentityText(
+        title = book.title.trim().ifBlank { untitledBook },
+        author = book.author.trim().ifBlank { unknownAuthor },
+        seriesName = seriesName,
+        seriesIndex = book.seriesIndex?.takeIf { seriesName != null && it.isFinite() },
+        collections = book.allCollections
+    )
+}
+
 @Composable
 private fun BookDetailIdentity(
     book: Book,
@@ -1963,56 +1986,107 @@ private fun BookDetailIdentity(
     modifier: Modifier = Modifier
 ) {
     val formatNumber = rememberVeilNumberFormatter()
+    val untitledBook = stringResource(R.string.common_untitled_book)
+    val unknownAuthor = stringResource(R.string.common_unknown_author)
+    val identity = remember(book, untitledBook, unknownAuthor) {
+        bookDetailIdentityText(
+            book = book,
+            untitledBook = untitledBook,
+            unknownAuthor = unknownAuthor
+        )
+    }
+    val visibleCollections = identity.collections.take(2)
+    val hiddenCollectionCount = identity.collections.size - visibleCollections.size
+
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(7.dp)
     ) {
         Text(
-            book.title.ifBlank { stringResource(R.string.common_untitled_book) },
+            identity.title,
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.headlineLarge,
             color = VeilPalette.Moon,
             maxLines = 4,
+            softWrap = true,
             overflow = TextOverflow.Ellipsis
         )
 
         Text(
-            book.author.trim().ifBlank {
-                stringResource(R.string.common_unknown_author)
-            },
+            identity.author,
+            modifier = Modifier.fillMaxWidth(),
             style = MaterialTheme.typography.titleSmall,
-            color = VeilPalette.Moon.copy(alpha = 0.74f),
+            color = VeilPalette.Moon.copy(alpha = 0.78f),
             maxLines = 2,
+            softWrap = true,
             overflow = TextOverflow.Ellipsis
         )
 
-        book.seriesName?.trim()?.takeIf { it.isNotBlank() }?.let { series ->
+        identity.seriesName?.let { series ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    series,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Brass.copy(alpha = 0.90f),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                identity.seriesIndex?.let { index ->
+                    Text(
+                        stringResource(
+                            R.string.book_detail_series_index,
+                            formatNumber(index)
+                        ),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Brass.copy(alpha = 0.68f),
+                        maxLines = 1
+                    )
+                }
+            }
+        }
+
+        if (visibleCollections.isNotEmpty()) {
             Text(
-                buildString {
-                    append(series)
-                    book.seriesIndex?.let { append(" · #").append(formatNumber(it)) }
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = VeilPalette.Brass,
+                stringResource(
+                    R.string.book_detail_collection_identity,
+                    visibleCollections.joinToString(" · ")
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 2,
+                softWrap = true,
                 overflow = TextOverflow.Ellipsis
             )
+            if (hiddenCollectionCount > 0) {
+                Text(
+                    stringResource(
+                        R.string.book_detail_more_collections,
+                        formatNumber(hiddenCollectionCount)
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Mist.copy(alpha = 0.70f)
+                )
+            }
         }
 
         val recordLabel = localizedBookArtifactRecordLabel(
             bookArtifactState(book, memory = artifactMemory)
         )
-        VeilMicroLabel(
-            text = recordLabel,
-            color = VeilPalette.Mist.copy(alpha = 0.72f)
-        )
-
         Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
         ) {
             VeilMicroLabel(
-                text = localizedBookFormatLabel(book.format),
-                color = VeilPalette.Moon.copy(alpha = 0.68f)
+                text = recordLabel,
+                modifier = Modifier.weight(1f),
+                color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
 
             if (book.favorite) {

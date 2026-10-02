@@ -132,4 +132,67 @@ class BookArtifactTest {
         assertTrue(cover.completed)
     }
 
+
+    @Test
+    fun `book detail identity supplies truthful fallbacks without blank geometry`() {
+        val identity = bookDetailIdentityText(
+            book = Book(
+                id = "identity-empty",
+                title = "   ",
+                author = "\t",
+                seriesName = "   ",
+                seriesIndex = 7.0
+            ),
+            untitledBook = "Untitled book",
+            unknownAuthor = "Unknown author"
+        )
+
+        assertEquals("Untitled book", identity.title)
+        assertEquals("Unknown author", identity.author)
+        assertNull(identity.seriesName)
+        assertNull(identity.seriesIndex)
+        assertTrue(identity.collections.isEmpty())
+    }
+
+    @Test
+    fun `book detail identity preserves mixed script and deduplicates collection context`() {
+        val longMixedTitle = "رازهای مه — The Archive Beyond the Seventh Threshold"
+        val identity = bookDetailIdentityText(
+            book = Book(
+                id = "identity-mixed",
+                title = "  $longMixedTitle  ",
+                author = "  نویسنده A  ",
+                seriesName = "  The Sequence  ",
+                seriesIndex = 2.5,
+                collections = listOf(" Mystery ", "mystery", "حافظه")
+            ),
+            untitledBook = "Untitled",
+            unknownAuthor = "Unknown"
+        )
+
+        assertEquals(longMixedTitle, identity.title)
+        assertEquals("نویسنده A", identity.author)
+        assertEquals("The Sequence", identity.seriesName)
+        assertEquals(2.5, identity.seriesIndex)
+        assertEquals(listOf("Mystery", "حافظه"), identity.collections)
+    }
+
+    @Test
+    fun `series index never survives without a visible series identity`() {
+        val identity = bookDetailIdentityText(
+            book = Book(
+                id = "identity-index",
+                title = "Book",
+                author = "Author",
+                seriesName = null,
+                seriesIndex = 4.0
+            ),
+            untitledBook = "Untitled",
+            unknownAuthor = "Unknown"
+        )
+
+        assertNull(identity.seriesName)
+        assertNull(identity.seriesIndex)
+    }
+
 }
