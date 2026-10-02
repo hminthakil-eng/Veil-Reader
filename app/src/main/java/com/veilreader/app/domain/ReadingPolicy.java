@@ -47,6 +47,9 @@ public final class ReadingPolicy {
     public static final class PageGate {
         private final Set<String> seen = new LinkedHashSet<>();
         private long lastSeenAt = -1;
+        public void resume(long elapsedMs) {
+            if (elapsedMs >= 0 && lastSeenAt < 0) lastSeenAt = elapsedMs;
+        }
         public boolean visit(String key, long elapsedMs, int todayPages, int todayMinutes) {
             if (key == null || key.isEmpty() || elapsedMs < 0) return false;
             boolean first = lastSeenAt < 0;
