@@ -79,6 +79,7 @@ class ReaderViewModel(
         val current = tracker ?: return
         if (resumed) return
         resumed = true
+        game.resumeReading()
         creditActive(current.onResume(SystemClock.elapsedRealtime()))
         publishActiveMillis()
         persistSession()
