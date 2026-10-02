@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.FocusGuideStyle
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -206,6 +207,52 @@ fun SettingsScreen(
                     commitReaderAppearance { current -> current.copy(publisherStyles = enabled) }
                 }
             )
+
+            Text("Veil Focus Guide", style = MaterialTheme.typography.labelLarge)
+            ChoiceRow(
+                entries = FocusGuideStyle.entries,
+                selected = appearance.focusGuideStyle,
+                label = { style ->
+                    when (style) {
+                        FocusGuideStyle.OFF -> "Off"
+                        FocusGuideStyle.WINDOW -> "Veil window"
+                        FocusGuideStyle.RULER -> "Brass ruler"
+                        FocusGuideStyle.LINE -> "Guide line"
+                    }
+                },
+                onSelected = { style ->
+                    commitReaderAppearance { current -> current.withFocusGuide(style = style) }
+                }
+            )
+            Text(
+                "A non-destructive visual focus layer that works above EPUB and PDF without rewriting publication content.",
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            if (appearance.focusGuideStyle != FocusGuideStyle.OFF) {
+                ReaderSlider(
+                    label = "Guide strength",
+                    value = appearance.focusGuideStrength.toFloat(),
+                    valueRange = 0.15f..0.80f,
+                    displayValue = { value -> ((value * 100).toInt()).toString() + "%" },
+                    onCommit = { value ->
+                        commitReaderAppearance { current ->
+                            current.withFocusGuide(strength = value.toDouble())
+                        }
+                    }
+                )
+                ReaderSlider(
+                    label = "Guide height",
+                    value = appearance.focusGuideHeight.toFloat(),
+                    valueRange = 0.08f..0.30f,
+                    displayValue = { value -> ((value * 100).toInt()).toString() + "%" },
+                    onCommit = { value ->
+                        commitReaderAppearance { current ->
+                            current.withFocusGuide(height = value.toDouble())
+                        }
+                    }
+                )
+            }
 
             Text("Reading brightness", style = MaterialTheme.typography.labelLarge)
             ReaderBrightnessControls(
