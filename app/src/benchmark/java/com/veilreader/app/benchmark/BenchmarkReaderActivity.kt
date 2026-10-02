@@ -43,7 +43,19 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 val inspected = engine.inspectAndCreateBook(Uri.fromFile(ensureFixture())).getOrThrow()
                 val committed = library.addImportedBook(inspected).book
                 library.flushWrites()
-                engine.openBook(committed).getOrThrow()
+
+                // Macrobenchmark repeats the same deterministic fixture inside one app data
+                // directory. The real Reader correctly persists progress between Activity launches,
+                // which would otherwise make later benchmark iterations resume near the end of the
+                // book and produce zero-frame GfxInfo samples. Keep durable app behavior untouched:
+                // only the benchmark-owned OpenedPublication starts from a transient clean locator.
+                val benchmarkBook = committed.copy(
+                    progress = 0f,
+                    pagesRead = 0,
+                    locatorJson = null,
+                    finished = false
+                )
+                engine.openBook(benchmarkBook).getOrThrow()
             }
 
             setContent {
