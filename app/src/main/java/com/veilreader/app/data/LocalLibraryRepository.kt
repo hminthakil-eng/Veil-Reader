@@ -32,6 +32,7 @@ import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util.Locale
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
@@ -85,6 +86,7 @@ class LocalLibraryRepository internal constructor(
     private val latestReaderProgressOrderByBook = mutableMapOf<String, ReaderProgressWriteOrder>()
     private val pendingReadingSessions = mutableMapOf<String, ReadingSessionSnapshot>()
     private val sessionFlushJobs = mutableMapOf<String, Job>()
+    private val deletedHighlightIds = ConcurrentHashMap.newKeySet<String>()
 
     private val _books = MutableStateFlow<List<Book>>(emptyList())
     val books: StateFlow<List<Book>> = _books
@@ -578,7 +580,10 @@ class LocalLibraryRepository internal constructor(
     fun addHighlight(bookId: String, quote: String, locatorJson: String): Highlight {
         val cleanQuote = quote.trim()
         _highlights.value.firstOrNull {
-            it.bookId == bookId && it.locatorJson == locatorJson && it.quote == cleanQuote
+            it.id !in deletedHighlightIds &&
+                it.bookId == bookId &&
+                it.locatorJson == locatorJson &&
+                it.quote == cleanQuote
         }?.let { return it }
         val record = Highlight(
             id = UUID.randomUUID().toString(),
@@ -610,8 +615,14 @@ class LocalLibraryRepository internal constructor(
         val cleanLocator = locatorJson.trim()
         val cleanNote = note.trim()
         if (bookId.isBlank() || cleanQuote.isBlank() || cleanLocator.isBlank()) return null
+        if (!existingHighlightId.isNullOrBlank() && existingHighlightId in deletedHighlightIds) {
+            return null
+        }
 
         val result = orderedWrite {
+            if (!existingHighlightId.isNullOrBlank() && existingHighlightId in deletedHighlightIds) {
+                return@orderedWrite null
+            }
             val existing = when {
                 !existingHighlightId.isNullOrBlank() ->
                     database.highlights()
@@ -796,6 +807,8 @@ class LocalLibraryRepository internal constructor(
     }
 
     fun deleteHighlight(id: String) {
+        if (id.isBlank()) return
+        deletedHighlightIds += id
         _highlights.value = _highlights.value.filterNot { it.id == id }
         enqueue { database.highlights().deleteById(id) }
     }
@@ -985,6 +998,9 @@ class LocalLibraryRepository internal constructor(
             }
             settings.saveReaderAppearance(snapshot.appearance)
         }
+        // A restore establishes a fresh durable source of truth. In-process deletion tombstones
+        // must not outlive that replacement or block edits to legitimately restored highlights.
+        deletedHighlightIds.clear()
     }
 
     /**
