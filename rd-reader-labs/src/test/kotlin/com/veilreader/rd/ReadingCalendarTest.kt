@@ -17,7 +17,7 @@ class ReadingCalendarTest {
             zone
         )
         assertEquals(1, result.size)
-        assertEquals(180_000, result.single().activeMillis)
+        assertEquals(180_000L, result.single().activeMillis)
         assertEquals(2, result.single().sessions)
     }
 }
