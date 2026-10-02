@@ -291,4 +291,58 @@ class BookArtifactTest {
         assertEquals(0f, state.progress, 0f)
     }
 
+
+    @Test
+    fun `preserved memory distinguishes quote note and combined artifacts`() {
+        val memory = bookDetailPreservedMemory(
+            listOf(
+                com.veilreader.app.domain.Highlight("q", "book", " Quote ", "{}", createdAtEpochMs = 10L),
+                com.veilreader.app.domain.Highlight("n", "book", " ", "{}", note = " Note ", createdAtEpochMs = 20L),
+                com.veilreader.app.domain.Highlight("both", "book", " Both quote ", "{}", note = " Both note ", createdAtEpochMs = 30L)
+            )
+        )
+        assertEquals(3, memory.totalUseful)
+        assertEquals(PreservedMemoryKind.QUOTE_AND_NOTE, memory.fragments[0].kind)
+        assertEquals("Both quote", memory.fragments[0].quote)
+        assertEquals("Both note", memory.fragments[0].note)
+        assertEquals(PreservedMemoryKind.NOTE_ONLY, memory.fragments[1].kind)
+        assertEquals(PreservedMemoryKind.QUOTE_ONLY, memory.fragments[2].kind)
+    }
+
+    @Test
+    fun `preserved memory is recent first bounded and ignores empty artifacts`() {
+        val memory = bookDetailPreservedMemory(
+            listOf(
+                com.veilreader.app.domain.Highlight("old", "book", "old", "{}", createdAtEpochMs = 1L),
+                com.veilreader.app.domain.Highlight("empty", "book", "   ", "{}", note = " ", createdAtEpochMs = 99L),
+                com.veilreader.app.domain.Highlight("new", "book", "new", "{}", createdAtEpochMs = 5L),
+                com.veilreader.app.domain.Highlight("mid", "book", "", "{}", note = "mid note", createdAtEpochMs = 3L),
+                com.veilreader.app.domain.Highlight("older", "book", "older", "{}", createdAtEpochMs = 2L)
+            ),
+            sampleLimit = 3
+        )
+        assertEquals(4, memory.totalUseful)
+        assertEquals(1, memory.hiddenCount)
+        assertEquals(listOf("new", "mid", "older"), memory.fragments.map { it.id })
+    }
+
+    @Test
+    fun `preserved memory stays a sample rather than a notebook`() {
+        val memory = bookDetailPreservedMemory(
+            (1..8).map { index ->
+                com.veilreader.app.domain.Highlight(
+                    id = "h$index",
+                    bookId = "book",
+                    quote = "memory $index",
+                    locatorJson = "{}",
+                    createdAtEpochMs = index.toLong()
+                )
+            }
+        )
+        assertEquals(8, memory.totalUseful)
+        assertEquals(3, memory.fragments.size)
+        assertEquals(5, memory.hiddenCount)
+        assertEquals(listOf("h8", "h7", "h6"), memory.fragments.map { it.id })
+    }
+
 }

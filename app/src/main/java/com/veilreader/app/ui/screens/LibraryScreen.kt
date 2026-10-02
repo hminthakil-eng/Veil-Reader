@@ -1436,8 +1436,8 @@ private fun BookDetailDestination(
             progress = artifactState.progress
         )
     }
-    val preservedFragments = remember(preservedHighlights) {
-        preservedHighlights.filter { it.quote.isNotBlank() || it.note.isNotBlank() }
+    val preservedMemory = remember(preservedHighlights) {
+        bookDetailPreservedMemory(preservedHighlights)
     }
     val status = when (journey.phase) {
         BookDetailJourneyPhase.COMPLETED ->
@@ -1743,9 +1743,9 @@ private fun BookDetailDestination(
 
                 BrassRule(Modifier.fillMaxWidth())
 
-                if (preservedFragments.isNotEmpty()) {
+                if (preservedMemory.totalUseful > 0) {
                     BookDetailFragments(
-                        highlights = preservedFragments
+                        memory = preservedMemory
                     )
                     BrassRule(Modifier.fillMaxWidth())
                 }
@@ -1911,25 +1911,60 @@ private fun BookDetailDestination(
     }
 }
 
-@Composable
-private fun BookDetailFragments(
-    highlights: List<Highlight>
+internal enum class PreservedMemoryKind { QUOTE_ONLY, NOTE_ONLY, QUOTE_AND_NOTE }
+
+internal data class PreservedMemoryFragment(
+    val id: String,
+    val quote: String?,
+    val note: String?,
+    val createdAtEpochMs: Long,
+    val kind: PreservedMemoryKind
+)
+
+internal data class BookDetailPreservedMemory(
+    val fragments: List<PreservedMemoryFragment>,
+    val totalUseful: Int
 ) {
+    val hiddenCount: Int get() = (totalUseful - fragments.size).coerceAtLeast(0)
+}
+
+internal fun bookDetailPreservedMemory(
+    highlights: List<Highlight>,
+    sampleLimit: Int = 3
+): BookDetailPreservedMemory {
+    val useful = highlights.mapNotNull { highlight ->
+        val quote = highlight.quote.trim().takeIf(String::isNotBlank)
+        val note = highlight.note.trim().takeIf(String::isNotBlank)
+        if (quote == null && note == null) return@mapNotNull null
+        PreservedMemoryFragment(
+            id = highlight.id,
+            quote = quote,
+            note = note,
+            createdAtEpochMs = highlight.createdAtEpochMs,
+            kind = when {
+                quote != null && note != null -> PreservedMemoryKind.QUOTE_AND_NOTE
+                quote != null -> PreservedMemoryKind.QUOTE_ONLY
+                else -> PreservedMemoryKind.NOTE_ONLY
+            }
+        )
+    }.sortedWith(
+        compareByDescending<PreservedMemoryFragment> { it.createdAtEpochMs }.thenBy { it.id }
+    )
+    return BookDetailPreservedMemory(
+        fragments = useful.take(sampleLimit.coerceAtLeast(0)),
+        totalUseful = useful.size
+    )
+}
+
+@Composable
+private fun BookDetailFragments(memory: BookDetailPreservedMemory) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                BookDetailEyebrow(
-                    text = stringResource(R.string.book_detail_preserved_memory)
-                )
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                BookDetailEyebrow(text = stringResource(R.string.book_detail_preserved_memory))
                 Text(
                     stringResource(R.string.book_detail_preserved_fragments),
                     style = MaterialTheme.typography.titleLarge,
@@ -1938,83 +1973,75 @@ private fun BookDetailFragments(
             }
             Text(
                 stringResource(
-                    if (highlights.size == 1) R.string.book_detail_passage_one
+                    if (memory.totalUseful == 1) R.string.book_detail_passage_one
                     else R.string.book_detail_passage_many,
-                    highlights.size
+                    memory.totalUseful
                 ),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Mist.copy(alpha = 0.72f)
             )
         }
 
-        highlights.take(3).forEachIndexed { index, highlight ->
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.extraSmall,
-                color = VeilPalette.Archive.copy(alpha = 0.62f),
-                border = BorderStroke(
-                    1.dp,
-                    if (index == 0) {
-                        VeilPalette.Brass.copy(alpha = 0.34f)
-                    } else {
-                        VeilPalette.BorderDark.copy(alpha = 0.68f)
-                    }
-                ),
-                tonalElevation = 0.dp,
-                shadowElevation = 0.dp
+        memory.fragments.forEachIndexed { index, fragment ->
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(vertical = VeilSpacing.xs),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                Column(
-                    modifier = Modifier.padding(VeilSpacing.sm),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
+                Text(
+                    formatArchiveRecordDate(fragment.createdAtEpochMs),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = VeilPalette.Brass.copy(alpha = 0.78f)
+                )
+                fragment.quote?.let { quote ->
                     Text(
-                        formatArchiveRecordDate(highlight.createdAtEpochMs),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass.copy(alpha = 0.78f)
+                        "“$quote”",
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = VeilPalette.Moon,
+                        maxLines = if (fragment.kind == PreservedMemoryKind.QUOTE_ONLY) 6 else 4,
+                        overflow = TextOverflow.Ellipsis
                     )
-                    highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
-                        Text(
-                            "“$quote”",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = VeilPalette.Moon,
-                            maxLines = 5,
-                            overflow = TextOverflow.Ellipsis
+                }
+                fragment.note?.let { note ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        Box(
+                            Modifier.width(2.dp).heightIn(min = 30.dp)
+                                .background(VeilPalette.Brass.copy(alpha = 0.36f))
                         )
-                    } ?: Text(
-                        stringResource(R.string.book_detail_preserved_note_only),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.Brass.copy(alpha = 0.80f)
-                    )
-
-                    highlight.note.trim().takeIf { it.isNotBlank() }?.let { note ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Box(
-                                Modifier
-                                    .width(2.dp)
-                                    .heightIn(min = 34.dp)
-                                    .background(VeilPalette.Brass.copy(alpha = 0.36f))
-                            )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            if (fragment.kind == PreservedMemoryKind.NOTE_ONLY) {
+                                Text(
+                                    stringResource(R.string.book_detail_preserved_note_only),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = VeilPalette.Brass.copy(alpha = 0.80f)
+                                )
+                            }
                             Text(
                                 note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = VeilPalette.Mist.copy(alpha = 0.82f),
-                                maxLines = 4,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
+                                style = if (fragment.kind == PreservedMemoryKind.NOTE_ONLY) {
+                                    MaterialTheme.typography.bodyLarge
+                                } else MaterialTheme.typography.bodySmall,
+                                color = if (fragment.kind == PreservedMemoryKind.NOTE_ONLY) {
+                                    VeilPalette.Moon
+                                } else VeilPalette.Mist.copy(alpha = 0.82f),
+                                maxLines = if (fragment.kind == PreservedMemoryKind.NOTE_ONLY) 5 else 4,
+                                overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
+                if (index < memory.fragments.lastIndex) {
+                    BrassRule(Modifier.fillMaxWidth().padding(top = VeilSpacing.xs))
+                }
             }
         }
 
-        if (highlights.size > 3) {
+        if (memory.hiddenCount > 0) {
             Text(
-                stringResource(R.string.book_detail_more_preserved, highlights.size - 3),
+                stringResource(R.string.book_detail_more_preserved, memory.hiddenCount),
                 style = MaterialTheme.typography.labelMedium,
                 color = VeilPalette.Spirit.copy(alpha = 0.72f)
             )
