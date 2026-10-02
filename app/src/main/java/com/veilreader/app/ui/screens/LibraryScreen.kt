@@ -1413,6 +1413,102 @@ internal fun bookDetailJourneyState(
     )
 }
 
+internal enum class BookDetailArchiveEventKind {
+    ARCHIVED,
+    FIRST_OPENED,
+    MILESTONE,
+    COMPLETED
+}
+
+internal data class BookDetailArchiveEvent(
+    val id: String,
+    val kind: BookDetailArchiveEventKind,
+    val timestampEpochMs: Long,
+    val progression: Float? = null,
+    val cycleIndex: Int? = null
+)
+
+internal fun bookDetailArchiveTimeline(
+    book: Book,
+    milestones: List<ReadingMilestoneRecord>,
+    cycles: List<ReadingCycleRecord>
+): List<BookDetailArchiveEvent> {
+    val events = mutableListOf<BookDetailArchiveEvent>()
+
+    book.addedAtEpochMs.takeIf { it > 0L }?.let { archivedAt ->
+        events += BookDetailArchiveEvent(
+            id = "archived:${book.id}",
+            kind = BookDetailArchiveEventKind.ARCHIVED,
+            timestampEpochMs = archivedAt
+        )
+    }
+
+    milestones
+        .asSequence()
+        .filter {
+            it.kind == ReadingMilestoneKind.FIRST_OPENED &&
+                it.reachedAtEpochMs > 0L
+        }
+        .minWithOrNull(compareBy<ReadingMilestoneRecord> { it.reachedAtEpochMs }.thenBy { it.id })
+        ?.let { firstOpened ->
+            events += BookDetailArchiveEvent(
+                id = firstOpened.id,
+                kind = BookDetailArchiveEventKind.FIRST_OPENED,
+                timestampEpochMs = firstOpened.reachedAtEpochMs
+            )
+        }
+
+    milestones
+        .asSequence()
+        .filter {
+            it.kind != ReadingMilestoneKind.FIRST_OPENED &&
+                it.reachedAtEpochMs > 0L &&
+                it.progression.isFinite() &&
+                it.progression > 0f &&
+                it.progression <= 1f
+        }
+        .groupBy { it.kind }
+        .values
+        .mapNotNull { records ->
+            records.minWithOrNull(
+                compareBy<ReadingMilestoneRecord> { it.reachedAtEpochMs }.thenBy { it.id }
+            )
+        }
+        .forEach { milestone ->
+            events += BookDetailArchiveEvent(
+                id = milestone.id,
+                kind = BookDetailArchiveEventKind.MILESTONE,
+                timestampEpochMs = milestone.reachedAtEpochMs,
+                progression = milestone.progression
+            )
+        }
+
+    cycles
+        .asSequence()
+        .filter { it.cycleIndex >= 1 && it.completedAtEpochMs > 0L }
+        .groupBy { it.cycleIndex }
+        .values
+        .mapNotNull { records ->
+            records.minWithOrNull(
+                compareBy<ReadingCycleRecord> { it.completedAtEpochMs }.thenBy { it.id }
+            )
+        }
+        .forEach { cycle ->
+            events += BookDetailArchiveEvent(
+                id = cycle.id,
+                kind = BookDetailArchiveEventKind.COMPLETED,
+                timestampEpochMs = cycle.completedAtEpochMs,
+                cycleIndex = cycle.cycleIndex
+            )
+        }
+
+    return events.sortedWith(
+        compareBy<BookDetailArchiveEvent> { it.timestampEpochMs }
+            .thenBy { it.kind.ordinal }
+            .thenBy { it.id }
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun BookDetailDestination(
@@ -1438,6 +1534,13 @@ private fun BookDetailDestination(
     }
     val preservedMemory = remember(preservedHighlights) {
         bookDetailPreservedMemory(preservedHighlights)
+    }
+    val archiveTimeline = remember(book, readingMilestones, readingCycles) {
+        bookDetailArchiveTimeline(
+            book = book,
+            milestones = readingMilestones,
+            cycles = readingCycles
+        )
     }
     val status = when (journey.phase) {
         BookDetailJourneyPhase.COMPLETED ->
@@ -1757,8 +1860,17 @@ private fun BookDetailDestination(
                     BookDetailEyebrow(
                         text = stringResource(R.string.book_detail_archive_history)
                     )
-                    BookDetailFact(stringResource(R.string.book_detail_format), localizedBookFormatLabel(book.format))
-                    book.language?.takeIf { it.isNotBlank() }?.let {
+
+                    if (archiveTimeline.isNotEmpty()) {
+                        BookDetailArchiveTimeline(events = archiveTimeline)
+                        BrassRule(Modifier.fillMaxWidth().padding(vertical = VeilSpacing.xs))
+                    }
+
+                    BookDetailFact(
+                        stringResource(R.string.book_detail_format),
+                        localizedBookFormatLabel(book.format)
+                    )
+                    book.language?.trim()?.takeIf { it.isNotBlank() }?.let {
                         BookDetailFact(stringResource(R.string.book_detail_language), it)
                     }
                     if (book.totalPages > 0) {
@@ -1779,40 +1891,11 @@ private fun BookDetailDestination(
                             stringResource(R.string.book_detail_sample_metadata_only)
                         }
                     )
-                    book.addedAtEpochMs.takeIf { it > 0L }?.let { archivedAt ->
-                        BookDetailFact(stringResource(R.string.book_detail_archived), formatArchiveRecordDate(archivedAt))
-                    }
-                    readingMilestones
-                        .firstOrNull { it.kind == ReadingMilestoneKind.FIRST_OPENED }
-                        ?.let { firstOpen ->
-                            BookDetailFact(
-                                stringResource(R.string.book_detail_first_opened),
-                                formatArchiveRecordDate(firstOpen.reachedAtEpochMs)
-                            )
-                        }
-                    val progressMarks = readingMilestones
-                        .filter { it.kind != ReadingMilestoneKind.FIRST_OPENED }
-                        .sortedBy { it.progression }
-                    if (progressMarks.isNotEmpty()) {
-                        BookDetailFact(
-                            stringResource(R.string.book_detail_journey_marks),
-                            progressMarks.joinToString(" · ") {
-                                formatPercent(it.progression)
-                            }
-                        )
-                    }
-                    readingCycles.maxByOrNull { it.cycleIndex }?.let { latestCycle ->
-                        BookDetailFact(
-                            if (latestCycle.cycleIndex > 1) {
-                                stringResource(R.string.book_detail_latest_cycle, latestCycle.cycleIndex)
-                            } else {
-                                stringResource(R.string.book_detail_completed_at)
-                            },
-                            formatArchiveRecordDate(latestCycle.completedAtEpochMs)
-                        )
-                    }
                     if (readingCycles.size > 1) {
-                        BookDetailFact(stringResource(R.string.book_detail_reading_cycles), readingCycles.size.toString())
+                        BookDetailFact(
+                            stringResource(R.string.book_detail_reading_cycles),
+                            readingCycles.map { it.cycleIndex }.filter { it >= 1 }.distinct().size.toString()
+                        )
                     }
                     archiveMemory?.let { memory ->
                         BookDetailFact(
@@ -1954,6 +2037,76 @@ internal fun bookDetailPreservedMemory(
         fragments = useful.take(sampleLimit.coerceAtLeast(0)),
         totalUseful = useful.size
     )
+}
+
+@Composable
+private fun BookDetailArchiveTimeline(events: List<BookDetailArchiveEvent>) {
+    val formatPercent = rememberVeilPercentFormatter()
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        events.forEachIndexed { index, event ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(
+                    modifier = Modifier.width(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Box(
+                        Modifier
+                            .size(7.dp)
+                            .background(VeilPalette.Brass, CircleShape)
+                    )
+                    if (index < events.lastIndex) {
+                        Box(
+                            Modifier
+                                .width(1.dp)
+                                .height(34.dp)
+                                .background(VeilPalette.Brass.copy(alpha = 0.30f))
+                        )
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(bottom = if (index < events.lastIndex) VeilSpacing.sm else 0.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        when (event.kind) {
+                            BookDetailArchiveEventKind.ARCHIVED ->
+                                stringResource(R.string.book_detail_archived)
+                            BookDetailArchiveEventKind.FIRST_OPENED ->
+                                stringResource(R.string.book_detail_first_opened)
+                            BookDetailArchiveEventKind.MILESTONE ->
+                                stringResource(
+                                    R.string.book_detail_progress_reached,
+                                    formatPercent(event.progression ?: 0f)
+                                )
+                            BookDetailArchiveEventKind.COMPLETED ->
+                                stringResource(
+                                    R.string.book_detail_cycle_completed,
+                                    event.cycleIndex ?: 1
+                                )
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = VeilPalette.Moon
+                    )
+                    Text(
+                        formatArchiveRecordDate(event.timestampEpochMs),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Mist.copy(alpha = 0.72f)
+                    )
+                }
+            }
+        }
+    }
 }
 
 @Composable

@@ -345,4 +345,95 @@ class BookArtifactTest {
         assertEquals(listOf("h8", "h7", "h6"), memory.fragments.map { it.id })
     }
 
+
+    @Test
+    fun `archive timeline preserves durable chronology across reread cycles`() {
+        val book = Book(
+            id = "history",
+            title = "History",
+            author = "Archive",
+            addedAtEpochMs = 100L,
+            finished = true
+        )
+        val milestones = listOf(
+            com.veilreader.app.domain.ReadingMilestoneRecord(
+                id = "m25",
+                bookId = book.id,
+                kind = com.veilreader.app.domain.ReadingMilestoneKind.PROGRESS_25,
+                reachedAtEpochMs = 300L,
+                progression = 0.25f,
+                locatorJson = "{}"
+            ),
+            com.veilreader.app.domain.ReadingMilestoneRecord(
+                id = "first",
+                bookId = book.id,
+                kind = com.veilreader.app.domain.ReadingMilestoneKind.FIRST_OPENED,
+                reachedAtEpochMs = 200L,
+                progression = 0f,
+                locatorJson = "{}"
+            )
+        )
+        val timeline = bookDetailArchiveTimeline(
+            book = book,
+            milestones = milestones,
+            cycles = listOf(
+                historyCycle(book.id, cycleIndex = 2, completedAt = 500L),
+                historyCycle(book.id, cycleIndex = 1, completedAt = 400L)
+            )
+        )
+
+        assertEquals(
+            listOf(
+                BookDetailArchiveEventKind.ARCHIVED,
+                BookDetailArchiveEventKind.FIRST_OPENED,
+                BookDetailArchiveEventKind.MILESTONE,
+                BookDetailArchiveEventKind.COMPLETED,
+                BookDetailArchiveEventKind.COMPLETED
+            ),
+            timeline.map { it.kind }
+        )
+        assertEquals(listOf(null, null, null, 1, 2), timeline.map { it.cycleIndex })
+        assertEquals(listOf(100L, 200L, 300L, 400L, 500L), timeline.map { it.timestampEpochMs })
+    }
+
+    @Test
+    fun `archive timeline never fabricates completion from finished flag alone`() {
+        val timeline = bookDetailArchiveTimeline(
+            book = Book(
+                id = "finished-without-seal",
+                title = "Finished",
+                author = "Archive",
+                finished = true,
+                addedAtEpochMs = 0L
+            ),
+            milestones = emptyList(),
+            cycles = emptyList()
+        )
+
+        assertTrue(timeline.isEmpty())
+    }
+
+    private fun historyCycle(
+        bookId: String,
+        cycleIndex: Int,
+        completedAt: Long
+    ) = com.veilreader.app.domain.ReadingCycleRecord(
+        id = "cycle:$bookId:$cycleIndex",
+        bookId = bookId,
+        cycleIndex = cycleIndex,
+        titleSnapshot = "Title",
+        authorSnapshot = "Author",
+        startedAtEpochMs = null,
+        completedAtEpochMs = completedAt,
+        finalLocatorJson = "{}",
+        sessionCount = 0,
+        totalActiveMillis = 0L,
+        pacedPageTurns = 0,
+        highlightCount = 0,
+        noteCount = 0,
+        bookmarkCount = 0,
+        sealCode = "seal",
+        timeline = emptyList()
+    )
+
 }

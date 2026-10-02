@@ -343,6 +343,8 @@
     <string name="book_detail_archived">بایگانی‌شده</string>
     <string name="book_detail_first_opened">نخستین گشودن</string>
     <string name="book_detail_journey_marks">نشان‌های مسیر</string>
+    <string name="book_detail_progress_reached">رسیدن به %1$s</string>
+    <string name="book_detail_cycle_completed">پایان دور مطالعهٔ %1$d</string>
     <string name="book_detail_latest_cycle">آخرین پایان · دور %1$d</string>
     <string name="book_detail_completed_at">پایان مطالعه</string>
     <string name="book_detail_reading_cycles">دورهای مطالعه</string>

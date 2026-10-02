@@ -343,6 +343,8 @@
     <string name="book_detail_archived">Archived</string>
     <string name="book_detail_first_opened">First opened</string>
     <string name="book_detail_journey_marks">Journey marks</string>
+    <string name="book_detail_progress_reached">Reached %1$s</string>
+    <string name="book_detail_cycle_completed">Reading cycle %1$d completed</string>
     <string name="book_detail_latest_cycle">Latest completion · Cycle %1$d</string>
     <string name="book_detail_completed_at">Completed</string>
     <string name="book_detail_reading_cycles">Reading cycles</string>
