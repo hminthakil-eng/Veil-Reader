@@ -512,9 +512,10 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForSelectedPdfLayoutLabel(excluding = excluding)
 
     /**
-     * PdfLayoutChoice owns one explicit accessibility node via clearAndSetSemantics. The selected
-     * state is published through the platform's standard AccessibilityNodeInfo.isSelected contract;
-     * the localized stateDescription remains spoken UX, not a test locator.
+     * Compose maps SemanticsProperties.Selected to platform checkable/checked state for roles other
+     * than Tab. PdfLayoutChoice is a RadioButton, so assert that public accessibility contract
+     * together with its stable content description. The localized stateDescription remains spoken
+     * UX and is intentionally not used as a locator.
      */
     private fun waitForSelectedPdfLayoutLabel(excluding: String? = null): String {
         val page = appString(R.string.pdf_paginated_layout)
@@ -524,7 +525,8 @@ class ReaderPdfReliabilityInstrumentedTest {
         ) {
             val description = it.contentDescription?.toString().orEmpty()
             it.isVisibleToUser &&
-                it.isSelected &&
+                it.isCheckable &&
+                it.isChecked &&
                 (description == page || description == scroll) &&
                 description != excluding
         }
