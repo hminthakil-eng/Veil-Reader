@@ -57,6 +57,9 @@ import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderHyphenation
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -86,6 +89,8 @@ import org.readium.r2.navigator.pdf.PdfNavigatorFragment
 import org.readium.r2.navigator.preferences.Axis
 import org.readium.r2.navigator.preferences.Color as ReadiumColor
 import org.readium.r2.navigator.preferences.Fit
+import org.readium.r2.navigator.preferences.FontFamily
+import org.readium.r2.navigator.preferences.TextAlign
 import org.readium.r2.navigator.preferences.Theme
 import org.readium.r2.shared.DelicateReadiumApi
 import org.readium.r2.shared.ExperimentalReadiumApi
@@ -1109,6 +1114,73 @@ private fun EpubAppearancePanel(
             valueRange = .5f..2.0f
         )
 
+        Text("Typeface", fontWeight = FontWeight.SemiBold)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                "Book" to ReaderFontFamily.ORIGINAL,
+                "Serif" to ReaderFontFamily.SERIF,
+                "Sans" to ReaderFontFamily.SANS_SERIF,
+                "Mono" to ReaderFontFamily.MONOSPACE,
+                "OpenDyslexic" to ReaderFontFamily.OPEN_DYSLEXIC,
+                "Accessible" to ReaderFontFamily.ACCESSIBLE_DFA,
+                "Duospace" to ReaderFontFamily.IA_WRITER_DUOSPACE
+            ).forEach { (label, family) ->
+                FilterChip(
+                    selected = draft.fontFamily == family,
+                    onClick = { updateDraft(draft.withFontFamily(family)) },
+                    label = { Text(label) },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                )
+            }
+        }
+
+        Text("Text alignment", fontWeight = FontWeight.SemiBold)
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                "Book" to ReaderTextAlignment.ORIGINAL,
+                "Start" to ReaderTextAlignment.START,
+                "Justify" to ReaderTextAlignment.JUSTIFY
+            ).forEach { (label, alignment) ->
+                FilterChip(
+                    selected = draft.textAlignment == alignment,
+                    onClick = { updateDraft(draft.withTextAlignment(alignment)) },
+                    label = { Text(label) },
+                    modifier = Modifier.heightIn(min = 48.dp)
+                )
+            }
+        }
+
+        Text("Hyphenation", fontWeight = FontWeight.SemiBold)
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(
+                "Book" to ReaderHyphenation.ORIGINAL,
+                "On" to ReaderHyphenation.ON,
+                "Off" to ReaderHyphenation.OFF
+            ).forEach { (label, hyphenation) ->
+                FilterChip(
+                    selected = draft.hyphenation == hyphenation,
+                    onClick = { updateDraft(draft.withHyphenation(hyphenation)) },
+                    label = { Text(label) },
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp)
+                )
+            }
+        }
+
+        Text(
+            "Advanced typography is applied through Readium and automatically turns off publisher styling.",
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1208,11 +1280,30 @@ internal fun ReaderAppearance.toEpubPreferences(): EpubPreferences {
         },
         backgroundColor = colors?.first?.let(::ReadiumColor),
         textColor = colors?.second?.let(::ReadiumColor),
+        fontFamily = when (fontFamily) {
+            ReaderFontFamily.ORIGINAL -> null
+            ReaderFontFamily.SERIF -> FontFamily.SERIF
+            ReaderFontFamily.SANS_SERIF -> FontFamily.SANS_SERIF
+            ReaderFontFamily.MONOSPACE -> FontFamily.MONOSPACE
+            ReaderFontFamily.OPEN_DYSLEXIC -> FontFamily.OPEN_DYSLEXIC
+            ReaderFontFamily.ACCESSIBLE_DFA -> FontFamily.ACCESSIBLE_DFA
+            ReaderFontFamily.IA_WRITER_DUOSPACE -> FontFamily.IA_WRITER_DUOSPACE
+        },
         fontSize = readiumFontSizeRatio(fontScale),
+        hyphens = when (hyphenation) {
+            ReaderHyphenation.ORIGINAL -> null
+            ReaderHyphenation.ON -> true
+            ReaderHyphenation.OFF -> false
+        },
         lineHeight = lineHeight.coerceIn(1.1, 2.0),
         pageMargins = pageMargins.coerceIn(0.5, 2.0),
         scroll = scroll,
-        publisherStyles = publisherStyles
+        publisherStyles = publisherStyles,
+        textAlign = when (textAlignment) {
+            ReaderTextAlignment.ORIGINAL -> null
+            ReaderTextAlignment.START -> TextAlign.START
+            ReaderTextAlignment.JUSTIFY -> TextAlign.JUSTIFY
+        }
     )
 }
 
