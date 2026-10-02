@@ -111,6 +111,9 @@ enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
 enum class PageTurnStyle { PAPER, SLIDE }
 
+/** Optional, non-destructive visual focus aid drawn above the publication surface. */
+enum class FocusGuideStyle { OFF, WINDOW, RULER, LINE }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
     val fontScale: Double = 1.0,
@@ -119,7 +122,10 @@ data class ReaderAppearance(
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
-    val screenBrightness: Double? = null
+    val screenBrightness: Double? = null,
+    val focusGuideStyle: FocusGuideStyle = FocusGuideStyle.OFF,
+    val focusGuideStrength: Double = 0.42,
+    val focusGuideHeight: Double = 0.18
 ) {
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
@@ -139,6 +145,16 @@ data class ReaderAppearance(
                 ?.takeIf { it.isFinite() }
                 ?.coerceIn(0.05, 1.0)
         )
+
+    fun withFocusGuide(
+        style: FocusGuideStyle = focusGuideStyle,
+        strength: Double = focusGuideStrength,
+        height: Double = focusGuideHeight
+    ): ReaderAppearance = copy(
+        focusGuideStyle = style,
+        focusGuideStrength = (if (strength.isFinite()) strength else 0.42).coerceIn(0.15, 0.80),
+        focusGuideHeight = (if (height.isFinite()) height else 0.18).coerceIn(0.08, 0.30)
+    )
 }
 
 /** A saved reading location, independent of text selection (also supports PDF). */
