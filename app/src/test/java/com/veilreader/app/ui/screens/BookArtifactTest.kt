@@ -452,6 +452,12 @@ class BookArtifactTest {
     }
 
     @Test
+    fun `book detail adaptive policy uses compact hero only below narrow width boundary`() {
+        assertTrue(bookDetailAdaptivePolicy(widthDp = 359, fontScale = 1f).compactHero)
+        assertFalse(bookDetailAdaptivePolicy(widthDp = 360, fontScale = 1f).compactHero)
+    }
+
+    @Test
     fun `book detail adaptive policy sanitizes invalid font scale`() {
         val invalid = bookDetailAdaptivePolicy(widthDp = 700, fontScale = Float.NaN)
 

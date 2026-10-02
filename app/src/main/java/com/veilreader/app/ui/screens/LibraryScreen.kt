@@ -1369,7 +1369,7 @@ internal fun bookDetailAdaptivePolicy(
     val safeWidth = widthDp.coerceAtLeast(0)
     val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
     return BookDetailAdaptivePolicy(
-        compactHero = safeWidth < 520 || safeScale >= 1.60f,
+        compactHero = safeWidth < 360 || safeScale >= 1.60f,
         stackUtilityActions = shouldStackDenseChoices(
             widthDp = safeWidth,
             fontScale = safeScale,
