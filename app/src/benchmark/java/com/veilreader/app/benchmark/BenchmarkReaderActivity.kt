@@ -16,6 +16,7 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.ui.screens.ReaderScreen
 import com.veilreader.app.ui.theme.VeilTheme
 import java.io.File
+import java.util.UUID
 import java.util.zip.CRC32
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
@@ -32,6 +33,8 @@ class BenchmarkReaderActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val benchmarkReaderSessionId = "benchmark-reader-session-${UUID.randomUUID()}"
 
         lifecycleScope.launch {
             val context = applicationContext
@@ -65,7 +68,7 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 VeilTheme {
                     ReaderScreen(
                         opened = opened,
-                        readerSessionInstanceId = BENCHMARK_READER_SESSION_ID,
+                        readerSessionInstanceId = benchmarkReaderSessionId,
                         library = library,
                         game = game,
                         readerAppearance = readerAppearance.value,
@@ -75,10 +78,6 @@ class BenchmarkReaderActivity : FragmentActivity() {
                 }
             }
         }
-    }
-
-    private companion object {
-        const val BENCHMARK_READER_SESSION_ID = "benchmark-reader-session"
     }
 
     private fun ensureFixture(): File {
