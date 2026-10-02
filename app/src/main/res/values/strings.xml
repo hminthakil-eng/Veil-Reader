@@ -1279,4 +1279,7 @@
     <string name="notice_manga_chapter_metadata_updated">Chapter details updated.</string>
     <string name="accessibility_selected">Selected</string>
     <string name="accessibility_not_selected">Not selected</string>
+    <string name="memory_artifact_passage">Passage</string>
+    <string name="memory_artifact_note">Note</string>
+    <string name="memory_artifact_annotation">Annotation</string>
 </resources>

@@ -642,23 +642,11 @@ fun ReaderNotebook(
                                             color = VeilPalette.Mist.copy(alpha = 0.52f)
                                         )
                                     }
-                                    highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
-                                        Text(
-                                            "“$quote”",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = VeilPalette.Moon
-                                        )
-                                    } ?: Text(
-                                        stringResource(R.string.reader_notebook_note_only),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = VeilPalette.Brass.copy(alpha = 0.82f)
+                                    MemoryArtifactContent(
+                                        highlight = highlight,
+                                        modifier = Modifier.fillMaxWidth()
                                     )
-                                    if (highlight.note.isNotBlank()) {
-                                        Text(
-                                            highlight.note,
-                                            color = VeilPalette.Brass.copy(alpha = 0.88f)
-                                        )
-                                    }
+
                                     ReaderNotebookActionRail(
                                         actions = listOf(
                                             ReaderNotebookAction(

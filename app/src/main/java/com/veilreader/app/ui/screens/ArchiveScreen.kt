@@ -814,60 +814,11 @@ private fun NotebookHighlightCard(
                 nowEpochMs = nowEpochMs
             )
 
-            if (!emphasizeNote || highlight.note.isBlank()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    Box(
-                        Modifier
-                            .width(2.dp)
-                            .heightIn(min = 54.dp)
-                            .background(VeilPalette.Brass.copy(alpha = 0.48f))
-                    )
-                    highlight.quote.trim().takeIf { it.isNotBlank() }?.let { quote ->
-                        Text(
-                            "“$quote”",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = VeilPalette.Moon.copy(alpha = 0.90f),
-                            modifier = Modifier.weight(1f)
-                        )
-                    } ?: Text(
-                        stringResource(R.string.archive_note_only),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.Brass.copy(alpha = 0.82f),
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            if (highlight.note.isNotBlank()) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    Surface(
-                        modifier = Modifier.width(2.dp).heightIn(min = 46.dp),
-                        color = VeilPalette.Brass.copy(alpha = 0.76f)
-                    ) {}
-                    Column(
-                        Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(3.dp)
-                    ) {
-                        Text(
-                            stringResource(R.string.archive_annotation),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = VeilPalette.Brass
-                        )
-                        Text(
-                            highlight.note,
-                            style = if (emphasizeNote) MaterialTheme.typography.bodyLarge
-                            else MaterialTheme.typography.bodyMedium,
-                            color = VeilPalette.Moon
-                        )
-                    }
-                }
-            }
+            MemoryArtifactContent(
+                highlight = highlight,
+                noteEmphasis = emphasizeNote,
+                modifier = Modifier.fillMaxWidth()
+            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

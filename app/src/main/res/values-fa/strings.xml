@@ -1279,4 +1279,7 @@
     <string name="notice_manga_chapter_metadata_updated">جزئیات فصل به‌روزرسانی شد.</string>
     <string name="accessibility_selected">انتخاب‌شده</string>
     <string name="accessibility_not_selected">انتخاب‌نشده</string>
+    <string name="memory_artifact_passage">بخش کتاب</string>
+    <string name="memory_artifact_note">یادداشت</string>
+    <string name="memory_artifact_annotation">حاشیه‌نویسی</string>
 </resources>
