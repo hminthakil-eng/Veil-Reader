@@ -2051,6 +2051,48 @@ fun ReaderScreen(
         }
 
         AnimatedVisibility(
+            visible =
+                !controlsVisible &&
+                    readerSessionReady &&
+                    !showNotebook &&
+                    !showAppearance &&
+                    !showPdfZoom &&
+                    !selectionModeActive &&
+                    !touchExplorationEnabled,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .navigationBarsPadding()
+                .padding(bottom = 12.dp),
+            enter = fadeIn(tween(VeilMotion.MICRO_FAST_MS)),
+            exit = fadeOut(tween(VeilMotion.MICRO_FAST_MS))
+        ) {
+            ReaderChromeButton(
+                action = when (contextControl) {
+                    ReaderContextControl.APPEARANCE -> ReaderAction.APPEARANCE
+                    ReaderContextControl.PDF_VIEW -> ReaderAction.ZOOM
+                },
+                accessibilityLabel = stringResource(
+                    when (contextControl) {
+                        ReaderContextControl.APPEARANCE -> R.string.reader_chrome_appearance
+                        ReaderContextControl.PDF_VIEW -> R.string.reader_chrome_pdf_view
+                    }
+                ),
+                tint = readerChromeAccent
+            ) {
+                readerViewModel.onUserInteraction(readerSessionInstanceId)
+                selectionActionModeCallback.dismissSelection()
+                when (contextControl) {
+                    ReaderContextControl.APPEARANCE -> {
+                        appearanceCloseJob?.cancel()
+                        appearanceCloseJob = null
+                        showAppearance = true
+                    }
+                    ReaderContextControl.PDF_VIEW -> showPdfZoom = true
+                }
+            }
+        }
+
+        AnimatedVisibility(
             visible = controlsVisible,
             modifier = Modifier.align(Alignment.TopCenter),
             enter = if (reducedMotion) {

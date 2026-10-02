@@ -138,7 +138,7 @@ internal class PaperCurlState {
                     top = Offset(width * 0.76f, height * 0.08f),
                     bottom = Offset(width * 0.32f, height)
                 ) at 260
-                leftEdge() at VeilMotion.PAPER_TAP_TURN_MS
+                terminalTurnEdge() at VeilMotion.PAPER_TAP_TURN_MS
             }
         ) {
             edge = value
@@ -162,19 +162,19 @@ internal class PaperCurlState {
                 bottom = Offset(bendX * 0.48f, height)
             )
             anim.animateTo(
-                targetValue = leftEdge(),
+                targetValue = terminalTurnEdge(),
                 animationSpec = keyframes {
                     durationMillis = profile.durationMillis
                     edge at 0
                     bend at (profile.durationMillis * 0.46f).toInt()
-                    leftEdge() at profile.durationMillis
+                    terminalTurnEdge() at profile.durationMillis
                 }
             ) {
                 edge = value
             }
         } else {
             animateTo(
-                target = leftEdge(),
+                target = terminalTurnEdge(),
                 dampingRatio = 0.88f,
                 stiffness = Spring.StiffnessMediumLow
             )
@@ -289,6 +289,9 @@ internal class PaperCurlState {
             Offset(0f, 0f),
             Offset(0f, height)
         )
+
+    private fun terminalTurnEdge(): PaperCurlEdge =
+        paperTerminalTurnEdge(width = width, height = height)
     private fun capture(view: View): Bitmap? =
         runCatching {
             val targetWidth = max(1, view.width)
@@ -365,4 +368,14 @@ internal fun PaperCurlOverlay(
                 }
         )
     }
+}
+
+
+internal fun paperTerminalTurnEdge(width: Float, height: Float): PaperCurlEdge {
+    val safeWidth = width.coerceAtLeast(0f)
+    val safeHeight = height.coerceAtLeast(0f)
+    return PaperCurlEdge(
+        top = Offset(-safeWidth * 0.10f, safeHeight * 0.03f),
+        bottom = Offset(-safeWidth * 0.42f, safeHeight * 0.98f)
+    )
 }

@@ -519,4 +519,14 @@ class PaperCurlGeometryTest {
         )
     }
 
+    @Test
+    fun `paper terminal turn keeps a folded edge off book`() {
+        val edge = paperTerminalTurnEdge(width = 1000f, height = 1600f)
+
+        assertTrue(edge.top.x < 0f)
+        assertTrue(edge.bottom.x < edge.top.x)
+        assertTrue(edge.top.y > 0f)
+        assertTrue(edge.bottom.y < 1600f)
+    }
+
 }
