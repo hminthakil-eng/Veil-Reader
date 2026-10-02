@@ -116,8 +116,6 @@ fun ProfileScreen(
             )
         }
 
-        ProfileMasteryPanel(profile = p)
-
         ProfileSectionHeading(
             eyebrow = stringResource(R.string.profile_recorded_history),
             title = stringResource(R.string.profile_reading_record)
@@ -129,6 +127,8 @@ fun ProfileScreen(
 
         DossierHistoryLedger(dossierHistory)
 
+        ProfileMasteryPanel(profile = p)
+
         OutlinedButton(
             onClick = onOpenArchive,
             modifier = Modifier
@@ -137,7 +137,10 @@ fun ProfileScreen(
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
         ) {
-            Text(stringResource(R.string.profile_open_hidden_archive), style = MaterialTheme.typography.labelMedium)
+            Text(
+                stringResource(R.string.profile_open_hidden_archive),
+                style = MaterialTheme.typography.labelMedium
+            )
         }
 
         ProfileSectionHeading(

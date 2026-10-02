@@ -74,6 +74,13 @@ internal fun pathGeometryFor(pathId: String): PathGeometryKind =
         else -> PathGeometryKind.RADIAL_EYE
     }
 
+internal fun showAlternativePathChoices(rankIndex: Int): Boolean = rankIndex == 0
+
+internal fun showAdvancementAction(
+    hasNextRank: Boolean,
+    canAdvance: Boolean
+): Boolean = hasNextRank && canAdvance
+
 @Composable
 fun PathScreen(
     profile: ReaderProfile,
@@ -125,13 +132,6 @@ fun PathScreen(
             PathIdentityPanel(profile)
         }
 
-        RitualPanel(
-            profile = profile,
-            canAdvance = canAdvance,
-            nextRank = nextRank,
-            onPrepareCeremony = { showCeremony = true }
-        )
-
         Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
             SectionHeading(
                 eyebrow = stringResource(R.string.path_progression_eyebrow),
@@ -140,28 +140,29 @@ fun PathScreen(
             RankConstellation(profile)
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-            SectionHeading(
-                eyebrow = stringResource(R.string.path_other_paths_eyebrow),
-                title = stringResource(
-                    if (profile.rankIndex == 0) R.string.path_choose_fit_title
-                    else R.string.path_choice_rooted_title
+        RitualPanel(
+            profile = profile,
+            canAdvance = canAdvance,
+            nextRank = nextRank,
+            onPrepareCeremony = { showCeremony = true }
+        )
+
+        if (showAlternativePathChoices(profile.rankIndex)) {
+            Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                SectionHeading(
+                    eyebrow = stringResource(R.string.path_other_paths_eyebrow),
+                    title = stringResource(R.string.path_choose_fit_title)
                 )
-            )
-            Text(
-                stringResource(
-                    if (profile.rankIndex == 0) R.string.path_change_before_first
-                    else R.string.path_change_after_first
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Mist
-            )
-            if (profile.rankIndex == 0) {
-                SampleData.paths.filterNot { it.id == profile.path.id }.forEach { path ->
+                Text(
+                    stringResource(R.string.path_change_before_first),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Mist
+                )
+                SampleData.paths.filterNot { it.id == profile.path.id }.forEach { alternative ->
                     PathChoiceCard(
-                        path = path,
+                        path = alternative,
                         enabled = true,
-                        onChoose = { onChoosePath(path.id) }
+                        onChoose = { onChoosePath(alternative.id) }
                     )
                 }
             }
@@ -668,28 +669,22 @@ private fun RitualPanel(
                 )
             }
 
-            if (nextRankLabel != null) {
+            if (showAdvancementAction(nextRankLabel != null, canAdvance)) {
                 BrassRule(Modifier.fillMaxWidth())
                 Button(
                     onClick = onPrepareCeremony,
-                    enabled = canAdvance,
                     modifier = Modifier
                         .align(Alignment.End)
                         .heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A),
-                        disabledContainerColor = VeilPalette.RaisedIron.copy(alpha = 0.50f),
-                        disabledContentColor = VeilPalette.Mist.copy(alpha = 0.62f)
+                        contentColor = Color(0xFF17120A)
                     ),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
                 ) {
                     Text(
-                        stringResource(
-                            if (canAdvance) R.string.path_perform_advancement
-                            else R.string.path_complete_three_seals
-                        ),
+                        stringResource(R.string.path_perform_advancement),
                         style = MaterialTheme.typography.labelMedium
                     )
                 }

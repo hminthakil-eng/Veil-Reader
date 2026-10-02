@@ -32,4 +32,20 @@ class PathGeometryTest {
         assertEquals(PathGeometryKind.MECHANICAL, pathGeometryFor("artificer"))
         assertEquals(PathGeometryKind.RADIAL_EYE, pathGeometryFor("unknown"))
     }
+
+    @Test
+    fun `committed path hides dead alternatives`() {
+        assertEquals(true, showAlternativePathChoices(rankIndex = 0))
+        assertEquals(false, showAlternativePathChoices(rankIndex = 1))
+        assertEquals(false, showAlternativePathChoices(rankIndex = 8))
+    }
+
+    @Test
+    fun `advancement action exists only when a real next rank is ready`() {
+        assertEquals(false, showAdvancementAction(hasNextRank = false, canAdvance = false))
+        assertEquals(false, showAdvancementAction(hasNextRank = false, canAdvance = true))
+        assertEquals(false, showAdvancementAction(hasNextRank = true, canAdvance = false))
+        assertEquals(true, showAdvancementAction(hasNextRank = true, canAdvance = true))
+    }
+
 }

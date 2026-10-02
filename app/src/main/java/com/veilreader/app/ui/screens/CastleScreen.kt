@@ -164,19 +164,6 @@ fun CastleScreen(
             subtitle = localizedCastleMemoryNarrative(memoryState.memoryNarrative)
         )
 
-        CastleKeep(
-            profile = profile,
-            memoryState = memoryState,
-            canAdvance = canAdvance,
-            awakenedRooms = awakenedRooms,
-            totalRooms = SampleData.rooms.size,
-            minHeightDp = castleLayout.keepMinHeightDp,
-            onAdvanceRank = onAdvanceRank
-        )
-
-        CastleMemoryInscription(memoryState)
-        CastleWorldProgressionInscription(worldProjection)
-
         Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
             VeilMicroLabel(
                 text = stringResource(R.string.castle_inner_keep_eyebrow),
@@ -202,6 +189,18 @@ fun CastleScreen(
             onOpenRoom = onOpenRoom
         )
 
+        CastleKeep(
+            profile = profile,
+            memoryState = memoryState,
+            canAdvance = canAdvance,
+            awakenedRooms = awakenedRooms,
+            totalRooms = SampleData.rooms.size,
+            minHeightDp = castleLayout.keepMinHeightDp,
+            onAdvanceRank = onAdvanceRank
+        )
+
+        CastleMemoryInscription(memoryState)
+        CastleWorldProgressionInscription(worldProjection)
         CastleMutationInscription(memoryState)
         CastleRitualAftermath(profile, ritualAfterglow)
         CastleMutationLedgerSummary(mutationLedger)
