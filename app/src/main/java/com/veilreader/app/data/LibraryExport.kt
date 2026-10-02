@@ -8,6 +8,10 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.PageTurnStyle
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderHyphenation
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
@@ -365,7 +369,11 @@ private fun ReadingSessionSnapshot.toJson(): JSONObject = JSONObject().apply {
 private fun ReaderAppearance.toJson(): JSONObject = JSONObject().apply {
     put("theme", theme.name); put("fontScale", fontScale); put("lineHeight", lineHeight); put("pageMargins", pageMargins)
     put("scroll", scroll); put("publisherStyles", publisherStyles)
+    put("pageTurnStyle", pageTurnStyle.name)
     put("screenBrightness", screenBrightness ?: JSONObject.NULL)
+    put("fontFamily", fontFamily.name)
+    put("textAlignment", textAlignment.name)
+    put("hyphenation", hyphenation.name)
 }
 
 private fun bookFromJson(o: JSONObject): Book {
@@ -430,7 +438,19 @@ private fun appearanceFromJson(o: JSONObject): ReaderAppearance = ReaderAppearan
     pageMargins = (o.optDouble("pageMargins", 1.0).takeIf { it.isFinite() } ?: 1.0).coerceIn(.5, 2.0),
     scroll = o.optBoolean("scroll", false),
     publisherStyles = o.optBoolean("publisherStyles", true),
-    screenBrightness = o.optFiniteDouble("screenBrightness")?.coerceIn(.05, 1.0)
+    pageTurnStyle = runCatching {
+        PageTurnStyle.valueOf(o.optString("pageTurnStyle", PageTurnStyle.PAPER.name))
+    }.getOrDefault(PageTurnStyle.PAPER),
+    screenBrightness = o.optFiniteDouble("screenBrightness")?.coerceIn(.05, 1.0),
+    fontFamily = runCatching {
+        ReaderFontFamily.valueOf(o.optString("fontFamily", ReaderFontFamily.ORIGINAL.name))
+    }.getOrDefault(ReaderFontFamily.ORIGINAL),
+    textAlignment = runCatching {
+        ReaderTextAlignment.valueOf(o.optString("textAlignment", ReaderTextAlignment.ORIGINAL.name))
+    }.getOrDefault(ReaderTextAlignment.ORIGINAL),
+    hyphenation = runCatching {
+        ReaderHyphenation.valueOf(o.optString("hyphenation", ReaderHyphenation.ORIGINAL.name))
+    }.getOrDefault(ReaderHyphenation.ORIGINAL)
 )
 
 private fun <T> JSONArray.mapObjects(transform: (JSONObject) -> T): List<T> = buildList {
