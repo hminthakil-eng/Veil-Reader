@@ -303,7 +303,19 @@ fun VeilApp(
     fun showNotice(
         resourceId: Int,
         kind: VeilNoticeKind = VeilNoticeKind.ERROR,
-        category: VeilIssueCategory = VeilIssueCategory.GENERAL,
+        vararg args: Any
+    ) {
+        notice = VeilNotice(
+            message = context.getString(resourceId, *args),
+            kind = kind,
+            category = VeilIssueCategory.GENERAL
+        )
+    }
+
+    fun showNotice(
+        resourceId: Int,
+        kind: VeilNoticeKind = VeilNoticeKind.ERROR,
+        category: VeilIssueCategory,
         vararg args: Any
     ) {
         notice = VeilNotice(
