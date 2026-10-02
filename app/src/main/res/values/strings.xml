@@ -1289,7 +1289,7 @@
     <string name="notice_category_reader">READER</string>
     <string name="notice_category_renderer">RENDERER</string>
     <string name="notice_category_navigation">NAVIGATION</string>
-    <string name="notice_category_backup">BACKUP & RESTORE</string>
+    <string name="notice_category_backup">BACKUP &amp; RESTORE</string>
     <string name="notice_category_persistence">SAVED STATE</string>
     <string name="notice_category_search">SEARCH</string>
     <string name="notice_category_validation">CHECK REQUIRED</string>
