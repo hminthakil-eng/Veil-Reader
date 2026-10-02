@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -148,36 +149,10 @@ fun ProfileScreen(
             color = VeilPalette.Mist,
             style = MaterialTheme.typography.bodyMedium
         )
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            listOf(10, 20, 30, 60).forEach { minutes ->
-                val selected = minutes == dailyGoalMinutes
-                if (selected) {
-                    Button(
-                        onClick = { onSetDailyGoal(minutes) },
-                        shape = MaterialTheme.shapes.extraSmall,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = VeilPalette.Brass,
-                            contentColor = Color(0xFF17120A)
-                        ),
-                        modifier = Modifier.heightIn(min = 48.dp)
-                    ) {
-                        Text(stringResource(R.string.profile_minutes_current, minutes), style = MaterialTheme.typography.labelMedium)
-                    }
-                } else {
-                    OutlinedButton(
-                        onClick = { onSetDailyGoal(minutes) },
-                        shape = MaterialTheme.shapes.extraSmall,
-                        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
-                        modifier = Modifier.heightIn(min = 48.dp)
-                    ) {
-                        Text(stringResource(R.string.profile_minutes, minutes), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-        }
+        ProfileDailyGoalChooser(
+            selectedMinutes = dailyGoalMinutes,
+            onSelectMinutes = onSetDailyGoal
+        )
 
         ProfileSectionHeading(
             eyebrow = stringResource(R.string.profile_known_marks),
@@ -239,6 +214,92 @@ fun ProfileScreen(
         }
 
     }
+    }
+}
+
+@Composable
+private fun ProfileDailyGoalChooser(
+    selectedMinutes: Int,
+    onSelectMinutes: (Int) -> Unit
+) {
+    val choices = listOf(10, 20, 30, 60)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val stacked = shouldStackDenseChoices(
+            widthDp = maxWidth.value.toInt(),
+            fontScale = LocalDensity.current.fontScale,
+            optionCount = choices.size
+        )
+
+        if (stacked) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                choices.forEach { minutes ->
+                    ProfileDailyGoalButton(
+                        minutes = minutes,
+                        selected = minutes == selectedMinutes,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = { onSelectMinutes(minutes) }
+                    )
+                }
+            }
+        } else {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                choices.forEach { minutes ->
+                    ProfileDailyGoalButton(
+                        minutes = minutes,
+                        selected = minutes == selectedMinutes,
+                        modifier = Modifier,
+                        onClick = { onSelectMinutes(minutes) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProfileDailyGoalButton(
+    minutes: Int,
+    selected: Boolean,
+    modifier: Modifier,
+    onClick: () -> Unit
+) {
+    if (selected) {
+        Button(
+            onClick = onClick,
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilPalette.Brass,
+                contentColor = Color(0xFF17120A)
+            ),
+            modifier = modifier.heightIn(min = 48.dp)
+        ) {
+            Text(
+                stringResource(R.string.profile_minutes_current, minutes),
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 2
+            )
+        }
+    } else {
+        OutlinedButton(
+            onClick = onClick,
+            shape = MaterialTheme.shapes.extraSmall,
+            border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.82f)),
+            modifier = modifier.heightIn(min = 48.dp)
+        ) {
+            Text(
+                stringResource(R.string.profile_minutes, minutes),
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 2
+            )
+        }
     }
 }
 
