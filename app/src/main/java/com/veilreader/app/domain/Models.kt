@@ -111,6 +111,25 @@ enum class ReaderTheme { PAPER, SEPIA, DUSK, OLED }
 
 enum class PageTurnStyle { PAPER, SLIDE }
 
+/**
+ * EPUB font choices exposed through Readium. ORIGINAL leaves the publication's typeface alone.
+ *
+ * These are deliberately generic/accessibility-oriented families rather than Moon+ assets.
+ */
+enum class ReaderFontFamily {
+    ORIGINAL,
+    SERIF,
+    SANS_SERIF,
+    MONOSPACE,
+    OPEN_DYSLEXIC,
+    ACCESSIBLE_DFA,
+    IA_WRITER_DUOSPACE
+}
+
+enum class ReaderTextAlignment { ORIGINAL, START, JUSTIFY }
+
+enum class ReaderHyphenation { ORIGINAL, ON, OFF }
+
 data class ReaderAppearance(
     val theme: ReaderTheme = ReaderTheme.DUSK,
     val fontScale: Double = 1.0,
@@ -119,7 +138,10 @@ data class ReaderAppearance(
     val scroll: Boolean = false,
     val publisherStyles: Boolean = true,
     val pageTurnStyle: PageTurnStyle = PageTurnStyle.PAPER,
-    val screenBrightness: Double? = null
+    val screenBrightness: Double? = null,
+    val fontFamily: ReaderFontFamily = ReaderFontFamily.ORIGINAL,
+    val textAlignment: ReaderTextAlignment = ReaderTextAlignment.ORIGINAL,
+    val hyphenation: ReaderHyphenation = ReaderHyphenation.ORIGINAL
 ) {
     fun withTheme(theme: ReaderTheme): ReaderAppearance =
         copy(theme = theme, publisherStyles = false)
@@ -139,6 +161,15 @@ data class ReaderAppearance(
                 ?.takeIf { it.isFinite() }
                 ?.coerceIn(0.05, 1.0)
         )
+
+    fun withFontFamily(value: ReaderFontFamily): ReaderAppearance =
+        copy(fontFamily = value, publisherStyles = false)
+
+    fun withTextAlignment(value: ReaderTextAlignment): ReaderAppearance =
+        copy(textAlignment = value, publisherStyles = false)
+
+    fun withHyphenation(value: ReaderHyphenation): ReaderAppearance =
+        copy(hyphenation = value, publisherStyles = false)
 }
 
 /** A saved reading location, independent of text selection (also supports PDF). */
