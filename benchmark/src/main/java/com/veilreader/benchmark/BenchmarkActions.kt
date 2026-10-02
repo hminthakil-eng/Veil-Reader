@@ -12,7 +12,7 @@ internal const val READER_ACTIVITY = "com.veilreader.app.benchmark.BenchmarkRead
 
 internal fun readerIntent(): Intent = Intent().apply {
     component = ComponentName(TARGET_PACKAGE, READER_ACTIVITY)
-    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
 }
 
 internal fun MacrobenchmarkScope.awaitReaderSurface(timeoutMs: Long = 20_000L) {
