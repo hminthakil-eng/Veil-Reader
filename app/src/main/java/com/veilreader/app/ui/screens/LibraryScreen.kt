@@ -1304,8 +1304,8 @@ private fun BookDetailArtifactStand(
         modifier = modifier.background(
             Brush.radialGradient(
                 listOf(
-                    fieldColor.copy(alpha = 0.16f),
-                    VeilPalette.Ink.copy(alpha = 0.04f),
+                    fieldColor.copy(alpha = 0.07f),
+                    VeilPalette.Ink.copy(alpha = 0.03f),
                     Color.Transparent
                 )
             )
@@ -1315,8 +1315,8 @@ private fun BookDetailArtifactStand(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(0.82f)
-                .height(12.dp)
+                .fillMaxWidth(0.76f)
+                .height(10.dp)
                 .background(
                     Brush.verticalGradient(
                         listOf(
@@ -1329,13 +1329,13 @@ private fun BookDetailArtifactStand(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .fillMaxWidth(0.72f)
+                .fillMaxWidth(0.64f)
                 .height(1.dp)
                 .background(
                     Brush.horizontalGradient(
                         listOf(
                             Color.Transparent,
-                            VeilPalette.Brass.copy(alpha = 0.72f),
+                            VeilPalette.Brass.copy(alpha = 0.56f),
                             Color.Transparent
                         )
                     )
@@ -1349,10 +1349,10 @@ private fun BookDetailArtifactStand(
             artifact = artifact,
             focusArtifact = true,
             modifier = Modifier
-                .fillMaxHeight(0.86f)
+                .fillMaxHeight(0.92f)
                 .aspectRatio(0.69f)
                 .align(Alignment.TopCenter)
-                .offset(y = 7.dp)
+                .offset(y = 2.dp)
         )
     }
 }
@@ -1423,7 +1423,7 @@ private fun BookDetailDestination(
             BoxWithConstraints(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 320.dp)
+                    .heightIn(min = 356.dp)
             ) {
                 val compact = maxWidth < 520.dp
 
@@ -1439,8 +1439,8 @@ private fun BookDetailDestination(
                         .matchParentSize()
                         .background(
                             Brush.verticalGradient(
-                                0f to VeilPalette.Ink.copy(alpha = 0.18f),
-                                0.48f to VeilPalette.Ink.copy(alpha = 0.72f),
+                                0f to VeilPalette.Ink.copy(alpha = 0.34f),
+                                0.44f to VeilPalette.Ink.copy(alpha = 0.78f),
                                 1f to VeilPalette.Ink
                             )
                         )
@@ -1452,9 +1452,9 @@ private fun BookDetailDestination(
                         .background(
                             Brush.horizontalGradient(
                                 listOf(
-                                    VeilPalette.Ink.copy(alpha = 0.36f),
+                                    VeilPalette.Ink.copy(alpha = 0.46f),
                                     Color.Transparent,
-                                    VeilPalette.Ink.copy(alpha = 0.28f)
+                                    VeilPalette.Ink.copy(alpha = 0.34f)
                                 )
                             )
                         )
@@ -1462,14 +1462,17 @@ private fun BookDetailDestination(
 
                 GrayfogOrnamentFrame(
                     modifier = Modifier.matchParentSize(),
-                    strength = 0.58f
+                    strength = 0.34f
                 )
 
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .align(Alignment.BottomCenter)
-                        .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.lg),
+                        .padding(
+                            horizontal = if (compact) VeilSpacing.lg else VeilSpacing.xxl,
+                            vertical = VeilSpacing.lg
+                        ),
                     verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                 ) {
                     Row(
@@ -1507,12 +1510,15 @@ private fun BookDetailDestination(
                                 book = book,
                                 artifactMemory = artifactMemory,
                                 modifier = Modifier
-                                    .width(184.dp)
-                                    .height(258.dp)
+                                    .width(208.dp)
+                                    .height(294.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
-                                artifactMemory = artifactMemory
+                                artifactMemory = artifactMemory,
+                                modifier = Modifier
+                                    .widthIn(max = 440.dp)
+                                    .fillMaxWidth()
                             )
                         }
                     } else {
@@ -1525,8 +1531,8 @@ private fun BookDetailDestination(
                                 book = book,
                                 artifactMemory = artifactMemory,
                                 modifier = Modifier
-                                    .width(198.dp)
-                                    .height(276.dp)
+                                    .width(224.dp)
+                                    .height(316.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
@@ -1963,9 +1969,9 @@ private fun BookDetailIdentity(
     ) {
         Text(
             book.title.ifBlank { stringResource(R.string.common_untitled_book) },
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineLarge,
             color = VeilPalette.Moon,
-            maxLines = 6,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis
         )
 
@@ -1973,9 +1979,9 @@ private fun BookDetailIdentity(
             book.author.trim().ifBlank {
                 stringResource(R.string.common_unknown_author)
             },
-            style = MaterialTheme.typography.bodyMedium,
-            color = VeilPalette.Moon.copy(alpha = 0.76f),
-            maxLines = 3,
+            style = MaterialTheme.typography.titleSmall,
+            color = VeilPalette.Moon.copy(alpha = 0.74f),
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
 
@@ -2000,33 +2006,21 @@ private fun BookDetailIdentity(
             color = VeilPalette.Mist.copy(alpha = 0.72f)
         )
 
-        Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
-            Surface(
-                shape = MaterialTheme.shapes.extraSmall,
-                color = VeilPalette.Ink.copy(alpha = 0.58f),
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.32f))
-            ) {
-                Text(
-                    localizedBookFormatLabel(book.format),
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Moon.copy(alpha = 0.84f)
-                )
-            }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            VeilMicroLabel(
+                text = localizedBookFormatLabel(book.format),
+                color = VeilPalette.Moon.copy(alpha = 0.68f)
+            )
 
             if (book.favorite) {
-                Surface(
-                    shape = MaterialTheme.shapes.extraSmall,
-                    color = VeilPalette.DeepBrass.copy(alpha = 0.54f),
-                    border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.42f))
-                ) {
-                    Text(
-                        stringResource(R.string.book_detail_favorite_badge),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Brass
-                    )
-                }
+                VeilMicroLabel(
+                    text = stringResource(R.string.book_detail_favorite_badge),
+                    color = VeilPalette.Brass,
+                    strong = true
+                )
             }
         }
     }
