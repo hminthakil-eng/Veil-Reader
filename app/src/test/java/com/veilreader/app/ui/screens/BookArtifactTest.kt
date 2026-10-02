@@ -436,4 +436,27 @@ class BookArtifactTest {
         timeline = emptyList()
     )
 
+
+    @Test
+    fun `book detail adaptive policy stacks utility actions for accessibility text`() {
+        val normal = bookDetailAdaptivePolicy(widthDp = 412, fontScale = 1f)
+        val largeText = bookDetailAdaptivePolicy(widthDp = 412, fontScale = 2f)
+        val narrow = bookDetailAdaptivePolicy(widthDp = 300, fontScale = 1f)
+
+        assertFalse(normal.compactHero)
+        assertFalse(normal.stackUtilityActions)
+        assertTrue(largeText.compactHero)
+        assertTrue(largeText.stackUtilityActions)
+        assertTrue(narrow.compactHero)
+        assertTrue(narrow.stackUtilityActions)
+    }
+
+    @Test
+    fun `book detail adaptive policy sanitizes invalid font scale`() {
+        val invalid = bookDetailAdaptivePolicy(widthDp = 700, fontScale = Float.NaN)
+
+        assertFalse(invalid.compactHero)
+        assertFalse(invalid.stackUtilityActions)
+    }
+
 }

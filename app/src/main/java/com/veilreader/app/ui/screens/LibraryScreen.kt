@@ -1357,6 +1357,27 @@ private fun BookDetailArtifactStand(
     }
 }
 
+internal data class BookDetailAdaptivePolicy(
+    val compactHero: Boolean,
+    val stackUtilityActions: Boolean
+)
+
+internal fun bookDetailAdaptivePolicy(
+    widthDp: Int,
+    fontScale: Float
+): BookDetailAdaptivePolicy {
+    val safeWidth = widthDp.coerceAtLeast(0)
+    val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
+    return BookDetailAdaptivePolicy(
+        compactHero = safeWidth < 520 || safeScale >= 1.60f,
+        stackUtilityActions = shouldStackDenseChoices(
+            widthDp = safeWidth,
+            fontScale = safeScale,
+            optionCount = 2
+        )
+    )
+}
+
 internal enum class BookDetailJourneyPhase {
     NOT_STARTED,
     READING,
@@ -1601,7 +1622,11 @@ private fun BookDetailDestination(
                     .fillMaxWidth()
                     .heightIn(min = 356.dp)
             ) {
-                val compact = maxWidth < 520.dp
+                val heroPolicy = bookDetailAdaptivePolicy(
+                    widthDp = maxWidth.value.toInt(),
+                    fontScale = LocalConfiguration.current.fontScale
+                )
+                val compact = heroPolicy.compactHero
 
                 Image(
                     painter = painterResource(R.drawable.grayfog_threshold_v1),
@@ -1809,40 +1834,11 @@ private fun BookDetailDestination(
                     Text(primaryAction)
                 }
 
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                ) {
-                    OutlinedButton(
-                        onClick = onFavorite,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        )
-                    ) {
-                        Text(
-                            if (book.favorite) {
-                                stringResource(R.string.book_detail_favorited)
-                            } else {
-                                stringResource(R.string.book_detail_favorite)
-                            }
-                        )
-                    }
-
-                    OutlinedButton(
-                        onClick = onEditMetadata,
-                        shape = MaterialTheme.shapes.extraSmall,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
-                        )
-                    ) {
-                        Text(stringResource(R.string.book_detail_edit_details))
-                    }
-                }
+                BookDetailUtilityActions(
+                    favorite = book.favorite,
+                    onFavorite = onFavorite,
+                    onEditMetadata = onEditMetadata
+                )
 
                 BrassRule(Modifier.fillMaxWidth())
 
@@ -1974,18 +1970,7 @@ private fun BookDetailDestination(
                 }
 
                 if (book.isImported) {
-                    BrassRule(Modifier.fillMaxWidth())
-                    TextButton(
-                        onClick = onDelete,
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .heightIn(min = 48.dp),
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text(stringResource(R.string.book_detail_delete))
-                    }
+                    BookDetailDestructiveActions(onDelete = onDelete)
                 }
             }
                 }
@@ -2037,6 +2022,90 @@ internal fun bookDetailPreservedMemory(
         fragments = useful.take(sampleLimit.coerceAtLeast(0)),
         totalUseful = useful.size
     )
+}
+
+@Composable
+private fun BookDetailUtilityActions(
+    favorite: Boolean,
+    onFavorite: () -> Unit,
+    onEditMetadata: () -> Unit
+) {
+    VeilAdaptiveDialogActions(
+        modifier = Modifier.fillMaxWidth(),
+        spacing = VeilSpacing.sm,
+        first = { actionModifier ->
+            OutlinedButton(
+                onClick = onFavorite,
+                shape = MaterialTheme.shapes.extraSmall,
+                modifier = actionModifier.heightIn(min = 48.dp),
+                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+                Text(
+                    if (favorite) {
+                        stringResource(R.string.book_detail_favorited)
+                    } else {
+                        stringResource(R.string.book_detail_favorite)
+                    },
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        },
+        second = { actionModifier ->
+            OutlinedButton(
+                onClick = onEditMetadata,
+                shape = MaterialTheme.shapes.extraSmall,
+                modifier = actionModifier.heightIn(min = 48.dp),
+                border = BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
+                )
+            ) {
+                Text(
+                    stringResource(R.string.book_detail_edit_details),
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun BookDetailDestructiveActions(onDelete: () -> Unit) {
+    BrassRule(Modifier.fillMaxWidth())
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+    ) {
+        VeilMicroLabel(
+            text = stringResource(R.string.book_detail_local_copy_controls),
+            color = MaterialTheme.colorScheme.error.copy(alpha = 0.76f)
+        )
+        Text(
+            stringResource(R.string.book_detail_delete_local_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        TextButton(
+            onClick = onDelete,
+            modifier = Modifier
+                .align(Alignment.End)
+                .heightIn(min = 48.dp),
+            colors = ButtonDefaults.textButtonColors(
+                contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+            Text(
+                stringResource(R.string.book_detail_delete),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
 }
 
 @Composable
