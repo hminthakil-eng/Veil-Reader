@@ -13,7 +13,7 @@ data class ContextToolProvider(
     fun supports(languageTag: String?): Boolean =
         supportsLanguages.isEmpty() ||
             languageTag.isNullOrBlank() ||
-            languageTag.lowercase() in supportsLanguages.map(String::lowercase)
+            languageTag.lowercase() in supportsLanguages.map { it.lowercase() }
 }
 
 object ContextToolRegistry {
