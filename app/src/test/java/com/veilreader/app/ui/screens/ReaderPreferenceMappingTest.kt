@@ -1,10 +1,15 @@
 package com.veilreader.app.ui.screens
 
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderHyphenation
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
+import org.readium.r2.navigator.preferences.FontFamily
+import org.readium.r2.navigator.preferences.TextAlign
 
 class ReaderPreferenceMappingTest {
     @Test
@@ -58,6 +63,29 @@ class ReaderPreferenceMappingTest {
         val margins = original.withPageMargins(1.3)
         assertEquals(1.3, margins.pageMargins, 0.0001)
         assertFalse(margins.publisherStyles)
+    }
+
+    @Test
+    fun `advanced typography maps to Readium without custom rendering`() {
+        val prefs = ReaderAppearance(
+            publisherStyles = false,
+            fontFamily = ReaderFontFamily.OPEN_DYSLEXIC,
+            textAlignment = ReaderTextAlignment.JUSTIFY,
+            hyphenation = ReaderHyphenation.ON
+        ).toEpubPreferences()
+
+        assertEquals(FontFamily.OPEN_DYSLEXIC, prefs.fontFamily)
+        assertEquals(TextAlign.JUSTIFY, prefs.textAlign)
+        assertEquals(true, prefs.hyphens)
+    }
+
+    @Test
+    fun `book typography leaves advanced Readium preferences unset`() {
+        val prefs = ReaderAppearance().toEpubPreferences()
+
+        assertEquals(null, prefs.fontFamily)
+        assertEquals(null, prefs.textAlign)
+        assertEquals(null, prefs.hyphens)
     }
 
 }
