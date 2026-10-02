@@ -55,6 +55,7 @@ import com.veilreader.app.data.OpenedPublication
 import com.veilreader.app.data.toVeilPersistedJson
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.BookFormat
+import com.veilreader.app.domain.FocusGuideStyle
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderTheme
@@ -539,6 +540,11 @@ fun ReaderScreen(
                 modifier = Modifier.fillMaxSize()
             )
         }
+
+        ReaderFocusGuideOverlay(
+            appearance = readerAppearance,
+            modifier = Modifier.fillMaxSize()
+        )
 
         AnimatedVisibility(
             visible = controlsVisible,
@@ -1174,6 +1180,63 @@ private fun EpubAppearancePanel(
                     modifier = Modifier.semantics { contentDescription = "Publisher styling" }
                 )
             }
+
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Veil Focus Guide", fontWeight = FontWeight.SemiBold)
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                FocusGuideStyle.entries.forEach { style ->
+                    FilterChip(
+                        selected = draft.focusGuideStyle == style,
+                        onClick = { updateDraft(draft.withFocusGuide(style = style)) },
+                        label = {
+                            Text(
+                                when (style) {
+                                    FocusGuideStyle.OFF -> "Off"
+                                    FocusGuideStyle.WINDOW -> "Veil window"
+                                    FocusGuideStyle.RULER -> "Brass ruler"
+                                    FocusGuideStyle.LINE -> "Guide line"
+                                }
+                            )
+                        },
+                        modifier = Modifier.heightIn(min = 48.dp)
+                    )
+                }
+            }
+            if (draft.focusGuideStyle != FocusGuideStyle.OFF) {
+                Text(
+                    "Strength · " + (draft.focusGuideStrength * 100).toInt() + "%",
+                    fontSize = 12.sp
+                )
+                Slider(
+                    value = draft.focusGuideStrength.toFloat(),
+                    onValueChange = {
+                        updateDraft(draft.withFocusGuide(strength = it.toDouble()))
+                    },
+                    valueRange = 0.15f..0.80f
+                )
+                Text(
+                    "Height · " + (draft.focusGuideHeight * 100).toInt() + "%",
+                    fontSize = 12.sp
+                )
+                Slider(
+                    value = draft.focusGuideHeight.toFloat(),
+                    onValueChange = {
+                        updateDraft(draft.withFocusGuide(height = it.toDouble()))
+                    },
+                    valueRange = 0.08f..0.30f
+                )
+            }
+            Text(
+                "Focus Guide is drawn above the renderer, so it never edits the book and works across EPUB and PDF.",
+                fontSize = 12.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
 
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
         ReaderBrightnessControls(
