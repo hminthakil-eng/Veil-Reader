@@ -10,6 +10,9 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderHyphenation
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -36,6 +39,9 @@ class SettingsStore(private val context: Context) {
         val publisherStyles = booleanPreferencesKey("reader_publisher_styles")
         val pageTurnStyle = stringPreferencesKey("reader_page_turn_style")
         val screenBrightness = doublePreferencesKey("reader_screen_brightness")
+        val fontFamily = stringPreferencesKey("reader_font_family")
+        val textAlignment = stringPreferencesKey("reader_text_alignment")
+        val hyphenation = stringPreferencesKey("reader_hyphenation")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val gameVisible = booleanPreferencesKey("game_visible")
         val legacyLibraryImported = booleanPreferencesKey("legacy_library_imported")
@@ -61,7 +67,22 @@ class SettingsStore(private val context: Context) {
                 }.getOrDefault(PageTurnStyle.PAPER),
                 screenBrightness = prefs[Keys.screenBrightness]
                     ?.takeIf { it.isFinite() }
-                    ?.coerceIn(0.05, 1.0)
+                    ?.coerceIn(0.05, 1.0),
+                fontFamily = runCatching {
+                    ReaderFontFamily.valueOf(
+                        prefs[Keys.fontFamily] ?: ReaderFontFamily.ORIGINAL.name
+                    )
+                }.getOrDefault(ReaderFontFamily.ORIGINAL),
+                textAlignment = runCatching {
+                    ReaderTextAlignment.valueOf(
+                        prefs[Keys.textAlignment] ?: ReaderTextAlignment.ORIGINAL.name
+                    )
+                }.getOrDefault(ReaderTextAlignment.ORIGINAL),
+                hyphenation = runCatching {
+                    ReaderHyphenation.valueOf(
+                        prefs[Keys.hyphenation] ?: ReaderHyphenation.ORIGINAL.name
+                    )
+                }.getOrDefault(ReaderHyphenation.ORIGINAL)
             ),
             dailyGoalMinutes = (prefs[Keys.dailyGoalMinutes] ?: 20).coerceIn(5, 180),
             gameVisible = prefs[Keys.gameVisible] ?: true,
@@ -86,6 +107,9 @@ class SettingsStore(private val context: Context) {
             value.screenBrightness?.takeIf { it.isFinite() }?.let {
                 prefs[Keys.screenBrightness] = it.coerceIn(0.05, 1.0)
             } ?: prefs.remove(Keys.screenBrightness)
+            prefs[Keys.fontFamily] = value.fontFamily.name
+            prefs[Keys.textAlignment] = value.textAlignment.name
+            prefs[Keys.hyphenation] = value.hyphenation.name
         }
     }
 
