@@ -199,7 +199,23 @@ workflows:
           test -n "$TEST_APK"
           test -f "$TEST_APK"
 
-          MANIFEST_XML="$(apkanalyzer manifest print "$TEST_APK")"
+          SDK_ROOT="${ANDROID_SDK_ROOT:-${ANDROID_HOME:-}}"
+          test -n "$SDK_ROOT"
+
+          AAPT=""
+          for candidate in "$SDK_ROOT"/build-tools/*/aapt; do
+            if [ -x "$candidate" ]; then
+              AAPT="$candidate"
+            fi
+          done
+
+          if [ -z "$AAPT" ]; then
+            echo "Android build-tools aapt was not found under $SDK_ROOT/build-tools."
+            exit 1
+          fi
+
+          echo "Using manifest inspector: $AAPT"
+          MANIFEST_XML="$("$AAPT" dump xmltree "$TEST_APK" AndroidManifest.xml)"
 
           case "$MANIFEST_XML" in
             *"androidx.test.runner.AndroidJUnitRunner"*)
