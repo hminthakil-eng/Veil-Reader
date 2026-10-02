@@ -99,6 +99,13 @@ jobs:
           find benchmark/build/outputs/androidTest-results -type f \( -name '*.xml' -o -name '*.txt' \) -print -exec cat {} \; 2>/dev/null || true
           echo "=== End benchmark instrumentation results ==="
 
+      - name: Build release package with generated profiles
+        run: gradle :app:assembleRelease :app:bundleRelease --stacktrace
+
+      - name: Verify packaged Baseline Profile
+        run: |
+          python3 tools/verify_release_artifact.py --require-profile             app/build/outputs/apk/release/app-release-unsigned.apk             app/build/outputs/bundle/release/app-release.aab
+
       - name: Enforce emulator smoke budgets
         run: python3 tools/check_performance_budget.py --mode smoke benchmark/build
 
