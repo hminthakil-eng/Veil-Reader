@@ -38,8 +38,15 @@ class ReaderFrameSmokeBenchmark {
             pressHome()
             startActivityAndWait(readerIntent())
             awaitReaderSurface()
+
+            // Keep startup/first-composition work out of the steady-state page-turn smoke sample.
+            // Two unmeasured turns also make the gfxinfo percentile less sensitive to a single
+            // lavapipe outlier on the ~30-frame CI sample. Budgets remain unchanged.
+            turnReaderPages(turns = 2)
+            device.waitForIdle()
+            Thread.sleep(650)
         }
     ) {
-        turnReaderPages(turns = 8)
+        turnReaderPages(turns = 12)
     }
 }
