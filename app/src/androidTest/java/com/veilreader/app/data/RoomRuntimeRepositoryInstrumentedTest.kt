@@ -10,7 +10,11 @@ import com.veilreader.app.data.settings.SettingsStore
 import com.veilreader.app.domain.Book
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookMetadataUpdate
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderHyphenation
+import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import java.io.File
@@ -195,7 +199,11 @@ class RoomRuntimeRepositoryInstrumentedTest {
             ReaderAppearance(
                 theme = ReaderTheme.OLED,
                 lineHeight = 1.7,
-                screenBrightness = 0.42
+                pageTurnStyle = PageTurnStyle.SLIDE,
+                screenBrightness = 0.42,
+                fontFamily = ReaderFontFamily.IA_WRITER_DUOSPACE,
+                textAlignment = ReaderTextAlignment.JUSTIFY,
+                hyphenation = ReaderHyphenation.ON
             )
         )
         repository.saveReadingSession(
@@ -249,6 +257,10 @@ class RoomRuntimeRepositoryInstrumentedTest {
         assertEquals(1, db.bookmarks().observeAll().first().size)
         val restoredAppearance = settings.settings.first().readerAppearance
         assertEquals(ReaderTheme.OLED, restoredAppearance.theme)
+        assertEquals(PageTurnStyle.SLIDE, restoredAppearance.pageTurnStyle)
+        assertEquals(ReaderFontFamily.IA_WRITER_DUOSPACE, restoredAppearance.fontFamily)
+        assertEquals(ReaderTextAlignment.JUSTIFY, restoredAppearance.textAlignment)
+        assertEquals(ReaderHyphenation.ON, restoredAppearance.hyphenation)
         assertEquals(0.42, requireNotNull(restoredAppearance.screenBrightness), 0.0001)
 
         val restoredSession = db.readingSessions().listAll().single()
