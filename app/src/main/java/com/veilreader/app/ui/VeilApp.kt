@@ -300,8 +300,17 @@ fun VeilApp(
     var mangaStorageRevision by remember { mutableIntStateOf(0) }
     var notice by remember { mutableStateOf<VeilNotice?>(null) }
 
-    fun showNotice(resourceId: Int, kind: VeilNoticeKind = VeilNoticeKind.ERROR, vararg args: Any) {
-        notice = VeilNotice(context.getString(resourceId, *args), kind)
+    fun showNotice(
+        resourceId: Int,
+        kind: VeilNoticeKind = VeilNoticeKind.ERROR,
+        category: VeilIssueCategory = VeilIssueCategory.GENERAL,
+        vararg args: Any
+    ) {
+        notice = VeilNotice(
+            message = context.getString(resourceId, *args),
+            kind = kind,
+            category = category
+        )
     }
 
     fun exportData(uri: Uri, backup: Boolean) {
@@ -318,7 +327,7 @@ fun VeilApp(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                showNotice(R.string.notice_export_failed)
+                showNotice(R.string.notice_export_failed, category = VeilIssueCategory.BACKUP_RESTORE)
             } finally {
                 exporting = false
             }
@@ -344,7 +353,7 @@ fun VeilApp(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (error: Exception) {
-                showNotice(R.string.notice_restore_failed)
+                showNotice(R.string.notice_restore_failed, category = VeilIssueCategory.BACKUP_RESTORE)
             } finally {
                 restoring = false
             }
@@ -354,7 +363,7 @@ fun VeilApp(
     fun requestOpenBook(book: Book, locatorOverride: String? = null) {
         if (restoring || mangaMutationInProgress) return
         if (!book.isImported) {
-            showNotice(R.string.notice_sample_no_file)
+            showNotice(R.string.notice_sample_no_file, category = VeilIssueCategory.MISSING_FILE)
             return
         }
         routeViewModel.requestBook(
@@ -388,7 +397,8 @@ fun VeilApp(
                 } else {
                     showNotice(
                         R.string.notice_book_delete_failed,
-                        VeilNoticeKind.WARNING
+                        VeilNoticeKind.WARNING,
+                        VeilIssueCategory.STORAGE
                     )
                 }
             } finally {
@@ -415,7 +425,7 @@ fun VeilApp(
                 val error = result.exceptionOrNull()
                 if (error != null) {
                     if (error is CancellationException) throw error
-                    showNotice(R.string.notice_manga_chapter_import_failed)
+                    showNotice(R.string.notice_manga_chapter_import_failed, category = VeilIssueCategory.IMPORT)
                     return@launch
                 }
 
@@ -452,7 +462,7 @@ fun VeilApp(
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
-                showNotice(R.string.notice_manga_chapter_import_failed)
+                showNotice(R.string.notice_manga_chapter_import_failed, category = VeilIssueCategory.IMPORT)
             } finally {
                 mangaMutationInProgress = false
                 isImporting = false
@@ -1076,7 +1086,7 @@ fun VeilApp(
                     } catch (cancelled: CancellationException) {
                         throw cancelled
                     } catch (error: Exception) {
-                        showNotice(R.string.notice_note_save_failed, VeilNoticeKind.WARNING)
+                        showNotice(R.string.notice_note_save_failed, VeilNoticeKind.WARNING, VeilIssueCategory.PERSISTENCE)
                     }
                 }
             },
@@ -1230,10 +1240,12 @@ fun VeilApp(
     }
 
     notice?.let { currentNotice ->
-        val eyebrow = when (currentNotice.kind) {
-            VeilNoticeKind.SUCCESS -> R.string.notice_success_eyebrow
-            VeilNoticeKind.WARNING -> R.string.notice_warning_eyebrow
-            VeilNoticeKind.ERROR -> R.string.notice_error_eyebrow
+        val eyebrow = when {
+            currentNotice.kind == VeilNoticeKind.SUCCESS -> R.string.notice_success_eyebrow
+            currentNotice.category != VeilIssueCategory.GENERAL ->
+                currentNotice.category.eyebrowRes
+            currentNotice.kind == VeilNoticeKind.WARNING -> R.string.notice_warning_eyebrow
+            else -> R.string.notice_error_eyebrow
         }
         val heading = when (currentNotice.kind) {
             VeilNoticeKind.SUCCESS -> R.string.notice_success_title
@@ -1335,7 +1347,26 @@ private fun VeilNoticeDialog(
 
 private enum class VeilNoticeKind { SUCCESS, WARNING, ERROR }
 
-private data class VeilNotice(val message: String, val kind: VeilNoticeKind)
+private enum class VeilIssueCategory(val eyebrowRes: Int) {
+    GENERAL(R.string.notice_error_eyebrow),
+    STORAGE(R.string.notice_category_storage),
+    IMPORT(R.string.notice_category_import),
+    PUBLICATION_RESTRICTION(R.string.notice_category_publication),
+    MISSING_FILE(R.string.notice_category_missing_file),
+    READER_OPEN(R.string.notice_category_reader),
+    RENDERER(R.string.notice_category_renderer),
+    NAVIGATION(R.string.notice_category_navigation),
+    BACKUP_RESTORE(R.string.notice_category_backup),
+    PERSISTENCE(R.string.notice_category_persistence),
+    SEARCH_EMPTY(R.string.notice_category_search),
+    VALIDATION(R.string.notice_category_validation)
+}
+
+private data class VeilNotice(
+    val message: String,
+    val kind: VeilNoticeKind,
+    val category: VeilIssueCategory = VeilIssueCategory.GENERAL
+)
 
 internal fun shouldUseNavigationRail(windowSizeClass: WindowSizeClass): Boolean =
     windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND) &&

@@ -1282,4 +1282,15 @@
     <string name="memory_artifact_passage">بخش کتاب</string>
     <string name="memory_artifact_note">یادداشت</string>
     <string name="memory_artifact_annotation">حاشیه‌نویسی</string>
+    <string name="notice_category_storage">ذخیره‌سازی محلی</string>
+    <string name="notice_category_import">درون‌ریزی</string>
+    <string name="notice_category_publication">انتشار</string>
+    <string name="notice_category_missing_file">فایل محلی</string>
+    <string name="notice_category_reader">کتاب‌خوان</string>
+    <string name="notice_category_renderer">نمایشگر</string>
+    <string name="notice_category_navigation">پیمایش</string>
+    <string name="notice_category_backup">پشتیبان و بازیابی</string>
+    <string name="notice_category_persistence">ذخیرهٔ وضعیت</string>
+    <string name="notice_category_search">جستجو</string>
+    <string name="notice_category_validation">نیازمند بررسی</string>
 </resources>

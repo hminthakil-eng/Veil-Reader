@@ -1282,4 +1282,15 @@
     <string name="memory_artifact_passage">Passage</string>
     <string name="memory_artifact_note">Note</string>
     <string name="memory_artifact_annotation">Annotation</string>
+    <string name="notice_category_storage">LOCAL STORAGE</string>
+    <string name="notice_category_import">IMPORT</string>
+    <string name="notice_category_publication">PUBLICATION</string>
+    <string name="notice_category_missing_file">LOCAL FILE</string>
+    <string name="notice_category_reader">READER</string>
+    <string name="notice_category_renderer">RENDERER</string>
+    <string name="notice_category_navigation">NAVIGATION</string>
+    <string name="notice_category_backup">BACKUP & RESTORE</string>
+    <string name="notice_category_persistence">SAVED STATE</string>
+    <string name="notice_category_search">SEARCH</string>
+    <string name="notice_category_validation">CHECK REQUIRED</string>
 </resources>
