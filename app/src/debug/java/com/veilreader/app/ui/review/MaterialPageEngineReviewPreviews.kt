@@ -164,7 +164,6 @@ private fun reviewPageBitmap(spec: MaterialReviewSpec): Bitmap {
     val metaPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = faint
         textSize = 18f
-        letterSpacing = 0.08f
         textAlign = if (spec.persian) Paint.Align.RIGHT else Paint.Align.LEFT
     }
 
