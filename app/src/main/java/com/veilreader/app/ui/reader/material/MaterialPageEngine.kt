@@ -181,8 +181,10 @@ internal class MaterialPageEngineState(
             android.content.Context.ACTIVITY_SERVICE
         ) as? ActivityManager
         backSnapshotAllowed =
-            memory?.isLowRamDevice != true &&
-                (memory?.memoryClass ?: 256) >= 256
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = memory?.isLowRamDevice == true,
+                memoryClassMb = memory?.memoryClass ?: 256
+            )
         this.side = side
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
