@@ -745,6 +745,45 @@ internal fun MaterialPageOverlay(
             }
         }
 
+        if (mesh.segmentCount > 0) {
+            val last = mesh.segmentCount - 1
+            val freeTopX = if (mirror) {
+                pageWidth - mesh.topRightX[last]
+            } else {
+                mesh.topRightX[last]
+            }
+            val freeTopY = mesh.topRightY[last]
+            val freeBottomX = if (mirror) {
+                pageWidth - mesh.bottomRightX[last]
+            } else {
+                mesh.bottomRightX[last]
+            }
+            val freeBottomY = mesh.bottomRightY[last]
+            val freeEdgeBody =
+                (
+                    optics.edgeBody *
+                        (0.78f + patina * optics.patinaResponse * 0.22f)
+                    ).coerceIn(0f, 1f)
+
+            scratch.detailPaint.color =
+                materialPageToneAdjustedArgb(optics.edgeArgb, tone).toInt()
+            scratch.detailPaint.alpha =
+                (
+                    mesh.lift *
+                        (0.18f + freeEdgeBody * 0.42f) *
+                        255f
+                    ).roundToInt().coerceIn(0, 122)
+            scratch.detailPaint.strokeWidth =
+                0.65f + freeEdgeBody * 1.85f
+            native.drawLine(
+                freeTopX,
+                freeTopY,
+                freeBottomX,
+                freeBottomY,
+                scratch.detailPaint
+            )
+        }
+
         // The binding/contact shadow is deliberately restrained; it communicates
         // attachment and thickness without turning the page into theatrical 3D.
         val creaseTopY = mesh.creaseTopY
