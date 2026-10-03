@@ -124,7 +124,12 @@ import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.MaterialPageSensoryAction
+import com.veilreader.app.ui.reader.material.MaterialPageSensorySink
 import com.veilreader.app.ui.reader.material.MaterialPageTone
+import com.veilreader.app.ui.reader.material.toVeilSensoryCue
+import com.veilreader.app.ui.sensory.VeilMaterialPageSensoryCue
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -203,6 +208,7 @@ fun ReaderScreen(
     returnRitual: BookReturnRitual? = null,
     initialReturnLocatorJson: String? = null,
     onSensoryEvent: (VeilSensoryEvent) -> Unit = {},
+    onMaterialPageSensoryCue: (VeilMaterialPageSensoryCue) -> Unit = {},
     onClose: () -> Unit,
     onLocatorCheckpoint: (String) -> Unit = {}
 ) {
@@ -385,6 +391,21 @@ fun ReaderScreen(
         stringResource(R.string.reader_boundary_end)
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
+    val latestMaterialPageSensoryCue =
+        rememberUpdatedState(onMaterialPageSensoryCue)
+    DisposableEffect(paperCurlState) {
+        val sink = MaterialPageSensorySink { cue ->
+            // Reader already owns the generic terminal-boundary feedback path.
+            // Suppress only that duplicate; lift/cancel/complete stay material-specific.
+            if (cue.action != MaterialPageSensoryAction.BOUNDARY) {
+                latestMaterialPageSensoryCue.value(cue.toVeilSensoryCue())
+            }
+        }
+        paperCurlState.materialEngine.setSensorySink(sink)
+        onDispose {
+            paperCurlState.materialEngine.setSensorySink(null)
+        }
+    }
     var paperInputListener by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<PaperCurlInputListener?>(null)
     }
@@ -1670,7 +1691,9 @@ fun ReaderScreen(
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
-                        onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        if (!MaterialPageEngineRollout.isEnabled()) {
+                            onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
+                        }
                         val locator = nav.currentLocator.value
                         val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
