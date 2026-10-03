@@ -497,19 +497,19 @@ internal fun PaperCurlOverlay(
             )
             if (BuildConfig.DEBUG) {
                 val label = when {
-                    state.active -> "PAPER · GPU v2"
-                    state.lastBeginFailed -> "PAPER · CAPTURE FAILED"
-                    else -> null
+                    state.lastBeginFailed -> "PAPER · GPU v2 · CAPTURE FAILED"
+                    state.materialEngine.reducedMotion ->
+                        "PAPER · GPU v2 · REDUCED MOTION"
+                    state.active -> "PAPER · GPU v2 · ACTIVE"
+                    else -> "PAPER · GPU v2 · READY"
                 }
-                if (label != null) {
-                    Text(
-                        text = label,
-                        color = Color(0xFFFFC857),
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp)
-                    )
-                }
+                Text(
+                    text = label,
+                    color = Color(0xFFFFC857),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                )
             }
         }
         return
@@ -523,19 +523,19 @@ internal fun PaperCurlOverlay(
             )
             if (BuildConfig.DEBUG) {
                 val label = when {
-                    state.active -> "PAPER · Canvas v1"
-                    state.lastBeginFailed -> "PAPER · CAPTURE FAILED"
-                    else -> null
+                    state.lastBeginFailed -> "PAPER · Canvas v1 · CAPTURE FAILED"
+                    state.materialEngine.reducedMotion ->
+                        "PAPER · Canvas v1 · REDUCED MOTION"
+                    state.active -> "PAPER · Canvas v1 · ACTIVE"
+                    else -> "PAPER · Canvas v1 · READY"
                 }
-                if (label != null) {
-                    Text(
-                        text = label,
-                        color = Color(0xFFFFC857),
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(6.dp)
-                    )
-                }
+                Text(
+                    text = label,
+                    color = Color(0xFFFFC857),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                )
             }
         }
         return
