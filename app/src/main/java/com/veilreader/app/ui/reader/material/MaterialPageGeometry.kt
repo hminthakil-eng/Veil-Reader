@@ -130,6 +130,15 @@ internal fun updateMaterialPageMesh(
     val bottomOriginInfluence = 0.34f + originY * 0.66f
     val safeVerticalBias =
         verticalBias.takeIf { it.isFinite() }?.coerceIn(-0.18f, 0.18f) ?: 0f
+    val cornerPull = ((0.5f - originY) * 2f).coerceIn(-1f, 1f)
+    val verticalPull = (safeVerticalBias / 0.18f).coerceIn(-1f, 1f)
+    val tiltSignal = (cornerPull * 0.68f + verticalPull * 0.32f)
+        .coerceIn(-1f, 1f)
+    val foldTilt =
+        width *
+            eased *
+            tiltSignal *
+            (0.032f + (1f - binding) * 0.035f)
 
     buffer.segmentCount = segments
     buffer.foldX = foldX
@@ -150,8 +159,22 @@ internal fun updateMaterialPageMesh(
         val leftZNorm = normalizedCurlDepth(leftTheta)
         val rightZNorm = normalizedCurlDepth(rightTheta)
 
-        val leftX = foldX + radius * sin(leftTheta)
-        val rightX = foldX + radius * sin(rightTheta)
+        val leftBaseX = foldX + radius * sin(leftTheta)
+        val rightBaseX = foldX + radius * sin(rightTheta)
+        val leftTilt = foldTilt * (1f - q0 * 0.55f)
+        val rightTilt = foldTilt * (1f - q1 * 0.55f)
+        val topLeftX =
+            (leftBaseX - leftTilt * topOriginInfluence)
+                .coerceIn(-width * 0.25f, width * 1.25f)
+        val topRightX =
+            (rightBaseX - rightTilt * topOriginInfluence)
+                .coerceIn(-width * 0.25f, width * 1.25f)
+        val bottomLeftX =
+            (leftBaseX + leftTilt * bottomOriginInfluence)
+                .coerceIn(-width * 0.25f, width * 1.25f)
+        val bottomRightX =
+            (rightBaseX + rightTilt * bottomOriginInfluence)
+                .coerceIn(-width * 0.25f, width * 1.25f)
         val leftVerticalShift =
             safeVerticalBias *
                 height *
@@ -199,13 +222,13 @@ internal fun updateMaterialPageMesh(
 
         buffer.sourceLeft[index] = sourceLeft
         buffer.sourceRight[index] = sourceRight
-        buffer.topLeftX[index] = leftX
+        buffer.topLeftX[index] = topLeftX
         buffer.topLeftY[index] = topLeftY
-        buffer.topRightX[index] = rightX
+        buffer.topRightX[index] = topRightX
         buffer.topRightY[index] = topRightY
-        buffer.bottomLeftX[index] = leftX
+        buffer.bottomLeftX[index] = bottomLeftX
         buffer.bottomLeftY[index] = bottomLeftY
-        buffer.bottomRightX[index] = rightX
+        buffer.bottomRightX[index] = bottomRightX
         buffer.bottomRightY[index] = bottomRightY
         buffer.backFacing[index] = isBackFacing
         buffer.lightResponse[index] =
@@ -219,9 +242,13 @@ internal fun updateMaterialPageMesh(
             height *
             0.06f *
             lift
-    buffer.creaseTopX = foldX
+    buffer.creaseTopX =
+        (foldX - foldTilt * topOriginInfluence)
+            .coerceIn(-width * 0.20f, width * 1.20f)
     buffer.creaseTopY = creaseShift
-    buffer.creaseBottomX = foldX
+    buffer.creaseBottomX =
+        (foldX + foldTilt * bottomOriginInfluence)
+            .coerceIn(-width * 0.20f, width * 1.20f)
     buffer.creaseBottomY = height + creaseShift
 }
 
