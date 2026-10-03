@@ -663,7 +663,11 @@ internal fun nextPaperReleaseVelocity(
                     kotlin.math.sign(previous) ==
                     kotlin.math.sign(instantaneous)
             val trust =
-                if (sameDirection) sampleTrust else sampleTrust * 0.72f
+                if (sameDirection) {
+                    sampleTrust
+                } else {
+                    kotlin.math.max(sampleTrust, 0.76f)
+                }
             return (
                 previous * (1f - trust) +
                     instantaneous * trust
