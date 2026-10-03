@@ -124,6 +124,7 @@ import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.reader.material.MaterialPageTone
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
@@ -2357,6 +2358,13 @@ fun ReaderScreen(
             PaperCurlOverlay(
                 state = paperCurlState,
                 config = paperCurlConfig,
+                patina = presentedReaderAppearance.paperPatina.toFloat(),
+                tone = when (presentedReaderAppearance.theme) {
+                    ReaderTheme.PAPER -> MaterialPageTone.LIGHT
+                    ReaderTheme.SEPIA -> MaterialPageTone.SEPIA
+                    ReaderTheme.DUSK,
+                    ReaderTheme.OLED -> MaterialPageTone.DARK
+                },
                 modifier = Modifier.fillMaxSize()
             )
         }
