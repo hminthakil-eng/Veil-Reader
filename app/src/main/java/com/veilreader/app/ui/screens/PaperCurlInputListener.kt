@@ -422,7 +422,7 @@ internal class PaperCurlInputListener(
                 ) {
                     // Let the destination compositor settle, then capture a second
                     // reusable texture for the physical back face of the lifted leaf.
-                    delay(VeilMotion.FRAME_SETTLE_MS)
+                    delay(VeilMotion.FRAME_SETTLE_MS * 2)
                     if (!cancellationRequested) {
                         state.captureMaterialBack(navigator.publicationView)
                     }
