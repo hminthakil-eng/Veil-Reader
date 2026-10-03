@@ -70,6 +70,29 @@ class GpuPageCurlModelTest {
     }
 
     @Test
+    fun `diagonal finger vector directly steers cylinder tilt`() {
+        val neutral = gpuPageCurlFrame(
+            progress = 0.42f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            diagonalPull = 0f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val diagonal = gpuPageCurlFrame(
+            progress = 0.42f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            diagonalPull = 0.75f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(kotlin.math.abs(neutral.cylinderTilt) < 0.001f)
+        assertTrue(diagonal.cylinderTilt > 0.05f)
+    }
+
+    @Test
     fun `left and right turns share geometry with opposite side sign`() {
         val right = gpuPageCurlFrame(
             progress = 0.5f,
