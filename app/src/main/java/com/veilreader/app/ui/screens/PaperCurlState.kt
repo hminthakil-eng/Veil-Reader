@@ -464,7 +464,10 @@ internal fun PaperCurlOverlay(
     // Keep the GPU surface resident while Material review is enabled so the GL
     // context, shaders and mesh are already warm when the finger lifts a page.
     // Unsupported devices transparently fall back to the source-hardened Canvas renderer.
-    if (MaterialPageEngineRollout.isEnabled()) {
+    if (
+        MaterialPageEngineRollout.isEnabled() &&
+        MaterialPageEngineRollout.useGpuRenderer()
+    ) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
             modifier = modifier
