@@ -250,7 +250,10 @@ internal class PaperCurlInputListener(
                     restoreDragStart(spec)
                     if (shouldAnimatePaperVisual()) {
                         if (!isReducedMotion()) delay(VeilMotion.PAGE_REVEAL_MS)
-                        state.animateCancel()
+                        state.animateCancel(
+                            releaseVelocityDpPerSec =
+                                releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                        )
                     }
                 }
 
@@ -276,7 +279,12 @@ internal class PaperCurlInputListener(
                 }
 
                 else -> {
-                    if (state.active && shouldAnimatePaperVisual()) state.animateCancel()
+                    if (state.active && shouldAnimatePaperVisual()) {
+                        state.animateCancel(
+                            releaseVelocityDpPerSec =
+                                releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
+                        )
+                    }
                 }
             }
 
