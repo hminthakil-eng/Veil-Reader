@@ -22,9 +22,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.toArgb
 import kotlinx.coroutines.delay
 import kotlin.math.ceil
 import kotlin.math.max
@@ -560,9 +558,8 @@ internal fun MaterialPageOverlay(
         }
 
         val optics = profile.optics
-        val backColor = Color(
-            materialPageToneAdjustedArgb(optics.backArgb, tone)
-        ).toArgb()
+        val backColor =
+            materialPageToneAdjustedArgb(optics.backArgb, tone).toInt()
 
         for (index in 0 until mesh.segmentCount) {
             val sourceLeft: Float
@@ -753,13 +750,36 @@ internal fun MaterialPageOverlay(
             scratch.detailPaint
         )
 
+        // Restrained lifted-sheet cast shadow. Multiple cheap lines approximate a
+        // soft falloff without allocating a moving gradient shader each frame.
+        val shadowDirection =
+            if (side == MaterialPageSide.RIGHT) 1f else -1f
+        for (step in 1..3) {
+            val distance = step * step * 3.2f
+            val falloff = 1f / (step.toFloat() * step.toFloat())
+            scratch.detailPaint.color = android.graphics.Color.BLACK
+            scratch.detailPaint.alpha = (
+                mesh.lift *
+                    falloff *
+                    (0.035f + (1f - profile.optics.roughness) * 0.025f) *
+                    255f
+                ).roundToInt().coerceIn(0, 18)
+            scratch.detailPaint.strokeWidth = 2.5f + step * 2.5f
+            native.drawLine(
+                creaseX + shadowDirection * distance,
+                creaseTopY,
+                creaseX + shadowDirection * distance,
+                creaseBottomY,
+                scratch.detailPaint
+            )
+        }
+
         val edgeAlpha =
             (mesh.lift * (0.08f + profile.optics.specularResponse * 0.14f) * 255f)
                 .roundToInt()
                 .coerceIn(0, 46)
-        scratch.detailPaint.color = Color(
-            materialPageToneAdjustedArgb(profile.optics.edgeArgb, tone)
-        ).toArgb()
+        scratch.detailPaint.color =
+            materialPageToneAdjustedArgb(profile.optics.edgeArgb, tone).toInt()
         scratch.detailPaint.alpha = edgeAlpha
         scratch.detailPaint.strokeWidth = 0.9f + edgeBody * 0.9f
         val edgeOffset =
