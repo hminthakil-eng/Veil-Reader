@@ -8,12 +8,19 @@ enum class ReaderFocusGuideMode {
 
 data class ReaderFocusGuideSettings(
     val mode: ReaderFocusGuideMode = ReaderFocusGuideMode.OFF,
+    val lastActiveMode: ReaderFocusGuideMode = ReaderFocusGuideMode.WINDOW,
     val verticalPosition: Double = 0.50,
     val bandFraction: Double = 0.18,
     val dimStrength: Double = 0.30
 ) {
-    fun normalized(): ReaderFocusGuideSettings =
-        copy(
+    fun normalized(): ReaderFocusGuideSettings {
+        val safeLastActive = when {
+            mode != ReaderFocusGuideMode.OFF -> mode
+            lastActiveMode == ReaderFocusGuideMode.OFF -> ReaderFocusGuideMode.WINDOW
+            else -> lastActiveMode
+        }
+        return copy(
+            lastActiveMode = safeLastActive,
             verticalPosition = verticalPosition
                 .takeIf { it.isFinite() }
                 ?.coerceIn(0.20, 0.80)
@@ -27,12 +34,16 @@ data class ReaderFocusGuideSettings(
                 ?.coerceIn(0.08, 0.68)
                 ?: 0.30
         )
+    }
 
     fun toggled(): ReaderFocusGuideSettings =
         if (mode == ReaderFocusGuideMode.OFF) {
-            copy(mode = ReaderFocusGuideMode.WINDOW)
+            copy(mode = lastActiveMode).normalized()
         } else {
-            copy(mode = ReaderFocusGuideMode.OFF)
+            copy(
+                mode = ReaderFocusGuideMode.OFF,
+                lastActiveMode = mode
+            ).normalized()
         }
 }
 
