@@ -761,22 +761,30 @@ internal fun MaterialPageOverlay(
             )
             if (!mapped) continue
 
+            val isBackFacing = mesh.backFacing[index]
+            scratch.contentPaint.alpha =
+                if (isBackFacing) {
+                    (
+                        materialPageBacksideContentAlpha(profile, patina) *
+                            255f
+                        ).roundToInt().coerceIn(0, 255)
+                } else {
+                    255
+                }
+
             native.save()
             native.clipPath(scratch.path)
             native.concat(scratch.matrix)
-            scratch.contentPaint.alpha = 255
             native.drawBitmap(bitmap, 0f, 0f, scratch.contentPaint)
             native.restore()
-
-            val isBackFacing = mesh.backFacing[index]
             val baseShadeAlpha = if (isBackFacing) {
                 (
-                    0.86f +
-                        optics.roughness * 0.035f +
-                        patina * optics.patinaResponse * 0.035f -
-                        optics.translucency * 0.10f -
-                        optics.inkGhosting * 0.16f
-                    ).coerceIn(0.76f, 0.92f)
+                    0.82f +
+                        optics.roughness * 0.045f +
+                        patina * optics.patinaResponse * 0.040f -
+                        optics.translucency * 0.08f -
+                        optics.inkGhosting * 0.08f
+                    ).coerceIn(0.74f, 0.90f)
             } else {
                 frontTintAlpha *
                     (0.42f + mesh.stripLift[index] * 0.58f)
