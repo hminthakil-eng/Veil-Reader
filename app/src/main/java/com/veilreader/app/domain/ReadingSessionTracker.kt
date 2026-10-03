@@ -22,6 +22,7 @@ class ReadingSessionTracker(
     private var lastTickElapsedMs = startedAtElapsedMs
     private var lastInteractionElapsedMs = startedAtElapsedMs
     private var lastPacedPageActiveMillis: Long? = null
+    private var paceSegmentCrossedIdleCutoff = false
     private val notedHighlightIds = initialNotedHighlightIds.toMutableSet()
 
     var activeMillis: Long = initialActiveMillis.coerceAtLeast(0L)
@@ -39,6 +40,7 @@ class ReadingSessionTracker(
         lastTickElapsedMs = nowElapsedMs
         lastInteractionElapsedMs = nowElapsedMs
         lastPacedPageActiveMillis = null
+        paceSegmentCrossedIdleCutoff = false
         return accrued
     }
 
@@ -53,6 +55,7 @@ class ReadingSessionTracker(
         resumed = false
         lastTickElapsedMs = nowElapsedMs
         lastPacedPageActiveMillis = null
+        paceSegmentCrossedIdleCutoff = false
         return accrued
     }
 
@@ -70,6 +73,12 @@ class ReadingSessionTracker(
         val currentActive = activeMillis
         val previousActive = lastPacedPageActiveMillis
         lastPacedPageActiveMillis = currentActive
+
+        if (paceSegmentCrossedIdleCutoff) {
+            paceSegmentCrossedIdleCutoff = false
+            return null
+        }
+
         return previousActive
             ?.let { currentActive - it }
             ?.takeIf { it > 0L }
@@ -102,7 +111,14 @@ class ReadingSessionTracker(
             return 0L
         }
 
-        val activeUntil = minOf(nowElapsedMs, lastInteractionElapsedMs + idleTimeoutMs)
+        val idleCutoff = lastInteractionElapsedMs + idleTimeoutMs
+        val activeUntil = minOf(nowElapsedMs, idleCutoff)
+        if (
+            lastPacedPageActiveMillis != null &&
+            nowElapsedMs > idleCutoff
+        ) {
+            paceSegmentCrossedIdleCutoff = true
+        }
         val delta = (activeUntil - lastTickElapsedMs).coerceAtLeast(0L)
         activeMillis += delta
         lastTickElapsedMs = nowElapsedMs
