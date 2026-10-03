@@ -296,9 +296,9 @@ internal class PaperCurlInputListener(
     }
 
     /**
-     * Called when the Reader pauses or exits PAPER mode. The preview navigator may
-     * already be on the next page, so let that navigation finish before restoring
-     * the exact locator captured at drag start. A committed turn stays committed.
+     * Called when the Reader pauses or exits PAPER mode. An uncommitted preview is
+     * restored to its exact start locator; a committed turn keeps its navigation
+     * result but any remaining Paper visual coroutine is cancelled and cleared.
      */
     fun cancelPendingTurn(): Boolean {
         if (!dragReserved && activeDrag == null) {
