@@ -90,7 +90,7 @@ internal class SlidePageState {
             targetValue = 0f,
             animationSpec = spring(
                 dampingRatio = 1f,
-                stiffness = Spring.StiffnessMediumHigh
+                stiffness = Spring.StiffnessMedium
             )
         ) {
             offsetPx = value
