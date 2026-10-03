@@ -83,6 +83,9 @@ class ReaderLocatorPolicyTest {
         assertTrue(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.countsPageTurn)
 
+        assertTrue(ReaderLocatorEvent.TTS_SYNC_COMMIT.commitsLocator)
+        assertFalse(ReaderLocatorEvent.TTS_SYNC_COMMIT.countsPageTurn)
+
         assertTrue(ReaderLocatorEvent.PAPER_COMMIT.commitsLocator)
         assertTrue(ReaderLocatorEvent.PAPER_COMMIT.countsPageTurn)
 
