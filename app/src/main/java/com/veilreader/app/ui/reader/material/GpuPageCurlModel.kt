@@ -43,31 +43,41 @@ internal fun gpuPageCurlFrame(
 
     // A stiff glossy sheet bends over a broader cylinder. Softer fibrous stock
     // forms a tighter roll. Keep the radius in normalized page-width units.
-    val radius = (
+    val baseRadius = (
         0.052f +
             bend * 0.055f +
             (mass - 0.6f) * 0.018f
         ).coerceIn(0.052f, 0.125f)
+    val liftEnvelope = materialPageLift(p, profile)
+    val radius = (
+        baseRadius *
+            (0.78f + liftEnvelope * (0.22f + (1f - bend) * 0.05f))
+        ).coerceIn(0.044f, 0.132f)
 
-    // Progress moves the virtual cylinder through the page. The extra half-turn
-    // travel ensures the terminal frame actually clears the viewport instead of
-    // collapsing into a folded strip at the spine.
-    val terminalOvershoot = (PI.toFloat() * radius * 0.56f)
+    // Progress moves the virtual cylinder through the page. Clearance is based on
+    // the authored material radius so a breathing radius never traps the terminal
+    // sheet near the spine.
+    val terminalOvershoot = (PI.toFloat() * baseRadius * 0.62f)
     val cylinderX =
-        1f - p * (1.04f + terminalOvershoot)
+        1f - p * (1.045f + terminalOvershoot)
 
     val cornerSignal = ((0.5f - origin) * 2f).coerceIn(-1f, 1f)
     val verticalSignal = (vertical / 0.18f).coerceIn(-1f, 1f)
 
-    // Tilt is intentionally restrained near the binding. It becomes expressive
-    // only when the user actually grabs a corner or drags vertically.
-    val cylinderTilt = (
-        cornerSignal * (0.14f + (1f - binding) * 0.08f) +
-            verticalSignal * 0.075f
-        ).coerceIn(-0.24f, 0.24f)
+    val cylinderY = (
+        origin +
+            vertical * (0.54f + (1f - binding) * 0.26f)
+        ).coerceIn(0.03f, 0.97f)
 
-    val liftEnvelope =
-        materialPageLift(p, profile)
+    // Tilt is intentionally restrained at first contact and becomes expressive
+    // only after the leaf has actually lifted from the reading plane.
+    val tiltEnvelope = 0.20f + liftEnvelope * 0.80f
+    val cylinderTilt = (
+        (
+            cornerSignal * (0.14f + (1f - binding) * 0.08f) +
+                verticalSignal * 0.075f
+            ) * tiltEnvelope
+        ).coerceIn(-0.24f, 0.24f)
     val shadowStrength = (
         liftEnvelope *
             (0.11f +
@@ -82,7 +92,7 @@ internal fun gpuPageCurlFrame(
 
     return GpuPageCurlFrame(
         cylinderX = cylinderX,
-        cylinderY = origin,
+        cylinderY = cylinderY,
         cylinderTilt = cylinderTilt,
         radius = radius,
         sideSign = if (side == MaterialPageSide.RIGHT) 1f else -1f,
