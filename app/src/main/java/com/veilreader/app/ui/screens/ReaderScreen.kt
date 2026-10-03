@@ -577,8 +577,9 @@ fun ReaderScreen(
     LaunchedEffect(
         navigator,
         readerSessionReady,
-        presentedReaderAppearance.navigationMode,
+        presentedReaderAppearance,
         reducedMotion,
+        paperCurlState.active,
         readerSessionInstanceId
     ) {
         if (
@@ -590,9 +591,15 @@ fun ReaderScreen(
             paperCurlState.releaseBufferIfIdle()
             return@LaunchedEffect
         }
+        if (paperCurlState.active) return@LaunchedEffect
+
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
-        delay(VeilMotion.FRAME_SETTLE_MS)
+        // Capture the current Readium page after it has painted, not inside the
+        // first drag callback. This mirrors mature curl engines that keep page
+        // textures warm before the pointer begins moving.
+        delay(VeilMotion.FRAME_SETTLE_MS * 2)
         if (
+            !paperCurlState.active &&
             readerAsyncResultBelongsToSession(
                 currentSessionInstanceId = latestReaderSessionInstanceId.value,
                 expectedSessionInstanceId = readerSessionInstanceId
