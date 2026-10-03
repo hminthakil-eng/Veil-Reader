@@ -965,6 +965,7 @@ internal fun GpuMaterialPageOverlay(
         progress = state.progress,
         verticalBias = state.verticalBias,
         pullOriginY = state.pullOriginY,
+        diagonalPull = state.diagonalPull,
         profile = state.profile,
         side = state.side
     )
