@@ -320,10 +320,25 @@ fun ReaderScreen(
         readerAppearance,
         fixedLayoutPublication
     ) {
-        effectiveReaderAppearanceForPublication(
-            appearance = readerAppearance,
-            fixedLayout = fixedLayoutPublication
-        )
+        val publicationAppearance =
+            effectiveReaderAppearanceForPublication(
+                appearance = readerAppearance,
+                fixedLayout = fixedLayoutPublication
+            )
+        if (
+            BuildConfig.DEBUG &&
+            opened.format == BookFormat.EPUB &&
+            MaterialPageEngineRollout.isEnabled()
+        ) {
+            // Material review is a runtime product mode, not a Settings-screen
+            // side effect. Force the actual Reader contract to Paged + Paper so a
+            // persisted SLIDE preference from an older build can never bypass v2.
+            publicationAppearance
+                .withReadingMode(ReaderReadingMode.PAGED)
+                .withPageTurnStyle(PageTurnStyle.PAPER)
+        } else {
+            publicationAppearance
+        }
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf(effectiveReaderAppearance)
