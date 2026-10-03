@@ -14,6 +14,8 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyAction
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
@@ -49,6 +51,7 @@ data class AppSettings(
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     val readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
+    val readerFocusGuide: ReaderFocusGuideSettings = ReaderFocusGuideSettings(),
     val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
@@ -86,6 +89,10 @@ class SettingsStore(private val context: Context) {
         val tapGrid = stringPreferencesKey("reader_tap_grid")
         val volumeUpAction = stringPreferencesKey("reader_volume_up_action")
         val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
+        val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
+        val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
+        val focusGuideBand = doublePreferencesKey("reader_focus_guide_band")
+        val focusGuideDim = doublePreferencesKey("reader_focus_guide_dim")
         val fixedLayoutSpreads = stringPreferencesKey("reader_fixed_layout_spreads")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
@@ -184,6 +191,16 @@ class SettingsStore(private val context: Context) {
                     ReaderHardwareKeyAction.SYSTEM
                 )
             ),
+            readerFocusGuide = ReaderFocusGuideSettings(
+                mode = runCatching {
+                    ReaderFocusGuideMode.valueOf(
+                        prefs[Keys.focusGuideMode] ?: ReaderFocusGuideMode.OFF.name
+                    )
+                }.getOrDefault(ReaderFocusGuideMode.OFF),
+                verticalPosition = prefs[Keys.focusGuidePosition] ?: 0.50,
+                bandFraction = prefs[Keys.focusGuideBand] ?: 0.18,
+                dimStrength = prefs[Keys.focusGuideDim] ?: 0.30
+            ).normalized(),
             fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
                 prefs[Keys.fixedLayoutSpreads]
             ),
@@ -270,6 +287,16 @@ class SettingsStore(private val context: Context) {
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.volumeUpAction] = value.volumeUp.name
             prefs[Keys.volumeDownAction] = value.volumeDown.name
+        }
+    }
+
+    suspend fun saveReaderFocusGuide(value: ReaderFocusGuideSettings) {
+        val normalized = value.normalized()
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.focusGuideMode] = normalized.mode.name
+            prefs[Keys.focusGuidePosition] = normalized.verticalPosition
+            prefs[Keys.focusGuideBand] = normalized.bandFraction
+            prefs[Keys.focusGuideDim] = normalized.dimStrength
         }
     }
 
