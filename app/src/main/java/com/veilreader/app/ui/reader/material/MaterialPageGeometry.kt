@@ -416,13 +416,18 @@ internal fun isRenderableMaterialPageQuad(
     bottomLeftX: Float,
     bottomLeftY: Float
 ): Boolean {
-    val values = floatArrayOf(
-        topLeftX, topLeftY,
-        topRightX, topRightY,
-        bottomRightX, bottomRightY,
-        bottomLeftX, bottomLeftY
-    )
-    if (values.any { !it.isFinite() }) return false
+    if (
+        !topLeftX.isFinite() ||
+        !topLeftY.isFinite() ||
+        !topRightX.isFinite() ||
+        !topRightY.isFinite() ||
+        !bottomRightX.isFinite() ||
+        !bottomRightY.isFinite() ||
+        !bottomLeftX.isFinite() ||
+        !bottomLeftY.isFinite()
+    ) {
+        return false
+    }
 
     val twiceArea =
         topLeftX * topRightY - topRightX * topLeftY +
