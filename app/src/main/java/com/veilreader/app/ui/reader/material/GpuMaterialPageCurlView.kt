@@ -464,6 +464,24 @@ internal class GpuMaterialPageCurlView(
 
     private fun configureTexture(textureId: Int) {
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
+        val transparentPixel =
+            ByteBuffer.allocateDirect(4)
+                .order(ByteOrder.nativeOrder())
+                .apply {
+                    put(byteArrayOf(0, 0, 0, 0))
+                    position(0)
+                }
+        GLES20.glTexImage2D(
+            GLES20.GL_TEXTURE_2D,
+            0,
+            GLES20.GL_RGBA,
+            1,
+            1,
+            0,
+            GLES20.GL_RGBA,
+            GLES20.GL_UNSIGNED_BYTE,
+            transparentPixel
+        )
         GLES20.glTexParameteri(
             GLES20.GL_TEXTURE_2D,
             GLES20.GL_TEXTURE_MIN_FILTER,
