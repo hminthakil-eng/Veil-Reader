@@ -127,6 +127,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.readium.adapter.pdfium.navigator.PdfiumEngineProvider
+import org.readium.navigator.media.tts.android.AndroidTtsEngine
 import org.readium.adapter.pdfium.navigator.PdfiumDefaults
 import org.readium.adapter.pdfium.navigator.PdfiumNavigatorFragment
 import org.readium.adapter.pdfium.navigator.PdfiumPreferences
@@ -2731,6 +2732,11 @@ fun ReaderScreen(
                 onPrevious = ttsController::previous,
                 onNext = ttsController::next,
                 onStop = ttsController::stop,
+                onInstallVoiceData = {
+                    AndroidTtsEngine.requestInstallVoice(
+                        activity.applicationContext
+                    )
+                },
                 onSettingsChange = { updated ->
                     onTtsSettingsChange(updated)
                     ttsController.submitSettings(updated)
