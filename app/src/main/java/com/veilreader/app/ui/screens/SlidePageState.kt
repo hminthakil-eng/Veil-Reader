@@ -89,8 +89,8 @@ internal class SlidePageState {
         anim.animateTo(
             targetValue = 0f,
             animationSpec = spring(
-                dampingRatio = 0.90f,
-                stiffness = Spring.StiffnessMediumLow
+                dampingRatio = 1f,
+                stiffness = Spring.StiffnessMediumHigh
             )
         ) {
             offsetPx = value
@@ -100,13 +100,13 @@ internal class SlidePageState {
     suspend fun animateBoundaryBounce(directionSign: Float) {
         if (!active || width <= 0f) return
         val anim = Animatable(offsetPx)
-        val peek = width * 0.055f * directionSign.coerceIn(-1f, 1f)
-        anim.animateTo(peek, tween(95)) { offsetPx = value }
+        val peek = width * 0.035f * directionSign.coerceIn(-1f, 1f)
+        anim.animateTo(peek, tween(64)) { offsetPx = value }
         anim.animateTo(
             0f,
             spring(
-                dampingRatio = 0.82f,
-                stiffness = Spring.StiffnessMedium
+                dampingRatio = 1f,
+                stiffness = Spring.StiffnessHigh
             )
         ) { offsetPx = value }
     }
@@ -193,7 +193,7 @@ internal fun SlidePageOverlay(
                 .fillMaxSize()
                 .graphicsLayer {
                     translationX = state.offsetPx
-                    alpha = 1f - progress * 0.04f
+                    alpha = 1f
                 }
         )
 
@@ -206,7 +206,7 @@ internal fun SlidePageOverlay(
                 }.coerceIn(0f, size.width)
 
                 val shadowWidth =
-                    (16.dp.toPx() + 38.dp.toPx() * shadowIntensity)
+                    (10.dp.toPx() + 22.dp.toPx() * shadowIntensity)
                 val rawStartX = if (direction < 0f) {
                     edgeX
                 } else {
@@ -226,7 +226,7 @@ internal fun SlidePageOverlay(
                             colorStops = if (direction < 0f) {
                                 arrayOf(
                                     0f to Color.Black.copy(
-                                        alpha = 0.26f * shadowIntensity
+                                        alpha = 0.15f * shadowIntensity
                                     ),
                                     1f to Color.Transparent
                                 )
@@ -234,7 +234,7 @@ internal fun SlidePageOverlay(
                                 arrayOf(
                                     0f to Color.Transparent,
                                     1f to Color.Black.copy(
-                                        alpha = 0.26f * shadowIntensity
+                                        alpha = 0.15f * shadowIntensity
                                     )
                                 )
                             },
@@ -255,13 +255,13 @@ internal fun SlidePageOverlay(
 
 
 /**
- * A weighted slide should feel attached to the finger without looking like a native renderer
- * swipe. It starts with mass, then progressively catches up as the turn becomes intentional.
+ * Slide is intentionally not a paper simulation. It tracks the finger closely,
+ * starts quickly and settles without material resistance or bend metaphors.
  */
 internal fun slideHorizontalDragResponse(progress: Float): Float {
     val t = progress.coerceIn(0f, 1f)
     val smooth = t * t * (3f - 2f * t)
-    return 0.76f + smooth * 0.22f
+    return 0.94f + smooth * 0.06f
 }
 
 /**
@@ -280,12 +280,13 @@ internal fun slideCompletionDurationMillis(
     val remaining = 1f - progress.coerceIn(0f, 1f)
     val speed = abs(velocityDpPerSec)
     val fullTravelMillis = when {
-        speed >= 1_800f -> 140f
-        speed >= 900f -> 175f
-        else -> 220f
+        speed >= 1_800f -> 112f
+        speed >= 900f -> 136f
+        else -> 168f
     }
-    // Even a nearly completed gesture needs a perceptible settle frame, but it must not crawl.
-    return (88f + (fullTravelMillis - 88f) * remaining)
+    // Slide is the low-latency navigation mode: preserve a brief settle without
+    // simulating paper weight or a long material release.
+    return (72f + (fullTravelMillis - 72f) * remaining)
         .roundToInt()
-        .coerceIn(88, 220)
+        .coerceIn(72, 168)
 }
