@@ -150,62 +150,39 @@ internal fun updateMaterialPageMesh(
         val leftZNorm = normalizedCurlDepth(leftTheta)
         val rightZNorm = normalizedCurlDepth(rightTheta)
 
-        val topLeft = projectedMaterialPoint(
-            sourceX = sourceLeft,
-            q = q0,
-            theta = leftTheta,
-            zNorm = leftZNorm,
-            foldX = foldX,
-            radius = radius,
-            height = height,
-            eased = eased,
-            verticalBias = safeVerticalBias,
-            bindingConstraint = profile.physics.bindingConstraint,
-            originInfluence = topOriginInfluence,
-            top = true
-        )
-        val topRight = projectedMaterialPoint(
-            sourceX = sourceRight,
-            q = q1,
-            theta = rightTheta,
-            zNorm = rightZNorm,
-            foldX = foldX,
-            radius = radius,
-            height = height,
-            eased = eased,
-            verticalBias = safeVerticalBias,
-            bindingConstraint = profile.physics.bindingConstraint,
-            originInfluence = topOriginInfluence,
-            top = true
-        )
-        val bottomLeft = projectedMaterialPoint(
-            sourceX = sourceLeft,
-            q = q0,
-            theta = leftTheta,
-            zNorm = leftZNorm,
-            foldX = foldX,
-            radius = radius,
-            height = height,
-            eased = eased,
-            verticalBias = safeVerticalBias,
-            bindingConstraint = profile.physics.bindingConstraint,
-            originInfluence = bottomOriginInfluence,
-            top = false
-        )
-        val bottomRight = projectedMaterialPoint(
-            sourceX = sourceRight,
-            q = q1,
-            theta = rightTheta,
-            zNorm = rightZNorm,
-            foldX = foldX,
-            radius = radius,
-            height = height,
-            eased = eased,
-            verticalBias = safeVerticalBias,
-            bindingConstraint = profile.physics.bindingConstraint,
-            originInfluence = bottomOriginInfluence,
-            top = false
-        )
+        val leftX = foldX + radius * sin(leftTheta)
+        val rightX = foldX + radius * sin(rightTheta)
+        val leftVerticalShift =
+            safeVerticalBias *
+                height *
+                (0.24f + q0 * 0.50f) *
+                leftZNorm
+        val rightVerticalShift =
+            safeVerticalBias *
+                height *
+                (0.24f + q1 * 0.50f) *
+                rightZNorm
+        val leftBindingSkew =
+            (1f - q0) *
+                eased *
+                profile.physics.bindingConstraint.coerceIn(0f, 1f) *
+                height *
+                0.010f
+        val rightBindingSkew =
+            (1f - q1) *
+                eased *
+                profile.physics.bindingConstraint.coerceIn(0f, 1f) *
+                height *
+                0.010f
+
+        val topLeftY =
+            leftVerticalShift * topOriginInfluence + leftBindingSkew
+        val topRightY =
+            rightVerticalShift * topOriginInfluence + rightBindingSkew
+        val bottomLeftY =
+            height + leftVerticalShift * bottomOriginInfluence - leftBindingSkew
+        val bottomRightY =
+            height + rightVerticalShift * bottomOriginInfluence - rightBindingSkew
 
         val midTheta = (leftTheta + rightTheta) * 0.5f
         val midLift = (leftZNorm + rightZNorm) * 0.5f
@@ -222,14 +199,14 @@ internal fun updateMaterialPageMesh(
 
         buffer.sourceLeft[index] = sourceLeft
         buffer.sourceRight[index] = sourceRight
-        buffer.topLeftX[index] = topLeft.x
-        buffer.topLeftY[index] = topLeft.y
-        buffer.topRightX[index] = topRight.x
-        buffer.topRightY[index] = topRight.y
-        buffer.bottomLeftX[index] = bottomLeft.x
-        buffer.bottomLeftY[index] = bottomLeft.y
-        buffer.bottomRightX[index] = bottomRight.x
-        buffer.bottomRightY[index] = bottomRight.y
+        buffer.topLeftX[index] = leftX
+        buffer.topLeftY[index] = topLeftY
+        buffer.topRightX[index] = rightX
+        buffer.topRightY[index] = topRightY
+        buffer.bottomLeftX[index] = leftX
+        buffer.bottomLeftY[index] = bottomLeftY
+        buffer.bottomRightX[index] = rightX
+        buffer.bottomRightY[index] = bottomRightY
         buffer.backFacing[index] = isBackFacing
         buffer.lightResponse[index] =
             (if (isBackFacing) backLight else frontLight)
@@ -370,45 +347,6 @@ internal fun isFiniteMaterialPageFrame(frame: MaterialPageFrame): Boolean {
 
 private fun MaterialPagePoint.isFinite(): Boolean =
     x.isFinite() && y.isFinite()
-
-private data class PrimitiveMaterialPoint(
-    val x: Float,
-    val y: Float
-)
-
-private fun projectedMaterialPoint(
-    sourceX: Float,
-    q: Float,
-    theta: Float,
-    zNorm: Float,
-    foldX: Float,
-    radius: Float,
-    height: Float,
-    eased: Float,
-    verticalBias: Float,
-    bindingConstraint: Float,
-    originInfluence: Float,
-    top: Boolean
-): PrimitiveMaterialPoint {
-    val x = foldX + radius * sin(theta)
-    val verticalShift =
-        verticalBias *
-            height *
-            (0.24f + q * 0.50f) *
-            zNorm
-    val bindingSkew =
-        (1f - q) *
-            eased *
-            bindingConstraint.coerceIn(0f, 1f) *
-            height *
-            0.010f
-    val y = if (top) {
-        verticalShift * originInfluence + bindingSkew
-    } else {
-        height + verticalShift * originInfluence - bindingSkew
-    }
-    return PrimitiveMaterialPoint(x, y)
-}
 
 private fun normalizedCurlDepth(theta: Float): Float =
     ((1f - cos(theta)) * 0.5f).coerceIn(0f, 1f)
