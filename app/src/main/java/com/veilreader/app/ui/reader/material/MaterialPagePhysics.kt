@@ -1,7 +1,6 @@
 package com.veilreader.app.ui.reader.material
 
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -143,11 +142,20 @@ internal fun materialPageSpringDamping(
     profile: MaterialPageProfile,
     cancelling: Boolean
 ): Float {
-    val base = profile.physics.settleDamping.coerceIn(0.82f, 0.98f)
+    val authored = profile.physics.settleDamping.coerceIn(0.82f, 0.98f)
+    val materialBody =
+        profile.physics.apparentMass.coerceIn(0.6f, 1.5f)
+    val criticalBias =
+        (0.98f - authored).coerceAtLeast(0f) * 0.45f
+    val massBias =
+        ((materialBody - 0.6f) / 0.9f).coerceIn(0f, 1f) * 0.025f
+
+    // Page settling must never read as a bouncy UI spring. Completion is critical
+    // or slightly overdamped; cancellation is a touch firmer so the sheet seats cleanly.
     return if (cancelling) {
-        max(base, 0.95f)
+        (1.035f + criticalBias + massBias).coerceIn(1.035f, 1.11f)
     } else {
-        base.coerceAtLeast(0.90f)
+        (1.0f + criticalBias + massBias).coerceIn(1.0f, 1.075f)
     }
 }
 
