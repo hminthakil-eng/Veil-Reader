@@ -455,6 +455,7 @@ private class MaterialPageRenderScratch {
     val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     val sourceRect = Rect()
     val destinationRect = RectF()
+    val mesh = MaterialPageMeshBuffer(36)
 }
 
 @Composable
@@ -510,31 +511,35 @@ internal fun MaterialPageOverlay(
             return@Canvas
         }
 
-        val canonical = materialPageGeometry(
-            width = bitmap.width.toFloat(),
-            height = bitmap.height.toFloat(),
+        val pageWidth = bitmap.width.toFloat()
+        val pageHeight = bitmap.height.toFloat()
+        updateMaterialPageMesh(
+            buffer = scratch.mesh,
+            width = pageWidth,
+            height = pageHeight,
             progress = progress,
             verticalBias = verticalBias,
             profile = profile,
             pullOriginY = pullOriginY
         )
-        val frame = if (side == MaterialPageSide.LEFT) {
-            mirrorMaterialPageFrame(canonical, bitmap.width.toFloat())
+        val mesh = scratch.mesh
+        val mirror = side == MaterialPageSide.LEFT
+
+        val flatStartX = if (mirror) {
+            pageWidth - mesh.flatEndX
         } else {
-            canonical
+            mesh.flatStartX
+        }
+        val flatEndX = if (mirror) {
+            pageWidth - mesh.flatStartX
+        } else {
+            mesh.flatEndX
         }
 
-        if (!isFiniteMaterialPageFrame(frame)) {
-            scratch.contentPaint.alpha = 255
-            native.drawBitmap(bitmap, 0f, 0f, scratch.contentPaint)
-            native.restore()
-            return@Canvas
-        }
-
-        val flatLeft = frame.flatStartX
+        val flatLeft = flatStartX
             .roundToInt()
             .coerceIn(0, bitmap.width)
-        val flatRight = ceil(frame.flatEndX.toDouble())
+        val flatRight = ceil(flatEndX.toDouble())
             .toInt()
             .coerceIn(flatLeft, bitmap.width)
         if (flatRight > flatLeft) {
@@ -554,32 +559,72 @@ internal fun MaterialPageOverlay(
             )
         }
 
-        frame.strips.forEachIndexed { index, strip ->
-            if (strip.sourceRight <= strip.sourceLeft) return@forEachIndexed
+        val optics = profile.optics
+        val backColor = Color(
+            materialPageToneAdjustedArgb(optics.backArgb, tone)
+        ).toArgb()
 
-            scratch.source[0] = strip.sourceLeft
+        for (index in 0 until mesh.segmentCount) {
+            val sourceLeft: Float
+            val sourceRight: Float
+            val topLeftX: Float
+            val topLeftY: Float
+            val topRightX: Float
+            val topRightY: Float
+            val bottomLeftX: Float
+            val bottomLeftY: Float
+            val bottomRightX: Float
+            val bottomRightY: Float
+
+            if (mirror) {
+                sourceLeft = pageWidth - mesh.sourceRight[index]
+                sourceRight = pageWidth - mesh.sourceLeft[index]
+                topLeftX = pageWidth - mesh.topRightX[index]
+                topLeftY = mesh.topRightY[index]
+                topRightX = pageWidth - mesh.topLeftX[index]
+                topRightY = mesh.topLeftY[index]
+                bottomLeftX = pageWidth - mesh.bottomRightX[index]
+                bottomLeftY = mesh.bottomRightY[index]
+                bottomRightX = pageWidth - mesh.bottomLeftX[index]
+                bottomRightY = mesh.bottomLeftY[index]
+            } else {
+                sourceLeft = mesh.sourceLeft[index]
+                sourceRight = mesh.sourceRight[index]
+                topLeftX = mesh.topLeftX[index]
+                topLeftY = mesh.topLeftY[index]
+                topRightX = mesh.topRightX[index]
+                topRightY = mesh.topRightY[index]
+                bottomLeftX = mesh.bottomLeftX[index]
+                bottomLeftY = mesh.bottomLeftY[index]
+                bottomRightX = mesh.bottomRightX[index]
+                bottomRightY = mesh.bottomRightY[index]
+            }
+
+            if (sourceRight <= sourceLeft) continue
+
+            scratch.source[0] = sourceLeft
             scratch.source[1] = 0f
-            scratch.source[2] = strip.sourceRight
+            scratch.source[2] = sourceRight
             scratch.source[3] = 0f
-            scratch.source[4] = strip.sourceRight
-            scratch.source[5] = bitmap.height.toFloat()
-            scratch.source[6] = strip.sourceLeft
-            scratch.source[7] = bitmap.height.toFloat()
+            scratch.source[4] = sourceRight
+            scratch.source[5] = pageHeight
+            scratch.source[6] = sourceLeft
+            scratch.source[7] = pageHeight
 
-            scratch.destination[0] = strip.topLeft.x
-            scratch.destination[1] = strip.topLeft.y
-            scratch.destination[2] = strip.topRight.x
-            scratch.destination[3] = strip.topRight.y
-            scratch.destination[4] = strip.bottomRight.x
-            scratch.destination[5] = strip.bottomRight.y
-            scratch.destination[6] = strip.bottomLeft.x
-            scratch.destination[7] = strip.bottomLeft.y
+            scratch.destination[0] = topLeftX
+            scratch.destination[1] = topLeftY
+            scratch.destination[2] = topRightX
+            scratch.destination[3] = topRightY
+            scratch.destination[4] = bottomRightX
+            scratch.destination[5] = bottomRightY
+            scratch.destination[6] = bottomLeftX
+            scratch.destination[7] = bottomLeftY
 
             scratch.path.reset()
-            scratch.path.moveTo(strip.topLeft.x, strip.topLeft.y)
-            scratch.path.lineTo(strip.topRight.x, strip.topRight.y)
-            scratch.path.lineTo(strip.bottomRight.x, strip.bottomRight.y)
-            scratch.path.lineTo(strip.bottomLeft.x, strip.bottomLeft.y)
+            scratch.path.moveTo(topLeftX, topLeftY)
+            scratch.path.lineTo(topRightX, topRightY)
+            scratch.path.lineTo(bottomRightX, bottomRightY)
+            scratch.path.lineTo(bottomLeftX, bottomLeftY)
             scratch.path.close()
 
             scratch.matrix.reset()
@@ -600,8 +645,8 @@ internal fun MaterialPageOverlay(
                 native.restore()
             }
 
-            val optics = profile.optics
-            val baseShadeAlpha = if (strip.backFacing) {
+            val isBackFacing = mesh.backFacing[index]
+            val baseShadeAlpha = if (isBackFacing) {
                 (
                     0.86f +
                         optics.roughness * 0.035f +
@@ -614,17 +659,13 @@ internal fun MaterialPageOverlay(
             }
 
             if (baseShadeAlpha > 0f) {
-                scratch.shadePaint.color = Color(
-                    materialPageToneAdjustedArgb(optics.backArgb, tone)
-                ).toArgb()
+                scratch.shadePaint.color = backColor
                 scratch.shadePaint.alpha =
                     (baseShadeAlpha * 255f).roundToInt().coerceIn(0, 255)
                 scratch.shadePaint.style = Paint.Style.FILL
                 native.drawPath(scratch.path, scratch.shadePaint)
             }
 
-            // Deterministic micro-tonal variation: enough to communicate grain and age,
-            // never enough to compete with publication text.
             val variationUnit = (((index * 37) % 11) - 5) / 5f
             val tonalAlpha = (
                 kotlin.math.abs(variationUnit) *
@@ -641,7 +682,7 @@ internal fun MaterialPageOverlay(
                 native.drawPath(scratch.path, scratch.shadePaint)
             }
 
-            val light = strip.lightResponse
+            val light = mesh.lightResponse[index]
             if (light > 0.01f) {
                 scratch.shadePaint.color = android.graphics.Color.WHITE
                 scratch.shadePaint.alpha = (
@@ -661,26 +702,27 @@ internal fun MaterialPageOverlay(
             }
 
             if (
-                strip.backFacing &&
+                isBackFacing &&
                 optics.directionalFiber > 0.35f &&
                 index % 2 == 0
             ) {
-                val centerTopX = (strip.topLeft.x + strip.topRight.x) * 0.5f
-                val centerBottomX =
-                    (strip.bottomLeft.x + strip.bottomRight.x) * 0.5f
+                val centerTopX = (topLeftX + topRightX) * 0.5f
+                val centerTopY = (topLeftY + topRightY) * 0.5f
+                val centerBottomX = (bottomLeftX + bottomRightX) * 0.5f
+                val centerBottomY = (bottomLeftY + bottomRightY) * 0.5f
                 scratch.detailPaint.color = android.graphics.Color.BLACK
                 scratch.detailPaint.alpha = (
                     optics.directionalFiber *
-                        strip.lift *
+                        mesh.stripLift[index] *
                         (8f + patina * optics.patinaResponse * 8f)
                     ).roundToInt().coerceIn(0, 14)
                 scratch.detailPaint.strokeWidth =
                     (0.35f + optics.grain * 0.50f)
                 native.drawLine(
                     centerTopX,
-                    bitmap.height * 0.10f,
+                    centerTopY,
                     centerBottomX,
-                    bitmap.height * 0.90f,
+                    centerBottomY,
                     scratch.detailPaint
                 )
             }
@@ -688,13 +730,16 @@ internal fun MaterialPageOverlay(
 
         // The binding/contact shadow is deliberately restrained; it communicates
         // attachment and thickness without turning the page into theatrical 3D.
-        val creaseX = frame.creaseTop.x
+        val creaseX =
+            if (mirror) pageWidth - mesh.creaseTopX else mesh.creaseTopX
+        val creaseTopY = mesh.creaseTopY
+        val creaseBottomY = mesh.creaseBottomY
         val edgeBody = (
             profile.optics.edgeBody *
                 (0.94f + patina * profile.optics.patinaResponse * 0.12f)
             ).coerceIn(0f, 1f)
         val contactAlpha =
-            (frame.lift * (0.08f + edgeBody * 0.12f) * 255f)
+            (mesh.lift * (0.08f + edgeBody * 0.12f) * 255f)
                 .roundToInt()
                 .coerceIn(0, 52)
         scratch.detailPaint.color = android.graphics.Color.BLACK
@@ -702,14 +747,14 @@ internal fun MaterialPageOverlay(
         scratch.detailPaint.strokeWidth = 2.2f + edgeBody * 2.4f
         native.drawLine(
             creaseX,
-            frame.creaseTop.y,
+            creaseTopY,
             creaseX,
-            frame.creaseBottom.y,
+            creaseBottomY,
             scratch.detailPaint
         )
 
         val edgeAlpha =
-            (frame.lift * (0.08f + profile.optics.specularResponse * 0.14f) * 255f)
+            (mesh.lift * (0.08f + profile.optics.specularResponse * 0.14f) * 255f)
                 .roundToInt()
                 .coerceIn(0, 46)
         scratch.detailPaint.color = Color(
@@ -721,9 +766,9 @@ internal fun MaterialPageOverlay(
             if (side == MaterialPageSide.RIGHT) -1.2f else 1.2f
         native.drawLine(
             creaseX + edgeOffset,
-            frame.creaseTop.y,
+            creaseTopY,
             creaseX + edgeOffset,
-            frame.creaseBottom.y,
+            creaseBottomY,
             scratch.detailPaint
         )
 
