@@ -10,6 +10,7 @@ import com.veilreader.app.domain.AppThemeMode
 import com.veilreader.app.diagnostics.ReaderTrace
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderTapGrid
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -39,6 +40,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             store.saveReaderAppearance(appearance)
             ReaderTrace.event("appearance_persisted", details = details)
         }
+    }
+
+    fun saveReaderTapGrid(grid: ReaderTapGrid) {
+        viewModelScope.launch { store.saveReaderTapGrid(grid) }
     }
 
     fun saveFixedLayoutSpread(
