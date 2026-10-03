@@ -1,5 +1,9 @@
 package com.veilreader.app.ui.reader.material
 
+import com.veilreader.app.ui.sensory.VeilMaterialPageAction
+import com.veilreader.app.ui.sensory.VeilMaterialPageSensoryCue
+import com.veilreader.app.ui.sensory.VeilPageMaterial
+
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -105,3 +109,36 @@ internal fun materialPageSensoryCue(
 internal fun interface MaterialPageSensorySink {
     fun emit(cue: MaterialPageSensoryCue)
 }
+
+
+internal fun MaterialPageSensoryCue.toVeilSensoryCue(): VeilMaterialPageSensoryCue =
+    VeilMaterialPageSensoryCue(
+        material = when (preset) {
+            MaterialPagePreset.GLOSSY -> VeilPageMaterial.GLOSSY
+            MaterialPagePreset.MATTE_BOOK -> VeilPageMaterial.MATTE_BOOK
+            MaterialPagePreset.PARCHMENT -> VeilPageMaterial.PARCHMENT
+            MaterialPagePreset.PAPYRUS -> VeilPageMaterial.PAPYRUS
+            MaterialPagePreset.MANUSCRIPT -> VeilPageMaterial.MANUSCRIPT
+        },
+        action = when (action) {
+            MaterialPageSensoryAction.LIFT_THRESHOLD ->
+                VeilMaterialPageAction.LIFT_THRESHOLD
+            MaterialPageSensoryAction.COMPLETE ->
+                VeilMaterialPageAction.COMPLETE
+            MaterialPageSensoryAction.CANCEL ->
+                VeilMaterialPageAction.CANCEL
+            MaterialPageSensoryAction.BOUNDARY ->
+                VeilMaterialPageAction.BOUNDARY
+        },
+        durationMillis = acoustic.durationMillis,
+        acousticBrightness = acoustic.brightness,
+        acousticDryness = acoustic.dryness,
+        acousticBody = acoustic.body,
+        acousticFiber = acoustic.fiber,
+        acousticGain = acoustic.gain,
+        hapticSharpness = haptic.sharpness,
+        hapticWeight = haptic.weight,
+        hapticPulseCount = haptic.pulseCount,
+        hapticPulseMillis = haptic.pulseMillis,
+        hapticGapMillis = haptic.gapMillis
+    )
