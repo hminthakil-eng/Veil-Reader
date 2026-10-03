@@ -179,6 +179,7 @@ internal class GpuMaterialPageCurlView(
         runCatching {
             program = buildProgram(VERTEX_SHADER, FRAGMENT_SHADER)
             resolveLocations()
+            validateLocations()
             createMesh()
             createTextures()
             GLES20.glDisable(GLES20.GL_CULL_FACE)
@@ -301,6 +302,11 @@ internal class GpuMaterialPageCurlView(
         GLES20.glDisableVertexAttribArray(aTexCoord)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
+
+        val drawError = GLES20.glGetError()
+        if (drawError != GLES20.GL_NO_ERROR) {
+            failRenderer("GPU page draw failed: glError=$drawError")
+        }
     }
 
     private fun textureFits(bitmap: Bitmap): Boolean =
@@ -654,6 +660,41 @@ internal class GpuMaterialPageCurlView(
         uShadowStrength = GLES20.glGetUniformLocation(program, "uShadowStrength")
         uVisualAlpha = GLES20.glGetUniformLocation(program, "uVisualAlpha")
         uShadowPass = GLES20.glGetUniformLocation(program, "uShadowPass")
+    }
+
+    private fun validateLocations() {
+        val required = mapOf(
+            "aPosition" to aPosition,
+            "aTexCoord" to aTexCoord,
+            "uFrontTexture" to uFrontTexture,
+            "uBackTexture" to uBackTexture,
+            "uHasBackTexture" to uHasBackTexture,
+            "uCylinderPosition" to uCylinderPosition,
+            "uCylinderTilt" to uCylinderTilt,
+            "uCylinderRadius" to uCylinderRadius,
+            "uPageAspect" to uPageAspect,
+            "uTexelSize" to uTexelSize,
+            "uSideSign" to uSideSign,
+            "uFrontTint" to uFrontTint,
+            "uBackTint" to uBackTint,
+            "uEdgeTint" to uEdgeTint,
+            "uFrontTintAlpha" to uFrontTintAlpha,
+            "uGhostAlpha" to uGhostAlpha,
+            "uRoughness" to uRoughness,
+            "uSpecular" to uSpecular,
+            "uTranslucency" to uTranslucency,
+            "uGrain" to uGrain,
+            "uFiber" to uFiber,
+            "uMaterialPhase" to uMaterialPhase,
+            "uEdgeStrength" to uEdgeStrength,
+            "uShadowStrength" to uShadowStrength,
+            "uVisualAlpha" to uVisualAlpha,
+            "uShadowPass" to uShadowPass
+        )
+        val missing = required.filterValues { it < 0 }.keys
+        check(missing.isEmpty()) {
+            "GPU page shader locations missing: " + missing.joinToString()
+        }
     }
 
     private fun buildProgram(vertexSource: String, fragmentSource: String): Int {
