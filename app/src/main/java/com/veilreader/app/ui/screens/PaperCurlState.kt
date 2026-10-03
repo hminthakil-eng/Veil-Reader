@@ -101,7 +101,7 @@ internal class PaperCurlState {
 
         if (MaterialPageEngineRollout.isEnabled()) {
             releaseLegacyBufferIfIdle()
-            materialEngine.setProfile(MaterialPageEngineRollout.selectedProfile())
+            materialEngine.configureProfile(MaterialPageEngineRollout.selectedProfile())
             val started = materialEngine.begin(
                 view = view,
                 side = when (side) {
@@ -453,8 +453,8 @@ internal fun PaperCurlOverlay(
     modifier: Modifier = Modifier
 ) {
     LaunchedEffect(state, patina, tone) {
-        state.materialEngine.setPatina(patina)
-        state.materialEngine.setTone(tone)
+        state.materialEngine.configurePatina(patina)
+        state.materialEngine.configureTone(tone)
     }
 
     if (state.usingMaterialEngine()) {
