@@ -68,6 +68,9 @@ internal class PaperCurlState {
     var active: Boolean by mutableStateOf(false)
         private set
 
+    var lastBeginFailed: Boolean by mutableStateOf(false)
+        private set
+
     private var width = 0f
     private var height = 0f
     private var snapshotBuffer: Bitmap? = null
@@ -117,17 +120,24 @@ internal class PaperCurlState {
                 }
             )
             if (started) {
+                lastBeginFailed = false
                 this.side = side
                 this.direction = direction
                 activeEngine = PaperVisualEngine.MATERIAL
                 active = true
+            } else {
+                lastBeginFailed = true
             }
             return started
         }
 
         materialEngine.releaseBufferIfIdle()
-        val bitmap = capture(view) ?: return false
+        val bitmap = capture(view) ?: run {
+            lastBeginFailed = true
+            return false
+        }
 
+        lastBeginFailed = false
         width = view.width.toFloat()
         height = view.height.toFloat()
         this.side = side
@@ -485,14 +495,21 @@ internal fun PaperCurlOverlay(
                 state = state.materialEngine,
                 modifier = Modifier.fillMaxSize()
             )
-            if (BuildConfig.DEBUG && state.active) {
-                Text(
-                    text = "PAPER · GPU v2",
-                    color = Color(0xFFFFC857),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(6.dp)
-                )
+            if (BuildConfig.DEBUG) {
+                val label = when {
+                    state.active -> "PAPER · GPU v2"
+                    state.lastBeginFailed -> "PAPER · CAPTURE FAILED"
+                    else -> null
+                }
+                if (label != null) {
+                    Text(
+                        text = label,
+                        color = Color(0xFFFFC857),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                    )
+                }
             }
         }
         return
@@ -504,14 +521,21 @@ internal fun PaperCurlOverlay(
                 state = state.materialEngine,
                 modifier = Modifier.fillMaxSize()
             )
-            if (BuildConfig.DEBUG && state.active) {
-                Text(
-                    text = "PAPER · Canvas v1",
-                    color = Color(0xFFFFC857),
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(6.dp)
-                )
+            if (BuildConfig.DEBUG) {
+                val label = when {
+                    state.active -> "PAPER · Canvas v1"
+                    state.lastBeginFailed -> "PAPER · CAPTURE FAILED"
+                    else -> null
+                }
+                if (label != null) {
+                    Text(
+                        text = label,
+                        color = Color(0xFFFFC857),
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(6.dp)
+                    )
+                }
             }
         }
         return
