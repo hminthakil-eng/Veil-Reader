@@ -10,6 +10,7 @@ import android.opengl.GLUtils
 import android.util.Log
 import android.view.View
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -35,7 +36,8 @@ import javax.microedition.khronos.opengles.GL10
  * Veil's material profiles, lifecycle and accessibility contracts.
  */
 internal class GpuMaterialPageCurlView(
-    context: Context
+    context: Context,
+    private val onRendererFailure: () -> Unit = {}
 ) : GLSurfaceView(context), GLSurfaceView.Renderer {
 
     private data class SubmittedFrame(
@@ -156,6 +158,7 @@ internal class GpuMaterialPageCurlView(
         }.onFailure { error ->
             rendererFailed = true
             Log.e(TAG, "GPU page renderer initialization failed", error)
+            post { onRendererFailure() }
         }
     }
 
@@ -713,7 +716,8 @@ internal fun GpuMaterialPageOverlay(
     val supported = remember(context) {
         GpuMaterialPageCurlView.isSupported(context)
     }
-    if (!supported) {
+    val rendererFailed = remember { mutableStateOf(false) }
+    if (!supported || rendererFailed.value) {
         MaterialPageOverlay(state = state, modifier = modifier)
         return
     }
@@ -734,7 +738,12 @@ internal fun GpuMaterialPageOverlay(
 
     AndroidView(
         factory = { viewContext ->
-            GpuMaterialPageCurlView(viewContext)
+            GpuMaterialPageCurlView(
+                context = viewContext,
+                onRendererFailure = {
+                    rendererFailed.value = true
+                }
+            )
         },
         modifier = modifier,
         update = { view ->
