@@ -35,6 +35,21 @@ class PdfZoomControlsTest {
     }
 
     @Test
+    fun `renderer slider bounds remain finite and nonempty`() {
+        for (raw in listOf(Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, -1f, Float.MAX_VALUE)) {
+            val min = pdfZoomMinimum(raw)
+            val max = pdfZoomMaximum(raw, min)
+            assertTrue(min.isFinite() && max.isFinite())
+            assertTrue(max > min)
+            assertEquals(1f, min, 0f)
+            assertEquals(4f, max, 0f)
+        }
+        assertEquals(2f, pdfZoomMinimum(2f), 0f)
+        assertEquals(8f, pdfZoomMaximum(8f, 2f), 0f)
+        assertEquals(4f, pdfZoomMaximum(1f, 2f), 0f)
+    }
+
+    @Test
     fun `PDF zoom animation follows reduced motion policy`() {
         assertFalse(shouldAnimatePdfZoom(reducedMotion = true))
         assertTrue(shouldAnimatePdfZoom(reducedMotion = false))

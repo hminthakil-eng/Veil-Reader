@@ -7,6 +7,7 @@ import android.os.SystemClock
 import android.view.ActionMode
 import android.view.accessibility.AccessibilityManager
 import android.view.View
+import com.github.barteksc.pdfviewer.link.LinkHandler
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
@@ -121,6 +122,7 @@ import kotlinx.coroutines.flow.debounce
 import org.readium.r2.shared.util.use
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -243,6 +245,9 @@ fun ReaderScreen(
 
     var navigator by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf<Navigator?>(null) }
     val latestNavigator = rememberUpdatedState(navigator)
+    var pdfTapArbiter by remember(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf<ReaderPdfTapArbiter?>(null)
+    }
     var controlsVisible by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var selectionModeActive by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     val accessibilityManager = remember(activity) {
@@ -349,12 +354,16 @@ fun ReaderScreen(
         onDispose { navigationTransactionGate.reset() }
     }
 
-    fun beginProgrammaticNavigation(originLocatorJson: String?): Long {
+    fun beginProgrammaticNavigation(originLocatorJson: String?, expectedPdfPage: Int? = null): Long {
         paperInputListener?.forceCancelPendingTurn()
         slideInputListener?.forceCancelPendingTurn()
         val transaction = navigationTransactionGate.begin(
             originLocatorJson = originLocatorJson,
-            nowElapsedMs = SystemClock.elapsedRealtime()
+            nowElapsedMs = SystemClock.elapsedRealtime(),
+            expectedPdfPage = expectedPdfPage,
+            originPdfPage = if (expectedPdfPage != null) {
+                latestNavigator.value?.currentLocator?.value?.let(::pdfPageNumber)
+            } else null
         )
         ReaderTrace.event(
             "navigation_jump_requested",
@@ -829,6 +838,17 @@ fun ReaderScreen(
         }
     }
 
+    fun settleReachedPdfLink(locator: Locator? = latestNavigator.value?.currentLocator?.value) {
+        if (opened.format != BookFormat.PDF || locator == null) return
+        val settled = navigationTransactionGate.consumeReachedPdfDestination(
+            nowElapsedMs = SystemClock.elapsedRealtime(),
+            observedPdfPage = pdfPageNumber(locator)
+        ) ?: return
+        val json = locator.toVeilPersistedJson(opened.format)
+        previousLocationJson = settled.originLocatorJson?.takeIf { it != json }
+        recordLocator(locator, ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT)
+    }
+
     fun closeReader() {
         if (closeInFlight) return
         closeInFlight = true
@@ -842,6 +862,7 @@ fun ReaderScreen(
             slideInputListener?.forceCancelPendingTurn() == true
         val cancelledPreview = cancelledPaperPreview || cancelledSlidePreview
 
+        settleReachedPdfLink()
         val cancelledNavigationJump =
             navigationTransactionGate.cancelActive(SystemClock.elapsedRealtime()) != null
         if (
@@ -1015,18 +1036,80 @@ fun ReaderScreen(
         }
     }
 
+    val latestPdfLinkAction = rememberUpdatedState<(com.github.barteksc.pdfviewer.model.LinkTapEvent) -> Unit> { event ->
+        // Native link hit testing happens after onTap; it always wins over pending Veil chrome.
+        pdfTapArbiter?.cancelPendingTap()
+        val nav = latestNavigator.value
+        val owned = readerAsyncResultBelongsToSession(
+            currentSessionInstanceId = latestReaderSessionInstanceId.value,
+            expectedSessionInstanceId = readerSessionInstanceId
+        )
+        if (
+            owned && latestReaderSessionReady.value && nav != null &&
+            lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+            !closeInFlight && !rendererPreferencesSettling &&
+            !showNotebook && !showAppearance && !showPdfZoom &&
+            pendingNoteHighlightId == null && footnote == null &&
+            !imageLoading && imageViewer == null
+        ) {
+            val uri = event.link.uri
+            if (!uri.isNullOrBlank()) {
+                val safeUri = safePdfExternalLink(uri)
+                if (safeUri == null || runCatching {
+                    activity.startActivity(
+                        Intent(Intent.ACTION_VIEW, safeUri)
+                            .addCategory(Intent.CATEGORY_BROWSABLE)
+                    )
+                }.isFailure) {
+                    readerMessage = externalLinkFailedMessage
+                }
+            } else {
+                val pageIndex = event.link.destPageIdx
+                val pageCount = nav.findPdfView()?.pageCount ?: 0
+                val target = pageIndex?.let {
+                    pdfInternalLinkLocator(nav.currentLocator.value, it, pageCount)
+                }
+                if (target == null) {
+                    readerMessage = previousLocationFailedMessage
+                } else if (pdfPageNumber(nav.currentLocator.value) != pdfPageNumber(target)) {
+                    val token = beginProgrammaticNavigation(
+                        currentLocatorJson(), expectedPdfPage = pdfPageNumber(target)
+                    )
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    game.rebasePagePacing()
+                    if (nav.go(target, animated = false)) {
+                        controlsVisible = false
+                    } else {
+                        cancelProgrammaticNavigation(token)
+                        readerMessage = previousLocationFailedMessage
+                    }
+                }
+            }
+        }
+    }
+    val pdfLinkHandler = remember(opened.book.id, readerSessionInstanceId) {
+        val ownerSessionId = readerSessionInstanceId
+        LinkHandler { event ->
+            if (latestReaderSessionInstanceId.value == ownerSessionId) {
+                latestPdfLinkAction.value(event)
+            }
+        }
+    }
+
     val fragmentFactory = remember(
         opened.book.id,
         readerSessionInstanceId,
         selectionActionModeCallback,
-        epubNavigatorListener
+        epubNavigatorListener,
+        pdfLinkHandler
     ) {
         createReaderFactory(
             opened = opened,
             appearance = effectiveReaderAppearance,
             fixedLayoutSpread = activeFixedLayoutSpread,
             selectionActionModeCallback = selectionActionModeCallback,
-            epubNavigatorListener = epubNavigatorListener
+            epubNavigatorListener = epubNavigatorListener,
+            pdfLinkHandler = pdfLinkHandler
         )
     }
     val onNavigatorReady = remember<(Navigator) -> Unit>(opened.book.id, readerSessionInstanceId) {
@@ -1075,6 +1158,7 @@ fun ReaderScreen(
                             slideInputListener?.forceCancelPendingTurn() == true
                         val cancelledPreview =
                             cancelledPaperPreview || cancelledSlidePreview
+                        settleReachedPdfLink()
                         val navigationJumpInFlight =
                             navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
                         if (
@@ -1127,6 +1211,11 @@ fun ReaderScreen(
         }
         var initialLocatorPending = true
         nav.currentLocator
+            .onEach { locator ->
+                // A link destination is already authoritative before the UI debounce. Capture it
+                // once so a rapid subsequent native swipe or lifecycle pause cannot erase it.
+                if (opened.format == BookFormat.PDF) settleReachedPdfLink(locator)
+            }
             .debounce(500)
             .collect { locator ->
                 locationTitle = locator.title?.trim().orEmpty()
@@ -1148,7 +1237,8 @@ fun ReaderScreen(
                     details = "progress=${locator.locations.totalProgression}"
                 )
                 val settledNavigation = navigationTransactionGate.consumeSettled(
-                    nowElapsedMs = SystemClock.elapsedRealtime()
+                    nowElapsedMs = SystemClock.elapsedRealtime(),
+                    observedPdfPage = if (opened.format == BookFormat.PDF) pdfPageNumber(locator) else null
                 )
                 if (settledNavigation != null) {
                     previousLocationJson = settledNavigation.originLocatorJson
@@ -1585,7 +1675,13 @@ fun ReaderScreen(
 
             paperInputListener = paperListener
             slideInputListener = slideListener
-            nav.addInputListener(inputArbiter)
+            val registeredInput = if (opened.format == BookFormat.PDF) {
+                ReaderPdfTapArbiter(inputArbiter, isEnabled = {
+                    lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                        latestReaderSessionInstanceId.value == readerSessionInstanceId
+                }).also { pdfTapArbiter = it }
+            } else inputArbiter
+            nav.addInputListener(registeredInput)
             onDispose {
                 imageLoadSerial += 1
                 imageLoadJob?.cancel()
@@ -1594,7 +1690,11 @@ fun ReaderScreen(
                 paperListener?.forceCancelPendingTurn()
                 slideListener?.forceCancelPendingTurn()
                 hardwareKeyHost?.clearReaderHardwareKeyHandler(readerSessionInstanceId)
-                nav.removeInputListener(inputArbiter)
+                nav.removeInputListener(registeredInput)
+                (registeredInput as? ReaderPdfTapArbiter)?.let { owner ->
+                    owner.dispose()
+                    if (pdfTapArbiter === owner) pdfTapArbiter = null
+                }
                 if (paperInputListener === paperListener) paperInputListener = null
                 if (slideInputListener === slideListener) slideInputListener = null
             }
@@ -2024,7 +2124,11 @@ fun ReaderScreen(
                             if (locator != null) {
                                 val added = library.addBookmark(
                                     opened.book.id,
-                                    "${formatPercent(progress)} · ${locator.title ?: opened.book.title}",
+                                    if (opened.format == BookFormat.PDF && pdfPageNumber(locator) != null) {
+                                        activity.getString(R.string.pdf_bookmark_page, pdfPageNumber(locator))
+                                    } else {
+                                        "${formatPercent(progress)} · ${locator.title ?: opened.book.title}"
+                                    },
                                     locator.toVeilPersistedJson(opened.format)
                                 )
                                 if (added) {
@@ -3027,7 +3131,8 @@ private fun createReaderFactory(
     appearance: ReaderAppearance,
     fixedLayoutSpread: ReaderFixedLayoutSpread,
     selectionActionModeCallback: ActionMode.Callback,
-    epubNavigatorListener: EpubNavigatorFragment.Listener
+    epubNavigatorListener: EpubNavigatorFragment.Listener,
+    pdfLinkHandler: LinkHandler
 ): FragmentFactory = when (opened.format) {
     BookFormat.EPUB -> EpubNavigatorFactory(opened.publication)
         .createFragmentFactory(
@@ -3050,7 +3155,13 @@ private fun createReaderFactory(
     BookFormat.PDF -> PdfNavigatorFactory(
         publication = opened.publication,
         pdfEngineProvider = PdfiumEngineProvider(
-            defaults = PdfiumDefaults()
+            defaults = PdfiumDefaults(),
+            listener = object : PdfiumEngineProvider.Listener {
+                override fun onConfigurePdfView(configurator: com.github.barteksc.pdfviewer.PDFView.Configurator) {
+                    // Public adapter hook; Readium installs its own page/tap/render listeners after it.
+                    configurator.enableAnnotationRendering(true).linkHandler(pdfLinkHandler)
+                }
+            }
         )
     ).createFragmentFactory(
         initialLocator = opened.initialLocator,

@@ -68,6 +68,48 @@ class ReaderNavigationTransactionTest {
     }
 
     @Test
+    fun pdfSourceEmission_cannotSettleDestinationOrOverwriteReturnHistory() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin("page1", 100L, expectedPdfPage = 3)
+        assertNull(gate.consumeSettled(120L, observedPdfPage = 1))
+        assertTrue(gate.isActive(121L))
+        assertEquals(started.token, gate.consumeSettled(150L, observedPdfPage = 3)?.token)
+        assertNull(gate.consumeSettled(600L, observedPdfPage = 3))
+    }
+
+    @Test
+    fun fastPdfBackground_canFlushReachedDestinationWithoutWaitingForDebounce() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin("page1", 100L, expectedPdfPage = 3)
+        assertNull(gate.consumeReachedPdfDestination(110L, observedPdfPage = 1))
+        assertEquals(started.token, gate.consumeReachedPdfDestination(130L, observedPdfPage = 3)?.token)
+        assertNull(gate.cancelActive(140L))
+        assertNull(gate.consumeSettled(600L, observedPdfPage = 3))
+    }
+
+    @Test
+    fun nativeSwipeImmediatelyAfterPdfLink_cannotMakeFastCloseDiscardTheActualPage() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin("page1", 100L, expectedPdfPage = 3, originPdfPage = 1)
+        assertNull(gate.consumeReachedPdfDestination(110L, observedPdfPage = 1))
+        // StateFlow may conflate page 3 with a fast native swipe to page 4 before UI debounce.
+        assertEquals(started.token, gate.consumeReachedPdfDestination(130L, observedPdfPage = 4)?.token)
+        assertFalse(gate.isActive(140L))
+        assertNull(gate.cancelActive(150L))
+    }
+
+    @Test
+    fun lifecyclePdfFlush_cannotSettleAnOrdinaryOrExpiredTransaction() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 100L)
+        gate.begin("epub", 100L)
+        assertNull(gate.consumeReachedPdfDestination(120L, observedPdfPage = 3))
+        assertTrue(gate.isActive(125L))
+        gate.begin("pdf", 130L, expectedPdfPage = 3)
+        assertNull(gate.consumeReachedPdfDestination(231L, observedPdfPage = 3))
+        assertFalse(gate.isActive(232L))
+    }
+
+    @Test
     fun jumpCommit_persistsWithoutPageTurnCredit() {
         assertTrue(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.commitsLocator)
         assertFalse(ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT.countsPageTurn)

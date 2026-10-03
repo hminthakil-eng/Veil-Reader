@@ -33,7 +33,7 @@ Evidence levels:
 | E-Ink mode | explicit E-Ink screen mode | Missing | Static paged, no translucent animation, high-contrast paper palette, low-refresh invalidation |
 | Arbitrary font replacement | book CSS font replacement / font folder workflows | Partial: bundled font families + weight exist | Add local font import and per-book substitution map; preserve publisher fallback |
 | Calendar/year statistics | statistics by year/calendar views | Partial archive/progression data, no equivalent surface confirmed | Build reading calendar and annual comparison from durable session rows |
-| PDF annotation depth | dedicated PDF annotation list / annotation controls | Veil currently exposes PDF bookmarks; text highlights are EPUB-oriented | Add PDF annotation capability only through supported engine APIs; no overlay fake state |
+| PDF annotation depth | dedicated PDF annotation list / annotation controls | **W41 capability audited**: embedded annotations rendered through the public Pdfium configuration hook; bookmarks use page labels. Enumeration/authoring/save remain adapter-extension work. | [Exact A/B/C audit](PDF_ANNOTATION_CAPABILITY_AUDIT.md); no fake PDF selection/decorations or annotation UI. Device rendering/RTL/link/zoom verification pending. |
 | Screen-edge touch disable | full-screen edge disable option | Missing | Useful for curved screens and gesture-nav devices; per-device override |
 | Multi-touch font scaling | pinch/multi-point font size adjustment | Missing | EPUB-only opt-in pinch typography; must not conflict with fixed-layout/PDF zoom |
 | Auto-brightness resume | resume system/auto brightness after inactivity | Missing | Treat custom brightness as session-scoped with configurable timeout |
@@ -56,7 +56,7 @@ Evidence levels:
 2. Long-press ownership and timing — **research complete / implementation blocked by safe-input constraints**
 3. Volume-key mapping — **W38 implemented**
 4. Focus Guide / reading ruler — **W39 implemented**
-5. PDF annotation capability audit
+5. PDF annotation capability audit — **completed; W41 public-API reliability slice, runtime matrix pending**
 
 ### P1 — reading power
 6. TTS engine

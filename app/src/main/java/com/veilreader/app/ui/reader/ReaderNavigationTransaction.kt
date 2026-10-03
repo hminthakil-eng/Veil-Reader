@@ -10,7 +10,9 @@ package com.veilreader.app.ui.reader
 internal data class ReaderNavigationTransaction(
     val token: Long,
     val originLocatorJson: String?,
-    val startedAtElapsedMs: Long
+    val startedAtElapsedMs: Long,
+    val expectedPdfPage: Int? = null,
+    val originPdfPage: Int? = null
 )
 
 internal class ReaderNavigationTransactionGate(
@@ -22,12 +24,16 @@ internal class ReaderNavigationTransactionGate(
     @Synchronized
     fun begin(
         originLocatorJson: String?,
-        nowElapsedMs: Long
+        nowElapsedMs: Long,
+        expectedPdfPage: Int? = null,
+        originPdfPage: Int? = null
     ): ReaderNavigationTransaction {
         val transaction = ReaderNavigationTransaction(
             token = ++nextToken,
             originLocatorJson = originLocatorJson,
-            startedAtElapsedMs = nowElapsedMs
+            startedAtElapsedMs = nowElapsedMs,
+            expectedPdfPage = expectedPdfPage?.takeIf { it > 0 },
+            originPdfPage = originPdfPage?.takeIf { it > 0 }
         )
         active = transaction
         return transaction
@@ -43,8 +49,23 @@ internal class ReaderNavigationTransactionGate(
         freshActive(nowElapsedMs) != null
 
     @Synchronized
-    fun consumeSettled(nowElapsedMs: Long): ReaderNavigationTransaction? {
+    fun consumeSettled(nowElapsedMs: Long, observedPdfPage: Int? = null): ReaderNavigationTransaction? {
         val transaction = freshActive(nowElapsedMs) ?: return null
+        if (transaction.expectedPdfPage != null && transaction.expectedPdfPage != observedPdfPage) return null
+        active = null
+        return transaction
+    }
+
+    /** A lifecycle flush may commit a reached PDF destination before the 500ms UI debounce. */
+    @Synchronized
+    fun consumeReachedPdfDestination(nowElapsedMs: Long, observedPdfPage: Int?): ReaderNavigationTransaction? {
+        val transaction = freshActive(nowElapsedMs) ?: return null
+        if (transaction.expectedPdfPage == null || observedPdfPage == null || observedPdfPage <= 0) return null
+        val reachedDestination = transaction.expectedPdfPage == observedPdfPage
+        // An unanimated PDF jump has no intermediate page animation. A real page beyond its
+        // source can also be a user swipe immediately after that jump; final flush must not lose it.
+        val movedPastSource = transaction.originPdfPage != null && transaction.originPdfPage != observedPdfPage
+        if (!reachedDestination && !movedPastSource) return null
         active = null
         return transaction
     }

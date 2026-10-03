@@ -5,9 +5,9 @@ import android.app.UiAutomation
 import android.content.ContentValues
 import android.content.Intent
 import android.os.Environment
+import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
-import android.util.Base64
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
@@ -85,8 +85,11 @@ class ReaderPdfReliabilityInstrumentedTest {
         waitForText("PDF zoom")
         waitForText("Fit page width")
 
+        // These are radio choices, not toggles. Establish the starting state explicitly.
+        clickDescription(target.getString(R.string.pdf_paginated_layout))
+        waitForText(target.getString(R.string.pdf_page_description))
         val before = currentPdfLayoutLabel()
-        clickDescription("PDF continuous scroll")
+        clickDescription(target.getString(R.string.pdf_continuous_scroll))
         val after = waitForPdfLayoutLabel(excluding = before)
         assertNotEquals("PDF layout toggle did not change mode", before, after)
 
@@ -94,10 +97,11 @@ class ReaderPdfReliabilityInstrumentedTest {
         clickText("Fit page width")
 
         // Restore the original layout so this test does not leak reader preference state.
-        clickDescription("PDF continuous scroll")
+        clickDescription(target.getString(R.string.pdf_paginated_layout))
         waitForPdfLayoutLabel(excluding = after)
         pressAndroidBack()
 
+        exerciseNativeInternalLinkAndReturn(pdfView)
         instrumentation.runOnMainSync { pdfView.jumpTo(1, false) }
         waitForPdfPage(pdfView, 1)
         SystemClock.sleep(1_000)
@@ -430,7 +434,8 @@ class ReaderPdfReliabilityInstrumentedTest {
             "Unable to create PDF fixture in MediaStore Downloads"
         }
         resolver.openOutputStream(uri, "w")!!.use { output ->
-            output.write(Base64.decode(PDF_BASE64, Base64.DEFAULT))
+            instrumentation.context.assets.open("pdf/veil-links-annotations.pdf")
+                .use { it.copyTo(output) }
         }
         values.clear()
         values.put(MediaStore.MediaColumns.IS_PENDING, 0)
@@ -444,21 +449,25 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun revealReaderChrome(view: PDFView) {
-        if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+        if (hasNode { it.text?.toString() == "Zoom" }) return
 
         val readerSurface = waitForNode("Reader surface") {
             it.contentDescription?.toString() == "Reader surface"
         }
 
-        check(readerSurface.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
-            "Reader surface rejected ACTION_CLICK; actions=" +
-                readerSurface.actionList.joinToString { it.label?.toString() ?: it.id.toString() }
+        try {
+            check(readerSurface.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                "Reader surface rejected ACTION_CLICK; actions=" +
+                    readerSurface.actionList.joinToString { it.label?.toString() ?: it.id.toString() }
+            }
+        } finally {
+            readerSurface.recycleCompat()
         }
 
         uiAutomation.waitForIdle(250, 2_000)
         val deadline = SystemClock.elapsedRealtime() + 5_000L
         while (SystemClock.elapsedRealtime() < deadline) {
-            if (findClickableNode { it.text?.toString() == "Zoom" } != null) return
+            if (hasNode { it.text?.toString() == "Zoom" }) return
             SystemClock.sleep(POLL_MS)
         }
 
@@ -483,17 +492,19 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun currentPdfLayoutLabel(): String =
-        waitForNode("PDF layout label") {
-            val text = it.text?.toString().orEmpty()
-            text.startsWith("Paginated") || text.startsWith("Vertical flow")
-        }.text.toString()
+        waitForNode("PDF layout label", ::isPdfLayoutLabel).readTextAndRecycle()
+
+    private fun isPdfLayoutLabel(node: AccessibilityNodeInfo): Boolean {
+        val target = instrumentation.targetContext
+        val text = node.text?.toString()
+        return text == target.getString(R.string.pdf_page_description) ||
+            text == target.getString(R.string.pdf_scroll_description)
+    }
 
     private fun waitForPdfLayoutLabel(excluding: String): String =
         waitForNode("changed PDF layout label") {
-            val text = it.text?.toString().orEmpty()
-            (text.startsWith("Paginated") || text.startsWith("Vertical flow")) &&
-                text != excluding
-        }.text.toString()
+            isPdfLayoutLabel(it) && it.text?.toString() != excluding
+        }.readTextAndRecycle()
 
     private fun clickFirstText(vararg candidates: String) {
         val deadline = SystemClock.elapsedRealtime() + TIMEOUT_MS
@@ -522,7 +533,7 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun waitForText(text: String) {
-        waitForNode("text=$text") { it.text?.toString() == text }
+        waitForNode("text=$text") { it.text?.toString() == text }.recycleCompat()
     }
 
     private fun clickDescription(description: String) {
@@ -532,7 +543,7 @@ class ReaderPdfReliabilityInstrumentedTest {
     }
 
     private fun waitForPackage(packageName: String) {
-        waitForNode("package=$packageName") { it.packageName?.toString() == packageName }
+        waitForNode("package=$packageName") { it.packageName?.toString() == packageName }.recycleCompat()
     }
 
     private fun waitForNode(
@@ -547,57 +558,97 @@ class ReaderPdfReliabilityInstrumentedTest {
         error("Timed out waiting for $label")
     }
 
-    private fun findClickableNode(
-        predicate: (AccessibilityNodeInfo) -> Boolean
-    ): AccessibilityNodeInfo? {
-        val root = uiAutomation.rootInActiveWindow ?: return null
-        val queue = ArrayDeque<AccessibilityNodeInfo>()
-        queue.add(root)
+    private fun findClickableNode(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? =
+        findNode(predicate)
 
-        while (queue.isNotEmpty()) {
-            val node = queue.removeFirst()
-            if (predicate(node)) return node
-            for (index in 0 until node.childCount) {
-                node.getChild(index)?.let(queue::add)
-            }
-        }
-        return null
-    }
+    private fun hasNode(predicate: (AccessibilityNodeInfo) -> Boolean): Boolean =
+        findNode(predicate)?.let { it.recycleCompat(); true } ?: false
 
     private fun clickableAncestor(node: AccessibilityNodeInfo): AccessibilityNodeInfo? {
         var current: AccessibilityNodeInfo? = node
-        while (current != null && !current.isClickable) current = current.parent
+        while (current != null && !current.isClickable) {
+            val parent = current.parent
+            if (current !== node) current.recycleCompat()
+            current = parent
+        }
         return current
     }
 
-    private fun findNode(
-        predicate: (AccessibilityNodeInfo) -> Boolean
-    ): AccessibilityNodeInfo? {
+    private fun findNode(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
         val root = uiAutomation.rootInActiveWindow ?: return null
         val queue = ArrayDeque<AccessibilityNodeInfo>()
         queue.add(root)
-
-        while (queue.isNotEmpty()) {
-            val node = queue.removeFirst()
-            if (predicate(node)) return node
-            for (index in 0 until node.childCount) {
-                node.getChild(index)?.let(queue::add)
+        try {
+            while (queue.isNotEmpty()) {
+                val node = queue.removeFirst()
+                var matched = false
+                try {
+                    matched = predicate(node)
+                    if (matched) return node
+                    for (index in 0 until node.childCount) {
+                        node.getChild(index)?.let(queue::add)
+                    }
+                } finally {
+                    if (!matched) node.recycleCompat()
+                }
             }
+            return null
+        } finally {
+            queue.forEach { it.recycleCompat() }
         }
-        return null
     }
 
     private fun clickNode(node: AccessibilityNodeInfo) {
         val current = clickableAncestor(node)
-        val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
-        if (!clicked) {
-            val bounds = android.graphics.Rect()
-            (current ?: node).getBoundsInScreen(bounds)
-            check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
-            uiAutomation.executeShellCommand(
-                "input tap ${bounds.centerX()} ${bounds.centerY()}"
-            ).close()
+        try {
+            val clicked = current?.performAction(AccessibilityNodeInfo.ACTION_CLICK) == true
+            if (!clicked) {
+                val bounds = android.graphics.Rect()
+                (current ?: node).getBoundsInScreen(bounds)
+                check(!bounds.isEmpty) { "Accessibility node has no tappable screen bounds" }
+                uiAutomation.executeShellCommand(
+                    "input tap ${bounds.centerX()} ${bounds.centerY()}"
+                ).close()
+            }
+        } finally {
+            if (current !== node) current?.recycleCompat()
+            node.recycleCompat()
         }
+        SystemClock.sleep(750)
+    }
+
+    private fun AccessibilityNodeInfo.readTextAndRecycle(): String =
+        try { text.toString() } finally { recycleCompat() }
+
+    @Suppress("DEPRECATION") // Pooling exists on supported API 26–32; API 33+ recycle is a no-op.
+    private fun AccessibilityNodeInfo.recycleCompat() {
+        if (Build.VERSION.SDK_INT < 33) recycle()
+    }
+
+    private fun exerciseNativeInternalLinkAndReturn(view: PDFView) {
+        instrumentation.runOnMainSync { view.jumpTo(0, false) }
+        waitForPdfPage(view, 0)
+        SystemClock.sleep(750) // Let Readium's debounced source locator become the return origin.
+        val tap = IntArray(2)
+        instrumentation.runOnMainSync {
+            val link = view.getLinks(0).single()
+            assertEquals(2, link.destPageIdx)
+            val pageSize = view.getPageSize(0)
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            // This fixture has equal, unrotated 612x792 pages. No production geometry shortcut.
+            tap[0] = (location[0] + view.currentXOffset +
+                link.bounds.centerX() / 612f * pageSize.width * view.zoom).toInt()
+            tap[1] = (location[1] + view.currentYOffset +
+                (792f - link.bounds.centerY()) / 792f * pageSize.height * view.zoom).toInt()
+        }
+        uiAutomation.executeShellCommand("input tap ${tap[0]} ${tap[1]}").close()
+        waitForPdfPage(view, 2)
+        revealReaderChrome(view)
+        val returnLabel = instrumentation.targetContext.getString(R.string.reader_previous_location)
+        waitForText(returnLabel)
+        clickText(returnLabel)
+        waitForPdfPage(view, 0)
         SystemClock.sleep(750)
     }
 
@@ -605,9 +656,5 @@ class ReaderPdfReliabilityInstrumentedTest {
         const val TIMEOUT_MS = 20_000L
         const val POLL_MS = 250L
 
-        // Three-page, text-only PDF 1.4 fixture. Kept inline so the instrumentation gate is
-        // hermetic and does not depend on host-side files or network access.
-        const val PDF_BASE64 =
-            "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA1IDAgUiA3IDAgUl0gL0NvdW50IDMgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA5IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAxMzcgPj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA3MiA3MDAgVGQgKFZlaWwgUmVhZGVyIFBERiBTbW9rZSBQYWdlIDEpIFRqIDAgLTQwIFRkIC9GMSAxNCBUZiAoUGluY2ggem9vbSwgZml0LCBzY3JvbGwsIG9yaWVudGF0aW9uIGFuZCByZXN1bWUgdGVzdC4pIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDkgMCBSID4+ID4+IC9Db250ZW50cyA2IDAgUiA+PgplbmRvYmoKNiAwIG9iago8PCAvTGVuZ3RoIDEzNyA+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDcyIDcwMCBUZCAoVmVpbCBSZWFkZXIgUERGIFNtb2tlIFBhZ2UgMikgVGogMCAtNDAgVGQgL0YxIDE0IFRmIChQaW5jaCB6b29tLCBmaXQsIHNjcm9sbCwgb3JpZW50YXRpb24gYW5kIHJlc3VtZSB0ZXN0LikgVGogRVQKZW5kc3RyZWFtCmVuZG9iago3IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgOSAwIFIgPj4gPj4gL0NvbnRlbnRzIDggMCBSID4+CmVuZG9iago4IDAgb2JqCjw8IC9MZW5ndGggMTM3ID4+CnN0cmVhbQpCVCAvRjEgMjQgVGYgNzIgNzAwIFRkIChWZWlsIFJlYWRlciBQREYgU21va2UgUGFnZSAzKSBUaiAwIC00MCBUZCAvRjEgMTQgVGYgKFBpbmNoIHpvb20sIGZpdCwgc2Nyb2xsLCBvcmllbnRhdGlvbiBhbmQgcmVzdW1lIHRlc3QuKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagp4cmVmCjAgMTAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAwNjQgMDAwMDAgbiAKMDAwMDAwMDEzMyAwMDAwMCBuIAowMDAwMDAwMjU5IDAwMDAwIG4gCjAwMDAwMDA0NDcgMDAwMDAgbiAKMDAwMDAwMDU3MyAwMDAwMCBuIAowMDAwMDAwNzYxIDAwMDAwIG4gCjAwMDAwMDA4ODcgMDAwMDAgbiAKMDAwMDAwMTA3NSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDEwIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMTQ1CiUlRU9GCg=="
     }
 }
