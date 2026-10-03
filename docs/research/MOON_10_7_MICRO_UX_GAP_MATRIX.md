@@ -19,8 +19,8 @@ Evidence levels:
 | Area | Moon+ evidence | Veil status | Veil direction |
 |---|---|---|---|
 | 3×3 tap customization | packaged 9-square tap customization and per-region tap labels | **W37 implemented** | Nine durable zones; semantic previous/next; renderer passthrough; RTL-safe; Paper/Slide preserved |
-| Long-press actions | separate left/middle/right long-tap actions plus trigger timing | Missing | Add press-duration policy and per-zone long-press map without stealing text selection |
-| Volume-key actions | volume up/down actions | Missing | Optional page-turn mapping; never hijack volume unless explicitly enabled |
+| Long-press actions | separate left/middle/right long-tap actions plus trigger timing | **Gap confirmed; blocked on current legacy navigator input API** | Preserve native Readium/WebView selection. Do not add a touch-overlay hack; revisit with a renderer/input path that exposes long-press ownership safely. |
+| Volume-key actions | volume up/down actions | **W38 implemented** | Activity-owned opt-in mapping; System volume default; page turns preserve Veil motion; scroll/selection/dialog/TalkBack fail back to Android volume. |
 | Edge brightness gesture | left-edge swipe changes brightness | Missing | Add opt-in edge gesture with dead-zone, haptic detents and conflict arbitration |
 | Edge font-size gesture | right-edge swipe changes text size | Missing | Add opt-in EPUB-only gesture with live preview and accessibility guard |
 | Auto-scroll | auto-scroll controls and speed UI | Missing | Reader-owned velocity engine with pause-on-touch, reduced-motion policy and persistent speed |
@@ -53,8 +53,8 @@ Evidence levels:
 
 ### P0 — interaction quality
 1. W37 tap matrix — **in progress / implemented**
-2. Long-press ownership and timing
-3. Volume-key mapping
+2. Long-press ownership and timing — **research complete / implementation blocked by safe-input constraints**
+3. Volume-key mapping — **W38 implemented**
 4. Focus Guide / reading ruler
 5. PDF annotation capability audit
 
