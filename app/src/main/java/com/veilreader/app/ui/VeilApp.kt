@@ -53,6 +53,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.deriveBookReturnRitual
@@ -97,6 +98,7 @@ fun VeilApp(
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
     onSaveReaderTapGrid: (ReaderTapGrid) -> Unit = {},
     onSaveReaderHardwareKeys: (ReaderHardwareKeyMap) -> Unit = {},
+    onSaveReaderFocusGuide: (ReaderFocusGuideSettings) -> Unit = {},
     onSaveFixedLayoutSpread: (String, ReaderFixedLayoutSpread) -> Unit = { _, _ -> },
     onSaveSensorySettings: (SensorySettings) -> Unit = {}
 ) {
@@ -1001,6 +1003,8 @@ fun VeilApp(
             readerAppearance = appSettings.readerAppearance,
             readerTapGrid = appSettings.readerTapGrid,
             readerHardwareKeys = appSettings.readerHardwareKeys,
+            focusGuide = appSettings.readerFocusGuide,
+            onFocusGuideChange = onSaveReaderFocusGuide,
             fixedLayoutSpread = appSettings.fixedLayoutSpreads[opened.book.id]
                 ?: ReaderFixedLayoutSpread.AUTO,
             onReaderAppearanceChange = onSaveReaderAppearance,
@@ -1040,6 +1044,7 @@ fun VeilApp(
                 onSaveReaderAppearance = onSaveReaderAppearance,
                 onSaveReaderTapGrid = onSaveReaderTapGrid,
                 onSaveReaderHardwareKeys = onSaveReaderHardwareKeys,
+                onSaveReaderFocusGuide = onSaveReaderFocusGuide,
                 onSaveSensorySettings = onSaveSensorySettings,
                 onExportBackup = { exportData(it, true) },
                 onRestoreBackup = ::restoreData,
