@@ -2,12 +2,25 @@ package com.veilreader.app.ui.reader
 
 import com.veilreader.app.domain.ReaderHardwareKeyAction
 import com.veilreader.app.domain.ReaderHardwareKeyMap
+import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ReaderHardwareKeyControllerTest {
+    @Test
+    fun `malformed persisted action falls back to system volume`() {
+        assertEquals(
+            ReaderHardwareKeyAction.SYSTEM,
+            decodeReaderHardwareKeyAction("NOT_A_REAL_ACTION")
+        )
+        assertEquals(
+            ReaderHardwareKeyAction.SYSTEM,
+            decodeReaderHardwareKeyAction(null)
+        )
+    }
+
     @Test
     fun `system mapping never consumes hardware volume events`() {
         val controller = controller(
