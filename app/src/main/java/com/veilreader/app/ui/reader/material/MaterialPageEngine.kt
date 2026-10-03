@@ -108,6 +108,7 @@ internal class MaterialPageEngineState(
     private var density = 1f
     private var snapshotBuffer: Bitmap? = null
     private var backSnapshotBuffer: Bitmap? = null
+    private var preparedSnapshotValid = false
     private var backSnapshotAllowed = true
     private var liftCueEmitted = false
 
@@ -133,7 +134,15 @@ internal class MaterialPageEngineState(
 
     fun prepareBuffer(view: View): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        return obtainSnapshotBuffer(view) != null
+        val bitmap = captureIntoSourceBuffer(view) ?: run {
+            preparedSnapshotValid = false
+            return false
+        }
+        preparedSnapshotValid =
+            bitmap.width == view.width &&
+                bitmap.height == view.height &&
+                !bitmap.isRecycled
+        return preparedSnapshotValid
     }
 
     fun begin(
@@ -142,7 +151,14 @@ internal class MaterialPageEngineState(
         profile: MaterialPageProfile = this.profile
     ): Boolean {
         if (active || view.width <= 0 || view.height <= 0) return false
-        val bitmap = capture(view) ?: return false
+        val prepared = snapshotBuffer?.takeIf {
+            preparedSnapshotValid &&
+                !it.isRecycled &&
+                it.width == view.width &&
+                it.height == view.height
+        }
+        val bitmap = prepared ?: captureIntoSourceBuffer(view) ?: return false
+        preparedSnapshotValid = false
 
         width = view.width.toFloat()
         height = view.height.toFloat()
@@ -414,6 +430,7 @@ internal class MaterialPageEngineState(
     suspend fun clear() {
         snapshot = null
         backSnapshot = null
+        preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -432,6 +449,7 @@ internal class MaterialPageEngineState(
     fun clearImmediately() {
         snapshot = null
         backSnapshot = null
+        preparedSnapshotValid = false
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -509,6 +527,7 @@ internal class MaterialPageEngineState(
         // in-flight frame references are gone.
         snapshotBuffer = null
         backSnapshotBuffer = null
+        preparedSnapshotValid = false
     }
 
     fun dispose() {
@@ -516,7 +535,7 @@ internal class MaterialPageEngineState(
         releaseBufferIfIdle()
     }
 
-    private fun capture(view: View): Bitmap? =
+    private fun captureIntoSourceBuffer(view: View): Bitmap? =
         runCatching {
             val bitmap = obtainSnapshotBuffer(view)
                 ?: return@runCatching null
