@@ -190,13 +190,6 @@ internal fun materialPageTapLiftDurationMillis(
             profile.physics.dragResistance.coerceIn(0.45f, 1.35f) * 8f
         ).roundToInt().coerceIn(54, 78)
 
-internal fun materialPageTapDurationMillis(
-    profile: MaterialPageProfile
-): Int =
-    (176f + profile.physics.apparentMass.coerceIn(0.6f, 1.5f) * 86f)
-        .roundToInt()
-        .coerceIn(220, 320)
-
 internal fun materialPageSpringStiffness(
     profile: MaterialPageProfile
 ): Float {
