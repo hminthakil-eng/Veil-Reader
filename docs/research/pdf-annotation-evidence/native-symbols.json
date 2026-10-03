@@ -1,0 +1,98 @@
+{
+  "arm64-v8a": {
+    "sha256": "63ce766a306d56e03423c0b7b2464020777f434cbff5e8a6029ab7b270645845",
+    "confirmed": [
+      "FPDFAnnot_AddInkStroke",
+      "FPDFAnnot_GetAttachmentPoints",
+      "FPDFAnnot_GetRect",
+      "FPDFAnnot_GetStringValue",
+      "FPDFAnnot_GetSubtype",
+      "FPDFAnnot_SetAttachmentPoints",
+      "FPDFAnnot_SetRect",
+      "FPDFAnnot_SetStringValue",
+      "FPDFPage_CreateAnnot",
+      "FPDFPage_GetAnnot",
+      "FPDFPage_GetAnnotCount",
+      "FPDFPage_RemoveAnnot",
+      "FPDFText_CountChars",
+      "FPDFText_GetCharBox",
+      "FPDFText_LoadPage",
+      "FPDF_DeviceToPage",
+      "FPDF_PageToDevice",
+      "FPDF_SaveAsCopy"
+    ],
+    "missing": []
+  },
+  "armeabi-v7a": {
+    "sha256": "95809ac27cad80a6e6c66342d6e4e102d958c10e085306f9712845efca55d277",
+    "confirmed": [
+      "FPDFAnnot_AddInkStroke",
+      "FPDFAnnot_GetAttachmentPoints",
+      "FPDFAnnot_GetRect",
+      "FPDFAnnot_GetStringValue",
+      "FPDFAnnot_GetSubtype",
+      "FPDFAnnot_SetAttachmentPoints",
+      "FPDFAnnot_SetRect",
+      "FPDFAnnot_SetStringValue",
+      "FPDFPage_CreateAnnot",
+      "FPDFPage_GetAnnot",
+      "FPDFPage_GetAnnotCount",
+      "FPDFPage_RemoveAnnot",
+      "FPDFText_CountChars",
+      "FPDFText_GetCharBox",
+      "FPDFText_LoadPage",
+      "FPDF_DeviceToPage",
+      "FPDF_PageToDevice",
+      "FPDF_SaveAsCopy"
+    ],
+    "missing": []
+  },
+  "x86": {
+    "sha256": "d2739c0f4d0b07d23ba27676fc503dfd87e0a298bba3e5bb970533baf56656f6",
+    "confirmed": [
+      "FPDFAnnot_AddInkStroke",
+      "FPDFAnnot_GetAttachmentPoints",
+      "FPDFAnnot_GetRect",
+      "FPDFAnnot_GetStringValue",
+      "FPDFAnnot_GetSubtype",
+      "FPDFAnnot_SetAttachmentPoints",
+      "FPDFAnnot_SetRect",
+      "FPDFAnnot_SetStringValue",
+      "FPDFPage_CreateAnnot",
+      "FPDFPage_GetAnnot",
+      "FPDFPage_GetAnnotCount",
+      "FPDFPage_RemoveAnnot",
+      "FPDFText_CountChars",
+      "FPDFText_GetCharBox",
+      "FPDFText_LoadPage",
+      "FPDF_DeviceToPage",
+      "FPDF_PageToDevice",
+      "FPDF_SaveAsCopy"
+    ],
+    "missing": []
+  },
+  "x86_64": {
+    "sha256": "c31e7c0d35238dc88c72cb014d8fe385d4ba257f33b456365b9848ad978358b4",
+    "confirmed": [
+      "FPDFAnnot_AddInkStroke",
+      "FPDFAnnot_GetAttachmentPoints",
+      "FPDFAnnot_GetRect",
+      "FPDFAnnot_GetStringValue",
+      "FPDFAnnot_GetSubtype",
+      "FPDFAnnot_SetAttachmentPoints",
+      "FPDFAnnot_SetRect",
+      "FPDFAnnot_SetStringValue",
+      "FPDFPage_CreateAnnot",
+      "FPDFPage_GetAnnot",
+      "FPDFPage_GetAnnotCount",
+      "FPDFPage_RemoveAnnot",
+      "FPDFText_CountChars",
+      "FPDFText_GetCharBox",
+      "FPDFText_LoadPage",
+      "FPDF_DeviceToPage",
+      "FPDF_PageToDevice",
+      "FPDF_SaveAsCopy"
+    ],
+    "missing": []
+  }
+}
