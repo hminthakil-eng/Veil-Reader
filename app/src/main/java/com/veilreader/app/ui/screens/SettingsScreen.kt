@@ -841,9 +841,7 @@ fun SettingsScreen(
                     checked = materialPageReviewEnabled,
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
-                        MaterialPageEngineRollout.setDebugOverride(
-                            if (enabled) true else null
-                        )
+                        MaterialPageEngineRollout.setDebugOverride(enabled)
                     }
                 )
 
