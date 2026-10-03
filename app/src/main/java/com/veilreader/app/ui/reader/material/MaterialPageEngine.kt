@@ -89,6 +89,9 @@ internal class MaterialPageEngineState(
     var pullOriginY: Float by mutableFloatStateOf(0.5f)
         private set
 
+    var diagonalPull: Float by mutableFloatStateOf(0f)
+        private set
+
     var visualAlpha: Float by mutableFloatStateOf(1f)
         private set
 
@@ -173,6 +176,7 @@ internal class MaterialPageEngineState(
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
+        diagonalPull = 0f
         visualAlpha = 1f
         liftCueEmitted = false
         active = true
@@ -199,6 +203,16 @@ internal class MaterialPageEngineState(
             startY = start.y,
             heightPx = height
         )
+        val slopeDenominator =
+            inward.coerceAtLeast(width * 0.08f)
+        diagonalPull =
+            (offset.y / slopeDenominator)
+                .takeIf { it.isFinite() }
+                ?.coerceIn(-1f, 1f)
+                ?.let { slope ->
+                    slope * (sample.rawProgress / 0.14f).coerceIn(0f, 1f)
+                }
+                ?: 0f
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -440,6 +454,7 @@ internal class MaterialPageEngineState(
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
+        diagonalPull = 0f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -458,6 +473,7 @@ internal class MaterialPageEngineState(
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
+        diagonalPull = 0f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -475,6 +491,7 @@ internal class MaterialPageEngineState(
         progress: Float,
         verticalBias: Float = 0f,
         pullOriginY: Float = 0.5f,
+        diagonalPull: Float = 0f,
         side: MaterialPageSide = MaterialPageSide.RIGHT,
         profile: MaterialPageProfile = this.profile,
         reducedMotion: Boolean = false,
@@ -495,6 +512,8 @@ internal class MaterialPageEngineState(
             startY = safePullOrigin * height,
             heightPx = height
         )
+        this.diagonalPull =
+            diagonalPull.takeIf { it.isFinite() }?.coerceIn(-1f, 1f) ?: 0f
         this.side = side
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
