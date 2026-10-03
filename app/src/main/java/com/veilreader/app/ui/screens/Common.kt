@@ -226,99 +226,27 @@ fun ArchivePanel(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    val colors = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.extraSmall
-
+    val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
+    val frameColor = if (highContrast) VeilPalette.Brass else com.veilreader.app.ui.theme.VeilMaterials.Frame
     Box(
         modifier = modifier
             .animateContentSize(if (LocalVeilReducedMotion.current) snap() else tween(VeilMotion.STANDARD_MS))
             .clip(shape)
-            .background(
-                Brush.linearGradient(
-                    listOf(
-                        VeilPalette.Archive.copy(alpha = 0.995f),
-                        VeilPalette.Iron.copy(alpha = 0.88f),
-                        VeilPalette.Ink.copy(alpha = 0.995f)
-                    )
-                )
-            )
+            .background(com.veilreader.app.ui.theme.VeilMaterials.Surface)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                BorderStroke(
+                    if (highContrast) com.veilreader.app.ui.theme.VeilStroke.Emphasis else com.veilreader.app.ui.theme.VeilStroke.Hairline,
+                    frameColor.copy(alpha = if (highContrast) 0.85f else com.veilreader.app.ui.theme.VeilFrame.StructuralAlpha)
+                ),
                 shape
             )
     ) {
-        Box(
-            Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-42).dp)
-                .size(180.dp)
-                .clip(RoundedCornerShape(90.dp))
-                .background(
-                    Brush.radialGradient(
-                        listOf(
-                            VeilPalette.Brass.copy(alpha = 0.055f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Brass.copy(alpha = 0.86f),
-                            VeilPalette.Brass.copy(alpha = 0.46f),
-                            Color.Transparent
-                        )
-                    )
-                )
-                .align(Alignment.TopCenter)
-        )
-
+        // Registration belongs to the archive object; it does not illuminate every utility panel.
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
-            strength = 0.56f
+            strength = com.veilreader.app.ui.theme.VeilFrame.OrnamentStrength
         )
-
-        Box(
-            Modifier
-                .fillMaxHeight()
-                .width(2.dp)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Transparent,
-                            VeilPalette.Brass.copy(alpha = 0.34f),
-                            Color.Transparent
-                        )
-                    )
-                )
-                .align(Alignment.CenterStart)
-        )
-
-        Box(
-            Modifier
-                .size(7.dp)
-                .rotate(45f)
-                .background(VeilPalette.Brass.copy(alpha = 0.74f))
-                .align(Alignment.TopStart)
-                .offset(x = 10.dp, y = 10.dp)
-        )
-
-        Box(
-            Modifier
-                .size(7.dp)
-                .rotate(45f)
-                .background(VeilPalette.Brass.copy(alpha = 0.82f))
-                .align(Alignment.BottomEnd)
-                .offset(x = (-10).dp, y = (-10).dp)
-        )
-
         Column(
             modifier = Modifier.padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
@@ -400,7 +328,7 @@ internal fun VeilMicroLabel(
             if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall
         } else {
             (if (strong) MaterialTheme.typography.labelMedium else MaterialTheme.typography.labelSmall)
-                .copy(letterSpacing = if (strong) 1.45.sp else 0.95.sp)
+                .withVeilTracking(text, if (strong) 0.75.sp else 0.65.sp)
         }
     )
 }
@@ -418,7 +346,7 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
             style = if (arabicScriptEyebrow) {
                 MaterialTheme.typography.labelMedium
             } else {
-                MaterialTheme.typography.labelMedium.copy(letterSpacing = 1.75.sp)
+                MaterialTheme.typography.labelMedium.withVeilTracking(eyebrow, 0.75.sp)
             }
         )
         BrassRule(Modifier.width(72.dp))
@@ -826,6 +754,41 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+        }
+    }
+}
+
+/** A map and its record become adjacent rooms on wide windows; large text restores reading order. */
+@Composable
+internal fun VeilArchitecturalPair(
+    modifier: Modifier = Modifier,
+    primaryFraction: Float = com.veilreader.app.ui.theme.VeilProportion.WorldPrimary,
+    spacing: Dp = VeilSpacing.lg,
+    primary: @Composable () -> Unit,
+    secondary: @Composable () -> Unit
+) {
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val paired = com.veilreader.app.ui.theme.useArchitecturalPair(
+            widthDp = maxWidth.value,
+            fontScale = LocalDensity.current.fontScale
+        )
+        if (paired) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
+                verticalAlignment = Alignment.Top
+            ) {
+                Column(Modifier.weight(primaryFraction)) { primary() }
+                Column(Modifier.weight(1f - primaryFraction)) { secondary() }
+            }
+        } else {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(spacing)
+            ) {
+                primary()
+                secondary()
             }
         }
     }

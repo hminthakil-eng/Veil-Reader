@@ -52,7 +52,7 @@ object ArenaGeometry {
     val SealRadius = 999.dp
 
     val TouchTarget = 48.dp
-    val CompactTouchTarget = 44.dp
+    val CompactTouchTarget = TouchTarget
 }
 
 object ArenaOpacity {
@@ -75,16 +75,47 @@ data class ArenaDensityBudget(
     val authoredImage: Float,
     val ornament: Float,
     val atmosphere: Float,
-    val motion: Float
+    val motion: Float,
+    val richness: Float
 )
 
 fun arenaDensityFor(realm: VeilRealm): ArenaDensityBudget =
     when (realm) {
-        VeilRealm.SANCTUARY -> ArenaDensityBudget(0.00f, 0.00f, 0.04f, 0.08f)
-        VeilRealm.THRESHOLD -> ArenaDensityBudget(0.86f, 0.34f, 0.56f, 0.26f)
-        VeilRealm.ARCHIVE -> ArenaDensityBudget(0.68f, 0.48f, 0.50f, 0.22f)
+        VeilRealm.SANCTUARY -> ArenaDensityBudget(0.00f, 0.00f, 0.04f, 0.08f, 0.05f)
+        VeilRealm.THRESHOLD -> ArenaDensityBudget(0.86f, 0.34f, 0.56f, 0.26f, 0.48f)
+        VeilRealm.ARCHIVE -> ArenaDensityBudget(0.68f, 0.48f, 0.50f, 0.22f, 0.58f)
         VeilRealm.CASTLE,
-        VeilRealm.WORLD -> ArenaDensityBudget(0.62f, 0.66f, 0.72f, 0.42f)
-        VeilRealm.RITUAL -> ArenaDensityBudget(0.46f, 0.82f, 0.74f, 0.58f)
-        VeilRealm.SANCTUM -> ArenaDensityBudget(0.54f, 0.74f, 0.78f, 0.28f)
+        VeilRealm.WORLD -> ArenaDensityBudget(0.62f, 0.66f, 0.72f, 0.42f, 0.76f)
+        VeilRealm.RITUAL -> ArenaDensityBudget(0.46f, 0.82f, 0.74f, 0.58f, 0.86f)
+        VeilRealm.SANCTUM -> ArenaDensityBudget(0.54f, 0.74f, 0.78f, 0.28f, 0.82f)
     }
+
+/** Semantic material aliases; no second palette or per-screen color system. */
+object VeilMaterials {
+    val RealmBackground = ArenaPalette.Void
+    val Surface = ArenaPalette.Archive
+    val ElevatedSurface = ArenaPalette.RaisedArchive
+    val Parchment = ArenaPalette.Parchment
+    val Ink = ArenaPalette.InkOnPaper
+    val Brass = ArenaPalette.AntiqueGold
+    val Moonlight = ArenaPalette.Moon
+    val TextPrimary = ArenaPalette.Moon
+    val TextSecondary = ArenaPalette.Mist
+    // Readable archival metadata; ornament may use Ash, text must not.
+    val TextMuted = ArenaPalette.Mist
+    val Divider = ArenaPalette.Border
+    val Frame = ArenaPalette.GoldHairline
+    val Ornament = ArenaPalette.Brass
+    val Depth = ArenaPalette.Cathedral
+    val Error = Color(0xFFFFB4AB)
+    val Warning = Color(0xFFE2C18B)
+    val Success = Color(0xFFA9C6B2)
+}
+
+/** The general archive inset is deliberately quieter than an artifact or ceremonial chamber. */
+object VeilFrame {
+    val Inset = 6.dp
+    val CornerLength = 16.dp
+    const val StructuralAlpha = 0.28f
+    const val OrnamentStrength = 0.24f
+}

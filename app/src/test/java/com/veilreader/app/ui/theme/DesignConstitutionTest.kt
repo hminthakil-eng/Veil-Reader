@@ -159,4 +159,19 @@ class DesignConstitutionTest {
         assertEquals(8f, VeilSanctuary.maximumPageStackDp)
         assertEquals(VeilMotion.READER_AUTO_HIDE_MS, VeilSanctuary.chromeAutoHideMillis)
     }
+
+    @Test
+    fun `architectural pairing uses usable width and yields to large text`() {
+        assertFalse(useArchitecturalPair(599f, 1f))
+        assertFalse(useArchitecturalPair(720f, 1f))
+        assertFalse(useArchitecturalPair(839f, 1f))
+        assertTrue(useArchitecturalPair(840f, 1f))
+        assertTrue(useArchitecturalPair(840f, 1.3f))
+        assertFalse(useArchitecturalPair(840f, 1.5f))
+        assertFalse(useArchitecturalPair(1120f, 2f))
+        assertTrue(useArchitecturalPair(1400f, 2f))
+        assertFalse(useArchitecturalPair(Float.NaN, 1f))
+        assertFalse(useArchitecturalPair(900f, Float.POSITIVE_INFINITY))
+        assertFalse(useArchitecturalPair(900f, 0f))
+    }
 }

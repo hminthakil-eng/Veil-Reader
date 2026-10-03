@@ -1,0 +1,923 @@
+{
+  "base": "18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf",
+  "branch": "design/codex-grayfog-masterpiece-v1",
+  "gradle": "BUILD SUCCESSFUL in 9m 18s",
+  "jvm": {
+    "suites": 122,
+    "tests": 682,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "Warning": 166,
+    "Hint": 1
+  },
+  "reading_policy_checks": 39,
+  "font_instances_verified": 8,
+  "font_notices_packaged": 5,
+  "apk_evidence": {
+    "app-debug.apk": {
+      "bytes": 45993856,
+      "sha256": "b03ca9aee01df450129ca8c24a598a1eee001dc0c37ba8561d7f760dc77dc742"
+    },
+    "app-debug-androidTest.apk": {
+      "bytes": 1403675,
+      "sha256": "af3543b686a10862abd4aabac942178b8a45d306e543d8717745b27706c7eb5f"
+    }
+  },
+  "protected_reader_data_sources": "unchanged",
+  "device_tests": "not executed; no device attached",
+  "rendered_visual_review": "pending",
+  "source_sha256": {
+    "app/src/androidTest/java/com/veilreader/app/ui/screens/GrayfogShellAccessibilityTest.kt": "759df438e47de810e5de2e1a8a362127d9298b83c5f54030f80b884d4521de95",
+    "app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt": "21651b6575f8cde654727f0a02af32b51de0a068b77a578403503c975771d522",
+    "app/src/main/assets/font-licenses/PROVENANCE.md": "c9d2fc395103c9730874b1f9ef9e54fd2922920744ada1e5dafcae0ad717fa1a",
+    "app/src/main/assets/font-licenses/cormorantgaramond-OFL.txt": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
+    "app/src/main/assets/font-licenses/playfairdisplay-OFL.txt": "566be814f8e96e93dfa16101331557eb6b5467e9e03f627c0910fe93ca12300e",
+    "app/src/main/assets/font-licenses/sourcesans3-OFL.txt": "09746787287a289323b0ec3cff4d1a4a801331b82b7207c1e186f5d26619a392",
+    "app/src/main/assets/font-licenses/vazirmatn-OFL.txt": "17e355067c8284f47743a1ee3b1ef7ff684ff0601eda357f9353b10b3016ab31",
+    "app/src/main/java/com/veilreader/app/ui/VeilApp.kt": "fc7ea0233474a226eba899edf3bc6384b88fb1024647c2bbf153da668511e154",
+    "app/src/main/java/com/veilreader/app/ui/VeilChrome.kt": "7697475f38cabe60effbd09da67da25fe430e84082b377a41aad3997af0c63c5",
+    "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt": "09bb3ff8a90f19b903f4798994db351ca8fc671415ea3a75b2d4cc8996573885",
+    "app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt": "21e01ea6246932727859d89cf258d9fb55cfa32f4af2024cb621e05caebff33c",
+    "app/src/main/java/com/veilreader/app/ui/screens/Common.kt": "90132ca100cee8145e54cf4e5f751204ad76946fa19c63b986fc0d55e9d5d2e5",
+    "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt": "b20733e25a66f279399ad628faba071e82526ac7b0e66be717b94adabf58efc7",
+    "app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt": "c5f5c8c79ebcdd33585f74f40fac94e4ddcdc14e20667f72508ae852aae0baf4",
+    "app/src/main/java/com/veilreader/app/ui/screens/PathScreen.kt": "95987a08b2adef99556b78c06ab2169ffaabe7707c8eccb5e179ff06e0015da0",
+    "app/src/main/java/com/veilreader/app/ui/screens/ProfileScreen.kt": "e17c0e82d08836812acf4e974d02be31779096be7360db1d6552361835310450",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt": "3ace0688c15e0ddd6caa925e02857450d9b2c352f25047a58a8024c11e5e1b56",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt": "19f0055acfb8a1be0b2bd032600fbedc69286ed4f707d1de5c991316d0a2e45d",
+    "app/src/main/java/com/veilreader/app/ui/theme/ArenaDesignSystem.kt": "4901be909f14f4cae673a70af3d2dd052a6cf99225084647e3f64047b51525c9",
+    "app/src/main/java/com/veilreader/app/ui/theme/ArtDirection.kt": "886c3a5eacbdf3d49e2d0c5e8a5a422cd034b0ccc7a9f04f8de04181a7c30e14",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignConstitution.kt": "e32d9246a900c4304f83d0ec3aadcf0e28e0acc046a2b51519e158df604467ff",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignSystem.kt": "80a1a8793b3cdca0d3d7fb8407f17c8e20eae5c6b9b4bd6da64872ac0b08645b",
+    "app/src/main/java/com/veilreader/app/ui/theme/Theme.kt": "83a7ed89aef26c4af85eaecebd2fb62a3e113006270785b9023ed2915a26446c",
+    "app/src/main/res/font/veil_editorial_regular.ttf": "21136f1a856906435f52618c1ce142f5179267d8861f36af868bfcc653165179",
+    "app/src/main/res/font/veil_editorial_semibold.ttf": "a3ac38ebaeeea413b53c4818ee906f2e6f3801e1e5705c79c478bb5f74e85bb2",
+    "app/src/main/res/font/veil_literary_regular.ttf": "085ec1c9f9877cd5cf36ad1bbfbcff8677d8cf220b7d812ea30f5abb34e8279e",
+    "app/src/main/res/font/veil_literary_semibold.ttf": "e4afc60905463fec3abb3a3eef937d822be0d259fd475be575a3ca3e738d9fd8",
+    "app/src/main/res/font/veil_persian_regular.ttf": "0e6f925a0273c67ef5f5498d0f81c6a5bf6a6676e30161b11512e6fd3c3a6316",
+    "app/src/main/res/font/veil_persian_semibold.ttf": "bd8bcad74b9a89b84b425137f901fedb2a53ee83c6f52004da3ca51228046fd4",
+    "app/src/main/res/font/veil_utility_regular.ttf": "c57de3a0eb49ec4e340168b6f3319cdf45b1d8bb3fadb22a78d085f367d951c6",
+    "app/src/main/res/font/veil_utility_semibold.ttf": "cbba7e4254407954e9c2232bef8f900ff8820d956a10dc5cd9ae714650cbba3b",
+    "app/src/test/java/com/veilreader/app/ui/theme/DesignConstitutionTest.kt": "4c006f423ef0d46a7bcb531f79668860e6b10c2e7d3a1ff84be2c02e22963b41",
+    "app/src/test/java/com/veilreader/app/ui/theme/DesignSystemTest.kt": "c3735d981ee2f4a3f76a4b7a9d0bf0ca5d47116bffa289849c4677073ee5adc5"
+  },
+  "test_suites": [
+    {
+      "name": "com.veilreader.app.data.GameCompletionEvidenceTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.data.GameRepositoryDurabilityTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.data.ReaderProgressWriteOrderTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.data.ReadingPaceStoreCodecTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.data.migration.LegacyLibraryMigratorTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.data.settings.ReaderFocusGuidePreferencesTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.data.settings.ReaderTtsPreferencesTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ArrodesMirrorTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.BookArtifactMemoryTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.CastleMemoryStateTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.GamificationEngineTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.HighlightMemoryTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.HistoricalMemoryTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.LibraryAtmosphereStateTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.LibraryMemoryTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.LibraryWingsTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.MemoryAtlasTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.NarrativeIdentityTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.RankWorldMutationTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReaderFocusGuideTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReaderTapZonesTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReaderTtsSettingsTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingMemoryTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingPolicyTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingSessionTrackerTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingTimeCapsuleTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReadingTimeEstimateTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.ReturnRitualTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.RitualAftermathTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.WorldMutationLedgerTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.domain.WorldProgressionProjectionTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.challenge.BrowserChallengeCoordinatorTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.health.SourceExecutionHealthIntegrationTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.health.SourceHealthRankerTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.health.SourceHealthStoreTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.importing.MangaCbzIngestorTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.CanonicalMangaTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaChapterMatcherTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaOfflineCacheTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaOfflineChapterLocatorTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.library.MangaProgressTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.MangaImageGeometryTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.MangaReaderControllerTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.MangaReaderRestoreTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.image.MangaExtremeImageStrategyTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.image.MangaLocalPageVerifierTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.image.MangaRemotePagePolicyTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.presentation.MangaChapterNavigationTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.presentation.MangaReaderChapterLoaderTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaProductSessionAdapterTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderDurableCloseTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderGestureOwnershipPolicyTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderProgressMapperTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.screen.MangaReaderSessionTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.ui.MangaReaderSavedStateCodecTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.ui.MangaReaderUiReducerTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.reader.ui.MangaReaderViewportMathTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.replacement.SourceAlternativeResolverTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.replacement.SourceAlternativeScorerTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.replacement.SourceReplacementPlannerTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.MangaSourceProviderContractTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.SourceExecutionCoordinatorTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.SourceRecoveryPolicyTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.manga.source.SourceRegistryTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.CrossRealmAccessibilityTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.VeilAppAdaptiveLayoutTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.books.BookArtifactTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.navigation.ReaderRestorePolicyTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.navigation.VeilAppViewModelProcessDeathTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.navigation.VeilAppViewModelTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderCloseDurabilityTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderHardwareAccessibilityTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderHardwareKeyControllerTest",
+      "tests": "10",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderHardwareKeyDispatcherTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderLocatorPolicyTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderNavigationTransactionTest",
+      "tests": "24",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderOpenAttemptGateTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderOpenResourceGuardTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderSessionOwnershipTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.ReaderStartupHandshakePolicyTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReaderTtsPolicyTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReaderTtsReaderOwnershipTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReaderTtsSessionTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.reader.tts.ReadiumTtsContentTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.BookArtifactTest",
+      "tests": "22",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.BookCoverSampleSizeTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.BookEntryTransitionTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.DenseChoiceLayoutPolicyTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.GrandLibraryModelTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.LibraryCompositionTest",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.LibrarySearchTest",
+      "tests": "11",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PaperCurlGeometryTest",
+      "tests": "33",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PaperReleaseVelocityTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PathGeometryTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PdfZoomControlsTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.PdfZoomPolicyTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderAsyncOwnershipTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderChromePolicyTest",
+      "tests": "24",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderDossierHistoryTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderFocusGuideStateTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderImageViewerTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderInputArbiterTest",
+      "tests": "19",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderLookupTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderModeHandoffPolicyTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderPdfInputTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderPreferenceMappingTest",
+      "tests": "29",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderPreferencesTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderRelayoutContinuityPolicyTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderSelectionNotePolicyTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderTapOwnershipTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ReaderTtsSettingsStateTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.RelicHistoryTest",
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.RelicRarityTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.SlideTurnPolicyTest",
+      "tests": "14",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ThresholdCompositionTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.ThresholdModelTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.screens.VeilRevealMotionPolicyTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.sensory.VeilSensoryFeedbackPolicyTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.ArtDirectionTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.DesignConstitutionTest",
+      "tests": "14",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.DesignSystemTest",
+      "tests": "13",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.veilreader.app.ui.theme.LibraryAtmosphereTimeTest",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ]
+}

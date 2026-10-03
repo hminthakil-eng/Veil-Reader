@@ -374,3 +374,8 @@ fun sanctuarySurfaceProfileFor(
         speckCount = if (dark) 0 else 14 + (22f * p).toInt()
     )
 }
+
+/** Two rooms need actual space after navigation/insets, not just a nominal tablet window. */
+fun useArchitecturalPair(widthDp: Float, fontScale: Float): Boolean =
+    widthDp.isFinite() && fontScale.isFinite() && fontScale > 0f &&
+        widthDp >= 840f && widthDp / fontScale.coerceAtLeast(1f) >= 600f

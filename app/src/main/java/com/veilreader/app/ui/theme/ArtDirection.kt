@@ -34,46 +34,15 @@ data class VeilVisualBudget(
     val motion: Float
 )
 
-fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget =
-    when (realm) {
-        VeilRealm.SANCTUARY -> VeilVisualBudget(
-            richness = 0.05f,
-            atmosphere = VeilSanctuary.atmosphereIntensity,
-            ornament = 0.00f,
-            motion = 0.10f
-        )
-        VeilRealm.THRESHOLD -> VeilVisualBudget(
-            richness = 0.48f,
-            atmosphere = 0.56f,
-            ornament = 0.34f,
-            motion = 0.34f
-        )
-        VeilRealm.ARCHIVE -> VeilVisualBudget(
-            richness = 0.58f,
-            atmosphere = 0.46f,
-            ornament = 0.48f,
-            motion = 0.28f
-        )
-        VeilRealm.CASTLE,
-        VeilRealm.WORLD -> VeilVisualBudget(
-            richness = 0.76f,
-            atmosphere = 0.72f,
-            ornament = 0.66f,
-            motion = 0.52f
-        )
-        VeilRealm.RITUAL -> VeilVisualBudget(
-            richness = 0.86f,
-            atmosphere = 0.78f,
-            ornament = 0.82f,
-            motion = 0.74f
-        )
-        VeilRealm.SANCTUM -> VeilVisualBudget(
-            richness = 0.82f,
-            atmosphere = 0.80f,
-            ornament = 0.74f,
-            motion = 0.36f
-        )
-    }
+fun visualBudgetFor(realm: VeilRealm): VeilVisualBudget {
+    val density = arenaDensityFor(realm)
+    return VeilVisualBudget(
+        richness = density.richness,
+        atmosphere = if (realm == VeilRealm.SANCTUARY) VeilSanctuary.atmosphereIntensity else density.atmosphere,
+        ornament = density.ornament,
+        motion = density.motion
+    )
+}
 
 /**
  * Lightweight procedural atmosphere: no bitmap allocation, blur, network, or random state.
@@ -192,13 +161,13 @@ fun GrayfogOrnamentFrame(
     strength: Float = 1f
 ) {
     Canvas(modifier) {
-        val s = strength.coerceIn(0f, 1f)
+        val s = if (strength.isFinite()) strength.coerceIn(0f, 1f) else 0f
         if (s <= 0.001f) return@Canvas
 
         val line = VeilPalette.Brass.copy(alpha = 0.28f * s)
         val glow = VeilPalette.Brass.copy(alpha = 0.12f * s)
-        val inset = 10.dp.toPx()
-        val corner = 22.dp.toPx()
+        val inset = VeilFrame.Inset.toPx()
+        val corner = VeilFrame.CornerLength.toPx()
         val stroke = 1.dp.toPx()
 
         fun cornerMark(x: Float, y: Float, xDir: Float, yDir: Float) {

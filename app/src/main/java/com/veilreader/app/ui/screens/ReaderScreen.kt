@@ -125,7 +125,6 @@ import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
-import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
 import com.veilreader.app.ui.theme.VeilPalette
@@ -2841,10 +2840,6 @@ fun ReaderScreen(
                     shadowElevation = 0.dp
                 ) {
                     Box {
-                        GrayfogOrnamentFrame(
-                            modifier = Modifier.matchParentSize(),
-                            strength = 0.20f
-                        )
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -2931,10 +2926,6 @@ fun ReaderScreen(
                     shadowElevation = 0.dp
                 ) {
                     Box {
-                        GrayfogOrnamentFrame(
-                            modifier = Modifier.matchParentSize(),
-                            strength = 0.24f
-                        )
                         Column(
                             modifier = Modifier
                                 .padding(VeilSpacing.lg)
@@ -3263,10 +3254,6 @@ fun ReaderScreen(
                         .windowInsetsPadding(WindowInsets.safeDrawing),
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    GrayfogOrnamentFrame(
-                        modifier = Modifier.matchParentSize(),
-                        strength = 0.38f
-                    )
                     EpubAppearancePanel(
                         appearance = readerAppearance,
                         fixedLayout = fixedLayoutPublication,

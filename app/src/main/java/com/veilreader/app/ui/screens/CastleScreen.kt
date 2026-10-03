@@ -164,39 +164,46 @@ fun CastleScreen(
             subtitle = localizedCastleMemoryNarrative(memoryState.memoryNarrative)
         )
 
-        Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-            VeilMicroLabel(
-                text = stringResource(R.string.castle_inner_keep_eyebrow),
-                strong = true
-            )
-            Text(
-                stringResource(R.string.castle_awakened_chambers_title),
-                style = MaterialTheme.typography.titleLarge,
-                color = VeilPalette.Moon
-            )
-            Text(
-                stringResource(R.string.castle_inner_keep_body),
-                style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Mist
-            )
-        }
+        VeilArchitecturalPair(
+            primary = {
+                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                        VeilMicroLabel(
+                            text = stringResource(R.string.castle_inner_keep_eyebrow),
+                            strong = true
+                        )
+                        Text(
+                            stringResource(R.string.castle_awakened_chambers_title),
+                            style = MaterialTheme.typography.titleLarge,
+                            color = VeilPalette.Moon
+                        )
+                        Text(
+                            stringResource(R.string.castle_inner_keep_body),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = VeilPalette.Mist
+                        )
+                    }
 
-        CastleWorldMap(
-            rankIndex = profile.rankIndex,
-            memoryState = memoryState,
-            mapHorizontalPaddingDp = castleLayout.mapHorizontalPaddingDp,
-            chamberMinHeightDp = castleLayout.chamberMinHeightDp,
-            onOpenRoom = onOpenRoom
-        )
-
-        CastleKeep(
-            profile = profile,
-            memoryState = memoryState,
-            canAdvance = canAdvance,
-            awakenedRooms = awakenedRooms,
-            totalRooms = SampleData.rooms.size,
-            minHeightDp = castleLayout.keepMinHeightDp,
-            onAdvanceRank = onAdvanceRank
+                    CastleWorldMap(
+                        rankIndex = profile.rankIndex,
+                        memoryState = memoryState,
+                        mapHorizontalPaddingDp = castleLayout.mapHorizontalPaddingDp,
+                        chamberMinHeightDp = castleLayout.chamberMinHeightDp,
+                        onOpenRoom = onOpenRoom
+                    )
+                }
+            },
+            secondary = {
+                CastleKeep(
+                    profile = profile,
+                    memoryState = memoryState,
+                    canAdvance = canAdvance,
+                    awakenedRooms = awakenedRooms,
+                    totalRooms = SampleData.rooms.size,
+                    minHeightDp = castleLayout.keepMinHeightDp,
+                    onAdvanceRank = onAdvanceRank
+                )
+            }
         )
 
         CastleMemoryInscription(memoryState)

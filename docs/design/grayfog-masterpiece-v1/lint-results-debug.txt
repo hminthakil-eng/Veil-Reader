@@ -1,0 +1,733 @@
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:59: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            editor.commit()
+                   ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:77: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            editor.commit()
+                   ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:120: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        if (sigilId == null) prefs.edit().remove("equippedSigil").commit()
+                                                                  ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:121: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        else prefs.edit().putString("equippedSigil", sigilId).commit()
+                                                              ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:143: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs.edit().putString("castleTitle", title).commit()
+                                                     ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:212: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).commit()
+                                                                                   ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:238: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:257: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:311: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            .commit()
+             ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:329: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            editor.commit()
+                   ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:368: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+                .commit()
+                 ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:378: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+            prefs.edit().putString("castleTitle", "Reader of the Veil").commit()
+                                                                        ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/LibraryExport.kt:717: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        editor.commit()
+               ~~~~~~~~
+
+   Explanation for issues of type "ApplySharedPref":
+   Consider using apply() instead of commit on shared preferences. Whereas
+   commit blocks and writes its data to persistent storage immediately, apply
+   will handle it in the background.
+
+/workspace/Veil-Reader/gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 9.6.0 is available: 9.8.0 [AndroidGradlePluginVersion]
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AndroidGradlePluginVersion":
+   This detector looks for usage of the Android Gradle Plugin where the
+   version you are using is not the current stable release. Using older
+   versions is fine, and there are cases where you deliberately want to stick
+   with an older version. However, you may simply not be aware that a more
+   recent version is available, and that is what this lint check helps find.
+
+/workspace/Veil-Reader/app/build.gradle.kts:79: Warning: A newer version of androidx.fragment:fragment-ktx than 1.8.9 is available: 1.9.1 [GradleDependency]
+    implementation("androidx.fragment:fragment-ktx:1.8.9")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:80: Warning: A newer version of androidx.compose.ui:ui than 1.10.5 is available: 1.12.1 [GradleDependency]
+    implementation("androidx.compose.ui:ui:1.10.5")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:81: Warning: A newer version of androidx.compose.ui:ui-tooling-preview than 1.10.5 is available: 1.12.1 [GradleDependency]
+    implementation("androidx.compose.ui:ui-tooling-preview:1.10.5")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:82: Warning: Upgrade androidx.compose.foundation for keyboard and mouse support [GradleDependency]
+    implementation("androidx.compose.foundation:foundation:1.10.5")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:86: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-ktx than 2.10.0 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:87: Warning: A newer version of androidx.lifecycle:lifecycle-runtime-compose than 2.10.0 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:88: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-ktx than 2.10.0 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.10.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:89: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-compose than 2.10.0 is available: 2.11.0 [GradleDependency]
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:116: Warning: A newer version of androidx.compose.ui:ui-tooling than 1.10.5 is available: 1.12.1 [GradleDependency]
+    debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:117: Warning: A newer version of androidx.compose.ui:ui-test-manifest than 1.10.5 is available: 1.12.1 [GradleDependency]
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.5")
+                        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:119: Warning: A newer version of androidx.lifecycle:lifecycle-viewmodel-testing than 2.10.0 is available: 2.11.0 [GradleDependency]
+    testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:128: Warning: A newer version of androidx.compose.ui:ui-test-junit4 than 1.10.5 is available: 1.12.1 [GradleDependency]
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
+                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "GradleDependency":
+   This detector looks for usages of libraries where the version you are using
+   is not the current stable release. Using older versions is fine, and there
+   are cases where you deliberately want to stick with an older version.
+   However, you may simply not be aware that a more recent version is
+   available, and that is what this lint check helps find.
+
+/workspace/Veil-Reader/app/build.gradle.kts:90: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-android than 1.10.2 is available: 1.11.0 [NewerVersionAvailable]
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:110: Warning: A newer version of io.github.panpf.zoomimage:zoomimage-compose-coil3-core than 1.5.0 is available: 1.7.0 [NewerVersionAvailable]
+    implementation("io.github.panpf.zoomimage:zoomimage-compose-coil3-core:1.5.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/build.gradle.kts:121: Warning: A newer version of org.jetbrains.kotlinx:kotlinx-coroutines-test than 1.10.2 is available: 1.11.0 [NewerVersionAvailable]
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "NewerVersionAvailable":
+   This detector checks with a central repository to see if there are newer
+   versions available for the dependencies used by this project. This is
+   similar to the GradleDependency check, which checks for newer versions
+   available in the Android SDK tools and libraries, but this works with any
+   MavenCentral dependency, and connects to the library every time, which
+   makes it more flexible but also much slower.
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:197: Warning: Composable functions with a return type should start with a lowercase letter [ComposableNaming from androidx.compose.runtime]
+internal fun VeilBackLabel(destination: String): String =
+             ~~~~~~~~~~~~~
+
+   Explanation for issues of type "ComposableNaming":
+   @Composable functions without a return type should use similar naming to
+   classes, starting with an uppercase letter and ending with a noun.
+   @Composable functions with a return type should be treated as normal Kotlin
+   functions, starting with a lowercase letter.
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.runtime
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt:199: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt:655: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt:130: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt:262: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/MangaHubScreen.kt:93: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt:86: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt:71: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+        LocalConfiguration.current.screenWidthDp.toFloat()
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "ConfigurationScreenWidthHeight":
+   Configuration.screenWidthDp and Configuration.screenHeightDp have different
+   insets behaviour depending on target SDK version, and are rounded to the
+   nearest Dp. This means that using these values in composition to size a
+   layout can result in issues, as these values do not accurately represent
+   the actual available window size. Instead it is recommended to use
+   WindowInfo.containerSize which accurately represents the window size.
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.ui
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/manga/reader/image/MangaCoilPage.kt:136: Warning: Modifier factory functions should be extensions on Modifier [ModifierFactoryExtensionFunction from androidx.compose.ui]
+private fun pageModifier(
+            ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/manga/reader/image/MangaCoilPage.kt:144: Warning: Modifier factory functions should be extensions on Modifier [ModifierFactoryExtensionFunction from androidx.compose.ui]
+private fun imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
+            ~~~~~~~~~~~~~
+
+   Explanation for issues of type "ModifierFactoryExtensionFunction":
+   Modifier factory functions should be defined as extension functions on
+   Modifier to allow modifiers to be fluently chained.
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.ui
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/BookEntryTransition.kt:83: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier
+    ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:135: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier,
+    ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/MemoryArtifactPresentation.kt:36: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier
+    ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/PdfZoomControls.kt:68: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier,
+    ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt:5238: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier
+    ~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/VeilChrome.kt:620: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+    modifier: Modifier = Modifier
+    ~~~~~~~~
+
+   Explanation for issues of type "ModifierParameter":
+   The first (or only) Modifier parameter in a Composable function should
+   follow the following rules:
+   - Be named modifier
+   - Have a type of Modifier
+   - Either have no default value, or have a default value of Modifier
+   - If optional, be the first optional parameter in the parameter list
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.ui
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/diagnostics/ReaderTrace.kt:29: Warning: Using 'Log' instead of 'Timber' [LogNotTimber from com.jakewharton.timber:timber:{version}]
+        Log.d(TAG, payload)
+        ~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "LogNotTimber":
+   Since Timber is included in the project, it is likely that calls to Log
+   should instead be going to Timber.
+
+   Vendor: JakeWharton/timber
+   Identifier: com.jakewharton.timber:timber:{version}
+   Feedback: https://github.com/JakeWharton/timber/issues
+
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:20: Warning: Formatting %d followed by words ("highlights"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="notebook_counts">%1$d highlights · %2$d bookmarks</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:349: Warning: Formatting %d followed by words ("completed"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_cycle_completed">Reading cycle %1$d completed</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:355: Warning: Formatting %d followed by words ("session"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_session_one">%1$d session</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:356: Warning: Formatting %d followed by words ("sessions"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_session_many">%1$d sessions</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:357: Warning: Formatting %d followed by words ("passage"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_passage_one">%1$d passage</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:358: Warning: Formatting %d followed by words ("passages"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_passage_many">%1$d passages</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:359: Warning: Formatting %d followed by words ("saved"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_place_one">%1$d saved place</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:360: Warning: Formatting %d followed by words ("saved"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_place_many">%1$d saved places</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:364: Warning: Formatting %d followed by words ("more"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_more_preserved">+%1$d more preserved in Hidden Archive</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:375: Warning: Formatting %d followed by words ("months"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_silence_months">%1$d months</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:376: Warning: Formatting %d followed by words ("weeks"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_silence_weeks">%1$d weeks</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:377: Warning: Formatting %d followed by words ("days"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="book_detail_silence_days">%1$d days</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:393: Warning: Formatting %d followed by words ("volume"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_header_one">%1$d volume catalogued on this device.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:394: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_header_many">%1$d volumes catalogued on this device.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:517: Warning: Formatting %d followed by words ("marks"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_mark_count">%1$d marks</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:518: Warning: Formatting %d followed by words ("saved"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_saved_count">%1$d saved</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:519: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_group_volume_count">%1$d volumes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:523: Warning: Formatting %d followed by words ("traces"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_memory_traces">%1$d traces</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:526: Warning: Formatting %d followed by words ("active"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_recent_active">%1$d active</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:530: Warning: Formatting %d followed by words ("mapped"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_wings_mapped">%1$d mapped</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:596: Warning: Formatting %d followed by words ("finished"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_path_summary_one">%1$s · %2$d finished volume</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:597: Warning: Formatting %d followed by words ("finished"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_path_summary_many">%1$s · %2$d finished volumes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:601: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_memory_volumes">%1$d volumes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:602: Warning: Formatting %d followed by words ("preserved"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_memory_passages">%1$d preserved passages</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:603: Warning: Formatting %d followed by words ("sealed"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_memory_records">%1$d sealed records</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:604: Warning: Formatting %d followed by words ("atlas"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_memory_links">%1$d atlas links</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:641: Warning: Formatting %d followed by words ("evidence"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="castle_mutation_evidence">%1$d evidence marks · %2$s</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:785: Warning: Formatting %d followed by words ("awakened"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="profile_awakened_count">%1$d awakened</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:788: Warning: Formatting %d followed by words ("revealed"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="profile_revealed_count">%1$d/%2$d revealed</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:800: Warning: Formatting %d followed by words ("sessions"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="profile_sessions_count">%1$d sessions</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:880: Warning: Formatting %d followed by words ("books"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="notice_restore_success">Restored %1$d books and %2$d highlights. Reopen Veil Reader to load them.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:919: Warning: Formatting %d followed by words ("complete"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_progress">%1$d/%2$d complete</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:920: Warning: Formatting %d followed by words ("active"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_read">Keep a quiet reading session for %1$d active minutes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:921: Warning: Formatting %d followed by words ("paced"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_pages">Turn %1$d paced pages without rushing</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:922: Warning: Formatting %d followed by words ("active"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_dreamwalker">Dwell in another world for %1$d active minutes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:923: Warning: Formatting %d followed by words ("paced"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_vanguard">Advance through %1$d paced pages</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:924: Warning: Formatting %d followed by words ("reading"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_nocturne">Keep the night watch for %1$d reading minutes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:927: Warning: Formatting %d followed by words ("passages"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="threshold_quest_oracle">Preserve %1$d passages that reveal hidden structure</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:991: Warning: Formatting %d followed by words ("recognized"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="sanctum_recognized_count">%1$d recognized</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1018: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="observatory_summary">%1$d volumes · %2$d recorded links</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1019: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="observatory_summary_with_solitary">%1$d volumes · %2$d recorded links · %3$d solitary</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1023: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="observatory_canvas_semantics">Memory Atlas with %1$d volumes and %2$d recorded links</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1027: Warning: Formatting %d followed by words ("recorded"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="observatory_recorded_link_one">%1$d recorded link</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1028: Warning: Formatting %d followed by words ("recorded"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="observatory_recorded_links_many">%1$d recorded links</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1052: Warning: Formatting %d followed by words ("volume"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_wing_volume_one">%1$d volume</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1053: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_wing_volumes_many">%1$d volumes</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1054: Warning: Formatting %d followed by words ("active"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_wing_active">%1$d active</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1055: Warning: Formatting %d followed by words ("sealed"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_wing_sealed">%1$d sealed</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1059: Warning: Formatting %d followed by words ("volume"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_quiet_volume_one">%1$d volume has gone quiet</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1060: Warning: Formatting %d followed by words ("volumes"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="library_quiet_volumes_many">%1$d volumes have gone quiet</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1104: Warning: Formatting %d followed by words ("matches"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="reader_notebook_search_limited">Showing the first %1$d matches. Refine the search to narrow the result set.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1170: Warning: Formatting %d followed by words ("saved"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="mirror_portal_body">%1$d saved traces can return through the glass.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1191: Warning: Formatting %d followed by words ("local"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="manga_portal_body">%1$d local comic volumes · dedicated reader foundation</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1250: Warning: Formatting %d followed by words ("chapters"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="manga_hub_storage_summary">%1$d chapters · %2$s sources · %3$s page cache</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1255: Warning: Formatting %d followed by words ("chapters"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="notice_manga_chapters_added">Added %1$d chapters to %2$s.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1256: Warning: Formatting %d followed by words ("chapters"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="notice_manga_chapters_added_with_duplicates">Added %1$d chapters to %3$s; %2$d were already present.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1265: Warning: Formatting %d followed by words ("pages"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="manga_chapter_metadata">Position %1$d · Ch. %2$s · %3$d pages · %4$s</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1362: Warning: Formatting %d followed by words ("real"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="reader_eta_range_description">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "PluralsCandidate":
+   This lint check looks for potential errors in internationalization where
+   you have translated a message which involves a quantity and it looks like
+   other parts of the string may need grammatical changes.
+
+   For example, rather than something like this:
+     <string name="try_again">Try again in %d seconds.</string>
+   you should be using a plural:
+      <plurals name="try_again">
+           <item quantity="one">Try again in %d second</item>
+           <item quantity="other">Try again in %d seconds</item>
+       </plurals>
+   This will ensure that in other languages the right set of translations are
+   provided for the different quantity classes.
+
+   (This check depends on some heuristics, so it may not accurately determine
+   whether a string really should be a quantity. You can use tools:ignore to
+   filter out false positives.
+
+   https://developer.android.com/guide/topics/resources/string-resource.html#Plurals
+
+/workspace/Veil-Reader/app/src/main/AndroidManifest.xml:13: Warning: The attribute android:allowBackup is deprecated from Android 12 and higher and may be removed in future versions. Consider adding the attribute android:dataExtractionRules specifying an @xml resource which configures cloud backups and device transfers on Android 12 and higher. [DataExtractionRules]
+        android:allowBackup="false"
+                             ~~~~~
+
+   Explanation for issues of type "DataExtractionRules":
+   Before Android 12, the attributes android:allowBackup and
+   android:fullBackupContent were used to configure all forms of backup,
+   including cloud backups, device-to-device transfers and adb backup.
+
+   In Android 12 and higher, these attributes have been deprecated and will
+   only apply to cloud backups. You should instead use the attribute
+   android:dataExtractionRules, specifying an @xml resource that configures
+   which files to back up, for cloud backups and for device-to-device
+   transfers, separately. If your minSdkVersion supports older versions,
+   you'll still want to specify an android:fullBackupContent resource if the
+   default behavior is not right for your app.
+
+   https://developer.android.com/about/versions/12/backup-restore#xml-changes
+   https://goo.gle/DataExtractionRules
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/PdfZoomControls.kt:75: Hint: Prefer mutableIntStateOf instead of mutableStateOf [AutoboxingStateCreation from androidx.compose.runtime]
+    var probeGeneration by remember(navigator) { mutableStateOf(0) }
+                                                 ~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AutoboxingStateCreation":
+   Calling mutableStateOf<T>() when T is either backed by a primitive type on
+   the JVM or is a value class results in a state implementation that requires
+   all state values to be boxed. This usually causes an additional allocation
+   for each state write, and adds some additional work to auto-unbox values
+   when reading the value of the state. Instead, prefer to use a specialized
+   primitive state implementation for Int, Long, Float, and Double when the
+   state does not need to track null values and does not override the default
+   SnapshotMutationPolicy. See mutableIntStateOf(), mutableLongStateOf(),
+   mutableFloatStateOf(), and mutableDoubleStateOf() for more information.
+
+   Vendor: Jetpack Compose
+   Identifier: androidx.compose.runtime
+   Feedback: https://issuetracker.google.com/issues/new?component=612128
+
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:10: Warning: The resource R.string.common_read appears to be unused [UnusedResources]
+    <string name="common_read">Read</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:19: Warning: The resource R.string.notebook_title appears to be unused [UnusedResources]
+    <string name="notebook_title">Notebook</string>
+            ~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:20: Warning: The resource R.string.notebook_counts appears to be unused [UnusedResources]
+    <string name="notebook_counts">%1$d highlights · %2$d bookmarks</string>
+            ~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:21: Warning: The resource R.string.notebook_search_label appears to be unused [UnusedResources]
+    <string name="notebook_search_label">Search books, passages and notes</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:22: Warning: The resource R.string.notebook_highlights_count appears to be unused [UnusedResources]
+    <string name="notebook_highlights_count">Highlights %1$d</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:23: Warning: The resource R.string.notebook_bookmarks_count appears to be unused [UnusedResources]
+    <string name="notebook_bookmarks_count">Bookmarks %1$d</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:32: Warning: The resource R.string.notebook_note_label appears to be unused [UnusedResources]
+    <string name="notebook_note_label">NOTE</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:33: Warning: The resource R.string.notebook_add_note appears to be unused [UnusedResources]
+    <string name="notebook_add_note">Add note</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:34: Warning: The resource R.string.notebook_edit_note appears to be unused [UnusedResources]
+    <string name="notebook_edit_note">Edit note</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:36: Warning: The resource R.string.notebook_note_field_label appears to be unused [UnusedResources]
+    <string name="notebook_note_field_label">Your note</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:43: Warning: The resource R.string.book_detail_local_publication_format appears to be unused [UnusedResources]
+    <string name="book_detail_local_publication_format">LOCAL PUBLICATION · %1$s</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:44: Warning: The resource R.string.book_detail_sample_entry appears to be unused [UnusedResources]
+    <string name="book_detail_sample_entry">SAMPLE ENTRY</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:46: Warning: The resource R.string.book_detail_percent_read appears to be unused [UnusedResources]
+    <string name="book_detail_percent_read">%1$d%% read</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:58: Warning: The resource R.string.book_detail_publication_details appears to be unused [UnusedResources]
+    <string name="book_detail_publication_details">Publication details</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:121: Warning: The resource R.string.settings_reading_motion appears to be unused [UnusedResources]
+    <string name="settings_reading_motion">Reading motion</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:184: Warning: The resource R.string.reader_percent_read appears to be unused [UnusedResources]
+    <string name="reader_percent_read">%1$d%% read</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:185: Warning: The resource R.string.reader_notes appears to be unused [UnusedResources]
+    <string name="reader_notes">Notes</string>
+            ~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:186: Warning: The resource R.string.reader_mark appears to be unused [UnusedResources]
+    <string name="reader_mark">Mark</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:187: Warning: The resource R.string.reader_type appears to be unused [UnusedResources]
+    <string name="reader_type">Type</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:188: Warning: The resource R.string.reader_zoom appears to be unused [UnusedResources]
+    <string name="reader_zoom">Zoom</string>
+            ~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:278: Warning: The resource R.string.archive_annotation appears to be unused [UnusedResources]
+    <string name="archive_annotation">ANNOTATION</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:279: Warning: The resource R.string.archive_note_only appears to be unused [UnusedResources]
+    <string name="archive_note_only">Preserved note</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:347: Warning: The resource R.string.book_detail_journey_marks appears to be unused [UnusedResources]
+    <string name="book_detail_journey_marks">Journey marks</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:350: Warning: The resource R.string.book_detail_latest_cycle appears to be unused [UnusedResources]
+    <string name="book_detail_latest_cycle">Latest completion · Cycle %1$d</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:351: Warning: The resource R.string.book_detail_completed_at appears to be unused [UnusedResources]
+    <string name="book_detail_completed_at">Completed</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:670: Warning: The resource R.string.path_choice_rooted_title appears to be unused [UnusedResources]
+    <string name="path_choice_rooted_title">Your choice is rooted</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:672: Warning: The resource R.string.path_change_after_first appears to be unused [UnusedResources]
+    <string name="path_change_after_first">Other Paths stay visible as lore. Your current Path remains fixed for this journey.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:682: Warning: The resource R.string.path_complete_three_seals appears to be unused [UnusedResources]
+    <string name="path_complete_three_seals">Complete the three seals</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1153: Warning: The resource R.string.common_cover_of appears to be unused [UnusedResources]
+    <string name="common_cover_of">Cover of %1$s</string>
+            ~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1239: Warning: The resource R.string.manga_hub_reader_ready appears to be unused [UnusedResources]
+    <string name="manga_hub_reader_ready">Saved locally and ready for Veil’s visual reader.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1240: Warning: The resource R.string.manga_hub_read appears to be unused [UnusedResources]
+    <string name="manga_hub_read">Read manga</string>
+            ~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/res/values/strings.xml:1247: Warning: The resource R.string.notice_manga_chapter_added appears to be unused [UnusedResources]
+    <string name="notice_manga_chapter_added">Added chapter %2$d to %1$s.</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests=true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests=true.
+
+   Available options:
+
+   **skip-libraries** (default is true):
+   Whether the unused resource check should skip reporting unused resources in libraries.
+
+   Many libraries will declare resources that are part of the library surface; other modules depending on the library will also reference the resources. To avoid reporting all these resources as unused (in the context of a library), the unused resource check normally skips reporting unused resources in libraries. Instead, run the unused resource check on the consuming app module (along with `checkDependencies=true`).
+
+   However, there are cases where you want to check that all the resources declared in a library are used; in that case, you can disable the skip option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UnusedResources">
+           <option name="skip-libraries" value="true" />
+       </issue>
+   </lint>
+   ```
+
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:395: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
+            val pixel = bitmap.getPixel(x, y)
+                        ~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:497: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
+            val pixel = bitmap.getPixel(x, y)
+                        ~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:57: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            val editor = prefs.edit().putInt("ritualVersion", 2)
+                         ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:68: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            val editor = prefs.edit()
+                         ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:84: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        if (count > prefs.getInt("totalHighlights", 0)) prefs.edit().putInt("totalHighlights", count).apply()
+                                                        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:96: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            prefs.edit().putInt("booksFinished", evidence).apply()
+            ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:108: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putInt("dailyGoalMinutes", safe).apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:121: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        else prefs.edit().putString("equippedSigil", sigilId).commit()
+             ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:143: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putString("castleTitle", title).commit()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:151: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putInt("ritualProgress", (profile.ritualProgress + 1).coerceAtMost(profile.ritualTarget)).apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:159: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putStringSet("creditedNotes", credited).apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:177: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putInt("minutesRead", previousMinutes + 1).apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:191: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putInt("pagesRead", prefs.getInt("pagesRead", 0) + 1).apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:202: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putInt("totalHighlights", prefs.getInt("totalHighlights", 0) + 1).apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:212: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().putInt("booksFinished", prefs.getInt("booksFinished", 0) + 1).commit()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:227: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:250: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:279: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:296: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit().remove("claimedQuestIds").apply()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:308: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        prefs.edit()
+        ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:365: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            prefs.edit()
+            ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:378: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+            prefs.edit().putString("castleTitle", "Reader of the Veil").commit()
+            ~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/LibraryExport.kt:92: Warning: Use the KTX extension function String.toUri instead? [UseKtx]
+                val uri = Uri.parse(requireNotNull(book.sourceUri))
+                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/LibraryExport.kt:682: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        val editor = target.edit().clear()
+                     ~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/LibraryExport.kt:706: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]
+        val editor = target.edit().clear()
+                     ~~~~~~~~~~~~~
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/manga/MangaLocalImportCoordinator.kt:1372: Warning: Use the KTX extension function Bitmap.scale instead? [UseKtx]
+                Bitmap.createScaledBitmap(
+                ^
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/PaperCurlState.kt:306: Warning: Use the KTX function createBitmap instead? [UseKtx]
+            val bitmap = reusable ?: Bitmap.createBitmap(
+                                     ^
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ReaderModeHandoffState.kt:100: Warning: Use the KTX function createBitmap instead? [UseKtx]
+            val bitmap = reusable ?: Bitmap.createBitmap(
+                                     ^
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/SlidePageState.kt:158: Warning: Use the KTX function createBitmap instead? [UseKtx]
+            val bitmap = reusable ?: Bitmap.createBitmap(
+                                     ^
+
+   Explanation for issues of type "UseKtx":
+   The Android KTX libraries decorates the Android platform SDK as well as
+   various libraries with more convenient extension functions available from
+   Kotlin, allowing you to use default parameters, named parameters, and
+   more.
+
+   Available options:
+
+   **remove-defaults** (default is true):
+   Whether to skip arguments that match the defaults provided by the extension.
+
+   Extensions often provide default values for some of the parameters. For example:
+   ```kotlin
+   fun Path.readLines(charset: Charset = Charsets.UTF_8): List<String> { return Files.readAllLines(this, charset) }
+   ```
+   This lint check will by default automatically omit parameters that match the default, so if your code was calling
+
+   ```kotlin
+   Files.readAllLines(file, Charset.UTF_8)
+   ```
+   lint would replace this with
+   ```kotlin
+   file.readLines()
+   ```
+   rather than
+
+   ```kotlin
+   file.readLines(Charset.UTF_8
+   ```
+   You can turn this behavior off using this option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="remove-defaults" value="true" />
+       </issue>
+   </lint>
+   ```
+
+   **require-present** (default is true):
+   Whether to only offer extensions already available.
+
+   This option lets you only have lint suggest extension replacements if those extensions are already available on the class path (in other words, you're already depending on the library containing the extension method.)
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UseKtx">
+           <option name="require-present" value="true" />
+       </issue>
+   </lint>
+   ```
+
+0 errors, 166 warnings, 1 hint

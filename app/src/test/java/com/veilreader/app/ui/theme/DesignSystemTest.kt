@@ -1,6 +1,8 @@
 package com.veilreader.app.ui.theme
 
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -109,5 +111,42 @@ class DesignSystemTest {
                 scriptGroup = VeilScriptGroup.LATIN
             )
         )
+    }
+
+    @Test
+    fun `archival label floor is readable in both scripts`() {
+        listOf(VeilLatinTypography, VeilPersianTypography).forEach { typography ->
+            assertTrue(typography.labelSmall.fontSize.value >= 11f)
+            assertTrue(typography.labelMedium.fontSize.value >= 12f)
+            assertTrue(typography.labelSmall.lineHeight.value > typography.labelSmall.fontSize.value)
+        }
+    }
+
+    @Test
+    fun `all Persian shell roles preserve connected script tracking`() {
+        with(VeilPersianTypography) {
+            listOf(displayLarge, headlineLarge, headlineMedium, headlineSmall, titleLarge,
+                titleMedium, titleSmall, bodyLarge, bodyMedium, bodySmall, labelLarge,
+                labelMedium, labelSmall).forEach { style ->
+                assertEquals(0.sp, style.letterSpacing)
+            }
+        }
+    }
+
+    @Test
+    fun `semantic text colors clear normal text contrast on archive material`() {
+        fun contrast(foreground: Color, background: Color): Float {
+            val a = foreground.luminance()
+            val b = background.luminance()
+            return (maxOf(a, b) + 0.05f) / (minOf(a, b) + 0.05f)
+        }
+        listOf(VeilMaterials.TextPrimary, VeilMaterials.TextSecondary, VeilMaterials.TextMuted,
+            VeilMaterials.Brass).forEach { ink ->
+            listOf(VeilMaterials.RealmBackground, VeilMaterials.Surface,
+                VeilMaterials.ElevatedSurface).forEach { paper ->
+                assertTrue("Semantic text contrast must be at least 4.5:1", contrast(ink, paper) >= 4.5f)
+            }
+        }
+        assertTrue(contrast(VeilMaterials.Ink, VeilMaterials.Parchment) >= 4.5f)
     }
 }

@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -375,7 +377,7 @@ private fun VeilDockItem(
     val foreground = if (selected) {
         VeilPalette.Moon
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.76f)
+        MaterialTheme.colorScheme.onSurfaceVariant
     }
 
     Box(
@@ -437,7 +439,7 @@ private fun VeilNavigationLabel(
     Text(
         text = label,
         style = MaterialTheme.typography.labelMedium.copy(
-            fontSize = if (arabicScript) 10.4.sp else 9.5.sp,
+            fontSize = 11.sp,
             letterSpacing = if (arabicScript) 0.sp else 0.30.sp,
             fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium
         ),
@@ -648,15 +650,27 @@ fun VeilLoadingState(
             textAlign = TextAlign.Center
         )
         Spacer(Modifier.height(18.dp))
-        LinearProgressIndicator(
-            modifier = Modifier
-                .width(132.dp)
-                .height(2.dp),
-            color = accent,
-            trackColor = MaterialTheme.colorScheme.outlineVariant.copy(
-                alpha = if (highContrast) 0.52f else 0.24f
+        if (LocalVeilReducedMotion.current) {
+            // A stationary indeterminate register, never a fabricated zero-percent progress value.
+            Box(
+                modifier = Modifier
+                    .width(132.dp)
+                    .height(2.dp)
+                    .background(MaterialTheme.colorScheme.outlineVariant)
+                    .semantics { progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate },
+                contentAlignment = Alignment.Center
+            ) {
+                Box(Modifier.width(VeilSpacing.xxl).height(2.dp).background(accent))
+            }
+        } else {
+            LinearProgressIndicator(
+                modifier = Modifier.width(132.dp).height(2.dp),
+                color = accent,
+                trackColor = MaterialTheme.colorScheme.outlineVariant.copy(
+                    alpha = if (highContrast) 0.52f else 0.24f
+                )
             )
-        )
+        }
     }
 }
 

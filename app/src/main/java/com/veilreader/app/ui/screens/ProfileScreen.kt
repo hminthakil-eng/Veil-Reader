@@ -370,7 +370,7 @@ private fun ProfileMasteryPanel(profile: ReaderProfile) {
                 Text(
                     stringResource(R.string.profile_mastery_dissonance, mastery.dissonance),
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.70f)
+                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                 )
             }
         }
@@ -477,7 +477,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
             Text(
                 stringResource(R.string.profile_sessions_count, history.recordedSessionCount),
                 style = MaterialTheme.typography.labelMedium,
-                color = VeilPalette.Mist.copy(alpha = 0.72f)
+                color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
             )
         }
 
@@ -507,7 +507,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         Text(
             stringResource(R.string.profile_ledger_note),
             style = MaterialTheme.typography.bodySmall,
-            color = VeilPalette.Mist.copy(alpha = 0.58f)
+            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
         )
     }
 }
@@ -525,7 +525,7 @@ private fun DossierLedgerLine(
         VeilMicroLabel(
             text = label,
             modifier = Modifier.weight(1f),
-            color = VeilPalette.Mist.copy(alpha = 0.62f)
+            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
         )
         Text(
             value,
@@ -699,7 +699,7 @@ private fun ArchivistDossierPanel(
                 Text(
                     stringResource(R.string.profile_sigils_count, profile.earnedSigils.size),
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.78f)
+                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                 )
                 Text(
                     stringResource(
@@ -708,12 +708,12 @@ private fun ArchivistDossierPanel(
                         totalDiscoveries
                     ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.78f)
+                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                 )
                 Text(
                     stringResource(R.string.profile_marks_count, highlightCount),
                     style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Mist.copy(alpha = 0.78f)
+                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                 )
             }
         }
@@ -822,7 +822,7 @@ private fun DossierFact(label: String, value: String) {
     ) {
         VeilMicroLabel(
             text = label,
-            color = VeilPalette.Mist.copy(alpha = 0.66f),
+            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
             modifier = Modifier.width(82.dp)
         )
         Text(
@@ -914,7 +914,7 @@ private fun DossierStat(
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
-            color = VeilPalette.Mist.copy(alpha = 0.72f),
+            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
             maxLines = 1
         )
     }

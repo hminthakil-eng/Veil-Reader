@@ -25,17 +25,17 @@ import com.veilreader.app.domain.AppThemeMode
 object VeilPalette {
     // W26: Arena is the canonical visual source of truth. Keep these names as compatibility aliases
     // so reliability work and screen-by-screen migration stay on one branch without a second theme.
-    val Ink = ArenaPalette.Void
-    val Archive = ArenaPalette.Archive
+    val Ink = VeilMaterials.RealmBackground
+    val Archive = VeilMaterials.Surface
     val Iron = ArenaPalette.Iron
-    val RaisedIron = ArenaPalette.RaisedArchive
+    val RaisedIron = VeilMaterials.ElevatedSurface
 
-    val Moon = ArenaPalette.Moon
-    val Mist = ArenaPalette.Mist
+    val Moon = VeilMaterials.TextPrimary
+    val Mist = VeilMaterials.TextSecondary
     val BorderDark = ArenaPalette.Border
     val StrongBorderDark = ArenaPalette.StrongBorder
 
-    val Brass = ArenaPalette.AntiqueGold
+    val Brass = VeilMaterials.Brass
     val DeepBrass = ArenaPalette.DeepBrass
     val Spirit = Color(0xFF789CA5)
     val MoonCrimson = ArenaPalette.Oxblood
@@ -52,7 +52,7 @@ object VeilPalette {
     val LightCrimson = Color(0xFF70232D)
 
     // Reader material stays independent from shell dark/light mode.
-    val ReaderPaper = ArenaPalette.Parchment
+    val ReaderPaper = VeilMaterials.Parchment
 
     // Compatibility aliases while legacy call-sites are rebuilt in place.
     val Obsidian = Archive
@@ -141,7 +141,7 @@ private val VeilDarkColors = darkColorScheme(
     onSurfaceVariant = VeilPalette.Mist,
     outline = VeilPalette.StrongBorderDark,
     outlineVariant = VeilPalette.BorderDark,
-    error = Color(0xFFFFB4AB),
+    error = VeilMaterials.Error,
     onError = Color(0xFF690005)
 )
 
@@ -189,7 +189,7 @@ private val VeilHighContrastDarkColors = darkColorScheme(
     onSurfaceVariant = Color(0xFFE8E9EA),
     outline = Color(0xFFD9DDE3),
     outlineVariant = Color(0xFF8E97A4),
-    error = Color(0xFFFFB4AB),
+    error = VeilMaterials.Error,
     onError = Color(0xFF3B0000)
 )
 

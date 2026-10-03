@@ -2,6 +2,8 @@ package com.veilreader.app.ui
 
 import android.net.Uri
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -1335,7 +1337,7 @@ private fun VeilNoticeDialog(
                 shadowElevation = 0.dp
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 18.dp),
+                    modifier = Modifier.verticalScroll(rememberScrollState()).padding(horizontal = 20.dp, vertical = 18.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     VeilMicroLabel(
@@ -1357,7 +1359,7 @@ private fun VeilNoticeDialog(
                     Text(
                         message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                     )
                     Button(
                         onClick = onDismiss,

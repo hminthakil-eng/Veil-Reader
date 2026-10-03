@@ -4,6 +4,8 @@ import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
+import com.veilreader.app.R
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
@@ -13,7 +15,7 @@ import androidx.compose.ui.unit.sp
 /**
  * Grayfog Design System v3.
  *
- * Typography is script-aware even before bundled font binaries land. The shell uses an
+ * Typography uses licensed bundled fonts for deterministic offline rendering. The shell uses an
  * editorial/reading/utility hierarchy for Latin-script locales, while Persian/Arabic-script
  * locales deliberately avoid Latin-oriented negative tracking and monospace utility faces.
  */
@@ -103,24 +105,30 @@ object VeilShapeLanguage {
     val Seal = ArenaGeometry.SealRadius
 }
 
-/**
- * Latin shell typography. Generic families are intentional temporary stand-ins until the
- * approved bundled editorial font pack is committed; roles and metrics are already locked.
- */
+/** Offline shell faces. Publication fonts remain exclusively renderer-owned. */
 private object LatinFamilies {
-    val Editorial = FontFamily.Serif
-    val Reading = FontFamily.Serif
-    val Utility = FontFamily.Monospace
+    val Editorial = FontFamily(
+        Font(R.font.veil_editorial_regular, FontWeight.Normal),
+        Font(R.font.veil_editorial_semibold, FontWeight.SemiBold)
+    )
+    val Reading = FontFamily(
+        Font(R.font.veil_literary_regular, FontWeight.Normal),
+        Font(R.font.veil_literary_semibold, FontWeight.SemiBold)
+    )
+    val Utility = FontFamily(
+        Font(R.font.veil_utility_regular, FontWeight.Normal),
+        Font(R.font.veil_utility_semibold, FontWeight.SemiBold)
+    )
 }
 
-/**
- * Persian/Arabic shell typography. Sans-serif is safer than forcing the Latin editorial serif
- * onto Arabic shaping. Tracking is kept at zero and vertical metrics are more generous.
- */
+/** Vazirmatn gives Persian/Arabic equal authored treatment, with connected-script metrics. */
 private object RtlFamilies {
-    val Editorial = FontFamily.SansSerif
-    val Reading = FontFamily.SansSerif
-    val Utility = FontFamily.SansSerif
+    val Editorial = FontFamily(
+        Font(R.font.veil_persian_regular, FontWeight.Normal),
+        Font(R.font.veil_persian_semibold, FontWeight.SemiBold)
+    )
+    val Reading = Editorial
+    val Utility = Editorial
 }
 
 val VeilLatinTypography = Typography(
@@ -180,15 +188,15 @@ val VeilLatinTypography = Typography(
     bodyMedium = TextStyle(
         fontFamily = LatinFamilies.Reading,
         fontWeight = FontWeight.Normal,
-        fontSize = 14.sp,
-        lineHeight = 21.sp,
+        fontSize = 16.sp,
+        lineHeight = 23.sp,
         letterSpacing = 0.02.sp
     ),
     bodySmall = TextStyle(
         fontFamily = LatinFamilies.Reading,
         fontWeight = FontWeight.Normal,
-        fontSize = 12.sp,
-        lineHeight = 18.sp,
+        fontSize = 14.sp,
+        lineHeight = 21.sp,
         letterSpacing = 0.04.sp
     ),
     labelLarge = TextStyle(
@@ -201,16 +209,16 @@ val VeilLatinTypography = Typography(
     labelMedium = TextStyle(
         fontFamily = LatinFamilies.Utility,
         fontWeight = FontWeight.Medium,
-        fontSize = 10.5.sp,
-        lineHeight = 15.sp,
-        letterSpacing = 0.72.sp
+        fontSize = 12.sp,
+        lineHeight = 17.sp,
+        letterSpacing = 0.45.sp
     ),
     labelSmall = TextStyle(
         fontFamily = LatinFamilies.Utility,
         fontWeight = FontWeight.Medium,
-        fontSize = 9.sp,
-        lineHeight = 13.sp,
-        letterSpacing = 1.05.sp
+        fontSize = 11.sp,
+        lineHeight = 16.sp,
+        letterSpacing = 0.65.sp
     )
 )
 
@@ -295,15 +303,15 @@ val VeilPersianTypography = Typography(
     labelMedium = TextStyle(
         fontFamily = RtlFamilies.Utility,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 11.sp,
-        lineHeight = 18.sp,
+        fontSize = 12.sp,
+        lineHeight = 20.sp,
         letterSpacing = 0.sp
     ),
     labelSmall = TextStyle(
         fontFamily = RtlFamilies.Utility,
         fontWeight = FontWeight.SemiBold,
-        fontSize = 9.5.sp,
-        lineHeight = 16.sp,
+        fontSize = 11.sp,
+        lineHeight = 19.sp,
         letterSpacing = 0.sp
     )
 )
@@ -313,3 +321,9 @@ fun veilTypographyFor(script: VeilScriptGroup): Typography =
         VeilScriptGroup.LATIN -> VeilLatinTypography
         VeilScriptGroup.PERSIAN_ARABIC -> VeilPersianTypography
     }
+
+/** Spatial proportions: world maps dominate; Threshold gives the current artifact more room. */
+object VeilProportion {
+    const val WorldPrimary = 0.60f
+    const val ThresholdPrimary = 0.44f
+}

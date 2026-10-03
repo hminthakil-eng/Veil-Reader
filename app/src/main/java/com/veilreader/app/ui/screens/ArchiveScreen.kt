@@ -192,7 +192,7 @@ fun ArchiveScreen(
                     Spacer(Modifier.weight(1f))
                     ArchiveMicroLabel(
                         text = stringResource(R.string.archive_privacy),
-                        color = VeilPalette.Mist.copy(alpha = 0.70f)
+                        color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                     )
                 }
 
@@ -793,7 +793,7 @@ private fun NotebookHighlightCard(
                         Text(
                             author,
                             style = MaterialTheme.typography.labelSmall,
-                            color = VeilPalette.Mist.copy(alpha = 0.70f),
+                            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -891,7 +891,7 @@ private fun LivingMarginMemoryStrip(
             Text(
                 stringResource(R.string.archive_later_volume_activity),
                 style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Mist.copy(alpha = 0.46f)
+                color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
             )
         }
     }
@@ -980,7 +980,7 @@ private fun NotebookBookmarkCard(
                 }
                 VeilMicroLabel(
                     text = stringResource(R.string.archive_bookmark),
-                    color = VeilPalette.Mist.copy(alpha = 0.64f)
+                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
                 )
             }
 

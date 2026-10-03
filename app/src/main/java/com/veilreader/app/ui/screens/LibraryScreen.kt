@@ -30,10 +30,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -2066,13 +2068,12 @@ private fun BookDetailUtilityActions(
         modifier = Modifier.fillMaxWidth(),
         spacing = VeilSpacing.sm,
         first = { actionModifier ->
-            OutlinedButton(
+            TextButton(
                 onClick = onFavorite,
                 shape = MaterialTheme.shapes.extraSmall,
                 modifier = actionModifier.heightIn(min = 48.dp),
-                border = BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurface
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = if (favorite) VeilPalette.Brass else VeilPalette.Mist
                 )
             ) {
                 Text(
@@ -2087,14 +2088,11 @@ private fun BookDetailUtilityActions(
             }
         },
         second = { actionModifier ->
-            OutlinedButton(
+            TextButton(
                 onClick = onEditMetadata,
                 shape = MaterialTheme.shapes.extraSmall,
                 modifier = actionModifier.heightIn(min = 48.dp),
-                border = BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.62f)
-                )
+                colors = ButtonDefaults.textButtonColors(contentColor = VeilPalette.Mist)
             ) {
                 Text(
                     stringResource(R.string.book_detail_edit_details),
@@ -3663,7 +3661,7 @@ private fun BookLibraryTile(
 }
 
 @Composable
-private fun BookLibraryRow(
+internal fun BookLibraryRow(
     book: Book,
     archiveMemory: BookArchiveMemory?,
     artifactMemory: BookArtifactMemory?,
@@ -3691,6 +3689,34 @@ private fun BookLibraryRow(
         else -> VeilPalette.BorderDark
     }
 
+    @Composable
+    fun IndexActions() {
+        IconButton(
+            onClick = onFavorite,
+            modifier = Modifier
+                .size(48.dp)
+                .semantics {
+                    contentDescription = favoriteLabel
+                }
+        ) {
+            FavoriteIcon(book.favorite, Modifier.size(17.dp))
+        }
+
+        IconButton(
+            onClick = onDetails,
+            modifier = Modifier
+                .size(48.dp)
+                .semantics {
+                    contentDescription = recordLabel
+                }
+        ) {
+            EllipsisIcon(
+                Modifier.size(17.dp),
+                VeilPalette.Mist
+            )
+        }
+    }
+
     Surface(
         modifier = Modifier
             .fillMaxWidth()
@@ -3700,18 +3726,22 @@ private fun BookLibraryRow(
                 onClick = onOpen
             ),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.52f),
-        border = BorderStroke(
-            1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.46f)
-        ),
+        color = VeilPalette.Archive,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 68.dp)
+                .drawBehind {
+                    drawLine(
+                        color = VeilPalette.BorderDark,
+                        start = androidx.compose.ui.geometry.Offset(0f, size.height),
+                        end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+                        strokeWidth = 1.dp.toPx()
+                    )
+                }
+                .heightIn(min = 80.dp)
                 .padding(start = 8.dp, end = 4.dp, top = 7.dp, bottom = 7.dp),
             horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             verticalAlignment = Alignment.CenterVertically
@@ -3731,7 +3761,7 @@ private fun BookLibraryRow(
                     book.title,
                     style = MaterialTheme.typography.titleSmall,
                     color = VeilPalette.Moon,
-                    maxLines = 1,
+                    maxLines = if (LocalDensity.current.fontScale >= 1.3f) 3 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
@@ -3748,15 +3778,15 @@ private fun BookLibraryRow(
                         }
                     },
                     style = MaterialTheme.typography.labelMedium,
-                    color = VeilPalette.Mist.copy(alpha = 0.78f),
-                    maxLines = 1,
+                    color = VeilPalette.Mist,
+                    maxLines = if (LocalDensity.current.fontScale >= 1.3f) 3 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
 
-                Row(
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
                         when {
@@ -3770,71 +3800,54 @@ private fun BookLibraryRow(
                     Text(
                         localizedBookFormatLabel(book.format),
                         style = MaterialTheme.typography.labelSmall,
-                        color = VeilPalette.Mist.copy(alpha = 0.62f)
+                        color = VeilPalette.Mist
                     )
                     archiveMemory?.let { memory ->
                         Text(
                             archiveDepthRecord(memory),
                             style = MaterialTheme.typography.labelSmall,
-                            color = VeilPalette.Mist.copy(alpha = 0.54f),
+                            color = VeilPalette.Mist,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
+
+                if (
+                    showMemorySummary &&
+                    artifactMemory != null &&
+                    (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
+                ) {
+                    val marksText = stringResource(
+                        R.string.library_mark_count,
+                        artifactMemory.highlightCount
+                    )
+                    val savedText = stringResource(
+                        R.string.library_saved_count,
+                        artifactMemory.bookmarkCount
+                    )
+                    Text(
+                        buildString {
+                            if (artifactMemory.highlightCount > 0) append(marksText)
+                            if (artifactMemory.bookmarkCount > 0) {
+                                if (isNotEmpty()) append(" · ")
+                                append(savedText)
+                            }
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        color = VeilPalette.Spirit,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
 
-            if (
-                showMemorySummary &&
-                artifactMemory != null &&
-                (artifactMemory.highlightCount > 0 || artifactMemory.bookmarkCount > 0)
-            ) {
-                val marksText = stringResource(
-                    R.string.library_mark_count,
-                    artifactMemory.highlightCount
-                )
-                val savedText = stringResource(
-                    R.string.library_saved_count,
-                    artifactMemory.bookmarkCount
-                )
-                Text(
-                    buildString {
-                        if (artifactMemory.highlightCount > 0) append(marksText)
-                        if (artifactMemory.bookmarkCount > 0) {
-                            if (isNotEmpty()) append(" · ")
-                            append(savedText)
-                        }
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    color = VeilPalette.Spirit.copy(alpha = 0.68f),
-                    maxLines = 1
-                )
+            if (LocalDensity.current.fontScale >= 1.3f) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) { IndexActions() }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) { IndexActions() }
             }
 
-            IconButton(
-                onClick = onFavorite,
-                modifier = Modifier
-                    .size(48.dp)
-                    .semantics {
-                        contentDescription = favoriteLabel
-                    }
-            ) {
-                FavoriteIcon(book.favorite, Modifier.size(17.dp))
-            }
-
-            IconButton(
-                onClick = onDetails,
-                modifier = Modifier
-                    .size(48.dp)
-                    .semantics {
-                        contentDescription = recordLabel
-                    }
-            ) {
-                EllipsisIcon(
-                    Modifier.size(17.dp),
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
         }
     }
 }

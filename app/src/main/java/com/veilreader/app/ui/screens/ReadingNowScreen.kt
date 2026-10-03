@@ -123,37 +123,38 @@ fun ReadingNowScreen(
                 .padding(bottom = VeilSpacing.xxl),
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
-                Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
-                    ThresholdHeader(
-                        bookCount = books.size,
-                        hasCurrentBook = current != null,
-                        headerHeightDp = thresholdLayout.headerHeightDp
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(VeilSpacing.sm))
-
-            VeilReveal(delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
-                Box(
-                    Modifier.padding(
-                        horizontal = thresholdLayout.horizontalPaddingDp.dp
-                    )
-                ) {
-                    if (current == null) {
-                        EmptyReadingState(onOpenLibrary)
-                    } else {
-                        ContinueReadingHero(
-                            current = current,
-                            artifactMemory = artifactMemoryByBookId[current.id],
-                            coverWidthDp = thresholdLayout.heroCoverWidthDp,
-                            coverHeightDp = thresholdLayout.heroCoverHeightDp,
-                            onOpenBook = onOpenBook
-                        )
+            VeilArchitecturalPair(
+                primaryFraction = com.veilreader.app.ui.theme.VeilProportion.ThresholdPrimary,
+                spacing = VeilSpacing.xs,
+                primary = {
+                    VeilReveal(delayMillis = 10, modifier = Modifier.fillMaxWidth()) {
+                        Box(Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.xs)) {
+                            ThresholdHeader(
+                                bookCount = books.size,
+                                hasCurrentBook = current != null,
+                                headerHeightDp = thresholdLayout.headerHeightDp
+                            )
+                        }
+                    }
+                },
+                secondary = {
+                    VeilReveal(delayMillis = 70, modifier = Modifier.fillMaxWidth()) {
+                        Box(Modifier.padding(horizontal = thresholdLayout.horizontalPaddingDp.dp)) {
+                            if (current == null) {
+                                EmptyReadingState(onOpenLibrary)
+                            } else {
+                                ContinueReadingHero(
+                                    current = current,
+                                    artifactMemory = artifactMemoryByBookId[current.id],
+                                    coverWidthDp = thresholdLayout.heroCoverWidthDp,
+                                    coverHeightDp = thresholdLayout.heroCoverHeightDp,
+                                    onOpenBook = onOpenBook
+                                )
+                            }
+                        }
                     }
                 }
-            }
+            )
 
             if (snapshot.recent.isNotEmpty()) {
                 Spacer(Modifier.height(VeilSpacing.xl))
@@ -233,136 +234,95 @@ private fun ThresholdHeader(
     hasCurrentBook: Boolean,
     headerHeightDp: Float
 ) {
+    val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
             .background(VeilPalette.Ink)
             .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.46f)),
+                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
                 MaterialTheme.shapes.extraSmall
             )
     ) {
+        Image(
+            painter = painterResource(R.drawable.grayfog_threshold_v1),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            alpha = if (highContrast) 0.18f else 1f,
+            modifier = Modifier.matchParentSize()
+        )
         Box(
-            Modifier
+            Modifier.matchParentSize().background(
+                Brush.verticalGradient(
+                    0f to VeilPalette.Ink.copy(alpha = 0.48f),
+                    0.38f to VeilPalette.Ink.copy(alpha = 0.18f),
+                    0.70f to VeilPalette.Ink.copy(alpha = 0.92f),
+                    1f to VeilPalette.Ink
+                )
+            )
+        )
+        ThresholdDepthField(bookCount = bookCount, modifier = Modifier.matchParentSize())
+        GrayfogOrnamentFrame(modifier = Modifier.matchParentSize(), strength = 0.38f)
+
+        // Copy determines height. At 200% the doorway grows instead of painting over the seal.
+        Column(
+            modifier = Modifier
                 .fillMaxWidth()
-                .height(headerHeightDp.dp)
+                .heightIn(min = headerHeightDp.dp)
+                .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painterResource(R.drawable.grayfog_threshold_v1),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.matchParentSize()
-            )
-
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.verticalGradient(
-                            0f to Color.Black.copy(alpha = 0.18f),
-                            0.44f to Color.Transparent,
-                            1f to VeilPalette.Ink.copy(alpha = 0.98f)
-                        )
-                    )
-            )
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                VeilPalette.Ink.copy(alpha = 0.34f),
-                                Color.Transparent,
-                                Color.Transparent,
-                                VeilPalette.Ink.copy(alpha = 0.22f)
-                            )
-                        )
-                    )
-            )
-
-            ThresholdDepthField(
-                bookCount = bookCount,
-                modifier = Modifier.matchParentSize()
-            )
-
-            GrayfogOrnamentFrame(
-                modifier = Modifier.matchParentSize(),
-                strength = 0.74f
-            )
-
-            ThresholdLiminalSeal(
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = VeilSpacing.lg)
-                    .size(72.dp),
-                waking = (bookCount.coerceIn(0, 12) / 12f)
-            )
-
-            VeilMicroLabel(
-                text = stringResource(R.string.app_name),
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(start = VeilSpacing.md, top = VeilSpacing.md),
-                strong = true
-            )
-
-            VeilMicroLabel(
-                text = stringResource(R.string.threshold_grayfog_archive),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(end = VeilSpacing.md, top = VeilSpacing.md),
-                color = VeilPalette.Moon.copy(alpha = 0.72f)
-            )
-
-            Column(
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .fillMaxWidth()
-                    .padding(horizontal = VeilSpacing.md, vertical = VeilSpacing.lg),
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    stringResource(
-                        when {
-                            bookCount == 0 -> R.string.threshold_title_unwritten
-                            bookCount == 1 -> R.string.threshold_title_first_volume
-                            hasCurrentBook -> R.string.threshold_title_library_awaits
-                            else -> R.string.threshold_title_return_archive
-                        }
-                    ),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = VeilPalette.Moon
+                ThresholdLiminalSeal(
+                    modifier = Modifier.size(40.dp),
+                    waking = bookCount.coerceIn(0, 12) / 12f
                 )
-                Text(
-                    stringResource(
-                        when {
-                            bookCount == 0 -> R.string.threshold_body_unwritten
-                            bookCount == 1 -> R.string.threshold_body_first_volume
-                            hasCurrentBook -> R.string.threshold_body_library_awaits
-                            else -> R.string.threshold_body_return_archive
-                        }
-                    ),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = VeilPalette.Moon.copy(alpha = 0.82f),
-                    modifier = Modifier.widthIn(max = 540.dp)
-                )
-                Box(
-                    Modifier
-                        .padding(top = 4.dp)
-                        .width(112.dp)
-                        .height(1.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(
-                                    VeilPalette.Brass.copy(alpha = 0.92f),
-                                    VeilPalette.Brass.copy(alpha = 0.42f),
-                                    Color.Transparent
-                                )
-                            )
-                        )
-                )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    VeilMicroLabel(text = stringResource(R.string.app_name), strong = true)
+                    VeilMicroLabel(
+                        text = stringResource(R.string.threshold_grayfog_archive),
+                        color = VeilPalette.Mist
+                    )
+                }
             }
+            Spacer(Modifier.height(VeilSpacing.xl))
+            Text(
+                stringResource(
+                    when {
+                        bookCount == 0 -> R.string.threshold_title_unwritten
+                        bookCount == 1 -> R.string.threshold_title_first_volume
+                        hasCurrentBook -> R.string.threshold_title_library_awaits
+                        else -> R.string.threshold_title_return_archive
+                    }
+                ),
+                style = MaterialTheme.typography.headlineLarge,
+                color = VeilPalette.Moon,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Text(
+                stringResource(
+                    when {
+                        bookCount == 0 -> R.string.threshold_body_unwritten
+                        bookCount == 1 -> R.string.threshold_body_first_volume
+                        hasCurrentBook -> R.string.threshold_body_library_awaits
+                        else -> R.string.threshold_body_return_archive
+                    }
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = VeilPalette.Moon.copy(alpha = 0.90f),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                modifier = Modifier.widthIn(max = 540.dp)
+            )
+            BrassRule(Modifier.width(112.dp), strong = true)
         }
     }
 }
@@ -571,28 +531,12 @@ private fun ContinueReadingHero(
                     )
                 }
 
-                Box(
-                    modifier = Modifier
-                        .size(50.dp)
-                        .border(
-                            BorderStroke(
-                                1.dp,
-                                VeilPalette.LightBrass.copy(alpha = 0.58f)
-                            ),
-                            shellShape
-                        )
-                        .background(
-                            VeilPalette.LightSurface.copy(alpha = 0.44f),
-                            shellShape
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        formatPercent(progress),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = VeilPalette.LightInk
-                    )
-                }
+                Text(
+                    formatPercent(progress),
+                    modifier = Modifier.padding(start = VeilSpacing.sm),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.LightInk
+                )
             }
 
             Box(
@@ -715,7 +659,7 @@ private fun ContinueReadingHero(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            "›",
+                            if (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) "‹" else "›",
                             style = MaterialTheme.typography.titleMedium,
                             color = VeilPalette.LightBrass
                         )
@@ -1338,7 +1282,7 @@ private fun EmptyReadingState(onOpenLibrary: () -> Unit) {
                             style = MaterialTheme.typography.labelLarge
                         )
                         Text(
-                            "›",
+                            if (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) "‹" else "›",
                             style = MaterialTheme.typography.titleMedium,
                             color = VeilPalette.DeepBrass
                         )

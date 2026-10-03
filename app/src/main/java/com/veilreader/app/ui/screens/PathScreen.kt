@@ -1030,6 +1030,7 @@ private fun AdvancementCeremonyDialog(
                             ),
                             MaterialTheme.shapes.medium
                         )
+                        .verticalScroll(rememberScrollState())
                         .padding(
                             horizontal = VeilSpacing.lg,
                             vertical = VeilSpacing.xl
@@ -1059,7 +1060,11 @@ private fun AdvancementCeremonyDialog(
                     )
 
                     Text(
-                        "$currentRankLabel  →  $nextRankLabel",
+                        if (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) {
+                            "$currentRankLabel  ←  $nextRankLabel"
+                        } else {
+                            "$currentRankLabel  →  $nextRankLabel"
+                        },
                         style = MaterialTheme.typography.labelMedium,
                         color = VeilPalette.Brass.copy(alpha = 0.88f)
                     )
@@ -1084,33 +1089,31 @@ private fun AdvancementCeremonyDialog(
                         textAlign = TextAlign.Center
                     )
 
-                    Row(
+                    VeilAdaptiveDialogActions(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-                    ) {
-                        OutlinedButton(
-                            onClick = onDismiss,
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 50.dp),
-                            shape = MaterialTheme.shapes.extraSmall
-                        ) {
-                            Text(stringResource(R.string.path_not_yet))
+                        first = { actionModifier ->
+                            OutlinedButton(
+                                onClick = onDismiss,
+                                modifier = actionModifier.heightIn(min = 50.dp),
+                                shape = MaterialTheme.shapes.extraSmall
+                            ) {
+                                Text(stringResource(R.string.path_not_yet))
+                            }
+                        },
+                        second = { actionModifier ->
+                            Button(
+                                onClick = onConfirm,
+                                modifier = actionModifier.heightIn(min = 50.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = VeilPalette.Brass,
+                                    contentColor = Color(0xFF17120A)
+                                )
+                            ) {
+                                Text(stringResource(R.string.path_advance_confirm))
+                            }
                         }
-                        Button(
-                            onClick = onConfirm,
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 50.dp),
-                            shape = MaterialTheme.shapes.extraSmall,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = VeilPalette.Brass,
-                                contentColor = Color(0xFF17120A)
-                            )
-                        ) {
-                            Text(stringResource(R.string.path_advance_confirm))
-                        }
-                    }
+                    )
                 }
             }
         }
