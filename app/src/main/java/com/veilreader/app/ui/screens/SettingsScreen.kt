@@ -842,6 +842,15 @@ fun SettingsScreen(
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
                         MaterialPageEngineRollout.setDebugOverride(enabled)
+                        if (enabled) {
+                            // Review mode must enter the Paper navigation path; otherwise the
+                            // Material engine can be enabled while Slide still owns every gesture.
+                            commitReaderAppearance { current ->
+                                current
+                                    .withReadingMode(ReaderReadingMode.PAGED)
+                                    .withPageTurnStyle(PageTurnStyle.PAPER)
+                            }
+                        }
                     }
                 )
 
@@ -868,7 +877,7 @@ fun SettingsScreen(
                         }
                     )
                     Text(
-                        "This control is process-local and intentionally not persisted.",
+                        "Review mode forces Paged + Paper so gestures actually exercise the Material engine. The engine toggle itself is process-local and intentionally not persisted.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
