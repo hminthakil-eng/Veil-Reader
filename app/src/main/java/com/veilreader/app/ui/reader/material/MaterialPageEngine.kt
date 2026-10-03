@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.nativeCanvas
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import kotlinx.coroutines.delay
 import kotlin.math.max
@@ -50,7 +51,8 @@ internal object MaterialPageEngineRollout {
     @Volatile
     private var previewPreset: MaterialPagePreset = MaterialPagePreset.MATTE_BOOK
 
-    fun isEnabled(): Boolean = debugOverride ?: DEFAULT_ENABLED
+    fun isEnabled(): Boolean =
+        debugOverride ?: if (BuildConfig.DEBUG) true else DEFAULT_ENABLED
 
     fun selectedProfile(): MaterialPageProfile =
         MaterialPageProfiles.canonical(previewPreset)
