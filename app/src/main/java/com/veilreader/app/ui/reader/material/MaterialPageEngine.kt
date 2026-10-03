@@ -147,7 +147,10 @@ internal class MaterialPageEngineState(
 
         width = view.width.toFloat()
         height = view.height.toFloat()
-        density = view.resources.displayMetrics.density.coerceAtLeast(0.1f)
+        density = view.resources.displayMetrics.density
+            .takeIf { it.isFinite() }
+            ?.coerceIn(0.75f, 4f)
+            ?: 1f
         this.side = side
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
@@ -442,10 +445,14 @@ internal class MaterialPageEngineState(
         snapshot = bitmap
         width = bitmap.width.toFloat()
         height = bitmap.height.toFloat()
-        this.progress = progress.coerceIn(0f, 1f)
-        this.verticalBias = verticalBias.coerceIn(-0.18f, 0.18f)
+        this.progress =
+            progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+        this.verticalBias =
+            verticalBias.takeIf { it.isFinite() }?.coerceIn(-0.18f, 0.18f) ?: 0f
+        val safePullOrigin =
+            pullOriginY.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.5f
         this.pullOriginY = materialPageStablePullOrigin(
-            startY = pullOriginY.coerceIn(0f, 1f) * height,
+            startY = safePullOrigin * height,
             heightPx = height
         )
         this.side = side
@@ -470,7 +477,9 @@ internal class MaterialPageEngineState(
     ): Float {
         val widthDp = (width / density.coerceAtLeast(0.1f))
             .coerceAtLeast(1f)
-        return velocityDpPerSec / widthDp
+        val safeVelocity =
+            velocityDpPerSec.takeIf { it.isFinite() } ?: 0f
+        return safeVelocity / widthDp
     }
 
     fun releaseBufferIfIdle() {
