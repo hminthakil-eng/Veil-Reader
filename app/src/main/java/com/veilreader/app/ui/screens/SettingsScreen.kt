@@ -861,8 +861,8 @@ fun SettingsScreen(
                 description = "Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification."
             ) {
                 SettingsSwitchRow(
-                    title = "Use GPU Material Page Engine v2",
-                    subtitle = "Forces Paged + Paper and renders the page as a GPU triangle mesh with a virtual cylinder, real front/back faces and material lighting.",
+                    title = "Use Material Page Engine review",
+                    subtitle = "Forces Paged + Paper. Use the renderer switch below to compare GPU v2 directly against Canvas v1 with identical physics and navigation.",
                     checked = materialPageReviewEnabled,
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
