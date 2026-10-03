@@ -109,6 +109,92 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `reverse release cancels an ambiguous sheet while a deep turn stays committed`() {
+        assertEquals(
+            MaterialPageReleaseDecision.CANCEL,
+            materialPageReleaseDecision(
+                progress = 0.36f,
+                inwardVelocityDpPerSec = -900f,
+                profile = MaterialPageProfiles.MatteBook
+            )
+        )
+        assertEquals(
+            MaterialPageReleaseDecision.COMPLETE,
+            materialPageReleaseDecision(
+                progress = 0.62f,
+                inwardVelocityDpPerSec = -900f,
+                profile = MaterialPageProfiles.MatteBook
+            )
+        )
+    }
+
+    @Test
+    fun `adaptive mesh spends detail where curvature and gloss need it`() {
+        val shallow = materialPageAdaptiveSegmentCount(
+            progress = 0.02f,
+            profile = MaterialPageProfiles.MatteBook
+        )
+        val middle = materialPageAdaptiveSegmentCount(
+            progress = 0.50f,
+            profile = MaterialPageProfiles.MatteBook
+        )
+        val glossyMiddle = materialPageAdaptiveSegmentCount(
+            progress = 0.50f,
+            profile = MaterialPageProfiles.Glossy
+        )
+
+        assertTrue(shallow in 18..34)
+        assertTrue(middle in 18..34)
+        assertTrue(glossyMiddle in 18..34)
+        assertTrue(middle > shallow)
+        assertTrue(glossyMiddle >= middle)
+    }
+
+    @Test
+    fun `vertical micro jitter is suppressed without deleting intentional diagonal pull`() {
+        val tiny = materialPageDragSample(
+            inwardDistancePx = 260f,
+            verticalDistancePx = 2f,
+            widthPx = 1_000f,
+            heightPx = 1_600f,
+            profile = MaterialPageProfiles.MatteBook
+        )
+        val deliberate = materialPageDragSample(
+            inwardDistancePx = 260f,
+            verticalDistancePx = 150f,
+            widthPx = 1_000f,
+            heightPx = 1_600f,
+            profile = MaterialPageProfiles.MatteBook
+        )
+
+        assertEquals(0f, tiny.verticalBias, 0.0001f)
+        assertTrue(deliberate.verticalBias > 0.02f)
+    }
+
+    @Test
+    fun `glossy sheet develops stronger grazing highlight than matte stock`() {
+        val glossy = materialPageGeometry(
+            width = 1_000f,
+            height = 1_600f,
+            progress = 0.55f,
+            verticalBias = 0f,
+            profile = MaterialPageProfiles.Glossy
+        )
+        val matte = materialPageGeometry(
+            width = 1_000f,
+            height = 1_600f,
+            progress = 0.55f,
+            verticalBias = 0f,
+            profile = MaterialPageProfiles.MatteBook
+        )
+
+        assertTrue(
+            glossy.strips.maxOf { it.lightResponse } >
+                matte.strips.maxOf { it.lightResponse }
+        )
+    }
+
+    @Test
     fun `geometry stays finite through the full turn and reveals progressively`() {
         val progressValues = listOf(0.02f, 0.12f, 0.35f, 0.62f, 0.88f, 0.99f)
         var previousReveal = -1f
@@ -123,7 +209,10 @@ class MaterialPageModelTest {
             )
 
             assertTrue(isFiniteMaterialPageFrame(frame))
-            assertEquals(26, frame.strips.size)
+            assertEquals(
+                materialPageAdaptiveSegmentCount(progress, MaterialPageProfiles.MatteBook),
+                frame.strips.size
+            )
             assertTrue(frame.revealFraction >= previousReveal)
             assertTrue(frame.foldX in 0f..1_080f)
             previousReveal = frame.revealFraction
