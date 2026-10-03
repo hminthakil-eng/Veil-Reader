@@ -36,6 +36,11 @@ import kotlin.math.max
 internal enum class PaperCurlSide { LEFT, RIGHT }
 internal enum class PaperTurnDirection { FORWARD, BACKWARD }
 
+private enum class PaperVisualEngine {
+    LEGACY,
+    MATERIAL
+}
+
 @Stable
 internal class PaperCurlState {
     var snapshot: Bitmap? by mutableStateOf(null)
@@ -59,6 +64,7 @@ internal class PaperCurlState {
     private var width = 0f
     private var height = 0f
     private var snapshotBuffer: Bitmap? = null
+    private var activeEngine: PaperVisualEngine? = null
 
     /**
      * New physical-material engine kept beside the legacy curl. The rollout gate is
@@ -71,6 +77,9 @@ internal class PaperCurlState {
     fun configureReducedMotion(value: Boolean) {
         materialEngine.configureReducedMotion(value)
     }
+
+    internal fun usingMaterialEngine(): Boolean =
+        activeEngine == PaperVisualEngine.MATERIAL
 
     fun begin(
         view: View,
@@ -91,6 +100,7 @@ internal class PaperCurlState {
             if (started) {
                 this.side = side
                 this.direction = direction
+                activeEngine = PaperVisualEngine.MATERIAL
                 active = true
             }
             return started
@@ -104,12 +114,13 @@ internal class PaperCurlState {
         this.direction = direction
         snapshot = bitmap
         edge = rightEdge()
+        activeEngine = PaperVisualEngine.LEGACY
         active = true
         return true
     }
     fun updateDrag(start: PointF, offset: PointF) {
         if (!active) return
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.updateDrag(start, offset)
             return
         }
@@ -155,7 +166,7 @@ internal class PaperCurlState {
 
     fun dragProgress(): Float {
         if (!active) return 0f
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             return materialEngine.dragProgress()
         }
         if (width <= 0f) return 0f
@@ -165,7 +176,7 @@ internal class PaperCurlState {
 
     suspend fun animateTapTurn() {
         if (!active) return
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.animateTapTurn()
             return
         }
@@ -196,7 +207,7 @@ internal class PaperCurlState {
 
     suspend fun animateComplete(releaseVelocityDpPerSec: Float = 0f) {
         if (!active) return
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.animateComplete(releaseVelocityDpPerSec)
             return
         }
@@ -236,7 +247,7 @@ internal class PaperCurlState {
 
     suspend fun animateCancel() {
         if (!active) return
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.animateCancel()
             return
         }
@@ -249,7 +260,7 @@ internal class PaperCurlState {
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.animateBoundaryBounce()
             return
         }
@@ -277,8 +288,9 @@ internal class PaperCurlState {
     }
 
     suspend fun clear() {
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.clear()
+            activeEngine = null
             active = false
             return
         }
@@ -286,6 +298,7 @@ internal class PaperCurlState {
         // Keep one frame of input lock so Compose fully drops the overlay
         // before the reusable bitmap can be drawn into again.
         delay(VeilMotion.FRAME_SETTLE_MS)
+        activeEngine = null
         active = false
     }
 
@@ -294,10 +307,11 @@ internal class PaperCurlState {
      * a cancelled preview cannot survive a configuration change or a reader teardown.
      */
     fun clearImmediately() {
-        if (MaterialPageEngineRollout.isEnabled()) {
+        if (usingMaterialEngine()) {
             materialEngine.clearImmediately()
         }
         resetVisual()
+        activeEngine = null
         active = false
     }
 
@@ -414,7 +428,7 @@ internal fun PaperCurlOverlay(
     tone: MaterialPageTone = MaterialPageTone.LIGHT,
     modifier: Modifier = Modifier
 ) {
-    if (MaterialPageEngineRollout.isEnabled()) {
+    if (state.usingMaterialEngine()) {
         LaunchedEffect(state, patina, tone) {
             state.materialEngine.setPatina(patina)
             state.materialEngine.setTone(tone)
