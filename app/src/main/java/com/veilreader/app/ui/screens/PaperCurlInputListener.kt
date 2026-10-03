@@ -310,7 +310,12 @@ internal class PaperCurlInputListener(
             }
             return false
         }
-        if (turnCommitted) return false
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
         cancellationRequested = true
         val spec = activeDrag
         if (spec == null) {
