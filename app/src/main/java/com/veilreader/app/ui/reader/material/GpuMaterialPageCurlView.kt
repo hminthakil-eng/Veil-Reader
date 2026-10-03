@@ -1023,6 +1023,13 @@ internal class GpuMaterialPageCurlView(
     }
 }
 
+internal enum class GpuMaterialPageRendererStatus {
+    READY,
+    UNSUPPORTED,
+    FAILED,
+    REDUCED_MOTION
+}
+
 private data class GpuOverlaySnapshot(
     val bitmap: Bitmap?,
     val backBitmap: Bitmap?,
@@ -1041,17 +1048,26 @@ private data class GpuOverlaySnapshot(
 @Composable
 internal fun GpuMaterialPageOverlay(
     state: MaterialPageEngineState,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRendererStatus: (GpuMaterialPageRendererStatus) -> Unit = {}
 ) {
     val context = LocalContext.current
     val supported = remember(context) {
         GpuMaterialPageCurlView.isSupported(context)
     }
     val rendererFailed = remember { mutableStateOf(false) }
-    if (!supported || rendererFailed.value || state.reducedMotion) {
-        // v2 has no legacy/Canvas curl fallback. Reduced Motion and GPU failure
-        // keep semantic navigation available but deliberately render no curl so
-        // device review can never confuse an old engine with the GPU path.
+    val status = when {
+        state.reducedMotion -> GpuMaterialPageRendererStatus.REDUCED_MOTION
+        !supported -> GpuMaterialPageRendererStatus.UNSUPPORTED
+        rendererFailed.value -> GpuMaterialPageRendererStatus.FAILED
+        else -> GpuMaterialPageRendererStatus.READY
+    }
+    LaunchedEffect(status) {
+        onRendererStatus(status)
+    }
+    if (status != GpuMaterialPageRendererStatus.READY) {
+        // v2 has no legacy/Canvas curl fallback. Semantic navigation remains
+        // available, but renderer failure is surfaced explicitly to the HUD.
         return
     }
 
