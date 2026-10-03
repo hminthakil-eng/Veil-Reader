@@ -82,10 +82,36 @@ internal fun materialPageReleaseDecision(
     profile: MaterialPageProfile
 ): MaterialPageReleaseDecision {
     val p = progress.coerceIn(0f, 1f)
-    val velocity = inwardVelocityDpPerSec.coerceAtLeast(0f)
+    val velocity = inwardVelocityDpPerSec
+        .takeIf { it.isFinite() }
+        ?.coerceIn(-4_000f, 4_000f)
+        ?: 0f
     val thresholds = profile.physics
 
-    val deliberateCompletion = p >= thresholds.completionThreshold
+    // A deliberate reverse release is authoritative. Once the finger starts carrying
+    // the sheet back toward the bound edge, distance alone must not accidentally commit it.
+    val reverseCancelVelocity =
+        -thresholds.flickVelocityDpPerSec * 0.42f
+    if (
+        velocity <= reverseCancelVelocity &&
+        p < thresholds.completionThreshold + 0.12f
+    ) {
+        return MaterialPageReleaseDecision.CANCEL
+    }
+
+    // Project only a short physical horizon. This removes the binary feel around the
+    // threshold without allowing a tiny high-speed twitch to throw an entire page.
+    val mass = thresholds.apparentMass.coerceIn(0.6f, 1.5f)
+    val velocityContribution =
+        (velocity / thresholds.flickVelocityDpPerSec.coerceAtLeast(1f)) *
+            (0.075f / mass)
+    val projectedProgress =
+        (p + velocityContribution.coerceIn(-0.10f, 0.12f))
+            .coerceIn(0f, 1f)
+
+    val deliberateCompletion =
+        p >= thresholds.completionThreshold ||
+            projectedProgress >= thresholds.completionThreshold
     val fastCompletion =
         p >= thresholds.cancelThreshold &&
             velocity >= thresholds.flickVelocityDpPerSec
