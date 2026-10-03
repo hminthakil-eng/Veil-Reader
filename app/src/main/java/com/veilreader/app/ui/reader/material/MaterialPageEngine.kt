@@ -6,8 +6,6 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Path as AndroidPath
 import android.graphics.PointF
-import android.graphics.Rect
-import android.graphics.RectF
 import android.view.View
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -24,7 +22,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.nativeCanvas
 import kotlinx.coroutines.delay
-import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -473,8 +470,6 @@ private class MaterialPageRenderScratch {
     }
     val shadePaint = Paint(Paint.ANTI_ALIAS_FLAG)
     val detailPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    val sourceRect = Rect()
-    val destinationRect = RectF()
     val mesh = MaterialPageMeshBuffer(36)
 }
 
@@ -545,39 +540,29 @@ internal fun MaterialPageOverlay(
         val mesh = scratch.mesh
         val mirror = side == MaterialPageSide.LEFT
 
-        val flatStartX = if (mirror) {
-            pageWidth - mesh.flatEndX
-        } else {
-            mesh.flatStartX
-        }
-        val flatEndX = if (mirror) {
-            pageWidth - mesh.flatStartX
-        } else {
-            mesh.flatEndX
-        }
+        val creaseTopX =
+            if (mirror) pageWidth - mesh.creaseTopX else mesh.creaseTopX
+        val creaseBottomX =
+            if (mirror) pageWidth - mesh.creaseBottomX else mesh.creaseBottomX
 
-        val flatLeft = flatStartX
-            .roundToInt()
-            .coerceIn(0, bitmap.width)
-        val flatRight = ceil(flatEndX.toDouble())
-            .toInt()
-            .coerceIn(flatLeft, bitmap.width)
-        if (flatRight > flatLeft) {
-            scratch.sourceRect.set(flatLeft, 0, flatRight, bitmap.height)
-            scratch.destinationRect.set(
-                flatLeft.toFloat(),
-                0f,
-                flatRight.toFloat(),
-                bitmap.height.toFloat()
-            )
-            scratch.contentPaint.alpha = 255
-            native.drawBitmap(
-                bitmap,
-                scratch.sourceRect,
-                scratch.destinationRect,
-                scratch.contentPaint
-            )
+        scratch.path.reset()
+        if (mirror) {
+            scratch.path.moveTo(pageWidth, 0f)
+            scratch.path.lineTo(creaseTopX, 0f)
+            scratch.path.lineTo(creaseBottomX, pageHeight)
+            scratch.path.lineTo(pageWidth, pageHeight)
+        } else {
+            scratch.path.moveTo(0f, 0f)
+            scratch.path.lineTo(creaseTopX, 0f)
+            scratch.path.lineTo(creaseBottomX, pageHeight)
+            scratch.path.lineTo(0f, pageHeight)
         }
+        scratch.path.close()
+        native.save()
+        native.clipPath(scratch.path)
+        scratch.contentPaint.alpha = 255
+        native.drawBitmap(bitmap, 0f, 0f, scratch.contentPaint)
+        native.restore()
 
         val optics = profile.optics
         val backColor =
@@ -749,8 +734,6 @@ internal fun MaterialPageOverlay(
 
         // The binding/contact shadow is deliberately restrained; it communicates
         // attachment and thickness without turning the page into theatrical 3D.
-        val creaseX =
-            if (mirror) pageWidth - mesh.creaseTopX else mesh.creaseTopX
         val creaseTopY = mesh.creaseTopY
         val creaseBottomY = mesh.creaseBottomY
         val edgeBody = (
@@ -765,9 +748,9 @@ internal fun MaterialPageOverlay(
         scratch.detailPaint.alpha = contactAlpha
         scratch.detailPaint.strokeWidth = 2.2f + edgeBody * 2.4f
         native.drawLine(
-            creaseX,
+            creaseTopX,
             creaseTopY,
-            creaseX,
+            creaseBottomX,
             creaseBottomY,
             scratch.detailPaint
         )
@@ -788,9 +771,9 @@ internal fun MaterialPageOverlay(
                 ).roundToInt().coerceIn(0, 18)
             scratch.detailPaint.strokeWidth = 2.5f + step * 2.5f
             native.drawLine(
-                creaseX + shadowDirection * distance,
+                creaseTopX + shadowDirection * distance,
                 creaseTopY,
-                creaseX + shadowDirection * distance,
+                creaseBottomX + shadowDirection * distance,
                 creaseBottomY,
                 scratch.detailPaint
             )
@@ -807,9 +790,9 @@ internal fun MaterialPageOverlay(
         val edgeOffset =
             if (side == MaterialPageSide.RIGHT) -1.2f else 1.2f
         native.drawLine(
-            creaseX + edgeOffset,
+            creaseTopX + edgeOffset,
             creaseTopY,
-            creaseX + edgeOffset,
+            creaseBottomX + edgeOffset,
             creaseBottomY,
             scratch.detailPaint
         )
