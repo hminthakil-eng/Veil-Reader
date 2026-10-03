@@ -14,6 +14,7 @@ internal enum class ReaderLocatorEvent(
     NAVIGATOR_SCROLL_COMMIT(commitsLocator = true, countsPageTurn = false),
     NAVIGATOR_PAGE_TURN(commitsLocator = true, countsPageTurn = true),
     NAVIGATION_JUMP_COMMIT(commitsLocator = true, countsPageTurn = false),
+    TTS_SYNC_COMMIT(commitsLocator = true, countsPageTurn = false),
     PAPER_COMMIT(commitsLocator = true, countsPageTurn = true),
     FINAL_SNAPSHOT(commitsLocator = true, countsPageTurn = false)
 }
