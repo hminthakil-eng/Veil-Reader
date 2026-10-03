@@ -1,6 +1,7 @@
 package com.veilreader.app.domain
 
 enum class ReaderTapAction {
+    VEIL_DEFAULT,
     PREVIOUS_PAGE,
     TOGGLE_CONTROLS,
     NEXT_PAGE,
@@ -31,20 +32,11 @@ data class ReaderTapGrid(
     fun reset(): ReaderTapGrid = ReaderTapGrid()
 }
 
-fun defaultReaderTapAction(zone: ReaderTapZone): ReaderTapAction =
-    when (zone) {
-        ReaderTapZone.TOP_LEFT,
-        ReaderTapZone.MIDDLE_LEFT,
-        ReaderTapZone.BOTTOM_LEFT -> ReaderTapAction.PREVIOUS_PAGE
-
-        ReaderTapZone.TOP_CENTER,
-        ReaderTapZone.MIDDLE_CENTER,
-        ReaderTapZone.BOTTOM_CENTER -> ReaderTapAction.TOGGLE_CONTROLS
-
-        ReaderTapZone.TOP_RIGHT,
-        ReaderTapZone.MIDDLE_RIGHT,
-        ReaderTapZone.BOTTOM_RIGHT -> ReaderTapAction.NEXT_PAGE
-    }
+fun defaultReaderTapAction(zone: ReaderTapZone): ReaderTapAction {
+    @Suppress("UNUSED_PARAMETER")
+    val ignored = zone
+    return ReaderTapAction.VEIL_DEFAULT
+}
 
 fun defaultReaderTapActions(): Map<ReaderTapZone, ReaderTapAction> =
     ReaderTapZone.entries.associateWith(::defaultReaderTapAction)
