@@ -129,6 +129,11 @@ internal class MaterialPageEngineState(
         tone = value
     }
 
+    fun prepareBuffer(view: View): Boolean {
+        if (active || view.width <= 0 || view.height <= 0) return false
+        return obtainSnapshotBuffer(view) != null
+    }
+
     fun begin(
         view: View,
         side: MaterialPageSide,
@@ -439,6 +444,15 @@ internal class MaterialPageEngineState(
 
     private fun capture(view: View): Bitmap? =
         runCatching {
+            val bitmap = obtainSnapshotBuffer(view)
+                ?: return@runCatching null
+            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
+            view.draw(AndroidCanvas(bitmap))
+            bitmap
+        }.getOrNull()
+
+    private fun obtainSnapshotBuffer(view: View): Bitmap? =
+        runCatching {
             val targetWidth = max(1, view.width)
             val targetHeight = max(1, view.height)
             val reusable = snapshotBuffer?.takeIf {
@@ -447,8 +461,7 @@ internal class MaterialPageEngineState(
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
             }
-
-            val bitmap = reusable ?: Bitmap.createBitmap(
+            reusable ?: Bitmap.createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888
@@ -456,10 +469,6 @@ internal class MaterialPageEngineState(
                 snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
                 snapshotBuffer = created
             }
-
-            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
-            view.draw(AndroidCanvas(bitmap))
-            bitmap
         }.getOrNull()
 }
 
