@@ -43,6 +43,9 @@ internal class ReaderTapZoneInputListener(
         ) ?: return ReaderTapZoneDisposition.DEFER
 
         return when (grid()[zone]) {
+            ReaderTapAction.VEIL_DEFAULT ->
+                ReaderTapZoneDisposition.DEFER
+
             ReaderTapAction.PREVIOUS_PAGE -> {
                 if (!canTurnPages()) {
                     ReaderTapZoneDisposition.RENDERER
