@@ -1691,7 +1691,7 @@ fun ReaderScreen(
                     isReducedMotion = { latestReducedMotion.value },
                     onInteraction = ::markReaderNavigationInteraction,
                     onCommittedTurn = {
-                        if (!MaterialPageEngineRollout.isEnabled()) {
+                        if (!paperCurlState.usingMaterialEngine()) {
                             onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         }
                         val locator = nav.currentLocator.value
