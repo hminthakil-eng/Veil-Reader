@@ -92,6 +92,23 @@ Arena then ran ten additional quality passes after the first source-hardening re
 
 The pass also corrected the pure inspection geometry buffer so adaptive segment counts keep full capacity, and removed the superseded generic tap-duration policy.
 
+## Second ten-level quality escalation
+
+Arena then ran a second ten-pass refinement cycle:
+
+11. sanitized non-finite drag, release, settle and reduced-motion inputs so NaN/Infinity cannot poison renderer state;
+12. strengthened finite-frame validation and rejected collapsed perspective quads before matrix mapping;
+13. stopped failed perspective mappings from drawing orphaned material shading;
+14. latched a stable material-specific mesh budget for the entire turn to prevent topology popping;
+15. removed the Paper reveal delay from Reduced Motion discrete turns;
+16. stopped prewarming full-page Paper bitmaps when Reduced Motion means the legacy snapshot path is unused;
+17. added a restrained material tint to the lifted front face so front surface identity is visible without recoloring the reading canvas;
+18. normalized seam overlap, free-edge thickness, crease/body shadow and edge offsets by display density;
+19. rejected curl drawing when a stale snapshot would be non-uniformly warped after a resize or rotation;
+20. made the new quad validation allocation-free and added contracts for non-finite safety, quad collapse, stable turn tessellation, front-surface material identity and resize safety.
+
+The second cycle deliberately rejected refactors that did not create measurable correctness, physical plausibility, accessibility, lifecycle or frame-quality gains.
+
 ## Existing protections retained
 
 - Legacy Paper implementation is still present.
