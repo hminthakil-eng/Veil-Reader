@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.reader.material
 
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -220,13 +221,27 @@ internal fun updateMaterialPageMesh(
         val normal = cos(midTheta)
         val isBackFacing = normal < 0f
         val optical = profile.optics
+        val facing = normal.coerceAtLeast(0f)
+        val grazing = (1f - abs(normal)).coerceIn(0f, 1f)
+        val diffuse =
+            facing *
+                (0.14f + (1f - optical.roughness) * 0.12f)
+        val specularLobe =
+            grazing *
+                grazing *
+                optical.specularResponse *
+                (0.34f + (1f - optical.roughness) * 0.28f)
         val frontLight =
-            normal.coerceAtLeast(0f) *
-                (0.22f + optical.specularResponse * 0.46f) -
-                optical.roughness * 0.08f
+            diffuse +
+                specularLobe -
+                optical.roughness * 0.055f
         val backLight =
             -normal.coerceAtMost(0f) *
-                (0.08f + optical.translucency * 0.20f)
+                (
+                    0.055f +
+                        optical.translucency * 0.24f +
+                        optical.inkGhosting * 0.05f
+                    )
 
         buffer.sourceLeft[index] = sourceLeft
         buffer.sourceRight[index] = sourceRight
