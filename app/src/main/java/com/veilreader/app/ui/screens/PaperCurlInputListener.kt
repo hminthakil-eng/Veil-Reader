@@ -209,7 +209,7 @@ internal class PaperCurlInputListener(
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
         val inward = inwardDistance(spec, event)
-        val commit = if (MaterialPageEngineRollout.isEnabled()) {
+        val commit = if (state.usingMaterialEngine()) {
             inward > 0f &&
                 materialPageReleaseDecision(
                     progress = state.dragProgress(),
@@ -468,7 +468,7 @@ internal class PaperCurlInputListener(
         !navigator.overflow.value.scroll && isEnabled()
 
     private fun shouldAnimatePaperVisual(): Boolean =
-        MaterialPageEngineRollout.isEnabled() || !isReducedMotion()
+        state.usingMaterialEngine() || !isReducedMotion()
 
     private fun isMostlyHorizontal(event: DragEvent): Boolean {
         val view = navigator.publicationView
