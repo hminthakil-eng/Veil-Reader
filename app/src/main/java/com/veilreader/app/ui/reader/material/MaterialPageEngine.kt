@@ -57,6 +57,8 @@ internal object MaterialPageEngineRollout {
     fun selectedProfile(): MaterialPageProfile =
         MaterialPageProfiles.canonical(previewPreset)
 
+    fun selectedPreset(): MaterialPagePreset = previewPreset
+
     internal fun setDebugOverride(enabled: Boolean?) {
         debugOverride = enabled
     }
