@@ -90,6 +90,7 @@ class SettingsStore(private val context: Context) {
         val volumeUpAction = stringPreferencesKey("reader_volume_up_action")
         val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
         val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
+        val focusGuideLastActiveMode = stringPreferencesKey("reader_focus_guide_last_active_mode")
         val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
         val focusGuideBand = doublePreferencesKey("reader_focus_guide_band")
         val focusGuideDim = doublePreferencesKey("reader_focus_guide_dim")
@@ -197,6 +198,11 @@ class SettingsStore(private val context: Context) {
                         prefs[Keys.focusGuideMode] ?: ReaderFocusGuideMode.OFF.name
                     )
                 }.getOrDefault(ReaderFocusGuideMode.OFF),
+                lastActiveMode = runCatching {
+                    ReaderFocusGuideMode.valueOf(
+                        prefs[Keys.focusGuideLastActiveMode] ?: ReaderFocusGuideMode.WINDOW.name
+                    )
+                }.getOrDefault(ReaderFocusGuideMode.WINDOW),
                 verticalPosition = prefs[Keys.focusGuidePosition] ?: 0.50,
                 bandFraction = prefs[Keys.focusGuideBand] ?: 0.18,
                 dimStrength = prefs[Keys.focusGuideDim] ?: 0.30
@@ -294,6 +300,7 @@ class SettingsStore(private val context: Context) {
         val normalized = value.normalized()
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.focusGuideMode] = normalized.mode.name
+            prefs[Keys.focusGuideLastActiveMode] = normalized.lastActiveMode.name
             prefs[Keys.focusGuidePosition] = normalized.verticalPosition
             prefs[Keys.focusGuideBand] = normalized.bandFraction
             prefs[Keys.focusGuideDim] = normalized.dimStrength
