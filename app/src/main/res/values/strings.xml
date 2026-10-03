@@ -1269,4 +1269,18 @@
     <string name="settings_hardware_action_controls">Reader controls</string>
     <string name="settings_hardware_keys_hint">Reader mappings pause during selection, dialogs, touch exploration, and scrolling page actions. Held keys are rate-limited to prevent accidental page bursts.</string>
     <string name="settings_hardware_keys_reset">Restore system volume</string>
+
+    <string name="settings_focus_guide_title">Focus guide</string>
+    <string name="settings_focus_guide_description">Reduce peripheral visual load without taking touch ownership from the book.</string>
+    <string name="settings_focus_guide_off">Off</string>
+    <string name="settings_focus_guide_window">Focus window</string>
+    <string name="settings_focus_guide_line">Reading line</string>
+    <string name="settings_focus_guide_position">Vertical position</string>
+    <string name="settings_focus_guide_band">Focus height</string>
+    <string name="settings_focus_guide_dim">Outside dimming</string>
+    <string name="settings_focus_guide_hint">The guide is visual only. Links, selection, page gestures and PDF zoom keep their original input ownership.</string>
+    <string name="settings_focus_guide_reset">Reset focus guide</string>
+    <string name="reader_focus">Focus</string>
+    <string name="reader_focus_on">Focus guide on</string>
+    <string name="reader_focus_off">Focus guide off</string>
 </resources>
