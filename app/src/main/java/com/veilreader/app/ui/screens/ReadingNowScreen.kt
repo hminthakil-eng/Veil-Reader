@@ -38,6 +38,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveBookArtifactMemory
 import com.veilreader.app.ui.books.bookArtifactState
 import com.veilreader.app.domain.ReaderProfile
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.adaptiveClassFor
@@ -235,6 +236,8 @@ private fun ThresholdHeader(
     headerHeightDp: Float
 ) {
     val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
+    val abbreviatedEntry = hasCurrentBook && (LocalDensity.current.fontScale >= 1.3f ||
+        androidx.compose.ui.platform.LocalConfiguration.current.screenHeightDp < 500)
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -264,7 +267,7 @@ private fun ThresholdHeader(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = headerHeightDp.dp)
+                .heightIn(min = if (abbreviatedEntry) 0.dp else headerHeightDp.dp)
                 .padding(horizontal = VeilSpacing.lg, vertical = VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -289,7 +292,7 @@ private fun ThresholdHeader(
                     )
                 }
             }
-            Spacer(Modifier.height(VeilSpacing.xl))
+            if (!abbreviatedEntry) Spacer(Modifier.height(VeilSpacing.xl))
             Text(
                 stringResource(
                     when {
@@ -299,24 +302,26 @@ private fun ThresholdHeader(
                         else -> R.string.threshold_title_return_archive
                     }
                 ),
-                style = MaterialTheme.typography.headlineLarge,
+                style = if (abbreviatedEntry) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineLarge,
                 color = VeilPalette.Moon,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center
             )
-            Text(
-                stringResource(
-                    when {
-                        bookCount == 0 -> R.string.threshold_body_unwritten
-                        bookCount == 1 -> R.string.threshold_body_first_volume
-                        hasCurrentBook -> R.string.threshold_body_library_awaits
-                        else -> R.string.threshold_body_return_archive
-                    }
-                ),
-                style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Moon,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.widthIn(max = 540.dp)
-            )
+            if (!abbreviatedEntry) {
+                Text(
+                    stringResource(
+                        when {
+                            bookCount == 0 -> R.string.threshold_body_unwritten
+                            bookCount == 1 -> R.string.threshold_body_first_volume
+                            hasCurrentBook -> R.string.threshold_body_library_awaits
+                            else -> R.string.threshold_body_return_archive
+                        }
+                    ),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = VeilPalette.Moon,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.widthIn(max = 540.dp)
+                )
+            }
             BrassRule(Modifier.width(112.dp), strong = true)
         }
     }
@@ -451,7 +456,6 @@ private fun ContinueReadingHero(
     coverHeightDp: Float,
     onOpenBook: (Book) -> Unit
 ) {
-    val formatPercent = rememberVeilPercentFormatter()
     val progress = current.progress.coerceIn(0f, 1f)
     val fontScale = LocalDensity.current.fontScale
     val shellShape = MaterialTheme.shapes.extraSmall
@@ -477,7 +481,9 @@ private fun ContinueReadingHero(
                 shellShape
             )
     ) {
-        val stacked = maxWidth < 300.dp || fontScale > 1.45f
+        // Reserve a readable identity measure instead of squeezing it beside the artifact.
+        val stacked = (maxWidth.value - 36f - coverWidthDp - 16f) /
+            fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ResumeIdentityMinWidthDp
 
         ThresholdParchmentTexture(
             modifier = Modifier.matchParentSize()
@@ -488,108 +494,8 @@ private fun ContinueReadingHero(
             strength = 0.20f
         )
 
-        Column(
-            modifier = Modifier.padding(
-                horizontal = 18.dp,
-                vertical = 16.dp
-            ),
-            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.library_continue_reading),
-                        color = VeilPalette.LightBrass,
-                        strong = true
-                    )
-                    Text(
-                        heroProgressLabel(current, progress),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.LightMist,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Text(
-                    formatPercent(progress),
-                    modifier = Modifier.padding(start = VeilSpacing.sm),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = VeilPalette.LightInk
-                )
-            }
-
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(
-                                Color.Transparent,
-                                VeilPalette.LightBrass.copy(alpha = 0.58f),
-                                VeilPalette.LightBrass.copy(alpha = 0.82f),
-                                VeilPalette.LightBrass.copy(alpha = 0.58f),
-                                Color.Transparent
-                            )
-                        )
-                    )
-            )
-
-            if (stacked) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    HeroCover(
-                        current,
-                        artifactMemory,
-                        coverWidthDp,
-                        coverHeightDp
-                    )
-                }
-                HeroDetails(
-                    current = current,
-                    ink = VeilPalette.LightInk,
-                    secondaryInk = VeilPalette.LightMist
-                )
-            } else {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    HeroCover(
-                        current,
-                        artifactMemory,
-                        coverWidthDp,
-                        coverHeightDp
-                    )
-                    HeroDetails(
-                        current = current,
-                        ink = VeilPalette.LightInk,
-                        secondaryInk = VeilPalette.LightMist,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            LinearProgressIndicator(
-                progress = { progress },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(3.dp),
-                color = VeilPalette.LightBrass,
-                trackColor = VeilPalette.BorderLight.copy(alpha = 0.58f),
-                drawStopIndicator = {}
-            )
-
+        @Composable
+        fun ResumeAction() {
             Surface(
                 onClick = { onOpenBook(current) },
                 modifier = Modifier
@@ -636,6 +542,108 @@ private fun ContinueReadingHero(
                     )
                 }
             }
+        }
+
+        Column(
+            modifier = Modifier.padding(
+                horizontal = 18.dp,
+                vertical = 16.dp
+            ),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    VeilMicroLabel(
+                        text = stringResource(R.string.library_continue_reading),
+                        color = VeilPalette.LightBrass,
+                        strong = true
+                    )
+                    Text(
+                        heroProgressLabel(current, progress),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = VeilPalette.LightMist,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+            }
+
+            Box(
+                Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(
+                                Color.Transparent,
+                                VeilPalette.LightBrass.copy(alpha = 0.58f),
+                                VeilPalette.LightBrass.copy(alpha = 0.82f),
+                                VeilPalette.LightBrass.copy(alpha = 0.58f),
+                                Color.Transparent
+                            )
+                        )
+                    )
+            )
+
+            if (stacked) {
+                HeroDetails(
+                    current = current,
+                    ink = VeilPalette.LightInk,
+                    secondaryInk = VeilPalette.LightMist
+                )
+                ResumeAction()
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    HeroCover(
+                        current,
+                        artifactMemory,
+                        coverWidthDp,
+                        coverHeightDp
+                    )
+                }
+
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    HeroCover(
+                        current,
+                        artifactMemory,
+                        coverWidthDp,
+                        coverHeightDp
+                    )
+                    HeroDetails(
+                        current = current,
+                        ink = VeilPalette.LightInk,
+                        secondaryInk = VeilPalette.LightMist,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            LinearProgressIndicator(
+                progress = { progress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp),
+                color = VeilPalette.LightBrass,
+                trackColor = VeilPalette.BorderLight.copy(alpha = 0.58f),
+                drawStopIndicator = {}
+            )
+
+            if (!stacked) ResumeAction()
+
         }
     }
 }
@@ -739,20 +747,20 @@ private fun HeroDetails(
     Column(modifier, verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)) {
         Text(
             current.title,
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.titleLarge.withVeilContentScript(current.title),
             color = ink,
             maxLines = 3,
             overflow = TextOverflow.Ellipsis
         )
         Text(
             current.author.ifBlank { stringResource(R.string.common_unknown_author) },
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyMedium.withVeilContentScript(current.author.ifBlank { stringResource(R.string.common_unknown_author) }),
             color = secondaryInk,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis
         )
         current.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
-            Text(series, style = MaterialTheme.typography.labelMedium, color = secondaryInk,
+            Text(series, style = MaterialTheme.typography.labelMedium.withVeilContentScript(series), color = secondaryInk,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
     }
@@ -893,7 +901,7 @@ private fun RecentBookCard(
 
             Text(
                 book.title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
                 color = VeilPalette.Moon,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis

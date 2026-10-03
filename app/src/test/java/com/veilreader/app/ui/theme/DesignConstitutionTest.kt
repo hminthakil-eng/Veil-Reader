@@ -11,6 +11,14 @@ import org.junit.Test
 
 class DesignConstitutionTest {
     @Test
+    fun `archive records reserve readable measure at accessibility sizes`() {
+        assertEquals(112f, galleryCellMeasureDp(112f, 1f), 0.001f)
+        assertEquals(224f, galleryCellMeasureDp(112f, 2f), 0.001f)
+        assertEquals(112f, galleryCellMeasureDp(112f, Float.NaN), 0.001f)
+        assertEquals(112f, galleryCellMeasureDp(112f, 0f), 0.001f)
+    }
+
+    @Test
     fun `quality tiers degrade atmosphere before capability`() {
         val full = qualityPolicyFor(VeilQualityTier.FULL)
         val balanced = qualityPolicyFor(VeilQualityTier.BALANCED)
@@ -163,8 +171,11 @@ class DesignConstitutionTest {
     @Test
     fun `architectural pairing uses usable width and yields to large text`() {
         assertFalse(useArchitecturalPair(599f, 1f))
-        assertFalse(useArchitecturalPair(720f, 1f))
-        assertFalse(useArchitecturalPair(839f, 1f))
+        assertTrue(useArchitecturalPair(720f, 1f))
+        assertFalse(useArchitecturalPair(720f, 1.3f))
+        assertFalse(useArchitecturalPair(639f, 1f))
+        assertTrue(useArchitecturalPair(640f, 1f))
+        assertTrue(useArchitecturalPair(839f, 1f))
         assertTrue(useArchitecturalPair(840f, 1f))
         assertTrue(useArchitecturalPair(840f, 1.3f))
         assertFalse(useArchitecturalPair(840f, 1.5f))

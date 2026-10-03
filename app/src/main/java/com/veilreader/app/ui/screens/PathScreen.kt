@@ -683,8 +683,8 @@ private fun RitualPanel(
                         .heightIn(min = 48.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
+                        containerColor = com.veilreader.app.ui.theme.VeilMaterials.Parchment,
+                        contentColor = com.veilreader.app.ui.theme.VeilMaterials.Ink
                     ),
                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 7.dp)
                 ) {
@@ -942,7 +942,7 @@ private fun PathChoiceCard(path: ReadingPath, enabled: Boolean, onChoose: () -> 
 }
 
 @Composable
-private fun AdvancementCeremonyDialog(
+internal fun AdvancementCeremonyDialog(
     profile: ReaderProfile,
     nextRank: String,
     onDismiss: () -> Unit,
@@ -980,6 +980,7 @@ private fun AdvancementCeremonyDialog(
             decorFitsSystemWindows = false
         )
     ) {
+        com.veilreader.app.ui.VeilSystemBars(lightBackground = false)
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -1111,8 +1112,8 @@ private fun AdvancementCeremonyDialog(
                                 modifier = actionModifier.heightIn(min = 50.dp),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = VeilPalette.Brass,
-                                    contentColor = Color(0xFF17120A)
+                                    containerColor = com.veilreader.app.ui.theme.VeilMaterials.Parchment,
+                                    contentColor = com.veilreader.app.ui.theme.VeilMaterials.Ink
                                 )
                             ) {
                                 Text(stringResource(R.string.path_advance_confirm))

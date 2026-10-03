@@ -16,6 +16,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -694,6 +695,8 @@ fun SanctumScreen(
             subtitle = stringResource(R.string.sanctum_header_body)
         )
 
+        VeilArchitecturalPair(
+            primary = {
         SanctumSealPanel(
             profile = profile,
             rankProgress = rankProgress,
@@ -701,6 +704,9 @@ fun SanctumScreen(
             sovereignReady = sovereignReady
         )
 
+            },
+            secondary = {
+                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)) {
         ArchiveChamberHeading(
             eyebrow = stringResource(R.string.sanctum_permanent_identity),
             title = stringResource(R.string.sanctum_castle_title),
@@ -712,24 +718,22 @@ fun SanctumScreen(
                 delayMillis = 50 + index * 35,
                 distance = 6.dp
             ) {
-                OutlinedButton(
+                TextButton(
                     onClick = { onSelectTitle(title) },
                     enabled = title != castleTitle,
                     shape = MaterialTheme.shapes.extraSmall,
-                    border = BorderStroke(
-                        1.dp,
-                        if (title == castleTitle) {
-                            VeilPalette.Brass.copy(alpha = 0.56f)
-                        } else {
-                            VeilPalette.BorderDark.copy(alpha = 0.72f)
-                        }
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = VeilMaterials.TextPrimary,
+                        disabledContentColor = VeilMaterials.TextPrimary
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 48.dp)
+                        .veilLedgerRule()
+                        .heightIn(min = 64.dp)
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.Start,
                         verticalArrangement = Arrangement.spacedBy(1.dp)
                     ) {
                         Text(
@@ -752,6 +756,9 @@ fun SanctumScreen(
                 }
             }
         }
+                }
+            }
+        )
 
         HiddenSanctumRecord(sovereignReady = sovereignReady)
     }

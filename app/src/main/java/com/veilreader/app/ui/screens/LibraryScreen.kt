@@ -78,8 +78,10 @@ import com.veilreader.app.ui.books.BookArtifactState
 import com.veilreader.app.ui.books.BookPatina
 import com.veilreader.app.ui.books.BookReadingState
 import com.veilreader.app.ui.books.bookArtifactState
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.adaptiveClassFor
+import com.veilreader.app.ui.theme.galleryCellMeasureDp
 import com.veilreader.app.ui.theme.archiveLayoutPolicyFor
 import com.veilreader.app.ui.theme.archiveTimePhaseForHour
 import com.veilreader.app.ui.theme.VeilRealm
@@ -258,6 +260,32 @@ fun LibraryScreen(
     onOpenSettings: () -> Unit,
     onOpenManga: () -> Unit = {}
 ) {
+    LibraryArchiveContent(
+        books, highlights, bookmarks, readingSessions, readingCycles, readingMilestones,
+        isImporting, onImportUri, onOpenBook, onFavorite, onEditMetadata, onDeleteBook,
+        onOpenSettings, onOpenManga
+    )
+}
+
+@Composable
+internal fun LibraryArchiveContent(
+    books: List<Book>,
+    highlights: List<Highlight> = emptyList(),
+    bookmarks: List<Bookmark> = emptyList(),
+    readingSessions: List<ReadingSessionSnapshot> = emptyList(),
+    readingCycles: List<ReadingCycleRecord> = emptyList(),
+    readingMilestones: List<ReadingMilestoneRecord> = emptyList(),
+    isImporting: Boolean,
+    onImportUri: (Uri) -> Unit,
+    onOpenBook: (Book) -> Unit,
+    onFavorite: (String) -> Unit,
+    onEditMetadata: (BookMetadataUpdate) -> Unit,
+    onDeleteBook: (Book) -> Unit,
+    onOpenSettings: () -> Unit,
+    onOpenManga: () -> Unit = {},
+    initialViewMode: LibraryViewMode = LibraryViewMode.GALLERY,
+    initialQuery: String = ""
+) {
     val focusManager = LocalFocusManager.current
     val archiveAdaptiveClass = adaptiveClassFor(
         LocalConfiguration.current.screenWidthDp.toFloat()
@@ -272,12 +300,12 @@ fun LibraryScreen(
     val archiveTimePhase = remember(libraryNowEpochMs) {
         archiveTimePhaseForHour(LocalTime.now().hour)
     }
-    var query by rememberSaveable { mutableStateOf("") }
+    var query by rememberSaveable { mutableStateOf(initialQuery) }
     var shelf by rememberSaveable { mutableStateOf("All") }
     var collection by rememberSaveable { mutableStateOf("") }
     var seriesFilter by rememberSaveable { mutableStateOf("") }
     var sort by rememberSaveable { mutableStateOf("Recent") }
-    var viewModeName by rememberSaveable { mutableStateOf(LibraryViewMode.GALLERY.name) }
+    var viewModeName by rememberSaveable { mutableStateOf(initialViewMode.name) }
     val viewMode = libraryViewModeFromStored(viewModeName)
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
@@ -490,7 +518,7 @@ fun LibraryScreen(
     // Headers and books share one lazy viewport, including landscape and large-text layouts.
     LazyVerticalGrid(
         columns = if (viewMode == LibraryViewMode.GALLERY) {
-            GridCells.Adaptive(archiveLayout.galleryMinCellDp.dp)
+            GridCells.Adaptive(galleryCellMeasureDp(archiveLayout.galleryMinCellDp, LocalDensity.current.fontScale).dp)
         } else {
             GridCells.Fixed(1)
         },
@@ -575,18 +603,12 @@ fun LibraryScreen(
         }
 
         item(key = "library:status-shelves", span = { GridItemSpan(maxLineSpan) }) {
-            if (viewMode != LibraryViewMode.SHELVES) Column(
+            Column(
                 Modifier
                     .fillMaxWidth()
                     .padding(top = VeilSpacing.sm),
                 verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
             ) {
-                LibrarySectionHeading(
-                    eyebrow = stringResource(R.string.library_section_archive),
-                    title = stringResource(R.string.library_section_shelves),
-                    trailing = stringResource(R.string.library_tap_to_filter)
-                )
-
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -595,28 +617,24 @@ fun LibraryScreen(
                 ) {
                     LibraryShelfCard(
                         title = stringResource(R.string.library_shelf_favorites),
-                        subtitle = stringResource(R.string.library_shelf_favorites_subtitle),
                         count = books.count { it.favorite },
                         selected = shelf == "Favorites",
                         onClick = { shelf = if (shelf == "Favorites") "All" else "Favorites" }
                     )
                     LibraryShelfCard(
                         title = stringResource(R.string.library_shelf_reading),
-                        subtitle = stringResource(R.string.library_shelf_reading_subtitle),
                         count = books.count { !it.finished && it.progress > 0f },
                         selected = shelf == "Reading",
                         onClick = { shelf = if (shelf == "Reading") "All" else "Reading" }
                     )
                     LibraryShelfCard(
                         title = stringResource(R.string.library_shelf_completed),
-                        subtitle = stringResource(R.string.library_shelf_completed_subtitle),
                         count = books.count { it.finished },
                         selected = shelf == "Finished",
                         onClick = { shelf = if (shelf == "Finished") "All" else "Finished" }
                     )
                     LibraryShelfCard(
                         title = stringResource(R.string.library_shelf_deep),
-                        subtitle = stringResource(R.string.library_shelf_deep_subtitle),
                         count = memoryState.deepShelfBookIds.size,
                         selected = shelf == "Deep Shelf",
                         onClick = {
@@ -625,7 +643,6 @@ fun LibraryScreen(
                     )
                     LibraryShelfCard(
                         title = stringResource(R.string.library_shelf_unread),
-                        subtitle = stringResource(R.string.library_shelf_unread_subtitle),
                         count = books.count { !it.finished && it.progress <= 0f },
                         selected = shelf == "Unread",
                         onClick = { shelf = if (shelf == "Unread") "All" else "Unread" }
@@ -1304,7 +1321,7 @@ private fun DeleteBookDialog(
                     )
                     Text(
                         stringResource(R.string.book_delete_body, book.title),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodyMedium.withVeilContentScript(stringResource(R.string.book_delete_body, book.title)),
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     BrassRule(Modifier.fillMaxWidth())
@@ -1679,6 +1696,7 @@ internal fun BookDetailDestination(
             decorFitsSystemWindows = false
         )
     ) {
+        com.veilreader.app.ui.VeilSystemBars(lightBackground = false)
         Surface(
             modifier = Modifier.fillMaxSize(),
             color = VeilPalette.Ink,
@@ -1808,7 +1826,7 @@ internal fun BookDetailDestination(
                                     .widthIn(max = 440.dp)
                                     .fillMaxWidth()
                             )
-                            ReadingAction()
+                            Box(Modifier.widthIn(max = 440.dp).fillMaxWidth()) { ReadingAction() }
                         }
                     } else {
                         Row(
@@ -2379,7 +2397,7 @@ private fun BookDetailIdentity(
         Text(
             identity.title,
             modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.headlineLarge,
+            style = MaterialTheme.typography.headlineLarge.withVeilContentScript(identity.title),
             color = VeilPalette.Moon,
             maxLines = 4,
             softWrap = true,
@@ -2389,7 +2407,7 @@ private fun BookDetailIdentity(
         Text(
             identity.author,
             modifier = Modifier.fillMaxWidth(),
-            style = MaterialTheme.typography.titleSmall,
+            style = MaterialTheme.typography.titleSmall.withVeilContentScript(identity.author),
             color = VeilPalette.Moon.copy(alpha = 0.78f),
             maxLines = 2,
             softWrap = true,
@@ -2405,7 +2423,7 @@ private fun BookDetailIdentity(
                 Text(
                     series,
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodyMedium.withVeilContentScript(series),
                     color = VeilPalette.Brass.copy(alpha = 0.90f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -2524,13 +2542,9 @@ private fun LibraryHeader(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.52f)),
-                MaterialTheme.shapes.extraSmall
-            )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 144.dp else 172.dp
+        val headerHeight = if (compact) 112.dp else 144.dp
 
         Box(Modifier.fillMaxWidth().heightIn(min = headerHeight)) {
             Image(
@@ -2564,10 +2578,7 @@ private fun LibraryHeader(
                         )
                     )
             )
-            GrayfogOrnamentFrame(
-                modifier = Modifier.matchParentSize(),
-                strength = 0.24f
-            )
+
 
             Column(
                 modifier = Modifier
@@ -2605,7 +2616,7 @@ private fun LibraryHeader(
                         shape = MaterialTheme.shapes.extraSmall,
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 8.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = VeilPalette.DeepBrass.copy(alpha = 0.94f),
+                            containerColor = VeilMaterials.ElevatedSurface,
                             contentColor = VeilPalette.Moon
                         ),
                         modifier = Modifier.weight(1f).heightIn(min = 48.dp)
@@ -2622,19 +2633,16 @@ private fun LibraryHeader(
                     }
                 }
 
-                Spacer(Modifier.height(VeilSpacing.md))
+                Spacer(Modifier.height(VeilSpacing.xs))
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.app_name),
-                        strong = true
-                    )
+
                     Text(
                         stringResource(R.string.library_header_title),
-                        style = MaterialTheme.typography.headlineLarge,
+                        style = MaterialTheme.typography.headlineMedium,
                         color = VeilPalette.Moon
                     )
                     Text(
@@ -2808,7 +2816,6 @@ private fun LibraryAtmosphereLedger(state: LibraryAtmosphereState) {
 @Composable
 private fun LibraryShelfCard(
     title: String,
-    subtitle: String,
     count: Int,
     selected: Boolean,
     onClick: () -> Unit
@@ -2816,7 +2823,7 @@ private fun LibraryShelfCard(
     val formatNumber = rememberVeilIntegerFormatter()
     Surface(
         onClick = onClick,
-        modifier = Modifier.widthIn(min = 138.dp, max = 200.dp).heightIn(min = 48.dp)
+        modifier = Modifier.widthIn(min = 104.dp, max = 220.dp).heightIn(min = 48.dp)
             .semantics { this.selected = selected },
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) VeilPalette.Archive else Color.Transparent,
@@ -2830,10 +2837,8 @@ private fun LibraryShelfCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(title, style = MaterialTheme.typography.labelLarge, color = VeilPalette.Moon)
-                    Text(subtitle, style = MaterialTheme.typography.labelSmall,
-                        color = VeilMaterials.TextSecondary, maxLines = 2,
-                        overflow = TextOverflow.Ellipsis)
+                    Text(title, style = MaterialTheme.typography.labelLarge.withVeilContentScript(title), color = VeilPalette.Moon)
+
                 }
                 Text(formatNumber(count), style = MaterialTheme.typography.labelMedium,
                     color = VeilMaterials.TextSecondary)
@@ -2852,7 +2857,7 @@ private fun LibrarySectionHeading(eyebrow: String, title: String, trailing: Stri
                 text = eyebrow,
                 strong = true
             )
-            Text(title, style = MaterialTheme.typography.titleLarge)
+            Text(title, style = MaterialTheme.typography.titleLarge.withVeilContentScript(title))
         }
         trailing?.let {
             Text(it, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -2893,13 +2898,13 @@ private fun RecentReadingBook(
                 Text(stringResource(R.string.library_continue_reading), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.withVeilContentScript(book.title),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.withVeilContentScript(book.author.ifBlank { stringResource(R.string.common_unknown_author) }),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -3202,7 +3207,7 @@ private fun MemoryReturnCard(
             )
             Text(
                 book.title,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.withVeilContentScript(book.title),
                 color = VeilPalette.Mist.copy(alpha = 0.78f),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
@@ -3470,12 +3475,12 @@ internal fun BookLibraryTile(
 
             }
 
-            if (artifact.progress > 0f) {
+            run {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(2.dp)
-                        .background(VeilPalette.BorderDark.copy(alpha = 0.70f))
+                        .background(if (artifact.progress > 0f) VeilPalette.BorderDark.copy(alpha = 0.70f) else Color.Transparent)
                 ) {
                     Box(
                         modifier = Modifier
@@ -3497,8 +3502,9 @@ internal fun BookLibraryTile(
             ) {
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.withVeilContentScript(book.title),
                     color = VeilPalette.Moon,
+                    minLines = if (largeText) 3 else 2,
                     maxLines = if (largeText) 3 else 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3506,7 +3512,8 @@ internal fun BookLibraryTile(
                 Text(
                     book.author.ifBlank { stringResource(R.string.common_unknown_author) },
                     color = VeilMaterials.TextSecondary,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.withVeilContentScript(book.author.ifBlank { stringResource(R.string.common_unknown_author) }),
+                    minLines = 2,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -3516,7 +3523,7 @@ internal fun BookLibraryTile(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    VeilMicroLabel(
+                    Text(
                         text = when {
                             book.finished -> stringResource(R.string.library_completed)
                             book.progress > 0f -> stringResource(
@@ -3526,6 +3533,8 @@ internal fun BookLibraryTile(
                             else -> stringResource(R.string.library_unopened)
                         },
                         color = VeilMaterials.TextSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                        minLines = if (largeText) 2 else 1,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -3695,7 +3704,7 @@ internal fun BookLibraryRow(
             ) {
                 Text(
                     book.title,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
                     color = VeilPalette.Moon,
                     maxLines = if (LocalDensity.current.fontScale >= 1.3f) 3 else 2,
                     overflow = TextOverflow.Ellipsis
@@ -3713,7 +3722,17 @@ internal fun BookLibraryRow(
                             }
                         }
                     },
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.withVeilContentScript(buildString {
+                        append(
+                            book.author.ifBlank { unknownAuthor }
+                        )
+                        book.seriesName?.takeIf { it.isNotBlank() }?.let { series ->
+                            append(" · ").append(series)
+                            book.seriesIndex?.let {
+                                append(" #").append(formatNumber(it))
+                            }
+                        }
+                    }),
                     color = VeilPalette.Mist,
                     maxLines = if (LocalDensity.current.fontScale >= 1.3f) 3 else 2,
                     overflow = TextOverflow.Ellipsis
@@ -4009,14 +4028,14 @@ internal fun LibraryShelvesView(
                         trailing = stringResource(R.string.library_group_volume_count, group.books.size)
                     )
                     LazyRow(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().veilShelfDatum(coverHeightDp.dp),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
                     ) {
                         lazyRowItems(group.books, key = { it.id }, contentType = { "shelfBook" }) { book ->
                             val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
                             Column(
                                 modifier = Modifier
-                                    .width(itemWidthDp.dp)
+                                    .width(galleryCellMeasureDp(itemWidthDp, LocalDensity.current.fontScale).dp)
                                     .clickable(
                                         role = Role.Button,
                                         onClickLabel = readLabel
@@ -4036,14 +4055,11 @@ internal fun LibraryShelvesView(
                                             .width(coverWidthDp.dp)
                                             .height(coverHeightDp.dp)
                                     )
-                                    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                                        .offset(y = (-6).dp).height(1.dp).background(VeilPalette.StrongBorderDark))
-                                    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
-                                        .height(6.dp).background(VeilMaterials.Depth))
+
                                 }
                                 Text(
                                     book.title,
-                                    style = MaterialTheme.typography.titleSmall,
+                                    style = MaterialTheme.typography.titleSmall.withVeilContentScript(book.title),
                                     color = VeilPalette.Moon,
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis

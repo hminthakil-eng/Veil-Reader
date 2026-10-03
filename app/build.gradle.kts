@@ -116,6 +116,8 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
     debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.5")
     testImplementation("junit:junit:4.13.2")
+    // Reuse the native Compose test stack for cloud rendering; no production dependency.
+    testImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
     testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
     testImplementation("org.robolectric:robolectric:4.17")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")

@@ -4152,7 +4152,7 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
 }
 
 @Composable
-private fun EpubAppearancePanel(
+internal fun EpubAppearancePanel(
     appearance: ReaderAppearance,
     fixedLayout: Boolean,
     fixedLayoutSpread: ReaderFixedLayoutSpread,
@@ -4160,14 +4160,16 @@ private fun EpubAppearancePanel(
     onSpreadChange: (ReaderFixedLayoutSpread) -> Unit,
     onChange: (ReaderAppearance) -> Unit,
     onDone: (ReaderAppearance) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initiallyAdvanced: Boolean = false
 ) {
+    com.veilreader.app.ui.VeilSystemBars(lightBackground = false)
     val formatPercent = rememberVeilPercentFormatter()
     val formatNumber = rememberVeilNumberFormatter()
     var draft by remember { mutableStateOf(appearance) }
     var hasPendingDraft by remember { mutableStateOf(false) }
     var sliderPending by remember { mutableStateOf(false) }
-    var showAdvanced by remember { mutableStateOf(false) }
+    var showAdvanced by remember { mutableStateOf(initiallyAdvanced) }
     val capabilities = readerAppearanceCapabilities(
         fixedLayout = fixedLayout,
         languageTag = publicationLanguage,
@@ -5550,7 +5552,7 @@ private fun ReaderModeChoice(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (active) {
-            VeilPalette.DeepBrass.copy(alpha = 0.76f)
+            VeilMaterials.ElevatedSurface
         } else {
             MaterialTheme.colorScheme.surface.copy(alpha = 0.46f)
         },

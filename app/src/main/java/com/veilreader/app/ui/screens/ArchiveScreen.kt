@@ -40,6 +40,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
@@ -49,7 +50,7 @@ import com.veilreader.app.ui.theme.grayfogAtmosphere
 import java.text.NumberFormat
 import kotlinx.coroutines.delay
 
-private enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
+internal enum class NotebookSection { NOTES, HIGHLIGHTS, BOOKMARKS, ECHOES, CAPSULES }
 
 @Composable
 private fun ArchiveMicroLabel(
@@ -78,8 +79,27 @@ fun ArchiveScreen(
     onDeleteHighlight: (String) -> Unit,
     onDeleteBookmark: (String) -> Unit
 ) {
+    ArchiveRecordContent(books, highlights, bookmarks, readingSessions, readingCycles, passageVisits,
+        onClose, onOpenPassage, onSaveNote, onDeleteHighlight, onDeleteBookmark)
+}
+
+@Composable
+internal fun ArchiveRecordContent(
+    books: List<Book>,
+    highlights: List<Highlight>,
+    bookmarks: List<Bookmark>,
+    readingSessions: List<ReadingSessionSnapshot>,
+    readingCycles: List<ReadingCycleRecord>,
+    passageVisits: List<PassageVisit>,
+    onClose: () -> Unit,
+    onOpenPassage: (Book, String) -> Unit,
+    onSaveNote: (String, String) -> Unit,
+    onDeleteHighlight: (String) -> Unit,
+    onDeleteBookmark: (String) -> Unit,
+    initialSection: NotebookSection = NotebookSection.NOTES
+) {
     var query by rememberSaveable { mutableStateOf("") }
-    var selectedSectionName by rememberSaveable { mutableStateOf(NotebookSection.NOTES.name) }
+    var selectedSectionName by rememberSaveable { mutableStateOf(initialSection.name) }
     var editingHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
     var noteDraft by rememberSaveable { mutableStateOf("") }
     var deleteHighlightId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -792,7 +812,7 @@ private fun NotebookHighlightCard(
                     book?.author?.takeIf { it.isNotBlank() }?.let { author ->
                         Text(
                             author,
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelSmall.withVeilContentScript(author),
                             color = VeilMaterials.TextSecondary,
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis
@@ -1042,7 +1062,7 @@ private fun NotebookEmptyState(title: String, body: String) {
             )
             Text(
                 title,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.withVeilContentScript(title),
                 fontWeight = FontWeight.SemiBold
             )
             Text(
@@ -1102,7 +1122,7 @@ private fun DeleteNotebookItemDialog(
                     )
                     Text(
                         title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleLarge.withVeilContentScript(title),
                         color = VeilPalette.Moon
                     )
                     BrassRule(Modifier.fillMaxWidth())

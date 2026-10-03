@@ -42,6 +42,7 @@ import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.books.bookArtifactState as canonicalBookArtifactState
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
@@ -425,7 +426,7 @@ private fun ObservatorySelection(
                     )
                     Text(
                         node.book.title,
-                        style = MaterialTheme.typography.titleLarge,
+                        style = MaterialTheme.typography.titleLarge.withVeilContentScript(node.book.title),
                         color = VeilPalette.Moon,
                         maxLines = 3,
                         overflow = TextOverflow.Ellipsis
@@ -462,8 +463,8 @@ private fun ObservatorySelection(
                 enabled = node.book.isImported,
                 shape = MaterialTheme.shapes.extraSmall,
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = VeilPalette.Brass,
-                    contentColor = Color(0xFF17120A)
+                    containerColor = VeilMaterials.Parchment,
+                    contentColor = VeilMaterials.Ink
                 ),
                 modifier = Modifier
                     .align(Alignment.End)
@@ -485,31 +486,22 @@ private fun ObservatoryConnectionRow(edge: MemoryAtlasEdge, other: Book) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.60f)),
-                MaterialTheme.shapes.extraSmall
-            )
+            .veilLedgerRule()
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                other.title,
-                style = MaterialTheme.typography.titleSmall,
-                color = VeilPalette.Moon,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f)
-            )
-            Text(
-                stringResource(R.string.observatory_link_strength, edge.strength),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass
-            )
-        }
+        Text(
+            other.title,
+            style = MaterialTheme.typography.titleSmall.withVeilContentScript(other.title),
+            color = VeilMaterials.TextPrimary,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            stringResource(R.string.observatory_link_strength, edge.strength),
+            style = MaterialTheme.typography.labelSmall,
+            color = VeilMaterials.TextSecondary
+        )
         Text(
             relationLabelsText(edge.reasons),
             style = MaterialTheme.typography.labelSmall,
@@ -561,7 +553,7 @@ private fun ObservatoryBookRow(
         ) {
             Text(
                 node.book.title,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleSmall.withVeilContentScript(node.book.title),
                 color = VeilPalette.Moon,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -601,7 +593,7 @@ private fun ObservatorySectionHeading(
             Text(
                 title,
                 modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.titleLarge.withVeilContentScript(title),
                 color = VeilPalette.Moon
             )
             trailing?.let { value ->

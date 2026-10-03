@@ -610,38 +610,18 @@ private fun ArchivistDossierPanel(
             modifier = Modifier.padding(VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.profile_private_record),
-                        strong = true
-                    )
-                    Text(
-                        rankName,
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = VeilPalette.Moon
-                    )
-                    Text(
-                        identity.epithet,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = VeilPalette.Mist
-                    )
-                }
-
-                TextButton(
-                    onClick = onOpenSettings,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                ) {
-                    VeilMicroLabel(
-                        text = stringResource(R.string.profile_settings)
-                    )
+                VeilMicroLabel(text = stringResource(R.string.profile_private_record), strong = true)
+                TextButton(onClick = onOpenSettings, modifier = Modifier.heightIn(min = 48.dp)) {
+                    Text(stringResource(R.string.profile_settings), style = MaterialTheme.typography.labelMedium)
                 }
             }
+            Text(rankName, style = MaterialTheme.typography.headlineMedium, color = VeilMaterials.TextPrimary)
+            Text(identity.epithet, style = MaterialTheme.typography.bodySmall, color = VeilMaterials.TextSecondary)
 
             Row(
                 Modifier.fillMaxWidth(),
@@ -658,10 +638,10 @@ private fun ArchivistDossierPanel(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     DossierFact(stringResource(R.string.profile_fact_path), pathName)
-                    DossierFact(stringResource(R.string.profile_fact_level), profile.level.toString())
+                    DossierFact(stringResource(R.string.profile_fact_level), rememberVeilIntegerFormatter()(profile.level))
                     DossierFact(
                         stringResource(R.string.profile_fact_castle_tier),
-                        (profile.rankIndex + 1).toString()
+                        rememberVeilIntegerFormatter()(profile.rankIndex + 1)
                     )
                     equippedSigilName?.let {
                         DossierFact(stringResource(R.string.profile_fact_equipped_sigil), it)
@@ -808,7 +788,7 @@ private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
         }
 
         Text(
-            rank.toString().padStart(2, '0'),
+            rememberVeilIntegerFormatter()(rank),
             style = MaterialTheme.typography.titleLarge,
             color = VeilPalette.Brass
         )
@@ -817,22 +797,20 @@ private fun ArchivistSeal(rank: Int, modifier: Modifier = Modifier) {
 
 @Composable
 private fun DossierFact(label: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        VeilMicroLabel(
-            text = label,
-            color = VeilMaterials.TextSecondary,
-            modifier = Modifier.width(82.dp)
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.bodySmall,
-            color = VeilPalette.Moon,
-            modifier = Modifier.weight(1f),
-            maxLines = 1
-        )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth.value / LocalDensity.current.fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.FactPairMinWidthDp) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, style = MaterialTheme.typography.labelSmall, color = VeilMaterials.TextSecondary)
+                Text(value, style = MaterialTheme.typography.bodySmall, color = VeilMaterials.TextPrimary, maxLines = 3)
+            }
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                Text(label, style = MaterialTheme.typography.labelSmall, color = VeilMaterials.TextSecondary,
+                    modifier = Modifier.width(82.dp))
+                Text(value, style = MaterialTheme.typography.bodySmall, color = VeilMaterials.TextPrimary,
+                    modifier = Modifier.weight(1f), maxLines = 3)
+            }
+        }
     }
 }
 
@@ -841,46 +819,31 @@ private fun DossierRecordGrid(
     profile: ReaderProfile,
     highlightCount: Int
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat(
-                stringResource(R.string.profile_stat_return),
-                stringResource(R.string.profile_stat_streak_value, profile.streakDays),
-                stringResource(R.string.profile_stat_current_streak),
-                Modifier.weight(1f)
-            )
-            DossierStat(
-                stringResource(R.string.profile_stat_volumes),
-                profile.booksFinished.toString(),
-                stringResource(R.string.profile_stat_finished),
-                Modifier.weight(1f)
-            )
-            DossierStat(
-                stringResource(R.string.profile_stat_marks),
-                highlightCount.toString(),
-                stringResource(R.string.profile_stat_highlights),
-                Modifier.weight(1f)
-            )
+    val formatNumber = rememberVeilIntegerFormatter()
+    val records = listOf(
+        Triple(stringResource(R.string.profile_stat_return),
+            stringResource(R.string.profile_stat_streak_value, profile.streakDays), stringResource(R.string.profile_stat_current_streak)),
+        Triple(stringResource(R.string.profile_stat_volumes), formatNumber(profile.booksFinished), stringResource(R.string.profile_stat_finished)),
+        Triple(stringResource(R.string.profile_stat_marks), formatNumber(highlightCount), stringResource(R.string.profile_stat_highlights)),
+        Triple(stringResource(R.string.profile_stat_pages), formatNumber(profile.pagesRead), stringResource(R.string.profile_stat_turned)),
+        Triple(stringResource(R.string.profile_stat_time), formatMinutes(profile.minutesRead), stringResource(R.string.profile_stat_inside_books)),
+        Triple(stringResource(R.string.profile_stat_tier), formatNumber(profile.rankIndex + 1), stringResource(R.string.profile_stat_castle))
+    )
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        val usableWidth = maxWidth.value / LocalDensity.current.fontScale.coerceAtLeast(1f)
+        val columns = when {
+            usableWidth  >= com.veilreader.app.ui.theme.VeilComposition.DossierThreeColumnsMinWidthDp -> 3
+            usableWidth >= com.veilreader.app.ui.theme.VeilComposition.DossierTwoColumnsMinWidthDp -> 2
+            else -> 1
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-            DossierStat(
-                stringResource(R.string.profile_stat_pages),
-                profile.pagesRead.toString(),
-                stringResource(R.string.profile_stat_turned),
-                Modifier.weight(1f)
-            )
-            DossierStat(
-                stringResource(R.string.profile_stat_time),
-                formatMinutes(profile.minutesRead),
-                stringResource(R.string.profile_stat_inside_books),
-                Modifier.weight(1f)
-            )
-            DossierStat(
-                stringResource(R.string.profile_stat_tier),
-                (profile.rankIndex + 1).toString(),
-                stringResource(R.string.profile_stat_castle),
-                Modifier.weight(1f)
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+            records.chunked(columns).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                    row.forEach { (eyebrow, value, label) ->
+                        DossierStat(eyebrow, value, label, Modifier.weight(1f))
+                    }
+                }
+            }
         }
     }
 }
@@ -894,18 +857,13 @@ private fun DossierStat(
 ) {
     Column(
         modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(VeilPalette.Archive.copy(alpha = 0.68f))
-            .border(
-                BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
-                MaterialTheme.shapes.extraSmall
-            )
+            .veilLedgerRule()
             .padding(horizontal = 10.dp, vertical = 9.dp),
         verticalArrangement = Arrangement.spacedBy(1.dp)
     ) {
         VeilMicroLabel(
             text = eyebrow,
-            color = VeilPalette.Brass.copy(alpha = 0.78f)
+            color = VeilMaterials.TextSecondary
         )
         Text(
             value,
@@ -916,7 +874,7 @@ private fun DossierStat(
             label,
             style = MaterialTheme.typography.bodySmall,
             color = VeilMaterials.TextSecondary,
-            maxLines = 1
+            maxLines = 3
         )
     }
 }

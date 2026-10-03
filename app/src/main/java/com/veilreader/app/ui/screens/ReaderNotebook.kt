@@ -27,6 +27,7 @@ import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveHighlightMemory
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
@@ -351,7 +352,9 @@ fun ReaderNotebook(
                     opened.book.title.ifBlank {
                         stringResource(R.string.common_untitled_book)
                     },
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.withVeilContentScript(opened.book.title.ifBlank {
+                        stringResource(R.string.common_untitled_book)
+                    }),
                     color = VeilPalette.Mist.copy(alpha = 0.74f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
@@ -695,10 +698,7 @@ fun ReaderNotebook(
                                 modifier = Modifier.fillMaxWidth().veilLedgerRule(),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 color = VeilPalette.Archive.copy(alpha = 0.64f),
-                                border = BorderStroke(
-                                    1.dp,
-                                    VeilPalette.BorderDark.copy(alpha = 0.68f)
-                                ),
+
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {

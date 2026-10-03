@@ -93,3 +93,42 @@ New native review specimens cover Book Detail, Gallery object and Shelves. These
 Remaining weaknesses are deliberately open: Threshold crop/light and entry-to-resume distance; Gallery metadata/action baseline rhythm; continuous shelf depth; compact artifact balance; Persian shaping/wrapping; Castle corridor spatial quality; Observatory node selection; paper fold illumination and long-session texture comfort. Native screenshots are needed to choose further optical corrections responsibly. The PR remains Draft.
 
 The large-library retrieval review adds a direct Series menu to the wrapping filter instruments. It uses existing source-derived series wings and the existing seriesFilter; choosing a series clears the collection exactly as the wing route does. All-series/reset remain immediate. Archive wings may stay below results without making series retrieval depend on scrolling through the entire library. No second filtering pipeline was added.
+
+## V3 continuation: native-reviewed source candidate
+
+Continued the latest fetched remote `0888bf0` on the existing branch/PR. The V3 audit above supersedes the earlier claim that only device-led improvements remained. A lightweight native rendering path was available through the existing Robolectric stack and the same Compose test dependency already used by instrumentation. Its addition is test-only; no production screenshot renderer or new UI architecture was introduced.
+
+The strongest changes concern reading access and structural grammar: Threshold preserves a measured identity column and moves the stacked action before the cover; Library removes duplicate approach headings, retains status filters in all modes, grows Gallery/Shelf records with text scale, establishes editorial caption rhythm and a continuous shelf datum; Book Detail uses one identity/action measure. Mode choices use cool instrument plates while remaining semantically distinct. Notebook search loses its redundant perimeter. Observatory records wrap without a competing strength column. Castle gains a readable narrow stair register and adjacent memory inscriptions; Sanctum becomes a seal beside a ruled title registry; Profile gains a reachable wrapping Settings action, adaptive fact/history records and localized counts. Small missing-cover substitutes no longer carry tiny duplicate archive stamps. Original imported cover bitmaps remain unchanged.
+
+Semantic readable measures and map proportions live in the existing design system. The architectural-pair policy now permits a readable folded-width working surface and still stacks when accessibility scaling removes that room. No hinge position is invented. Shell/dialog system-bar icon appearance follows dark architecture versus light paper, and an independent dialog cannot recolor the underlying paper window. Icon visibility, immersive gestures and navigation ownership are not changed.
+
+### Review facilities and their scope
+
+- `GrayfogReviewFixtures.kt`: thirty deterministic fictional surface cases, including 0/42/99/100% progress, long English/Persian identity, short title/missing author, 48 books/16 series/large collections, empty/search/no-results, populated/empty notes, highlights/bookmarks, isolated/maximum-node Observatory, low/advanced Castle, ready Ritual, locked/populated Sanctum, loading and errors. Known fixture dates and unknown annotation dates are deliberate. These records are never imported, persisted, or loaded into production history; book-opening and maintenance callbacks are inert.
+- `GrayfogReviewPreviews.kt`: native previews of all thirty production specimens across seven configurations (210 preview instances). These replace the earlier sample-only review set. They use the shared debug registry rather than duplicate screen implementations.
+- `GrayfogCloudRenderTest`: native API-35/Skia frames across eleven configurations, thirty cases each (330 frames). English 320/412/600dp, Persian 100/130/150/200%, contrast at Persian 200%, landscape, folded-width window and tablet. It asserts the first reading action and Profile Settings remain displayed/actionable. A dialog is captured from its own root, avoiding the blank background capture found in an intermediate iteration.
+- `GrayfogCloudAccessibilityTest`: actual narrow Gallery utilities at ordinary text and Persian 200%; checks 48dp targets and that favorite/details do not trigger the book-open callback.
+- `GrayfogSystemBarsTest`: icon state changes in both fields and independent dark-dialog versus underlying light-paper ownership.
+- Existing device accessibility harness and all Reader regressions remain. Native cloud rendering does not replace connected instrumentation, TalkBack, actual Readium/Pdfium content or physical page turns.
+
+See [DEVICE_CAPTURE.md](DEVICE_CAPTURE.md) for reproducible native/device commands, deterministic names and the separate live-publication matrix. Debug-only `GrayfogReviewActivity` has its own task affinity, reads only fictional review objects and never instantiates the library repository or saves preferences. The capture script clears only that review task; it does not force-stop the ordinary application. Release variants contain neither the activity nor its fixtures.
+
+### Exact unresolved questions
+
+1. Do real imported covers retain the intended current/recent dominance, caption baseline and continuous shelf depth on physical 320/360/412dp screens? Native substitutes cannot answer artwork crop or physical image contrast.
+2. Does actual Persian shaping/hinting and TalkBack traversal match the cloud API-35 layout at all four scales, including long source metadata, dialogs and keyboard/IME overlap?
+3. Are the compact Castle stair datum, chamber thresholds and folded-width atlas/record proportions optically coherent on real screens and real hinges? Native window sizes do not simulate posture or touch exploration.
+4. Does the live publication keep Sanctuary quiet during selection, footnotes, TTS/Focus Guide and close/reopen? No simulated publication is used in the shell review.
+5. Does paper/curl have believable weight, backside tint, ghosting and contact/crease response during real gesture frames without texture fatigue? Geometry and ownership were deliberately not retuned from shell evidence.
+6. Do API-26/37 system bars, light/dark OS settings, display cutouts, edge-to-edge navigation, landscape and IME show the expected contrast? JVM window-flag checks do not capture actual system pixels.
+7. Does a dense real archive remain responsive and clearly selectable in Observatory, and do memory/unlock records preserve their significance with genuine long-term data? Fictional extremes exercise composition, not historical acceptance.
+
+These are open device/publication/optical gates. The PR remains Draft; no final visual acceptance, DEVICE-GREEN or release claim is made.
+
+### Mixed-script metadata refinement
+
+Native Gallery review exposed a separate typography contract: a Persian book in an English interface must still use the licensed Persian family, connected glyphs and adequate leading. `withVeilContentScript` preserves hierarchy/weight while selecting that family, zero tracking and at least 1.5× leading for Arabic-script metadata. Explicit title/author/series/quote records use it; the shared tracking helper also applies it before intentional tracking overrides. English styles and publication typography remain independent. Two pure typography regressions protect this behavior. Final physical shaping, mixed-script baseline rhythm and real cover contrast remain optical gates.
+
+The remote advanced to `56bc0faa823c5295bcf1367dae2832de88edc965` with a Codemagic-only naming/artifact change during this continuation. That change is preserved; this continuation does not replace another contributor’s work.
+
+Final native folded-width refinement: the 720dp Castle specimen exposed mid-word rank/floor wrapping. The existing architectural pair now supports a semantic minimum readable record width; Castle reserves 280dp at normal text scale before allocating up to 68% to the map. Its corridor floor registration rail is 84dp at normal text scale rather than 48dp, and grows with accessibility text scaling. Large text still restores stacked composition; room/unlock data and callbacks are unchanged. This is a native-render-driven correction, not a physical hinge acceptance claim.

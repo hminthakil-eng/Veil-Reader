@@ -9,6 +9,23 @@ import org.junit.Test
 
 class DesignSystemTest {
     @Test
+    fun `Arabic metadata in a Latin interface uses the authored shaping system`() {
+        val base = VeilLatinTypography.headlineLarge
+        val content = base.withVeilContentScript("Archive · دفترهای رصدخانه")
+        assertEquals(VeilPersianTypography.headlineLarge.fontFamily, content.fontFamily)
+        assertEquals(0.sp, content.letterSpacing)
+        assertTrue(content.lineHeight >= base.fontSize * 1.5f)
+        assertEquals(base.fontSize, content.fontSize)
+        assertEquals(base.fontWeight, content.fontWeight)
+    }
+
+    @Test
+    fun `Latin publication metadata retains its existing shell typography`() {
+        val base = VeilLatinTypography.titleLarge
+        assertEquals(base, base.withVeilContentScript("The Cartographer of Quiet Rooms"))
+    }
+
+    @Test
     fun `Arabic script detection protects connected letterforms from Latin tracking`() {
         assertTrue(usesArabicScript("کتابخانه خاکستری"))
         assertTrue(usesArabicScript("الأرشيف"))

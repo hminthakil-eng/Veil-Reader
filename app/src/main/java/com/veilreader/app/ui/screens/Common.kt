@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -52,6 +53,7 @@ import com.veilreader.app.R
 import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.ui.books.BookArtifactLayer
 import com.veilreader.app.ui.books.BookArtifactState
+import com.veilreader.app.ui.theme.withVeilContentScript
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMeasure
@@ -354,7 +356,7 @@ fun ScreenHeader(eyebrow: String, title: String, subtitle: String? = null) {
         BrassRule(Modifier.width(72.dp))
         Text(
             title,
-            style = MaterialTheme.typography.headlineLarge,
+            style = MaterialTheme.typography.headlineLarge.withVeilContentScript(title),
             color = MaterialTheme.colorScheme.onBackground
         )
         subtitle?.takeIf(String::isNotBlank)?.let {
@@ -719,32 +721,24 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
         )
     }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val compactCover = maxWidth.value < com.veilreader.app.ui.theme.VeilComposition.CompactArtifactCaptionWidthDp
+        // Small cover specimens are visual objects; their accessible title remains beside them.
+        // Do not squeeze duplicate metadata into a tiny substitute for missing publication art.
+        if (maxWidth.value / LocalDensity.current.fontScale.coerceAtLeast(1f) >= com.veilreader.app.ui.theme.VeilComposition.ArtifactCaptionMinWidthDp) {
     Column(
         Modifier
             .fillMaxSize()
             .padding(start = 17.dp, end = 14.dp, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.SpaceBetween
     ) {
-        Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-            val archiveLabel = stringResource(R.string.threshold_grayfog_archive)
-            Text(
-                archiveLabel,
-                color = VeilPalette.Brass.copy(alpha = 0.82f),
-                style = MaterialTheme.typography.labelSmall
-                    .copy(
-                        fontSize = 7.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    .withVeilTracking(archiveLabel, 1.45.sp)
-            )
-            BrassRule(Modifier.width(42.dp))
-        }
+        BrassRule(Modifier.width(42.dp))
 
         Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
             Text(
                 title,
                 color = VeilPalette.Moon,
-                style = MaterialTheme.typography.titleMedium,
+                style = if (compactCover) MaterialTheme.typography.titleSmall else MaterialTheme.typography.titleMedium,
                 maxLines = 4,
                 overflow = TextOverflow.Ellipsis
             )
@@ -759,6 +753,8 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
             }
         }
     }
+        }
+    }
 }
 
 /** A map and its record become adjacent rooms on wide windows; large text restores reading order. */
@@ -766,6 +762,7 @@ private fun BoxScope.GeneratedBookCover(title: String, subtitle: String?) {
 internal fun VeilArchitecturalPair(
     modifier: Modifier = Modifier,
     primaryFraction: Float = com.veilreader.app.ui.theme.VeilProportion.WorldPrimary,
+    minimumSecondaryReadableWidth: Dp = 0.dp,
     spacing: Dp = VeilSpacing.lg,
     primary: @Composable () -> Unit,
     secondary: @Composable () -> Unit
@@ -776,13 +773,16 @@ internal fun VeilArchitecturalPair(
             fontScale = LocalDensity.current.fontScale
         )
         if (paired) {
+            val workingWidth = (maxWidth - VeilSpacing.xl).value
+            val recordWidth = minimumSecondaryReadableWidth.value * LocalDensity.current.fontScale.coerceAtLeast(1f)
+            val mapFraction = primaryFraction.coerceAtMost(1f - recordWidth / workingWidth).coerceIn(0.1f, 0.9f)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xl),
                 verticalAlignment = Alignment.Top
             ) {
-                Column(Modifier.weight(primaryFraction)) { primary() }
-                Column(Modifier.weight(1f - primaryFraction)) { secondary() }
+                Column(Modifier.weight(mapFraction)) { primary() }
+                Column(Modifier.weight(1f - mapFraction)) { secondary() }
             }
         } else {
             Column(
@@ -805,4 +805,14 @@ internal fun Modifier.veilLedgerRule(): Modifier = drawWithContent {
         end = androidx.compose.ui.geometry.Offset(size.width, size.height),
         strokeWidth = com.veilreader.app.ui.theme.ArenaGeometry.Hairline.toPx()
     )
+}
+
+/** One shared shelf register crosses the gaps between objects; covers remain untouched. */
+internal fun Modifier.veilShelfDatum(coverHeight: Dp): Modifier = drawBehind {
+    val registerY = coverHeight.toPx() + 10.dp.toPx()
+    drawRect(VeilMaterials.Depth, topLeft = androidx.compose.ui.geometry.Offset(0f, registerY),
+        size = androidx.compose.ui.geometry.Size(size.width, 6.dp.toPx()))
+    drawLine(VeilMaterials.Frame, androidx.compose.ui.geometry.Offset(0f, registerY),
+        androidx.compose.ui.geometry.Offset(size.width, registerY),
+        com.veilreader.app.ui.theme.ArenaGeometry.Hairline.toPx())
 }

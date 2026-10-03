@@ -84,7 +84,7 @@ fun archiveLayoutPolicyFor(
 ): VeilArchiveLayoutPolicy =
     when (adaptiveClass) {
         VeilAdaptiveClass.COMPACT -> VeilArchiveLayoutPolicy(
-            galleryMinCellDp = 112f,
+            galleryMinCellDp = 140f,
             horizontalPaddingDp = 12f,
             shelfItemWidthDp = 118f,
             shelfCoverWidthDp = 108f,
@@ -92,7 +92,7 @@ fun archiveLayoutPolicyFor(
             showIndexMemorySummary = false
         )
         VeilAdaptiveClass.WIDE -> VeilArchiveLayoutPolicy(
-            galleryMinCellDp = 132f,
+            galleryMinCellDp = 160f,
             horizontalPaddingDp = 20f,
             shelfItemWidthDp = 136f,
             shelfCoverWidthDp = 124f,
@@ -100,7 +100,7 @@ fun archiveLayoutPolicyFor(
             showIndexMemorySummary = true
         )
         VeilAdaptiveClass.LARGE -> VeilArchiveLayoutPolicy(
-            galleryMinCellDp = 152f,
+            galleryMinCellDp = 184f,
             horizontalPaddingDp = 28f,
             shelfItemWidthDp = 150f,
             shelfCoverWidthDp = 138f,
@@ -108,6 +108,12 @@ fun archiveLayoutPolicyFor(
             showIndexMemorySummary = true
         )
     }
+
+/** Accessibility grows the record measure, not the artwork itself. */
+fun galleryCellMeasureDp(baseMeasureDp: Float, fontScale: Float): Float {
+    val scale = if (fontScale.isFinite()) fontScale.coerceAtLeast(1f) else 1f
+    return baseMeasureDp * scale.coerceAtMost(2f)
+}
 
 data class VeilThresholdLayoutPolicy(
     val contentMaxWidthDp: Float,
@@ -378,4 +384,5 @@ fun sanctuarySurfaceProfileFor(
 /** Two rooms need actual space after navigation/insets, not just a nominal tablet window. */
 fun useArchitecturalPair(widthDp: Float, fontScale: Float): Boolean =
     widthDp.isFinite() && fontScale.isFinite() && fontScale > 0f &&
-        widthDp >= 840f && widthDp / fontScale.coerceAtLeast(1f) >= 600f
+        widthDp >= VeilComposition.ArchitecturalPairMinWidthDp &&
+        widthDp / fontScale.coerceAtLeast(1f) >= VeilComposition.ArchitecturalPairReadableWidthDp

@@ -68,7 +68,7 @@ fun TextStyle.withVeilTracking(
     text: String,
     latinTracking: TextUnit
 ): TextStyle =
-    copy(
+    withVeilContentScript(text).copy(
         letterSpacing = veilTrackingFor(
             text = text,
             latinTracking = latinTracking,
@@ -87,7 +87,18 @@ object VeilMeasure {
 /** Readable working width, after accessibility scaling, for architectural adjacency. */
 object VeilComposition {
     const val ArtifactIdentityMinWidthDp = 600f
+    const val ArchitecturalPairMinWidthDp = 640f
+    const val ArchitecturalPairReadableWidthDp = 600f
+    const val ResumeIdentityMinWidthDp = 150f
+    const val FactPairMinWidthDp = 220f
+    const val DossierTwoColumnsMinWidthDp = 240f
+    const val DossierThreeColumnsMinWidthDp = 360f
+    const val ArtifactCaptionMinWidthDp = 120f
+    const val CompactArtifactCaptionWidthDp = 140f
     const val ChamberBridgeMinWidthDp = 440f
+    const val ChamberCorridorMinWidthDp = 260f
+    const val CastleRecordMinWidthDp = 280f
+    const val FloorRegistrationWidthDp = 84f
 }
 
 /** Semantic shape families: archive plates stay sharp; architectural surfaces can breathe. */
@@ -135,6 +146,15 @@ private object RtlFamilies {
     )
     val Reading = Editorial
     val Utility = Editorial
+}
+
+/** Imported metadata can use Arabic script even when the interface is English. */
+fun TextStyle.withVeilContentScript(text: String): TextStyle {
+    if (!usesArabicScript(text)) return this
+    val scriptLineHeight = if (fontSize.isSp) {
+        maxOf(if (lineHeight.isSp) lineHeight.value else 0f, fontSize.value * 1.5f).sp
+    } else lineHeight
+    return copy(fontFamily = RtlFamilies.Editorial, letterSpacing = 0.sp, lineHeight = scriptLineHeight)
 }
 
 val VeilLatinTypography = Typography(
@@ -331,5 +351,6 @@ fun veilTypographyFor(script: VeilScriptGroup): Typography =
 /** Spatial proportions: world maps dominate; Threshold gives the current artifact more room. */
 object VeilProportion {
     const val WorldPrimary = 0.60f
+    const val CastleMapPrimary = 0.68f
     const val ThresholdPrimary = 0.44f
 }

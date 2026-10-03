@@ -1,18 +1,7 @@
 package com.veilreader.app.ui.review
 
-import androidx.compose.foundation.layout.width
-import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
-import com.veilreader.app.data.SampleData
-import com.veilreader.app.data.settings.AppSettings
-import com.veilreader.app.domain.AppThemeMode
-import com.veilreader.app.domain.Highlight
-import com.veilreader.app.ui.VeilWorldBackdrop
-import com.veilreader.app.ui.screens.*
-import com.veilreader.app.ui.theme.LocalVeilReducedMotion
-import com.veilreader.app.ui.theme.VeilTheme
 
 /** Debug-only review fixtures, never imported publications or historical evidence. */
 @Preview(name = "Compact 100%", widthDp = 320, heightDp = 720)
@@ -25,124 +14,122 @@ import com.veilreader.app.ui.theme.VeilTheme
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.ANNOTATION_CLASS)
 private annotation class GrayfogReviewSizes
 
+@GrayfogReviewSizes
 @Composable
-private fun ReviewFrame(content: @Composable () -> Unit) {
-    VeilTheme(themeMode = AppThemeMode.DARK) {
-        CompositionLocalProvider(LocalVeilReducedMotion provides true) {
-            VeilWorldBackdrop { content() }
-        }
-    }
-}
+private fun ThresholdActiveReview() = GrayfogReviewContent(GrayfogReviewSurface.THRESHOLD_ACTIVE)
 
 @GrayfogReviewSizes
 @Composable
-private fun ThresholdReview() = ReviewFrame {
-    ReadingNowScreen(
-        books = SampleData.books, profile = SampleData.profile, quests = emptyList(),
-        onOpenBook = {}, onOpenPassage = { _, _ -> }, onOpenLibrary = {}, onOpenCastle = {}
-    )
-}
+private fun ThresholdEmptyReview() = GrayfogReviewContent(GrayfogReviewSurface.THRESHOLD_EMPTY)
 
 @GrayfogReviewSizes
 @Composable
-private fun LibraryReview() = ReviewFrame {
-    LibraryScreen(
-        books = SampleData.books, isImporting = false, onImportUri = {},
-        onOpenBook = {}, onFavorite = {}, onEditMetadata = {}, onDeleteBook = {}, onOpenSettings = {}
-    )
-}
+private fun LibraryGalleryReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_GALLERY)
 
 @GrayfogReviewSizes
 @Composable
-private fun ArchiveReview() = ReviewFrame {
-    val book = SampleData.books.first()
-    ArchiveScreen(
-        books = SampleData.books,
-        highlights = listOf(Highlight("review-note", book.id, "The archive keeps a trace of each return.",
-            "{}", "A preview annotation, not a reading record.", createdAtEpochMs = 0)),
-        bookmarks = emptyList(), readingSessions = emptyList(), readingCycles = emptyList(),
-        passageVisits = emptyList(), onClose = {}, onOpenPassage = { _, _ -> },
-        onSaveNote = { _, _ -> }, onDeleteHighlight = {}, onDeleteBookmark = {}
-    )
-}
+private fun LibraryShelvesReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_SHELVES)
 
 @GrayfogReviewSizes
 @Composable
-private fun SettingsReview() = ReviewFrame {
-    SettingsScreen(
-        settings = AppSettings(appThemeMode = AppThemeMode.DARK), exporting = false, restoring = false,
-        onSetAppThemeMode = {}, onSetHighContrastEnabled = {}, onSaveReaderAppearance = {},
-        onSaveReaderTapGrid = {}, onSaveReaderHardwareKeys = {}, onSaveReaderFocusGuide = {},
-        onSaveSensorySettings = {}, onSetGameVisible = {}, onExportBackup = {},
-        onRestoreBackup = {}, onExportNotes = {}, onClose = {}
-    )
-}
+private fun LibraryIndexReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_INDEX)
 
 @GrayfogReviewSizes
 @Composable
-private fun ProfileReview() = ReviewFrame {
-    ProfileScreen(
-        profile = SampleData.profile, highlightCount = 0, dailyGoalMinutes = 20,
-        castleTitle = "Review archive", equippedSigilId = null, books = SampleData.books,
-        onSetDailyGoal = {}, onOpenArchive = {}, onOpenSettings = {}
-    )
-}
+private fun LibrarySearchReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_SEARCH)
 
 @GrayfogReviewSizes
 @Composable
-private fun ObservatoryReview() = ReviewFrame {
-    ObservatoryScreen(SampleData.books, emptyList(), emptyList(), onOpenBook = {}, onClose = {})
-}
+private fun LibraryNoResultsReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_NO_RESULTS)
 
 @GrayfogReviewSizes
 @Composable
-private fun CastleReview() = ReviewFrame {
-    CastleScreen(SampleData.profile, onAdvanceRank = {}, onOpenRoom = {}, books = SampleData.books)
-}
+private fun LibraryEmptyReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_EMPTY)
 
 @GrayfogReviewSizes
 @Composable
-private fun PathReview() = ReviewFrame {
-    PathScreen(SampleData.profile, onAdvanceRank = {}, onChoosePath = {})
-}
+private fun LibraryManyReview() = GrayfogReviewContent(GrayfogReviewSurface.LIBRARY_MANY)
 
 @GrayfogReviewSizes
 @Composable
-private fun TreasuryReview() = ReviewFrame {
-    TreasuryScreen(SampleData.profile, equippedSigil = null, onEquip = {}, onClose = {})
-}
+private fun BookDetailReview() = GrayfogReviewContent(GrayfogReviewSurface.BOOK_DETAIL)
 
 @GrayfogReviewSizes
 @Composable
-private fun SanctumReview() = ReviewFrame {
-    SanctumScreen(SampleData.profile, castleTitle = "Review archive", availableTitles = emptyList(),
-        onSelectTitle = {}, onClose = {})
-}
+private fun BookDetailPersianReview() = GrayfogReviewContent(GrayfogReviewSurface.BOOK_DETAIL_PERSIAN)
 
 @GrayfogReviewSizes
 @Composable
-private fun BookDetailReview() = ReviewFrame {
-    BookDetailDestination(
-        book = SampleData.books.first(), archiveMemory = null, artifactMemory = null,
-        readingCycles = emptyList(), readingMilestones = emptyList(), preservedHighlights = emptyList(),
-        onDismiss = {}, onOpen = {}, onFavorite = {}, onEditMetadata = {}, onDelete = {}
-    )
-}
+private fun BookDetailMissingReview() = GrayfogReviewContent(GrayfogReviewSurface.BOOK_DETAIL_MISSING)
 
 @GrayfogReviewSizes
 @Composable
-private fun GalleryObjectReview() = ReviewFrame {
-    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.width(184.dp)) {
-        BookLibraryTile(SampleData.books.first(), null, null, onOpen = {}, onFavorite = {}, onDetails = {})
-    }
-}
+private fun AppearanceQuickReview() = GrayfogReviewContent(GrayfogReviewSurface.APPEARANCE_QUICK)
 
 @GrayfogReviewSizes
 @Composable
-private fun ShelvesReview() = ReviewFrame {
-    LibraryShelvesView(
-        groups = listOf(LibraryShelfGroup("Review", "A preserved shelf", SampleData.books)),
-        artifactMemoryByBookId = emptyMap(), itemWidthDp = 146f, coverWidthDp = 132f, coverHeightDp = 194f,
-        onOpen = {}, onDetails = {}
-    )
-}
+private fun AppearanceAdvancedReview() = GrayfogReviewContent(GrayfogReviewSurface.APPEARANCE_ADVANCED)
+
+@GrayfogReviewSizes
+@Composable
+private fun SettingsReview() = GrayfogReviewContent(GrayfogReviewSurface.SETTINGS)
+
+@GrayfogReviewSizes
+@Composable
+private fun NotesReview() = GrayfogReviewContent(GrayfogReviewSurface.NOTES)
+
+@GrayfogReviewSizes
+@Composable
+private fun NotesEmptyReview() = GrayfogReviewContent(GrayfogReviewSurface.NOTES_EMPTY)
+
+@GrayfogReviewSizes
+@Composable
+private fun HighlightsReview() = GrayfogReviewContent(GrayfogReviewSurface.HIGHLIGHTS)
+
+@GrayfogReviewSizes
+@Composable
+private fun BookmarksReview() = GrayfogReviewContent(GrayfogReviewSurface.BOOKMARKS)
+
+@GrayfogReviewSizes
+@Composable
+private fun ObservatoryIsolatedReview() = GrayfogReviewContent(GrayfogReviewSurface.OBSERVATORY_ISOLATED)
+
+@GrayfogReviewSizes
+@Composable
+private fun ObservatoryDenseReview() = GrayfogReviewContent(GrayfogReviewSurface.OBSERVATORY_DENSE)
+
+@GrayfogReviewSizes
+@Composable
+private fun CastleLowReview() = GrayfogReviewContent(GrayfogReviewSurface.CASTLE_LOW)
+
+@GrayfogReviewSizes
+@Composable
+private fun CastleAdvancedReview() = GrayfogReviewContent(GrayfogReviewSurface.CASTLE_ADVANCED)
+
+@GrayfogReviewSizes
+@Composable
+private fun PathReview() = GrayfogReviewContent(GrayfogReviewSurface.PATH)
+
+@GrayfogReviewSizes
+@Composable
+private fun RitualReview() = GrayfogReviewContent(GrayfogReviewSurface.RITUAL)
+
+@GrayfogReviewSizes
+@Composable
+private fun LoadingReview() = GrayfogReviewContent(GrayfogReviewSurface.LOADING)
+
+@GrayfogReviewSizes
+@Composable
+private fun ErrorReview() = GrayfogReviewContent(GrayfogReviewSurface.ERROR)
+
+@GrayfogReviewSizes
+@Composable
+private fun SanctumLockedReview() = GrayfogReviewContent(GrayfogReviewSurface.SANCTUM_LOCKED)
+
+@GrayfogReviewSizes
+@Composable
+private fun SanctumPopulatedReview() = GrayfogReviewContent(GrayfogReviewSurface.SANCTUM_POPULATED)
+
+@GrayfogReviewSizes
+@Composable
+private fun ProfileReview() = GrayfogReviewContent(GrayfogReviewSurface.PROFILE)

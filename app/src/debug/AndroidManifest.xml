@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <!-- Only the debug APK exposes fictional, inert review fixtures. -->
+        <activity android:name=".ui.review.GrayfogReviewActivity" android:exported="true" android:taskAffinity="com.veilreader.app.grayfog.review" />
+    </application>
+</manifest>

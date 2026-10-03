@@ -1022,6 +1022,9 @@ fun VeilApp(
 
     val opened = openedPublication
     val openedSessionId = openedPublicationSessionId
+    VeilSystemBars(lightBackground = opened != null && openedSessionId != null &&
+        appSettings.readerAppearance.theme in setOf(
+            com.veilreader.app.domain.ReaderTheme.PAPER, com.veilreader.app.domain.ReaderTheme.SEPIA))
     val mangaSession = activeMangaSession
     Box(Modifier.fillMaxSize()) {
         if (mangaSession != null) {
@@ -1296,7 +1299,7 @@ fun VeilApp(
 }
 
 @Composable
-private fun VeilNoticeDialog(
+internal fun VeilNoticeDialog(
     kind: VeilNoticeKind,
     eyebrow: String,
     title: String,
@@ -1317,6 +1320,7 @@ private fun VeilNoticeDialog(
             usePlatformDefaultWidth = false
         )
     ) {
+        VeilSystemBars(lightBackground = false)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1376,7 +1380,7 @@ private fun VeilNoticeDialog(
     }
 }
 
-private enum class VeilNoticeKind { SUCCESS, WARNING, ERROR }
+internal enum class VeilNoticeKind { SUCCESS, WARNING, ERROR }
 
 private enum class VeilIssueCategory(val eyebrowRes: Int) {
     GENERAL(R.string.notice_error_eyebrow),

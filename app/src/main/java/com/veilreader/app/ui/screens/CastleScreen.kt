@@ -166,6 +166,8 @@ fun CastleScreen(
         )
 
         VeilArchitecturalPair(
+            primaryFraction = com.veilreader.app.ui.theme.VeilProportion.CastleMapPrimary,
+            minimumSecondaryReadableWidth = com.veilreader.app.ui.theme.VeilComposition.CastleRecordMinWidthDp.dp,
             primary = {
                 Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
                     Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -195,6 +197,7 @@ fun CastleScreen(
                 }
             },
             secondary = {
+                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.lg)) {
                 CastleKeep(
                     profile = profile,
                     memoryState = memoryState,
@@ -204,11 +207,12 @@ fun CastleScreen(
                     minHeightDp = castleLayout.keepMinHeightDp,
                     onAdvanceRank = onAdvanceRank
                 )
+                CastleMemoryInscription(memoryState)
+                CastleWorldProgressionInscription(worldProjection)
+                }
             }
         )
 
-        CastleMemoryInscription(memoryState)
-        CastleWorldProgressionInscription(worldProjection)
         CastleMutationInscription(memoryState)
         CastleRitualAftermath(profile, ritualAfterglow)
         CastleMutationLedgerSummary(mutationLedger)
@@ -983,13 +987,22 @@ private fun CastleFloor(
             )
 
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                if (maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
-                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-                        FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
-                        CastleChamberNode(
-                            id, name, purpose, unlockRank, unlocked, resonance,
-                            chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth()
-                        )
+                val usableWidth = maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f)
+                if (usableWidth < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
+                    if (usableWidth >= com.veilreader.app.ui.theme.VeilComposition.ChamberCorridorMinWidthDp) {
+                        // A narrow stair datum remains spatial without taking half the reading width.
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                            FloorInscription(floor, unlocked, Modifier.width((com.veilreader.app.ui.theme.VeilComposition.FloorRegistrationWidthDp * LocalConfiguration.current.fontScale.coerceAtLeast(1f)).dp))
+                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
+                                chamberMinHeightDp, onOpenRoom, Modifier.weight(1f))
+                        }
+                    } else {
+                        Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                            FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
+                            CastleChamberNode(id, name, purpose, unlockRank, unlocked, resonance,
+                                chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth())
+                        }
                     }
                 } else {
             Row(
