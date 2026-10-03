@@ -7,6 +7,40 @@ import org.junit.Test
 class GpuPageCurlModelTest {
 
     @Test
+    fun `mesh quality keeps low memory conservative and normal devices dense`() {
+        val low = gpuPageMeshQuality(lowMemoryDevice = true)
+        val normal = gpuPageMeshQuality(lowMemoryDevice = false)
+
+        assertEquals(48, low.columns)
+        assertEquals(8, low.rows)
+        assertEquals(72, normal.columns)
+        assertEquals(14, normal.rows)
+        assertTrue(normal.columns * normal.rows > low.columns * low.rows)
+    }
+
+    @Test
+    fun `dual back texture is gated by low ram and memory class`() {
+        assertTrue(
+            shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 256
+            )
+        )
+        assertTrue(
+            !shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = true,
+                memoryClassMb = 512
+            )
+        )
+        assertTrue(
+            !shouldCaptureMaterialBackSnapshot(
+                lowMemoryDevice = false,
+                memoryClassMb = 192
+            )
+        )
+    }
+
+    @Test
     fun `virtual cylinder starts at free edge and clears viewport at completion`() {
         val start = gpuPageCurlFrame(
             progress = 0f,
