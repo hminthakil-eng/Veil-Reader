@@ -112,7 +112,7 @@ internal class MaterialPageEngineState(
     private var renderSegmentCount =
         materialPageTurnSegmentCount(initialProfile)
 
-    fun setProfile(value: MaterialPageProfile) {
+    fun configureProfile(value: MaterialPageProfile) {
         if (!active) profile = value
     }
 
@@ -124,11 +124,11 @@ internal class MaterialPageEngineState(
         reducedMotion = value
     }
 
-    fun setPatina(value: Float) {
+    fun configurePatina(value: Float) {
         patina = value.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.35f
     }
 
-    fun setTone(value: MaterialPageTone) {
+    fun configureTone(value: MaterialPageTone) {
         tone = value
     }
 
@@ -459,8 +459,8 @@ internal class MaterialPageEngineState(
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
         this.reducedMotion = reducedMotion
-        setPatina(patina)
-        setTone(tone)
+        configurePatina(patina)
+        configureTone(tone)
         visualAlpha = if (reducedMotion) {
             materialPageReducedMotionAlpha(
                 progress = this.progress,
