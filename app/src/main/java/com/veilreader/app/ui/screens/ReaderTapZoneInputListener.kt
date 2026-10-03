@@ -5,6 +5,7 @@ import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.readerTapZoneAt
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.TapEvent
+import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapZoneDisposition {
     CONSUMED,
@@ -20,6 +21,7 @@ internal enum class ReaderTapZoneDisposition {
  * publication. This prevents a customized "book interaction" zone from being stolen by
  * paper-curl, slide or static edge navigation.
  */
+@OptIn(ExperimentalReadiumApi::class)
 internal class ReaderTapZoneInputListener(
     private val navigator: OverflowableNavigator,
     private val grid: () -> ReaderTapGrid,
