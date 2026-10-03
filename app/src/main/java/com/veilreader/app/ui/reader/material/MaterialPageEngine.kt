@@ -611,8 +611,12 @@ internal fun MaterialPageOverlay(
         native.restore()
 
         val optics = profile.optics
+        val frontColor =
+            materialPageToneAdjustedArgb(optics.frontArgb, tone).toInt()
         val backColor =
             materialPageToneAdjustedArgb(optics.backArgb, tone).toInt()
+        val frontTintAlpha =
+            materialPageFrontSurfaceTintAlpha(profile, patina)
 
         for (index in 0 until mesh.segmentCount) {
             val sourceLeft: Float
@@ -754,11 +758,13 @@ internal fun MaterialPageOverlay(
                         optics.inkGhosting * 0.16f
                     ).coerceIn(0.76f, 0.92f)
             } else {
-                0f
+                frontTintAlpha *
+                    (0.42f + mesh.stripLift[index] * 0.58f)
             }
 
             if (baseShadeAlpha > 0f) {
-                scratch.shadePaint.color = backColor
+                scratch.shadePaint.color =
+                    if (isBackFacing) backColor else frontColor
                 scratch.shadePaint.alpha =
                     (baseShadeAlpha * 255f).roundToInt().coerceIn(0, 255)
                 scratch.shadePaint.style = Paint.Style.FILL
