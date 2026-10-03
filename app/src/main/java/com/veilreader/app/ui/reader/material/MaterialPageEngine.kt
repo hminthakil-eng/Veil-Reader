@@ -628,20 +628,55 @@ internal fun MaterialPageOverlay(
             scratch.source[6] = sourceLeft
             scratch.source[7] = pageHeight
 
-            scratch.destination[0] = topLeftX
-            scratch.destination[1] = topLeftY
-            scratch.destination[2] = topRightX
-            scratch.destination[3] = topRightY
-            scratch.destination[4] = bottomRightX
-            scratch.destination[5] = bottomRightY
-            scratch.destination[6] = bottomLeftX
-            scratch.destination[7] = bottomLeftY
+            val seamOverlapPx = 0.42f
+            val topDx = topRightX - topLeftX
+            val topDy = topRightY - topLeftY
+            val topLength =
+                kotlin.math.sqrt(topDx * topDx + topDy * topDy)
+                    .coerceAtLeast(0.001f)
+            val bottomDx = bottomRightX - bottomLeftX
+            val bottomDy = bottomRightY - bottomLeftY
+            val bottomLength =
+                kotlin.math.sqrt(bottomDx * bottomDx + bottomDy * bottomDy)
+                    .coerceAtLeast(0.001f)
+            val leftOverlap = if (index > 0) seamOverlapPx else 0f
+            val rightOverlap =
+                if (index < mesh.segmentCount - 1) seamOverlapPx else 0f
+
+            scratch.destination[0] =
+                topLeftX - topDx / topLength * leftOverlap
+            scratch.destination[1] =
+                topLeftY - topDy / topLength * leftOverlap
+            scratch.destination[2] =
+                topRightX + topDx / topLength * rightOverlap
+            scratch.destination[3] =
+                topRightY + topDy / topLength * rightOverlap
+            scratch.destination[4] =
+                bottomRightX + bottomDx / bottomLength * rightOverlap
+            scratch.destination[5] =
+                bottomRightY + bottomDy / bottomLength * rightOverlap
+            scratch.destination[6] =
+                bottomLeftX - bottomDx / bottomLength * leftOverlap
+            scratch.destination[7] =
+                bottomLeftY - bottomDy / bottomLength * leftOverlap
 
             scratch.path.reset()
-            scratch.path.moveTo(topLeftX, topLeftY)
-            scratch.path.lineTo(topRightX, topRightY)
-            scratch.path.lineTo(bottomRightX, bottomRightY)
-            scratch.path.lineTo(bottomLeftX, bottomLeftY)
+            scratch.path.moveTo(
+                scratch.destination[0],
+                scratch.destination[1]
+            )
+            scratch.path.lineTo(
+                scratch.destination[2],
+                scratch.destination[3]
+            )
+            scratch.path.lineTo(
+                scratch.destination[4],
+                scratch.destination[5]
+            )
+            scratch.path.lineTo(
+                scratch.destination[6],
+                scratch.destination[7]
+            )
             scratch.path.close()
 
             scratch.matrix.reset()
