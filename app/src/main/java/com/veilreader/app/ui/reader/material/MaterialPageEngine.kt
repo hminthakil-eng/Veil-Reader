@@ -640,6 +640,15 @@ internal fun MaterialPageOverlay(
         val frontTintAlpha =
             materialPageFrontSurfaceTintAlpha(profile, patina) *
                 if (highContrast) 0.55f else 1f
+        val backsideContentAlpha =
+            materialPageBacksideContentAlpha(profile, patina)
+        val materialPhase = profile.preset.ordinal.toDouble()
+        val grainStrength =
+            optics.grain *
+                (0.25f + patina * optics.patinaResponse * 0.75f)
+        val fiberStrength =
+            optics.directionalFiber *
+                (8f + patina * optics.patinaResponse * 8f)
 
         for (index in 0 until mesh.segmentCount) {
             val sourceLeft: Float
@@ -768,8 +777,7 @@ internal fun MaterialPageOverlay(
             scratch.contentPaint.alpha =
                 if (isBackFacing) {
                     (
-                        materialPageBacksideContentAlpha(profile, patina) *
-                            255f
+                        backsideContentAlpha * 255f
                         ).roundToInt().coerceIn(0, 255)
                 } else {
                     255
@@ -808,12 +816,11 @@ internal fun MaterialPageOverlay(
             val variationUnit =
                 kotlin.math.sin(
                     sourceCenter * 73.0 +
-                        profile.preset.ordinal * 1.618
+                        materialPhase * 1.618
                 ).toFloat()
             val tonalAlpha = (
                 kotlin.math.abs(variationUnit) *
-                    optics.grain *
-                    (0.25f + patina * optics.patinaResponse * 0.75f) *
+                    grainStrength *
                     (if (highContrast) 0.018f else 0.035f) *
                     255f
                 ).roundToInt().coerceIn(0, 9)
@@ -856,13 +863,12 @@ internal fun MaterialPageOverlay(
                 val fiberSignal =
                     (0.45f + 0.55f * kotlin.math.sin(
                         sourceCenter * 41.0 +
-                            profile.preset.ordinal * 0.73
+                            materialPhase * 0.73
                     ).toFloat()).coerceIn(0f, 1f)
                 scratch.detailPaint.alpha = (
-                    optics.directionalFiber *
+                    fiberStrength *
                         mesh.stripLift[index] *
-                        fiberSignal *
-                        (8f + patina * optics.patinaResponse * 8f)
+                        fiberSignal
                     ).roundToInt().coerceIn(0, 14)
                 scratch.detailPaint.strokeWidth =
                     (0.16f + optics.grain * 0.18f) * renderDensity
