@@ -12,6 +12,26 @@ import kotlin.math.abs
  * gesture/physics ownership in Veil while allowing the GPU renderer to operate
  * without reimplementing Reader state.
  */
+internal data class GpuPageMeshQuality(
+    val columns: Int,
+    val rows: Int
+)
+
+internal fun gpuPageMeshQuality(
+    lowMemoryDevice: Boolean
+): GpuPageMeshQuality =
+    if (lowMemoryDevice) {
+        GpuPageMeshQuality(columns = 48, rows = 8)
+    } else {
+        GpuPageMeshQuality(columns = 72, rows = 14)
+    }
+
+internal fun shouldCaptureMaterialBackSnapshot(
+    lowMemoryDevice: Boolean,
+    memoryClassMb: Int
+): Boolean =
+    !lowMemoryDevice && memoryClassMb >= 256
+
 internal data class GpuPageCurlFrame(
     val cylinderX: Float,
     val cylinderY: Float,
