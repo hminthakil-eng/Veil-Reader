@@ -100,6 +100,7 @@ internal class PaperCurlState {
         if (active || view.width <= 0 || view.height <= 0) return false
 
         if (MaterialPageEngineRollout.isEnabled()) {
+            releaseLegacyBufferIfIdle()
             materialEngine.setProfile(MaterialPageEngineRollout.selectedProfile())
             val started = materialEngine.begin(
                 view = view,
@@ -117,6 +118,7 @@ internal class PaperCurlState {
             return started
         }
 
+        materialEngine.releaseBufferIfIdle()
         val bitmap = capture(view) ?: return false
 
         width = view.width.toFloat()
