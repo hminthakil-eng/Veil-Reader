@@ -109,6 +109,23 @@ Arena then ran a second ten-pass refinement cycle:
 
 The second cycle deliberately rejected refactors that did not create measurable correctness, physical plausibility, accessibility, lifecycle or frame-quality gains.
 
+## Third ten-level quality escalation
+
+Arena then ran quality levels 21–30:
+
+21. replaced one-sample release velocity with a high-refresh-aware estimator that smooths noisy samples but gives deliberate reversals high trust;
+22. softened extreme top/bottom pull origins so corner grabs remain expressive without driving singular geometry;
+23. added a material-specific backside ink-transmission policy;
+24. reduced front-content dominance on back-facing strips and rebalanced backside paper shade;
+25. made material haptics foreground/attachment-safe and gave synthesized material sounds deterministic material/action timbre seeds;
+26. enforced one large Paper snapshot buffer across Legacy/Material A/B switching;
+27. made the Material renderer honor High Contrast by reducing surface noise while strengthening structural edge/contact cues;
+28. density-normalized remaining fibre strokes for Papyrus/Manuscript;
+29. added regression contracts for corner stabilization, backside transmission, high-refresh velocity smoothing and reversal response;
+30. hoisted material invariants out of the per-strip render loop to reduce repeated per-frame work.
+
+Arena also refined Level 21 after testing: meaningful direction reversals receive higher trust than same-direction noise so reverse-cancel stays responsive.
+
 ## Existing protections retained
 
 - Legacy Paper implementation is still present.
