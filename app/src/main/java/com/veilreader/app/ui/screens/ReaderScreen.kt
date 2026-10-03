@@ -565,6 +565,30 @@ fun ReaderScreen(
         }
     }
     val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
+    LaunchedEffect(
+        navigator,
+        readerSessionReady,
+        presentedReaderAppearance.navigationMode,
+        readerSessionInstanceId
+    ) {
+        if (
+            !readerSessionReady ||
+            opened.format != BookFormat.EPUB ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL
+        ) {
+            return@LaunchedEffect
+        }
+        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        delay(VeilMotion.FRAME_SETTLE_MS)
+        if (
+            readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            )
+        ) {
+            paperCurlState.prepareBuffer(nav.publicationView)
+        }
+    }
     val latestTapGrid = rememberUpdatedState(readerTapGrid)
     val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
     val paperCurlConfig = remember(
