@@ -772,14 +772,16 @@ private fun ReaderTapGridEditor(
 
 private fun nextReaderTapAction(action: ReaderTapAction): ReaderTapAction =
     when (action) {
+        ReaderTapAction.VEIL_DEFAULT -> ReaderTapAction.PREVIOUS_PAGE
         ReaderTapAction.PREVIOUS_PAGE -> ReaderTapAction.TOGGLE_CONTROLS
         ReaderTapAction.TOGGLE_CONTROLS -> ReaderTapAction.NEXT_PAGE
         ReaderTapAction.NEXT_PAGE -> ReaderTapAction.RENDERER
-        ReaderTapAction.RENDERER -> ReaderTapAction.PREVIOUS_PAGE
+        ReaderTapAction.RENDERER -> ReaderTapAction.VEIL_DEFAULT
     }
 
 private fun readerTapActionGlyph(action: ReaderTapAction): String =
     when (action) {
+        ReaderTapAction.VEIL_DEFAULT -> "V"
         ReaderTapAction.PREVIOUS_PAGE -> "←"
         ReaderTapAction.TOGGLE_CONTROLS -> "◎"
         ReaderTapAction.NEXT_PAGE -> "→"
@@ -790,6 +792,7 @@ private fun readerTapActionGlyph(action: ReaderTapAction): String =
 private fun localizedReaderTapAction(action: ReaderTapAction): String =
     stringResource(
         when (action) {
+            ReaderTapAction.VEIL_DEFAULT -> R.string.settings_tap_action_default
             ReaderTapAction.PREVIOUS_PAGE -> R.string.settings_tap_action_previous
             ReaderTapAction.TOGGLE_CONTROLS -> R.string.settings_tap_action_controls
             ReaderTapAction.NEXT_PAGE -> R.string.settings_tap_action_next
