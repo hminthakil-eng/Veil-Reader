@@ -24,7 +24,7 @@ Evidence levels:
 | Edge brightness gesture | left-edge swipe changes brightness | Missing | Add opt-in edge gesture with dead-zone, haptic detents and conflict arbitration |
 | Edge font-size gesture | right-edge swipe changes text size | Missing | Add opt-in EPUB-only gesture with live preview and accessibility guard |
 | Auto-scroll | auto-scroll controls and speed UI | Missing | Reader-owned velocity engine with pause-on-touch, reduced-motion policy and persistent speed |
-| Reading ruler | ruler controls and tap behavior | Missing | Veil Focus Guide: window/ruler/line modes, renderer-agnostic overlay |
+| Reading ruler | ruler controls and tap behavior | **W39 implemented as Veil Focus Guide** | Off/Focus Window/Reading Line, tunable position/height/dimming, quick Reader toggle, renderer-agnostic visual overlay that never owns touch. |
 | Full TTS reader | start/pause/next/prior, filters, notification controls, background guidance | Missing as a reader feature | Android TTS session engine, paragraph queue, media notification, sleep timer, filters |
 | Dictionary routing | dictionary selection/custom online routing/history | Missing | Selection action with installed-handler routing; optional user-defined URL template |
 | Chapter time remaining | chapter/book minutes remaining strings | Missing | Estimate from personal rolling reading speed; show uncertainty rather than fake precision |
@@ -55,7 +55,7 @@ Evidence levels:
 1. W37 tap matrix — **in progress / implemented**
 2. Long-press ownership and timing — **research complete / implementation blocked by safe-input constraints**
 3. Volume-key mapping — **W38 implemented**
-4. Focus Guide / reading ruler
+4. Focus Guide / reading ruler — **W39 implemented**
 5. PDF annotation capability audit
 
 ### P1 — reading power
