@@ -1055,8 +1055,11 @@ fun ReaderScreen(
             )
         }
     }
-    val onDisposePublication = remember(opened.book.id, readerSessionInstanceId) {
-        { opened.close() }
+    val onDisposePublication = remember(opened.book.id, readerSessionInstanceId, ttsController) {
+        {
+            ttsController.close()
+            opened.close()
+        }
     }
 
     DisposableEffect(paperCurlState) {
@@ -1080,6 +1083,7 @@ fun ReaderScreen(
                 Lifecycle.Event.ON_PAUSE,
                 Lifecycle.Event.ON_STOP,
                 Lifecycle.Event.ON_DESTROY -> {
+                    ttsController.pause()
                     if (latestReaderSessionReady.value) {
                         // Lifecycle teardown may cancel the composition scope immediately. Restore an
                         // uncommitted preview synchronously before any final locator can be flushed.
@@ -2122,7 +2126,7 @@ fun ReaderScreen(
                             action = ReaderAction.TTS,
                             label = stringResource(R.string.reader_listen),
                             modifier = Modifier.weight(1f),
-                            enabled = ttsState.supported,
+                            enabled = true,
                             accent = if (ttsState.active) {
                                 readerChromeAccent
                             } else {
