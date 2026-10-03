@@ -49,10 +49,15 @@ internal fun gpuPageCurlFrame(
             (mass - 0.6f) * 0.018f
         ).coerceIn(0.052f, 0.125f)
     val liftEnvelope = materialPageLift(p, profile)
+    val terminalT =
+        ((p - 0.72f) / 0.28f).coerceIn(0f, 1f).let { t ->
+            t * t * (3f - 2f * t)
+        }
     val radius = (
         baseRadius *
-            (0.78f + liftEnvelope * (0.22f + (1f - bend) * 0.05f))
-        ).coerceIn(0.044f, 0.132f)
+            (0.78f + liftEnvelope * (0.22f + (1f - bend) * 0.05f)) *
+            (1f - terminalT * 0.48f)
+        ).coerceIn(0.028f, 0.132f)
 
     // Progress moves the virtual cylinder through the page. Clearance is based on
     // the authored material radius so a breathing radius never traps the terminal
