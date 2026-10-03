@@ -53,6 +53,7 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveLibraryMemoryState
@@ -95,6 +96,7 @@ fun VeilApp(
     onSetHighContrastEnabled: (Boolean) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
     onSaveReaderTapGrid: (ReaderTapGrid) -> Unit = {},
+    onSaveReaderHardwareKeys: (ReaderHardwareKeyMap) -> Unit = {},
     onSaveFixedLayoutSpread: (String, ReaderFixedLayoutSpread) -> Unit = { _, _ -> },
     onSaveSensorySettings: (SensorySettings) -> Unit = {}
 ) {
@@ -998,6 +1000,7 @@ fun VeilApp(
             game = game,
             readerAppearance = appSettings.readerAppearance,
             readerTapGrid = appSettings.readerTapGrid,
+            readerHardwareKeys = appSettings.readerHardwareKeys,
             fixedLayoutSpread = appSettings.fixedLayoutSpreads[opened.book.id]
                 ?: ReaderFixedLayoutSpread.AUTO,
             onReaderAppearanceChange = onSaveReaderAppearance,
@@ -1036,6 +1039,7 @@ fun VeilApp(
                 onSetHighContrastEnabled = onSetHighContrastEnabled,
                 onSaveReaderAppearance = onSaveReaderAppearance,
                 onSaveReaderTapGrid = onSaveReaderTapGrid,
+                onSaveReaderHardwareKeys = onSaveReaderHardwareKeys,
                 onSaveSensorySettings = onSaveSensorySettings,
                 onExportBackup = { exportData(it, true) },
                 onRestoreBackup = ::restoreData,
