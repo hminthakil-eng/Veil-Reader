@@ -75,6 +75,23 @@ Problem: object-based strip/point geometry would allocate heavily at high refres
 
 Fix: the live renderer now mutates a bounded reusable primitive mesh buffer. Immutable frame/strip objects remain only for tests and inspection.
 
+## Ten-level quality escalation
+
+Arena then ran ten additional quality passes after the first source-hardening review:
+
+1. projected release with reverse-cancel hysteresis;
+2. adaptive mesh density based on curvature/material demand;
+3. grazing-angle optical response for glossy vs matte surfaces;
+4. material-dependent free-edge rendering;
+5. page-coordinate-anchored grain/fibre cues to prevent texture swimming;
+6. vertical micro-jitter suppression without temporal drag lag;
+7. compile/review hardening, including invalid preview Paint cleanup and duplicate motion configuration removal;
+8. subpixel strip overlap to suppress seam artifacts;
+9. expanded contracts for release, adaptive mesh, jitter and optical differentiation;
+10. material-specific tap lift/settle choreography instead of generic UI easing.
+
+The pass also corrected the pure inspection geometry buffer so adaptive segment counts keep full capacity, and removed the superseded generic tap-duration policy.
+
 ## Existing protections retained
 
 - Legacy Paper implementation is still present.
