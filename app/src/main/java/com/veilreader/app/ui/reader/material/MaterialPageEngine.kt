@@ -21,6 +21,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.nativeCanvas
+import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import kotlinx.coroutines.delay
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -546,6 +547,7 @@ internal fun MaterialPageOverlay(
     val patina = state.patina
     val tone = state.tone
     val renderDensity = state.densityForRender()
+    val highContrast = LocalVeilHighContrast.current
 
     Canvas(modifier.fillMaxSize()) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
@@ -636,7 +638,8 @@ internal fun MaterialPageOverlay(
         val backColor =
             materialPageToneAdjustedArgb(optics.backArgb, tone).toInt()
         val frontTintAlpha =
-            materialPageFrontSurfaceTintAlpha(profile, patina)
+            materialPageFrontSurfaceTintAlpha(profile, patina) *
+                if (highContrast) 0.55f else 1f
 
         for (index in 0 until mesh.segmentCount) {
             val sourceLeft: Float
@@ -811,7 +814,7 @@ internal fun MaterialPageOverlay(
                 kotlin.math.abs(variationUnit) *
                     optics.grain *
                     (0.25f + patina * optics.patinaResponse * 0.75f) *
-                    0.035f *
+                    (if (highContrast) 0.018f else 0.035f) *
                     255f
                 ).roundToInt().coerceIn(0, 9)
             if (tonalAlpha > 0) {
@@ -921,7 +924,12 @@ internal fun MaterialPageOverlay(
                 (0.94f + patina * profile.optics.patinaResponse * 0.12f)
             ).coerceIn(0f, 1f)
         val contactAlpha =
-            (mesh.lift * (0.08f + edgeBody * 0.12f) * 255f)
+            (
+                mesh.lift *
+                    (0.08f + edgeBody * 0.12f) *
+                    (if (highContrast) 1.18f else 1f) *
+                    255f
+                )
                 .roundToInt()
                 .coerceIn(0, 52)
         scratch.detailPaint.color = android.graphics.Color.BLACK
@@ -963,7 +971,12 @@ internal fun MaterialPageOverlay(
         }
 
         val edgeAlpha =
-            (mesh.lift * (0.08f + profile.optics.specularResponse * 0.14f) * 255f)
+            (
+                mesh.lift *
+                    (0.08f + profile.optics.specularResponse * 0.14f) *
+                    (if (highContrast) 1.22f else 1f) *
+                    255f
+                )
                 .roundToInt()
                 .coerceIn(0, 46)
         scratch.detailPaint.color =
