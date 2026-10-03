@@ -48,19 +48,21 @@ internal class ReaderHardwareKeyController(
     private var lastHandledAtMs: Long = Long.MIN_VALUE
 
     fun handle(event: ReaderHardwareButtonEvent): Boolean {
-        val action = actionFor(event.button)
-        if (action == ReaderHardwareKeyAction.SYSTEM || !isEnabled()) {
-            if (event.phase == ReaderHardwareButtonPhase.UP) {
-                activeConsumedButtons.remove(event.button)
-            }
-            return false
-        }
-
         if (event.phase == ReaderHardwareButtonPhase.UP) {
+            // Consume the matching key-up whenever its key-down was consumed, even if
+            // settings or interaction mode changed while the button was held.
             return activeConsumedButtons.remove(event.button)
         }
 
+        val action = actionFor(event.button)
+        if (action == ReaderHardwareKeyAction.SYSTEM || !isEnabled()) {
+            return false
+        }
+
+        val repeatingSamePress =
+            event.repeatCount > 0 || event.button in activeConsumedButtons
         if (
+            repeatingSamePress &&
             !shouldHandleReaderHardwareRepeat(
                 nowElapsedMs = event.eventTimeMs,
                 lastHandledAtMs = lastHandledAtMs,
