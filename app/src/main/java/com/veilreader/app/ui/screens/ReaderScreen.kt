@@ -327,19 +327,30 @@ fun ReaderScreen(
                 appearance = readerAppearance,
                 fixedLayout = fixedLayoutPublication
             )
-        if (
-            BuildConfig.DEBUG &&
+        when {
             opened.format == BookFormat.EPUB &&
-            MaterialPageEngineRollout.isEnabled()
-        ) {
-            // Material review is a runtime product mode, not a Settings-screen
-            // side effect. Force the actual Reader contract to Paged + Paper so a
-            // persisted SLIDE preference from an older build can never bypass v2.
-            publicationAppearance
-                .withReadingMode(ReaderReadingMode.PAGED)
-                .withPageTurnStyle(PageTurnStyle.PAPER)
-        } else {
-            publicationAppearance
+                BuildConfig.DEBUG &&
+                MaterialPageEngineRollout.isEnabled() -> {
+                // Material review is a runtime product mode, not a Settings-screen
+                // side effect. Force the actual Reader contract to Paged + Paper so a
+                // persisted SLIDE preference from an older build can never bypass v2.
+                publicationAppearance
+                    .withReadingMode(ReaderReadingMode.PAGED)
+                    .withPageTurnStyle(PageTurnStyle.PAPER)
+            }
+
+            opened.format == BookFormat.EPUB &&
+                publicationAppearance.pageTurnStyle == PageTurnStyle.PAPER &&
+                !MaterialPageEngineRollout.isEnabled() -> {
+                // GPU Paper is the only Paper runtime in v2. If rollout is disabled,
+                // degrade to static PAGED rather than exposing Readium's native swipe,
+                // which would visually masquerade as Veil's Slide mode.
+                publicationAppearance
+                    .withReadingMode(ReaderReadingMode.PAGED)
+                    .withPageTurnStyle(PageTurnStyle.NONE)
+            }
+
+            else -> publicationAppearance
         }
     }
     var presentedReaderAppearance by remember(opened.book.id, readerSessionInstanceId) {
