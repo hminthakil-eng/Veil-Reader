@@ -721,22 +721,21 @@ internal fun MaterialPageOverlay(
             scratch.path.close()
 
             scratch.matrix.reset()
-            if (
-                scratch.matrix.setPolyToPoly(
-                    scratch.source,
-                    0,
-                    scratch.destination,
-                    0,
-                    4
-                )
-            ) {
-                native.save()
-                native.clipPath(scratch.path)
-                native.concat(scratch.matrix)
-                scratch.contentPaint.alpha = 255
-                native.drawBitmap(bitmap, 0f, 0f, scratch.contentPaint)
-                native.restore()
-            }
+            val mapped = scratch.matrix.setPolyToPoly(
+                scratch.source,
+                0,
+                scratch.destination,
+                0,
+                4
+            )
+            if (!mapped) continue
+
+            native.save()
+            native.clipPath(scratch.path)
+            native.concat(scratch.matrix)
+            scratch.contentPaint.alpha = 255
+            native.drawBitmap(bitmap, 0f, 0f, scratch.contentPaint)
+            native.restore()
 
             val isBackFacing = mesh.backFacing[index]
             val baseShadeAlpha = if (isBackFacing) {
