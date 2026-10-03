@@ -252,6 +252,12 @@ internal class MaterialPageEngineState(
 
     fun dragProgress(): Float = progress.coerceIn(0f, 1f)
 
+    fun prepareTapGrip() {
+        if (!active) return
+        pullOriginY = materialPageTapPullOrigin(profile)
+        diagonalPull = materialPageTapDiagonalPull(profile)
+    }
+
     /**
      * Captures the previewed destination after Readium navigation has settled.
      * This becomes the physical back-side texture of the lifted leaf. Failure is
