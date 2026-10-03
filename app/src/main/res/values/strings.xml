@@ -1303,4 +1303,7 @@
     <string name="tts_install_voice">Install voice data</string>
     <string name="tts_playback_failed">Speech playback stopped because the TTS engine or publication content reported an error.</string>
     <string name="tts_follow_hint">Veil follows spoken sentences visually without counting them as manual page turns.</string>
+
+    <string name="reader_selection_lookup">Lookup</string>
+    <string name="reader_lookup_failed">No installed app can look up the selected text.</string>
 </resources>
