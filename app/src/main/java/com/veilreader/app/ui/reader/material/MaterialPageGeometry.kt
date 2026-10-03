@@ -434,6 +434,14 @@ internal fun isFiniteMaterialPageFrame(frame: MaterialPageFrame): Boolean {
 private fun MaterialPagePoint.isFinite(): Boolean =
     x.isFinite() && y.isFinite()
 
+internal fun materialPageTurnSegmentCount(
+    profile: MaterialPageProfile
+): Int =
+    materialPageAdaptiveSegmentCount(
+        progress = 0.50f,
+        profile = profile
+    )
+
 internal fun materialPageAdaptiveSegmentCount(
     progress: Float,
     profile: MaterialPageProfile
