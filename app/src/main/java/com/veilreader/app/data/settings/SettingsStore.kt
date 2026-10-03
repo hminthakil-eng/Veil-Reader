@@ -14,10 +14,13 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderHardwareKeyAction
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import com.veilreader.app.domain.decodeReaderTapGrid
 import com.veilreader.app.domain.encodeReaderTapGrid
 import kotlinx.coroutines.flow.Flow
@@ -45,6 +48,7 @@ data class AppSettings(
     val highContrastEnabled: Boolean = false,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
     val readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
+    val readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
     val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
@@ -80,6 +84,8 @@ class SettingsStore(private val context: Context) {
         val darkImageTreatment = stringPreferencesKey("reader_dark_image_treatment")
         val paperPatina = doublePreferencesKey("reader_paper_patina")
         val tapGrid = stringPreferencesKey("reader_tap_grid")
+        val volumeUpAction = stringPreferencesKey("reader_volume_up_action")
+        val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
         val fixedLayoutSpreads = stringPreferencesKey("reader_fixed_layout_spreads")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
@@ -168,6 +174,16 @@ class SettingsStore(private val context: Context) {
                 paperPatina = prefs[Keys.paperPatina] ?: 0.72
             ).normalized(),
             readerTapGrid = decodeReaderTapGrid(prefs[Keys.tapGrid]),
+            readerHardwareKeys = ReaderHardwareKeyMap(
+                volumeUp = decodeReaderHardwareKeyAction(
+                    prefs[Keys.volumeUpAction],
+                    ReaderHardwareKeyAction.SYSTEM
+                ),
+                volumeDown = decodeReaderHardwareKeyAction(
+                    prefs[Keys.volumeDownAction],
+                    ReaderHardwareKeyAction.SYSTEM
+                )
+            ),
             fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
                 prefs[Keys.fixedLayoutSpreads]
             ),
@@ -247,6 +263,13 @@ class SettingsStore(private val context: Context) {
     suspend fun saveReaderTapGrid(value: ReaderTapGrid) {
         context.veilSettingsDataStore.edit { prefs ->
             prefs[Keys.tapGrid] = encodeReaderTapGrid(value)
+        }
+    }
+
+    suspend fun saveReaderHardwareKeys(value: ReaderHardwareKeyMap) {
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.volumeUpAction] = value.volumeUp.name
+            prefs[Keys.volumeDownAction] = value.volumeDown.name
         }
     }
 
