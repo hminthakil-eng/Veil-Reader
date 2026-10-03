@@ -1269,4 +1269,18 @@
     <string name="settings_hardware_action_controls">کنترل‌های خواننده</string>
     <string name="settings_hardware_keys_hint">هنگام انتخاب متن، پنجره‌ها، کاوش لمسی و عمل صفحه در حالت اسکرول، نگاشت مطالعه کنار می‌رود. نگه‌داشتن کلید نیز محدود می‌شود تا چندین صفحه ناخواسته رد نشود.</string>
     <string name="settings_hardware_keys_reset">بازگرداندن صدای سیستم</string>
+
+    <string name="settings_focus_guide_title">راهنمای تمرکز</string>
+    <string name="settings_focus_guide_description">بدون گرفتن کنترل لمس از کتاب، شلوغی دیداری پیرامون متن را کمتر کن.</string>
+    <string name="settings_focus_guide_off">خاموش</string>
+    <string name="settings_focus_guide_window">پنجرهٔ تمرکز</string>
+    <string name="settings_focus_guide_line">خط مطالعه</string>
+    <string name="settings_focus_guide_position">جایگاه عمودی</string>
+    <string name="settings_focus_guide_band">ارتفاع ناحیهٔ تمرکز</string>
+    <string name="settings_focus_guide_dim">تیرگی بیرون ناحیه</string>
+    <string name="settings_focus_guide_hint">این راهنما فقط دیداری است؛ لینک‌ها، انتخاب متن، ورق‌زدن و زوم PDF همان مالکیت ورودی قبلی را حفظ می‌کنند.</string>
+    <string name="settings_focus_guide_reset">بازنشانی راهنمای تمرکز</string>
+    <string name="reader_focus">تمرکز</string>
+    <string name="reader_focus_on">راهنمای تمرکز روشن</string>
+    <string name="reader_focus_off">راهنمای تمرکز خاموش</string>
 </resources>
