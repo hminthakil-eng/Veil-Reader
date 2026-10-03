@@ -245,10 +245,12 @@ internal class PaperCurlState {
         }
     }
 
-    suspend fun animateCancel() {
+    suspend fun animateCancel(
+        releaseVelocityDpPerSec: Float = 0f
+    ) {
         if (!active) return
         if (usingMaterialEngine()) {
-            materialEngine.animateCancel()
+            materialEngine.animateCancel(releaseVelocityDpPerSec)
             return
         }
         animateTo(
