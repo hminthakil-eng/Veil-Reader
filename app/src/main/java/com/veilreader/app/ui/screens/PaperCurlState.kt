@@ -13,6 +13,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import com.veilreader.app.BuildConfig
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.Text
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -474,18 +480,40 @@ internal fun PaperCurlOverlay(
         MaterialPageEngineRollout.isEnabled() &&
         MaterialPageEngineRollout.useGpuRenderer()
     ) {
-        GpuMaterialPageOverlay(
-            state = state.materialEngine,
-            modifier = modifier
-        )
+        Box(modifier = modifier) {
+            GpuMaterialPageOverlay(
+                state = state.materialEngine,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (BuildConfig.DEBUG && state.active) {
+                Text(
+                    text = "PAPER · GPU v2",
+                    color = Color(0xFFFFC857),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                )
+            }
+        }
         return
     }
 
     if (state.usingMaterialEngine()) {
-        MaterialPageOverlay(
-            state = state.materialEngine,
-            modifier = modifier
-        )
+        Box(modifier = modifier) {
+            MaterialPageOverlay(
+                state = state.materialEngine,
+                modifier = Modifier.fillMaxSize()
+            )
+            if (BuildConfig.DEBUG && state.active) {
+                Text(
+                    text = "PAPER · Canvas v1",
+                    color = Color(0xFFFFC857),
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(6.dp)
+                )
+            }
+        }
         return
     }
 
