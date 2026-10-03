@@ -640,16 +640,40 @@ internal fun nextPaperReleaseVelocity(
     elapsedMillis: Long,
     sinceLastMotionMillis: Long
 ): Float {
-    if (abs(distanceDeltaPx) >= 1f) {
+    val previous =
+        previousVelocityPxPerSec
+            .takeIf { it.isFinite() }
+            ?.coerceIn(-12_000f, 12_000f)
+            ?: 0f
+    val delta = distanceDeltaPx.takeIf { it.isFinite() } ?: 0f
+
+    if (abs(delta) >= 1f) {
         if (elapsedMillis in 1L..120L) {
-            return (distanceDeltaPx * 1000f / elapsedMillis.toFloat())
-                .coerceIn(-12_000f, 12_000f)
+            val instantaneous =
+                (delta * 1000f / elapsedMillis.toFloat())
+                    .coerceIn(-12_000f, 12_000f)
+            val sampleTrust = when {
+                elapsedMillis <= 12L -> 0.42f
+                elapsedMillis <= 28L -> 0.58f
+                elapsedMillis <= 60L -> 0.72f
+                else -> 0.82f
+            }
+            val sameDirection =
+                previous == 0f ||
+                    kotlin.math.sign(previous) ==
+                    kotlin.math.sign(instantaneous)
+            val trust =
+                if (sameDirection) sampleTrust else sampleTrust * 0.72f
+            return (
+                previous * (1f - trust) +
+                    instantaneous * trust
+                ).coerceIn(-12_000f, 12_000f)
         }
         return if (elapsedMillis == 0L && sinceLastMotionMillis <= 100L) {
-            previousVelocityPxPerSec
+            previous
         } else {
             0f
         }
     }
-    return if (sinceLastMotionMillis <= 100L) previousVelocityPxPerSec else 0f
+    return if (sinceLastMotionMillis <= 100L) previous else 0f
 }
