@@ -89,6 +89,9 @@ internal class MaterialPageEngineState(
     var reducedMotion: Boolean by mutableStateOf(false)
         private set
 
+    var patina: Float by mutableFloatStateOf(0.35f)
+        private set
+
     var active: Boolean by mutableStateOf(false)
         private set
 
@@ -107,6 +110,10 @@ internal class MaterialPageEngineState(
 
     fun configureReducedMotion(value: Boolean) {
         reducedMotion = value
+    }
+
+    fun setPatina(value: Float) {
+        patina = value.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.35f
     }
 
     fun begin(
@@ -352,7 +359,8 @@ internal class MaterialPageEngineState(
         verticalBias: Float = 0f,
         side: MaterialPageSide = MaterialPageSide.RIGHT,
         profile: MaterialPageProfile = this.profile,
-        reducedMotion: Boolean = false
+        reducedMotion: Boolean = false,
+        patina: Float = this.patina
     ) {
         snapshot = bitmap
         width = bitmap.width.toFloat()
@@ -362,6 +370,7 @@ internal class MaterialPageEngineState(
         this.side = side
         this.profile = profile
         this.reducedMotion = reducedMotion
+        setPatina(patina)
         visualAlpha = if (reducedMotion) {
             materialPageReducedMotionAlpha(
                 progress = this.progress,
@@ -440,6 +449,7 @@ internal fun MaterialPageOverlay(
     val profile = state.profile
     val side = state.side
     val reducedMotion = state.reducedMotion
+    val patina = state.patina
 
     Canvas(modifier.fillMaxSize()) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
@@ -567,10 +577,12 @@ internal fun MaterialPageOverlay(
             val optics = profile.optics
             val baseShadeAlpha = if (strip.backFacing) {
                 (
-                    0.48f +
-                        optics.roughness * 0.10f -
-                        optics.translucency * 0.22f
-                    ).coerceIn(0.30f, 0.62f)
+                    0.86f +
+                        optics.roughness * 0.035f +
+                        patina * optics.patinaResponse * 0.035f -
+                        optics.translucency * 0.10f -
+                        optics.inkGhosting * 0.16f
+                    ).coerceIn(0.76f, 0.92f)
             } else {
                 0f
             }
@@ -580,6 +592,24 @@ internal fun MaterialPageOverlay(
                 scratch.shadePaint.alpha =
                     (baseShadeAlpha * 255f).roundToInt().coerceIn(0, 255)
                 scratch.shadePaint.style = Paint.Style.FILL
+                native.drawPath(scratch.path, scratch.shadePaint)
+            }
+
+            // Deterministic micro-tonal variation: enough to communicate grain and age,
+            // never enough to compete with publication text.
+            val variationUnit = (((index * 37) % 11) - 5) / 5f
+            val tonalAlpha = (
+                kotlin.math.abs(variationUnit) *
+                    optics.grain *
+                    (0.25f + patina * optics.patinaResponse * 0.75f) *
+                    0.035f *
+                    255f
+                ).roundToInt().coerceIn(0, 9)
+            if (tonalAlpha > 0) {
+                scratch.shadePaint.color =
+                    if (variationUnit >= 0f) android.graphics.Color.WHITE
+                    else android.graphics.Color.BLACK
+                scratch.shadePaint.alpha = tonalAlpha
                 native.drawPath(scratch.path, scratch.shadePaint)
             }
 
@@ -614,7 +644,7 @@ internal fun MaterialPageOverlay(
                 scratch.detailPaint.alpha = (
                     optics.directionalFiber *
                         strip.lift *
-                        12f
+                        (8f + patina * optics.patinaResponse * 8f)
                     ).roundToInt().coerceIn(0, 14)
                 scratch.detailPaint.strokeWidth =
                     (0.35f + optics.grain * 0.50f)
@@ -631,7 +661,10 @@ internal fun MaterialPageOverlay(
         // The binding/contact shadow is deliberately restrained; it communicates
         // attachment and thickness without turning the page into theatrical 3D.
         val creaseX = frame.creaseTop.x
-        val edgeBody = profile.optics.edgeBody.coerceIn(0f, 1f)
+        val edgeBody = (
+            profile.optics.edgeBody *
+                (0.94f + patina * profile.optics.patinaResponse * 0.12f)
+            ).coerceIn(0f, 1f)
         val contactAlpha =
             (frame.lift * (0.08f + edgeBody * 0.12f) * 255f)
                 .roundToInt()
