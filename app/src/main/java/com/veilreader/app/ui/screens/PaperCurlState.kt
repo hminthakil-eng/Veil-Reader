@@ -24,6 +24,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import com.veilreader.app.ui.reader.material.GpuMaterialPageOverlay
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageOverlay
@@ -455,6 +456,17 @@ internal fun PaperCurlOverlay(
     LaunchedEffect(state, patina, tone) {
         state.materialEngine.configurePatina(patina)
         state.materialEngine.configureTone(tone)
+    }
+
+    // Keep the GPU surface resident while Material review is enabled so the GL
+    // context, shaders and mesh are already warm when the finger lifts a page.
+    // Unsupported devices transparently fall back to the source-hardened Canvas renderer.
+    if (MaterialPageEngineRollout.isEnabled()) {
+        GpuMaterialPageOverlay(
+            state = state.materialEngine,
+            modifier = modifier
+        )
+        return
     }
 
     if (state.usingMaterialEngine()) {
