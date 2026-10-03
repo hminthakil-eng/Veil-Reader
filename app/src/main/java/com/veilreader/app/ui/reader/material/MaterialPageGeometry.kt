@@ -379,6 +379,33 @@ internal fun mirrorMaterialPageFrame(
     )
 }
 
+internal fun materialPageSnapshotScaleIsSafe(
+    snapshotWidth: Float,
+    snapshotHeight: Float,
+    canvasWidth: Float,
+    canvasHeight: Float
+): Boolean {
+    if (
+        !snapshotWidth.isFinite() ||
+        !snapshotHeight.isFinite() ||
+        !canvasWidth.isFinite() ||
+        !canvasHeight.isFinite() ||
+        snapshotWidth <= 0f ||
+        snapshotHeight <= 0f ||
+        canvasWidth <= 0f ||
+        canvasHeight <= 0f
+    ) {
+        return false
+    }
+
+    val snapshotAspect = snapshotWidth / snapshotHeight
+    val canvasAspect = canvasWidth / canvasHeight
+    val relativeError =
+        abs(snapshotAspect - canvasAspect) /
+            snapshotAspect.coerceAtLeast(0.0001f)
+    return relativeError <= 0.08f
+}
+
 internal fun isRenderableMaterialPageQuad(
     topLeftX: Float,
     topLeftY: Float,
