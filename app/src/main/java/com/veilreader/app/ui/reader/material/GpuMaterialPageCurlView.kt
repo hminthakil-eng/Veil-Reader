@@ -73,6 +73,7 @@ internal class GpuMaterialPageCurlView(
     private var viewportHeight = 0
     private var maxTextureSize = 0
     private var failureReported = false
+    private var rendererPaused = false
 
     private var aPosition = -1
     private var aTexCoord = -1
@@ -309,11 +310,15 @@ internal class GpuMaterialPageCurlView(
     }
 
     fun pauseRenderer() {
+        if (rendererPaused) return
         runCatching { onPause() }
+            .onSuccess { rendererPaused = true }
     }
 
     fun resumeRenderer() {
+        if (!rendererPaused) return
         runCatching { onResume() }
+            .onSuccess { rendererPaused = false }
     }
 
     private fun bindFrameUniforms(frame: SubmittedFrame) {
