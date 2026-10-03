@@ -56,6 +56,29 @@ class ReadingSessionTrackerTest {
     }
 
     @Test
+    fun pagePaceInterval_rejectsSegmentsThatCrossIdleCutoff() {
+        val tracker = ReadingSessionTracker(
+            sessionId = "pace-idle",
+            bookId = "book",
+            startedAtEpochMs = 0L,
+            startedAtElapsedMs = 0L,
+            idleTimeoutMs = 60_000L
+        )
+        tracker.onResume(0L)
+        tracker.tick(20_000L)
+        assertEquals(null, tracker.recordPacedPageTurn())
+
+        // The screen is left untouched well beyond the idle cutoff.
+        tracker.tick(180_000L)
+        tracker.onInteraction(180_000L)
+        assertEquals(null, tracker.recordPacedPageTurn())
+
+        // A new uninterrupted foreground segment can produce pace evidence again.
+        tracker.tick(210_000L)
+        assertEquals(30_000L, tracker.recordPacedPageTurn())
+    }
+
+    @Test
     fun pagePaceInterval_resetsAcrossPauseAndResume() {
         val tracker = ReadingSessionTracker(
             sessionId = "pace-reset",
