@@ -15,8 +15,11 @@ import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.decodeReaderTapGrid
+import com.veilreader.app.domain.encodeReaderTapGrid
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
@@ -41,6 +44,7 @@ data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val highContrastEnabled: Boolean = false,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
+    val readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
@@ -75,6 +79,7 @@ class SettingsStore(private val context: Context) {
         val typeScale = doublePreferencesKey("reader_type_scale")
         val darkImageTreatment = stringPreferencesKey("reader_dark_image_treatment")
         val paperPatina = doublePreferencesKey("reader_paper_patina")
+        val tapGrid = stringPreferencesKey("reader_tap_grid")
         val fixedLayoutSpreads = stringPreferencesKey("reader_fixed_layout_spreads")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
@@ -162,6 +167,7 @@ class SettingsStore(private val context: Context) {
                 }.getOrDefault(ReaderDarkImageTreatment.NONE),
                 paperPatina = prefs[Keys.paperPatina] ?: 0.72
             ).normalized(),
+            readerTapGrid = decodeReaderTapGrid(prefs[Keys.tapGrid]),
             fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
                 prefs[Keys.fixedLayoutSpreads]
             ),
@@ -235,6 +241,12 @@ class SettingsStore(private val context: Context) {
                 .takeIf { it.isFinite() }
                 ?.coerceIn(0.0, 1.0)
                 ?: 0.72
+        }
+    }
+
+    suspend fun saveReaderTapGrid(value: ReaderTapGrid) {
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.tapGrid] = encodeReaderTapGrid(value)
         }
     }
 
