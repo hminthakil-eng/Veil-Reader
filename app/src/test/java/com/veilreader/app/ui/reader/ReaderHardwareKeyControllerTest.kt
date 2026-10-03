@@ -73,6 +73,29 @@ class ReaderHardwareKeyControllerTest {
     }
 
     @Test
+    fun `repeat throttling is isolated per physical volume key`() {
+        var nextCalls = 0
+        var previousCalls = 0
+        val controller = ReaderHardwareKeyController(
+            mapping = {
+                ReaderHardwareKeyMap(
+                    volumeUp = ReaderHardwareKeyAction.NEXT_PAGE,
+                    volumeDown = ReaderHardwareKeyAction.PREVIOUS_PAGE
+                )
+            },
+            isEnabled = { true },
+            onPreviousPage = { previousCalls += 1; true },
+            onNextPage = { nextCalls += 1; true },
+            onToggleControls = { false }
+        )
+
+        assertTrue(controller.handle(down(ReaderHardwareButton.VOLUME_UP, 1000L)))
+        assertTrue(controller.handle(down(ReaderHardwareButton.VOLUME_DOWN, 1050L)))
+        assertEquals(1, nextCalls)
+        assertEquals(1, previousCalls)
+    }
+
+    @Test
     fun `disabled reader mapping falls back to Android system volume`() {
         var calls = 0
         val controller = ReaderHardwareKeyController(
@@ -108,7 +131,16 @@ class ReaderHardwareKeyControllerTest {
 
         assertTrue(controller.handle(down(ReaderHardwareButton.VOLUME_UP, 1000L)))
         enabled = false
-        assertTrue(controller.handle(up(ReaderHardwareButton.VOLUME_UP, 1020L)))
+        assertTrue(
+            controller.handle(
+                down(
+                    button = ReaderHardwareButton.VOLUME_UP,
+                    timeMs = 1080L,
+                    repeatCount = 1
+                )
+            )
+        )
+        assertTrue(controller.handle(up(ReaderHardwareButton.VOLUME_UP, 1100L)))
     }
 
     @Test
