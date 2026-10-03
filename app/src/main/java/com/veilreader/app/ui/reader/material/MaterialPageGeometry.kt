@@ -40,6 +40,7 @@ internal fun materialPageGeometry(
     progress: Float,
     verticalBias: Float,
     profile: MaterialPageProfile,
+    pullOriginY: Float = 0.5f,
     segmentCount: Int = 26
 ): MaterialPageFrame {
     if (width <= 0f || height <= 0f) {
@@ -75,13 +76,18 @@ internal fun materialPageGeometry(
     val binding = profile.physics.bindingConstraint.coerceIn(0.75f, 1f)
     val foldX = width * (1f - eased * (0.91f + binding * 0.07f))
     val span = (width - foldX).coerceAtLeast(width * 0.002f)
-    val thetaMax = (PI.toFloat() * (0.20f + eased * 0.80f))
-        .coerceIn(0.20f * PI.toFloat(), PI.toFloat())
+    val bend = profile.physics.bendStiffness.coerceIn(0.35f, 1f)
+    val curlRange = 0.72f + (1f - bend) * 0.22f
+    val thetaMax = (PI.toFloat() * (0.16f + eased * curlRange))
+        .coerceIn(0.16f * PI.toFloat(), PI.toFloat())
     val radius = span / thetaMax.coerceAtLeast(0.001f)
     val lift = materialPageLift(p, profile)
 
     val segments = segmentCount.coerceIn(12, 36)
     val strips = ArrayList<MaterialPageStrip>(segments)
+    val originY = pullOriginY.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.5f
+    val topOriginInfluence = 0.34f + (1f - originY) * 0.66f
+    val bottomOriginInfluence = 0.34f + originY * 0.66f
 
     fun projected(sourceX: Float, top: Boolean): Pair<MaterialPagePoint, ProjectionSample> {
         val q = ((sourceX - foldX) / span).coerceIn(0f, 1f)
@@ -103,10 +109,12 @@ internal fun materialPageGeometry(
                 height *
                 0.010f
 
+        val originInfluence =
+            if (top) topOriginInfluence else bottomOriginInfluence
         val y = if (top) {
-            verticalShift + bindingSkew
+            verticalShift * originInfluence + bindingSkew
         } else {
-            height + verticalShift - bindingSkew
+            height + verticalShift * originInfluence - bindingSkew
         }
 
         return MaterialPagePoint(x, y) to ProjectionSample(
