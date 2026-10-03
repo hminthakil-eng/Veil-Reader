@@ -65,6 +65,9 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderTapAction
+import com.veilreader.app.domain.ReaderTapGrid
+import com.veilreader.app.domain.ReaderTapZone
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -81,6 +84,7 @@ fun SettingsScreen(
     onSetAppThemeMode: (AppThemeMode) -> Unit,
     onSetHighContrastEnabled: (Boolean) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
+    onSaveReaderTapGrid: (ReaderTapGrid) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
@@ -89,6 +93,8 @@ fun SettingsScreen(
 ) {
     var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
+    var tapGridDraft by remember { mutableStateOf(settings.readerTapGrid) }
+    var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
 
     LaunchedEffect(settings.readerAppearance) {
         val persisted = settings.readerAppearance
@@ -99,6 +105,23 @@ fun SettingsScreen(
                 pendingAppearance = null
             }
         }
+    }
+
+    LaunchedEffect(settings.readerTapGrid) {
+        val persisted = settings.readerTapGrid
+        when {
+            pendingTapGrid == null -> tapGridDraft = persisted
+            persisted == pendingTapGrid -> {
+                tapGridDraft = persisted
+                pendingTapGrid = null
+            }
+        }
+    }
+
+    fun commitReaderTapGrid(value: ReaderTapGrid) {
+        tapGridDraft = value
+        pendingTapGrid = value
+        onSaveReaderTapGrid(value)
     }
 
     fun commitReaderAppearance(transform: (ReaderAppearance) -> ReaderAppearance) {
@@ -439,6 +462,27 @@ fun SettingsScreen(
         }
 
         SettingsSection(
+            title = stringResource(R.string.settings_tap_matrix_title),
+            description = stringResource(R.string.settings_tap_matrix_description)
+        ) {
+            ReaderTapGridEditor(
+                grid = tapGridDraft,
+                onChange = ::commitReaderTapGrid
+            )
+            Text(
+                stringResource(R.string.settings_tap_matrix_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedButton(
+                onClick = { commitReaderTapGrid(ReaderTapGrid()) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.settings_tap_matrix_reset))
+            }
+        }
+
+        SettingsSection(
             title = stringResource(R.string.settings_sound_title),
             description = stringResource(R.string.settings_sound_description)
         ) {
@@ -660,6 +704,114 @@ fun SettingsScreen(
         }
     }
 }
+
+@Composable
+private fun ReaderTapGridEditor(
+    grid: ReaderTapGrid,
+    onChange: (ReaderTapGrid) -> Unit
+) {
+    val rows = listOf(
+        listOf(ReaderTapZone.TOP_LEFT, ReaderTapZone.TOP_CENTER, ReaderTapZone.TOP_RIGHT),
+        listOf(ReaderTapZone.MIDDLE_LEFT, ReaderTapZone.MIDDLE_CENTER, ReaderTapZone.MIDDLE_RIGHT),
+        listOf(ReaderTapZone.BOTTOM_LEFT, ReaderTapZone.BOTTOM_CENTER, ReaderTapZone.BOTTOM_RIGHT)
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+    ) {
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            ) {
+                row.forEach { zone ->
+                    val action = grid[zone]
+                    val zoneLabel = localizedReaderTapZone(zone)
+                    val actionLabel = localizedReaderTapAction(action)
+                    OutlinedButton(
+                        onClick = {
+                            onChange(
+                                grid.withAction(
+                                    zone,
+                                    nextReaderTapAction(action)
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 70.dp)
+                            .semantics {
+                                contentDescription = "$zoneLabel: $actionLabel"
+                            },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 6.dp,
+                            vertical = 8.dp
+                        )
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                readerTapActionGlyph(action),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                zoneLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun nextReaderTapAction(action: ReaderTapAction): ReaderTapAction =
+    when (action) {
+        ReaderTapAction.PREVIOUS_PAGE -> ReaderTapAction.TOGGLE_CONTROLS
+        ReaderTapAction.TOGGLE_CONTROLS -> ReaderTapAction.NEXT_PAGE
+        ReaderTapAction.NEXT_PAGE -> ReaderTapAction.RENDERER
+        ReaderTapAction.RENDERER -> ReaderTapAction.PREVIOUS_PAGE
+    }
+
+private fun readerTapActionGlyph(action: ReaderTapAction): String =
+    when (action) {
+        ReaderTapAction.PREVIOUS_PAGE -> "←"
+        ReaderTapAction.TOGGLE_CONTROLS -> "◎"
+        ReaderTapAction.NEXT_PAGE -> "→"
+        ReaderTapAction.RENDERER -> "·"
+    }
+
+@Composable
+private fun localizedReaderTapAction(action: ReaderTapAction): String =
+    stringResource(
+        when (action) {
+            ReaderTapAction.PREVIOUS_PAGE -> R.string.settings_tap_action_previous
+            ReaderTapAction.TOGGLE_CONTROLS -> R.string.settings_tap_action_controls
+            ReaderTapAction.NEXT_PAGE -> R.string.settings_tap_action_next
+            ReaderTapAction.RENDERER -> R.string.settings_tap_action_renderer
+        }
+    )
+
+@Composable
+private fun localizedReaderTapZone(zone: ReaderTapZone): String =
+    stringResource(
+        when (zone) {
+            ReaderTapZone.TOP_LEFT -> R.string.settings_tap_zone_top_left
+            ReaderTapZone.TOP_CENTER -> R.string.settings_tap_zone_top_center
+            ReaderTapZone.TOP_RIGHT -> R.string.settings_tap_zone_top_right
+            ReaderTapZone.MIDDLE_LEFT -> R.string.settings_tap_zone_middle_left
+            ReaderTapZone.MIDDLE_CENTER -> R.string.settings_tap_zone_middle_center
+            ReaderTapZone.MIDDLE_RIGHT -> R.string.settings_tap_zone_middle_right
+            ReaderTapZone.BOTTOM_LEFT -> R.string.settings_tap_zone_bottom_left
+            ReaderTapZone.BOTTOM_CENTER -> R.string.settings_tap_zone_bottom_center
+            ReaderTapZone.BOTTOM_RIGHT -> R.string.settings_tap_zone_bottom_right
+        }
+    )
 
 @Composable
 private fun SettingsSection(
