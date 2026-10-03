@@ -13,6 +13,52 @@ import org.readium.r2.navigator.preferences.ReadingProgression
 class ReaderInputArbiterTest {
 
     @Test
+    fun `each EPUB navigation mode has exactly one drag owner or native scroll`() {
+        PageTurnStyle.entries.forEach { style ->
+            val paper = shouldUsePaperCurlNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = style
+            )
+            val slide = shouldUseVeilSlideNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = style
+            )
+            val paged = shouldUseStaticPagedDragNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = style
+            )
+
+            assertEquals(
+                "style=$style must have exactly one Veil drag owner",
+                1,
+                listOf(paper, slide, paged).count { it }
+            )
+        }
+
+        val scrollOwners = listOf(
+            shouldUsePaperCurlNavigation(
+                BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.PAPER
+            ),
+            shouldUseVeilSlideNavigation(
+                BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.SLIDE
+            ),
+            shouldUseStaticPagedDragNavigation(
+                BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.NONE
+            )
+        )
+        assertEquals(0, scrollOwners.count { it })
+    }
+
+    @Test
     fun `Veil slide owns only paginated EPUB slide mode`() {
         assertTrue(
             shouldUseVeilSlideNavigation(
