@@ -82,6 +82,7 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
@@ -160,6 +161,7 @@ fun ReaderScreen(
     game: GameRepository,
     readerAppearance: ReaderAppearance,
     readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
+    readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
     fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
     onFixedLayoutSpreadChange: (ReaderFixedLayoutSpread) -> Unit = {},
@@ -425,6 +427,7 @@ fun ReaderScreen(
     }
     val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
     val latestTapGrid = rememberUpdatedState(readerTapGrid)
+    val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
     val paperCurlConfig = remember(presentedReaderAppearance.theme) {
         when (presentedReaderAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
@@ -1402,51 +1405,63 @@ fun ReaderScreen(
                 }
             )
 
-            fun performTapMatrixTurn(direction: PaperTurnDirection): Boolean {
+            fun performSemanticReaderTurn(direction: PaperTurnDirection): Boolean {
                 if (
-                    opened.format != BookFormat.EPUB ||
                     nav.overflow.value.scroll ||
                     !latestReaderSessionReady.value
                 ) {
                     return false
                 }
 
-                return when (latestAppearance.value.navigationMode) {
-                    ReaderNavigationMode.PAPER_CURL ->
-                        paperListener?.performDiscreteTurn(direction) == true
-
-                    ReaderNavigationMode.SLIDE ->
-                        slideListener?.performDiscreteTurn(direction) == true
-
-                    ReaderNavigationMode.PAGED -> {
-                        navigationTransactionGate.reset()
-                        readerViewModel.onUserInteraction(readerSessionInstanceId)
-                        controlsVisible = false
-                        val side = paperTurnSideFor(
-                            direction,
-                            nav.overflow.value.readingProgression
-                        )
-                        val moved = when (direction) {
-                            PaperTurnDirection.FORWARD ->
-                                nav.goForward(animated = false)
-                            PaperTurnDirection.BACKWARD ->
-                                nav.goBackward(animated = false)
-                        }
-                        if (moved) {
-                            onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
+                fun performDirectPagedTurn(): Boolean {
+                    navigationTransactionGate.reset()
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    controlsVisible = false
+                    val side = paperTurnSideFor(
+                        direction,
+                        nav.overflow.value.readingProgression
+                    )
+                    val moved = when (direction) {
+                        PaperTurnDirection.FORWARD ->
+                            nav.goForward(animated = false)
+                        PaperTurnDirection.BACKWARD ->
+                            nav.goBackward(animated = false)
+                    }
+                    if (moved) {
+                        onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
+                        if (opened.format == BookFormat.EPUB) {
                             nav.currentLocator.value.let { locator ->
                                 recordLocator(
                                     locator,
                                     ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
                                 )
                             }
-                        } else {
-                            emitBoundaryFeedback(side)
                         }
-                        true
+                    } else {
+                        emitBoundaryFeedback(side)
                     }
+                    return true
+                }
 
-                    ReaderNavigationMode.SCROLL -> false
+                return when (opened.format) {
+                    BookFormat.EPUB ->
+                        when (latestAppearance.value.navigationMode) {
+                            ReaderNavigationMode.PAPER_CURL ->
+                                paperListener?.performDiscreteTurn(direction) == true
+
+                            ReaderNavigationMode.SLIDE ->
+                                slideListener?.performDiscreteTurn(direction) == true
+
+                            ReaderNavigationMode.PAGED ->
+                                performDirectPagedTurn()
+
+                            ReaderNavigationMode.SCROLL -> false
+                        }
+
+                    BookFormat.PDF ->
+                        performDirectPagedTurn()
+
+                    else -> false
                 }
             }
 
@@ -1461,10 +1476,29 @@ fun ReaderScreen(
                     !nav.overflow.value.scroll
                 },
                 onPreviousPage = {
-                    performTapMatrixTurn(PaperTurnDirection.BACKWARD)
+                    performSemanticReaderTurn(PaperTurnDirection.BACKWARD)
                 },
                 onNextPage = {
-                    performTapMatrixTurn(PaperTurnDirection.FORWARD)
+                    performSemanticReaderTurn(PaperTurnDirection.FORWARD)
+                },
+                onToggleControls = {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    controlsVisible = !controlsVisible
+                    true
+                }
+            )
+
+            val hardwareKeyListener = ReaderHardwareKeyInputListener(
+                mapping = { latestHardwareKeys.value },
+                isEnabled = {
+                    latestReaderSessionReady.value &&
+                        (opened.format == BookFormat.EPUB || opened.format == BookFormat.PDF)
+                },
+                onPreviousPage = {
+                    performSemanticReaderTurn(PaperTurnDirection.BACKWARD)
+                },
+                onNextPage = {
+                    performSemanticReaderTurn(PaperTurnDirection.FORWARD)
                 },
                 onToggleControls = {
                     readerViewModel.onUserInteraction(readerSessionInstanceId)
@@ -1476,6 +1510,7 @@ fun ReaderScreen(
             val inputArbiter = ReaderInputArbiter(
                 contentTarget = imageTapListener,
                 tapZones = tapZoneListener,
+                hardwareKeys = hardwareKeyListener,
                 paper = paperListener,
                 slide = slideListener,
                 staticPaged = staticPagedListener,
