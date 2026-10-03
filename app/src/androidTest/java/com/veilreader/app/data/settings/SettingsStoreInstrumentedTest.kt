@@ -11,6 +11,9 @@ import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTapAction
+import com.veilreader.app.domain.ReaderTapGrid
+import com.veilreader.app.domain.ReaderTapZone
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
@@ -101,6 +104,23 @@ class SettingsStoreInstrumentedTest {
             assertEquals(true, recreated.highContrastEnabled)
         } finally {
             store.setHighContrastEnabled(false)
+        }
+    }
+
+    @Test
+    fun tapMatrix_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderTapGrid()
+            .withAction(ReaderTapZone.TOP_LEFT, ReaderTapAction.RENDERER)
+            .withAction(ReaderTapZone.BOTTOM_RIGHT, ReaderTapAction.TOGGLE_CONTROLS)
+
+        try {
+            store.saveReaderTapGrid(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerTapGrid)
+        } finally {
+            store.saveReaderTapGrid(ReaderTapGrid())
         }
     }
 
