@@ -29,6 +29,24 @@ class MaterialPageRolloutContractTest {
     }
 
     @Test
+    fun `debug GPU renderer is independently reversible from Material rollout`() {
+        MaterialPageEngineRollout.setGpuRendererOverride(null)
+        try {
+            assertFalse(MaterialPageEngineRollout.DEFAULT_GPU_RENDERER_ENABLED)
+            assertTrue(BuildConfig.DEBUG)
+            assertTrue(MaterialPageEngineRollout.useGpuRenderer())
+
+            MaterialPageEngineRollout.setGpuRendererOverride(false)
+            assertFalse(MaterialPageEngineRollout.useGpuRenderer())
+
+            MaterialPageEngineRollout.setGpuRendererOverride(true)
+            assertTrue(MaterialPageEngineRollout.useGpuRenderer())
+        } finally {
+            MaterialPageEngineRollout.setGpuRendererOverride(null)
+        }
+    }
+
+    @Test
     fun `review preset selection is source structured and reversible`() {
         MaterialPageEngineRollout.setDebugOverride(null)
         try {
