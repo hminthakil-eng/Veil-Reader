@@ -18,7 +18,9 @@ internal data class ReaderNavigationTransaction(
     val targetIdentity: ReaderNavigationIdentity?,
     val targetHref: String?,
     val passageVisitLocatorJson: String?,
-    val startedAtElapsedMs: Long
+    val startedAtElapsedMs: Long,
+    val expectedPdfPage: Int? = null,
+    val originPdfPage: Int? = null
 )
 
 /**
@@ -153,7 +155,9 @@ internal class ReaderNavigationTransactionGate(
         nowElapsedMs: Long,
         targetIdentity: ReaderNavigationIdentity? = null,
         targetHref: String? = null,
-        passageVisitLocatorJson: String? = null
+        passageVisitLocatorJson: String? = null,
+        expectedPdfPage: Int? = null,
+        originPdfPage: Int? = null
     ): ReaderNavigationTransaction {
         val transaction = ReaderNavigationTransaction(
             token = ++nextToken,
@@ -161,7 +165,9 @@ internal class ReaderNavigationTransactionGate(
             targetIdentity = targetIdentity,
             targetHref = targetHref,
             passageVisitLocatorJson = passageVisitLocatorJson,
-            startedAtElapsedMs = nowElapsedMs
+            startedAtElapsedMs = nowElapsedMs,
+            expectedPdfPage = expectedPdfPage?.takeIf { it > 0 },
+            originPdfPage = originPdfPage?.takeIf { it > 0 }
         )
         active = transaction
         return transaction
@@ -178,9 +184,10 @@ internal class ReaderNavigationTransactionGate(
 
     @Synchronized
     fun consumeSettled(
-        observedLocatorJson: String?,
+        observedLocatorJson: String? = null,
         nowElapsedMs: Long,
-        observedIdentity: ReaderNavigationIdentity? = null
+        observedIdentity: ReaderNavigationIdentity? = null,
+        observedPdfPage: Int? = null
     ): ReaderNavigationTransaction? {
         val transaction = freshActive(nowElapsedMs) ?: return null
 
@@ -206,6 +213,21 @@ internal class ReaderNavigationTransactionGate(
             return null
         }
 
+        if (transaction.expectedPdfPage != null && transaction.expectedPdfPage != observedPdfPage) return null
+        active = null
+        return transaction
+    }
+
+    /** A lifecycle flush may commit a reached PDF destination before the 500ms UI debounce. */
+    @Synchronized
+    fun consumeReachedPdfDestination(nowElapsedMs: Long, observedPdfPage: Int?): ReaderNavigationTransaction? {
+        val transaction = freshActive(nowElapsedMs) ?: return null
+        if (transaction.expectedPdfPage == null || observedPdfPage == null || observedPdfPage <= 0) return null
+        val reachedDestination = transaction.expectedPdfPage == observedPdfPage
+        // An unanimated PDF jump has no intermediate page animation. A real page beyond its
+        // source can also be a user swipe immediately after that jump; final flush must not lose it.
+        val movedPastSource = transaction.originPdfPage != null && transaction.originPdfPage != observedPdfPage
+        if (!reachedDestination && !movedPastSource) return null
         active = null
         return transaction
     }
@@ -236,3 +258,7 @@ internal class ReaderNavigationTransactionGate(
         const val DEFAULT_TIMEOUT_MS = 3_000L
     }
 }
+
+/** Fast PDF swipes can flush beyond a jump target, but cannot fabricate a passage revisit there. */
+internal fun ReaderNavigationTransaction.passageVisitAfterSettlement(observedPdfPage: Int? = null): String? =
+    passageVisitLocatorJson?.takeIf { expectedPdfPage == null || expectedPdfPage == observedPdfPage }

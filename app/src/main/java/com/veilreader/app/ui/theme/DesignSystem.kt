@@ -1,10 +1,12 @@
 package com.veilreader.app.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -37,6 +39,40 @@ fun usesArabicScript(text: String): Boolean =
             code in 0xFB50..0xFDFF ||
             code in 0xFE70..0xFEFF
     }
+
+
+fun veilTrackingFor(
+    text: String,
+    latinTracking: TextUnit,
+    scriptGroup: VeilScriptGroup
+): TextUnit =
+    if (
+        scriptGroup == VeilScriptGroup.PERSIAN_ARABIC ||
+        usesArabicScript(text)
+    ) {
+        0.sp
+    } else {
+        latinTracking
+    }
+
+/**
+ * Local display tracking must never break connected Arabic-script glyphs.
+ *
+ * This helper protects both the active UI locale and mixed-script content. It should be used
+ * whenever a screen intentionally overrides the typography token's letterSpacing.
+ */
+@Composable
+fun TextStyle.withVeilTracking(
+    text: String,
+    latinTracking: TextUnit
+): TextStyle =
+    copy(
+        letterSpacing = veilTrackingFor(
+            text = text,
+            latinTracking = latinTracking,
+            scriptGroup = LocalVeilScriptGroup.current
+        )
+    )
 
 /** Stable optical measures shared across phone/tablet layouts. */
 object VeilMeasure {

@@ -1,0 +1,2992 @@
+[
+  {
+    "branch": "origin/BUILD-WORKMODE-GRAYFOG-AUDIT-FIX",
+    "head": "5592bc6e2f9200d33deb68d47d0bbc70cc1b8393",
+    "date": "2026-09-26T23:51:03+03:30",
+    "arena_counts": [
+      "2856",
+      "0"
+    ],
+    "reader_counts": [
+      "2657",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/BUILD-WORKMODE-GRAYFOG-FULL",
+    "head": "9a8b66095baafdbc7dd069b364c1a2646bd06005",
+    "date": "2026-09-26T15:46:05+03:30",
+    "arena_counts": [
+      "3011",
+      "0"
+    ],
+    "reader_counts": [
+      "2812",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/BUILD-WORKMODE-GRAYFOG-PERFECTION",
+    "head": "7725fc48dffff5ba2f57985386934b8337f18820",
+    "date": "2026-09-30T01:26:18+03:30",
+    "arena_counts": [
+      "2582",
+      "0"
+    ],
+    "reader_counts": [
+      "2383",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/CANONICAL-UIUX-PERFECTION",
+    "head": "7c98d6f4435762dbd2e904252109f54985d1cf4f",
+    "date": "2026-09-27T15:28:47+03:30",
+    "arena_counts": [
+      "2621",
+      "0"
+    ],
+    "reader_counts": [
+      "2422",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin",
+    "head": "cbf27c818409ad63d2c2fa55178bfd6c16a87642",
+    "date": "2026-09-20T09:32:37+03:30",
+    "arena_counts": [
+      "3228",
+      "0"
+    ],
+    "reader_counts": [
+      "3029",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/arena-rebuild-v1",
+    "head": "81201e962a62a70755e870e1f895dc6d2c146899",
+    "date": "2026-09-30T19:26:31+03:30",
+    "arena_counts": [
+      "3077",
+      "5"
+    ],
+    "reader_counts": [
+      "2878",
+      "5"
+    ]
+  },
+  {
+    "branch": "origin/alpha/arena-rebuild-v2",
+    "head": "3296164cb4a92cc373d982179623972685962f76",
+    "date": "2026-09-30T20:49:37+03:30",
+    "arena_counts": [
+      "2582",
+      "74"
+    ],
+    "reader_counts": [
+      "2383",
+      "74"
+    ]
+  },
+  {
+    "branch": "origin/alpha/canonical-convergence-w10",
+    "head": "a12bfa0ccc0142e41fa81c5d412c280678997bca",
+    "date": "2026-09-30T06:52:01+03:30",
+    "arena_counts": [
+      "662",
+      "0"
+    ],
+    "reader_counts": [
+      "463",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/canonical-convergence-w7",
+    "head": "68474a9c2d518c50206fbfefa83ce694113757e6",
+    "date": "2026-09-29T11:30:48+03:30",
+    "arena_counts": [
+      "2560",
+      "0"
+    ],
+    "reader_counts": [
+      "2361",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/cathedral-convergence-w0",
+    "head": "46d4e99643920c6dcb0b72d74ae29f98ac108805",
+    "date": "2026-09-27T21:58:21+03:30",
+    "arena_counts": [
+      "2591",
+      "0"
+    ],
+    "reader_counts": [
+      "2392",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/cathedral-visual-breakthrough-v1",
+    "head": "16342664ecfe8cab59e58381e51c61476233bb08",
+    "date": "2026-09-28T10:10:43+03:30",
+    "arena_counts": [
+      "2431",
+      "0"
+    ],
+    "reader_counts": [
+      "2232",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/g1-silent-names-policy-v1",
+    "head": "1c4e26df49d4c901d0784e58c47344500f48c406",
+    "date": "2026-09-28T23:31:09+03:30",
+    "arena_counts": [
+      "2356",
+      "0"
+    ],
+    "reader_counts": [
+      "2157",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/g1-usable-silent-names-v1",
+    "head": "42f69bbfe8a7802dc9d07d15a43ff661ecd17d09",
+    "date": "2026-09-28T14:58:22+03:30",
+    "arena_counts": [
+      "2358",
+      "0"
+    ],
+    "reader_counts": [
+      "2159",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/i18n-path-ritual-snapshot",
+    "head": "d7c9c47f3a5b33a79774ee040148d74cef1c92ce",
+    "date": "2026-09-28T22:17:18+03:30",
+    "arena_counts": [
+      "2353",
+      "0"
+    ],
+    "reader_counts": [
+      "2154",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/i18n-path-ritual-v1",
+    "head": "b69de6f4f892e52debf3419af5a23f1aed2974ab",
+    "date": "2026-09-28T22:39:49+03:30",
+    "arena_counts": [
+      "2324",
+      "0"
+    ],
+    "reader_counts": [
+      "2125",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w11-mirror-manga-integration",
+    "head": "affe601c086f107ac8505c4c5896f03cfce64ece",
+    "date": "2026-09-30T11:30:40+03:30",
+    "arena_counts": [
+      "489",
+      "0"
+    ],
+    "reader_counts": [
+      "290",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w12-manga-series-integrity-v1",
+    "head": "cac175a0c0ee8e8c7a2986f2924731dd4740a4e0",
+    "date": "2026-09-30T12:27:07+03:30",
+    "arena_counts": [
+      "489",
+      "19"
+    ],
+    "reader_counts": [
+      "290",
+      "19"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w12-reader-integrity-polish",
+    "head": "bb95fff1d0531b2e7980f83005a25f508703035f",
+    "date": "2026-09-30T12:18:01+03:30",
+    "arena_counts": [
+      "479",
+      "0"
+    ],
+    "reader_counts": [
+      "280",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w13-manga-reversible-merge-v1",
+    "head": "561f65af23492784e8e80e1701fb0fa984dfca30",
+    "date": "2026-09-30T14:45:08+03:30",
+    "arena_counts": [
+      "489",
+      "72"
+    ],
+    "reader_counts": [
+      "290",
+      "72"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w13-reader-open-ownership-v1",
+    "head": "7ddb08edf2992dc6622acd570f34fee5c6485f96",
+    "date": "2026-09-30T14:10:26+03:30",
+    "arena_counts": [
+      "476",
+      "0"
+    ],
+    "reader_counts": [
+      "277",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w14-background-durability-v1",
+    "head": "e4a102d0f94ff60fffc600f0e7bfbba6843d9f80",
+    "date": "2026-09-30T14:38:38+03:30",
+    "arena_counts": [
+      "474",
+      "0"
+    ],
+    "reader_counts": [
+      "275",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w15-reader-resurrection-guards-v1",
+    "head": "794aa63e2c4527914a17704f04c00a81a8807870",
+    "date": "2026-09-30T14:48:18+03:30",
+    "arena_counts": [
+      "470",
+      "0"
+    ],
+    "reader_counts": [
+      "271",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w16-process-stable-reading-sessions-v1",
+    "head": "0d63c1a867f85496d218d195d00bf06cdef4461e",
+    "date": "2026-09-30T14:57:57+03:30",
+    "arena_counts": [
+      "464",
+      "0"
+    ],
+    "reader_counts": [
+      "265",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w17-reader-session-ui-ownership-v1",
+    "head": "d0f9a584d09c46d7466aa51521b8316edb0a5e49",
+    "date": "2026-09-30T15:05:29+03:30",
+    "arena_counts": [
+      "458",
+      "0"
+    ],
+    "reader_counts": [
+      "259",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w18-reader-async-ownership-v1",
+    "head": "882ac1cdca628797858c49e540829bdbe51eae71",
+    "date": "2026-09-30T15:12:48+03:30",
+    "arena_counts": [
+      "452",
+      "0"
+    ],
+    "reader_counts": [
+      "253",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w19-navigation-transaction-integrity-v1",
+    "head": "75e1fc1566bd0472b92d05a7c2e0e1f5d604e36d",
+    "date": "2026-09-30T15:26:34+03:30",
+    "arena_counts": [
+      "436",
+      "0"
+    ],
+    "reader_counts": [
+      "237",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w20-progress-write-ordering-v1",
+    "head": "08bde84b51af3d72c8ea7f2eb01fe80981ed28ac",
+    "date": "2026-09-30T15:44:13+03:30",
+    "arena_counts": [
+      "421",
+      "0"
+    ],
+    "reader_counts": [
+      "222",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w21-reader-startup-handshake-v1",
+    "head": "1e3eb0cc7c225bf5e26a4944ce0db4ddb38fbbe3",
+    "date": "2026-09-30T15:57:49+03:30",
+    "arena_counts": [
+      "409",
+      "0"
+    ],
+    "reader_counts": [
+      "210",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w22-open-cancellation-integrity-v1",
+    "head": "407be48d29c46e71a0e4fe6f2cb364dc2a26ccf1",
+    "date": "2026-09-30T18:26:38+03:30",
+    "arena_counts": [
+      "363",
+      "0"
+    ],
+    "reader_counts": [
+      "164",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w23-reader-experience-convergence-v1",
+    "head": "e18af05b09059b0fb68936ec2f42508b1271ca68",
+    "date": "2026-09-30T19:04:32+03:30",
+    "arena_counts": [
+      "353",
+      "0"
+    ],
+    "reader_counts": [
+      "154",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w24-arena-progression-durability-v1",
+    "head": "09d948b17566ec8f4f43612ad07b281d23fc2b24",
+    "date": "2026-09-30T22:08:56+03:30",
+    "arena_counts": [
+      "350",
+      "0"
+    ],
+    "reader_counts": [
+      "151",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w25-book-detail-hierarchy-v1",
+    "head": "f02df8fdae8429e13c6d9059ce4845f374331422",
+    "date": "2026-09-30T22:10:05+03:30",
+    "arena_counts": [
+      "349",
+      "0"
+    ],
+    "reader_counts": [
+      "150",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w26-arena-canonical-ui-rebuild-v1",
+    "head": "4415bb723818b1b24e1ab123108122d5aca0643d",
+    "date": "2026-10-03T00:00:41+03:30",
+    "arena_counts": [
+      "0",
+      "0"
+    ],
+    "reader_counts": [
+      "136",
+      "335"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w27-grayfog-archive-rebuild-v1",
+    "head": "e008497443a9395b263c06afdae096725b300d26",
+    "date": "2026-09-30T23:52:56+03:30",
+    "arena_counts": [
+      "335",
+      "7"
+    ],
+    "reader_counts": [
+      "129",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w28-artifact-chamber-rebuild-v1",
+    "head": "42895a8b6bc398f26845492c31965e60158c315f",
+    "date": "2026-09-30T23:56:39+03:30",
+    "arena_counts": [
+      "335",
+      "12"
+    ],
+    "reader_counts": [
+      "124",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w29-sanctuary-reader-rebuild-v1",
+    "head": "b361be82af8fd1286bd9acd4de652633818fd399",
+    "date": "2026-10-01T00:01:31+03:30",
+    "arena_counts": [
+      "335",
+      "18"
+    ],
+    "reader_counts": [
+      "118",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w30-reader-appearance-pdf-workspace-v1",
+    "head": "3b4f894293bec8bbc42d291d0142287f67cdf6f8",
+    "date": "2026-10-01T00:06:14+03:30",
+    "arena_counts": [
+      "335",
+      "23"
+    ],
+    "reader_counts": [
+      "113",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w31-hidden-archive-rebuild-v1",
+    "head": "c7793fd37483e785f087420ebdf1837d6669a3d6",
+    "date": "2026-10-01T00:08:54+03:30",
+    "arena_counts": [
+      "335",
+      "26"
+    ],
+    "reader_counts": [
+      "110",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w32-collections-search-rebuild-v1",
+    "head": "ced734f5690ce19d38af2839b975270b7f38e475",
+    "date": "2026-10-01T00:11:18+03:30",
+    "arena_counts": [
+      "335",
+      "31"
+    ],
+    "reader_counts": [
+      "105",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w33-settings-profile-rebuild-v1",
+    "head": "9307a9d85625ca70a4d2d16286256e6020281f37",
+    "date": "2026-10-01T00:13:13+03:30",
+    "arena_counts": [
+      "335",
+      "35"
+    ],
+    "reader_counts": [
+      "101",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w34-castle-path-rebuild-v1",
+    "head": "f26cb27f2a4786ee2f05134801485f9756a5fee1",
+    "date": "2026-10-01T00:15:29+03:30",
+    "arena_counts": [
+      "335",
+      "39"
+    ],
+    "reader_counts": [
+      "97",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w35-ritual-sanctum-rebuild-v1",
+    "head": "bc06770935cb819d8d300c98a0e06439f19a4526",
+    "date": "2026-10-01T00:19:19+03:30",
+    "arena_counts": [
+      "335",
+      "42"
+    ],
+    "reader_counts": [
+      "94",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w36-full-harmony-motion-v1",
+    "head": "75b134ab1baa60360dafa82244a04a050e72de86",
+    "date": "2026-10-01T00:23:59+03:30",
+    "arena_counts": [
+      "335",
+      "58"
+    ],
+    "reader_counts": [
+      "78",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w37-reader-tap-matrix-v1",
+    "head": "88078a60d1b4e7c28accaf16c461f6e09ec92acb",
+    "date": "2026-10-03T06:53:08+03:30",
+    "arena_counts": [
+      "335",
+      "84"
+    ],
+    "reader_counts": [
+      "52",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w38-reader-hardware-keys-v1",
+    "head": "2dcf3556a2177e006790811cf926741c13802d27",
+    "date": "2026-10-03T07:04:35+03:30",
+    "arena_counts": [
+      "335",
+      "111"
+    ],
+    "reader_counts": [
+      "25",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w39-focus-guide-v1",
+    "head": "7d3d7e289e7e2dd895a8bf8772587ee78dd8ce0d",
+    "date": "2026-10-03T06:42:10Z",
+    "arena_counts": [
+      "335",
+      "132"
+    ],
+    "reader_counts": [
+      "4",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w40-reader-cloud-baseline-v1",
+    "head": "0632a7817b954035442ca9ca7d14b57570f02087",
+    "date": "2026-10-03T07:33:58Z",
+    "arena_counts": [
+      "335",
+      "133"
+    ],
+    "reader_counts": [
+      "3",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w40-readium-tts-v1",
+    "head": "38491836a341bfa97657f9736a6794041fa02fc8",
+    "date": "2026-10-03T08:03:35+03:30",
+    "arena_counts": [
+      "335",
+      "147"
+    ],
+    "reader_counts": [
+      "13",
+      "24"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w41-pdf-reliability-v1",
+    "head": "d311b019353fc7ad4214d931b2184f2c40e8b2c6",
+    "date": "2026-10-03T08:09:31Z",
+    "arena_counts": [
+      "335",
+      "134"
+    ],
+    "reader_counts": [
+      "2",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w41-selection-lookup-v1",
+    "head": "0f03927ac7c774ea21bfe01591e9a07e5197ea99",
+    "date": "2026-10-03T08:06:46+03:30",
+    "arena_counts": [
+      "335",
+      "156"
+    ],
+    "reader_counts": [
+      "13",
+      "33"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w42-reading-eta-v1",
+    "head": "e688113ae73488b40caf44f1afdaf68a9fbd65a5",
+    "date": "2026-10-03T08:15:38+03:30",
+    "arena_counts": [
+      "335",
+      "173"
+    ],
+    "reader_counts": [
+      "13",
+      "50"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w42-tts-foundation-v1",
+    "head": "1c987f85b27be8c71892adca1966c8e1853e7ccb",
+    "date": "2026-10-03T09:08:30Z",
+    "arena_counts": [
+      "335",
+      "136"
+    ],
+    "reader_counts": [
+      "0",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w6-unified-reading-world",
+    "head": "dfa3e2f946489adf2882f4a1e6f018c0d9c723cb",
+    "date": "2026-09-28T02:15:41+03:30",
+    "arena_counts": [
+      "2459",
+      "0"
+    ],
+    "reader_counts": [
+      "2260",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w8-convergence-sync",
+    "head": "d1952f47d6cc982d779bc118a9b2aa02c07db1a9",
+    "date": "2026-09-30T08:29:06+03:30",
+    "arena_counts": [
+      "2272",
+      "4"
+    ],
+    "reader_counts": [
+      "2073",
+      "4"
+    ]
+  },
+  {
+    "branch": "origin/alpha/w9-accessibility-contrast-foundation",
+    "head": "a25ff2aaa1898cb555baf1f26d40a81735f85cd7",
+    "date": "2026-09-30T06:45:28+03:30",
+    "arena_counts": [
+      "2261",
+      "0"
+    ],
+    "reader_counts": [
+      "2062",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/chore/google-skills-controlled-pilot",
+    "head": "59941d57e65e269a4110be4905a831e7a3de00e1",
+    "date": "2026-09-22T15:54:48+03:30",
+    "arena_counts": [
+      "3221",
+      "0"
+    ],
+    "reader_counts": [
+      "3022",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/codemagic-release-pilot",
+    "head": "fd212b6d32ebca1b6fd915f592838de78c9f69fb",
+    "date": "2026-09-25T09:54:40+03:30",
+    "arena_counts": [
+      "3009",
+      "0"
+    ],
+    "reader_counts": [
+      "2810",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/codemagic-runner-v2",
+    "head": "96a3748e3347f96be7359cf27d4e9c715f39396b",
+    "date": "2026-09-25T18:14:30+03:30",
+    "arena_counts": [
+      "3055",
+      "0"
+    ],
+    "reader_counts": [
+      "2856",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/manga-rc-regression-gate-v1",
+    "head": "939010157ddf61f126f7c7886d72a1cfddc989b4",
+    "date": "2026-09-21T10:51:51+03:30",
+    "arena_counts": [
+      "3063",
+      "0"
+    ],
+    "reader_counts": [
+      "2864",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/phone-cloud-green-gate-v1",
+    "head": "3027c7ead3a819340eee49ea523a9c7343fc76e9",
+    "date": "2026-09-21T10:20:30+03:30",
+    "arena_counts": [
+      "3098",
+      "0"
+    ],
+    "reader_counts": [
+      "2899",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/render-verify-readium-3-4",
+    "head": "09c99a6113c2e080b2088671e9777d6ea33f846a",
+    "date": "2026-09-18T12:57:42+03:30",
+    "arena_counts": [
+      "3231",
+      "0"
+    ],
+    "reader_counts": [
+      "3032",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/self-hosted-align-gradle-9-6",
+    "head": "5037ce0fae11a48a5eff4d45a9cb9e6c0b60d620",
+    "date": "2026-09-20T08:37:59+03:30",
+    "arena_counts": [
+      "3229",
+      "0"
+    ],
+    "reader_counts": [
+      "3030",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ci/self-hosted-runner-bootstrap-hardening",
+    "head": "204eb4d6d6b657437163de576bd1fd3c2e48bdf1",
+    "date": "2026-09-20T23:41:42+04:30",
+    "arena_counts": [
+      "3198",
+      "0"
+    ],
+    "reader_counts": [
+      "2999",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/codex/reader-chrome-i18n-v1",
+    "head": "349d9a4e428d285d5f3f81c4f70f7ae561ac9126",
+    "date": "2026-09-29T01:10:16+03:30",
+    "arena_counts": [
+      "2336",
+      "0"
+    ],
+    "reader_counts": [
+      "2137",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/agent-infrastructure-owner-layers-v1",
+    "head": "864725c34514b66e758e239e7379206835c6a505",
+    "date": "2026-09-18T19:48:54+03:30",
+    "arena_counts": [
+      "3234",
+      "0"
+    ],
+    "reader_counts": [
+      "3035",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/challenge-registry-v1",
+    "head": "edf7508fedf1698527626fc1175b3abacd9f2e9b",
+    "date": "2026-09-18T17:07:56+03:30",
+    "arena_counts": [
+      "3233",
+      "0"
+    ],
+    "reader_counts": [
+      "3034",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/mobile-command-encoding-fix",
+    "head": "9ccfde140c31e18f4914eb1f8798c87cf7cbf279",
+    "date": "2026-09-20T09:32:12+03:30",
+    "arena_counts": [
+      "3228",
+      "0"
+    ],
+    "reader_counts": [
+      "3029",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/mobile-command-layer-pilot",
+    "head": "7aa72f891c719ca16a3bbf080b80c1e29857da71",
+    "date": "2026-09-18T14:55:37+03:30",
+    "arena_counts": [
+      "3235",
+      "0"
+    ],
+    "reader_counts": [
+      "3036",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/mobile-command-v2",
+    "head": "1487e63d39328798a82637c445bb21cef1272c81",
+    "date": "2026-09-20T09:16:52+03:30",
+    "arena_counts": [
+      "3228",
+      "0"
+    ],
+    "reader_counts": [
+      "3029",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/offline-continuity-node-v1",
+    "head": "d5a04fcf008d52af6f2c2bed365890bb4cee63cc",
+    "date": "2026-09-18T20:02:02+03:30",
+    "arena_counts": [
+      "3219",
+      "0"
+    ],
+    "reader_counts": [
+      "3020",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/offline-continuity-reconcile",
+    "head": "e301b0076958c73e89b44d0a20e253b490b68590",
+    "date": "2026-09-18T20:02:53+03:30",
+    "arena_counts": [
+      "3232",
+      "0"
+    ],
+    "reader_counts": [
+      "3033",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/project-file-hygiene-v1",
+    "head": "a444d7cb21190a9fb9735e38531838420ba18f0c",
+    "date": "2026-09-20T08:30:55+03:30",
+    "arena_counts": [
+      "3231",
+      "0"
+    ],
+    "reader_counts": [
+      "3032",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/company-os/work-reuse-gate-v1",
+    "head": "1fb1cfe7d12190322604ed4ca7cfc291f5a3c6a5",
+    "date": "2026-09-18T16:50:27+03:30",
+    "arena_counts": [
+      "3225",
+      "0"
+    ],
+    "reader_counts": [
+      "3026",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/book-artifact-facts-consistency",
+    "head": "9d11557506a7e59fd7b522242c478d0f9e1556af",
+    "date": "2026-09-29T08:15:12+03:30",
+    "arena_counts": [
+      "2689",
+      "0"
+    ],
+    "reader_counts": [
+      "2490",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/gray-fog-archive-v1",
+    "head": "4cdfd657ddb23c3724b046e2000b7997253941d8",
+    "date": "2026-09-25T15:21:14+03:30",
+    "arena_counts": [
+      "3079",
+      "0"
+    ],
+    "reader_counts": [
+      "2880",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-appearance-pdf-v2",
+    "head": "e57e7f6dda61d7ee239b380b14057aa6397a811c",
+    "date": "2026-09-26T17:18:39+03:30",
+    "arena_counts": [
+      "2991",
+      "0"
+    ],
+    "reader_counts": [
+      "2792",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-archive-settings-v2",
+    "head": "c54e344069472e272f9d5a79409347dfdeee4847",
+    "date": "2026-09-26T17:23:30+03:30",
+    "arena_counts": [
+      "2987",
+      "0"
+    ],
+    "reader_counts": [
+      "2788",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-book-detail-localization",
+    "head": "19ffbaf2e5f8f245412a0d97a4e3fa185f20c2b5",
+    "date": "2026-09-29T08:25:35+03:30",
+    "arena_counts": [
+      "2656",
+      "0"
+    ],
+    "reader_counts": [
+      "2457",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-book-detail-v2",
+    "head": "511066f581af5734e85b03b77455ef8c9784a54c",
+    "date": "2026-09-26T16:47:15+03:30",
+    "arena_counts": [
+      "3004",
+      "0"
+    ],
+    "reader_counts": [
+      "2805",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-dream-typography-v1",
+    "head": "c6b0f00615b872e9b8882a256ae8fa14f30ec91e",
+    "date": "2026-09-26T18:53:52+03:30",
+    "arena_counts": [
+      "2953",
+      "0"
+    ],
+    "reader_counts": [
+      "2754",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-foundation-v2",
+    "head": "d07e34d2eba9ebb15dc4e945fb497958b7a77656",
+    "date": "2026-09-26T16:37:58+03:30",
+    "arena_counts": [
+      "3008",
+      "0"
+    ],
+    "reader_counts": [
+      "2809",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-library-entry-accessibility",
+    "head": "ef2be2fd2f46d4e1b1c48c56452bc53ff0aee097",
+    "date": "2026-09-29T08:27:52+03:30",
+    "arena_counts": [
+      "2653",
+      "0"
+    ],
+    "reader_counts": [
+      "2454",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-library-v2",
+    "head": "ad7598101ec361d87bbd0f1657990dc7f6abe8bc",
+    "date": "2026-09-26T16:45:35+03:30",
+    "arena_counts": [
+      "3005",
+      "0"
+    ],
+    "reader_counts": [
+      "2806",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-library-viewport",
+    "head": "f2d62afbdfb7ccbbf3141ef2b32b196612c46725",
+    "date": "2026-09-26T06:18:38+03:30",
+    "arena_counts": [
+      "3027",
+      "0"
+    ],
+    "reader_counts": [
+      "2828",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-navigation-v1",
+    "head": "e85b6e01b6480e702672ba56964c013432086046",
+    "date": "2026-09-25T19:21:08+03:30",
+    "arena_counts": [
+      "3040",
+      "0"
+    ],
+    "reader_counts": [
+      "2841",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-page-motion-v2",
+    "head": "f0e069668a7e7172bd6beb770bce8a2ef3da4c71",
+    "date": "2026-09-26T17:10:08+03:30",
+    "arena_counts": [
+      "2995",
+      "0"
+    ],
+    "reader_counts": [
+      "2796",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-perfection-pass-v1",
+    "head": "dd0be0e76f6139c17779f5d20b8e0c44123e30e1",
+    "date": "2026-09-27T00:33:09+03:30",
+    "arena_counts": [
+      "2788",
+      "0"
+    ],
+    "reader_counts": [
+      "2589",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-persian-backup-safety",
+    "head": "6e9171b46d4988e1c434c7d8aca0abf61f7e7845",
+    "date": "2026-09-29T08:10:37+03:30",
+    "arena_counts": [
+      "2662",
+      "0"
+    ],
+    "reader_counts": [
+      "2463",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-reader-sanctuary-v2",
+    "head": "cdf5e688d2a13a9e5e8d5b4a03595401ae3158bb",
+    "date": "2026-09-26T16:50:27+03:30",
+    "arena_counts": [
+      "3001",
+      "0"
+    ],
+    "reader_counts": [
+      "2802",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-reader-v3",
+    "head": "5b79260c165b3f9629f02b8ad6e7fc709c8a58db",
+    "date": "2026-09-25T19:17:35+03:30",
+    "arena_counts": [
+      "3042",
+      "0"
+    ],
+    "reader_counts": [
+      "2843",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-reference-fidelity-v1",
+    "head": "8fefa410652a5a28173bb23182aa0fe444b23169",
+    "date": "2026-09-26T07:49:09+03:30",
+    "arena_counts": [
+      "2975",
+      "0"
+    ],
+    "reader_counts": [
+      "2776",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-reference-match",
+    "head": "e1a131e660f870687bc60dddd6386083a566172c",
+    "date": "2026-09-26T15:36:13+03:30",
+    "arena_counts": [
+      "3055",
+      "0"
+    ],
+    "reader_counts": [
+      "2856",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-threshold-v2",
+    "head": "9a90b83ca9e2882c10462aeb1fbaa3d38a40dd68",
+    "date": "2026-09-26T16:42:46+03:30",
+    "arena_counts": [
+      "3006",
+      "0"
+    ],
+    "reader_counts": [
+      "2807",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/grayfog-v4-concept-fidelity",
+    "head": "5cb39c2c3f7248c69657e92e66b3c5b1de892863",
+    "date": "2026-09-25T20:35:26+03:30",
+    "arena_counts": [
+      "3030",
+      "0"
+    ],
+    "reader_counts": [
+      "2831",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/design/motion-reference-artifacts-v1",
+    "head": "0ca331a87c297ccc7ea8d806b4a7a507b0884fdb",
+    "date": "2026-09-30T16:29:21+03:30",
+    "arena_counts": [
+      "397",
+      "2"
+    ],
+    "reader_counts": [
+      "198",
+      "2"
+    ]
+  },
+  {
+    "branch": "origin/design/visual-redesign-v2",
+    "head": "cccc3703586f36760df686a316d6ba831e434142",
+    "date": "2026-09-25T19:11:22+03:30",
+    "arena_counts": [
+      "3047",
+      "0"
+    ],
+    "reader_counts": [
+      "2848",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/diag/actions-minimal",
+    "head": "7c23a9bd6a0a9ac417b9b5bbe57733bc165f4c3e",
+    "date": "2026-09-21T19:36:36+03:30",
+    "arena_counts": [
+      "3233",
+      "0"
+    ],
+    "reader_counts": [
+      "3034",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/docs/r1-9h-selective-port-inventory",
+    "head": "cea28592a255062c46f39c4a0170aa5581a6e75e",
+    "date": "2026-09-22T13:46:59+03:30",
+    "arena_counts": [
+      "3132",
+      "0"
+    ],
+    "reader_counts": [
+      "2933",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/docs/r1-9j-static-acceptance",
+    "head": "f27a2d25fe2049ee4c19bd929c28f987b8bfe47e",
+    "date": "2026-09-22T13:54:47+03:30",
+    "arena_counts": [
+      "3128",
+      "0"
+    ],
+    "reader_counts": [
+      "2929",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/docs/rc-version-qa-hygiene",
+    "head": "7dde9beee51475a6a4b10505c6ebb9ed858ba234",
+    "date": "2026-09-20T23:04:48+04:30",
+    "arena_counts": [
+      "3198",
+      "0"
+    ],
+    "reader_counts": [
+      "2999",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/experiment/startup-gpu-backdrop-ab",
+    "head": "67706d76f0a129938e396177cec729291baf130c",
+    "date": "2026-09-24T00:27:16+03:30",
+    "arena_counts": [
+      "3085",
+      "0"
+    ],
+    "reader_counts": [
+      "2886",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/adaptive-large-screen-v1",
+    "head": "06178578fea5360a766393c784ffa341bf461065",
+    "date": "2026-09-25T16:18:45+03:30",
+    "arena_counts": [
+      "3059",
+      "0"
+    ],
+    "reader_counts": [
+      "2860",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/archive-memory-art-v2",
+    "head": "e6dca48757ff818f30b0e316005d7b0845a25879",
+    "date": "2026-09-27T17:09:52+03:30",
+    "arena_counts": [
+      "2683",
+      "0"
+    ],
+    "reader_counts": [
+      "2484",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/book-detail-gray-fog-v1",
+    "head": "8b048ffd5cbdce9c17c4c141409ba5ca28577f14",
+    "date": "2026-09-25T16:08:29+03:30",
+    "arena_counts": [
+      "3071",
+      "0"
+    ],
+    "reader_counts": [
+      "2872",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/castle-mutation-v2",
+    "head": "19e44b26f0f58b7f5d2a21efd2769e299c45b7a1",
+    "date": "2026-09-27T16:52:19+03:30",
+    "arena_counts": [
+      "2684",
+      "0"
+    ],
+    "reader_counts": [
+      "2485",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/cleanroom-reader-powerpack-1",
+    "head": "0144a78dfb196ed4bc257445f8ac5b7906181f56",
+    "date": "2026-10-03T00:05:48+03:30",
+    "arena_counts": [
+      "3077",
+      "6"
+    ],
+    "reader_counts": [
+      "2878",
+      "6"
+    ]
+  },
+  {
+    "branch": "origin/feature/gray-fog-theme-foundation-v1",
+    "head": "b5863099955efee94bee382a1d1ee3f40921ba70",
+    "date": "2026-09-25T15:22:32+03:30",
+    "arena_counts": [
+      "3078",
+      "0"
+    ],
+    "reader_counts": [
+      "2879",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/library-gray-fog-polish-v1",
+    "head": "b0fdc05cc953fbb964194e3eff801d6f9e0b3515",
+    "date": "2026-09-25T15:27:47+03:30",
+    "arena_counts": [
+      "3079",
+      "0"
+    ],
+    "reader_counts": [
+      "2880",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/library-persian-search-normalization",
+    "head": "aef0ce17991baaa2c5560870b90f157c98e4dbe7",
+    "date": "2026-09-29T08:31:19+03:30",
+    "arena_counts": [
+      "2647",
+      "0"
+    ],
+    "reader_counts": [
+      "2448",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/literary-art-direction-v1",
+    "head": "43ac3c1493c952d0e044029d67b201469847acbf",
+    "date": "2026-09-27T18:16:51+03:30",
+    "arena_counts": [
+      "2678",
+      "0"
+    ],
+    "reader_counts": [
+      "2479",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-android-challenge-ui-v1",
+    "head": "1085d9ee574c4b82f8626dffbae3878c27271fd1",
+    "date": "2026-09-21T14:02:16+03:30",
+    "arena_counts": [
+      "3050",
+      "0"
+    ],
+    "reader_counts": [
+      "2851",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-browser-challenge-foundation-v1",
+    "head": "63e3dca37f1c77983f32c1e25a6d15c308ae8e74",
+    "date": "2026-09-21T12:26:07+03:30",
+    "arena_counts": [
+      "3181",
+      "0"
+    ],
+    "reader_counts": [
+      "2982",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-canonical-offline-foundation-v1",
+    "head": "dc228665a2f1e057a3f64e5e727c45290ac09e92",
+    "date": "2026-09-21T12:05:34+03:30",
+    "arena_counts": [
+      "3205",
+      "0"
+    ],
+    "reader_counts": [
+      "3006",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-extreme-tall-strategy-v1",
+    "head": "097e513f1e2a0847d748561b9d240099afd865df",
+    "date": "2026-09-21T13:23:47+03:30",
+    "arena_counts": [
+      "3117",
+      "0"
+    ],
+    "reader_counts": [
+      "2918",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-hub-catalog-vertical-slice-v1",
+    "head": "5149dfdced08aaf1034ad228ed005c6f7a5327a9",
+    "date": "2026-09-21T16:17:09+03:30",
+    "arena_counts": [
+      "2967",
+      "0"
+    ],
+    "reader_counts": [
+      "2768",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-core-foundation-v1",
+    "head": "e5ab35069c0f7f62bd14b8f32efb85a9f4e5168a",
+    "date": "2026-09-21T12:32:41+03:30",
+    "arena_counts": [
+      "3170",
+      "0"
+    ],
+    "reader_counts": [
+      "2971",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-device-verification-v1",
+    "head": "7538f69f36b8911646ce2ebd339f4f462dd9d3ee",
+    "date": "2026-09-21T14:14:40+03:30",
+    "arena_counts": [
+      "3029",
+      "0"
+    ],
+    "reader_counts": [
+      "2830",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-image-delivery-v1",
+    "head": "f66536c23d69f4a7fffd4a09254c57a33c414e56",
+    "date": "2026-09-21T13:16:13+03:30",
+    "arena_counts": [
+      "3127",
+      "0"
+    ],
+    "reader_counts": [
+      "2928",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-presentation-v1",
+    "head": "7797874b65875b97c7230b242884dfd3805f27fb",
+    "date": "2026-09-21T13:08:41+03:30",
+    "arena_counts": [
+      "3140",
+      "0"
+    ],
+    "reader_counts": [
+      "2941",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-screen-integration-v1",
+    "head": "87246a34ea679b5ff61a4cda41cd23d32933f79f",
+    "date": "2026-09-21T13:37:48+03:30",
+    "arena_counts": [
+      "3098",
+      "0"
+    ],
+    "reader_counts": [
+      "2899",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-shell",
+    "head": "5182d2b5975de67038c92b9f43b569edd55729fe",
+    "date": "2026-09-20T12:50:52+03:30",
+    "arena_counts": [
+      "3205",
+      "0"
+    ],
+    "reader_counts": [
+      "3006",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-reader-ui-adapter-v1",
+    "head": "5980d0f5c3b0dfd975e96c2fbee6011c1c851ad4",
+    "date": "2026-09-21T12:43:49+03:30",
+    "arena_counts": [
+      "3157",
+      "0"
+    ],
+    "reader_counts": [
+      "2958",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-room-persistence-v1",
+    "head": "a9bead7bb82be32fb139c9004237c14b0c33d6fb",
+    "date": "2026-09-21T13:49:42+03:30",
+    "arena_counts": [
+      "3082",
+      "0"
+    ],
+    "reader_counts": [
+      "2883",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-source-health-ranking-v1",
+    "head": "59cfdd9920f1ae31b9b53eb236f18e4f85904d89",
+    "date": "2026-09-21T12:20:05+03:30",
+    "arena_counts": [
+      "3187",
+      "0"
+    ],
+    "reader_counts": [
+      "2988",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-source-replacement-planner-v1",
+    "head": "c137961e2176224dd17a405779675c99b9dcdbe2",
+    "date": "2026-09-21T12:13:02+03:30",
+    "arena_counts": [
+      "3197",
+      "0"
+    ],
+    "reader_counts": [
+      "2998",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/manga-source-sdk-foundation-v1",
+    "head": "19d4d8ee1979e2a45c48e8033a395e970974f151",
+    "date": "2026-09-21T11:57:45+03:30",
+    "arena_counts": [
+      "3214",
+      "0"
+    ],
+    "reader_counts": [
+      "3015",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/mangadex-live-source-pilot-v1",
+    "head": "84553ede7dbb29846c292c9acee7b9960a7082d5",
+    "date": "2026-09-21T16:51:12+03:30",
+    "arena_counts": [
+      "2951",
+      "0"
+    ],
+    "reader_counts": [
+      "2752",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/moon-reuse-pass-1",
+    "head": "dc14f1e1b259a26988f29f26bca210d86bb7f7f8",
+    "date": "2026-10-02T13:25:08+03:30",
+    "arena_counts": [
+      "3077",
+      "11"
+    ],
+    "reader_counts": [
+      "2878",
+      "11"
+    ]
+  },
+  {
+    "branch": "origin/feature/notebook-gray-fog-v1",
+    "head": "4dd71a45d4ac8d44d5be2d417cccc36849b966f9",
+    "date": "2026-09-25T16:00:34+03:30",
+    "arena_counts": [
+      "3073",
+      "0"
+    ],
+    "reader_counts": [
+      "2874",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/pdf-view-gray-fog-polish-v1",
+    "head": "f7f52f9de0c9fcfc69496a3792010d3e3b2d1e09",
+    "date": "2026-09-25T15:27:16+03:30",
+    "arena_counts": [
+      "3079",
+      "0"
+    ],
+    "reader_counts": [
+      "2880",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/pdf-view-polish-v1",
+    "head": "7c82559c0b95dc4ccd0804c5aca0657cd925333f",
+    "date": "2026-09-25T14:50:31+03:30",
+    "arena_counts": [
+      "3080",
+      "0"
+    ],
+    "reader_counts": [
+      "2881",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/persian-identity-v2",
+    "head": "9b80963752c0d811cee592aa50ab3291feeed273",
+    "date": "2026-09-27T17:55:50+03:30",
+    "arena_counts": [
+      "2673",
+      "0"
+    ],
+    "reader_counts": [
+      "2474",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/persistent-discovery-ledger",
+    "head": "a0514e2ef31b67d73981dc13f47657d1afc38589",
+    "date": "2026-09-27T17:24:31+03:30",
+    "arena_counts": [
+      "2677",
+      "0"
+    ],
+    "reader_counts": [
+      "2478",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/personal-use-settings-shortcut-v1",
+    "head": "e0d0531f416dacad33a540264d19783064f968fa",
+    "date": "2026-09-25T14:27:59+03:30",
+    "arena_counts": [
+      "3080",
+      "0"
+    ],
+    "reader_counts": [
+      "2881",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/reader-appearance-polish-v1",
+    "head": "e8bd568e00442fe454777bc3b76739e078f839ca",
+    "date": "2026-09-25T14:48:10+03:30",
+    "arena_counts": [
+      "3080",
+      "0"
+    ],
+    "reader_counts": [
+      "2881",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/reader-gray-fog-polish-v1",
+    "head": "3394a2ce00e137375fdd0883e0b66e17d52d8719",
+    "date": "2026-09-25T15:26:19+03:30",
+    "arena_counts": [
+      "3079",
+      "0"
+    ],
+    "reader_counts": [
+      "2880",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/reader-interaction-hardening",
+    "head": "539cf4dc7288ca67f8245b2d5cbe1fd16578c39c",
+    "date": "2026-09-20T13:32:58+03:30",
+    "arena_counts": [
+      "3206",
+      "0"
+    ],
+    "reader_counts": [
+      "3007",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/reader-navigation-modes-v1",
+    "head": "3fd7677a9d28b86bf4bb11bab18afb46c12c95d0",
+    "date": "2026-09-26T06:10:48+03:30",
+    "arena_counts": [
+      "3027",
+      "0"
+    ],
+    "reader_counts": [
+      "2828",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/reading-signature-v1",
+    "head": "bdd2a2ee3cdf33c06a623fbfbc58ae43d8f41604",
+    "date": "2026-09-27T17:33:32+03:30",
+    "arena_counts": [
+      "2683",
+      "0"
+    ],
+    "reader_counts": [
+      "2484",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/ritual-ascension-v1",
+    "head": "ec24786d8a5193a76201f1ae03ebd0e3c9f89c5f",
+    "date": "2026-09-27T16:34:21+03:30",
+    "arena_counts": [
+      "2686",
+      "0"
+    ],
+    "reader_counts": [
+      "2487",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/rtl-persian-foundation-v1",
+    "head": "f8bfca1fc8ae283f647701ffff30b0d6ed7f8358",
+    "date": "2026-09-25T16:14:03+03:30",
+    "arena_counts": [
+      "3062",
+      "0"
+    ],
+    "reader_counts": [
+      "2863",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/temporal-atmosphere-v1",
+    "head": "0395d0a80de804dfc99355edf071bed35cdae1a6",
+    "date": "2026-09-27T17:44:04+03:30",
+    "arena_counts": [
+      "2680",
+      "0"
+    ],
+    "reader_counts": [
+      "2481",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/threshold-gray-fog-polish-v1",
+    "head": "499b42bb3228bb425be72a5495d639dacb25ed42",
+    "date": "2026-09-25T15:32:36+03:30",
+    "arena_counts": [
+      "3080",
+      "0"
+    ],
+    "reader_counts": [
+      "2881",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/threshold-v2-stack-v1",
+    "head": "e9d6bad1c4af41539883a7508f112dae281233e4",
+    "date": "2026-09-25T16:20:35+03:30",
+    "arena_counts": [
+      "3058",
+      "0"
+    ],
+    "reader_counts": [
+      "2859",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/feature/world-kernel-w1",
+    "head": "871592cf2b4bf679959f32b2fbb4550d57bf500c",
+    "date": "2026-09-27T21:21:21+03:30",
+    "arena_counts": [
+      "2591",
+      "0"
+    ],
+    "reader_counts": [
+      "2392",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/canonical-reader-font-contract-20260921",
+    "head": "6907a098fb3681cc54617b936ee8faf4646acd3a",
+    "date": "2026-09-21T17:32:30+03:30",
+    "arena_counts": [
+      "3226",
+      "0"
+    ],
+    "reader_counts": [
+      "3027",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/manga-add-cancellation-20260921",
+    "head": "a39a2f88749f47da4490f207bc685fa254a96de7",
+    "date": "2026-09-21T17:32:58+03:30",
+    "arena_counts": [
+      "2966",
+      "0"
+    ],
+    "reader_counts": [
+      "2767",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/manga-process-death-route-v1",
+    "head": "b28a7f5acc11a178b09aa78d6153f1520f83bf82",
+    "date": "2026-09-21T10:37:22+03:30",
+    "arena_counts": [
+      "3083",
+      "0"
+    ],
+    "reader_counts": [
+      "2884",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/manga-reader-failure-recovery-v1",
+    "head": "8d33e10c6dc2d06881291c0b775b7406ff8ef353",
+    "date": "2026-09-21T10:50:35+03:30",
+    "arena_counts": [
+      "3065",
+      "0"
+    ],
+    "reader_counts": [
+      "2866",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/manga-reader-lifecycle-route-v1",
+    "head": "0acdf2b205cce425fe50bff7ce98641b10671af5",
+    "date": "2026-09-21T10:12:59+03:30",
+    "arena_counts": [
+      "3101",
+      "0"
+    ],
+    "reader_counts": [
+      "2902",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/manga-reader-offline-transition-v1",
+    "head": "226eae87435d6998227083da848b2b032e6d907c",
+    "date": "2026-09-21T10:10:30+03:30",
+    "arena_counts": [
+      "3103",
+      "0"
+    ],
+    "reader_counts": [
+      "2904",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/manga-reader-restore-preferences-v1",
+    "head": "512ca34729cc1927d197d83e6cfa4caff7c1c3bd",
+    "date": "2026-09-21T10:43:23+03:30",
+    "arena_counts": [
+      "3073",
+      "0"
+    ],
+    "reader_counts": [
+      "2874",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/p0-durable-annotations",
+    "head": "1ea01df852db27f72c23ad9eca3d54041a89e50d",
+    "date": "2026-09-12T20:20:51+03:30",
+    "arena_counts": [
+      "3267",
+      "0"
+    ],
+    "reader_counts": [
+      "3068",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/p2-2b-pdf-reliability",
+    "head": "b0eed4dd9fc1975bdae08c444b98fb4acedb5c15",
+    "date": "2026-09-22T01:15:42+03:30",
+    "arena_counts": [
+      "3179",
+      "0"
+    ],
+    "reader_counts": [
+      "2980",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/p2-2c1-settings-access",
+    "head": "a3d68255ab6ca4dd3a39e63fb64687177f811521",
+    "date": "2026-09-22T01:31:24+03:30",
+    "arena_counts": [
+      "3178",
+      "0"
+    ],
+    "reader_counts": [
+      "2979",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/p2-2c2-theme-reliability",
+    "head": "f70f51c89ade8fd8719b1b38bc7e077a9c67a3cb",
+    "date": "2026-09-22T01:44:27+03:30",
+    "arena_counts": [
+      "3177",
+      "0"
+    ],
+    "reader_counts": [
+      "2978",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/pagegate-session-baseline",
+    "head": "3c458757ae4024ff25dab36158a6dbf6ae202843",
+    "date": "2026-09-26T00:22:49+03:30",
+    "arena_counts": [
+      "3075",
+      "0"
+    ],
+    "reader_counts": [
+      "2876",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/paper-curl-haptics-respect-settings",
+    "head": "301a2a0066a0ce0a1f67dd993ffd661d9acf1deb",
+    "date": "2026-09-29T08:05:46+03:30",
+    "arena_counts": [
+      "2690",
+      "0"
+    ],
+    "reader_counts": [
+      "2491",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-10-exact-resume-harness",
+    "head": "995149964de071f9b1eace1e770d8ac6cd2c269d",
+    "date": "2026-09-22T11:44:49+03:30",
+    "arena_counts": [
+      "3141",
+      "0"
+    ],
+    "reader_counts": [
+      "2942",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-10a-durable-reader-close",
+    "head": "12e7fe5934ed8ea9da222ff408751c0080fec220",
+    "date": "2026-09-22T15:04:54+03:30",
+    "arena_counts": [
+      "3125",
+      "0"
+    ],
+    "reader_counts": [
+      "2926",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-3a-appearance-convergence",
+    "head": "18324d3242ce8df80f18e0db9dc15c1f7d1ca3d3",
+    "date": "2026-09-22T08:16:57+03:30",
+    "arena_counts": [
+      "3187",
+      "0"
+    ],
+    "reader_counts": [
+      "2988",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-3b-reader-appearance-mirror",
+    "head": "57d0c68e38409b5a81b2d1df84cdd2ff447508e6",
+    "date": "2026-09-22T08:29:30+03:30",
+    "arena_counts": [
+      "3186",
+      "0"
+    ],
+    "reader_counts": [
+      "2987",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-4-locator-event-normalization",
+    "head": "4dd466341cbe56bbe4d8ad5bdfac275147440ebc",
+    "date": "2026-09-22T08:58:05+03:30",
+    "arena_counts": [
+      "3181",
+      "0"
+    ],
+    "reader_counts": [
+      "2982",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-5-pdf-zoom-ownership",
+    "head": "3df33833b6d2f806592af09a1b9ff2771813c80d",
+    "date": "2026-09-22T09:15:14+03:30",
+    "arena_counts": [
+      "3179",
+      "0"
+    ],
+    "reader_counts": [
+      "2980",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-6-gesture-arbitration",
+    "head": "a88f42bf5419e912c6aa54558d7e1c38e33eefce",
+    "date": "2026-09-22T09:47:38+03:30",
+    "arena_counts": [
+      "3173",
+      "0"
+    ],
+    "reader_counts": [
+      "2974",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-7-theme-renderer-verification",
+    "head": "666623b5803960c220aa0728f85c7ee60260692d",
+    "date": "2026-09-22T10:09:52+03:30",
+    "arena_counts": [
+      "3168",
+      "0"
+    ],
+    "reader_counts": [
+      "2969",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-8-reader-brightness",
+    "head": "75c6b6a6fbe5bea09de10637bbccffe043de20c0",
+    "date": "2026-09-22T10:49:39+03:30",
+    "arena_counts": [
+      "3156",
+      "0"
+    ],
+    "reader_counts": [
+      "2957",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-8-reader-brightness-ownership",
+    "head": "61cfbf154487613c999bb34e17f424bc1c6ef321",
+    "date": "2026-09-22T10:31:07+03:30",
+    "arena_counts": [
+      "3157",
+      "0"
+    ],
+    "reader_counts": [
+      "2958",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-9-restore-sequencing",
+    "head": "9d463466a44fa094bb4bd920281ecbab2bad7255",
+    "date": "2026-09-22T11:16:21+03:30",
+    "arena_counts": [
+      "3146",
+      "0"
+    ],
+    "reader_counts": [
+      "2947",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-9b-settings-appearance-lost-update",
+    "head": "9b97dfc6ace10dbf8f6d81a96435166716dfd3e0",
+    "date": "2026-09-22T13:15:18+03:30",
+    "arena_counts": [
+      "3144",
+      "0"
+    ],
+    "reader_counts": [
+      "2945",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-9c-settings-reader-parity",
+    "head": "524dc772613eb9b6dedde8bbb8f08cc11d203725",
+    "date": "2026-09-22T13:15:36+03:30",
+    "arena_counts": [
+      "3142",
+      "0"
+    ],
+    "reader_counts": [
+      "2943",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/r1-9e-format-navigation-policy",
+    "head": "ba080fae5cb0c02d4d82d81e9e042d74aaf8b59d",
+    "date": "2026-09-22T13:20:28+03:30",
+    "arena_counts": [
+      "3135",
+      "0"
+    ],
+    "reader_counts": [
+      "2936",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/reader-selection-ux",
+    "head": "ec8761eab9b857983f3dfd256d3c0b17ffdd8e2e",
+    "date": "2026-09-12T20:35:44+03:30",
+    "arena_counts": [
+      "3265",
+      "0"
+    ],
+    "reader_counts": [
+      "3066",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/fix/release-file-open-single-top",
+    "head": "1ed9f666beeaa837e88f775cee93f4c576dd8620",
+    "date": "2026-09-24T12:54:15+03:30",
+    "arena_counts": [
+      "3082",
+      "0"
+    ],
+    "reader_counts": [
+      "2883",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/governance/alpha-night-wolves",
+    "head": "72daee463f29fffe1634bd6f6701ad553c64bafc",
+    "date": "2026-09-27T18:59:21+03:30",
+    "arena_counts": [
+      "2689",
+      "0"
+    ],
+    "reader_counts": [
+      "2490",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/infra/codemagic-pr-fallback",
+    "head": "2c10139b2b6f6230a5794a95a727928ee377e9f4",
+    "date": "2026-09-20T09:25:31+03:30",
+    "arena_counts": [
+      "3228",
+      "0"
+    ],
+    "reader_counts": [
+      "3029",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/infra/release-train-guardrails-v2",
+    "head": "12a75ea6e761a2d848a0b78021c286a13f415a5d",
+    "date": "2026-09-18T11:10:39+03:30",
+    "arena_counts": [
+      "3240",
+      "0"
+    ],
+    "reader_counts": [
+      "3041",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/infra/release-train-guardrails-v3",
+    "head": "28a3c2ec25b4a0160590e8f87e439dab8c3d83c3",
+    "date": "2026-09-18T11:24:16+03:30",
+    "arena_counts": [
+      "3239",
+      "0"
+    ],
+    "reader_counts": [
+      "3040",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/infra/self-hosted-runner-fallback",
+    "head": "f60f6622ffba47d7667c84153bd7311d99866bfd",
+    "date": "2026-09-18T12:21:08+03:30",
+    "arena_counts": [
+      "3240",
+      "0"
+    ],
+    "reader_counts": [
+      "3041",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/infra/self-hosted-runner-sdk",
+    "head": "f248e54ab77256a46aaf264af849145a57273923",
+    "date": "2026-09-18T12:22:28+03:30",
+    "arena_counts": [
+      "3240",
+      "0"
+    ],
+    "reader_counts": [
+      "3041",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/gray-fog-preview-v1",
+    "head": "4dccd7a62d52eb17cd284db42fe71931406c394c",
+    "date": "2026-09-25T15:29:25+03:30",
+    "arena_counts": [
+      "3075",
+      "0"
+    ],
+    "reader_counts": [
+      "2876",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/grayfog-all-workmode-build",
+    "head": "580607e7f87c02e7d69ca35a56e8666bb0212cec",
+    "date": "2026-09-26T07:06:08+03:30",
+    "arena_counts": [
+      "3012",
+      "0"
+    ],
+    "reader_counts": [
+      "2813",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/grayfog-reader-preview-v1",
+    "head": "580607e7f87c02e7d69ca35a56e8666bb0212cec",
+    "date": "2026-09-26T07:06:08+03:30",
+    "arena_counts": [
+      "3012",
+      "0"
+    ],
+    "reader_counts": [
+      "2813",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/grayfog-review-candidate",
+    "head": "ac2f9fa6ef10296f329d7fd2a0d802dda2fc9150",
+    "date": "2026-09-29T15:29:08+03:30",
+    "arena_counts": [
+      "2600",
+      "0"
+    ],
+    "reader_counts": [
+      "2401",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/grayfog-v3-preview",
+    "head": "90df17186bf89219d0c45dbafea4eef1f4f953ec",
+    "date": "2026-09-25T20:14:31+03:30",
+    "arena_counts": [
+      "3035",
+      "0"
+    ],
+    "reader_counts": [
+      "2836",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/reader-rc-v2",
+    "head": "22dcc398d6101ec0b19400dcd4e8c94e21d6c4fe",
+    "date": "2026-09-29T15:00:18+03:30",
+    "arena_counts": [
+      "3077",
+      "0"
+    ],
+    "reader_counts": [
+      "2878",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/integration/reader-rc-v3",
+    "head": "0d70232e1f36cfd99a9014d774b7ce82bc27be8d",
+    "date": "2026-09-24T02:37:25+03:30",
+    "arena_counts": [
+      "3084",
+      "0"
+    ],
+    "reader_counts": [
+      "2885",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/main",
+    "head": "cbf27c818409ad63d2c2fa55178bfd6c16a87642",
+    "date": "2026-09-20T09:32:37+03:30",
+    "arena_counts": [
+      "3228",
+      "0"
+    ],
+    "reader_counts": [
+      "3029",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/obs/r1-1-reader-trace",
+    "head": "87e931f0b133dc6244e72b7e30038378f3824085",
+    "date": "2026-09-22T07:47:16+03:30",
+    "arena_counts": [
+      "3191",
+      "0"
+    ],
+    "reader_counts": [
+      "2992",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/obs/r1-2-state-ownership-map",
+    "head": "de336419a366362198ac4be68d2603b4b056866d",
+    "date": "2026-09-22T08:07:25+03:30",
+    "arena_counts": [
+      "3190",
+      "0"
+    ],
+    "reader_counts": [
+      "2991",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/perf/defer-readium-startup-rc3",
+    "head": "3cc5b50bafdb914a289444a704a6c48563464919",
+    "date": "2026-09-23T23:07:51+03:30",
+    "arena_counts": [
+      "3084",
+      "0"
+    ],
+    "reader_counts": [
+      "2885",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/perf/m8-3-targeted-progress-writes",
+    "head": "8ee2b378f0ebfac68e1c9d5b50bfe1a527327a48",
+    "date": "2026-09-18T10:25:09+03:30",
+    "arena_counts": [
+      "3186",
+      "0"
+    ],
+    "reader_counts": [
+      "2987",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/perf/startup-profile-rc3",
+    "head": "1f54965ab0800840085e704e2ab13e0c3432d987",
+    "date": "2026-09-23T23:57:41+03:30",
+    "arena_counts": [
+      "3086",
+      "0"
+    ],
+    "reader_counts": [
+      "2887",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/performance/grayfog-library-shelves",
+    "head": "d713aba57c5b62f0fb405eab6edebcfac1c4127f",
+    "date": "2026-09-29T08:01:42+03:30",
+    "arena_counts": [
+      "2687",
+      "0"
+    ],
+    "reader_counts": [
+      "2488",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/pilot/mattpocock-skills-v1",
+    "head": "0eaa0dd197f9b8a0ac4ccadb0f8ab527d2cfee29",
+    "date": "2026-09-22T17:54:28+03:30",
+    "arena_counts": [
+      "3196",
+      "0"
+    ],
+    "reader_counts": [
+      "2997",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/polish/paper-curl-tactility",
+    "head": "82d94fe102814fa43009b1fee1ed8d68335fcfd6",
+    "date": "2026-09-26T00:34:13+03:30",
+    "arena_counts": [
+      "3074",
+      "0"
+    ],
+    "reader_counts": [
+      "2875",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/prototype/arrodes-standalone",
+    "head": "1528f00567a4fbbdbe61b27da4ccddcddfece874",
+    "date": "2026-09-29T20:45:57+03:30",
+    "arena_counts": [
+      "3217",
+      "0"
+    ],
+    "reader_counts": [
+      "3018",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/benchmark-reader-appearance-rc3",
+    "head": "ccc6d4c7c39a2508b57e30f09840c122f524b65d",
+    "date": "2026-09-23T21:54:46+03:30",
+    "arena_counts": [
+      "3087",
+      "0"
+    ],
+    "reader_counts": [
+      "2888",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/device-evidence-orchestrator",
+    "head": "4548bd8aa03b468bb6435f277ac0fd8032c8b02b",
+    "date": "2026-09-20T23:36:05+04:30",
+    "arena_counts": [
+      "3198",
+      "0"
+    ],
+    "reader_counts": [
+      "2999",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/firebase-startup-only-rc3",
+    "head": "a520e3d2baef77905c1b321cf9466e4329dcf38d",
+    "date": "2026-09-24T02:21:19+03:30",
+    "arena_counts": [
+      "3085",
+      "0"
+    ],
+    "reader_counts": [
+      "2886",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/firebase-test-lab-pilot",
+    "head": "b65b664c906b0de39f84e5c2445596b695dea94a",
+    "date": "2026-09-23T16:22:17+03:30",
+    "arena_counts": [
+      "3087",
+      "0"
+    ],
+    "reader_counts": [
+      "2888",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/grayfog-device-truth-v1",
+    "head": "7e453d3886c2c6ca64d86ad09b8c787dbacb0486",
+    "date": "2026-09-27T16:23:14+03:30",
+    "arena_counts": [
+      "2686",
+      "0"
+    ],
+    "reader_counts": [
+      "2487",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/pdf-chrome-semantic-action-8220074",
+    "head": "29e3ad075ca4c287a343a99826dd41cca748204e",
+    "date": "2026-09-23T19:00:53+03:30",
+    "arena_counts": [
+      "3092",
+      "0"
+    ],
+    "reader_counts": [
+      "2893",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/r1-10-device-process-recreation",
+    "head": "a58dbc5d369488e083bc0a0e025c9dd8e6c321b6",
+    "date": "2026-09-23T00:08:28+03:30",
+    "arena_counts": [
+      "3188",
+      "0"
+    ],
+    "reader_counts": [
+      "2989",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/rc-v3-semantic-chrome-probe",
+    "head": "d2fda44041a1e5eede206b8d6981805ab7692d91",
+    "date": "2026-09-23T20:45:17+03:30",
+    "arena_counts": [
+      "3089",
+      "0"
+    ],
+    "reader_counts": [
+      "2890",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/qa/slice1g-deterministic-reader-harness",
+    "head": "b55ef255c622edc0ee176d03ba307b950461a7c1",
+    "date": "2026-09-22T01:49:18+03:30",
+    "arena_counts": [
+      "3207",
+      "0"
+    ],
+    "reader_counts": [
+      "3008",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/rd/moon-missing-feature-labs-2026-10-02",
+    "head": "2008ec14a6c8b71581a603190763118a566ac49c",
+    "date": "2026-10-02T14:47:37+03:30",
+    "arena_counts": [
+      "17",
+      "58"
+    ],
+    "reader_counts": [
+      "136",
+      "376"
+    ]
+  },
+  {
+    "branch": "origin/refactor/compose-path-api",
+    "head": "e4d356c8cc0ac125c61b40aec739f864005d2f92",
+    "date": "2026-09-20T22:58:55+04:30",
+    "arena_counts": [
+      "3205",
+      "0"
+    ],
+    "reader_counts": [
+      "3006",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/refactor/r1-9d-appearance-mutation-contract",
+    "head": "43471f4d039dfd46a71b459847b6159e93cbec90",
+    "date": "2026-09-22T13:17:20+03:30",
+    "arena_counts": [
+      "3138",
+      "0"
+    ],
+    "reader_counts": [
+      "2939",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/refactor/r1-9f-remove-dead-pdf-appearance",
+    "head": "23bf45241e456c066ecb36077ea3474acd9c39ce",
+    "date": "2026-09-22T13:27:09+03:30",
+    "arena_counts": [
+      "3134",
+      "0"
+    ],
+    "reader_counts": [
+      "2935",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/release/reader-hardening-rc",
+    "head": "fbd96d3ef80b49a6acccfd14d326ec784a8346b5",
+    "date": "2026-09-25T14:07:03+03:30",
+    "arena_counts": [
+      "3019",
+      "0"
+    ],
+    "reader_counts": [
+      "2820",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/research/alpha-moon-gap-review-2026-10-02",
+    "head": "52659810221adeacfe19dbc9e708bfa185b630de",
+    "date": "2026-10-02T14:01:04+03:30",
+    "arena_counts": [
+      "18",
+      "1"
+    ],
+    "reader_counts": [
+      "136",
+      "318"
+    ]
+  },
+  {
+    "branch": "origin/research/mimic-moon-reader-2026-10-02",
+    "head": "373536ba4c37faffb00c8a7e0717d8d41c859dcf",
+    "date": "2026-10-02T13:00:08+03:30",
+    "arena_counts": [
+      "3077",
+      "3"
+    ],
+    "reader_counts": [
+      "2878",
+      "3"
+    ]
+  },
+  {
+    "branch": "origin/research/pdf-annotation-capability-audit",
+    "head": "26f8e636a0d1a0cc0a3d4f2f5135a5511b123fb2",
+    "date": "2026-10-03T07:00:39Z",
+    "arena_counts": [
+      "335",
+      "133"
+    ],
+    "reader_counts": [
+      "4",
+      "1"
+    ]
+  },
+  {
+    "branch": "origin/sid/deepseek-harness-pilot-baseline",
+    "head": "b3f540a2b00f6370b44e7f2435f9ed1a46377bf6",
+    "date": "2026-09-18T16:20:55+03:30",
+    "arena_counts": [
+      "3231",
+      "0"
+    ],
+    "reader_counts": [
+      "3032",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/sid/registry-v0-1-scanner-provenance",
+    "head": "4c8fedcb9b1820d6110048f85a47ae2b32c7d9c0",
+    "date": "2026-09-18T14:34:24+03:30",
+    "arena_counts": [
+      "3234",
+      "0"
+    ],
+    "reader_counts": [
+      "3035",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/test/r1-10b-reader-recreation-matrix",
+    "head": "82064ce90b7d3418eb7cffd292dfaa67f1fa3ae0",
+    "date": "2026-09-22T15:05:56+03:30",
+    "arena_counts": [
+      "3123",
+      "0"
+    ],
+    "reader_counts": [
+      "2924",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/test/r1-10c-process-recreation-host",
+    "head": "28363e405b85de6a80d82a0a9cd1d1bd4f80991b",
+    "date": "2026-09-22T15:08:19+03:30",
+    "arena_counts": [
+      "3121",
+      "0"
+    ],
+    "reader_counts": [
+      "2922",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/test/r1-9a-restore-race-regressions",
+    "head": "5773a9116a8f720551b0b2252f6e81dbc04f1f71",
+    "date": "2026-09-22T12:30:33+03:30",
+    "arena_counts": [
+      "3144",
+      "0"
+    ],
+    "reader_counts": [
+      "2945",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/test/r1-9g-consolidated-regression-guards",
+    "head": "022dbf9595c1eea691a1394d5dbdc101c6c56628",
+    "date": "2026-09-22T13:33:52+03:30",
+    "arena_counts": [
+      "3133",
+      "0"
+    ],
+    "reader_counts": [
+      "2934",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/test/r1-9i-verification-harness-hardening",
+    "head": "7f3e3b0077d672856f4bb72b4574ede8fe384fa3",
+    "date": "2026-09-22T13:50:16+03:30",
+    "arena_counts": [
+      "3129",
+      "0"
+    ],
+    "reader_counts": [
+      "2930",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/tooling/magic-code-pilot-v1",
+    "head": "97c88ae15342e591eafa310748578b3f2b875821",
+    "date": "2026-09-25T15:45:53+03:30",
+    "arena_counts": [
+      "3068",
+      "0"
+    ],
+    "reader_counts": [
+      "2869",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/personal-reader-identity-v1",
+    "head": "85b8b587f7cbe073cb4db52f6353bc148a9704d9",
+    "date": "2026-09-25T14:36:40+03:30",
+    "arena_counts": [
+      "3080",
+      "0"
+    ],
+    "reader_counts": [
+      "2881",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice0-reader-baseline",
+    "head": "70d8fd3530147824bd40ec0b154ec59231d9ed89",
+    "date": "2026-09-21T19:53:11+03:30",
+    "arena_counts": [
+      "3227",
+      "0"
+    ],
+    "reader_counts": [
+      "3028",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice1a-veil-identity-foundation",
+    "head": "6d47d1e6f679dec3df5bf988978e9e96ebea989a",
+    "date": "2026-09-21T21:34:30+03:30",
+    "arena_counts": [
+      "3224",
+      "0"
+    ],
+    "reader_counts": [
+      "3025",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice1b-reader-sanctuary",
+    "head": "beb5a8bef243770d0073517a8069e48cd5f21edf",
+    "date": "2026-09-21T22:13:15+03:30",
+    "arena_counts": [
+      "3222",
+      "0"
+    ],
+    "reader_counts": [
+      "3023",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice1c-reader-settings-architecture",
+    "head": "fd7153e2d3224edde5ff1a236d632602f5d620e8",
+    "date": "2026-09-21T23:39:31+03:30",
+    "arena_counts": [
+      "3220",
+      "0"
+    ],
+    "reader_counts": [
+      "3021",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice1d-pdf-interaction-reliability",
+    "head": "f5c027b6e80ef14ba8abb4f908e7511069437d40",
+    "date": "2026-09-22T00:12:12+03:30",
+    "arena_counts": [
+      "3216",
+      "0"
+    ],
+    "reader_counts": [
+      "3017",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice1e-reader-motion-reliability",
+    "head": "6122b7a0bbbcf9c5f0cd41a95db09c26d5711659",
+    "date": "2026-09-22T00:39:25+03:30",
+    "arena_counts": [
+      "3211",
+      "0"
+    ],
+    "reader_counts": [
+      "3012",
+      "0"
+    ]
+  },
+  {
+    "branch": "origin/ux/slice1f-reader-gesture-rtl-matrix",
+    "head": "75833f3659a4dbf6993c0ba48951f2556fa0453f",
+    "date": "2026-09-22T00:55:15+03:30",
+    "arena_counts": [
+      "3209",
+      "0"
+    ],
+    "reader_counts": [
+      "3010",
+      "0"
+    ]
+  }
+]

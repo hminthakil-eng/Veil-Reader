@@ -2,6 +2,7 @@ package com.veilreader.app.ui.screens
 
 import android.net.Uri
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.activity.compose.BackHandler
@@ -42,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
@@ -55,6 +57,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.veilreader.app.R
@@ -67,6 +70,13 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderReadingMode
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
+import com.veilreader.app.domain.ReaderHardwareKeyAction
+import com.veilreader.app.domain.ReaderHardwareKeyMap
+import com.veilreader.app.domain.ReaderTapAction
+import com.veilreader.app.domain.ReaderTapGrid
+import com.veilreader.app.domain.ReaderTapZone
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
@@ -74,6 +84,7 @@ import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
+import com.veilreader.app.ui.theme.withVeilTracking
 
 @Composable
 fun SettingsScreen(
@@ -83,6 +94,9 @@ fun SettingsScreen(
     onSetAppThemeMode: (AppThemeMode) -> Unit,
     onSetHighContrastEnabled: (Boolean) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
+    onSaveReaderTapGrid: (ReaderTapGrid) -> Unit,
+    onSaveReaderHardwareKeys: (ReaderHardwareKeyMap) -> Unit,
+    onSaveReaderFocusGuide: (ReaderFocusGuideSettings) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
     onSetGameVisible: (Boolean) -> Unit,
     onExportBackup: (Uri) -> Unit,
@@ -93,6 +107,12 @@ fun SettingsScreen(
     var appearanceDraft by remember { mutableStateOf(settings.readerAppearance) }
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
     var showAdvancedReadingSettings by rememberSaveable { mutableStateOf(false) }
+    var tapGridDraft by remember { mutableStateOf(settings.readerTapGrid) }
+    var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
+    var hardwareKeysDraft by remember { mutableStateOf(settings.readerHardwareKeys) }
+    var pendingHardwareKeys by remember { mutableStateOf<ReaderHardwareKeyMap?>(null) }
+    var focusGuideDraft by remember { mutableStateOf(settings.readerFocusGuide) }
+    var pendingFocusGuide by remember { mutableStateOf<ReaderFocusGuideSettings?>(null) }
 
     LaunchedEffect(settings.readerAppearance) {
         val persisted = settings.readerAppearance
@@ -103,6 +123,58 @@ fun SettingsScreen(
                 pendingAppearance = null
             }
         }
+    }
+
+    LaunchedEffect(settings.readerTapGrid) {
+        val persisted = settings.readerTapGrid
+        when {
+            pendingTapGrid == null -> tapGridDraft = persisted
+            persisted == pendingTapGrid -> {
+                tapGridDraft = persisted
+                pendingTapGrid = null
+            }
+        }
+    }
+
+    LaunchedEffect(settings.readerHardwareKeys) {
+        val persisted = settings.readerHardwareKeys
+        when {
+            pendingHardwareKeys == null -> hardwareKeysDraft = persisted
+            persisted == pendingHardwareKeys -> {
+                hardwareKeysDraft = persisted
+                pendingHardwareKeys = null
+            }
+        }
+    }
+
+    LaunchedEffect(settings.readerFocusGuide) {
+        val persisted = settings.readerFocusGuide
+        when {
+            pendingFocusGuide == null -> focusGuideDraft = persisted
+            persisted == pendingFocusGuide -> {
+                focusGuideDraft = persisted
+                pendingFocusGuide = null
+            }
+        }
+    }
+
+    fun commitReaderFocusGuide(value: ReaderFocusGuideSettings) {
+        val normalized = value.normalized()
+        focusGuideDraft = normalized
+        pendingFocusGuide = normalized
+        onSaveReaderFocusGuide(normalized)
+    }
+
+    fun commitReaderHardwareKeys(value: ReaderHardwareKeyMap) {
+        hardwareKeysDraft = value
+        pendingHardwareKeys = value
+        onSaveReaderHardwareKeys(value)
+    }
+
+    fun commitReaderTapGrid(value: ReaderTapGrid) {
+        tapGridDraft = value
+        pendingTapGrid = value
+        onSaveReaderTapGrid(value)
     }
 
     fun commitReaderAppearance(transform: (ReaderAppearance) -> ReaderAppearance) {
@@ -485,6 +557,150 @@ fun SettingsScreen(
 
         }
 
+        if (showAdvancedReadingSettings) {
+            SettingsSection(
+                title = stringResource(R.string.settings_tap_matrix_title),
+                description = stringResource(R.string.settings_tap_matrix_description)
+            ) {
+                ReaderTapGridEditor(
+                    grid = tapGridDraft,
+                    onChange = ::commitReaderTapGrid
+                )
+                Text(
+                    stringResource(R.string.settings_tap_matrix_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(
+                    onClick = { commitReaderTapGrid(ReaderTapGrid()) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.settings_tap_matrix_reset))
+                }
+            }
+
+            SettingsSection(
+                title = stringResource(R.string.settings_hardware_keys_title),
+                description = stringResource(R.string.settings_hardware_keys_description)
+            ) {
+                Text(
+                    stringResource(R.string.settings_volume_up_key),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                ChoiceRow(
+                    entries = ReaderHardwareKeyAction.entries,
+                    selected = hardwareKeysDraft.volumeUp,
+                    label = { localizedHardwareKeyAction(it) },
+                    onSelected = { action ->
+                        commitReaderHardwareKeys(
+                            hardwareKeysDraft.copy(volumeUp = action)
+                        )
+                    }
+                )
+
+                Text(
+                    stringResource(R.string.settings_volume_down_key),
+                    style = MaterialTheme.typography.labelLarge
+                )
+                ChoiceRow(
+                    entries = ReaderHardwareKeyAction.entries,
+                    selected = hardwareKeysDraft.volumeDown,
+                    label = { localizedHardwareKeyAction(it) },
+                    onSelected = { action ->
+                        commitReaderHardwareKeys(
+                            hardwareKeysDraft.copy(volumeDown = action)
+                        )
+                    }
+                )
+
+                Text(
+                    stringResource(R.string.settings_hardware_keys_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+                OutlinedButton(
+                    onClick = {
+                        commitReaderHardwareKeys(ReaderHardwareKeyMap())
+                    },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.settings_hardware_keys_reset))
+                }
+            }
+
+            SettingsSection(
+                title = stringResource(R.string.settings_focus_guide_title),
+                description = stringResource(R.string.settings_focus_guide_description)
+            ) {
+                ChoiceRow(
+                    entries = ReaderFocusGuideMode.entries,
+                    selected = focusGuideDraft.mode,
+                    label = { mode ->
+                        when (mode) {
+                            ReaderFocusGuideMode.OFF ->
+                                stringResource(R.string.settings_focus_guide_off)
+                            ReaderFocusGuideMode.WINDOW ->
+                                stringResource(R.string.settings_focus_guide_window)
+                            ReaderFocusGuideMode.LINE ->
+                                stringResource(R.string.settings_focus_guide_line)
+                        }
+                    },
+                    onSelected = { mode ->
+                        commitReaderFocusGuide(focusGuideDraft.copy(mode = mode))
+                    }
+                )
+
+                if (focusGuideDraft.mode != ReaderFocusGuideMode.OFF) {
+                    ReaderSlider(
+                        label = stringResource(R.string.settings_focus_guide_position),
+                        value = focusGuideDraft.verticalPosition.toFloat(),
+                        valueRange = 0.20f..0.80f,
+                        displayValue = { formatPercent(it) },
+                        onCommit = { value ->
+                            commitReaderFocusGuide(
+                                focusGuideDraft.copy(verticalPosition = value.toDouble())
+                            )
+                        }
+                    )
+                    ReaderSlider(
+                        label = stringResource(R.string.settings_focus_guide_band),
+                        value = focusGuideDraft.bandFraction.toFloat(),
+                        valueRange = 0.06f..0.36f,
+                        displayValue = { formatPercent(it) },
+                        onCommit = { value ->
+                            commitReaderFocusGuide(
+                                focusGuideDraft.copy(bandFraction = value.toDouble())
+                            )
+                        }
+                    )
+                    ReaderSlider(
+                        label = stringResource(R.string.settings_focus_guide_dim),
+                        value = focusGuideDraft.dimStrength.toFloat(),
+                        valueRange = 0.08f..0.68f,
+                        displayValue = { formatPercent(it) },
+                        onCommit = { value ->
+                            commitReaderFocusGuide(
+                                focusGuideDraft.copy(dimStrength = value.toDouble())
+                            )
+                        }
+                    )
+                    Text(
+                        stringResource(R.string.settings_focus_guide_hint),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                OutlinedButton(
+                    onClick = { commitReaderFocusGuide(ReaderFocusGuideSettings()) },
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                ) {
+                    Text(stringResource(R.string.settings_focus_guide_reset))
+                }
+            }
+
+        }
+
         SettingsSection(
             title = stringResource(R.string.settings_sound_title),
             description = stringResource(R.string.settings_sound_description)
@@ -719,6 +935,129 @@ fun SettingsScreen(
         }
     }
 }
+
+@Composable
+private fun localizedHardwareKeyAction(action: ReaderHardwareKeyAction): String =
+    stringResource(
+        when (action) {
+            ReaderHardwareKeyAction.SYSTEM -> R.string.settings_hardware_action_system
+            ReaderHardwareKeyAction.PREVIOUS_PAGE -> R.string.settings_hardware_action_previous
+            ReaderHardwareKeyAction.NEXT_PAGE -> R.string.settings_hardware_action_next
+            ReaderHardwareKeyAction.TOGGLE_CONTROLS -> R.string.settings_hardware_action_controls
+        }
+    )
+
+@Composable
+private fun ReaderTapGridEditor(
+    grid: ReaderTapGrid,
+    onChange: (ReaderTapGrid) -> Unit
+) {
+    val rows = listOf(
+        listOf(ReaderTapZone.TOP_LEFT, ReaderTapZone.TOP_CENTER, ReaderTapZone.TOP_RIGHT),
+        listOf(ReaderTapZone.MIDDLE_LEFT, ReaderTapZone.MIDDLE_CENTER, ReaderTapZone.MIDDLE_RIGHT),
+        listOf(ReaderTapZone.BOTTOM_LEFT, ReaderTapZone.BOTTOM_CENTER, ReaderTapZone.BOTTOM_RIGHT)
+    )
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+    ) {
+        rows.forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+            ) {
+                row.forEach { zone ->
+                    val action = grid[zone]
+                    val zoneLabel = localizedReaderTapZone(zone)
+                    val actionLabel = localizedReaderTapAction(action)
+                    OutlinedButton(
+                        onClick = {
+                            onChange(
+                                grid.withAction(
+                                    zone,
+                                    nextReaderTapAction(action)
+                                )
+                            )
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .heightIn(min = 70.dp)
+                            .semantics {
+                                contentDescription = "$zoneLabel: $actionLabel"
+                            },
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(
+                            horizontal = 6.dp,
+                            vertical = 8.dp
+                        )
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
+                        ) {
+                            Text(
+                                readerTapActionGlyph(action),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                zoneLabel,
+                                style = MaterialTheme.typography.labelSmall,
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun nextReaderTapAction(action: ReaderTapAction): ReaderTapAction =
+    when (action) {
+        ReaderTapAction.VEIL_DEFAULT -> ReaderTapAction.PREVIOUS_PAGE
+        ReaderTapAction.PREVIOUS_PAGE -> ReaderTapAction.TOGGLE_CONTROLS
+        ReaderTapAction.TOGGLE_CONTROLS -> ReaderTapAction.NEXT_PAGE
+        ReaderTapAction.NEXT_PAGE -> ReaderTapAction.RENDERER
+        ReaderTapAction.RENDERER -> ReaderTapAction.VEIL_DEFAULT
+    }
+
+private fun readerTapActionGlyph(action: ReaderTapAction): String =
+    when (action) {
+        ReaderTapAction.VEIL_DEFAULT -> "V"
+        ReaderTapAction.PREVIOUS_PAGE -> "←"
+        ReaderTapAction.TOGGLE_CONTROLS -> "◎"
+        ReaderTapAction.NEXT_PAGE -> "→"
+        ReaderTapAction.RENDERER -> "·"
+    }
+
+@Composable
+private fun localizedReaderTapAction(action: ReaderTapAction): String =
+    stringResource(
+        when (action) {
+            ReaderTapAction.VEIL_DEFAULT -> R.string.settings_tap_action_default
+            ReaderTapAction.PREVIOUS_PAGE -> R.string.settings_tap_action_previous
+            ReaderTapAction.TOGGLE_CONTROLS -> R.string.settings_tap_action_controls
+            ReaderTapAction.NEXT_PAGE -> R.string.settings_tap_action_next
+            ReaderTapAction.RENDERER -> R.string.settings_tap_action_renderer
+        }
+    )
+
+@Composable
+private fun localizedReaderTapZone(zone: ReaderTapZone): String =
+    stringResource(
+        when (zone) {
+            ReaderTapZone.TOP_LEFT -> R.string.settings_tap_zone_top_left
+            ReaderTapZone.TOP_CENTER -> R.string.settings_tap_zone_top_center
+            ReaderTapZone.TOP_RIGHT -> R.string.settings_tap_zone_top_right
+            ReaderTapZone.MIDDLE_LEFT -> R.string.settings_tap_zone_middle_left
+            ReaderTapZone.MIDDLE_CENTER -> R.string.settings_tap_zone_middle_center
+            ReaderTapZone.MIDDLE_RIGHT -> R.string.settings_tap_zone_middle_right
+            ReaderTapZone.BOTTOM_LEFT -> R.string.settings_tap_zone_bottom_left
+            ReaderTapZone.BOTTOM_CENTER -> R.string.settings_tap_zone_bottom_center
+            ReaderTapZone.BOTTOM_RIGHT -> R.string.settings_tap_zone_bottom_right
+        }
+    )
+
 
 @Composable
 private fun SettingsReadingDisclosureToggle(

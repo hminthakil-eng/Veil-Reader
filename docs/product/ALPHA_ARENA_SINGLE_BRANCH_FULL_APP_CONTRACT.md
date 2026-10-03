@@ -1,13 +1,16 @@
 # Veil Reader — Alpha × Arena Single-Branch Full-App Reconstruction Contract
 
 Status: **ACTIVE / CANONICAL**
-Effective: 2026-10-01
+Effective: 2026-10-03
+
+Convergence authority: [2026-10-03 handoff](../convergence/2026-10-03/README.md).
+The original Arena head is preserved as the convergence first parent; this does not authorize main promotion.
 
 ## 1. One active development line
 
 There is exactly one active reconstruction branch:
 
-`alpha/w26-arena-canonical-ui-rebuild-v1`
+`integration/arena-reader-canonical-convergence-v1`
 
 All future product, UI/UX, accessibility, localization, reliability-safe refinement, world systems, gamification presentation, settings, reader polish, tests and source-level verification land on this line.
 

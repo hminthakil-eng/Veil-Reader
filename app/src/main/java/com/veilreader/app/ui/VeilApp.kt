@@ -53,6 +53,10 @@ import com.veilreader.app.domain.BookFormat
 import com.veilreader.app.domain.BookReturnRitual
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideSettings
+import com.veilreader.app.domain.ReaderHardwareKeyMap
+import com.veilreader.app.domain.ReaderTtsSettings
+import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.deriveBookReturnRitual
 import com.veilreader.app.domain.deriveLibraryMemoryState
 import com.veilreader.app.domain.ReadingContinuitySummary
@@ -94,6 +98,10 @@ fun VeilApp(
     onSetAppThemeMode: (AppThemeMode) -> Unit = {},
     onSetHighContrastEnabled: (Boolean) -> Unit = {},
     onSaveReaderAppearance: (ReaderAppearance) -> Unit = {},
+    onSaveReaderTapGrid: (ReaderTapGrid) -> Unit = {},
+    onSaveReaderHardwareKeys: (ReaderHardwareKeyMap) -> Unit = {},
+    onSaveReaderFocusGuide: (ReaderFocusGuideSettings) -> Unit = {},
+    onSaveReaderTtsSettings: (ReaderTtsSettings) -> Unit = {},
     onSaveFixedLayoutSpread: (String, ReaderFixedLayoutSpread) -> Unit = { _, _ -> },
     onSaveSensorySettings: (SensorySettings) -> Unit = {},
     onSetGameVisible: (Boolean) -> Unit = {}
@@ -1035,6 +1043,12 @@ fun VeilApp(
             library = library,
             game = game,
             readerAppearance = appSettings.readerAppearance,
+            readerTapGrid = appSettings.readerTapGrid,
+            readerHardwareKeys = appSettings.readerHardwareKeys,
+            focusGuide = appSettings.readerFocusGuide,
+            onFocusGuideChange = onSaveReaderFocusGuide,
+            ttsSettings = appSettings.readerTts,
+            onTtsSettingsChange = onSaveReaderTtsSettings,
             fixedLayoutSpread = appSettings.fixedLayoutSpreads[opened.book.id]
                 ?: ReaderFixedLayoutSpread.AUTO,
             onReaderAppearanceChange = onSaveReaderAppearance,
@@ -1072,6 +1086,9 @@ fun VeilApp(
                 onSetAppThemeMode = onSetAppThemeMode,
                 onSetHighContrastEnabled = onSetHighContrastEnabled,
                 onSaveReaderAppearance = onSaveReaderAppearance,
+                onSaveReaderTapGrid = onSaveReaderTapGrid,
+                onSaveReaderHardwareKeys = onSaveReaderHardwareKeys,
+                onSaveReaderFocusGuide = onSaveReaderFocusGuide,
                 onSaveSensorySettings = onSaveSensorySettings,
                 onSetGameVisible = onSetGameVisible,
                 onExportBackup = { exportData(it, true) },

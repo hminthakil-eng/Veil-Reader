@@ -2,6 +2,8 @@ package com.veilreader.app.data
 
 import com.veilreader.app.diagnostics.ReaderTrace
 
+import java.io.IOException
+import java.util.concurrent.atomic.AtomicLong
 import android.content.Context
 import android.net.Uri
 import androidx.room.withTransaction
@@ -20,6 +22,7 @@ import com.veilreader.app.domain.Bookmark
 import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.ReaderAppearance
+import com.veilreader.app.domain.ReadingPaceProfile
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingMilestoneRecord
@@ -75,6 +78,8 @@ class LocalLibraryRepository internal constructor(
     )
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val readingPaceStore = ReadingPaceStore(appContext)
+    private val readingPaceGeneration = AtomicLong(0L)
     private val writes = Channel<suspend () -> Unit>(Channel.UNLIMITED)
     private val initialized = CompletableDeferred<Unit>()
     private val storageFailure = AtomicReference<Throwable?>(null)
@@ -108,6 +113,11 @@ class LocalLibraryRepository internal constructor(
 
     private val _readingMilestones = MutableStateFlow<List<ReadingMilestoneRecord>>(emptyList())
     val readingMilestones: StateFlow<List<ReadingMilestoneRecord>> = _readingMilestones
+
+    private val _readingPaceProfiles =
+        MutableStateFlow<Map<String, ReadingPaceProfile>>(emptyMap())
+    val readingPaceProfiles: StateFlow<Map<String, ReadingPaceProfile>> =
+        _readingPaceProfiles
 
     init {
         scope.launch {
@@ -157,6 +167,28 @@ class LocalLibraryRepository internal constructor(
         scope.launch {
             database.readingMilestones().observeAll().collect { rows ->
                 _readingMilestones.value = rows.map { it.toDomain() }
+            }
+        }
+        scope.launch {
+            readingPaceStore.profiles.collect { profiles ->
+                _readingPaceProfiles.value = profiles
+            }
+        }
+    }
+
+    internal fun recordReadingPaceInterval(
+        bookId: String,
+        intervalMillis: Long
+    ) {
+        if (bookId.isBlank() || intervalMillis <= 0L) return
+        val generation = readingPaceGeneration.get()
+        scope.launch {
+            try {
+                readingPaceStore.recordInterval(bookId, intervalMillis) {
+                    generation == readingPaceGeneration.get() && _books.value.any { it.id == bookId }
+                }
+            } catch (_: IOException) {
+                // Derived pace is disposable; an unavailable cache cannot poison durable progress.
             }
         }
     }
@@ -240,6 +272,8 @@ class LocalLibraryRepository internal constructor(
         _readingSessions.value = _readingSessions.value.map { session ->
             if (session.bookId == bookId) session.copy(bookId = null) else session
         }
+        try { readingPaceStore.remove(bookId) } catch (_: IOException) { }
+        _readingPaceProfiles.value = _readingPaceProfiles.value - bookId
 
         discardImportedArtifacts(deleted)
         return deleted
@@ -256,6 +290,8 @@ class LocalLibraryRepository internal constructor(
             database.books().deleteById(book.id)
         }
         _books.value = _books.value.filterNot { it.id == book.id }
+        try { readingPaceStore.remove(book.id) } catch (_: IOException) { }
+        _readingPaceProfiles.value = _readingPaceProfiles.value - book.id
         discardImportedArtifacts(book)
     }
 
@@ -963,6 +999,7 @@ class LocalLibraryRepository internal constructor(
 
     /** Transactional replacement used by backup restore, serialized with normal reader writes. */
     suspend fun replaceAll(snapshot: LibrarySnapshot) {
+        readingPaceGeneration.incrementAndGet()
         discardAllPendingProgress()
         discardAllPendingReadingSessions()
         orderedWrite {
@@ -1001,6 +1038,8 @@ class LocalLibraryRepository internal constructor(
         // A restore establishes a fresh durable source of truth. In-process deletion tombstones
         // must not outlive that replacement or block edits to legitimately restored highlights.
         deletedHighlightIds.clear()
+        try { readingPaceStore.clear() } catch (_: IOException) { }
+        _readingPaceProfiles.value = emptyMap()
     }
 
     /**

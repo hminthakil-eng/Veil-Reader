@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">Reading</string>
     <string name="nav_library">Library</string>
@@ -1295,4 +1295,69 @@
     <string name="notice_category_persistence">SAVED STATE</string>
     <string name="notice_category_search">SEARCH</string>
     <string name="notice_category_validation">CHECK REQUIRED</string>
+
+    <string name="settings_tap_matrix_title">Touch map</string>
+    <string name="settings_tap_matrix_description">Assign all nine reading zones. Tap a cell to cycle its action without changing the book itself.</string>
+    <string name="settings_tap_matrix_hint">Previous and Next keep Veil’s active page motion. Renderer hands that zone back to the publication for links and native interactions.</string>
+    <string name="settings_tap_matrix_reset">Reset touch map</string>
+    <string name="settings_tap_action_default">Veil default</string>
+    <string name="settings_tap_action_previous">Previous page</string>
+    <string name="settings_tap_action_controls">Reader controls</string>
+    <string name="settings_tap_action_next">Next page</string>
+    <string name="settings_tap_action_renderer">Book interaction</string>
+    <string name="settings_tap_zone_top_left">Top left</string>
+    <string name="settings_tap_zone_top_center">Top center</string>
+    <string name="settings_tap_zone_top_right">Top right</string>
+    <string name="settings_tap_zone_middle_left">Middle left</string>
+    <string name="settings_tap_zone_middle_center">Center</string>
+    <string name="settings_tap_zone_middle_right">Middle right</string>
+    <string name="settings_tap_zone_bottom_left">Bottom left</string>
+    <string name="settings_tap_zone_bottom_center">Bottom center</string>
+    <string name="settings_tap_zone_bottom_right">Bottom right</string>
+
+    <string name="settings_hardware_keys_title">Hardware reading keys</string>
+    <string name="settings_hardware_keys_description">Optionally remap the volume buttons while a book is open. System volume remains the default.</string>
+    <string name="settings_volume_up_key">Volume up</string>
+    <string name="settings_volume_down_key">Volume down</string>
+    <string name="settings_hardware_action_system">System volume</string>
+    <string name="settings_hardware_action_previous">Previous page</string>
+    <string name="settings_hardware_action_next">Next page</string>
+    <string name="settings_hardware_action_controls">Reader controls</string>
+    <string name="settings_hardware_keys_hint">Reader mappings pause during selection, dialogs, touch exploration, and scrolling page actions. Held keys are rate-limited to prevent accidental page bursts.</string>
+    <string name="settings_hardware_keys_reset">Restore system volume</string>
+
+    <string name="settings_focus_guide_title">Focus guide</string>
+    <string name="settings_focus_guide_description">Reduce peripheral visual load without taking touch ownership from the book.</string>
+    <string name="settings_focus_guide_off">Off</string>
+    <string name="settings_focus_guide_window">Focus window</string>
+    <string name="settings_focus_guide_line">Reading line</string>
+    <string name="settings_focus_guide_position">Vertical position</string>
+    <string name="settings_focus_guide_band">Focus height</string>
+    <string name="settings_focus_guide_dim">Outside dimming</string>
+    <string name="settings_focus_guide_hint">The guide is visual only. Links, selection, page gestures and PDF zoom keep their original input ownership.</string>
+    <string name="settings_focus_guide_reset">Reset focus guide</string>
+    <string name="reader_focus">Focus</string>
+    <string name="reader_focus_on">Focus guide on</string>
+    <string name="reader_focus_off">Focus guide off</string>
+    <!-- A page identifier, not a quantity requiring plural forms. -->
+    <string name="pdf_bookmark_page" tools:ignore="PluralsCandidate">Page %1$d</string>
+    <string name="reader_selection_lookup">Lookup</string>
+    <string name="reader_lookup_failed">No installed app can look up the selected text.</string>
+    <string name="tts_title">Read aloud</string>
+    <string name="tts_intro">Read visible text using installed offline Android voices. Speech pauses when you leave the Reader.</string>
+    <string name="tts_start">Start from visible text</string>
+    <string name="tts_play">Play</string>
+    <string name="tts_pause">Pause</string>
+    <string name="tts_stop">Stop</string>
+    <string name="tts_speed">Speech speed</string>
+    <string name="tts_pitch">Voice pitch</string>
+    <string name="tts_preparing">Preparing voice…</string>
+    <string name="tts_unsupported">This publication does not expose text content that Readium can speak.</string>
+    <string name="tts_initialization_failed">The device TTS engine could not be initialized. Check installed voice data and try again.</string>
+    <string name="tts_missing_voice">No installed offline voice is available for this language.</string>
+    <string name="tts_playback_failed">Speech playback stopped because the TTS engine or publication content reported an error.</string>
+    <string name="reader_eta_minutes">%1$d min</string>
+    <string name="reader_eta_hours_minutes">%1$d h %2$d min</string>
+    <string name="reader_eta_remaining">~%1$s left</string>
+    <string name="reader_eta_range_description">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</string>
 </resources>

@@ -1,0 +1,335 @@
+e82a6bd00cbd67512e1f58ccef79174ee295b50a W27: refine Gallery into archival book artifacts
+0946c55f4c2a149f2ed856ecc94aaafcd452134d W27: add normalized Archive grouping primitive
+84490530d172d23b9e42194318cb9e39dc1e8324 W27: collapse duplicate collection shelves
+eda32a86f6c222ab8af46260936e1495cdf10184 W27: normalize series and author shelf identity
+d95a73ef0e63dfc9eb6c6cfc32a259471aaf7a5b W27: cover normalized shelf grouping with source tests
+7c4ae02c34698691d7178a08bc45c1c5939e4496 W27: keep Gallery progress truthful
+2c78d51ebcfc17ea855a9b336a5f63abf5c4ab72 W28: localize Artifact Chamber format and journey hierarchy
+bbc16a0f600f949bd824139dcee66876e29bc7f5 W28: add Artifact Chamber English labels
+aaaeabb54757e4ae9e493fb9e46d5ccbf1f6aedd W28: add Artifact Chamber Persian labels
+238f6c48b92b4e05b16d5edd61fc835671383625 W28: hide internal chapter sentinel from Artifact Chamber
+76029ceef08ef2b59d76e0f1255429e5374b0012 W28: add focused artifact cover presentation
+cf799222a2685396fc79289f0a7a656b56dd097a W28: add untitled book fallback
+fe88e1b4f543589b20c829aa9812c56d722de9f1 W28: add Persian untitled book fallback
+169434eff56189952f7231e8b8835b7700701111 W28: harden Artifact Chamber hierarchy and RTL layout
+1ba05ceef8361cbacdb77d7cf6c596c75a277e95 W28: complete Artifact Chamber editorial presentation
+36434073c3a0ce40345c5b95812c989af1566adc W28: handle note-only preserved fragments
+0b978256650186f49ded1d450456a779b09c8090 W28: label note-only preserved fragments
+4e43e243cd8cd5ef71ec81937cd1a1a5d3e6d3b4 W28: label Persian note-only fragments
+c475d5eb31d58bbe6bc9d5478d9ed59ffb8d7f8e W28: finish missing-title Artifact Chamber fallback
+aa04c5eed70068b331c3adff105b60740af803fd W29: share localized publication format labels
+4bda77666fce07da4b54f16c5454d322ae222b51 W29: route Archive through shared format labels
+5915f61abc009863a6ca5374d9cae4d452539c27 W29: name Reader chrome actions explicitly
+31e5e4c8f7de4d08f59e0b4f5e312f4ccd14df4d W29: add Persian Reader chrome action names
+67f6daaed6d61743902a89cd378b9a1efce93ad6 W29: clarify and harden Sanctuary Reader chrome
+73e9782b6d796e0d12dfeaaa60424f9f155466ec W29: quiet Reader chrome into Sanctuary edge rails
+26210f188f6fe23ccc37a26f7f3ae88c347811e6 W29: keep Reader and bookmark titles canonical
+5b14deb9021a813696de60e3cfedcb6e1398d663 W29: make Reader context control a single policy
+299ca5a0028be8829e0e74c53576a8466ec190fd W29: lock Reader context-control contract with test
+f10e30478045c49b971d1f818234d10d00ab553c W30: separate Reading mode and Page turn labels
+1e439b1a40bb97e53047c8af1a5c8e1bf39b16d0 W30: add Persian split Reading mode labels
+de7cbb7597ed3d96a5e9bfaac8494d9105281a82 W30: split Reading mode from Page turn in Quick Appearance
+f9230f52b71f6de2bf425c5ada4b559e4771607d W30: implement separate Reading mode and Page turn selectors
+c3d215cdb74c73097edb5b01001fcaa7c94cc5a6 W30: model Reading mode independently from Page turn
+e0349d0331d00dc7213e42d7771c93b85d375fd1 W30: bind Appearance UI to independent Reading mode model
+e1d4140267a44dfa07e4e4247639642874d47b30 W30: test Reading mode and Page turn independence
+5275f6f64ce9d208072721351d77b4bbb1ee3a6c W30: make Appearance preview expose both motion dimensions
+d7631ac82175e1bd45bccf3d3dc6ba5bc6d6c85d W30: restore Reader motion summary helper definition
+ac2e87384456cfb259161f099acf1d768b9e88ff W30: fix Sanctuary rail corner shapes
+457c70d17d480c244395594048e3556413b4bbbb W30: align global Settings with split reading controls
+d747c948d36ca64e2243a04d830e839e483e77c1 W30: preserve Page turn while Scroll owns navigation
+6a284807f6ceccd939d28f51881031c0121b55c6 W30: disable Page turn control while global Scroll is active
+48448c784d0105253f9352206ef3a2145bdc4cef W31: establish Hidden Archive notes-first navigation
+7f8a16bcb9fad05a293283a3558871c7b3682eeb W31: add note-only Hidden Archive label
+a32d104155be43fd37d654e8ae88cb4dacfb8bdd W31: add Persian note-only Hidden Archive label
+5f50036e711c1f1f68728582bea5f3b195c085cb W31: render note-only Hidden Archive entries truthfully
+1ffc65fbcfe1143d012227a878af8769205d0ccf W31: make Hidden Archive Notes-first
+b29af6cd2d29328a1152d0eab73f80da98fdd08b W31: harden legacy Notebook labels
+f15a5160852ec7dc45b8fe2434fb3f0ba73c1446 W31: quiet Hidden Archive section navigation
+cdc010cc0eade6b7864d7054e267d2f1e8e3059e W31: add Hidden Archive note-only label
+dfc42d0967944e6d78eb17c2dd21ad3498b3292f W31: add Persian Hidden Archive note-only label
+5cdbbf3df48b56c58e431de6a57dfef329494a6c W31: harden Hidden Archive RTL and note-only records
+b2e874ef909906b30f2db7295316159f2c8eec63 W32: make Reading Settings progressively disclosed
+28954d11e6eab2324fb7359454b6eead08d2b2d3 W32: group advanced reading controls after quick defaults
+26392fae395ca55f58869524182e850fa3065269 W32: remove generic Settings section cards
+0fcfafd7f33e1f46a70b9329a307c68faca1ec06 Canonical: fix Sanctuary rail padding overloads
+f908c2e561fc15a83356812c248a8cd57a6f93a6 Canonical: lock Alpha Arena single-branch full-app reconstruction
+73e30ef07d5f52d1f6d7baa8fd523b3743f226b2 Canonical: add shared RTL-aware micro-label primitive
+c5027cd90de11ff40160d4c6f5a45d5c89f1ed02 W33: harmonize Profile labels with canonical RTL typography
+ef60a18e38086b3507734ddb1de93762b1d42f31 W33: harmonize Path ritual labels with canonical RTL typography
+5f0d606150a6b42d67a3a8e1a06956f6c0ea8ffd W33: harmonize Castle labels with canonical RTL typography
+780d49a20123bcd1adc3081bf8377b83153aea87 W33: harmonize Observatory labels with canonical RTL typography
+cfaa5b4ffe2758475545d562f8a59889b7873fda W33: finish Profile label harmonization
+bdbef2e230c0ab56070755933fb106f09ba8e1e0 W33: finish Path label harmonization
+1c381e3b83840640a8df0df9696a6d1d6348e63b W33: finish Castle label harmonization
+5a671efefcc953beceee3a483c96706e97c8814b W33: finish Observatory label harmonization
+c7d319a8c264fe1aebe5445daab76ee162f96f0e W33: remove remaining Observatory Latin tracking
+67f361a36da3fece67e5ce6437872161799da13f Canonical: pin game durability Robolectric SDK
+81a9a2e32657f71d78d0fa36fff3b4c56779890e W34: make Profile history retrieval-first
+2cd533895c1b371d9e144206298a8e9c019e5e5b W34: remove dead Path choices after commitment
+f4928b33a7d15c5810e97c2d10f3fde9a2dfc6dd W34: prioritize Castle chambers over mutation ledger
+d166602ed1bd56a37380c3ab3daf5e7c1dbf27ad W34: enforce Profile adaptive width cap
+4307241421c5253ab59270a9b5a8035a46b3677e W34: enforce Path adaptive width cap
+69e468666531b8a2a1591b5e5b69b7ca8fb82e4e W34: enforce Castle adaptive width cap
+04208e9c5e0c76819929891dc074c09b500cb0c0 W34: enforce Observatory adaptive width cap
+52ac0a59ee7efaf903c19704cc6a5f7260d990e4 W35: unify Treasury Sanctum adaptive RTL presentation
+bca9bf0cb9f806828af5586fb90a0c4950107a3b W35: make Treasury relic cabinet adaptive
+d8ac762d0e302d7cf52810f0a05e12a3fe77d512 W36: align Arrodes Mirror with canonical width and typography
+fade12e3ce6fade7a199f3559e32cde899955239 W36: make Manga Hub adaptive and title-safe
+199e340a8650a3d42588ca864c3490ef6eed62a2 W36: enforce Arrodes mirror width cap
+f5c1c82448609db196755abde8c6a4347936a38d W36: enforce Manga Hub card width caps
+5719e9f1eb9d80bf6057ba66197872a1d4d0c889 W37: enforce Library dialog width caps
+de8af1f04de48fa2a548b848dfbd3cd4cd196346 W37: enforce Archive dialog width caps
+16ed2c4cbdc2acc3133b44c37cc46f7733e761a2 W37: enforce Settings dialog width cap
+c3b9518368cd702bc6ceadf1c98384a406f394ce W37: enforce shell and notice width caps
+ce086e6fba27497eb33bf49d0fe2eb21964d91ad W37: unify Threshold labels with canonical RTL typography
+f7c469c7878c20a4774f670aabd5f2a5bca45601 W37: unify Library labels with canonical RTL typography
+1be9a23011556fbadc9b28a1069656ad0c06a437 W37: converge Hidden Archive on shared RTL typography
+7df7fca4b2cf789206e4695a87752762a267ae68 W37: finish Threshold RTL typography convergence
+3ef8b7754aa242d82e47fe14a4ff89ddb089b3cc W38: harmonize book entry and return ritual typography
+ed5a9ef26aefc2f3dcc8f61e6b843c13fd68c47f W38: harden Time Capsule RTL and missing-title states
+c1e0e01f9c08da8acc45532ef5cee2e585dbfe55 W38: make PDF view labels RTL-safe
+5f8db3d2334ffabd9ff6c3972597c9aed1b643e3 W38: finish book entry RTL typography convergence
+14f37f8b47d5f9923c8cdf7ae3223790d7d6d413 W39: add PDF renderer recovery copy
+6e9b4220339f2c28c21ef0c2c025d4d82d605401 W39: add Persian PDF renderer recovery copy
+6add17852b335b53da107cf3689eedb04ab73fae W39: bound PDF renderer probing and add retry recovery
+af03991a54d07ec80c71ca01a9ee55538476b8cd W39: test bounded PDF renderer probing
+327a384e117ff06d93011aee972b69f3f4f96a5f W39: cover Reader image pan and decode sampling
+c9ef6b50a6192402ca7312cfb4a689dbb329f075 W39: make Reader image viewer accessible without captions
+c58d6bf5e6a518ab314421a1655d2e389c92fd9c W39: lock PDF recovery and zoom policy with tests
+138af9b1b03a43a6dcb6a86d01ee5ac71368ed44 W40: add missing-book recovery copy
+121b8f8998f9d586401846adcf38d8181c961caf W40: add Persian missing-book recovery copy
+2242e2c7c8336f25a27ff5a019d759c3f06977f3 W39: remove duplicate PDF probe coverage
+d36322b7a2e2d8eac1d517362bfb927066237427 W40: recover missing library records without stuck open state
+bcbc282138fcf2191453dd9f4d822e0110af4b91 W40: lock failed reader-open cleanup in SavedState
+133f8003e5156378dd3ab18896948e5776454e7b W40: add large-text dense-control layout policy
+ea0c296ad870aa5c25a2c38b93e6e973f3f0f494 W41: make notice recovery surfaces semantic and RTL-safe
+06a8ee01b4b62c527db6c8a4db6ec6bf3e426e94 W40: stack Reader mode controls for large text
+d8102c41b303e5aaa1027d264ccf483449b60384 W40: test large-text dense-control policy
+a7f26744adf4ae38255a646b09eca76f979ca885 W42: finish Threshold typography convergence
+54cc44f19cdae639293d4ac7194228a7b5273371 W42: converge Book Detail labels on shared typography primitive
+8ea4ba5c22d521f34a7d614416403a5ab0d713ae W40: stack Settings choices for large text
+7b4e5be7b3bde36d6725dba029ee5b2fba3e591d W42: remove obsolete Library script helper import
+b3687fbb6f1984c612ac51d9228827bb68882486 W43: enforce Reader Appearance adaptive width cap
+5ddcfcda53836ec82c5acd08ee9d73eac27ad1ea W43: enforce Reader dialog width caps
+d54368581a15bea83cf588024875c4220eb77c00 W40: verify every canonical chamber survives route restoration
+ebc160258300ca42efdb15e6a279749cceb4080c W44: make Reader instruments script-safe
+b3047d6070f6c6ddcbd40d57c13e520cade21b89 W45: lock large-text reader control adaptation
+352609f5cac5336c5892b37087b4f4873c5c6331 W45: make Settings slider headers large-text safe
+8ad4fcf9f07d7ff3532af2c1ac25ce0893345e8e W42: localize and announce core loading state
+2029a469b56f4e98fee19e27a76646e19b557644 W45: make Advanced Appearance controls large-text safe
+f3b7eb8d6ab94e74b28c32f142d627bb7688f877 W45: make fixed-layout spread controls large-text safe
+0c1d9d1d7678dd0f5ef487fc145ac2409f49962b W42: localize canonical navigation labels
+2b003c31998db269fab9b217468525c3da33b11d W42: localize Persian navigation labels
+ac3598bf4301dd083c1b942833ed6c8da2a2b3bf W42: separate navigation identity from localized labels
+9ab34bec8740fadc3d5f250df008a9c7e631c57a W42: render localized shell navigation labels
+b09e6a16e96175c7401244a0198e10566e7c94c3 W46: make localized shell navigation RTL and large-text safe
+f4ca68a8b787d4c6f29a57bcc94a2d1b98933712 W46: expose shell rail width policy for regression tests
+32a4f4c4dc45e58ac5e588f3d7fba571b2b6975b W46: test shell large-text and RTL navigation policies
+12fe51fcc4a4983e88bfeb2936e138c09b25d2f4 W47: keep Manga cover fallback truthful for untitled books
+01fee30fe0c3bf471157290e5cef47e0d2c9f574 W47: harden Arrodes missing-title presentation
+0f728151f4f0e700863ede9eb0c79499f4860d64 W43: add optional world-system settings copy
+905535ba757f46f51119626a6582b30cdc5d5321 W43: add Persian optional world-system settings copy
+d826691b3463153cc641bedf95fee0bf44de9d1a W43: expose world visibility setting
+236d23a6240550f814b5f0ea84f91289da1caf50 W43: wire world visibility from activity
+010b798a36c7e69507fb22653eff1b1829bf650c W43: accept world visibility handler in app shell
+65499d65a289786870c4abdcb59f86bc3bf30a72 W43: expose non-destructive world visibility control
+9813e9999d1e611b70043b1a218c52a7442ce6b3 W43: make shell tabs respect optional world visibility
+12cbdf5399b4f4eb9e6f0945d51a88b85c1d82f0 W43: enforce optional world visibility in navigation
+97c9e031540ba3f4e49396a26917b49f4c044aa8 W43: test optional world tab policy
+2f2802aabdbdc910509d72a888608a66be17da65 W43: verify world visibility persistence
+7da829c9137d902db6245fe12558b6ad4d9994c0 Refine PDF layout controls for narrow panels and large text
+9f35d21fa5249e07560a2f09f08e22e7e86e6d78 test(memory): keep sealed-cycle fixture on one clock
+8b09d71d7c9bdb79a4d99c84151dc337c6a850de test(manga): make chapter fixtures byte-distinct
+fa04143812dd3c2db3e2f431c549e68ff40cd81d test(saf): support AOSP and Google DocumentsUI
+f9d2d31f5239fd644df422f89ba507f8306e22d7 test(pdf): support AOSP and Google DocumentsUI
+fb677c1ff56aa7d647e2af6e23bad369ec7ecf0b test(room): package committed schemas for migration validation
+5ed94849922aabb56570c3598abc9ec0c87f4cab ci(room): fail on untracked generated schemas
+8a670016f3e5a00059e2477f5299e3625170032e ci(perf): isolate BaselineProfile rule on emulator
+b5c0e7f993437c725d10b5a4f739ca45d63efc29 ui(reader): make Notebook rails width-aware
+1c9c87262d3e2c7551f8a7e80ef3bad3a0168f7f ui(settings): use measured width for dense controls
+a5c58123648d855ac2ec3d0c2d11c79406f3fc78 ui(reader): measure dense controls from container width
+e9b0ee7ccc87d186283b208276d2d34a8f468b4e ui(pdf): harden zoom header for large text
+1f551cd9840f1034b8de83fdb63a65b0822b28af docs(reader): advance W50 source-review ledger
+7b1e2c38670e261ecf66886b7799fc1e8b341a99 fix(reader): harden reflow continuity and CI emulators
+b5aa54b9b5ffb8468c3e67ce3d250610c40cf6be test(reader): align continuity literals with model types
+41bffa739607952afcb835809a081c4100de727f test(reader): make relayout policy JVM-safe
+34f493e942a85807199fcaeb174d318b945234bf ci(room): recover schemas from KSP without historical UI compile
+32ce4c3416e7efadb724e99ca32fa34812381200 fix(reader): make relayout continuity and emulator gates deterministic
+438c46f31e247939139ea742b3f83dd58665ff04 fix(room): commit generated migration schema history
+12d2ff305bf3fdeab4bbd7d837bd4a7359a31075 docs(reader): record W50 continuity and schema recovery evidence
+abbdbf5668f5fd5d5ece6f3eea462976486652ef fix(reader): harden jump settle and relayout checkpoints
+047ecab6a4d8fb4554113a00b6791e44d5bc49f6 fix(ci): align PDF reliability and macrobenchmark contracts
+7000ff83f59c448b8a5dba18469bf604f98ac485 test(perf): resolve Reader readiness from target resources
+ef3bd490c148b8fa4775224c5108d8a2926f3274 ui(reader): harden relayout chaining and large-text choices
+d0bc9243977601d0469e8031f90a0859a2b940da ui(reader): expose selected semantics and wrap large-text choices
+54379dbfb87a6691bff0b19936eab2e32989f305 fix(storage): serialize revisit memory and scroll PDF gate
+06a87e2c4700ba39783717c0170e07c8c98295b0 fix(perf): satisfy Reader session contract in benchmark fixture
+d9bf652c1d67bce77ca17b0270b45b07fc3acdd9 ui(reader): make note dialogs scroll-safe at large text
+615cc3c23804315f768183c0cb4ea1aa1d498547 test(reader): make PDF layout gate deterministic and recycle a11y nodes
+22fb522db44e745d08d7e68cfb479ac22a66a856 fix(reader): avoid no-op location jump transactions
+2c59ccefce41c2d34171c2fd49450b97f02dbb02 fix(reader): define transactional note draft policy
+83e616c3e6ed6adb03b475b07d707452355a5375 fix(reader): make note drafts and return jumps transactional
+b7db5d0b469dd0f630d86ea72580fd9c885d47a0 test(reader): cover no-op location jump policy
+2f0236d497d83855006e26c982c782a26b68d5f5 test(reader): lock transactional selection note behavior
+aaf6c38a71f62987bc24f07b08da800e8ab85455 docs(reader): record W51 interaction integrity evidence
+5ae9dfff4bacc49a3cf4a14381b65b2d637f74ef fix(reader): dismiss native selection before overlays
+24395ad8118d231f02fd65539240a13e38b9192c fix(reader): serialize selection overlays and appearance close
+78fb98b0c9e7004159623ac998f5c8e1e3747eec fix(reader): consume directional boundary gestures
+6d37e0069af453a15ce2a26cbe32c2ae1f16747f test(reader): cover appearance close synchronization
+c0d9ef0ad21cb93634b2ca831a724e59476b6118 test(reader): lock publication boundary gesture ownership
+7164f537d0a9deccb6b53a2808b36577c47c4cfd fix(reader): align appearance dismiss callback signature
+f349d9ea41c42f50252b59283d0e41fe8d1c2c46 fix(reader): fail calm on appearance renderer errors
+22556de847302fecfff20a9e2dfa48a2454bff5d i18n(reader): add appearance recovery copy
+0078d0d9588ad9674c17adaa6bd255055e391fbc i18n(reader): add Persian appearance recovery copy
+65e7a83b10dbf1c5d285192d39b8fdb058ed32b0 docs(reader): record W52 interaction convergence evidence
+01230913e0e4f3c1f5e00bc6134d07fddf02efb6 fix(reader): rollback failed appearance and spread state
+46562d8447a70aaa3fcbd0ff9aede36fbaf5c07a fix(reader): veil fixed-layout spread handoffs
+3bedd47465faa502d061ef4be78cc3fa4c7f9389 test(reader): cover fixed-layout spread handoff
+1e7964411865f148d5273b07fe7ac408c997942d fix(reader): harden paper curl intersection geometry
+b4c28a9fc09f1c36cc37732e5094d44af1a4d78d test(reader): cover degenerate paper curl geometry
+c7818056ecce11b1897dd65e84442810c9562bb9 fix(reader): keep paper geometry float-native
+10205b265a3896ad57dcb4db551e64cea66c59d7 fix(reader): use explicit finite checks in curl geometry
+66ba0242c451bf0e2159d06050355c2d44f26f68 fix(reader): scope navigator fragments to reader session
+93ad7dbdce7b8587165684567e5e60ed73fa0339 test(reader): lock session-scoped fragment identity
+90535102f37aa2e7549b60d02f0596bc6992be1e fix(reader): define safe curl render viewport
+eb4d28f39c751e18592d0bc31f02f889cca774c4 fix(reader): guard curl draw during zero-size resize
+fe88b4edaa790be9478b6eda3cf061c1d3ebff4e fix(reader): guard paper atmosphere during resize
+1adda4eb1de6f2fc2319be25babdfd4614385b94 test(reader): cover resize-safe curl rendering
+eb6759f6d8275a8f9c400205099f4be8dd8d09c9 fix(reader): give spread relayout a full settle window
+4791d0e1d9a65cc0828ddfe6f7e5c90f92ab2397 fix(reader): apply spread-aware renderer settle
+0c26ec80ff16ed3b7624a0811d32b79bdd607d4e test(reader): cover spread settle budget
+c72581e7d31c6f78c80c5520f06ab6884f6bbbfe test(reader): cover resize-safe material viewport
+d6ce1a05bf687ff41842433ba5716b225ee39850 docs(reader): record W53 continuity and paper hardening
+b7cfeff252484abe9ce74e54953d87129caf0e17 fix(reader): remove paper snapshots under reduced motion
+50f7770190c5ba43d08f7f6194a3c846e7b93875 test(reader): lock reduced-motion paper contract
+e846506e1a4088bef7e31d1cda9344995434c123 fix(reader): rollback page previews on viewport resize
+cbf48591e2777c5d3ccee2c07e0bbb0c14e80f5d test(reader): cover preview rollback on viewport resize
+56c55f850f753093bbc834a60878a8e6ea5fbe44 fix(reader): expose directional navigation interaction
+b9e7b4d3e7cff8f77e4699af0466404b9fa1a5d1 fix(reader): suppress resize relayout page credit
+581237d2200dd7326709f677e6313a96243df200 refactor(reader): codify viewport relayout locator semantics
+f5cf5127d699d7dc25b72d9b8f1ce79659a7c598 refactor(reader): use viewport-aware locator policy
+1daf5941d82a0c1016e25255e2bc4d1431899909 test(reader): lock resize locator accounting
+c42a1f45c9140cfbc91a5ca425250f67c413e1fb chore(reader): remove obsolete locator import
+15112187c14bb1b51b36f1390e9124cd5712b697 docs(reader): record W54 adaptive interaction hardening
+8302879479ce111b86b2509505fc6ee2dc625dec test(reader): restore appearance policy import
+bafbb15970cbcde36f2f0e700cb83c494563ec54 fix(reader): return accessibility keys to renderer
+061c679339889d72a3f3d874caedaa8105a0bb02 fix(reader): avoid no-op chapter transactions
+104df1ea076c4b3b10cf9034c979da0eb78f3ac0 fix(reader): persist paper keyboard turns and guard chapter no-ops
+47acae821c3b4fdecb10dcf1e234c727187cc1f6 test(reader): lock accessibility key ownership
+cf75ee73258086014f8cddf8896510b0c162bf33 test(reader): cover chapter no-op navigation
+21ad27d5c267954f4fdac002e75f4f911390f914 test(reader): cover paper keyboard commit semantics
+7b7e295798969a297120f01edc8e17f936440379 feat(reader): derive curl material from paper age
+7eef69896e5f20e93a1ad3fd4e945b9fdd8f181f feat(reader): keep curl material faithful to paper patina
+755a58a78ad72dbaafbdaeb8172337065acdd911 a11y(reader): announce beginning and end boundaries
+9a4acb81d4af3d4c71d03a5a0f41c430d2aff9fc i18n(reader): add accessible boundary copy
+80782c807fcb1d8fd27baaa6eff6a08fd6b34c8e i18n(reader): add Persian boundary copy
+2e3f6ee1df8639acbb0657a9fbf1c475059f93dc test(reader): lock patina-aware curl material
+844ff7b3c0f89202a0d7fdaa9019b7c1e8bde6dc test(reader): cover accessible boundary direction
+5eacb60deb1ed06e123fa35c7e6f3de41fdc33d4 docs(reader): record W55 W56 keyboard and paper polish
+2e42ae11e2b27a90d2620806dfc43d90d32b30f8 refactor(reader): make Paper own keyboard navigation
+366926333f866982360e96c738cb4e84bb3a42dc fix(reader): route Paper keys before directional fallback
+5be97525a5302f5c0d6ed8a56384eb3b0f3d2a59 refactor(reader): remove Paper keyboard fallback workaround
+98372f62e5c6ea10cfc255860ae9a8b01ab6f7b8 test(reader): remove superseded Paper keyboard workaround test
+123a19527dfde0402a8e516ec8f8fc90923f528e test(reader): exercise Paper keyboard ownership on Android
+216c9d5eeb3beeb2f9f5c623bbe7ea7716bd2682 feat(reader): unify keyboard page-turn semantics
+9cb7236a2c591beb2eeff2d2c2f31c92efc0b264 refactor(reader): use shared keyboard map in Paper
+91a4bc15fba0246faa8778af44006e50848547a4 refactor(reader): use shared keyboard map in Slide
+ff7d0a38de045bcc5d55a84bc4268c545fa0d201 refactor(reader): use shared keyboard map in directional navigation
+15b8a2b4b8a561b91c0cff13c36c6a59958496e9 test(reader): lock shared keyboard turn mapping
+a1e0edd8fa51c85680b9aeb3ec8d4e1291994502 test(reader): cover page keys and shift space on Android
+808782892824e1d13a2a1b4879fe582ec3c630ef fix(storage): commit selection notes atomically
+786fd78dcd560d10101a717abe88f44e498240a8 fix(reader): defer new Note highlight until durable save
+0c11e4957dfc677c47de89d104bc86e332fd24bb fix(reader): gate input on atomic Note draft state
+ef0971fba1d7a0d81ed129196ced93906fc18949 refactor(reader): simplify atomic Note draft policy
+6ea22e49362f52c708f428fdd27e0a75bbcc30f8 refactor(reader): align Note save policy naming
+758c03dd6dcddddb4794e7ce26fc2edf0cf4bef1 test(reader): align Note policy with atomic drafts
+f7c38a5e479b79bb7360f23ecb6b5fa9190124c3 test(storage): verify atomic selection Note durability
+5ca4a237a27dd9d86f2dfbeda4f1a18e7037a018 refactor(reader): simplify selection highlight acknowledgement
+fe4e6c87bc73437e960ecd9df737974ba0144dae docs(reader): record W57 W58 keyboard and atomic Note hardening
+051202d8029af10224f7c78f787cfce417f03c48 fix(reader): settle jumps only at their target
+e03e772947967db599f5ce005c444de2db830e1c fix(reader): provide jump destinations to settle gate
+edaf9680d75e0a588d2351b14ed17fd4cd49a370 test(reader): cover target-aware jump settlement
+f65fb7e92a830dc295cc9a45b46a37638ca232d7 fix(reader): carry passage revisit through jump transaction
+defedbd1eb2ad3ec9b4dabc6d32c5adf253ad6e1 fix(reader): record passage revisits only after jump settles
+138c5cb4c555c5e2355557b7a8d4fa34b3174c7e test(reader): verify passage revisit waits for target settle
+46c46823cb78ffb9b6338206a2741255772f2f7b refactor(reader): make jump target matching pure
+fb804583246f1a31592f6dc81b25c4ce757d61ea refactor(reader): pass stable locator identities to jump gate
+283b20b20e0e6a6d24f9bf228b07fa7e675ed216 test(reader): keep jump matching pure JVM
+de4e52d3de9f7b482a42dc827c990c1b6be06bba fix(reader): normalize jump resource hrefs
+6ee2463b056d797c7fd548ffc5f646a31cf55385 test(reader): cover normalized chapter hrefs
+da485ac892fde8144b0e73912684e869fb205253 fix(reader): resolve fragment-only jump targets
+ee63d35e7e28dc753fb70748e09dcaad767e9770 fix(reader): target-track in-content EPUB links
+0dd8ef766ce009e4730b8e7b292b9298f74f2e6c test(reader): cover fragment-only internal links
+d46724f0c1e1e738b8f98c3ea4b87063a1ca6d2f fix(reader): avoid unresolvable fragment transactions
+5931b6bab2b259e086c595ef4e829118c3c3f69d test(reader): cover unresolved fragment target
+5468dae2997d6e96b2fdf7723b4a86b5be968911 docs(reader): record W59 target-aware navigation evidence
+0fea114f79a7e82b25a30745861331425f63e815 fix(reader): detect locator no-ops by stable identity
+c022527dd33305bdf4fcefde0262363f19d63a56 fix(reader): avoid metadata-only location transactions
+0a449421ff0b4f4df766d44a4c9b89baac86d78f test(reader): cover identity-based no-op location jumps
+d195de050d22333b11de99cdea1020bd48c77497 perf(reader): release inactive Paper snapshot buffer
+b2ed8ca67293adacc766d6a4b184a2873ebd7c88 perf(reader): release inactive Slide snapshot buffer
+b4a02ee093a47520f4b5cb3c1673a6e2ff4cd554 perf(reader): free page-effect buffers after mode handoff
+d0e9fe8dedcc8a2438372f7dec8467b8e6df7df5 perf(reader): recycle settled handoff snapshots
+71e92ae80d7f6242e3b5ca6f5278f28e90b3c174 perf(reader): free stale handoff buffer after resize
+454f5a47deb4b4563870522e04a7d35e87bdca41 fix(reader): defer handoff bitmap recycle past draw frame
+8a7a9b5ccd28fdbda24ac47bd053db3c7696b863 docs(reader): record W60 identity and memory hardening
+af172cb02a542063976cca7b8e07cd86cae4a1a5 fix(storage): keep selection Note commit module-internal
+363de2ee81bf54c20b827ad13ea177c0dab9736f ci(storage): retry Android emulator package warmup
+30a614f8022f9d480fa248b36beb23eb94556b3c W61: turn Threshold resume hero into parchment artifact
+2a52592991da9e6024f1fe0b9348284784830f3a W61: sharpen Archive retrieval hierarchy and shelf filters
+f06e58f20c124abfa05f001cc295486439fb8274 Arena: lock W62-W68 review and execution plan
+ad30c60015938680b0ea208cc8bb17b8fa871d0f Arena: expand W62-W68 into detailed executable plan
+f9142330bd0cd155467e46049c02a3320229feb9 W62.1: align PDF layout instrumentation with selectable semantics
+12adc36aefd9f4f322b441b7b255a0ff9110f63b W62.2: resolve benchmark readiness from app resources
+9ae58132c5d1701ccbf9532504327c432991f5be W62.3: add explicit accessibility selection states
+d13ef8784611ded9eef5614ce8dcac85824975f0 W62.3: localize PDF selection accessibility states
+4e9a234fb5a56e962700e20ab2e0682088eeac55 W62.3: expose stable PDF layout accessibility state
+8c3e2f47bb157bfe3a30e32d73343f1cab5fcc1e W62.3: verify PDF layout via public accessibility state
+0ac2a7304eda2c66b76387a37f5841e36ec02b6d W62.4: share benchmark Reader readiness contract
+784218e21b96e7aa7b599ab9c47b9277746f7b9e W62.4: reuse stable Reader readiness in frame benchmark
+ea9f7d1547e08625b33fb34842129c96348296c1 W62.4: add gfxinfo Reader frame smoke benchmark
+51d39adbd05ee9014b4e84726d4457bef5e91304 W62.4: route emulator performance lane to gfxinfo smoke
+94de58a87c37c1b88c24ed83b66f776c59deccdd W62.4: align smoke budgets with gfxinfo frame metrics
+2535087604a73085272ded9c95b5df353402c481 W62.4: track gfxinfo smoke trends explicitly
+c2664018535f35c92786fd57f3f3998dc7eca314 W62.4: align smoke delta policy with gfxinfo metrics
+4962a9dc2bab3ab7abd3bed484f59a24fdfa29bb W62.4: skip incompatible historical delta baselines safely
+afe5f5cc6eb6beb47f374678e813259a4b1a3e8c W62.4: test performance metric schema migration
+1811b5a7e300f939119240a7932a18de18030bcb W62.4: cover gfxinfo smoke budget parsing
+5dda94919ed0d76f69bec20ccf82db77f287a5ce W62.4: make performance fixture matching order-independent
+f87b5c594fa8f973752a687328681200a2daf510 W62: prevent deleted selection notes from resurrecting
+8b19fb042707f4d352e1462ffe7371e1a2448bb7 W62: make PDF layout accessibility node deterministic
+3e29e3b48a5ed3a36782462434304d5e87ab0e6c W62: add exact durable highlight lookup for note commits
+7056a17673230c1264acb558217eec5d112f3278 W62: use exact durable passage identity for selection notes
+d763e72edf044fd6869f29880402fbec4576a64a W62: cover shared-locator selection note identity
+458f023acab8468b14040fa793a9f21d16caaae3 W62: restore shared semantics import after PDF accessibility override
+d593aee92b98ffde14db0b034513168e6e8ed9de W62.5: prevent deleted annotations from being resurrected
+46b765842b800be10111b74a55847e33b266445f W62.5: verify PDF selection through platform selected state
+f412d560eb5284560754724270edb75340da36dd W62.6: read PDF radio selection from checked accessibility state
+ac0b53825f2e61b623223ced8c4574f057a36438 W62.6: run startup and frame smoke benchmarks independently
+7e8910e52359d0a7960cf0a57830b14d7fa812da W63.1: make Artifact Chamber book-first
+e2ccd3764d77af3302efae970ce509fa3582fe23 W63.2: refine Artifact Chamber identity hierarchy
+1e34c2cb525ab444c47ba592dc91229b1dd1d55d W63.2: fix identity resource and test formatting
+333e7580479c55af458be8d252c95ba593747386 W63.2: reset benchmark fixture per iteration
+f7069c3b7d719be7f56989c21c382b70dcaa8631 W63.2: isolate benchmark reader sessions per iteration
+9045e72953b23eb8ff852a6ec339ff05db3de1b0 W63.2: recreate benchmark activity every iteration
+507f3d086b0f0188204ff8b0b39e1c13d8ec7f05 W63.3: refine Current Journey state and hierarchy
+45e739ef37a1d16e25d25bdef44b42d2f9710ec2 W63.4: author Preserved Memory samples
+c1f496994aa17d14dccda9d4b9d5e6c13506c38f W63.5: turn Archive History into durable chronology
+d46eba81c0d30f795d85ff249377f83bd21428d7 W63.5: stabilize steady-state reader smoke sampling
+7d941fe01274e5a452128c868588da5f941fcf6b W63.6-W63.7: harden Book Detail utility and adaptive states
+cee7280e0896dba23287da8206b9e8b12e84ad5a W64: converge Notebook and Archive memory artifacts
+45913366f0bf25e00480f2252ab99f5df2737b7f W66: type recovery notices by failure ownership
+f5b0d113f68a4732e4264987d0f5bb3ef6e5fbf7 W66: preserve formatted notice call compatibility
+9bb2c7f2078f4b47c6c118030fc2d0180c1c1570 W67: adapt Profile goals for large text and narrow windows
+54ba5e03adcb4dafef108da9760925f8f26d77e7 W68: verify optimized packages and packaged profiles
+bc258262f7d53cc4412cf9d60a5a7578ba44d25d W66-W68: finalize recovery ownership and final gate triggers
+0fb634e8c30a9291627df794c4d6ca9c36480f93 W65: converge World hierarchy around reading truth
+934d0fb9e15d70cc8e9eb69267c9772784c8dfd6 Fix XML escaping in backup notice category
+f4c16248457b4213f4922bb79dfa5344c1d7cfdf Rename Codemagic workflows for clearer Veil builds
+0a186e216c56fe96a37fbb3fbe49dbe34b1641a6 Fix missing Book Detail destructive-action strings
+7b226e0c94e7b52b3f3f7c0705f689b90a1633f0 Fix Book Detail compact hero breakpoint
+c096ccfa11030b1b8538d7e085dfc8ccc37e9962 Harden CodeMagic instrumentation runner verification
+a9edd7639deb0e043aeedc958c47601bac5aa3b0 Use Android build-tools aapt for instrumentation manifest verification
+33bcad119eec36f492a136bc6c99a0589f00b23c Refine paper turn finish and expose in-reader settings
+4415bb723818b1b24e1ab123108122d5aca0643d Keep paper tap turn folded through terminal frame

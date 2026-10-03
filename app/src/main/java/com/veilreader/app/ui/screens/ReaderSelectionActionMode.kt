@@ -13,7 +13,8 @@ import org.readium.r2.shared.publication.Locator
 /** Actions that belong beside the selected passage, not in the persistent reader chrome. */
 internal enum class ReaderSelectionAction {
     HIGHLIGHT,
-    NOTE
+    NOTE,
+    LOOKUP
 }
 
 /**
@@ -38,6 +39,7 @@ internal class ReaderSelectionActionModeCallback(
     private val navigatorProvider: () -> SelectableNavigator?,
     private val highlightLabel: String,
     private val noteLabel: String,
+    private val lookupLabel: String,
     private val onModeChanged: (Boolean) -> Unit = {},
     private val onAction: suspend (ReaderSelectionAction, Locator, String) -> Unit
 ) : BaseActionModeCallback() {
@@ -55,6 +57,10 @@ internal class ReaderSelectionActionModeCallback(
             menu.add(Menu.NONE, ACTION_NOTE, 1, noteLabel)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
         }
+        if (menu.findItem(ACTION_LOOKUP) == null) {
+            menu.add(Menu.NONE, ACTION_LOOKUP, 2, lookupLabel)
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        }
         return true
     }
 
@@ -62,6 +68,7 @@ internal class ReaderSelectionActionModeCallback(
         val action = when (item.itemId) {
             ACTION_HIGHLIGHT -> ReaderSelectionAction.HIGHLIGHT
             ACTION_NOTE -> ReaderSelectionAction.NOTE
+            ACTION_LOOKUP -> ReaderSelectionAction.LOOKUP
             else -> return false
         }
         val navigator = navigatorProvider() ?: return false
@@ -124,5 +131,6 @@ internal class ReaderSelectionActionModeCallback(
         // App-local IDs; they only need to be stable for the lifetime of the action mode.
         const val ACTION_HIGHLIGHT = 0x5648
         const val ACTION_NOTE = 0x564E
+        const val ACTION_LOOKUP = 0x564C
     }
 }

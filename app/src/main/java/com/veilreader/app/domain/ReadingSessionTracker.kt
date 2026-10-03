@@ -21,6 +21,8 @@ class ReadingSessionTracker(
     private var resumed = false
     private var lastTickElapsedMs = startedAtElapsedMs
     private var lastInteractionElapsedMs = startedAtElapsedMs
+    private var lastPacedPageActiveMillis: Long? = null
+    private var paceSegmentCrossedIdleCutoff = false
     private val notedHighlightIds = initialNotedHighlightIds.toMutableSet()
 
     var activeMillis: Long = initialActiveMillis.coerceAtLeast(0L)
@@ -37,6 +39,8 @@ class ReadingSessionTracker(
         resumed = true
         lastTickElapsedMs = nowElapsedMs
         lastInteractionElapsedMs = nowElapsedMs
+        lastPacedPageActiveMillis = null
+        paceSegmentCrossedIdleCutoff = false
         return accrued
     }
 
@@ -50,13 +54,39 @@ class ReadingSessionTracker(
         val accrued = accrue(nowElapsedMs)
         resumed = false
         lastTickElapsedMs = nowElapsedMs
+        lastPacedPageActiveMillis = null
+        paceSegmentCrossedIdleCutoff = false
         return accrued
     }
 
     fun tick(nowElapsedMs: Long): Long = accrue(nowElapsedMs)
 
-    fun recordPacedPageTurn() {
+    fun resetReadingPaceAnchor() {
+        lastPacedPageActiveMillis = null
+        paceSegmentCrossedIdleCutoff = false
+    }
+
+    /**
+     * Records a real user page turn and returns the engaged-reading interval since the
+     * previous page turn in the same uninterrupted foreground segment.
+     *
+     * The first turn after open/resume establishes an anchor only. This prevents startup,
+     * background time and cross-session gaps from contaminating personal pace analytics.
+     */
+    fun recordPacedPageTurn(): Long? {
         pacedPageTurns += 1
+        val currentActive = activeMillis
+        val previousActive = lastPacedPageActiveMillis
+        lastPacedPageActiveMillis = currentActive
+
+        if (paceSegmentCrossedIdleCutoff) {
+            paceSegmentCrossedIdleCutoff = false
+            return null
+        }
+
+        return previousActive
+            ?.let { currentActive - it }
+            ?.takeIf { it > 0L }
     }
 
     fun recordHighlight() {
@@ -86,7 +116,14 @@ class ReadingSessionTracker(
             return 0L
         }
 
-        val activeUntil = minOf(nowElapsedMs, lastInteractionElapsedMs + idleTimeoutMs)
+        val idleCutoff = lastInteractionElapsedMs + idleTimeoutMs
+        val activeUntil = minOf(nowElapsedMs, idleCutoff)
+        if (
+            lastPacedPageActiveMillis != null &&
+            nowElapsedMs > idleCutoff
+        ) {
+            paceSegmentCrossedIdleCutoff = true
+        }
         val delta = (activeUntil - lastTickElapsedMs).coerceAtLeast(0L)
         activeMillis += delta
         lastTickElapsedMs = nowElapsedMs

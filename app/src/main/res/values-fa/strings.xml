@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Veil Reader</string>
     <string name="nav_reading">مطالعه</string>
     <string name="nav_library">کتابخانه</string>
@@ -1295,4 +1295,69 @@
     <string name="notice_category_persistence">ذخیرهٔ وضعیت</string>
     <string name="notice_category_search">جستجو</string>
     <string name="notice_category_validation">نیازمند بررسی</string>
+
+    <string name="settings_tap_matrix_title">نقشهٔ لمس</string>
+    <string name="settings_tap_matrix_description">برای هر ۹ ناحیهٔ صفحه رفتار جدا تعیین کن. با لمس هر خانه، عمل آن عوض می‌شود بدون اینکه محتوای کتاب تغییر کند.</string>
+    <string name="settings_tap_matrix_hint">صفحهٔ قبل و بعد همان حرکت فعال Veil را حفظ می‌کنند. «تعامل کتاب» آن ناحیه را به خود کتاب می‌سپارد تا لینک‌ها و رفتارهای اصلی کار کنند.</string>
+    <string name="settings_tap_matrix_reset">بازنشانی نقشهٔ لمس</string>
+    <string name="settings_tap_action_default">رفتار پیش‌فرض Veil</string>
+    <string name="settings_tap_action_previous">صفحهٔ قبل</string>
+    <string name="settings_tap_action_controls">کنترل‌های خواننده</string>
+    <string name="settings_tap_action_next">صفحهٔ بعد</string>
+    <string name="settings_tap_action_renderer">تعامل کتاب</string>
+    <string name="settings_tap_zone_top_left">بالا چپ</string>
+    <string name="settings_tap_zone_top_center">بالا وسط</string>
+    <string name="settings_tap_zone_top_right">بالا راست</string>
+    <string name="settings_tap_zone_middle_left">وسط چپ</string>
+    <string name="settings_tap_zone_middle_center">مرکز</string>
+    <string name="settings_tap_zone_middle_right">وسط راست</string>
+    <string name="settings_tap_zone_bottom_left">پایین چپ</string>
+    <string name="settings_tap_zone_bottom_center">پایین وسط</string>
+    <string name="settings_tap_zone_bottom_right">پایین راست</string>
+
+    <string name="settings_hardware_keys_title">کلیدهای سخت‌افزاری مطالعه</string>
+    <string name="settings_hardware_keys_description">در صورت تمایل دکمه‌های صدا را هنگام باز بودن کتاب به عمل‌های مطالعه اختصاص بده. حالت پیش‌فرض همچنان صدای سیستم است.</string>
+    <string name="settings_volume_up_key">افزایش صدا</string>
+    <string name="settings_volume_down_key">کاهش صدا</string>
+    <string name="settings_hardware_action_system">صدای سیستم</string>
+    <string name="settings_hardware_action_previous">صفحهٔ قبل</string>
+    <string name="settings_hardware_action_next">صفحهٔ بعد</string>
+    <string name="settings_hardware_action_controls">کنترل‌های خواننده</string>
+    <string name="settings_hardware_keys_hint">هنگام انتخاب متن، پنجره‌ها، کاوش لمسی و عمل صفحه در حالت اسکرول، نگاشت مطالعه کنار می‌رود. نگه‌داشتن کلید نیز محدود می‌شود تا چندین صفحه ناخواسته رد نشود.</string>
+    <string name="settings_hardware_keys_reset">بازگرداندن صدای سیستم</string>
+
+    <string name="settings_focus_guide_title">راهنمای تمرکز</string>
+    <string name="settings_focus_guide_description">بدون گرفتن کنترل لمس از کتاب، شلوغی دیداری پیرامون متن را کمتر کن.</string>
+    <string name="settings_focus_guide_off">خاموش</string>
+    <string name="settings_focus_guide_window">پنجرهٔ تمرکز</string>
+    <string name="settings_focus_guide_line">خط مطالعه</string>
+    <string name="settings_focus_guide_position">جایگاه عمودی</string>
+    <string name="settings_focus_guide_band">ارتفاع ناحیهٔ تمرکز</string>
+    <string name="settings_focus_guide_dim">تیرگی بیرون ناحیه</string>
+    <string name="settings_focus_guide_hint">این راهنما فقط دیداری است؛ لینک‌ها، انتخاب متن، ورق‌زدن و زوم PDF همان مالکیت ورودی قبلی را حفظ می‌کنند.</string>
+    <string name="settings_focus_guide_reset">بازنشانی راهنمای تمرکز</string>
+    <string name="reader_focus">تمرکز</string>
+    <string name="reader_focus_on">راهنمای تمرکز روشن</string>
+    <string name="reader_focus_off">راهنمای تمرکز خاموش</string>
+    <!-- A page identifier, not a quantity requiring plural forms. -->
+    <string name="pdf_bookmark_page" tools:ignore="PluralsCandidate">صفحهٔ %1$d</string>
+    <string name="reader_selection_lookup">جست‌وجوی واژه</string>
+    <string name="reader_lookup_failed">هیچ برنامهٔ نصب‌شده‌ای برای جست‌وجوی متن انتخاب‌شده در دسترس نیست.</string>
+    <string name="tts_title">خواندن با صدا</string>
+    <string name="tts_intro">متنِ نمایان با صدای آفلاینِ نصب‌شدهٔ اندروید خوانده می‌شود. با خروج از کتاب‌خوان، پخش مکث می‌کند.</string>
+    <string name="tts_start">شروع از متن قابل‌مشاهده</string>
+    <string name="tts_play">پخش</string>
+    <string name="tts_pause">مکث</string>
+    <string name="tts_stop">توقف</string>
+    <string name="tts_speed">سرعت گفتار</string>
+    <string name="tts_pitch">زیر و بمی صدا</string>
+    <string name="tts_preparing">در حال آماده‌سازی صدا…</string>
+    <string name="tts_unsupported">این کتاب محتوای متنی قابل‌خواندن برای موتور TTS رسمی Readium ارائه نمی‌کند.</string>
+    <string name="tts_initialization_failed">موتور TTS دستگاه آماده نشد. دادهٔ صدای نصب‌شده را بررسی کن و دوباره تلاش کن.</string>
+    <string name="tts_missing_voice">صدای آفلاینِ نصب‌شده برای این زبان در دسترس نیست.</string>
+    <string name="tts_playback_failed">پخش صدا به‌دلیل خطای موتور TTS یا محتوای کتاب متوقف شد.</string>
+    <string name="reader_eta_minutes">%1$d دقیقه</string>
+    <string name="reader_eta_hours_minutes">%1$d ساعت و %2$d دقیقه</string>
+    <string name="reader_eta_remaining">حدود %1$s مانده</string>
+    <string name="reader_eta_range_description">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</string>
 </resources>

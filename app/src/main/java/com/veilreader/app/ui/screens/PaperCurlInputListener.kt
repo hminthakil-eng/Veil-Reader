@@ -87,6 +87,17 @@ internal class PaperCurlInputListener(
             activeDrag != null ||
             state.active
 
+    /** Semantic page actions reuse the same keyboard/tap transaction and busy guard. */
+    fun performDiscreteTurn(direction: PaperTurnDirection): Boolean {
+        if (!paperModeEnabled()) return false
+        if (paperInputBusy()) return true
+        performDiscreteTurn(TurnSpec(
+            direction = direction,
+            side = paperTurnSideFor(direction, navigator.overflow.value.readingProgression)
+        ))
+        return true
+    }
+
     private fun performDiscreteTurn(spec: TurnSpec) {
         val visualReady =
             shouldCapturePaperTurnSnapshot(isReducedMotion()) &&

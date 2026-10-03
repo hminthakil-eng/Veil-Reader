@@ -13,6 +13,7 @@ import org.readium.r2.shared.ExperimentalReadiumApi
 
 internal enum class ReaderTapOwner {
     IMAGE,
+    TAP_MATRIX,
     PAPER,
     SLIDE,
     DIRECTIONAL,
@@ -120,6 +121,15 @@ internal fun pageTurnTapZonePx(
         .coerceAtMost(upperBound)
 }
 
+internal fun shouldUsePaperCurlNavigation(
+    format: BookFormat,
+    scroll: Boolean,
+    pageTurnStyle: PageTurnStyle
+): Boolean =
+    format == BookFormat.EPUB &&
+        !scroll &&
+        pageTurnStyle == PageTurnStyle.PAPER
+
 internal fun shouldUseDirectionalTapNavigation(
     format: BookFormat,
     scroll: Boolean,
@@ -154,6 +164,7 @@ internal fun shouldAnimateDirectionalNavigation(
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
     private val contentTarget: InputListener?,
+    private val tapZones: ReaderTapZoneInputListener? = null,
     private val paper: InputListener?,
     private val slide: InputListener?,
     private val staticPaged: InputListener?,
@@ -190,6 +201,19 @@ internal class ReaderInputArbiter(
         if (contentTarget?.onTap(event) == true) {
             onTapOwner(ReaderTapOwner.IMAGE)
             return true
+        }
+
+        when (tapZones?.routeTap(event)) {
+            ReaderTapZoneDisposition.CONSUMED -> {
+                onTapOwner(ReaderTapOwner.TAP_MATRIX)
+                return true
+            }
+            ReaderTapZoneDisposition.RENDERER -> {
+                onTapOwner(ReaderTapOwner.RENDERER)
+                return false
+            }
+            ReaderTapZoneDisposition.DEFER,
+            null -> Unit
         }
 
         if (paper?.onTap(event) == true) {

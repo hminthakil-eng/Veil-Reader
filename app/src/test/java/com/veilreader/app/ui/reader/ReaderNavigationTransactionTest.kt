@@ -9,6 +9,49 @@ import org.junit.Test
 class ReaderNavigationTransactionTest {
 
     @Test
+    fun fastPdfFlush_preservesOnlyTruthfulPassageVisits() {
+        val gate = ReaderNavigationTransactionGate()
+        gate.begin("page1", 10L, expectedPdfPage = 3, originPdfPage = 1, passageVisitLocatorJson = "page3")
+        val fastSwipe = requireNotNull(gate.consumeReachedPdfDestination(20L, 4))
+        assertNull(fastSwipe.passageVisitAfterSettlement(4))
+        assertEquals("page3", fastSwipe.passageVisitAfterSettlement(3))
+        gate.begin("page1", 30L, expectedPdfPage = 3, passageVisitLocatorJson = "page3")
+        val reached = requireNotNull(gate.consumeReachedPdfDestination(40L, 3))
+        assertEquals("page3", reached.passageVisitAfterSettlement(3))
+    }
+
+    @Test
+    fun convergedPdfJump_requiresBothDocumentPageAndStableTarget() {
+        val gate = ReaderNavigationTransactionGate()
+        val target = ReaderNavigationIdentity("book.pdf", 3, null, null)
+        val transaction = gate.begin(
+            originLocatorJson = "source",
+            nowElapsedMs = 10L,
+            targetIdentity = target,
+            expectedPdfPage = 3,
+            originPdfPage = 1,
+            passageVisitLocatorJson = "saved-passage"
+        )
+        assertNull(gate.consumeSettled("intermediate", 20L, target.copy(position = 2), 3))
+        assertNull(gate.consumeSettled("wrong-page", 30L, target, 2))
+        val settled = gate.consumeSettled("destination", 40L, target, 3)
+        assertEquals(transaction.token, settled?.token)
+        assertEquals("saved-passage", settled?.passageVisitLocatorJson)
+        assertFalse(gate.isActive(50L))
+    }
+
+    @Test
+    fun pdfLifecycleSettlement_doesNotConsumeEpubTargetTransaction() {
+        val gate = ReaderNavigationTransactionGate()
+        val target = ReaderNavigationIdentity("chapter.xhtml", 8, null, null)
+        gate.begin("source", 10L, targetIdentity = target)
+        assertNull(gate.consumeReachedPdfDestination(20L, 3))
+        assertTrue(gate.isActive(30L))
+        assertNull(gate.consumeSettled("intermediate", 40L, target.copy(position = 5)))
+        assertEquals("source", gate.consumeSettled("destination", 50L, target)?.originLocatorJson)
+    }
+
+    @Test
     fun firstDifferentLocator_consumesProgrammaticTransactionOnce() {
         val gate = ReaderNavigationTransactionGate()
         val started = gate.begin(originLocatorJson = "origin", nowElapsedMs = 100L)
@@ -383,6 +426,48 @@ class ReaderNavigationTransactionTest {
                 target = null
             )
         )
+    }
+
+    @Test
+    fun pdfSourceEmission_cannotSettleDestinationOrOverwriteReturnHistory() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin("page1", 100L, expectedPdfPage = 3)
+        assertNull(gate.consumeSettled(nowElapsedMs = 120L, observedPdfPage = 1))
+        assertTrue(gate.isActive(121L))
+        assertEquals(started.token, gate.consumeSettled(nowElapsedMs = 150L, observedPdfPage = 3)?.token)
+        assertNull(gate.consumeSettled(nowElapsedMs = 600L, observedPdfPage = 3))
+    }
+
+    @Test
+    fun fastPdfBackground_canFlushReachedDestinationWithoutWaitingForDebounce() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin("page1", 100L, expectedPdfPage = 3)
+        assertNull(gate.consumeReachedPdfDestination(110L, observedPdfPage = 1))
+        assertEquals(started.token, gate.consumeReachedPdfDestination(130L, observedPdfPage = 3)?.token)
+        assertNull(gate.cancelActive(140L))
+        assertNull(gate.consumeSettled(nowElapsedMs = 600L, observedPdfPage = 3))
+    }
+
+    @Test
+    fun nativeSwipeImmediatelyAfterPdfLink_cannotMakeFastCloseDiscardTheActualPage() {
+        val gate = ReaderNavigationTransactionGate()
+        val started = gate.begin("page1", 100L, expectedPdfPage = 3, originPdfPage = 1)
+        assertNull(gate.consumeReachedPdfDestination(110L, observedPdfPage = 1))
+        // StateFlow may conflate page 3 with a fast native swipe to page 4 before UI debounce.
+        assertEquals(started.token, gate.consumeReachedPdfDestination(130L, observedPdfPage = 4)?.token)
+        assertFalse(gate.isActive(140L))
+        assertNull(gate.cancelActive(150L))
+    }
+
+    @Test
+    fun lifecyclePdfFlush_cannotSettleAnOrdinaryOrExpiredTransaction() {
+        val gate = ReaderNavigationTransactionGate(timeoutMs = 100L)
+        gate.begin("epub", 100L)
+        assertNull(gate.consumeReachedPdfDestination(120L, observedPdfPage = 3))
+        assertTrue(gate.isActive(125L))
+        gate.begin("pdf", 130L, expectedPdfPage = 3)
+        assertNull(gate.consumeReachedPdfDestination(231L, observedPdfPage = 3))
+        assertFalse(gate.isActive(232L))
     }
 
     @Test

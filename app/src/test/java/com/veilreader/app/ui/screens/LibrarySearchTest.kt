@@ -64,4 +64,115 @@ class LibrarySearchTest {
         assertEquals(null, parseLocalizedDecimalInput("Infinity"))
     }
 
+
+    @Test
+    fun `search relevance prefers exact prefix and contains within title`() {
+        val exact = normalizedLibrarySearchDocument(
+            title = "Dune",
+            author = "Frank Herbert",
+            series = null,
+            language = "en",
+            collections = emptyList()
+        )
+        val prefix = normalizedLibrarySearchDocument(
+            title = "Dune Messiah",
+            author = "Frank Herbert",
+            series = null,
+            language = "en",
+            collections = emptyList()
+        )
+        val contains = normalizedLibrarySearchDocument(
+            title = "The Dune Archive",
+            author = "Frank Herbert",
+            series = null,
+            language = "en",
+            collections = emptyList()
+        )
+        val query = normalizeLibrarySearchText("dune")
+
+        val exactScore = requireNotNull(librarySearchRelevance(query, exact))
+        val prefixScore = requireNotNull(librarySearchRelevance(query, prefix))
+        val containsScore = requireNotNull(librarySearchRelevance(query, contains))
+
+        assertTrue(exactScore > prefixScore)
+        assertTrue(prefixScore > containsScore)
+    }
+
+    @Test
+    fun `title match outranks author series collection and language matches`() {
+        val query = normalizeLibrarySearchText("veil")
+
+        fun score(
+            title: String = "Other",
+            author: String = "Other",
+            series: String? = null,
+            language: String? = null,
+            collections: List<String> = emptyList()
+        ) = requireNotNull(
+            librarySearchRelevance(
+                query,
+                normalizedLibrarySearchDocument(
+                    title = title,
+                    author = author,
+                    series = series,
+                    language = language,
+                    collections = collections
+                )
+            )
+        )
+
+        val title = score(title = "The Veil")
+        val author = score(author = "Veil")
+        val series = score(series = "Veil")
+        val collection = score(collections = listOf("Veil"))
+        val language = score(language = "veil")
+
+        assertTrue(title > author)
+        assertTrue(author > series)
+        assertTrue(series > collection)
+        assertTrue(collection > language)
+    }
+
+    @Test
+    fun `incidental author exact match cannot outrank title contains match`() {
+        val query = normalizeLibrarySearchText("ring")
+        val titleContains = normalizedLibrarySearchDocument(
+            title = "The Lord of the Rings",
+            author = "Tolkien",
+            series = null,
+            language = "en",
+            collections = emptyList()
+        )
+        val authorExact = normalizedLibrarySearchDocument(
+            title = "Another Book",
+            author = "Ring",
+            series = null,
+            language = "en",
+            collections = emptyList()
+        )
+
+        assertTrue(
+            requireNotNull(librarySearchRelevance(query, titleContains)) >
+                requireNotNull(librarySearchRelevance(query, authorExact))
+        )
+    }
+
+    @Test
+    fun `search relevance returns null for a true non match`() {
+        val document = normalizedLibrarySearchDocument(
+            title = "Dune",
+            author = "Frank Herbert",
+            series = "Dune",
+            language = "en",
+            collections = listOf("Science Fiction")
+        )
+
+        assertEquals(
+            null,
+            librarySearchRelevance(
+                normalizeLibrarySearchText("tolkien"),
+                document
+            )
+        )
+    }
 }

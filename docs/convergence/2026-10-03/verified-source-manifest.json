@@ -1,0 +1,1434 @@
+[
+  {
+    "path": "app/build.gradle.kts",
+    "sha256": "248da45f42c52d5860c0cf84eb1ff7cb7d5fba9ba09f92e8f5f873e2aa22b120"
+  },
+  {
+    "path": "app/schemas/com.veilreader.app.data.db.VeilDatabase/1.json",
+    "sha256": "88d6bc095959bd5b587c0ec870e2440070e2c584842748b9e1eb5049b3831adb"
+  },
+  {
+    "path": "app/schemas/com.veilreader.app.data.db.VeilDatabase/2.json",
+    "sha256": "623b49b736f6e74b09e11fd5092b96862fd993d9dcf7eb69410ae795d2e4d7eb"
+  },
+  {
+    "path": "app/schemas/com.veilreader.app.data.db.VeilDatabase/3.json",
+    "sha256": "646c51ba85b3346ac2aa9eef01d47ca5d8a7d9817f2ba69116ad4d8fb706344d"
+  },
+  {
+    "path": "app/src/androidTest/assets/pdf/README.md",
+    "sha256": "9917f7dced3f9965c88dbeaf824b85b2d58cac05d6508274b0d1774a8e98b9ea"
+  },
+  {
+    "path": "app/src/androidTest/assets/pdf/veil-links-annotations.pdf",
+    "sha256": "7bd850de7206db3d0797911df770bf3f0376f6bd5d8c59436991081b7e08c7c2"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ReaderHardwareKeysInstrumentedTest.kt",
+    "sha256": "7d314f980fd7f8c487ea830916779ff22e413827f1abd8e2335390d466c3ee73"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ReaderPdfReliabilityInstrumentedTest.kt",
+    "sha256": "3e8248fad34930b56b7796c853d1f4001b685a6171c831b195ca60332c88b8db"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ReaderSafImportInstrumentedTest.kt",
+    "sha256": "7b29c80677f8bf572c9ecd54796f5e5aaa05ab990882c84419a96eabb3f43f72"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/AnnotationDurabilityInstrumentedTest.kt",
+    "sha256": "e5ae4f86a2212b13b4269d18ca5adaa9dbcbf4bb46f2c03628f507b82d314c71"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/PdfiumLocatorCompatInstrumentedTest.kt",
+    "sha256": "d56c1bbda61261a94bc956061636ee735e36a86570e4c30b0c99e7da6cd569d4"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/RoomRuntimeRepositoryInstrumentedTest.kt",
+    "sha256": "e17575e145d46fa786ad8dfb3bb86067923f23893c2121efbb0ef3bc97f4f932"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/db/DatabaseFoundationInstrumentedTest.kt",
+    "sha256": "8e020b0b3ad3f9c0d1d9c88796079c88a9638b727c9065332e4e22f8a5628e90"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/db/HistoricalMemoryMigrationInstrumentedTest.kt",
+    "sha256": "d78f24d704339dd90c41c5dea279972109a626870024167f8e725ec2d58b03e7"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/db/MangaPersistenceMigrationInstrumentedTest.kt",
+    "sha256": "ced12f9b63aa89c2e905fd626540d15960222ba02a76ee20d581901a0a30203b"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/manga/MangaLocalImportCoordinatorInstrumentedTest.kt",
+    "sha256": "c6a035bf95fd304698393b0a30ade8153b1be5e6db25bc5fb684cc1b6658f940"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/manga/RoomMangaStoresInstrumentedTest.kt",
+    "sha256": "01aa5f30ce6aa3a41c9f6b2c85af90feac6f2e0c11b335ea1ef86ad08ff61141"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/data/settings/SettingsStoreInstrumentedTest.kt",
+    "sha256": "eba2c471b70d5f19b98f50df657ebf6c5c5cf8fdaa20cfbdd2a9d4a434d64d2c"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/reader/tts/ReaderTtsBackendInstrumentedTest.kt",
+    "sha256": "238416817ed9a28cf53c9bd8628c22194850462a74fd93e6c7848a2f3f95726b"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/screens/ReaderBrightnessInstrumentedTest.kt",
+    "sha256": "d8bd5d8b3de70785ba75ce9e4743b610e3f8cce8e50dc0cfed40fd838d796fc6"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/screens/ReaderFocusGuideOverlayTest.kt",
+    "sha256": "e23fc8705165f3982989a9d094235a243772c35083df41ef02c46a76f9fbdf4a"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/screens/ReaderFontSizeContractTest.kt",
+    "sha256": "75f0b76a8261a7dc2e6cd8c1c357da4c56f31900be358e4648cdd1550df3c525"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/screens/ReaderPdfNativeFixtureTest.kt",
+    "sha256": "003f4df69ae1a112261e97394cfb35429a0c59f8ba90da238d4b07843085a341"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/screens/ReaderTtsControlsAccessibilityTest.kt",
+    "sha256": "d3c074b6e55964b87a929ad8b3c235a128554f0adc40553d359df00f4f6dbef3"
+  },
+  {
+    "path": "app/src/androidTest/java/com/veilreader/app/ui/screens/VeilDirectionalNavigationContractInstrumentedTest.kt",
+    "sha256": "5f8970a101913b639c95497592ee653176d11da5b3b441c01081f3ee50060436"
+  },
+  {
+    "path": "app/src/benchmark/AndroidManifest.xml",
+    "sha256": "895f9bd79c89a14b6236538ab223ac91643fe66a7380dc5604c771681f544747"
+  },
+  {
+    "path": "app/src/benchmark/java/com/veilreader/app/benchmark/BenchmarkReaderActivity.kt",
+    "sha256": "67d055fa1935da368a2f3f4b8d1b0849249e759658dc45a6068912482003919a"
+  },
+  {
+    "path": "app/src/main/AndroidManifest.xml",
+    "sha256": "456cc696cb338b237a19c7ddfb2e30a476cd63b8a06f84f89f1be9593fa5bb6c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/MainActivity.kt",
+    "sha256": "be6c786febff7187ea7462831260fd9e89542a4bf8732057b60f3a68f23c882e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/GameRepository.kt",
+    "sha256": "5b8cac6db67926c975376e45e4a7dc7a9e2052902c05283af90369fac8093172"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/LibraryExport.kt",
+    "sha256": "ad802a70bd287da230d25b5d2dcd3cb097fe5f9a960ca751ac2c080a9f8ca55c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/LibraryRepository.kt",
+    "sha256": "d7a59f7a6069a36df17621342216553a12e5dbf6d226590e6af966edee8a6cc7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/LocalLibraryRepository.kt",
+    "sha256": "5e5b8326d035555c17fc008e8d20720a886c5467cb398d7edf191c696346e737"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/PdfiumLocatorCompat.kt",
+    "sha256": "53b5bd8fda80df782767ec0c79f4666050f72e5a7a4bb8d48082cc85b0322198"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/ReaderGateway.kt",
+    "sha256": "3e9d37336a77e1c24011e2088e4e2943bb91133eb10f9e844575942f0cb08349"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/ReaderProgressWriteOrder.kt",
+    "sha256": "025eb64bd6a1985bee92cf71624ac0fe64e63c6681f68c0472cb727006483e50"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/ReadingPaceStore.kt",
+    "sha256": "ba5c5f33bb0329026c5fab6a8477d8fa991f11ffd266600014aca1643edc9d31"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/ReadiumEngine.kt",
+    "sha256": "481a01d771d90b7c29dcd9840949cc97f03c87dad2229fbef2c5ed7a9add55d8"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/SampleData.kt",
+    "sha256": "a0ef0fe484edd484e4dd7ca0ea1918c015c9eb728ce591278b5790a55a52a3e4"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/Daos.kt",
+    "sha256": "c446f3d587c5ee6bf08a199cd0b647a5d80a24ac1685010a3af337f2e104f848"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/Entities.kt",
+    "sha256": "30bbe0c120c16d678c62f1cfab123cc43115444b63490e34d2099dd4dfa6e961"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/MangaDaos.kt",
+    "sha256": "bf5af738f0a6ef33a432c8af8cc29f90d097056d452f35f3b2da949235234754"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/MangaEntities.kt",
+    "sha256": "a8eec60509b6705f1b0084d535e267788c17e646f67783ae20affde99ac27cd0"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/Mappers.kt",
+    "sha256": "3faee20e9c099cc38587651942154fb4a58727d2c49a6b7520422d74b5b7bc7e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/Relations.kt",
+    "sha256": "e201fbf7d1933b2d13dedd5540a0207b067afc67c365ba9866a4066660729ad9"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/db/VeilDatabase.kt",
+    "sha256": "35f8753693f1e02123cb7b5b1664afd7ada1f4be05ba20276cc2c1775d51a5c2"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/manga/MangaLocalImportCoordinator.kt",
+    "sha256": "cea3066c9cfb2bacf571311b26f18a6bf6cfa67c3a497e48ce3e7b8576d8d689"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/manga/RoomMangaSessionRepository.kt",
+    "sha256": "d4d365a4a7c451a91a3bd8c75c18cf37f48d369a74bb04563c25e05c5f34b581"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/manga/RoomMangaStores.kt",
+    "sha256": "3f7eacaffb99761d7b8357f709f45b10dd89c67e4a30067b67d22c843f33ad59"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/migration/LegacyLibraryMigrator.kt",
+    "sha256": "8b2e2a1b94016691fb3962cbf1d2899715a22136f84d515cc6481b49a5b87542"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/migration/LegacyLibrarySnapshotReader.kt",
+    "sha256": "330fb14e364ed9a88565eea00067f2f29588915fe0e7fa031f23992f4e99334a"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/data/settings/SettingsStore.kt",
+    "sha256": "8c672498d9f5d6f4045c4a7c1287ffbbcf673e99ba1e6f3d74b7448865a9eaf7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/diagnostics/ReaderTrace.kt",
+    "sha256": "57a319897f56eb732c0eda19e2b6038d70980e713274c5dd49df8ef870dc7612"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ArrodesMirror.kt",
+    "sha256": "4f0f3b6d13710cbcf41c9f4f7b709248aebf64a94af1556b58f94caf8846b3fd"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/BookArtifactMemory.kt",
+    "sha256": "a0cd5c92ecc7de0e136d0747f0955652c27e1e6dcf6d7a7fecce8cbd633174ca"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/CastleMemoryState.kt",
+    "sha256": "86f771137d6fb5fbc12b4cda0a9702b343c0588dc6f5c904d9e9cf3e95c75a2d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/GamificationEngine.kt",
+    "sha256": "1ecd3ca4d41bc628675a162226706ba00fbcc3dcc536b2ed424e1cec75108cb4"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/HighlightMemory.kt",
+    "sha256": "b21d9505c4654cddb1a686c9836fa651778ef3e9b6738476ae780ef56ab062eb"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/HistoricalMemory.kt",
+    "sha256": "6bce2a346f290461eeaa46c07cecda6ff80967ba86d3b7e8816ec9718245671c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/LibraryAtmosphereState.kt",
+    "sha256": "9b7d80431a1c8cfc4848e0f77b9c2a85a965184f501b16bc794bf81ea4298a3d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/LibraryMemory.kt",
+    "sha256": "ff1ae85e71d7d7fb795b21de477b67fc14211019c24713dbbaf44f5348096dc3"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/LibraryWings.kt",
+    "sha256": "d0b26423ca4ae3659a41897b05d403aa4e793cf7ef22dfac798291a8dc488498"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/MemoryAtlas.kt",
+    "sha256": "5782f14494753ac3ac381677b12d3419a5736645f409ae8422f8667d7561526d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/Models.kt",
+    "sha256": "2e20889323f8b30a6e800813695fd278fab3e9ab3a63023e26c2fb101bd864df"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/NarrativeIdentity.kt",
+    "sha256": "6bf1b85c38ad9ea46b9c637f77df39d76f79c627768f7b4583b4aac52a9b44b4"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/PathMastery.kt",
+    "sha256": "2590567cf658eecf6953ba631cbcf82e2133b1c0e493a81cecf032619bd595a7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/RankWorldMutation.kt",
+    "sha256": "302a3b3d2e66bb2670ad79ed31ba577b50eb4a3cec2ca2932e53574f94ac1310"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReaderFocusGuide.kt",
+    "sha256": "0b40273204dbd178e47fcb096b6956eec899d89661b1b682db6aab9dd3bf5205"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReaderHardwareKeys.kt",
+    "sha256": "ddbc4240f336c8238979e73a742f184f6fae68458e26c9fb024ecdea406082c5"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReaderTapZones.kt",
+    "sha256": "80c05c0a6797cb788eb1b09fe04d1d82243ad88bf78ed073c4858b67d05c77bc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReaderTtsSettings.kt",
+    "sha256": "9b22926c6bc8914fa0cdbbede7c6e94482130b46a94ec36b89192643a9948f00"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReadingMemory.kt",
+    "sha256": "43056780ada55ae24f519da633b24e55ef73b66e477eb2e345db9ec6d6aa993b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReadingPolicy.java",
+    "sha256": "c4e085e49f1d0e6bc3ad82cb64438f1ca39fd9f0d7047723499b992e31088872"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReadingSessionTracker.kt",
+    "sha256": "3cc7924902a929d7f2c7f43a257e043e5003697a57bd8036f4f4d13c58c1934c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReadingTimeCapsule.kt",
+    "sha256": "ded7e24c246d7487ad47a6a270a38fa3e93f18a2d21ee48a589b4cad539b2bb8"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReadingTimeEstimate.kt",
+    "sha256": "f0dc09d58dabdc53f96ed811eb2276225c517cf4cfc5ebecfdeff4f68319899d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/ReturnRitual.kt",
+    "sha256": "f6303286a8b7b94b4c1ec1089b96395f8f79e79389fc4968e372de1feed42bf7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/RitualAftermath.kt",
+    "sha256": "cd8ee0930764551f1f83034a6aabab6476224c653a523d572e1e371944a88f79"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/WorldMutationLedger.kt",
+    "sha256": "e92c74f950bee3a9bd4d2118c77c0f3ba61baf920849d3378ba024a3cee78113"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/domain/WorldProgressionProjection.kt",
+    "sha256": "70edb049c22f76fc1431ed68ccef7745d75fec76586d756b200dd1be631aa64b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/challenge/BrowserChallengeCoordinator.kt",
+    "sha256": "4cd2d3223b4d6def89a6a2c58983e5fb841bdb359624e383de5b2533a3a0fbb8"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/health/SourceHealth.kt",
+    "sha256": "a3bf7024a6199c16dcbb941d9a30c87deeb088aba57ba9d3c2cdc5393f791aa7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/health/SourceHealthRanker.kt",
+    "sha256": "b46425e73127fafb0e944cfdd1d2b45df8b65704f2850b669ed63a2d1e7fab2d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/health/SourceHealthRecorder.kt",
+    "sha256": "64f8a2767f2ac4a1c3cd92bee2a857e7f3bd13b7c0f5f59ffcf32c1824eabb25"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/importing/MangaCbzIngestor.kt",
+    "sha256": "f426ef065cdfe1b9eaa17be3a980a873149a239cf4088e9a0fb5bce0e66b5d00"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/library/CanonicalManga.kt",
+    "sha256": "b3e420b6a27df890f7b4f5f5c222f8c773bd76f6542399ed0bd31109a7aa3a83"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/library/MangaChapterMatcher.kt",
+    "sha256": "c3d5ffc46d2493c6ab3fef208e22a7d94e347d5a1b325523de3bc0db0e49925f"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/library/MangaOfflineCache.kt",
+    "sha256": "4c874ba3f6be848e01b7ba80d7ef371241de488c72894bcf949fd5f592040cb3"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/library/MangaOfflineChapterLocator.kt",
+    "sha256": "ed7d1dd86d79ca8fdc27c7b0e0034b982ae9e594310acef50393626382e19964"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/library/MangaProgress.kt",
+    "sha256": "7024e52497c6b4dc7108bf3ffc036943dbdf3c3c251a85a9a74ce424fa666e43"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/MangaImageGeometry.kt",
+    "sha256": "82e3ea5b300f8587e882f97e87646075e5d60f7112ee2afc6b9379a187ed103e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/MangaReaderController.kt",
+    "sha256": "cd176c9ec8c575ad788a905b614dc10bd18bc767881b8611670795a3af9e7f1e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/MangaReaderModels.kt",
+    "sha256": "4cf2f8286467d49d169be719430ecf7816c3a824358a7907f8cc3538f611ef67"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaCoilPage.kt",
+    "sha256": "1300aac869ffbf33b8dabee3a54342d473eca2bdc4d0b8814387af6ca9737c36"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaCoilRequestFactory.kt",
+    "sha256": "04bb79738c3a327e3c81ac6154e851b1f2073509989a7f7d566c4b17a94d13c8"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaExtremeImageStrategy.kt",
+    "sha256": "3107d355ea7381c503883307060fc113a703c6c66fbf607e0ee2ba75036eb7e4"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaImageDeliveryPlanner.kt",
+    "sha256": "1b8c66b19be3c56ca9dfdddaf0db73bd1bcd309ee1feb207a1a5de02deea1628"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaImageDimensionProbe.kt",
+    "sha256": "7c3113a924e6d122be3db3852b0ad42db0e696a41f42e7f8c039ac6bd12f57c8"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaImageLoaderFactory.kt",
+    "sha256": "e3f6d452d38195b2a7c16a980dd989a5c1878aa7bfedb9d73b56f4a9c9fc1f5b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaLocalPageVerifier.kt",
+    "sha256": "40d2fe6983c53a400f57c59f95a3c0dcc2891e1a7b01d0763918246318d04631"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaLocalSubsamplingPage.kt",
+    "sha256": "65f24eef6c994c759d609eebb3bd8974a9ead848c7d04e6128bc710041a5828b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaPageAssetResolver.kt",
+    "sha256": "632053ed57e3b703e79d00c0b49eb62024b4bf953377c179debdda53217a74e9"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaReaderCoilPresentationSurface.kt",
+    "sha256": "85487da8bb447d49bfcd14f2be76a51e469942bf7fde65723588204ecd1ed78c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/image/MangaRemotePagePolicy.kt",
+    "sha256": "ae133920b1d5d632466a48d5b22c601625d86d3df925ab0c83cb6fabf47f9c32"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/presentation/MangaChapterNavigation.kt",
+    "sha256": "93555d7aa01db5a87496d3bf7ee77dea879980bc6b9ceaffbd44a2be2724896e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/presentation/MangaChapterPresentationRequest.kt",
+    "sha256": "6da98f6a918ecfeaf741aa44f7f7c45400eabf4e47b48d51697d248114d5ad0c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/presentation/MangaReaderChapterLoader.kt",
+    "sha256": "0d44f3cd3c53f8af5b5e490d2cd882363e46ea7a1502a8b39d9ef6cb60d74318"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/presentation/MangaReaderPresentationCoordinator.kt",
+    "sha256": "0eb15622bcb9b2d0b15b2b11689241fcbb8555564c235e1020f138a255cd7041"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/presentation/MangaReaderPresentationModels.kt",
+    "sha256": "bc0ee4681b4c93268ea05395ddc0260c9272cce2426b662186e343f1251a16ac"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/presentation/MangaReaderPresentationSurface.kt",
+    "sha256": "2432d0a18bcfa022bfc72d23cf6acab55f1071c815e3e8d1934fbe5444ff9169"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/screen/MangaProductSessionAdapter.kt",
+    "sha256": "51f683b9592bf131a532c902b403f97a46b9cf854b33f628b3be03050be6f85f"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/screen/MangaReaderGestureOwnershipPolicy.kt",
+    "sha256": "6fc44e04c1074d550ae7850b5eabde4e66e53d9135020393ee583a5f0927a06b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/screen/MangaReaderIntegratedScreen.kt",
+    "sha256": "8fd59fe8ffbf09fdd598b6c230eb434ffbffa31fac3eeeb4220dd8180d9a456e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/screen/MangaReaderProgressMapper.kt",
+    "sha256": "f2bfae2e8c049850ced55ffc9071f5f34ce0b6c260b664823c9a962cc446a4cc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/screen/MangaReaderScreenViewModel.kt",
+    "sha256": "38b5f59e6992268a646207fea8e1d0ac7ad36fc1e1f47ebb2fe338916ee0ac75"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/screen/MangaReaderSession.kt",
+    "sha256": "f3425c1655b7b422b2651caf6fe4f27878cb9c82de58f5527647aa9e98391423"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/ui/MangaReaderComposeSurface.kt",
+    "sha256": "19796eded54a6500b98abcb2a2b11e8f62d79bac7e1ff441275a4040e092c300"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/ui/MangaReaderSavedStateCodec.kt",
+    "sha256": "a082bdf23f7d3bf6bdd72de0e3d61d54ca52cc8ccb2655f485bac83473387dfc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/ui/MangaReaderSavedStateHandleAdapter.kt",
+    "sha256": "8d3d04f4724547639930118bc020e1a3072e76da6897badc28c90c673d156106"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/ui/MangaReaderUiModels.kt",
+    "sha256": "e7a581a7f44a4f635552e1afa399812ab18f85793568d7f18ef16b7e88d5ffbc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/ui/MangaReaderUiReducer.kt",
+    "sha256": "e662d41d54667e135928ec9d68dd82734879f760ba410ab818d8a1daa66f25bc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/reader/ui/MangaReaderViewportMath.kt",
+    "sha256": "7e307de55b7014b5dec2935624fd25373ee62401f2dcbf4d36ccda30081937bc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/replacement/SourceAlternativeResolver.kt",
+    "sha256": "2858b8ced1ccd53f4c4639b7c33e86d17b5f68c4e53180a08e122f999431ac22"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/replacement/SourceAlternativeScorer.kt",
+    "sha256": "53f1e2bc5def769a4c10e00f100cf3f20ae01c4696acfc12081d43e42d1325cc"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/replacement/SourceReplacementFinalizer.kt",
+    "sha256": "d923778c1e2d3964002388f0de805ad5b9be35b9641c917e44fdf41e9539fdeb"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/replacement/SourceReplacementPlanner.kt",
+    "sha256": "f683b849e8fbc3e327a5fa6401a82cf01a3f4d2c5cce2206c17b84e22480034f"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/source/MangaSourceProvider.kt",
+    "sha256": "38347e25fa40bdfb1377676dbe82801ca789662ce29ce564ecab42d1c3e82574"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/source/SourceExecutionCoordinator.kt",
+    "sha256": "6c8467656734beb07c3a5d5b8f563d769b81a66da55f242e5df1a40b3284f2f9"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/source/SourceFailure.kt",
+    "sha256": "1e583856499427b60b0099f86858ff52a1b317123dc253db8ddc2a2cd3fc816a"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/source/SourceModels.kt",
+    "sha256": "66a3fa26c8576c935f608db7a2b490dd790b50639562903e699e0cd7824e26de"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/manga/source/SourceRegistry.kt",
+    "sha256": "cdaef3f897b263e5f50041a7b3a76b72e03d7d7ada88c4af3829bbdee2521732"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/VeilApp.kt",
+    "sha256": "705aec9270e3413033464dbd91e3501349e2546f911fa043b715678745e30f00"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/VeilChrome.kt",
+    "sha256": "bfabefdd40be1e36db68a3bdfc369ec583f4d52ec6e050c393eaeafa631b3c9c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/books/BookArtifact.kt",
+    "sha256": "0fc5e850bb86c47a9b6a72ce94042c17a0dec518e65e324ca64a4c888a387986"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/navigation/ReaderRestorePolicy.kt",
+    "sha256": "06fb6412d4bcc45417c8a80ab574279371b075d9adf894e66164e3acb813d0b1"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/navigation/VeilAppViewModel.kt",
+    "sha256": "58c8ea05c24afcd4171933123d203bd8ad54fe7812a70023300844d6fd9a12b7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderCloseDurability.kt",
+    "sha256": "b162b733132886da92946e2819165b73e98f245986096daba5eed2ff46c297a0"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderHardwareKeyHost.kt",
+    "sha256": "0ab5bd7a8f8740d21f8bba487ec0ab3d68c2410712776a7160c977fdc6b32ff0"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderLocatorPolicy.kt",
+    "sha256": "a4f60fc8fd0f98cc2938ef3c3b67dc71b0ec7f2ce2cfa51a811dae171395e3f7"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderNavigationTransaction.kt",
+    "sha256": "5db628f9333d02a1c89e68fdaae1a41d7cf11b6210186ff39a81fc34e9501e0c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderOpenAttemptGate.kt",
+    "sha256": "df1dda95f28d934831f00cd885c3d0bd376193252277d829d291e809b6025c3f"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderOpenResourceGuard.kt",
+    "sha256": "53f64c06237d29aec65c96c22fc6b38dfe9c722fb2ae3df7d76fca6c218ee6d0"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderStartupHandshakePolicy.kt",
+    "sha256": "42574e901dfd9169a0767f859e1dfc3a40c892617502cb921dbe90dca2a48f3d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/ReaderViewModel.kt",
+    "sha256": "9d2c6a2ed34f50cba554499633d244670f08c6ce72eea66ec2206bf1c7ab9314"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/tts/AndroidReaderTtsBackend.kt",
+    "sha256": "cc5010dd30cfb2c07a9d3fae27b9963559210f1b1ad48744d9ec44c4953b2aa9"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/tts/ReaderTtsBackend.kt",
+    "sha256": "b891789d4c88273a730c0ea73f79560e9ac138853752ce224876a9658fa87b50"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/tts/ReaderTtsContent.kt",
+    "sha256": "40413d35a19dd88d79a1ea76e8a40ffdf6d9bfab8d79dc8cf48194f925f29b67"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/tts/ReaderTtsPolicy.kt",
+    "sha256": "1531a060e2922ef42112350ead71faebc443d3ff1a1ab1152da58e0841a795dd"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/tts/ReaderTtsSession.kt",
+    "sha256": "0fc003b4eec5c3c40c483acb2385ffe39cc213fa44c9f5b3b73fef93e3acb0bf"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/reader/tts/ReadiumReaderTtsSession.kt",
+    "sha256": "8796c6fb957a1e1941c8369a50099b1b5c99505000906bbd74a8c089d2c25453"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt",
+    "sha256": "7400eb4b4885f239a3168621c268402fa2b79891f4d1ad0945a00776ade87066"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ArrodesMirrorScreen.kt",
+    "sha256": "9c61569b169d8bf3962d9b9dc3dffaca539d48db47e34b8f11f31abdd71e0ab1"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/BookArtifact.kt",
+    "sha256": "0f054a6bf36c786b884dc31f04ec565a317a59c7dd77e94854bc58e36ada0510"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/BookEntryTransition.kt",
+    "sha256": "4e6244e0de072caccf923b9cf4755ff73fa474dae4c6531afa1b5f6772140287"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt",
+    "sha256": "68e0816ddd392f4f2d5cb1f41c29a555fe93c4a739b2247a0a716574b228fdb2"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt",
+    "sha256": "83c71fa60596ec56a063eaf87936299e933cf1dcdef31e4b073e2bc0a3ad0c49"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/Common.kt",
+    "sha256": "ac3d9eb5cd570d1b2e5ef05213c91ba3e9906ef6edfe8ee95d3032f8b0c4e882"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/GrandLibraryModel.kt",
+    "sha256": "f2780f874219997808d7532c6a669202dc7f0d9682044e75c5dfc9235b7ebe67"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt",
+    "sha256": "e5c2b703b87f1d33a212099e602b5acf33612a4735d67023916b12ddd690d5a6"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/LibrarySearch.kt",
+    "sha256": "296a72fb1972770ab6b683e306c2243a75c8b2e05c4f4320ef53b02372ddd05d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/MangaHubScreen.kt",
+    "sha256": "3bc33239e6af3ace167cabeba9528b9f55030d37a9f31af8fd1174a51ececfcb"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/MemoryArtifactPresentation.kt",
+    "sha256": "9ab7814d56f879ef438a3477515abde280909ddb60196ffb9806a587088e23e3"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt",
+    "sha256": "4a82d22db3ee807c2b17bd040bae66f488b0fc81dcc92369504683023cd4b734"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlDraw.kt",
+    "sha256": "9521e2ae5b9f9e6a7dad18de9930c956ef02957fe224af36430b06d42943c0a4"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlGeometry.kt",
+    "sha256": "c12e7ee2c334c62bbde7de9fa8455873fd6c99e7e83dc5ec7360e60fec3ce181"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlInputListener.kt",
+    "sha256": "b379ff4c7486a154b8a5b3bf5477d7e6f6fed6fb777f4d3f59f74dd2ab764267"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlState.kt",
+    "sha256": "9b662492576154be4bceaf694a1151aa12413c0088550379a7beef6ad62d7042"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/PathScreen.kt",
+    "sha256": "4bbab41a4891b60d8842e51ab4453bb1d840b4e06f69fe947eac7ee14cfdc973"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/PdfZoomControls.kt",
+    "sha256": "67c0f67b32fbe8646ea9f8edacb19efb1b02a219061e596247a5d2b01ec86795"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ProfileScreen.kt",
+    "sha256": "116db602636ed594492c549dd3cb4c92ea762260a2b746c6774574c6fc68ddde"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderAsyncOwnership.kt",
+    "sha256": "65c17040f79e9c2aa874e6140a685defb3315349186952d331ac939059b302e1"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderBrightnessControls.kt",
+    "sha256": "dde3bc39f82754e413dc920399af14cc26f4fedf62d419fd6f2a8ae14ec02dcd"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderFocusGuideState.kt",
+    "sha256": "748dcc6eabc82bce0c83c43e7383aa82fe5fd848f22ec5a435e8e5667b899d4b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderFragmentRestoration.kt",
+    "sha256": "99610f73fa8f7f127330b963cd51d9fe28fc93d9c8bbed93f4f11b2c86e8d0a3"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderImageViewer.kt",
+    "sha256": "a2910fa0206dc082470d7615d9aa48a4d593b50739c34c24ba39e2d298c1df2b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderInputArbiter.kt",
+    "sha256": "36f7299f5e079927709ba3d8d8e2f9b50e7c0d8175c7860a56e5cfe85c413e65"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderLookup.kt",
+    "sha256": "36e531a4539e69242e3531e5e574fdd2cca33c9ada7cf0aff748811dce8b98a1"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderModeHandoffState.kt",
+    "sha256": "064c7d458a39224c45182e5c095567f425fafc2499264294e1e9abe3df4c1c64"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderNotebook.kt",
+    "sha256": "cebab5f251db3f90038db043762e136f59da587418468c8d3cf439cf003a7797"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderPdfInput.kt",
+    "sha256": "da98e88be57f6bd05e75a8ee0c794bff6e49f26409d39b9ed933a950fd2fac88"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt",
+    "sha256": "b280352ecb9adf939056d0f5809a7f3622b99e36bf80fca6d80c96d85dbabc57"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderSelectionActionMode.kt",
+    "sha256": "7cff7e89f2b1bc017a62593162578f8b503ece9e3d4a6d81495e7330ba6779c5"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderTapZoneInputListener.kt",
+    "sha256": "a4dd6274024c07b9cd22b7b4ac72815ed345c64d982b32923d4fabe584c9434c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderTtsControls.kt",
+    "sha256": "884474c060d2d3c3230deaecfde0f12394f2335a52aacdcaf12f3b9de5a009a8"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReaderTtsSettingsState.kt",
+    "sha256": "cd88a1ba8a5ae8f828b2fc1569b5b09a99e312d2bd569a267ea8883ca274bae0"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt",
+    "sha256": "4dd53cbdda8ca10003f477200d3f8a7196141c773a4fc864ac47539eb081a50e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/SettingsScreen.kt",
+    "sha256": "2e01c0fdc536d3f0f15c9fccdabf787baa336746586c83ee644d9802084235a1"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/SlideNavigationInputListener.kt",
+    "sha256": "21b783b4414580b314d01db718c5768f139d80b90743c3ca900548009247b885"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/SlidePageState.kt",
+    "sha256": "7bb5d3d7e482a7576825000986c5ec1594a8310e759dd2ca1f505d6297aca353"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/StaticPagedNavigationInputListener.kt",
+    "sha256": "95098a6c4016ac6c9357191be295ddddd039fed53428bd906d81dc4f017b2256"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/ThresholdModel.kt",
+    "sha256": "a575606ec3c547bdca448cd6cd386aa631b615d05b46ae736a6e7bd9c3cb45ca"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/TimeCapsuleUi.kt",
+    "sha256": "78e747d558ebf924e99f5b5c8310e50f181cf70a1060343a107192744ad71cd1"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/VeilDirectionalNavigationInputListener.kt",
+    "sha256": "a9ce472cf195cbf1e1a5d049f4c8347d2567adc7fa419d17ad9ef10a09304091"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/screens/WorldLabels.kt",
+    "sha256": "5c5fbbcd7e8ab8c5ae91c7a5a9ef7fe24d4676bb9f7165a50e8bc40485fff13b"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/sensory/VeilSensoryFeedback.kt",
+    "sha256": "6418f3b567cb9ea81423588a6e6be35906a3b6e6b80f033eac4783b17ba9ffee"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/settings/SettingsViewModel.kt",
+    "sha256": "d74c12cf04901831fa840aafd2c5bdd1e615480ce5bfc31d84f23bb75b67614d"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/theme/ArenaDesignSystem.kt",
+    "sha256": "4de9cab9012d8005a7f63b33bc9322181f050bee89f9479ed0ad7aa0de1500a4"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/theme/ArtDirection.kt",
+    "sha256": "d98e49159fa4d7c0d5bd67389ade9fdcb0b7554d8aff4d408944ecf2d836f217"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/theme/DesignConstitution.kt",
+    "sha256": "ee54cb8569c743be2129c397b3191e4787397e6356f9bc0fe2c0e46c0e556b6e"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/theme/DesignSystem.kt",
+    "sha256": "4b1cfd308238640b95edcf162c155eec7204414ef06dc3d29dcfa62ac8b9789c"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/theme/LibraryAtmosphere.kt",
+    "sha256": "e6d12438bdc89c12032d17012feb58b7c7c14d8725e4f6f76ae24337789c7b93"
+  },
+  {
+    "path": "app/src/main/java/com/veilreader/app/ui/theme/Theme.kt",
+    "sha256": "553e2f275789d496b7f3afc7921c254ae1e3ade05cab8984e6982082df65a6d2"
+  },
+  {
+    "path": "app/src/main/res/drawable-nodpi/grayfog_threshold_v1.webp",
+    "sha256": "411c5da32684e455b59d01966a1607e181d955b9a38306a373dda11383f9014e"
+  },
+  {
+    "path": "app/src/main/res/drawable/ic_veil_reader_icon.xml",
+    "sha256": "1637e4c41cac591242d3c96a159da758f51b1ee26c45f94c74080f0e090e3bab"
+  },
+  {
+    "path": "app/src/main/res/values-fa/strings.xml",
+    "sha256": "df713d8e7d9bb01cc0db5cbed773c9e83a31742ed706a87690fa8a90da26c081"
+  },
+  {
+    "path": "app/src/main/res/values/strings.xml",
+    "sha256": "337a1066920440177cb644f9e51a6a7b23339e167f056deccdcf65e4774e33cd"
+  },
+  {
+    "path": "app/src/main/res/values/themes.xml",
+    "sha256": "038c6bff38b229bbb04b91838870bf47d6fd3ca2604a4b20dc5895affedb80fc"
+  },
+  {
+    "path": "app/src/nonMinifiedRelease/AndroidManifest.xml",
+    "sha256": "dd27edc237cb8e8f719ce7fb121a3be909c8dfdf02b94bff011ecc3778fe6fb5"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/GameCompletionEvidenceTest.kt",
+    "sha256": "fd5daabd9261160cd69f518fe30af421448f53ccfa44eb997eee5ce21d480589"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/GameRepositoryDurabilityTest.kt",
+    "sha256": "734397cec3c90cab3e2525f4d09c200935fb6cdd7efdc949d7db15d5f57cd11f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/ReaderProgressWriteOrderTest.kt",
+    "sha256": "d7eacb032c3a5bc52a259cf101d824343584c102a0784fbafdf804192671b48e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/ReadingPaceStoreCodecTest.kt",
+    "sha256": "6d3a862c11ad278842caa5c3b4d41b5dd3fe6364be314313247b77950134011f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/migration/LegacyLibraryMigratorTest.kt",
+    "sha256": "77fff84ecb246c24d41aebe47389e8f1b709b5bfc1c4c98f7926ebb8afb2dda7"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/settings/ReaderFocusGuidePreferencesTest.kt",
+    "sha256": "b0a2f81525f19d7132c01cfc728425a32ca1405e85bf2f363e8e33e22a541255"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/data/settings/ReaderTtsPreferencesTest.kt",
+    "sha256": "e438f65ddd8571531534e814c8f9278ade61e2ed99ec06300e34d4ba8f4e1e2c"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ArrodesMirrorTest.kt",
+    "sha256": "c94d095b55ea0f44473a571a2e569bd0ca817c1fe53d0e061f3c3999a4a64043"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/BookArtifactMemoryTest.kt",
+    "sha256": "6242c67918ac0e9eac6a6c1ba40e30df9ccd5d1bfc014342bd8b7698b32e420f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/CastleMemoryStateTest.kt",
+    "sha256": "f16ed8ad74f6c1e4aa851d6a9a61a202b511d58c07efd6c958dbb11970a9bf51"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/GamificationEngineTest.kt",
+    "sha256": "a403d41e84f5b4957b46c0f9d03eb47994eeb9c2798f62297bda5c18bf8de386"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/HighlightMemoryTest.kt",
+    "sha256": "4d91c1ff793e38b8f9687a50d6c862f643248d622f32d0db9b5b595e81db35bd"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/HistoricalMemoryTest.kt",
+    "sha256": "045aa6a041a971a3f68a03ca98dc0dc007a9ef52d06cc130f5018411379adea0"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/LibraryAtmosphereStateTest.kt",
+    "sha256": "e9f55914b331838e409e81d570564bcf27d50553be281c80472556d404e7e47f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/LibraryMemoryTest.kt",
+    "sha256": "7327435fcbbce97f30fecd46241c4862358b383f2e83f011d10e5ec4e26b142e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/LibraryWingsTest.kt",
+    "sha256": "29b8cfbf3fc6a1d906e4acefb2becac67d1512aeb7817f85d6001c8df7dcb852"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/MemoryAtlasTest.kt",
+    "sha256": "bf409929b56cdbae7530142d8b86dcd14af75b9bef6b229777121a31be374066"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/NarrativeIdentityTest.kt",
+    "sha256": "2641774cfb6777abdda5fa9e2181b447ace887160722d51e5bad7dbadad9eb90"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/RankWorldMutationTest.kt",
+    "sha256": "382e70ae81b6313a131b979a6f3366df774d9c5b96fcaf1d2cdb82b911e11cb1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReaderFocusGuideTest.kt",
+    "sha256": "13c831735f5fe06681f5239788712e2821dce5f40e6ce0aa0a2a75d6c69ebaa1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReaderTapZonesTest.kt",
+    "sha256": "c5fc865a359fb5a81775436dc40726637cf718bfbb3f326b8685e4eb1935b96f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReaderTtsSettingsTest.kt",
+    "sha256": "7466dee6610d511a85ab10f043efb03ddfa8e3a294421439ef4f57bb7df267a1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReadingMemoryTest.kt",
+    "sha256": "17341c7a0dc9312c1e3fdfd13eba4d1d03656442d3f278f343a3baf67fab7b60"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReadingPolicyTest.java",
+    "sha256": "52c809ee16ea798c523bbea88ac41866983e476e2b03e3e0a1bd3d2237906431"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReadingSessionTrackerTest.kt",
+    "sha256": "04dfc5c4ff32d26ef3ec53428e8325382247a75ef216e6442b9eeab357be4d3f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReadingTimeCapsuleTest.kt",
+    "sha256": "321bfbf7fc4d36c0a13afdb9de432d55007338f0d8f34eeb1047304997eed148"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReadingTimeEstimateTest.kt",
+    "sha256": "e23da1a3a154eaa1dae9cd38cf049e5a62dca9ce99b8e2ec63efe2bc92962940"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/ReturnRitualTest.kt",
+    "sha256": "ef883c4dcb73d373ed90600959c6b92421e5ba67a46955035277fd23e54ad8dc"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/RitualAftermathTest.kt",
+    "sha256": "0558e5a57ad3b2158353b16309552d596c600fb1675f336bbfe76bde8d123866"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/WorldMutationLedgerTest.kt",
+    "sha256": "bcd38451f17e9c7acaee81aace8c705f7d24d4c8f516b285703e7b4a3baf0942"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/domain/WorldProgressionProjectionTest.kt",
+    "sha256": "8e1700c55ad1b00ad6a37cd15b07538ac40c48eb855fd6bb21c2db1f7ce6b596"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/challenge/BrowserChallengeCoordinatorTest.kt",
+    "sha256": "1c7c168b008c0e2e90d94f2e28d92fd972c45379dd5a19baee9ef57f89bead46"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/health/SourceExecutionHealthIntegrationTest.kt",
+    "sha256": "c8e55301905b66b2e2cfb6be31a320cae522bc19a98a5ab0cdaeefedd1c35c66"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/health/SourceHealthRankerTest.kt",
+    "sha256": "8878ffab3ef849e1c326f27c088c81f9f428440138dbcbb639abeac7a76149bb"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/health/SourceHealthStoreTest.kt",
+    "sha256": "288487cdb6aa34098920cd91ca56510750aebf7cec54b20ca7be1684f1e08c51"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/importing/MangaCbzIngestorTest.kt",
+    "sha256": "0804e5acff2a8129e2d2552db585b038cbbc3e17d75e4745bc4e16168dc59789"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/library/CanonicalMangaTest.kt",
+    "sha256": "2a08ec77ff418814222b4fcd16d20d78764b7f4c29a116fe0a868481f1b61956"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/library/MangaChapterMatcherTest.kt",
+    "sha256": "1874b72f046b7edc24e2f91a7df5e50946ab669b035faf9efbbb4a8fa6c4b601"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/library/MangaOfflineCacheTest.kt",
+    "sha256": "52f1498f1dc285b5f73e1ecc07e515a6c156b78b210964a1b497744feef378c6"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/library/MangaOfflineChapterLocatorTest.kt",
+    "sha256": "4ef1293e37e3ff4c1221261579c8069c23af461978e3d44eb899e6470e5eba78"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/library/MangaProgressTest.kt",
+    "sha256": "9bba26ea5aa0cd87f4960c2de8c4eb0401276366c91482dec56924db4a7d8a99"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/MangaImageGeometryTest.kt",
+    "sha256": "d388fbd2c446f398c5eb60551eedc299fedd363bc7d0d9f57ead141e05153330"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/MangaReaderControllerTest.kt",
+    "sha256": "964de56ba818ffe88903593ea16f901d0196324c2efd8b168a7b29692543ec2c"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/MangaReaderRestoreTest.kt",
+    "sha256": "cfb350a6b0605bf7f688147638b9adc845acd83931708b7ecf0fe9b7676b6168"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/image/MangaExtremeImageStrategyTest.kt",
+    "sha256": "6f756ecbddbdfc8fa8510b3e6db2d307e68a66279ff10279639d884fae0d2d40"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/image/MangaLocalPageVerifierTest.kt",
+    "sha256": "6fd59481b4dc2dd8b1cb91db4b67b385c69a6f2b4dd590521c5706fcef6ae81e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/image/MangaRemotePagePolicyTest.kt",
+    "sha256": "d51cf3e853203dc1b93a423f6e163f791ebec2a885e5790937e78a6f5dc930b1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/presentation/MangaChapterNavigationTest.kt",
+    "sha256": "648c1558f3fb7d07fe0c0cf8f241a502c07499f8f0e60817d8cc9d6c5591e4a9"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/presentation/MangaReaderChapterLoaderTest.kt",
+    "sha256": "ae4ac05e9f888436be89329ef9ccc7faa461f93ff484b3d4c0dff368adf983c9"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/screen/MangaProductSessionAdapterTest.kt",
+    "sha256": "c0b6dfcb0aa1a21e692bb633f623aa2b8ad6b600f0b56dfa6f38dca71b45bd52"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/screen/MangaReaderDurableCloseTest.kt",
+    "sha256": "cf2079d20638bb7435a471dae9c8fef44696a229330552caf6a8065725167b78"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/screen/MangaReaderGestureOwnershipPolicyTest.kt",
+    "sha256": "e5043d0e530e3356428c18331aeca118b5a0fb30491a2e642b32e0c9ae9a2be2"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/screen/MangaReaderProgressMapperTest.kt",
+    "sha256": "a0693d3b9ccbe279b39d090957b2483fcb62d48a165271e1d7e61dc931f28ef6"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/screen/MangaReaderSessionTest.kt",
+    "sha256": "dd6f42da3c2b9b6dbd335c3fd3fa18d9c95c486cab174c0d283d088f25ae57e1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/ui/MangaReaderSavedStateCodecTest.kt",
+    "sha256": "c16ab5b2f6ececebb10f9a875936945a08d0f13e538803e09c946a20f9f81dfe"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/ui/MangaReaderUiReducerTest.kt",
+    "sha256": "965dba1e3c8c55c753ab4fcacf73fb553a5335e73e88d4ced51dec4fcfd15a8a"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/reader/ui/MangaReaderViewportMathTest.kt",
+    "sha256": "57d108269a2c5a9c1287b298c2fe330bc50ef50428b431ad1c1c6d18626a22fe"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/replacement/SourceAlternativeResolverTest.kt",
+    "sha256": "1ad2125da778c61fc4503533b49701c5175940722175026abcd3a54eb38236b1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/replacement/SourceAlternativeScorerTest.kt",
+    "sha256": "3360ea51f020b789e505e34db58830f88a4a4442505bc42bc2aa0995fa8c1df4"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/replacement/SourceReplacementPlannerTest.kt",
+    "sha256": "29547f95187fdfde087a077163498fc5ce9474922dde15de819557dbe09f7c8c"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/source/MangaSourceProviderContractTest.kt",
+    "sha256": "6e8ffcc8eff527a63f8ae2d65b5fe2121a9b96e75d9ae690f875fc3092c5a47c"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/source/SourceExecutionCoordinatorTest.kt",
+    "sha256": "606f334bebca9afa6485c1b4f2208f71f0e3aae57f265ae658a351de26f27449"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/source/SourceRecoveryPolicyTest.kt",
+    "sha256": "bb7d262a6b5384eabd6a431514011a911e00f247188f4435ebc4c4331900d15e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/manga/source/SourceRegistryTest.kt",
+    "sha256": "c5a863e11a3b7f03c76dac21e9593eded36f14467dcab436917768b18914fdf2"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/CrossRealmAccessibilityTest.kt",
+    "sha256": "d350467dc4f4506d03a29e1da0a6c5b8343d6d1740fef77bd5f2bb6fd82a3328"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/VeilAppAdaptiveLayoutTest.kt",
+    "sha256": "7ded021fc14fc6fc7030116ca5c98f94c05caad33f4ad8da0c7d38363c931241"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/books/BookArtifactTest.kt",
+    "sha256": "d59d1b45938a379601cc71f3d596e74ed922fa8b38fc7aa7d333e3a9230bf649"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/navigation/ReaderRestorePolicyTest.kt",
+    "sha256": "c49dffbe562c761892c7fae0710fbda8986e39c1b79a78061edb76042f06a4ef"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/navigation/VeilAppViewModelProcessDeathTest.kt",
+    "sha256": "9b0f1c3a6266aa78fc3e7f3657407eb72b9b7a58653d2255d261d4def2388451"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/navigation/VeilAppViewModelTest.kt",
+    "sha256": "fcebeb8ff295b7352871e0531af5c9701039bbc21a6e76955a3aec074b7a4851"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderCloseDurabilityTest.kt",
+    "sha256": "e20ac7d532c3f56a076eb481e3a1b97f6b5075583c2461194ccea6da2f6ff200"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderHardwareAccessibilityTest.kt",
+    "sha256": "66c24c0bc4d1d156c1f4be5e56ca40615d21c05374c1e200dd0ad4e6cbf8d9ee"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderHardwareKeyControllerTest.kt",
+    "sha256": "b404a329019257ab359480c12168a88e8c17f4cd02317f0797ce2189a766303b"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderHardwareKeyDispatcherTest.kt",
+    "sha256": "4f9891c325ef9789db15cf3ed2a33637c430329f48dfdde187fb5f300dcf9b1d"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderLocatorPolicyTest.kt",
+    "sha256": "c12515550e8ecaa6384abafe10ab5db1196004c627c2967624e14342e16e9b7e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderNavigationTransactionTest.kt",
+    "sha256": "12e615579267dda55ea0b9440bf43e91d9a0aba6f7c921c95f44b737aa8234b0"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderOpenAttemptGateTest.kt",
+    "sha256": "9390e638a1b6396e36755a9f59395731686f03663162b513b6c66f6c29cc1ac3"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderOpenResourceGuardTest.kt",
+    "sha256": "150de483de3e33a8988c17c46695f4c2a81acadf3d7533d0b48b5835b382f279"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderSessionOwnershipTest.kt",
+    "sha256": "b0c1948f1722ae932baf3a237bbc29a66fa2970aed296611bafbab17136cdabf"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/ReaderStartupHandshakePolicyTest.kt",
+    "sha256": "89b6a275c18a713dbb77bef4b1872db9e4f40e5623bd3ac66c00c82f68a885f1"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/tts/ReaderTtsPolicyTest.kt",
+    "sha256": "620e00215c9a266092a3c3b2c0baf06054a57c08b760850b435702cf2fa45e27"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/tts/ReaderTtsReaderOwnershipTest.kt",
+    "sha256": "be2714b109f1965465fa2d317eda2f46b501d9b0c5f8ea580c06d155203684fe"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/tts/ReaderTtsSessionTest.kt",
+    "sha256": "c63a96db9d48a9b5a64b8c64e602e8ee2cf917ac5854dec28ed05ac15c644c18"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/reader/tts/ReadiumTtsContentTest.kt",
+    "sha256": "a86680c75d6b85883ab69654110615c71242ec6597a395f89929f9778abcc0bb"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/BookArtifactTest.kt",
+    "sha256": "220eff118694b03ee694f421f8c076b80667261a2d2d767ffb42838c03a06bb0"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/BookCoverSampleSizeTest.kt",
+    "sha256": "9583419b60cae6c884897e39fbbbfff9f2934bc6e0e834f33ffd8ca651f34b54"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/BookEntryTransitionTest.kt",
+    "sha256": "f703bb0349dac10d37e363fd26043457cdf3554090cbae679d6b65a7dcc938cc"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/DenseChoiceLayoutPolicyTest.kt",
+    "sha256": "77db2143485d2b080243e205a2c6362c00440c67b88df037975e7e3b4d9166de"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/GrandLibraryModelTest.kt",
+    "sha256": "653aa7c5799bfb78b9ff5849c7d30c241598bdb99ad713b5bb3414f91028a679"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/LibraryCompositionTest.kt",
+    "sha256": "dbe8f9a154ef96d7a53b3c3edf11db4edbab832835014a9177162e0951b0a190"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/LibrarySearchTest.kt",
+    "sha256": "ed29b56590dbf2cb841813e541ad1c53f4fd441e195eb014948eb3d217c708b4"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/PaperCurlGeometryTest.kt",
+    "sha256": "50ef624fd3559a8f4043bfbfe2067f10399766ac85e25637303664b85acbdb11"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/PaperReleaseVelocityTest.kt",
+    "sha256": "523b9ecb157e9e11ff8190a081f20232f69022e2d9b81ed49c1d703717ee25ec"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/PathGeometryTest.kt",
+    "sha256": "bf2dbb5c982ec58094e20bbd85a085c9ef2066626c2f5344e7e90e2f16734e6f"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/PdfZoomControlsTest.kt",
+    "sha256": "93cf6f54e25ae701becea0888d11c746b136ba867fd0d421a01dac20e44ceeba"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/PdfZoomPolicyTest.kt",
+    "sha256": "d4ba3a5cdc686ef43c0f1a2796f48a714a968b0108b9ee37ce0fc8aebf25b6a4"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderAsyncOwnershipTest.kt",
+    "sha256": "2c554ce3aac1315b2da279f3a472cba68af053bc86e54a10264f279c244de9d4"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderChromePolicyTest.kt",
+    "sha256": "863254a2ffebcea673dab65a829ab60efc1bce22638fc0c1f743a2da58850261"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderDossierHistoryTest.kt",
+    "sha256": "dd039ad8fdc37399b18373fb4ac1caa661d81b2124f5105da279b67b2aaf928e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderFocusGuideStateTest.kt",
+    "sha256": "42f6aac16af42121a5cf68ec32aaa652d7b8f78147d42f41f936b47923368413"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderImageViewerTest.kt",
+    "sha256": "24e99e2cd84ca39b86fc4d1f98309e46a31b24961bd1c4bb701b77fb5d429511"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderInputArbiterTest.kt",
+    "sha256": "fcbcdf1b4083c266c067c3f9e7739b47440e67a302a5d5b5623716fec3d5a40b"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderLookupTest.kt",
+    "sha256": "69eface8bd819c19823d96d206d907e9fe3adb694004d0da2c8f99ab66f075df"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderModeHandoffPolicyTest.kt",
+    "sha256": "a3faa7b2dfd538c46db27a1c631416e77f80f4ad79e99c061b58d0888309da90"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderPdfInputTest.kt",
+    "sha256": "ace2b53aac25b927208ab723593f0a35cf19c597b7c9b06a18fe4ad02f320e01"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderPreferenceMappingTest.kt",
+    "sha256": "af7095cd4dcae71a29c02f3d22efe2a0e51d8c25d293cfc4faa94e008e0e6091"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderPreferencesTest.kt",
+    "sha256": "675912c3d649d0402340dd90b5d6bf56325db022d0a6dc1aa8833543a1cb4f5e"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderRelayoutContinuityPolicyTest.kt",
+    "sha256": "3aa29cf273a3ba35015500853d731c508241c51e61ecdfcbc0dae1dc47008100"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderSelectionNotePolicyTest.kt",
+    "sha256": "169fa79f06d2bf4c8f8a1c65781bfa04e6e9dac7aaefbd320c5169cc475ac480"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderTapOwnershipTest.kt",
+    "sha256": "fc2095cbe4e95dc8f8472380bc1e90b379344e23b2c62cedb6c20fed8bb37f15"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ReaderTtsSettingsStateTest.kt",
+    "sha256": "a408d7e073bd44b828466901ee1dcb03822965789802ba0aaf4b8f25d7b7f2ea"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/RelicHistoryTest.kt",
+    "sha256": "5dc1707175f01b762bf80eeac035b35a9255d6155df314635ea7ce7a966e0c64"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/RelicRarityTest.kt",
+    "sha256": "79fe7a6aa7c49f88148dfbeb2c7c9870bcb638722be739c6d8896c5fb6dab615"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/SlideTurnPolicyTest.kt",
+    "sha256": "13011429f24ec73e00cfc31026bdaeaeeacaca4ff5f9ff1174f7248baf257d09"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ThresholdCompositionTest.kt",
+    "sha256": "4edc4fcfc91d5cc74cdb44ff49d5ccc27cd76d69706fd186577da3e1de3c84e7"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/ThresholdModelTest.kt",
+    "sha256": "729ceaef7e4a53785da7939cab5ddfa7d35bddce155d34d25ac00daa0b0dd11a"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/screens/VeilRevealMotionPolicyTest.kt",
+    "sha256": "79bc130f489159580540532c113f6bf9d6403e5d837d39846b2f8d775e0cc209"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/sensory/VeilSensoryFeedbackPolicyTest.kt",
+    "sha256": "04303182d91ed52bc9f77d94e9030250d296a6cb0a14a4cffcffba8c714794d7"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/theme/ArtDirectionTest.kt",
+    "sha256": "5fa828a7378ac1a4434cc27dc4e5627ee42daa6f18c1f43bcb6afec7852d19e3"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/theme/DesignConstitutionTest.kt",
+    "sha256": "5ab108517cf190dea288b996b39dc539a4b797e57133292587c1a6419bc75fb9"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/theme/DesignSystemTest.kt",
+    "sha256": "504264f97bfcf9f34d0537be3be8aa366a77b1494b9f13705d6e582ecf3959c4"
+  },
+  {
+    "path": "app/src/test/java/com/veilreader/app/ui/theme/LibraryAtmosphereTimeTest.kt",
+    "sha256": "77a2ff33adac9d34036160ceff7c02b8dab4adfb3678445b5873912f6ff1af14"
+  },
+  {
+    "path": "benchmark/build.gradle.kts",
+    "sha256": "2d2ff8d9e77279de28cb2b478eb68c5f7765785d703215b5e22715e977ad7abb"
+  },
+  {
+    "path": "benchmark/src/main/java/com/veilreader/benchmark/BaselineProfileGenerator.kt",
+    "sha256": "3fa3dcfddf2696002aef7864eb0d4caba726fd3f9e65d8c9de4683008997b34f"
+  },
+  {
+    "path": "benchmark/src/main/java/com/veilreader/benchmark/BenchmarkActions.kt",
+    "sha256": "4e47c5280d3123e00d6322ff7d26c304474598c6376719d466602df4459b021c"
+  },
+  {
+    "path": "benchmark/src/main/java/com/veilreader/benchmark/ReaderFrameBenchmark.kt",
+    "sha256": "8f2710bd51a725abced0668f81d0f320f40e68fbc122c7c61fd9f51a994562bf"
+  },
+  {
+    "path": "benchmark/src/main/java/com/veilreader/benchmark/ReaderFrameSmokeBenchmark.kt",
+    "sha256": "c7f17cfcbaebaae109ef12515da0f490846436c23e434e8a63aeaf6cb319b15f"
+  },
+  {
+    "path": "benchmark/src/main/java/com/veilreader/benchmark/StartupBenchmark.kt",
+    "sha256": "df6e59a2d7a1f177dc19a4e876574704a8b7cab001bc1652c23316db10a92a77"
+  },
+  {
+    "path": "build.gradle.kts",
+    "sha256": "fa0654b168146ca5c8b33d2fef0bfaa3a496c939fbbce900fef741e391b3a9ce"
+  },
+  {
+    "path": "gradle.properties",
+    "sha256": "678c35a27eeda302d6a960484179d118d08fb1edf05c1b40745bc7aed6e88f03"
+  },
+  {
+    "path": "gradle/wrapper/gradle-wrapper.jar",
+    "sha256": "497c8c2a7e5031f6aa847f88104aa80a93532ec32ee17bdb8d1d2f67a194a9c7"
+  },
+  {
+    "path": "gradle/wrapper/gradle-wrapper.properties",
+    "sha256": "3bd25ed161cc4dd201df37990b9dcfc7173eff6ea9174ff57d5acfdd9455cb1c"
+  },
+  {
+    "path": "gradlew",
+    "sha256": "a5a5c199ba02189ae8c46a334223371a20599d9c298ef65e7540ede4a3f72d59"
+  },
+  {
+    "path": "gradlew.bat",
+    "sha256": "d539676c48b596afda64c963ec8f7ee56c7b3fe7e3b81d1dbe2d1a1e3dd9e9f8"
+  },
+  {
+    "path": "settings.gradle.kts",
+    "sha256": "71abd685624f946128cd17ea1d6ad221d4e7203f72f91f14bae3efc02bf4fafb"
+  },
+  {
+    "path": "tools/bootstrap-self-hosted-runner.ps1",
+    "sha256": "77902fd2fb02c3329a0ef346e54d30e1533a977853ecf21b88759b6ddd6e838d"
+  },
+  {
+    "path": "tools/build_performance_dashboard.py",
+    "sha256": "3ccc0d0277783d772d87f9bb59260635acc22867584a684d81701356f053c22b"
+  },
+  {
+    "path": "tools/check_performance_budget.py",
+    "sha256": "2d0099ed454481ee3324aaea5b33cdc41f8792fd085814aafe33cea790b46a5d"
+  },
+  {
+    "path": "tools/check_performance_delta.py",
+    "sha256": "1ba2f38f1fbed7ce4d8c4a05bc1f9927663bf841c070aa58e3bd81bf6ba23dde"
+  },
+  {
+    "path": "tools/company-os-mobile-command.ps1",
+    "sha256": "c246df7cb32598e1aef90fdb3e612a37c8fae6899552f49300b05e99a264ca75"
+  },
+  {
+    "path": "tools/gamification_smoke_test.kt",
+    "sha256": "101f6f6ff60fbac6f5a202ec387fdc4c2b6c577080f278e8d674099043073139"
+  },
+  {
+    "path": "tools/run_android_ci_emulator.sh",
+    "sha256": "4afd4959a273f1ba0cc1e3b9dccc0277aab09f5af442b82dbc4af69d5cc25dea"
+  },
+  {
+    "path": "tools/snapshot_performance.py",
+    "sha256": "4202c0f0bda0e237f902af196e82c8175ef5a60e5023ba1625a284e5074f0673"
+  },
+  {
+    "path": "tools/test-policy.sh",
+    "sha256": "34531f4c247c10d7a59eb1c9536cc62a2cb7d8d180802630c8db6a05b86a19ba"
+  },
+  {
+    "path": "tools/test_performance_budget.py",
+    "sha256": "2e476679fdb8695f9866435ed4a51551fe18b1bf58bccb1c0517c6239d08716d"
+  },
+  {
+    "path": "tools/test_performance_dashboard.py",
+    "sha256": "0629c5b420eac7514b104724380f03e2b13e5fbeef6d866a3ea5e125fb7d61c2"
+  },
+  {
+    "path": "tools/test_performance_delta.py",
+    "sha256": "d375c089cbb8135652a2e53095737e4740ebaaf0d5e4aa19bfeda045001c30ee"
+  },
+  {
+    "path": "tools/test_release_artifact.py",
+    "sha256": "77e4075acfb9813065ff89147518517b180a3b66de924aa5df57e9386009347f"
+  },
+  {
+    "path": "tools/tests/ReadingPolicyTest.java",
+    "sha256": "7f917ccb189d524298204a18425296f674470d908f2a6780a933be3627f13f29"
+  },
+  {
+    "path": "tools/verify_release_artifact.py",
+    "sha256": "350360affa1815e873d39dd58237e15920a3125a9cd0223afed84799724d49dc"
+  }
+]

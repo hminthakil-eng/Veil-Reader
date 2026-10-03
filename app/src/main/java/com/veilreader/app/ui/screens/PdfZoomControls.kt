@@ -1,6 +1,7 @@
 package com.veilreader.app.ui.screens
 
 import android.view.View
+import android.graphics.PointF
 import android.view.ViewGroup
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +47,9 @@ import androidx.compose.ui.res.stringResource
 import com.veilreader.app.R
 import androidx.compose.ui.unit.dp
 import com.github.barteksc.pdfviewer.PDFView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.ui.theme.VeilPalette
@@ -64,6 +68,7 @@ internal fun PdfZoomControls(
     modifier: Modifier = Modifier,
     onDone: () -> Unit
 ) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
     var pdfView by remember(navigator) {
         mutableStateOf(navigator.findPdfView())
     }
@@ -101,13 +106,15 @@ internal fun PdfZoomControls(
     val view = pdfView
     var zoomMirror by remember(view) { mutableFloatStateOf(view?.zoom ?: 1f) }
 
-    LaunchedEffect(view) {
+    LaunchedEffect(view, lifecycle) {
         val target = view ?: return@LaunchedEffect
-        while (true) {
-            val minZoom = target.minZoom.coerceAtLeast(0.5f)
-            val maxZoom = target.maxZoom.coerceAtLeast(minZoom + 0.5f)
-            zoomMirror = normalizedPdfZoom(target.zoom, minZoom, maxZoom)
-            delay(PDF_ZOOM_MIRROR_INTERVAL_MS)
+        lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            while (true) {
+                val minZoom = pdfZoomMinimum(target.minZoom)
+                val maxZoom = pdfZoomMaximum(target.maxZoom, minZoom)
+                zoomMirror = normalizedPdfZoom(target.zoom, minZoom, maxZoom)
+                delay(PDF_ZOOM_MIRROR_INTERVAL_MS)
+            }
         }
     }
 
@@ -243,8 +250,8 @@ internal fun PdfZoomControls(
                 }
             }
         } else {
-            val minZoom = view.minZoom.coerceAtLeast(0.5f)
-            val maxZoom = view.maxZoom.coerceAtLeast(minZoom + 0.5f)
+            val minZoom = pdfZoomMinimum(view.minZoom)
+            val maxZoom = pdfZoomMaximum(view.maxZoom, minZoom)
             val displayedZoom = normalizedPdfZoom(zoomMirror, minZoom, maxZoom)
 
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -291,9 +298,10 @@ internal fun PdfZoomControls(
                 value = displayedZoom,
                 onValueChange = {
                     val requested = normalizedPdfZoom(it, minZoom, maxZoom)
-                    view.zoomTo(requested)
+                    view.setZoomImmediately(requested, refreshTiles = false)
                     zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                 },
+                onValueChangeFinished = { view.loadPages() },
                 valueRange = minZoom..maxZoom,
                 modifier = Modifier.semantics {
                     contentDescription = zoomSemantics
@@ -317,7 +325,7 @@ internal fun PdfZoomControls(
                         if (shouldAnimatePdfZoom(reducedMotion)) {
                             view.zoomWithAnimation(requested)
                         } else {
-                            view.zoomTo(requested)
+                            view.setZoomImmediately(requested)
                             zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                         }
                     },
@@ -337,9 +345,9 @@ internal fun PdfZoomControls(
                 OutlinedButton(
                     onClick = {
                         if (shouldAnimatePdfZoom(reducedMotion)) {
-                            view.resetZoomWithAnimation()
+                            view.zoomWithAnimation(normalizedPdfZoom(1f, minZoom, maxZoom))
                         } else {
-                            view.zoomTo(normalizedPdfZoom(1f, minZoom, maxZoom))
+                            view.setZoomImmediately(normalizedPdfZoom(1f, minZoom, maxZoom))
                             zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                         }
                     },
@@ -353,7 +361,7 @@ internal fun PdfZoomControls(
                         VeilPalette.Brass.copy(alpha = 0.44f)
                     )
                 ) {
-                    Text(formatPercent(1f))
+                    Text(formatPercent(normalizedPdfZoom(1f, minZoom, maxZoom)))
                 }
 
                 OutlinedButton(
@@ -367,7 +375,7 @@ internal fun PdfZoomControls(
                         if (shouldAnimatePdfZoom(reducedMotion)) {
                             view.zoomWithAnimation(requested)
                         } else {
-                            view.zoomTo(requested)
+                            view.setZoomImmediately(requested)
                             zoomMirror = normalizedPdfZoom(view.zoom, minZoom, maxZoom)
                         }
                     },
@@ -534,12 +542,27 @@ internal fun shouldProbePdfView(
 ): Boolean =
     !hasView && attempt >= 0 && attempt < maxAttempts.coerceAtLeast(0)
 
+internal fun pdfZoomMinimum(raw: Float): Float =
+    if (raw.isFinite() && raw in 0.5f..100f) raw else 1f
+
+internal fun pdfZoomMaximum(raw: Float, min: Float): Float {
+    val safeMin = pdfZoomMinimum(min)
+    return if (raw.isFinite() && raw in (safeMin + 0.5f)..101f) raw else maxOf(4f, safeMin + 0.5f)
+}
+
+private fun PDFView.setZoomImmediately(requested: Float, refreshTiles: Boolean = true) {
+    // zoomTo only changes a field in AndroidPdfViewer 3.2.8. Preserve the viewport center and
+    // explicitly request fresh tiles; otherwise slider/reduced-motion zoom can show stale pixels.
+    zoomCenteredTo(requested, PointF(width / 2f, height / 2f))
+    if (refreshTiles) loadPages()
+}
+
 private const val PDF_ZOOM_MIRROR_INTERVAL_MS = 80L
 private const val PDF_VIEW_PROBE_INTERVAL_MS = 100L
 private const val PDF_VIEW_PROBE_ATTEMPTS = 40
 
 @OptIn(ExperimentalReadiumApi::class)
-private fun Navigator?.findPdfView(): PDFView? {
+internal fun Navigator?.findPdfView(): PDFView? {
     val root = (this as? OverflowableNavigator)?.publicationView ?: return null
     return root.findPdfView()
 }

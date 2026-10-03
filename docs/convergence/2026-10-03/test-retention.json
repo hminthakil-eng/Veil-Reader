@@ -1,0 +1,49 @@
+{
+  "summary": [
+    {
+      "branch": "origin/alpha/w26-arena-canonical-ui-rebuild-v1",
+      "test_methods": 610
+    },
+    {
+      "branch": "origin/alpha/w42-tts-foundation-v1",
+      "test_methods": 624
+    },
+    {
+      "branch": "origin/alpha/w42-reading-eta-v1",
+      "test_methods": 585
+    }
+  ],
+  "superseded_method_names": [
+    {
+      "branch": "origin/alpha/w42-tts-foundation-v1",
+      "file": "app/src/test/java/com/veilreader/app/ui/navigation/VeilAppViewModelTest.kt",
+      "test": "mirrorAndMangaChambers_areRestorableAndExclusive",
+      "superseded_by": "canonicalChambers_areRestorableAndExclusive"
+    },
+    {
+      "branch": "origin/alpha/w42-tts-foundation-v1",
+      "file": "app/src/test/java/com/veilreader/app/ui/reader/ReaderNavigationTransactionTest.kt",
+      "test": "firstSettledLocator_consumesProgrammaticTransactionOnce",
+      "superseded_by": "firstDifferentLocator_consumesProgrammaticTransactionOnce"
+    },
+    {
+      "branch": "origin/alpha/w42-reading-eta-v1",
+      "file": "app/src/test/java/com/veilreader/app/domain/ReaderFocusGuideTest.kt",
+      "test": "`quick toggle preserves tuning and returns to focus window`",
+      "superseded_by": "`quick toggle preserves tuning and restores prior active mode`"
+    },
+    {
+      "branch": "origin/alpha/w42-reading-eta-v1",
+      "file": "app/src/test/java/com/veilreader/app/ui/navigation/VeilAppViewModelTest.kt",
+      "test": "mirrorAndMangaChambers_areRestorableAndExclusive",
+      "superseded_by": "canonicalChambers_areRestorableAndExclusive"
+    },
+    {
+      "branch": "origin/alpha/w42-reading-eta-v1",
+      "file": "app/src/test/java/com/veilreader/app/ui/reader/ReaderNavigationTransactionTest.kt",
+      "test": "firstSettledLocator_consumesProgrammaticTransactionOnce",
+      "superseded_by": "firstDifferentLocator_consumesProgrammaticTransactionOnce"
+    }
+  ],
+  "missing_unsuperseded": []
+}

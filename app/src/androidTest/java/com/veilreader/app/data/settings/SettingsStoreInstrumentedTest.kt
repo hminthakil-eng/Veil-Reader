@@ -10,8 +10,16 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
+import com.veilreader.app.domain.ReaderHardwareKeyAction
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTapAction
+import com.veilreader.app.domain.ReaderTapGrid
+import com.veilreader.app.domain.ReaderTapZone
 import com.veilreader.app.domain.ReaderTextAlignment
+import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -21,6 +29,25 @@ import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class SettingsStoreInstrumentedTest {
+    @Test
+    fun ttsSettings_surviveSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderTtsSettings(
+            speed = 1.45,
+            pitch = 0.88
+        )
+
+        try {
+            store.saveReaderTtsSettings(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerTts)
+        } finally {
+            store.saveReaderTtsSettings(ReaderTtsSettings())
+        }
+    }
+
+
 
     @Test
     fun unanimatedPagedMode_survivesSettingsStoreRecreation() = runBlocking {
@@ -101,6 +128,79 @@ class SettingsStoreInstrumentedTest {
             assertEquals(true, recreated.highContrastEnabled)
         } finally {
             store.setHighContrastEnabled(false)
+        }
+    }
+
+    @Test
+    fun focusGuide_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderFocusGuideSettings(
+            mode = ReaderFocusGuideMode.LINE,
+            verticalPosition = 0.61,
+            bandFraction = 0.24,
+            dimStrength = 0.44
+        ).normalized()
+
+        try {
+            store.saveReaderFocusGuide(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerFocusGuide)
+        } finally {
+            store.saveReaderFocusGuide(ReaderFocusGuideSettings())
+        }
+    }
+
+    @Test
+    fun focusGuide_offRestoresLastActiveModeAfterStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        try {
+            for (mode in listOf(ReaderFocusGuideMode.WINDOW, ReaderFocusGuideMode.LINE)) {
+                val active = ReaderFocusGuideSettings(mode = mode).normalized()
+                store.saveReaderFocusGuide(active.toggled())
+                val restored = SettingsStore(context).settings.first().readerFocusGuide
+                assertEquals(ReaderFocusGuideMode.OFF, restored.mode)
+                assertEquals(mode, restored.lastActiveMode)
+                assertEquals(active, restored.toggled())
+            }
+        } finally {
+            store.saveReaderFocusGuide(ReaderFocusGuideSettings())
+        }
+    }
+
+    @Test
+    fun hardwareKeyMapping_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderHardwareKeyMap(
+            volumeUp = ReaderHardwareKeyAction.PREVIOUS_PAGE,
+            volumeDown = ReaderHardwareKeyAction.NEXT_PAGE
+        )
+
+        try {
+            store.saveReaderHardwareKeys(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerHardwareKeys)
+        } finally {
+            store.saveReaderHardwareKeys(ReaderHardwareKeyMap())
+        }
+    }
+
+    @Test
+    fun tapMatrix_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderTapGrid()
+            .withAction(ReaderTapZone.TOP_LEFT, ReaderTapAction.RENDERER)
+            .withAction(ReaderTapZone.BOTTOM_RIGHT, ReaderTapAction.TOGGLE_CONTROLS)
+
+        try {
+            store.saveReaderTapGrid(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerTapGrid)
+        } finally {
+            store.saveReaderTapGrid(ReaderTapGrid())
         }
     }
 

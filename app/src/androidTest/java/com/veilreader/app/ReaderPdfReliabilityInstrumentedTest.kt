@@ -5,9 +5,9 @@ import android.app.UiAutomation
 import android.content.ContentValues
 import android.content.Intent
 import android.os.Environment
+import android.os.Build
 import android.os.SystemClock
 import android.provider.MediaStore
-import android.util.Base64
 import android.view.InputDevice
 import android.view.MotionEvent
 import android.view.View
@@ -107,6 +107,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         clickTextWithScroll(appString(R.string.pdf_fit_width))
         pressAndroidBack()
 
+        exerciseNativeInternalLinkAndReturn(pdfView)
         instrumentation.runOnMainSync { pdfView.jumpTo(1, false) }
         waitForPdfPage(pdfView, 1)
         SystemClock.sleep(1_000)
@@ -439,7 +440,8 @@ class ReaderPdfReliabilityInstrumentedTest {
             "Unable to create PDF fixture in MediaStore Downloads"
         }
         resolver.openOutputStream(uri, "w")!!.use { output ->
-            output.write(Base64.decode(PDF_BASE64, Base64.DEFAULT))
+            instrumentation.context.assets.open("pdf/veil-links-annotations.pdf")
+                .use { it.copyTo(output) }
         }
         values.clear()
         values.put(MediaStore.MediaColumns.IS_PENDING, 0)
@@ -665,9 +667,7 @@ class ReaderPdfReliabilityInstrumentedTest {
         predicate: (AccessibilityNodeInfo) -> Boolean
     ): AccessibilityNodeInfo? = findNode(predicate)
 
-    private fun findNode(
-        predicate: (AccessibilityNodeInfo) -> Boolean
-    ): AccessibilityNodeInfo? {
+    private fun findNode(predicate: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
         val root = uiAutomation.rootInActiveWindow ?: return null
         val queue = ArrayDeque<AccessibilityNodeInfo>()
         queue.add(root)
@@ -729,6 +729,33 @@ class ReaderPdfReliabilityInstrumentedTest {
         recycle()
     }
 
+    private fun exerciseNativeInternalLinkAndReturn(view: PDFView) {
+        instrumentation.runOnMainSync { view.jumpTo(0, false) }
+        waitForPdfPage(view, 0)
+        SystemClock.sleep(750) // Let Readium's debounced source locator become the return origin.
+        val tap = IntArray(2)
+        instrumentation.runOnMainSync {
+            val link = view.getLinks(0).single()
+            assertEquals(2, link.destPageIdx)
+            val pageSize = view.getPageSize(0)
+            val location = IntArray(2)
+            view.getLocationOnScreen(location)
+            // This fixture has equal, unrotated 612x792 pages. No production geometry shortcut.
+            tap[0] = (location[0] + view.currentXOffset +
+                link.bounds.centerX() / 612f * pageSize.width * view.zoom).toInt()
+            tap[1] = (location[1] + view.currentYOffset +
+                (792f - link.bounds.centerY()) / 792f * pageSize.height * view.zoom).toInt()
+        }
+        uiAutomation.executeShellCommand("input tap ${tap[0]} ${tap[1]}").close()
+        waitForPdfPage(view, 2)
+        revealReaderChrome(view)
+        val returnLabel = instrumentation.targetContext.getString(R.string.reader_previous_location)
+        waitForText(returnLabel)
+        clickText(returnLabel)
+        waitForPdfPage(view, 0)
+        SystemClock.sleep(750)
+    }
+
     private companion object {
         val DOCUMENTS_UI_PACKAGES = setOf(
             "com.android.documentsui",
@@ -738,9 +765,5 @@ class ReaderPdfReliabilityInstrumentedTest {
         const val TIMEOUT_MS = 20_000L
         const val POLL_MS = 250L
 
-        // Three-page, text-only PDF 1.4 fixture. Kept inline so the instrumentation gate is
-        // hermetic and does not depend on host-side files or network access.
-        const val PDF_BASE64 =
-            "JVBERi0xLjQKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUiA1IDAgUiA3IDAgUl0gL0NvdW50IDMgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA5IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAxMzcgPj4Kc3RyZWFtCkJUIC9GMSAyNCBUZiA3MiA3MDAgVGQgKFZlaWwgUmVhZGVyIFBERiBTbW9rZSBQYWdlIDEpIFRqIDAgLTQwIFRkIC9GMSAxNCBUZiAoUGluY2ggem9vbSwgZml0LCBzY3JvbGwsIG9yaWVudGF0aW9uIGFuZCByZXN1bWUgdGVzdC4pIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvUGFnZSAvUGFyZW50IDIgMCBSIC9NZWRpYUJveCBbMCAwIDYxMiA3OTJdIC9SZXNvdXJjZXMgPDwgL0ZvbnQgPDwgL0YxIDkgMCBSID4+ID4+IC9Db250ZW50cyA2IDAgUiA+PgplbmRvYmoKNiAwIG9iago8PCAvTGVuZ3RoIDEzNyA+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDcyIDcwMCBUZCAoVmVpbCBSZWFkZXIgUERGIFNtb2tlIFBhZ2UgMikgVGogMCAtNDAgVGQgL0YxIDE0IFRmIChQaW5jaCB6b29tLCBmaXQsIHNjcm9sbCwgb3JpZW50YXRpb24gYW5kIHJlc3VtZSB0ZXN0LikgVGogRVQKZW5kc3RyZWFtCmVuZG9iago3IDAgb2JqCjw8IC9UeXBlIC9QYWdlIC9QYXJlbnQgMiAwIFIgL01lZGlhQm94IFswIDAgNjEyIDc5Ml0gL1Jlc291cmNlcyA8PCAvRm9udCA8PCAvRjEgOSAwIFIgPj4gPj4gL0NvbnRlbnRzIDggMCBSID4+CmVuZG9iago4IDAgb2JqCjw8IC9MZW5ndGggMTM3ID4+CnN0cmVhbQpCVCAvRjEgMjQgVGYgNzIgNzAwIFRkIChWZWlsIFJlYWRlciBQREYgU21va2UgUGFnZSAzKSBUaiAwIC00MCBUZCAvRjEgMTQgVGYgKFBpbmNoIHpvb20sIGZpdCwgc2Nyb2xsLCBvcmllbnRhdGlvbiBhbmQgcmVzdW1lIHRlc3QuKSBUaiBFVAplbmRzdHJlYW0KZW5kb2JqCjkgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iagp4cmVmCjAgMTAKMDAwMDAwMDAwMCA2NTUzNSBmIAowMDAwMDAwMDE1IDAwMDAwIG4gCjAwMDAwMDAwNjQgMDAwMDAgbiAKMDAwMDAwMDEzMyAwMDAwMCBuIAowMDAwMDAwMjU5IDAwMDAwIG4gCjAwMDAwMDA0NDcgMDAwMDAgbiAKMDAwMDAwMDU3MyAwMDAwMCBuIAowMDAwMDAwNzYxIDAwMDAwIG4gCjAwMDAwMDA4ODcgMDAwMDAgbiAKMDAwMDAwMTA3NSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDEwIC9Sb290IDEgMCBSID4+CnN0YXJ0eHJlZgoxMTQ1CiUlRU9GCg=="
     }
 }

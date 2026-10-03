@@ -8,6 +8,7 @@ import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
 import com.veilreader.app.data.ReaderProgressWriterLease
 import com.veilreader.app.diagnostics.ReaderTrace
+import com.veilreader.app.domain.normalizedReadingPaceInterval
 import com.veilreader.app.domain.ReadingSessionTracker
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
@@ -129,6 +130,7 @@ class ReaderViewModel(
                     bookId = bookId,
                     sessionId = preparedTracker.sessionId
                 )
+                lastPaceProgression = null
                 this.openInstanceId = openInstanceId
                 progressWriterLease = writerLease
                 tracker = preparedTracker
@@ -231,10 +233,13 @@ class ReaderViewModel(
         }
     }
 
+    private var lastPaceProgression: Double? = null
+
     fun onResume(expectedOpenInstanceId: String) {
         val current = currentTrackerFor(expectedOpenInstanceId) ?: return
         if (resumed) return
         resumed = true
+        lastPaceProgression = null
         creditActive(current.onResume(SystemClock.elapsedRealtime()))
         game.rebasePagePacing()
         publishActiveMillis()
@@ -293,6 +298,11 @@ class ReaderViewModel(
             return null
         }
 
+        if (!event.countsPageTurn) {
+            current.resetReadingPaceAnchor()
+            lastPaceProgression = null
+        }
+
         if (!locatorDeduplicator.acceptCommit(locationKey)) {
             ReaderTrace.event(
                 "locator_duplicate_commit_ignored",
@@ -306,7 +316,14 @@ class ReaderViewModel(
         creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
 
         if (event.countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
-            current.recordPacedPageTurn()
+            val previous = lastPaceProgression
+            lastPaceProgression = progression.takeIf { it.isFinite() && it in 0.0..1.0 }
+            current.recordPacedPageTurn()?.let { interval ->
+                normalizedReadingPaceInterval(
+                    interval, previous, progression,
+                    library.books.value.firstOrNull { it.id == bookId }?.totalPages ?: 0
+                )?.let { calibrated -> library.recordReadingPaceInterval(bookId, calibrated) }
+            }
         }
 
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())

@@ -1,0 +1,211 @@
+[
+  {
+    "branch": "alpha/w26-arena-canonical-ui-rebuild-v1",
+    "head": "4415bb723818b1b24e1ab123108122d5aca0643d",
+    "counts": [
+      "0",
+      "0"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 0,
+    "ancestor_of": []
+  },
+  {
+    "branch": "alpha/w36-full-harmony-motion-v1",
+    "head": "75b134ab1baa60360dafa82244a04a050e72de86",
+    "counts": [
+      "335",
+      "58"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 58,
+    "ancestor_of": [
+      "alpha/w37-reader-tap-matrix-v1",
+      "alpha/w38-reader-hardware-keys-v1",
+      "alpha/w39-focus-guide-v1",
+      "alpha/w40-reader-cloud-baseline-v1",
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1",
+      "alpha/w40-readium-tts-v1",
+      "alpha/w41-selection-lookup-v1",
+      "alpha/w42-reading-eta-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w37-reader-tap-matrix-v1",
+    "head": "88078a60d1b4e7c28accaf16c461f6e09ec92acb",
+    "counts": [
+      "335",
+      "84"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 84,
+    "ancestor_of": [
+      "alpha/w38-reader-hardware-keys-v1",
+      "alpha/w39-focus-guide-v1",
+      "alpha/w40-reader-cloud-baseline-v1",
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1",
+      "alpha/w40-readium-tts-v1",
+      "alpha/w41-selection-lookup-v1",
+      "alpha/w42-reading-eta-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w38-reader-hardware-keys-v1",
+    "head": "2dcf3556a2177e006790811cf926741c13802d27",
+    "counts": [
+      "335",
+      "111"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 111,
+    "ancestor_of": [
+      "alpha/w39-focus-guide-v1",
+      "alpha/w40-reader-cloud-baseline-v1",
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1",
+      "alpha/w40-readium-tts-v1",
+      "alpha/w41-selection-lookup-v1",
+      "alpha/w42-reading-eta-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w39-focus-guide-v1",
+    "head": "7d3d7e289e7e2dd895a8bf8772587ee78dd8ce0d",
+    "counts": [
+      "335",
+      "132"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 132,
+    "ancestor_of": [
+      "alpha/w40-reader-cloud-baseline-v1",
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w40-reader-cloud-baseline-v1",
+    "head": "0632a7817b954035442ca9ca7d14b57570f02087",
+    "counts": [
+      "335",
+      "133"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 133,
+    "ancestor_of": [
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w41-pdf-reliability-v1",
+    "head": "d311b019353fc7ad4214d931b2184f2c40e8b2c6",
+    "counts": [
+      "335",
+      "134"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 134,
+    "ancestor_of": [
+      "alpha/w42-tts-foundation-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w42-tts-foundation-v1",
+    "head": "1c987f85b27be8c71892adca1966c8e1853e7ccb",
+    "counts": [
+      "335",
+      "136"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 136,
+    "ancestor_of": []
+  },
+  {
+    "branch": "alpha/w40-readium-tts-v1",
+    "head": "38491836a341bfa97657f9736a6794041fa02fc8",
+    "counts": [
+      "335",
+      "147"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 147,
+    "ancestor_of": [
+      "alpha/w41-selection-lookup-v1",
+      "alpha/w42-reading-eta-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w41-selection-lookup-v1",
+    "head": "0f03927ac7c774ea21bfe01591e9a07e5197ea99",
+    "counts": [
+      "335",
+      "156"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 156,
+    "ancestor_of": [
+      "alpha/w42-reading-eta-v1"
+    ]
+  },
+  {
+    "branch": "alpha/w42-reading-eta-v1",
+    "head": "e688113ae73488b40caf44f1afdaf68a9fbd65a5",
+    "counts": [
+      "335",
+      "173"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 173,
+    "ancestor_of": []
+  },
+  {
+    "branch": "integration/reader-rc-v2",
+    "head": "22dcc398d6101ec0b19400dcd4e8c94e21d6c4fe",
+    "counts": [
+      "3077",
+      "0"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 0,
+    "ancestor_of": [
+      "alpha/w26-arena-canonical-ui-rebuild-v1",
+      "alpha/w36-full-harmony-motion-v1",
+      "alpha/w37-reader-tap-matrix-v1",
+      "alpha/w38-reader-hardware-keys-v1",
+      "alpha/w39-focus-guide-v1",
+      "alpha/w40-reader-cloud-baseline-v1",
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1",
+      "alpha/w40-readium-tts-v1",
+      "alpha/w41-selection-lookup-v1",
+      "alpha/w42-reading-eta-v1"
+    ]
+  },
+  {
+    "branch": "integration/reader-rc-v3",
+    "head": "0d70232e1f36cfd99a9014d774b7ce82bc27be8d",
+    "counts": [
+      "3084",
+      "0"
+    ],
+    "patch_equivalent": 0,
+    "unique_patches": 0,
+    "ancestor_of": [
+      "alpha/w26-arena-canonical-ui-rebuild-v1",
+      "alpha/w36-full-harmony-motion-v1",
+      "alpha/w37-reader-tap-matrix-v1",
+      "alpha/w38-reader-hardware-keys-v1",
+      "alpha/w39-focus-guide-v1",
+      "alpha/w40-reader-cloud-baseline-v1",
+      "alpha/w41-pdf-reliability-v1",
+      "alpha/w42-tts-foundation-v1",
+      "alpha/w40-readium-tts-v1",
+      "alpha/w41-selection-lookup-v1",
+      "alpha/w42-reading-eta-v1",
+      "integration/reader-rc-v2"
+    ]
+  }
+]

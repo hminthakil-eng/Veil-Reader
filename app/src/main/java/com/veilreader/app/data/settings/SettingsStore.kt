@@ -1,6 +1,7 @@
 package com.veilreader.app.data.settings
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -14,9 +15,18 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
+import com.veilreader.app.domain.ReaderHardwareKeyAction
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
+import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.decodeReaderHardwareKeyAction
+import com.veilreader.app.domain.decodeReaderTapGrid
+import com.veilreader.app.domain.encodeReaderTapGrid
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import org.json.JSONObject
@@ -41,6 +51,10 @@ data class AppSettings(
     val appThemeMode: AppThemeMode = AppThemeMode.SYSTEM,
     val highContrastEnabled: Boolean = false,
     val readerAppearance: ReaderAppearance = ReaderAppearance(),
+    val readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
+    val readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
+    val readerFocusGuide: ReaderFocusGuideSettings = ReaderFocusGuideSettings(),
+    val readerTts: ReaderTtsSettings = ReaderTtsSettings(),
     val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
@@ -75,6 +89,16 @@ class SettingsStore(private val context: Context) {
         val typeScale = doublePreferencesKey("reader_type_scale")
         val darkImageTreatment = stringPreferencesKey("reader_dark_image_treatment")
         val paperPatina = doublePreferencesKey("reader_paper_patina")
+        val tapGrid = stringPreferencesKey("reader_tap_grid")
+        val volumeUpAction = stringPreferencesKey("reader_volume_up_action")
+        val volumeDownAction = stringPreferencesKey("reader_volume_down_action")
+        val ttsSpeed = doublePreferencesKey("reader_tts_speed")
+        val ttsPitch = doublePreferencesKey("reader_tts_pitch")
+        val focusGuideMode = stringPreferencesKey("reader_focus_guide_mode")
+        val focusGuideLastActiveMode = stringPreferencesKey("reader_focus_guide_last_active_mode")
+        val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
+        val focusGuideBand = doublePreferencesKey("reader_focus_guide_band")
+        val focusGuideDim = doublePreferencesKey("reader_focus_guide_dim")
         val fixedLayoutSpreads = stringPreferencesKey("reader_fixed_layout_spreads")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
@@ -162,6 +186,19 @@ class SettingsStore(private val context: Context) {
                 }.getOrDefault(ReaderDarkImageTreatment.NONE),
                 paperPatina = prefs[Keys.paperPatina] ?: 0.72
             ).normalized(),
+            readerTapGrid = decodeReaderTapGrid(prefs[Keys.tapGrid]),
+            readerHardwareKeys = ReaderHardwareKeyMap(
+                volumeUp = decodeReaderHardwareKeyAction(
+                    prefs[Keys.volumeUpAction],
+                    ReaderHardwareKeyAction.SYSTEM
+                ),
+                volumeDown = decodeReaderHardwareKeyAction(
+                    prefs[Keys.volumeDownAction],
+                    ReaderHardwareKeyAction.SYSTEM
+                )
+            ),
+            readerFocusGuide = decodeReaderFocusGuidePreferences(prefs),
+            readerTts = decodeReaderTtsPreferences(prefs),
             fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
                 prefs[Keys.fixedLayoutSpreads]
             ),
@@ -235,6 +272,38 @@ class SettingsStore(private val context: Context) {
                 .takeIf { it.isFinite() }
                 ?.coerceIn(0.0, 1.0)
                 ?: 0.72
+        }
+    }
+
+    suspend fun saveReaderTapGrid(value: ReaderTapGrid) {
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.tapGrid] = encodeReaderTapGrid(value)
+        }
+    }
+
+    suspend fun saveReaderHardwareKeys(value: ReaderHardwareKeyMap) {
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.volumeUpAction] = value.volumeUp.name
+            prefs[Keys.volumeDownAction] = value.volumeDown.name
+        }
+    }
+
+    suspend fun saveReaderFocusGuide(value: ReaderFocusGuideSettings) {
+        val normalized = value.normalized()
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.focusGuideMode] = normalized.mode.name
+            prefs[Keys.focusGuideLastActiveMode] = normalized.lastActiveMode.name
+            prefs[Keys.focusGuidePosition] = normalized.verticalPosition
+            prefs[Keys.focusGuideBand] = normalized.bandFraction
+            prefs[Keys.focusGuideDim] = normalized.dimStrength
+        }
+    }
+
+    suspend fun saveReaderTtsSettings(value: ReaderTtsSettings) {
+        val normalized = value.normalized()
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.ttsSpeed] = normalized.speed
+            prefs[Keys.ttsPitch] = normalized.pitch
         }
     }
 
@@ -329,4 +398,29 @@ internal fun encodeFixedLayoutSpreadOverrides(
             }
         }
     return json.toString()
+}
+
+/** Decode independently so malformed legacy types cannot terminate the settings flow. */
+internal fun decodeReaderFocusGuidePreferences(prefs: Preferences): ReaderFocusGuideSettings {
+    val values = prefs.asMap()
+    fun number(key: String): Double? = values[doublePreferencesKey(key)] as? Double
+    fun mode(key: String, fallback: ReaderFocusGuideMode): ReaderFocusGuideMode =
+        runCatching { ReaderFocusGuideMode.valueOf((values[stringPreferencesKey(key)] as? String).orEmpty()) }
+            .getOrDefault(fallback)
+
+    return ReaderFocusGuideSettings(
+        mode = mode("reader_focus_guide_mode", ReaderFocusGuideMode.OFF),
+        lastActiveMode = mode("reader_focus_guide_last_active_mode", ReaderFocusGuideMode.WINDOW),
+        verticalPosition = number("reader_focus_guide_position") ?: 0.50,
+        bandFraction = number("reader_focus_guide_band") ?: 0.18,
+        dimStrength = number("reader_focus_guide_dim") ?: 0.30
+    ).normalized()
+}
+
+internal fun decodeReaderTtsPreferences(prefs: Preferences): ReaderTtsSettings {
+    val values = prefs.asMap()
+    return ReaderTtsSettings(
+        speed = values[doublePreferencesKey("reader_tts_speed")] as? Double ?: 1.0,
+        pitch = values[doublePreferencesKey("reader_tts_pitch")] as? Double ?: 1.0
+    ).normalized()
 }

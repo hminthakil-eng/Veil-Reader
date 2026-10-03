@@ -490,4 +490,69 @@ class ReaderInputArbiterTest {
         )
     }
 
+
+    @Test
+    fun `EPUB navigation ownership is one hot across paper slide paged and scroll`() {
+        val cases = listOf(
+            Triple(false, PageTurnStyle.PAPER, "paper"),
+            Triple(false, PageTurnStyle.SLIDE, "slide"),
+            Triple(false, PageTurnStyle.NONE, "paged"),
+            Triple(true, PageTurnStyle.NONE, "scroll"),
+            Triple(true, PageTurnStyle.PAPER, "scroll"),
+            Triple(true, PageTurnStyle.SLIDE, "scroll")
+        )
+
+        cases.forEach { (scroll, style, expectedOwner) ->
+            val owners = mapOf(
+                "paper" to shouldUsePaperCurlNavigation(
+                    format = BookFormat.EPUB,
+                    scroll = scroll,
+                    pageTurnStyle = style
+                ),
+                "slide" to shouldUseVeilSlideNavigation(
+                    format = BookFormat.EPUB,
+                    scroll = scroll,
+                    pageTurnStyle = style
+                ),
+                "paged" to shouldUseStaticPagedDragNavigation(
+                    format = BookFormat.EPUB,
+                    scroll = scroll,
+                    pageTurnStyle = style
+                ),
+                "scroll" to scroll
+            )
+
+            assertEquals(
+                "exactly one owner for scroll=$scroll style=$style",
+                1,
+                owners.values.count { it }
+            )
+            assertEquals(true, owners.getValue(expectedOwner))
+        }
+    }
+
+    @Test
+    fun `paper ownership never leaks into PDF or scroll`() {
+        assertFalse(
+            shouldUsePaperCurlNavigation(
+                format = BookFormat.PDF,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.PAPER
+            )
+        )
+        assertFalse(
+            shouldUsePaperCurlNavigation(
+                format = BookFormat.EPUB,
+                scroll = true,
+                pageTurnStyle = PageTurnStyle.PAPER
+            )
+        )
+        assertTrue(
+            shouldUsePaperCurlNavigation(
+                format = BookFormat.EPUB,
+                scroll = false,
+                pageTurnStyle = PageTurnStyle.PAPER
+            )
+        )
+    }
 }

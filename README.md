@@ -37,17 +37,18 @@ Veil Reader is a premium, offline-first Android EPUB/PDF reader with an optional
 
 ## Build and verify
 
-Requirements: JDK 17, Gradle 9.6 and Android SDK 37.
+Requirements: JDK 21 (Robolectric SDK 37), Gradle 9.6 and Android SDK 37.0.
+The checked-in wrapper pins and verifies Gradle 9.6.0. Android bytecode still targets Java 17.
 
 ```sh
 sh tools/test-policy.sh
-gradle :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
 For storage/migration changes, CI additionally runs:
 
 ```sh
-gradle :app:connectedDebugAndroidTest
+./gradlew :app:connectedDebugAndroidTest
 ```
 
 The repository workflows upload a debug APK and verification reports after successful runs.

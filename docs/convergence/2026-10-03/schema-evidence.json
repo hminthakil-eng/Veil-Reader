@@ -1,0 +1,20 @@
+[
+  {
+    "version": "1",
+    "source_ref": "origin/alpha/w26-arena-canonical-ui-rebuild-v1",
+    "unchanged": true,
+    "sha256": "88d6bc095959bd5b587c0ec870e2440070e2c584842748b9e1eb5049b3831adb"
+  },
+  {
+    "version": "2",
+    "source_ref": "origin/alpha/w42-tts-foundation-v1",
+    "unchanged": true,
+    "sha256": "623b49b736f6e74b09e11fd5092b96862fd993d9dcf7eb69410ae795d2e4d7eb"
+  },
+  {
+    "version": "3",
+    "source_ref": "origin/alpha/w42-tts-foundation-v1",
+    "unchanged": true,
+    "sha256": "646c51ba85b3346ac2aa9eef01d47ca5d8a7d9817f2ba69116ad4d8fb706344d"
+  }
+]

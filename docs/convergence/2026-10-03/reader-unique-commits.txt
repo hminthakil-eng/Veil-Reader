@@ -1,0 +1,136 @@
+892fa8b0cfaf20c26ab716c91422c87055fc6117 W27: define Grayfog Archive Arena acceptance spec
+343adc69f88614adba35338df6767ebb48b72ca7 W27: rebuild Archive header registers and recent shelf language
+74bd926dcf5498edbc853b0ddd1236aaf568497d W27: enforce archive retrieval hierarchy and flat index ledger
+296f4dda2136d68f22f98c686d9267dc6dbe1189 W27: turn gallery shelves and view modes into archive-native objects
+40bd7febeedda655407eb775f42c3d5b5de2af98 W27: demote manga utility and harden archive adaptive hierarchy
+1bc059e95c60174eb91ae176f62fd6f19a316146 W27: unify archive controls import and empty states
+e008497443a9395b263c06afdae096725b300d26 W27: record Grayfog Archive source QA gate
+13e247d8c6fea42a9072da4f0fc87e1d0d50c04a W28: define Artifact Chamber Arena acceptance spec
+57e33824eb0a86005c45c8fde059c9269dea0662 W28: establish Artifact Chamber hero and reading hierarchy
+b5091434e9a4055c9b293457791b996da567dcec W28: convert artifact traces badges and collections to archive language
+d6d398b9350e67b423188f1cc859d59466dcd58e W28: finish artifact archive history as ledger rows
+42895a8b6bc398f26845492c31965e60158c315f W28: record Artifact Chamber source QA gate
+33459940893d816deaf40e0a35a382bea8875e78 W29: define Sanctuary Reader Arena contract
+1258218020504e5581a54aaef2bb2a0049dffd02 W29: flatten Sanctuary chrome and clarify navigation ownership
+2c2516234c5797b9a02c3f3caeee317472fb215c W29: make paper navigation ownership explicit
+0d3508601e8fd34b87ff09d5bc28043c33ca58a4 W29: route paper listener through explicit ownership policy
+39298ff2fb739dbde50e7e9e9894d8abbcf3cdbb W29: lock mutually exclusive reader mode ownership with tests
+b361be82af8fd1286bd9acd4de652633818fd399 W29: record Sanctuary Reader source QA gate
+9ce60af53297b309efe30b35df3366fd8d5549c2 W30: define Reader Appearance and PDF workspace Arena contract
+d565561bfbe3daa533ca4381893f2fc59f63ca45 W30: flatten appearance controls and material preview
+20dac41470fcde3ca43cd443f85592168927c287 W30: rebuild PDF controls as a dedicated document workspace
+e6b1c7a37ca216a17b4763e37625671b55253549 W30: lock PDF preferences against EPUB page-turn leakage
+3b4f894293bec8bbc42d291d0142287f67cdf6f8 W30: record Reader Appearance and PDF source QA gate
+b27b5cbbf3c3874176a0c127aaed7fb75fb0fe24 W31: define Hidden Archive Arena contract
+b796a8464539320a6122149ea14fde361b8b37f3 W31: rebuild hidden archive index and records as folios
+c7793fd37483e785f087420ebdf1837d6669a3d6 W31: record Hidden Archive source QA gate
+ed4d65351b06b549100e0b4000a8c04fbb77f45d W32: define Collections and Search Arena contract
+d5101a3c75f370bebbcd93812a28c53f6e1a006a W32: add deterministic local search relevance model
+0f86cb475496f8b82a7b1a0e2823d91d6f5bbbc8 W32: rank default search results by local relevance
+26f8687828dd808521903ddba61758226e2717ae W32: lock local search relevance ordering with tests
+ced734f5690ce19d38af2839b975270b7f38e475 W32: record Collections and Search source QA gate
+efb08fdf6bffd9fdafd3392c19125becbc215a07 W33: define Settings and Profile Arena contract
+9ba99fb36087b6aa8fc9f87fac6cc67e3a3964bd W33: rebuild Settings as a flat calibration ledger
+4627e860f3e3b9d5133e2de9c3490c3f9cdda173 W33: flatten Profile mastery and discovery records
+9307a9d85625ca70a4d2d16286256e6020281f37 W33: record Settings and Profile source QA gate
+2ddbdd957cde41e92ab321dc9fcb7a7fc1ca5a53 W34: define Castle and Path Arena contract
+9eddf5cf73ff3b133710977d4c1de39fdba5feaa W34: make Castle map-first and flatten progression records
+19cdc5e910141e83790371a9c641316094e680f5 W34: put Path journey before ritual gate and demote raw XP
+f26cb27f2a4786ee2f05134801485f9756a5fee1 W34: record Castle and Path source QA gate
+7f2f9f3b3e04c1dbe262d5c2ce9e9b0c05a678a4 W35: define Ritual and Sanctum Arena contract
+32d1748763f0a8834d5fda2d757ad3651e8f6ff6 W35: turn Treasury and Sanctum into durable museum records
+bc06770935cb819d8d300c98a0e06439f19a4526 W35: record Ritual and Sanctum source QA gate
+124d04d8b5173a9444b99cc670c8d35b5efb7116 W36: define full harmony and motion contract
+09f2ea2141b8d314124932e8aa92d0ba7f70f7b8 W36: add script-safe local tracking helper
+81d92c77a57ccf271e79398315ebef4759d6a0eb W36: lock script-safe tracking with typography tests
+59d13a9c7b3844209a48d11b245b0cf3d3603350 W36: make fallback cover label tracking script-safe
+f09f45f93f939ac826de106b1bd98462c5712ecd W36: protect Settings section tracking for RTL
+4236272ee0cc2f5d103be69646a6f6d6114ffef9 W36: make Path identity and section tracking script-safe
+ffb0576df5909bb2a80d67c4ec94336d24ed9f97 W36: make Profile dossier tracking script-safe
+8815476241d316b56bca5feeb16cccd4d9fd33a6 W36: harmonize Library section and control tracking
+416c1933f76956873fdaa96e9b9929164ccba42d W36: harmonize Hidden Archive record tracking
+fe89981941f1b3fdd7a2d0dcdd8715225698349f W36: harmonize Reader instrument tracking
+a5371e89f238140f94a37e16174e92cb6042f351 W36: make Threshold recent-status tracking script-safe
+031fcf2da943356c61dd9e42657d05b6a4647db0 W36: make reveal motion realm-aware
+5a8fc155c6dbb406e539db700626526da7269446 W36: align ReadingNowScreen reveal motion with realm
+21d9486e0dbf387662f49559b98109f10524a2c0 W36: align ArchiveScreen reveal motion with realm
+fdda0c2894a90443dc31d6f65182ac32e8cab6a5 W36: align ProfileScreen reveal motion with realm
+75b134ab1baa60360dafa82244a04a050e72de86 W36: test realm-aware reveal motion policy
+fd4136b86bb5c971192de4d49fd7c5074697ef08 feat(reader): add configurable 3x3 tap grid model
+b299e3b90fe13b7c6653151067392e939f0bd287 feat(reader): add renderer-safe tap matrix listener
+fb6a7c01337193d24731427dc4e4562ad2ab43b6 feat(settings): persist reader tap matrix
+2995390f6bc4a6d0a6180cf4c0a0a3b4342a65b1 feat(settings): expose tap matrix persistence
+768ffad0e5656ef361234936fe09170c1f0060d1 feat(app): wire reader tap matrix settings
+dd6051cc8782af125094dd0dd853064821a2cd86 feat(app): route tap matrix through Veil world
+ecc46106054504a74d7f06afb4365e8faed3d790 feat(settings): add full 3x3 reader tap matrix editor
+4767dac1a83a600fee34750682eff16b7130d61d feat(i18n): localize reader tap matrix
+62214712735654b1670cdf9cd9863e2bf29f8749 feat(i18n): localize reader tap matrix
+9c9e9eb2f76c41e06c56d45070029e400902afef feat(reader): expose semantic paper tap turns
+d8cec88ba9bdc5b43c86950330e1c97af24b69f7 feat(reader): expose semantic slide tap turns
+14094ee6f2ba6381963d05212b47bb766f8ebcfc feat(reader): route taps through configurable matrix
+48b5591b27e844607425c1a0613e1ed496d16f78 fix(reader): make renderer zones bypass Veil navigation
+b0ffbffde61640f86fd74a548505c7072e1cab82 fix(reader): honor renderer-owned tap matrix zones
+cbd4307482789ef9d3520f75cfecd0bf5c449140 feat(reader): integrate mode-aware 3x3 tap matrix
+9e2543afe9986f4a012dade9c3da9ffb0218c694 test(reader): cover tap matrix geometry and codec
+79dbaa23dc44fc926dc2a6bf80325c9d227987ff test(settings): verify tap matrix durability
+78c836084e618b44c7348096a865edfa3e868046 docs(rnd): record Moon 10.7 micro-UX gap matrix
+c66cf59702b768b06756d6d30a8239c4c707d4d4 fix(reader): opt in tap matrix listener to Readium input API
+4f0b28181bb58cdde631bbad47c127b8c2cc8974 fix(reader): preserve legacy tap behavior by default
+74e36146d83b903481df6942d1f6067639ea26e7 fix(reader): defer default tap zones to existing Veil ownership
+b285dae5777ce9247024b8503132446e00d99708 fix(settings): expose non-destructive Veil-default tap action
+f8773408f56bda0fc256dbd9e4d5a3809f2016d5 fix(i18n): label safe default tap ownership
+2ec507759be32fec93259639d879b845de362bbb fix(i18n): label safe default tap ownership
+d2524cf0329b0d58e0558db1b1574c59e5ac88a3 test(reader): lock non-destructive tap matrix defaults
+88078a60d1b4e7c28accaf16c461f6e09ec92acb refactor(reader): simplify tap default policy
+3e587871d0fa4965144d208a9a540e295291020d feat(reader): add safe hardware key mapping model
+faa0151fe81ad2b82f8894229c0f6dd0aba76d68 feat(reader): add throttled volume-key reader input
+ec714a330d1e285404fedd022a1d9097b23ddb2c feat(settings): persist reader hardware key mappings
+21873405b62a7898d717e786e25dbb967fb2ee05 feat(settings): expose hardware key persistence
+e1228ee0243026bcbbf38e26983c5df94a8913f5 feat(app): wire reader hardware key settings
+3cfb281d2ddf17782158ad5d0f0c6a91cb0c362b feat(app): route hardware key policy through Veil
+9ab0f5d267fc86ab2ae544876597bd907bcf9786 feat(settings): add safe volume-key action controls
+e44e99a628aeb54c54e732dcfa9de12aef550d33 feat(reader): arbitrate hardware keys without stealing system volume
+3b823920d5c1df53394e852d9c5e001004412a9c feat(reader): preserve page motion for mapped volume keys
+783576ac37c3023573eb64fa90ee20b21a5162d9 feat(i18n): localize hardware reader key controls
+58892bc94a1db525a49beb73ced63ab1aca08fe2 feat(i18n): localize hardware reader key controls
+b3e03fa755f1d580d79bd5a9413206f574c342f4 test(reader): cover safe volume-key mapping and repeat guard
+2f3d774550db213697c1cb231ada94b1158fb8ab test(settings): verify hardware key durability
+593b6fa2a610456cd44d5ea0530778f1dfd5700a test(reader): keep volume keys system-owned in blocked and accessibility modes
+bb1964b73304e72e724fdcb19dae9941faf6feab fix(reader): keep volume interception out of Readium arbiter
+edc0c602875c1a45f2d08cc505ce4813a3e9b15f fix(reader): keep volume interception out of Readium arbiter
+3338a9722feb91914c5ad69002d9718fa9c42bbf fix(reader): remove non-consuming Readium volume-key path
+76127af4bad21530a785dc493d94baf185b44b4c fix(reader): remove non-consuming Readium volume-key path
+d595b7b9a4263b37678ac93decf96c9f464fdf28 feat(reader): move hardware key ownership to Activity host
+a47fb1f61bc70b8e1c809098891483ec5c13db10 feat(android): consume mapped volume keys at Activity boundary
+8871e37431420b589cc915cb3f8620e953ecb838 fix(reader): consume mapped volume keys at Activity boundary
+64faf09eeaa9eda5c36b3dd46853af679d292a87 fix(reader): throttle only held hardware-key repeats
+dcefe53e75d5b8652b07f8320f12a32b94408f35 test(reader): cover Activity-owned hardware key policy
+558bb4e4ed1e8a6eae800c080668363d1bcd17e6 fix(reader): isolate hardware repeat state per physical key
+fb35b66c19edb56fa8a0781593de9b7e5e085587 test(reader): cover cross-key repeats and mid-press mode changes
+5ce0d572c94a048ab2693f7ea483e180511e1eb9 docs(rnd): record long-press constraint and W38 hardware-key implementation
+2dcf3556a2177e006790811cf926741c13802d27 test(settings): fail calm on malformed hardware-key action
+5930ba08c0890ec170b1168d7fe1909933303890 feat(reader): add normalized focus guide model
+835951a2fa6fb03d07214dea7bd1a36a12d03c2e feat(settings): persist focus guide safely
+afba7e55b6d888d600743aaaac856f5db1b8e047 feat(settings): expose focus guide persistence
+7ea33092708bb6c2bb3e939abe9d40f97bfc5efe feat(app): wire focus guide settings
+2ce0050f53511ea10bccc19e922eacaf400054f0 feat(app): route focus guide through reader and settings
+c067e08bc9fedde7eb07e097cc7b1bbac7e26fe5 feat(settings): add focus guide controls
+03c3d94aefd5fac88697a9837b18f726d20c0f1f feat(i18n): localize focus guide
+9e7d62b6f20a33139b05d9f0a2ed5df7f9a82268 feat(i18n): localize focus guide
+bd1386ba05ee88483ca10efff1209135d7dab915 feat(reader): add non-intercepting Veil Focus Guide
+4fa56231877fe14e9546b538ad5ecd95821fe605 test(reader): cover focus guide geometry and fail-calm normalization
+d8167a3195963a16a37821adde4ad1a4abc2f6f0 test(settings): verify focus guide durability
+2d94d3a689f1de91da527fa055d11e9ac28b3bbb docs(rnd): mark Veil Focus Guide W39
+cd42de5be4d39743b503ea1d88ea748a30d3f5ae fix(reader): preserve last active focus guide mode
+011a48ce47185e6a6c0ae75c50ff4f23ab157f51 fix(settings): persist last active focus guide mode
+6dd1476327db9f897d6e0483877d9714baf155b2 docs(handoff): prepare W39 for Codex workspace
+cdf75af612ad7d646e322ffbf3158811adb7b4d5 test(reader): restore prior focus mode after quick toggle
+5419f2c0e174f4e59c315234ede1a6c692e7adb4 test(settings): persist focus guide resume mode
+43bc3051226260ac8f876d153912f598070487d3 docs(codex): refresh W39 handoff after focus-toggle hardening
+f1e453000da39fcade4a2a66a0817c8a21cb9aa1 docs(codex): make W39 handoff head-safe
+89c4c6c628590e78743803c4b585e94db86fa6c2 docs(codex): add master Veil perfection backlog
+7d3d7e289e7e2dd895a8bf8772587ee78dd8ce0d fix(reader): verify and harden W37-W39 focus and key ownership
+0632a7817b954035442ca9ca7d14b57570f02087 docs(w40): refresh current W39 engineering baseline with executed tests
+d311b019353fc7ad4214d931b2184f2c40e8b2c6 fix(w41): preserve PDF link ownership and durable document navigation
+31550dd635255accaccb1488348f7c7330833b67 feat(w42): add owned offline speech foundation over Readium content
+1c987f85b27be8c71892adca1966c8e1853e7ccb fix(tts): retain pending content and prioritize final locator durability

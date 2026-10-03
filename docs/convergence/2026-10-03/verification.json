@@ -1,0 +1,60 @@
+{
+  "environment": "Codex Cloud /workspace/Veil-Reader",
+  "branch": "integration/arena-reader-canonical-convergence-v1",
+  "source_manifest_sha256": "8f715c35c74056e07177761e7bcc78278939b9cb23ad5ea2d282f7c6400b6452",
+  "gradle": "9.6.0",
+  "jdk": "Temurin 21",
+  "android_sdk": "37.0",
+  "build_tools": "36.0.0",
+  "gradle_command": "./gradlew testDebugUnitTest :app:assembleDebug :app:assembleDebugAndroidTest :app:lintDebug --max-workers=2",
+  "gradle_exit_code": 0,
+  "units": {
+    "tests": 678,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 166,
+    "hints": 1
+  },
+  "policy_checks": 39,
+  "performance_helper_tests": 17,
+  "artifacts": [
+    {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "bytes": 46585644,
+      "sha256": "2173a84fbf48b0110d5fe9251c2e62d7f6c24c4112ffdda8448676d055b6d21c"
+    },
+    {
+      "path": "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "bytes": 1413274,
+      "sha256": "77d36a60213bca2cb31a558f07fad97ebf7327621bbf80716fd0f87e1ad33c3a"
+    }
+  ],
+  "regression_sensitivity": {
+    "command_tests": [
+      "ReaderTtsReaderOwnershipTest",
+      "ReaderNavigationTransactionTest.convergedPdfJump_requiresBothDocumentPageAndStableTarget"
+    ],
+    "intentional_mutations": [
+      "remove fresh-note speech blocker",
+      "remove PDF expected-page settlement guard"
+    ],
+    "tests": 4,
+    "expected_failures": 2,
+    "restored_before_full_verification": true
+  },
+  "statuses": {
+    "SOURCE-GREEN": "resolved source, policy, retention and schema checks",
+    "BUILD-GREEN": "debug and instrumentation APK compilation",
+    "TEST-GREEN": "678 JVM tests + 39 policies + 17 helper tests",
+    "DEVICE-GREEN": "NOT ESTABLISHED: no device and no /dev/kvm",
+    "RELEASE-GREEN": "NOT ESTABLISHED: no release build"
+  },
+  "instrumentation_runtime": "not executed",
+  "room_migration_runtime": "not executed",
+  "release_build": "not performed",
+  "github_ci": "blocked by account billing/spending limit; no runner allocated"
+}

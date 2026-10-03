@@ -7,7 +7,7 @@ workflows:
     # Manual-first on purpose: preserves the 500 free M2 minutes for useful runs.
     # Start this workflow from Codemagic and choose the branch you want to verify.
     environment:
-      java: 17
+      java: 21
 
     cache:
       cache_paths:
@@ -110,7 +110,7 @@ workflows:
 
     # Manual-only heavy lane: use after Fast Verify is green.
     environment:
-      java: 17
+      java: 21
 
     cache:
       cache_paths:

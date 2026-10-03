@@ -10,9 +10,11 @@ package com.veilreader.app.ui.reader
 internal suspend fun awaitDurableReaderClose(
     finalizeSession: () -> Unit,
     awaitDurability: suspend () -> Unit,
-    clearRoute: () -> Unit
+    clearRoute: () -> Unit,
+    awaitOwnerRelease: suspend () -> Unit = {}
 ) {
     finalizeSession()
     awaitDurability()
+    awaitOwnerRelease()
     clearRoute()
 }
