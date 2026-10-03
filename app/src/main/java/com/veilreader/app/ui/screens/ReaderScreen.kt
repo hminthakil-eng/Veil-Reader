@@ -1721,7 +1721,6 @@ fun ReaderScreen(
                             onSensoryEvent(VeilSensoryEvent.PAGE_TURN)
                         }
                         val locator = nav.currentLocator.value
-                        val json = locator.toVeilPersistedJson(opened.format)
                         recordLocator(locator, ReaderLocatorEvent.PAPER_COMMIT)
                     },
                     onBoundaryHit = { side ->
