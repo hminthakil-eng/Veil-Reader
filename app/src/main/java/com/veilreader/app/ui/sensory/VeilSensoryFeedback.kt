@@ -100,6 +100,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         Thread(runnable, "veil-sensory-ambient").apply { isDaemon = true }
     }
     private val ambientGeneration = AtomicInteger(0)
+    private val materialCueGeneration = AtomicInteger(0)
 
     @Volatile
     private var settings = SensorySettings()
@@ -120,6 +121,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
     fun setForeground(value: Boolean) {
         if (foreground == value) return
         foreground = value
+        if (!value) materialCueGeneration.incrementAndGet()
         syncAmbient()
     }
 
@@ -144,6 +146,7 @@ class VeilSensoryFeedback(context: android.content.Context) {
         view: View,
         cue: VeilMaterialPageSensoryCue
     ) {
+        val token = materialCueGeneration.incrementAndGet()
         val snapshot = settings
         if (snapshot.hapticsEnabled) {
             val feedback = materialHapticFeedbackFor(cue)
@@ -151,7 +154,11 @@ class VeilSensoryFeedback(context: android.content.Context) {
             if (cue.hapticPulseCount > 1) {
                 view.postDelayed(
                     {
-                        if (settings.hapticsEnabled && view.isAttachedToWindow) {
+                        if (
+                            token == materialCueGeneration.get() &&
+                            settings.hapticsEnabled &&
+                            view.isAttachedToWindow
+                        ) {
                             view.performHapticFeedback(feedback)
                         }
                     },
@@ -166,13 +173,19 @@ class VeilSensoryFeedback(context: android.content.Context) {
             foreground
         ) {
             cueExecutor.execute {
-                playMaterialPageCue(cue, snapshot.audioVolume.toFloat())
+                if (
+                    token == materialCueGeneration.get() &&
+                    foreground
+                ) {
+                    playMaterialPageCue(cue, snapshot.audioVolume.toFloat())
+                }
             }
         }
     }
 
     fun dispose() {
         ambientGeneration.incrementAndGet()
+        materialCueGeneration.incrementAndGet()
         cueExecutor.shutdownNow()
         ambientExecutor.shutdownNow()
     }
