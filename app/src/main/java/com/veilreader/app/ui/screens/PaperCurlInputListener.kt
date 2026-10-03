@@ -522,7 +522,11 @@ internal class PaperCurlInputListener(
     }
 
     private fun paperModeEnabled(): Boolean =
-        !navigator.overflow.value.scroll && isEnabled()
+        // The presented Reader appearance is the accepted interaction contract.
+        // Readium's overflow StateFlow can lag preference application by a frame;
+        // consulting it here creates a split-brain state where the UI says PAPER
+        // but the JS drag is not prevented and native swipe wins.
+        isEnabled()
 
     private fun shouldAnimatePaperVisual(): Boolean =
         state.usingMaterialEngine() || !isReducedMotion()
