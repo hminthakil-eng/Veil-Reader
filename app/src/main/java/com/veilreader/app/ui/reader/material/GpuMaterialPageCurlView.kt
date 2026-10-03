@@ -11,8 +11,10 @@ import android.util.Log
 import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
@@ -979,6 +981,21 @@ internal class GpuMaterialPageCurlView(
     }
 }
 
+private data class GpuOverlaySnapshot(
+    val bitmap: Bitmap?,
+    val backBitmap: Bitmap?,
+    val active: Boolean,
+    val progress: Float,
+    val verticalBias: Float,
+    val pullOriginY: Float,
+    val diagonalPull: Float,
+    val profile: MaterialPageProfile,
+    val patina: Float,
+    val tone: MaterialPageTone,
+    val visualAlpha: Float,
+    val side: MaterialPageSide
+)
+
 @Composable
 internal fun GpuMaterialPageOverlay(
     state: MaterialPageEngineState,
@@ -1015,20 +1032,50 @@ internal fun GpuMaterialPageOverlay(
         }
     }
 
-    val bitmap = state.snapshot
-    val backBitmap = state.backSnapshot
-    val active =
-        state.active &&
-            bitmap != null &&
-            !bitmap.isRecycled
-    val curl = gpuPageCurlFrame(
-        progress = state.progress,
-        verticalBias = state.verticalBias,
-        pullOriginY = state.pullOriginY,
-        diagonalPull = state.diagonalPull,
-        profile = state.profile,
-        side = state.side
-    )
+    val gpuView = viewRef.value
+    LaunchedEffect(gpuView, state, highContrast) {
+        if (gpuView == null) return@LaunchedEffect
+        snapshotFlow {
+            GpuOverlaySnapshot(
+                bitmap = state.snapshot,
+                backBitmap = state.backSnapshot,
+                active = state.active,
+                progress = state.progress,
+                verticalBias = state.verticalBias,
+                pullOriginY = state.pullOriginY,
+                diagonalPull = state.diagonalPull,
+                profile = state.profile,
+                patina = state.patina,
+                tone = state.tone,
+                visualAlpha = state.visualAlpha,
+                side = state.side
+            )
+        }.collect { frame ->
+            val bitmap = frame.bitmap
+            val active =
+                frame.active &&
+                    bitmap != null &&
+                    !bitmap.isRecycled
+            gpuView.submitFrame(
+                bitmap = bitmap,
+                backBitmap = frame.backBitmap,
+                active = active,
+                curl = gpuPageCurlFrame(
+                    progress = frame.progress,
+                    verticalBias = frame.verticalBias,
+                    pullOriginY = frame.pullOriginY,
+                    diagonalPull = frame.diagonalPull,
+                    profile = frame.profile,
+                    side = frame.side
+                ),
+                profile = frame.profile,
+                patina = frame.patina,
+                tone = frame.tone,
+                visualAlpha = frame.visualAlpha,
+                highContrast = highContrast
+            )
+        }
+    }
 
     AndroidView(
         factory = { viewContext ->
@@ -1042,18 +1089,6 @@ internal fun GpuMaterialPageOverlay(
             }
         },
         modifier = modifier,
-        update = { view ->
-            view.submitFrame(
-                bitmap = bitmap,
-                backBitmap = backBitmap,
-                active = active,
-                curl = curl,
-                profile = state.profile,
-                patina = state.patina,
-                tone = state.tone,
-                visualAlpha = state.visualAlpha,
-                highContrast = highContrast
-            )
-        }
+        update = { }
     )
 }
