@@ -543,6 +543,16 @@ internal fun MaterialPageOverlay(
 
     Canvas(modifier.fillMaxSize()) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
+        if (
+            !materialPageSnapshotScaleIsSafe(
+                snapshotWidth = bitmap.width.toFloat(),
+                snapshotHeight = bitmap.height.toFloat(),
+                canvasWidth = size.width,
+                canvasHeight = size.height
+            )
+        ) {
+            return@Canvas
+        }
 
         val scaleX = size.width / bitmap.width.toFloat().coerceAtLeast(1f)
         val scaleY = size.height / bitmap.height.toFloat().coerceAtLeast(1f)
