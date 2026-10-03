@@ -10,6 +10,8 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderHardwareKeyAction
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapAction
 import com.veilreader.app.domain.ReaderTapGrid
@@ -104,6 +106,24 @@ class SettingsStoreInstrumentedTest {
             assertEquals(true, recreated.highContrastEnabled)
         } finally {
             store.setHighContrastEnabled(false)
+        }
+    }
+
+    @Test
+    fun hardwareKeyMapping_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderHardwareKeyMap(
+            volumeUp = ReaderHardwareKeyAction.PREVIOUS_PAGE,
+            volumeDown = ReaderHardwareKeyAction.NEXT_PAGE
+        )
+
+        try {
+            store.saveReaderHardwareKeys(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerHardwareKeys)
+        } finally {
+            store.saveReaderHardwareKeys(ReaderHardwareKeyMap())
         }
     }
 
