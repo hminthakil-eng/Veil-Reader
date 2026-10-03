@@ -342,6 +342,37 @@ internal class MaterialPageEngineState(
         liftCueEmitted = false
     }
 
+    /**
+     * Debug/test inspection hook for production renderer states. It deliberately
+     * feeds the real overlay instead of maintaining a separate demo renderer.
+     */
+    internal fun installInspectableFrame(
+        bitmap: Bitmap,
+        progress: Float,
+        verticalBias: Float = 0f,
+        side: MaterialPageSide = MaterialPageSide.RIGHT,
+        profile: MaterialPageProfile = this.profile,
+        reducedMotion: Boolean = false
+    ) {
+        snapshot = bitmap
+        width = bitmap.width.toFloat()
+        height = bitmap.height.toFloat()
+        this.progress = progress.coerceIn(0f, 1f)
+        this.verticalBias = verticalBias.coerceIn(-0.18f, 0.18f)
+        this.side = side
+        this.profile = profile
+        this.reducedMotion = reducedMotion
+        visualAlpha = if (reducedMotion) {
+            materialPageReducedMotionAlpha(
+                progress = this.progress,
+                completing = true
+            )
+        } else {
+            1f
+        }
+        active = true
+    }
+
     fun releaseBufferIfIdle() {
         if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
