@@ -51,6 +51,7 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
                     onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
                     onSaveReaderTapGrid = settingsViewModel::saveReaderTapGrid,
                     onSaveReaderHardwareKeys = settingsViewModel::saveReaderHardwareKeys,
+                    onSaveReaderFocusGuide = settingsViewModel::saveReaderFocusGuide,
                     onSaveFixedLayoutSpread = settingsViewModel::saveFixedLayoutSpread,
                     onSaveSensorySettings = settingsViewModel::saveSensorySettings
                 )
