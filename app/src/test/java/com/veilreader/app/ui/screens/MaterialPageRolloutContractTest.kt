@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.screens
 
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPagePreset
 import com.veilreader.app.ui.reader.material.MaterialPageProfiles
@@ -11,15 +12,17 @@ import org.junit.Test
 class MaterialPageRolloutContractTest {
 
     @Test
-    fun `material engine remains opt in until promotion`() {
+    fun `debug build enables material review while release default stays off`() {
         MaterialPageEngineRollout.setDebugOverride(null)
         try {
-            assertFalse(MaterialPageEngineRollout.isEnabled())
-            assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
-
-            MaterialPageEngineRollout.setDebugOverride(true)
+            assertFalse(MaterialPageEngineRollout.DEFAULT_ENABLED)
+            assertTrue(BuildConfig.DEBUG)
             assertTrue(MaterialPageEngineRollout.isEnabled())
             assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = true))
+
+            MaterialPageEngineRollout.setDebugOverride(false)
+            assertFalse(MaterialPageEngineRollout.isEnabled())
+            assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
         } finally {
             MaterialPageEngineRollout.setDebugOverride(null)
         }
