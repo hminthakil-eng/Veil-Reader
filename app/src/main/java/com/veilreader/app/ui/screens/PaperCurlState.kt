@@ -14,6 +14,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,6 +28,7 @@ import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageOverlay
 import com.veilreader.app.ui.reader.material.MaterialPageSide
+import com.veilreader.app.ui.reader.material.MaterialPageTone
 import com.veilreader.app.ui.theme.VeilMotion
 import kotlinx.coroutines.delay
 import kotlin.math.max
@@ -408,9 +410,15 @@ internal fun paperCurlPageEdge(
 internal fun PaperCurlOverlay(
     state: PaperCurlState,
     config: PaperCurlVisualConfig,
+    patina: Float = 0.35f,
+    tone: MaterialPageTone = MaterialPageTone.LIGHT,
     modifier: Modifier = Modifier
 ) {
     if (MaterialPageEngineRollout.isEnabled()) {
+        LaunchedEffect(state, patina, tone) {
+            state.materialEngine.setPatina(patina)
+            state.materialEngine.setTone(tone)
+        }
         MaterialPageOverlay(
             state = state.materialEngine,
             modifier = modifier
