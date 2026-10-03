@@ -863,8 +863,7 @@ internal fun GpuMaterialPageOverlay(
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
                 Lifecycle.Event.ON_RESUME -> viewRef.value?.resumeRenderer()
-                Lifecycle.Event.ON_PAUSE,
-                Lifecycle.Event.ON_STOP -> viewRef.value?.pauseRenderer()
+                Lifecycle.Event.ON_PAUSE -> viewRef.value?.pauseRenderer()
                 else -> Unit
             }
         }
