@@ -1258,4 +1258,15 @@
     <string name="settings_tap_zone_bottom_left">پایین چپ</string>
     <string name="settings_tap_zone_bottom_center">پایین وسط</string>
     <string name="settings_tap_zone_bottom_right">پایین راست</string>
+
+    <string name="settings_hardware_keys_title">کلیدهای سخت‌افزاری مطالعه</string>
+    <string name="settings_hardware_keys_description">در صورت تمایل دکمه‌های صدا را هنگام باز بودن کتاب به عمل‌های مطالعه اختصاص بده. حالت پیش‌فرض همچنان صدای سیستم است.</string>
+    <string name="settings_volume_up_key">افزایش صدا</string>
+    <string name="settings_volume_down_key">کاهش صدا</string>
+    <string name="settings_hardware_action_system">صدای سیستم</string>
+    <string name="settings_hardware_action_previous">صفحهٔ قبل</string>
+    <string name="settings_hardware_action_next">صفحهٔ بعد</string>
+    <string name="settings_hardware_action_controls">کنترل‌های خواننده</string>
+    <string name="settings_hardware_keys_hint">هنگام انتخاب متن، پنجره‌ها، کاوش لمسی و عمل صفحه در حالت اسکرول، نگاشت مطالعه کنار می‌رود. نگه‌داشتن کلید نیز محدود می‌شود تا چندین صفحه ناخواسته رد نشود.</string>
+    <string name="settings_hardware_keys_reset">بازگرداندن صدای سیستم</string>
 </resources>
