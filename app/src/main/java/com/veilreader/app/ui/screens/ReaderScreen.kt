@@ -354,7 +354,7 @@ fun ReaderScreen(
         ReaderNavigationTransactionGate()
     }
     val ttsNavigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
-        ReaderNavigationTransactionGate()
+        ReaderNavigationTransactionGate(timeoutMs = 1_500L)
     }
     DisposableEffect(navigationTransactionGate, ttsNavigationTransactionGate) {
         onDispose {
@@ -1096,8 +1096,7 @@ fun ReaderScreen(
                             cancelledPaperPreview || cancelledSlidePreview
                         val nowElapsed = SystemClock.elapsedRealtime()
                         val navigationJumpInFlight =
-                            navigationTransactionGate.isActive(nowElapsed) ||
-                                ttsNavigationTransactionGate.isActive(nowElapsed)
+                            navigationTransactionGate.isActive(nowElapsed)
                         if (
                             shouldTakeFinalNavigatorSnapshot(
                                 format = opened.format,
