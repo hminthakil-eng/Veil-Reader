@@ -14,6 +14,7 @@ import kotlinx.coroutines.launch
 import org.readium.navigator.media.tts.AndroidTtsNavigator
 import org.readium.navigator.media.tts.AndroidTtsNavigatorFactory
 import org.readium.navigator.media.tts.TtsNavigator
+import org.readium.navigator.media.tts.android.AndroidTtsEngine
 import org.readium.navigator.media.tts.android.AndroidTtsPreferences
 import org.readium.r2.navigator.Navigator
 import org.readium.r2.navigator.VisualNavigator
@@ -25,6 +26,7 @@ import org.readium.r2.shared.util.getOrElse
 internal enum class ReaderTtsError {
     UNSUPPORTED_PUBLICATION,
     INITIALIZATION,
+    MISSING_VOICE_DATA,
     PLAYBACK
 }
 
@@ -183,16 +185,24 @@ internal class ReaderTtsController(
         playbackJob?.cancel()
         playbackJob = ttsNavigator.playback
             .onEach { playback ->
-                val playbackError =
-                    playback.state is TtsNavigator.State.Failure
+                val failure = playback.state as? TtsNavigator.State.Failure
+                val engineError =
+                    (failure?.error as? TtsNavigator.Error.EngineError<*>)
+                        ?.cause
+                val playbackError = when {
+                    engineError is AndroidTtsEngine.Error.LanguageMissingData ->
+                        ReaderTtsError.MISSING_VOICE_DATA
+                    engineError == AndroidTtsEngine.Error.NotInstalledYet ->
+                        ReaderTtsError.MISSING_VOICE_DATA
+                    failure != null ->
+                        ReaderTtsError.PLAYBACK
+                    else ->
+                        null
+                }
                 _state.value = _state.value.copy(
                     active = true,
                     playing = playback.playWhenReady,
-                    error = if (playbackError) {
-                        ReaderTtsError.PLAYBACK
-                    } else {
-                        _state.value.error
-                    }
+                    error = playbackError
                 )
 
                 if (playback.state == TtsNavigator.State.Ended) {
