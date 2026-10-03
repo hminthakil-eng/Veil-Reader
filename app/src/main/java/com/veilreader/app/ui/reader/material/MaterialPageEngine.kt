@@ -76,6 +76,9 @@ internal class MaterialPageEngineState(
     var snapshot: Bitmap? by mutableStateOf(null)
         private set
 
+    var backSnapshot: Bitmap? by mutableStateOf(null)
+        private set
+
     var progress: Float by mutableFloatStateOf(0f)
         private set
 
@@ -110,6 +113,7 @@ internal class MaterialPageEngineState(
     private var height = 0f
     private var density = 1f
     private var snapshotBuffer: Bitmap? = null
+    private var backSnapshotBuffer: Bitmap? = null
     private var liftCueEmitted = false
     private var renderSegmentCount =
         materialPageTurnSegmentCount(initialProfile)
@@ -157,6 +161,7 @@ internal class MaterialPageEngineState(
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
         snapshot = bitmap
+        backSnapshot = null
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -207,6 +212,19 @@ internal class MaterialPageEngineState(
     }
 
     fun dragProgress(): Float = progress.coerceIn(0f, 1f)
+
+    /**
+     * Captures the previewed destination after Readium navigation has settled.
+     * This becomes the physical back-side texture of the lifted leaf. Failure is
+     * non-fatal: the GPU renderer falls back to mirrored ink-through from the
+     * source snapshot.
+     */
+    fun captureBack(view: View): Boolean {
+        if (!active || view.width <= 0 || view.height <= 0) return false
+        val bitmap = captureBackSnapshot(view) ?: return false
+        backSnapshot = bitmap
+        return true
+    }
 
     internal fun segmentCountForRender(): Int = renderSegmentCount
 
@@ -402,6 +420,7 @@ internal class MaterialPageEngineState(
 
     suspend fun clear() {
         snapshot = null
+        backSnapshot = null
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -418,6 +437,7 @@ internal class MaterialPageEngineState(
 
     fun clearImmediately() {
         snapshot = null
+        backSnapshot = null
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -445,6 +465,7 @@ internal class MaterialPageEngineState(
         tone: MaterialPageTone = this.tone
     ) {
         snapshot = bitmap
+        backSnapshot = null
         width = bitmap.width.toFloat()
         height = bitmap.height.toFloat()
         this.progress =
@@ -485,9 +506,11 @@ internal class MaterialPageEngineState(
     }
 
     fun releaseBufferIfIdle() {
-        if (active || snapshot != null) return
+        if (active || snapshot != null || backSnapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+        backSnapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
         snapshotBuffer = null
+        backSnapshotBuffer = null
     }
 
     fun dispose() {
@@ -505,23 +528,53 @@ internal class MaterialPageEngineState(
         }.getOrNull()
 
     private fun obtainSnapshotBuffer(view: View): Bitmap? =
+        obtainReusableBuffer(
+            current = snapshotBuffer,
+            view = view
+        ).also { resolved ->
+            if (resolved != null && resolved !== snapshotBuffer) {
+                snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+                snapshotBuffer = resolved
+            }
+        }
+
+    private fun captureBackSnapshot(view: View): Bitmap? =
+        runCatching {
+            val bitmap = obtainBackSnapshotBuffer(view)
+                ?: return@runCatching null
+            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
+            view.draw(AndroidCanvas(bitmap))
+            bitmap
+        }.getOrNull()
+
+    private fun obtainBackSnapshotBuffer(view: View): Bitmap? =
+        obtainReusableBuffer(
+            current = backSnapshotBuffer,
+            view = view
+        ).also { resolved ->
+            if (resolved != null && resolved !== backSnapshotBuffer) {
+                backSnapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+                backSnapshotBuffer = resolved
+            }
+        }
+
+    private fun obtainReusableBuffer(
+        current: Bitmap?,
+        view: View
+    ): Bitmap? =
         runCatching {
             val targetWidth = max(1, view.width)
             val targetHeight = max(1, view.height)
-            val reusable = snapshotBuffer?.takeIf {
+            current?.takeIf {
                 !it.isRecycled &&
                     it.width == targetWidth &&
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
-            }
-            reusable ?: Bitmap.createBitmap(
+            } ?: Bitmap.createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888
-            ).also { created ->
-                snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
-                snapshotBuffer = created
-            }
+            )
         }.getOrNull()
 }
 
