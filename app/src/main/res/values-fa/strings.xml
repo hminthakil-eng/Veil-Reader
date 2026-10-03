@@ -1244,6 +1244,7 @@
     <string name="settings_tap_matrix_description">برای هر ۹ ناحیهٔ صفحه رفتار جدا تعیین کن. با لمس هر خانه، عمل آن عوض می‌شود بدون اینکه محتوای کتاب تغییر کند.</string>
     <string name="settings_tap_matrix_hint">صفحهٔ قبل و بعد همان حرکت فعال Veil را حفظ می‌کنند. «تعامل کتاب» آن ناحیه را به خود کتاب می‌سپارد تا لینک‌ها و رفتارهای اصلی کار کنند.</string>
     <string name="settings_tap_matrix_reset">بازنشانی نقشهٔ لمس</string>
+    <string name="settings_tap_action_default">رفتار پیش‌فرض Veil</string>
     <string name="settings_tap_action_previous">صفحهٔ قبل</string>
     <string name="settings_tap_action_controls">کنترل‌های خواننده</string>
     <string name="settings_tap_action_next">صفحهٔ بعد</string>
