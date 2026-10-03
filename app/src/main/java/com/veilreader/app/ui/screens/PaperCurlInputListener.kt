@@ -338,9 +338,10 @@ internal class PaperCurlInputListener(
      * Use this before taking a durable locator snapshot.
      */
     suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val existingCompletion = completionJob
         val requested = cancelPendingTurn()
         if (!requested) return false
-        completionJob?.join()
+        (existingCompletion ?: completionJob)?.join()
         return true
     }
 
