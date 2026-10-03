@@ -1299,6 +1299,8 @@
     <string name="tts_preparing">Preparing voice…</string>
     <string name="tts_unsupported">This publication does not expose text content that Readium can speak.</string>
     <string name="tts_initialization_failed">The device TTS engine could not be initialized. Check installed voice data and try again.</string>
+    <string name="tts_missing_voice">The selected language voice data is missing from this device.</string>
+    <string name="tts_install_voice">Install voice data</string>
     <string name="tts_playback_failed">Speech playback stopped because the TTS engine or publication content reported an error.</string>
     <string name="tts_follow_hint">Veil follows spoken sentences visually without counting them as manual page turns.</string>
 </resources>
