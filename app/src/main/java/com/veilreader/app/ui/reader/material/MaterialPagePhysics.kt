@@ -50,8 +50,29 @@ internal fun materialPageDragSample(
     val verticalLimit =
         (0.18f - profile.physics.bindingConstraint * 0.055f)
             .coerceIn(0.09f, 0.16f)
-    val verticalBias = (verticalDistancePx / heightPx)
-        .coerceIn(-verticalLimit, verticalLimit)
+    val rawVertical =
+        (verticalDistancePx / heightPx)
+            .takeIf { it.isFinite() }
+            ?.coerceIn(-verticalLimit, verticalLimit)
+            ?: 0f
+    val verticalDeadZone =
+        (0.0025f + profile.physics.bindingConstraint * 0.0018f)
+            .coerceAtMost(verticalLimit * 0.20f)
+    val verticalMagnitude = abs(rawVertical)
+    val verticalBias = if (verticalMagnitude <= verticalDeadZone) {
+        0f
+    } else {
+        val normalized =
+            ((verticalMagnitude - verticalDeadZone) /
+                (verticalLimit - verticalDeadZone).coerceAtLeast(0.0001f))
+                .coerceIn(0f, 1f)
+        val shaped =
+            normalized.toDouble()
+                .pow(1.12)
+                .toFloat() *
+                verticalLimit
+        if (rawVertical < 0f) -shaped else shaped
+    }
 
     return MaterialPageDragSample(
         progress = progress,
