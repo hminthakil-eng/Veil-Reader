@@ -1244,6 +1244,7 @@
     <string name="settings_tap_matrix_description">Assign all nine reading zones. Tap a cell to cycle its action without changing the book itself.</string>
     <string name="settings_tap_matrix_hint">Previous and Next keep Veil’s active page motion. Renderer hands that zone back to the publication for links and native interactions.</string>
     <string name="settings_tap_matrix_reset">Reset touch map</string>
+    <string name="settings_tap_action_default">Veil default</string>
     <string name="settings_tap_action_previous">Previous page</string>
     <string name="settings_tap_action_controls">Reader controls</string>
     <string name="settings_tap_action_next">Next page</string>
