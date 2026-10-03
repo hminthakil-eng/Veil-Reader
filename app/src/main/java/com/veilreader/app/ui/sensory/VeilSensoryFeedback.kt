@@ -148,7 +148,11 @@ class VeilSensoryFeedback(context: android.content.Context) {
     ) {
         val token = materialCueGeneration.incrementAndGet()
         val snapshot = settings
-        if (snapshot.hapticsEnabled) {
+        if (
+            snapshot.hapticsEnabled &&
+            foreground &&
+            view.isAttachedToWindow
+        ) {
             val feedback = materialHapticFeedbackFor(cue)
             view.performHapticFeedback(feedback)
             if (cue.hapticPulseCount > 1) {
@@ -331,7 +335,10 @@ class VeilSensoryFeedback(context: android.content.Context) {
         val fiber = cue.acousticFiber.coerceIn(0f, 1f).toDouble()
         val cueGain = cue.acousticGain.coerceIn(0f, 0.78f).toDouble()
 
-        var seed = 0x35A1D7B
+        var seed =
+            0x35A1D7B xor
+                (cue.material.ordinal * 0x45D9F3B) xor
+                (cue.action.ordinal * 0x119DE1F3)
         var smoothNoise = 0.0
         val smoothing = (0.90 - brightness * 0.24).coerceIn(0.58, 0.90)
         val bodyFrequency = 68.0 + body * 52.0 + brightness * 36.0
