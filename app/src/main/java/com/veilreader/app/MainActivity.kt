@@ -42,6 +42,7 @@ class MainActivity : FragmentActivity() {
                     onSetAppThemeMode = settingsViewModel::setAppThemeMode,
                     onSetHighContrastEnabled = settingsViewModel::setHighContrastEnabled,
                     onSaveReaderAppearance = settingsViewModel::saveReaderAppearance,
+                    onSaveReaderTapGrid = settingsViewModel::saveReaderTapGrid,
                     onSaveFixedLayoutSpread = settingsViewModel::saveFixedLayoutSpread,
                     onSaveSensorySettings = settingsViewModel::saveSensorySettings
                 )
