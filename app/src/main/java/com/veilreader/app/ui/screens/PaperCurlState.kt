@@ -430,11 +430,12 @@ internal fun PaperCurlOverlay(
     tone: MaterialPageTone = MaterialPageTone.LIGHT,
     modifier: Modifier = Modifier
 ) {
+    LaunchedEffect(state, patina, tone) {
+        state.materialEngine.setPatina(patina)
+        state.materialEngine.setTone(tone)
+    }
+
     if (state.usingMaterialEngine()) {
-        LaunchedEffect(state, patina, tone) {
-            state.materialEngine.setPatina(patina)
-            state.materialEngine.setTone(tone)
-        }
         MaterialPageOverlay(
             state = state.materialEngine,
             modifier = modifier
