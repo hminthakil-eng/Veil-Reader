@@ -65,6 +65,19 @@ Reference concepts:
 
 This is a useful Compose architecture reference but its renderer is a 2D illusion, not the quality ceiling for Veil Paper.
 
+### eschao/android-PageFlip — Apache-2.0
+https://github.com/eschao/android-PageFlip
+
+Reference concepts:
+- OpenGL ES 2.0 page-flip pipeline.
+- touch-to-origin geometry with explicit fold points.
+- configurable mesh pixels rather than a single fixed polygon budget.
+- semi-cylinder perimeter ratio derived from touch distance.
+- explicit fold-front, fold-back, edge-shadow and base-shadow buffers.
+- constrained page-curl angle and configurable back mask.
+
+Veil takeaway: the current static GPU grid is safe and inexpensive, but future quality scaling should be tied to screen geometry/curvature error rather than RAM tier alone.
+
 ### Nodlik/StPageFlip — MIT
 https://github.com/Nodlik/StPageFlip
 
@@ -168,6 +181,9 @@ Irurueta explicitly distinguishes:
 Veil GPU curl now uses `GLTextureView` from the already-installed irurueta GL utils dependency.
 
 This removes the separate-surface Z-order hack and keeps Paper in the normal Reader hierarchy.
+
+
+GPU failure status is surfaced directly to the persistent debug HUD as `GPU FAILED` or `GPU UNSUPPORTED`; v2 never hides the failure by substituting an older renderer.
 
 ## Geometry
 
@@ -377,23 +393,22 @@ Android Pager's canonical behavior is target-based:
 - snap animation;
 - max page distance.
 
-Veil approximates this with:
-- direct drag response 0.94 -> 0.98;
-- distance threshold;
-- flick threshold;
-- 88–168ms completion.
+Veil keeps its intentionally faster direct Slide response, but the release-velocity path now uses the same high-refresh smoothing/reversal-trust strategy as hardened Paper instead of replacing history with one instantaneous sample.
 
-It is deliberately faster than Paper, but its instantaneous velocity estimator is simpler than Android Pager's targeted fling model.
+The remaining gap is target animation: completion timing is still a compact Veil policy rather than Android Pager's decay + targeted-snap model.
 
-**Action after Paper is stable:** replace ad-hoc completion timing with a pure targeted-snap model while preserving one-page maximum and Readium locator ownership.
+**Action after Paper is stable:** consider a pure targeted-snap model while preserving one-page maximum and Readium locator ownership.
 
-## Slide snapshot risk — P2
+## Slide source texture — FIXED
 
-Slide still captures with `View.draw(Canvas)` on begin.
+Slide previously captured with `View.draw(Canvas)` on begin.
 
-Unlike Paper, source snapshot prewarm has not yet been promoted here.
+It now uses the same off-gesture warm-source strategy as Paper:
+- capture after the accepted Slide mode/page has painted;
+- reuse the prepared bitmap on drag start;
+- refresh after each transaction returns idle.
 
-**Action:** apply the same warm-snapshot strategy after Paper build evidence confirms it is stable.
+This changes texture lifecycle only; Slide motion remains free of Paper material physics.
 
 ---
 
@@ -506,17 +521,18 @@ Veil's accepted appearance provides:
 - stale unresolved `dropBackBufferIfCold()` compile symbol.
 - invisible Reduced Motion settle latency.
 - source Paper snapshot captured on first drag instead of prewarmed.
+- Slide source snapshot captured on first drag instead of prewarmed.
+- single-sample Slide release velocity instability at high refresh rates.
+- GPU renderer failure not distinguishable from an idle/blank curl in the HUD.
 
 ## P1 — open until build/device evidence
 - validate `View.draw()` WebView snapshot reliability; migrate to PixelCopy-style cache if needed.
 - solve pointer-distance/curl-arc/binding geometry closer to harism without theatrical distortion.
 - evaluate subtle perspective/MVP projection.
 - validate destination/backside semantic mapping in forward/backward and RTL.
-- make GPU failure reason externally observable in the HUD if hardware exposes a driver failure.
 
 ## P2 — after Paper hardware GREEN
 - move Slide to targeted snap/decay model closer to Android Pager.
-- prewarm Slide snapshots.
 - decide whether explicit geometric self-shadow is worth GPU cost.
 - consider hard-page density only for covers/special surfaces, not ordinary text pages.
 
