@@ -111,6 +111,10 @@ internal class PaperCurlInputListener(
                     direction = spec.direction
                 )
 
+        if (visualReady) {
+            state.prepareMaterialTapGrip()
+        }
+
         onInteraction()
         val moved = navigate(spec.direction)
         if (!moved) {
