@@ -608,6 +608,38 @@ fun ReaderScreen(
             paperCurlState.prepareBuffer(nav.publicationView)
         }
     }
+    LaunchedEffect(
+        navigator,
+        readerSessionReady,
+        presentedReaderAppearance,
+        reducedMotion,
+        slidePageState.active,
+        readerSessionInstanceId
+    ) {
+        if (
+            !readerSessionReady ||
+            opened.format != BookFormat.EPUB ||
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.SLIDE ||
+            reducedMotion
+        ) {
+            slidePageState.releaseBufferIfIdle()
+            return@LaunchedEffect
+        }
+        if (slidePageState.active) return@LaunchedEffect
+
+        val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
+        delay(VeilMotion.FRAME_SETTLE_MS * 2)
+        if (
+            !slidePageState.active &&
+            readerAsyncResultBelongsToSession(
+                currentSessionInstanceId = latestReaderSessionInstanceId.value,
+                expectedSessionInstanceId = readerSessionInstanceId
+            )
+        ) {
+            slidePageState.prepareBuffer(nav.publicationView)
+        }
+    }
+
     val latestTapGrid = rememberUpdatedState(readerTapGrid)
     val latestHardwareKeys = rememberUpdatedState(readerHardwareKeys)
     var showTts by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
