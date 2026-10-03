@@ -131,7 +131,9 @@ internal class PaperCurlInputListener(
         onCommittedTurn()
         if (visualReady) {
             completionJob = scope.launch {
-                delay(VeilMotion.PAGE_REVEAL_MS)
+                if (!isReducedMotion()) {
+                    delay(VeilMotion.PAGE_REVEAL_MS)
+                }
                 state.animateTapTurn()
                 state.clear()
                 resetDrag()
