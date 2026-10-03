@@ -1,6 +1,6 @@
 workflows:
   VEIL-APK:
-    name: VEIL READER — APK BUILD
+    name: 1 - VEIL UI APK
     instance_type: mac_mini_m2
     max_build_duration: 45
 
@@ -95,16 +95,17 @@ workflows:
         script: |
           cd "$CM_BUILD_DIR"
           ./gradlew :app:assembleDebug --stacktrace --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$CM_BUILD_DIR/Veil-UI.apk"
 
     artifacts:
+      - Veil-UI.apk
       - unit-test.log
       - android-lint.log
-      - app/build/outputs/apk/debug/*.apk
       - app/build/reports/**
       - app/build/test-results/**
 
   VEIL-FINAL-VERIFY:
-    name: VEIL READER — FINAL VERIFY + APK
+    name: 2 - VEIL FULL CHECK
     instance_type: mac_mini_m2
     max_build_duration: 60
 
@@ -186,6 +187,7 @@ workflows:
         script: |
           cd "$CM_BUILD_DIR"
           ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --stacktrace --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$CM_BUILD_DIR/Veil-UI.apk"
 
       - name: Verify AndroidJUnitRunner packaging
         script: |
@@ -244,8 +246,8 @@ workflows:
           ./gradlew :benchmark:assembleBenchmarkBenchmark --stacktrace --no-daemon
 
     artifacts:
+      - Veil-UI.apk
       - full-verify.log
-      - app/build/outputs/apk/debug/*.apk
       - app/build/outputs/apk/androidTest/**/*.apk
       - benchmark/build/outputs/**/*.apk
       - app/build/reports/**
