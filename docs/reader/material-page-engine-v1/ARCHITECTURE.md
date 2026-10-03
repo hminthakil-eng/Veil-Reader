@@ -78,8 +78,9 @@ Material-specific sound/haptic cues are modeled as data for:
 
 The policy reacts to material and release velocity. The engine exposes a `MaterialPageSensorySink` integration hook.
 
-**Implemented:** cue identity/policy and engine emission points.  
-**Not yet promoted to production playback:** a material-specific platform audio/haptic adapter. Existing Reader sensory feedback remains authoritative until device tuning establishes safe amplitude and character. This avoids shipping synthetic cues that have not been judged on real hardware.
+**Implemented:** cue identity/policy, engine emission points, and a material-specific adapter through the existing `VeilSensoryFeedback` lifecycle/settings layer. Material sounds are synthesized locally and remain governed by the existing optional interaction-sound setting and volume cap. Haptics reuse system feedback primitives so OEM/system accessibility behavior stays authoritative.
+
+**Still pending real-device tuning:** final acoustic balance, OEM haptic differentiation, and whether any material needs a quieter or simpler production profile. Release rollout remains off until that judgment is made.
 
 ### Reduced Motion
 
@@ -103,7 +104,7 @@ Slide deliberately does not use the material engine. Its response now tracks the
 
 The v1 renderer avoids per-frame bitmap allocation. Page capture uses a reusable ARGB buffer. Render scratch resources are remembered once. Mesh complexity is bounded to 12–36 strips (26 canonical). Geometry is O(n) with no recursive solver.
 
-The largest remaining performance uncertainty is GPU/Canvas cost of 26 perspective strip mappings on representative mid-range Android phones. That requires real-device frame timing; source inspection cannot settle it reliably.
+The live renderer uses a reusable primitive mesh buffer instead of allocating strip/point objects each frame, and the selected Paper snapshot buffer is prewarmed after Reader stabilization so first-touch allocation is avoided in the normal path. The largest remaining performance uncertainty is GPU/Canvas cost of 26 perspective strip mappings on representative mid-range Android phones. That requires real-device frame timing; source inspection cannot settle it reliably.
 
 ## Correctness ownership
 
