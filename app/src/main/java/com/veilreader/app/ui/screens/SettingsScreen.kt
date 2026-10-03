@@ -194,6 +194,27 @@ fun SettingsScreen(
         onSaveReaderAppearance(value)
     }
 
+    LaunchedEffect(
+        materialPageReviewEnabled,
+        appearanceDraft.readingMode,
+        appearanceDraft.pageTurnStyle
+    ) {
+        if (
+            BuildConfig.DEBUG &&
+            materialPageReviewEnabled &&
+            (
+                appearanceDraft.readingMode != ReaderReadingMode.PAGED ||
+                    appearanceDraft.pageTurnStyle != PageTurnStyle.PAPER
+                )
+        ) {
+            commitReaderAppearance { current ->
+                current
+                    .withReadingMode(ReaderReadingMode.PAGED)
+                    .withPageTurnStyle(PageTurnStyle.PAPER)
+            }
+        }
+    }
+
     val appearance = appearanceDraft
     val highContrast = LocalVeilHighContrast.current
     val shellAccent = if (highContrast) MaterialTheme.colorScheme.primary else VeilPalette.Brass
