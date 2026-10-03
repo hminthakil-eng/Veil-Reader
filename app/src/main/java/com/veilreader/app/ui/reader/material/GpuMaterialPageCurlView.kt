@@ -64,8 +64,9 @@ internal class GpuMaterialPageCurlView(
         (
             context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
             )?.isLowRamDevice == true
-    private val meshColumns = if (lowMemoryDevice) 48 else 72
-    private val meshRows = if (lowMemoryDevice) 8 else 14
+    private val meshQuality = gpuPageMeshQuality(lowMemoryDevice)
+    private val meshColumns = meshQuality.columns
+    private val meshRows = meshQuality.rows
     private var submittedFrame: SubmittedFrame? = null
     private var lastSubmittedActive = false
     private var frontTextureDirty = true
