@@ -31,31 +31,19 @@ internal enum class MaterialPageTone {
 }
 
 /**
- * Controlled rollout gate. Production stays on the proven legacy curl until source
- * verification and real-device judgment explicitly promote Material Page Engine v1.
+ * Controlled rollout gate for the single GPU Material Page Engine.
+ * Release remains disabled until build/device verification explicitly promotes v2.
  */
 internal object MaterialPageEngineRollout {
     const val DEFAULT_ENABLED: Boolean = false
-    const val DEFAULT_GPU_RENDERER_ENABLED: Boolean = false
-
     @Volatile
     private var debugOverride: Boolean? = null
-
-    @Volatile
-    private var debugGpuRendererOverride: Boolean? = null
 
     @Volatile
     private var previewPreset: MaterialPagePreset = MaterialPagePreset.MATTE_BOOK
 
     fun isEnabled(): Boolean =
         debugOverride ?: if (BuildConfig.DEBUG) true else DEFAULT_ENABLED
-
-    fun useGpuRenderer(): Boolean =
-        debugGpuRendererOverride ?: if (BuildConfig.DEBUG) {
-            true
-        } else {
-            DEFAULT_GPU_RENDERER_ENABLED
-        }
 
     fun selectedProfile(): MaterialPageProfile =
         MaterialPageProfiles.canonical(previewPreset)
@@ -64,10 +52,6 @@ internal object MaterialPageEngineRollout {
 
     internal fun setDebugOverride(enabled: Boolean?) {
         debugOverride = enabled
-    }
-
-    internal fun setGpuRendererOverride(enabled: Boolean?) {
-        debugGpuRendererOverride = enabled
     }
 
     internal fun setPreviewPreset(preset: MaterialPagePreset) {
