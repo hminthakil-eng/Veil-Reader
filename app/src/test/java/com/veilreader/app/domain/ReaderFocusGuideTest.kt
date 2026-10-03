@@ -65,20 +65,32 @@ class ReaderFocusGuideTest {
     }
 
     @Test
-    fun `quick toggle preserves tuning and returns to focus window`() {
+    fun `quick toggle preserves tuning and restores prior active mode`() {
         val tuned = ReaderFocusGuideSettings(
             mode = ReaderFocusGuideMode.LINE,
             verticalPosition = 0.62,
             bandFraction = 0.22,
             dimStrength = 0.41
-        )
+        ).normalized()
         val off = tuned.toggled()
         val on = off.toggled()
 
         assertEquals(ReaderFocusGuideMode.OFF, off.mode)
+        assertEquals(ReaderFocusGuideMode.LINE, off.lastActiveMode)
         assertEquals(0.62, off.verticalPosition, 0.0001)
-        assertEquals(ReaderFocusGuideMode.WINDOW, on.mode)
+        assertEquals(ReaderFocusGuideMode.LINE, on.mode)
         assertEquals(0.22, on.bandFraction, 0.0001)
         assertEquals(0.41, on.dimStrength, 0.0001)
+    }
+
+    @Test
+    fun `invalid resume mode fails calm to window`() {
+        val normalized = ReaderFocusGuideSettings(
+            mode = ReaderFocusGuideMode.OFF,
+            lastActiveMode = ReaderFocusGuideMode.OFF
+        ).normalized()
+
+        assertEquals(ReaderFocusGuideMode.WINDOW, normalized.lastActiveMode)
+        assertEquals(ReaderFocusGuideMode.WINDOW, normalized.toggled().mode)
     }
 }
