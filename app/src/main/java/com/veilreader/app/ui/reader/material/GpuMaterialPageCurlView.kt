@@ -1049,9 +1049,9 @@ internal fun GpuMaterialPageOverlay(
     }
     val rendererFailed = remember { mutableStateOf(false) }
     if (!supported || rendererFailed.value || state.reducedMotion) {
-        // Reduced Motion intentionally bypasses geometric curl; the existing
-        // Material fallback renders the restrained flat alpha/edge transition.
-        MaterialPageOverlay(state = state, modifier = modifier)
+        // v2 has no legacy/Canvas curl fallback. Reduced Motion and GPU failure
+        // keep semantic navigation available but deliberately render no curl so
+        // device review can never confuse an old engine with the GPU path.
         return
     }
 
