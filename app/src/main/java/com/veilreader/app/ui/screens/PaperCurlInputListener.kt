@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.theme.VeilMotion
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
@@ -28,7 +29,7 @@ import org.readium.r2.shared.publication.Locator
 internal fun shouldCapturePaperTurnSnapshot(
     reducedMotion: Boolean
 ): Boolean =
-    !reducedMotion
+    MaterialPageEngineRollout.isEnabled() || !reducedMotion
 
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
@@ -99,6 +100,8 @@ internal class PaperCurlInputListener(
     }
 
     private fun performDiscreteTurn(spec: TurnSpec) {
+        state.configureReducedMotion(isReducedMotion())
+        state.configureReducedMotion(isReducedMotion())
         val visualReady =
             shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
                 state.begin(
@@ -223,7 +226,7 @@ internal class PaperCurlInputListener(
                     // Persist/count and emit sensory feedback only after a real commit.
                     turnCommitted = true
                     onCommittedTurn()
-                    if (!isReducedMotion()) {
+                    if (shouldAnimatePaperVisual()) {
                         state.animateComplete(
                             releaseVelocityDpPerSec =
                                 releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -233,8 +236,8 @@ internal class PaperCurlInputListener(
 
                 previewNavigationSucceeded -> {
                     restoreDragStart(spec)
-                    if (!isReducedMotion()) {
-                        delay(VeilMotion.PAGE_REVEAL_MS)
+                    if (shouldAnimatePaperVisual()) {
+                        if (!isReducedMotion()) delay(VeilMotion.PAGE_REVEAL_MS)
                         state.animateCancel()
                     }
                 }
@@ -246,7 +249,7 @@ internal class PaperCurlInputListener(
                     if (moved) {
                         turnCommitted = true
                         onCommittedTurn()
-                        if (state.active && !isReducedMotion()) {
+                        if (state.active && shouldAnimatePaperVisual()) {
                             state.animateComplete(
                                 releaseVelocityDpPerSec =
                                     releaseVelocityPxPerSec / density.coerceAtLeast(0.1f)
@@ -254,14 +257,14 @@ internal class PaperCurlInputListener(
                         }
                     } else {
                         onBoundaryHit(spec.side)
-                        if (state.active && !isReducedMotion()) {
+                        if (state.active && shouldAnimatePaperVisual()) {
                             state.animateBoundaryBounce()
                         }
                     }
                 }
 
                 else -> {
-                    if (state.active && !isReducedMotion()) state.animateCancel()
+                    if (state.active && shouldAnimatePaperVisual()) state.animateCancel()
                 }
             }
 
@@ -451,6 +454,9 @@ internal class PaperCurlInputListener(
 
     private fun paperModeEnabled(): Boolean =
         !navigator.overflow.value.scroll && isEnabled()
+
+    private fun shouldAnimatePaperVisual(): Boolean =
+        MaterialPageEngineRollout.isEnabled() || !isReducedMotion()
 
     private fun isMostlyHorizontal(event: DragEvent): Boolean {
         val view = navigator.publicationView
