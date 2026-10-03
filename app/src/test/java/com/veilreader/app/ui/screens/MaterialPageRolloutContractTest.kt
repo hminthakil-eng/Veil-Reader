@@ -21,7 +21,8 @@ class MaterialPageRolloutContractTest {
             assertFalse(MaterialPageEngineRollout.DEFAULT_ENABLED)
             assertTrue(BuildConfig.DEBUG)
             assertTrue(MaterialPageEngineRollout.isEnabled())
-            assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = true))
+            assertFalse(shouldCapturePaperTurnSnapshot(reducedMotion = true))
+            assertTrue(shouldCapturePaperTurnSnapshot(reducedMotion = false))
 
             MaterialPageEngineRollout.setDebugOverride(false)
             assertFalse(MaterialPageEngineRollout.isEnabled())
