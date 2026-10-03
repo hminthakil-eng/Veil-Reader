@@ -272,10 +272,10 @@ internal fun SlidePageOverlay(
 internal fun slideHorizontalDragResponse(progress: Float): Float {
     val t = progress.coerceIn(0f, 1f)
     val smooth = t * t * (3f - 2f * t)
-    // Keep Slide immediate but not mechanically glued to the pointer. The small
-    // residual weighting preserves continuity with the settle phase and avoids a
-    // last-pixel snap as the gesture approaches full travel.
-    return 0.82f + smooth * 0.16f
+    // Slide should feel nearly direct from the first meaningful movement while
+    // retaining a tiny amount of headroom for the completion settle. This keeps it
+    // clearly distinct from Paper resistance without becoming mechanically glued.
+    return 0.94f + smooth * 0.04f
 }
 
 /**
