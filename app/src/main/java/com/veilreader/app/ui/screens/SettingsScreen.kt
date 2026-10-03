@@ -118,6 +118,9 @@ fun SettingsScreen(
     var materialPageReviewPreset by remember {
         mutableStateOf(MaterialPageEngineRollout.selectedPreset())
     }
+    var gpuPageRendererEnabled by remember {
+        mutableStateOf(MaterialPageEngineRollout.useGpuRenderer())
+    }
     var tapGridDraft by remember { mutableStateOf(settings.readerTapGrid) }
     var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
     var hardwareKeysDraft by remember { mutableStateOf(settings.readerHardwareKeys) }
@@ -877,6 +880,15 @@ fun SettingsScreen(
                 )
 
                 if (materialPageReviewEnabled) {
+                    SettingsSwitchRow(
+                        title = "GPU renderer v2",
+                        subtitle = "A/B between the new GPU mesh renderer and the Canvas v1 renderer while keeping the same Paper physics and navigation transaction.",
+                        checked = gpuPageRendererEnabled,
+                        onCheckedChange = { enabled ->
+                            gpuPageRendererEnabled = enabled
+                            MaterialPageEngineRollout.setGpuRendererOverride(enabled)
+                        }
+                    )
                     Text(
                         "Review material",
                         style = MaterialTheme.typography.labelLarge
