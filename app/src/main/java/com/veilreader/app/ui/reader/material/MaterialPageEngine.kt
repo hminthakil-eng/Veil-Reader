@@ -201,6 +201,9 @@ internal class MaterialPageEngineState(
 
     internal fun segmentCountForRender(): Int = renderSegmentCount
 
+    internal fun densityForRender(): Float =
+        density.takeIf { it.isFinite() }?.coerceIn(0.75f, 4f) ?: 1f
+
     suspend fun animateTapTurn() {
         if (!active) return
         sensorySink?.emit(
@@ -536,6 +539,7 @@ internal fun MaterialPageOverlay(
     val reducedMotion = state.reducedMotion
     val patina = state.patina
     val tone = state.tone
+    val renderDensity = state.densityForRender()
 
     Canvas(modifier.fillMaxSize()) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
@@ -554,7 +558,7 @@ internal fun MaterialPageOverlay(
 
             scratch.detailPaint.color = android.graphics.Color.BLACK
             scratch.detailPaint.alpha = 14
-            scratch.detailPaint.strokeWidth = 1.25f
+            scratch.detailPaint.strokeWidth = 0.42f * renderDensity
             val edgeX = if (side == MaterialPageSide.RIGHT) {
                 bitmap.width.toFloat() - 1f
             } else {
@@ -665,7 +669,7 @@ internal fun MaterialPageOverlay(
             scratch.source[6] = sourceLeft
             scratch.source[7] = pageHeight
 
-            val seamOverlapPx = 0.42f
+            val seamOverlapPx = 0.18f * renderDensity
             val topDx = topRightX - topLeftX
             val topDy = topRightY - topLeftY
             val topLength =
@@ -874,7 +878,7 @@ internal fun MaterialPageOverlay(
                         255f
                     ).roundToInt().coerceIn(0, 122)
             scratch.detailPaint.strokeWidth =
-                0.65f + freeEdgeBody * 1.85f
+                (0.30f + freeEdgeBody * 0.65f) * renderDensity
             native.drawLine(
                 freeTopX,
                 freeTopY,
@@ -898,7 +902,8 @@ internal fun MaterialPageOverlay(
                 .coerceIn(0, 52)
         scratch.detailPaint.color = android.graphics.Color.BLACK
         scratch.detailPaint.alpha = contactAlpha
-        scratch.detailPaint.strokeWidth = 2.2f + edgeBody * 2.4f
+        scratch.detailPaint.strokeWidth =
+            (0.80f + edgeBody * 0.80f) * renderDensity
         native.drawLine(
             creaseTopX,
             creaseTopY,
@@ -912,7 +917,8 @@ internal fun MaterialPageOverlay(
         val shadowDirection =
             if (side == MaterialPageSide.RIGHT) 1f else -1f
         for (step in 1..3) {
-            val distance = step * step * 3.2f
+            val distance =
+                step * step * 1.10f * renderDensity
             val falloff = 1f / (step.toFloat() * step.toFloat())
             scratch.detailPaint.color = android.graphics.Color.BLACK
             scratch.detailPaint.alpha = (
@@ -921,7 +927,8 @@ internal fun MaterialPageOverlay(
                     (0.035f + (1f - profile.optics.roughness) * 0.025f) *
                     255f
                 ).roundToInt().coerceIn(0, 18)
-            scratch.detailPaint.strokeWidth = 2.5f + step * 2.5f
+            scratch.detailPaint.strokeWidth =
+                (0.80f + step * 0.80f) * renderDensity
             native.drawLine(
                 creaseTopX + shadowDirection * distance,
                 creaseTopY,
@@ -938,9 +945,14 @@ internal fun MaterialPageOverlay(
         scratch.detailPaint.color =
             materialPageToneAdjustedArgb(profile.optics.edgeArgb, tone).toInt()
         scratch.detailPaint.alpha = edgeAlpha
-        scratch.detailPaint.strokeWidth = 0.9f + edgeBody * 0.9f
+        scratch.detailPaint.strokeWidth =
+            (0.32f + edgeBody * 0.32f) * renderDensity
         val edgeOffset =
-            if (side == MaterialPageSide.RIGHT) -1.2f else 1.2f
+            if (side == MaterialPageSide.RIGHT) {
+                -0.40f * renderDensity
+            } else {
+                0.40f * renderDensity
+            }
         native.drawLine(
             creaseTopX + edgeOffset,
             creaseTopY,
