@@ -32,11 +32,9 @@ data class ReaderTapGrid(
     fun reset(): ReaderTapGrid = ReaderTapGrid()
 }
 
-fun defaultReaderTapAction(zone: ReaderTapZone): ReaderTapAction {
-    @Suppress("UNUSED_PARAMETER")
-    val ignored = zone
-    return ReaderTapAction.VEIL_DEFAULT
-}
+@Suppress("UNUSED_PARAMETER")
+fun defaultReaderTapAction(zone: ReaderTapZone): ReaderTapAction =
+    ReaderTapAction.VEIL_DEFAULT
 
 fun defaultReaderTapActions(): Map<ReaderTapZone, ReaderTapAction> =
     ReaderTapZone.entries.associateWith(::defaultReaderTapAction)
