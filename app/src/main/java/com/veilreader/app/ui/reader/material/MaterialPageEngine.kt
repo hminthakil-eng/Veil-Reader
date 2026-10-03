@@ -543,8 +543,9 @@ internal class MaterialPageEngineState(
 
     fun releaseBufferIfIdle() {
         if (active || snapshot != null || backSnapshot != null) return
-        snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
-        backSnapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+        // Do not manually recycle buffers that may still be referenced by the GL
+        // render thread. Dropping ownership lets Android reclaim them once all
+        // in-flight frame references are gone.
         snapshotBuffer = null
         backSnapshotBuffer = null
     }
@@ -569,7 +570,6 @@ internal class MaterialPageEngineState(
             view = view
         ).also { resolved ->
             if (resolved != null && resolved !== snapshotBuffer) {
-                snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
                 snapshotBuffer = resolved
             }
         }
@@ -589,7 +589,6 @@ internal class MaterialPageEngineState(
             view = view
         ).also { resolved ->
             if (resolved != null && resolved !== backSnapshotBuffer) {
-                backSnapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
                 backSnapshotBuffer = resolved
             }
         }
