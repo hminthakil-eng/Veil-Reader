@@ -301,7 +301,15 @@ internal class PaperCurlInputListener(
      * the exact locator captured at drag start. A committed turn stays committed.
      */
     fun cancelPendingTurn(): Boolean {
-        if (!dragReserved && activeDrag == null) return false
+        if (!dragReserved && activeDrag == null) {
+            if (completionJob != null && state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
         if (turnCommitted) return false
         cancellationRequested = true
         val spec = activeDrag
@@ -336,15 +344,30 @@ internal class PaperCurlInputListener(
      * cancelled before an asynchronous restoration job can run.
      */
     fun forceCancelPendingTurn(): Boolean {
-        if (!dragReserved && activeDrag == null) return false
-        if (turnCommitted) return false
+        if (!dragReserved && activeDrag == null) {
+            if (completionJob != null || state.active) {
+                completionJob?.cancel()
+                state.clearImmediately()
+                resetDrag()
+                return true
+            }
+            return false
+        }
+        if (turnCommitted) {
+            completionJob?.cancel()
+            state.clearImmediately()
+            resetDrag()
+            return true
+        }
 
         cancellationRequested = true
         navigationJob?.cancel()
         completionJob?.cancel()
 
         val spec = activeDrag
-        if (spec != null && previewNavigationSucceeded) {
+        if (spec != null && dragStartLocator != null) {
+            // Restore the exact origin even if cancellation races the navigation job
+            // before previewNavigationSucceeded becomes observable.
             restoreDragStart(spec)
         }
         state.clearImmediately()
