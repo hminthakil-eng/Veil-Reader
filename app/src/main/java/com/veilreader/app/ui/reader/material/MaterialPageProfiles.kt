@@ -55,6 +55,21 @@ internal data class MaterialPageProfile(
     val sensory: MaterialPageSensoryProfile
 )
 
+internal fun materialPageBacksideContentAlpha(
+    profile: MaterialPageProfile,
+    patina: Float
+): Float {
+    val safePatina = patina.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+    val optics = profile.optics
+    return (
+        0.10f +
+            optics.translucency.coerceIn(0f, 1f) * 0.28f +
+            optics.inkGhosting.coerceIn(0f, 1f) * 0.42f -
+            optics.edgeBody.coerceIn(0f, 1f) * 0.035f -
+            safePatina * optics.patinaResponse.coerceIn(0f, 1f) * 0.025f
+        ).coerceIn(0.08f, 0.32f)
+}
+
 internal fun materialPageFrontSurfaceTintAlpha(
     profile: MaterialPageProfile,
     patina: Float
