@@ -284,7 +284,13 @@ internal fun materialPageGeometry(
     pullOriginY: Float = 0.5f,
     segmentCount: Int = 0
 ): MaterialPageFrame {
-    val buffer = MaterialPageMeshBuffer(maxSegments = segmentCount.coerceAtLeast(12))
+    val buffer = MaterialPageMeshBuffer(
+        maxSegments = if (segmentCount > 0) {
+            segmentCount.coerceAtLeast(12)
+        } else {
+            36
+        }
+    )
     updateMaterialPageMesh(
         buffer = buffer,
         width = width,
