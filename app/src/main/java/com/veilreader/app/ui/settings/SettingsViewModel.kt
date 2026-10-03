@@ -13,6 +13,7 @@ import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderTapGrid
+import com.veilreader.app.domain.ReaderTtsSettings
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -54,6 +55,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun saveReaderFocusGuide(settings: ReaderFocusGuideSettings) {
         viewModelScope.launch { store.saveReaderFocusGuide(settings) }
+    }
+
+    fun saveReaderTtsSettings(settings: ReaderTtsSettings) {
+        viewModelScope.launch { store.saveReaderTtsSettings(settings) }
     }
 
     fun saveFixedLayoutSpread(

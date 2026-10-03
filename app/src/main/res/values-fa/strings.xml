@@ -1283,4 +1283,24 @@
     <string name="reader_focus">تمرکز</string>
     <string name="reader_focus_on">راهنمای تمرکز روشن</string>
     <string name="reader_focus_off">راهنمای تمرکز خاموش</string>
+
+    <string name="reader_listen">شنیدن</string>
+    <string name="tts_title">خواندن با صدا</string>
+    <string name="tts_intro">متن کتاب را با صداهای Android و موتور TTS آگاه از ساختار کتاب در Readium بخوان.</string>
+    <string name="tts_start">شروع از متن قابل‌مشاهده</string>
+    <string name="tts_play">پخش</string>
+    <string name="tts_pause">مکث</string>
+    <string name="tts_stop">توقف</string>
+    <string name="tts_previous">جملهٔ قبلی</string>
+    <string name="tts_next">جملهٔ بعدی</string>
+    <string name="tts_speed">سرعت گفتار</string>
+    <string name="tts_pitch">زیر و بمی صدا</string>
+    <string name="tts_current">در حال خواندن</string>
+    <string name="tts_preparing">در حال آماده‌سازی صدا…</string>
+    <string name="tts_unsupported">این کتاب محتوای متنی قابل‌خواندن برای موتور TTS رسمی Readium ارائه نمی‌کند.</string>
+    <string name="tts_initialization_failed">موتور TTS دستگاه آماده نشد. دادهٔ صدای نصب‌شده را بررسی کن و دوباره تلاش کن.</string>
+    <string name="tts_missing_voice">دادهٔ صدای زبان انتخاب‌شده روی دستگاه نصب نیست.</string>
+    <string name="tts_install_voice">نصب دادهٔ صدا</string>
+    <string name="tts_playback_failed">پخش صدا به‌دلیل خطای موتور TTS یا محتوای کتاب متوقف شد.</string>
+    <string name="tts_follow_hint">Veil جملهٔ در حال خواندن را دنبال می‌کند، بدون اینکه آن را ورق‌زدن دستی حساب کند.</string>
 </resources>

@@ -21,6 +21,7 @@ import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
+import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.decodeReaderHardwareKeyAction
 import com.veilreader.app.domain.decodeReaderTapGrid
@@ -52,6 +53,7 @@ data class AppSettings(
     val readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     val readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
     val readerFocusGuide: ReaderFocusGuideSettings = ReaderFocusGuideSettings(),
+    val readerTts: ReaderTtsSettings = ReaderTtsSettings(),
     val fixedLayoutSpreads: Map<String, ReaderFixedLayoutSpread> = emptyMap(),
     val sensory: SensorySettings = SensorySettings(),
     val dailyGoalMinutes: Int = 20,
@@ -93,6 +95,8 @@ class SettingsStore(private val context: Context) {
         val focusGuidePosition = doublePreferencesKey("reader_focus_guide_position")
         val focusGuideBand = doublePreferencesKey("reader_focus_guide_band")
         val focusGuideDim = doublePreferencesKey("reader_focus_guide_dim")
+        val ttsSpeed = doublePreferencesKey("reader_tts_speed")
+        val ttsPitch = doublePreferencesKey("reader_tts_pitch")
         val fixedLayoutSpreads = stringPreferencesKey("reader_fixed_layout_spreads")
         val dailyGoalMinutes = intPreferencesKey("daily_goal_minutes")
         val sensoryHaptics = booleanPreferencesKey("sensory_haptics")
@@ -201,6 +205,10 @@ class SettingsStore(private val context: Context) {
                 bandFraction = prefs[Keys.focusGuideBand] ?: 0.18,
                 dimStrength = prefs[Keys.focusGuideDim] ?: 0.30
             ).normalized(),
+            readerTts = ReaderTtsSettings(
+                speed = prefs[Keys.ttsSpeed] ?: 1.0,
+                pitch = prefs[Keys.ttsPitch] ?: 1.0
+            ).normalized(),
             fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
                 prefs[Keys.fixedLayoutSpreads]
             ),
@@ -297,6 +305,14 @@ class SettingsStore(private val context: Context) {
             prefs[Keys.focusGuidePosition] = normalized.verticalPosition
             prefs[Keys.focusGuideBand] = normalized.bandFraction
             prefs[Keys.focusGuideDim] = normalized.dimStrength
+        }
+    }
+
+    suspend fun saveReaderTtsSettings(value: ReaderTtsSettings) {
+        val normalized = value.normalized()
+        context.veilSettingsDataStore.edit { prefs ->
+            prefs[Keys.ttsSpeed] = normalized.speed
+            prefs[Keys.ttsPitch] = normalized.pitch
         }
     }
 
