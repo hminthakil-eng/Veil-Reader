@@ -1299,6 +1299,8 @@
     <string name="tts_preparing">در حال آماده‌سازی صدا…</string>
     <string name="tts_unsupported">این کتاب محتوای متنی قابل‌خواندن برای موتور TTS رسمی Readium ارائه نمی‌کند.</string>
     <string name="tts_initialization_failed">موتور TTS دستگاه آماده نشد. دادهٔ صدای نصب‌شده را بررسی کن و دوباره تلاش کن.</string>
+    <string name="tts_missing_voice">دادهٔ صدای زبان انتخاب‌شده روی دستگاه نصب نیست.</string>
+    <string name="tts_install_voice">نصب دادهٔ صدا</string>
     <string name="tts_playback_failed">پخش صدا به‌دلیل خطای موتور TTS یا محتوای کتاب متوقف شد.</string>
     <string name="tts_follow_hint">Veil جملهٔ در حال خواندن را دنبال می‌کند، بدون اینکه آن را ورق‌زدن دستی حساب کند.</string>
 </resources>
