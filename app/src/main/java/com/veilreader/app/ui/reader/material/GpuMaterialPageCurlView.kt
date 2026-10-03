@@ -67,6 +67,7 @@ internal class GpuMaterialPageCurlView(
     private var uCylinderPosition = -1
     private var uCylinderTilt = -1
     private var uCylinderRadius = -1
+    private var uPageAspect = -1
     private var uSideSign = -1
     private var uFrontTint = -1
     private var uBackTint = -1
@@ -238,6 +239,17 @@ internal class GpuMaterialPageCurlView(
         )
         GLES20.glUniform1f(uCylinderTilt, curl.cylinderTilt)
         GLES20.glUniform1f(uCylinderRadius, curl.radius)
+        val bitmap = frame.bitmap
+        val pageAspect =
+            if (bitmap != null && bitmap.width > 0) {
+                bitmap.height.toFloat() / bitmap.width.toFloat()
+            } else {
+                1f
+            }
+        GLES20.glUniform1f(
+            uPageAspect,
+            pageAspect.takeIf { it.isFinite() }?.coerceIn(0.5f, 3f) ?: 1f
+        )
         GLES20.glUniform1f(uSideSign, curl.sideSign)
 
         val front = materialPageToneAdjustedArgb(optics.frontArgb, frame.tone)
@@ -415,6 +427,7 @@ internal class GpuMaterialPageCurlView(
         uCylinderPosition = GLES20.glGetUniformLocation(program, "uCylinderPosition")
         uCylinderTilt = GLES20.glGetUniformLocation(program, "uCylinderTilt")
         uCylinderRadius = GLES20.glGetUniformLocation(program, "uCylinderRadius")
+        uPageAspect = GLES20.glGetUniformLocation(program, "uPageAspect")
         uSideSign = GLES20.glGetUniformLocation(program, "uSideSign")
         uFrontTint = GLES20.glGetUniformLocation(program, "uFrontTint")
         uBackTint = GLES20.glGetUniformLocation(program, "uBackTint")
@@ -509,6 +522,7 @@ internal class GpuMaterialPageCurlView(
             uniform vec2 uCylinderPosition;
             uniform float uCylinderTilt;
             uniform float uCylinderRadius;
+            uniform float uPageAspect;
             uniform float uSideSign;
             uniform float uShadowPass;
 
@@ -522,12 +536,16 @@ internal class GpuMaterialPageCurlView(
                 bool turnFromRight = uSideSign > 0.0;
                 vec2 p = vec2(
                     turnFromRight ? aPosition.x : 1.0 - aPosition.x,
-                    aPosition.y
+                    aPosition.y * uPageAspect
+                );
+                vec2 cylinderPosition = vec2(
+                    uCylinderPosition.x,
+                    uCylinderPosition.y * uPageAspect
                 );
 
                 vec2 direction = normalize(vec2(uCylinderTilt, 1.0));
                 vec2 normal2 = vec2(direction.y, -direction.x);
-                vec2 relative = p - uCylinderPosition;
+                vec2 relative = p - cylinderPosition;
                 float distanceToAxis = dot(relative, normal2);
 
                 vec3 deformed = vec3(p, 0.0);
@@ -568,6 +586,8 @@ internal class GpuMaterialPageCurlView(
                     deformed.xy += normal2 * (0.008 + deformed.z * 0.13);
                     deformed.z = 0.0;
                 }
+
+                deformed.y /= max(uPageAspect, 0.0001);
 
                 if (!turnFromRight) {
                     deformed.x = 1.0 - deformed.x;
