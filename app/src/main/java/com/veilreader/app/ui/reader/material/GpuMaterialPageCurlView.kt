@@ -57,6 +57,12 @@ internal class GpuMaterialPageCurlView(
     )
 
     private val frameLock = Any()
+    private val lowMemoryDevice =
+        (
+            context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+            )?.isLowRamDevice == true
+    private val meshColumns = if (lowMemoryDevice) 48 else 72
+    private val meshRows = if (lowMemoryDevice) 8 else 14
     private var submittedFrame: SubmittedFrame? = null
     private var lastSubmittedActive = false
     private var frontTextureDirty = true
@@ -548,13 +554,13 @@ internal class GpuMaterialPageCurlView(
     }
 
     private fun createMesh() {
-        val vertexCount = (MESH_X + 1) * (MESH_Y + 1)
+        val vertexCount = (meshColumns + 1) * (meshRows + 1)
         val vertexData = FloatArray(vertexCount * FLOATS_PER_VERTEX)
         var vertexOffset = 0
-        for (y in 0..MESH_Y) {
-            val fy = y.toFloat() / MESH_Y.toFloat()
-            for (x in 0..MESH_X) {
-                val fx = x.toFloat() / MESH_X.toFloat()
+        for (y in 0..meshRows) {
+            val fy = y.toFloat() / meshRows.toFloat()
+            for (x in 0..meshColumns) {
+                val fx = x.toFloat() / meshColumns.toFloat()
                 vertexData[vertexOffset++] = fx
                 vertexData[vertexOffset++] = fy
                 vertexData[vertexOffset++] = fx
@@ -562,11 +568,11 @@ internal class GpuMaterialPageCurlView(
             }
         }
 
-        val indices = ShortArray(MESH_X * MESH_Y * 6)
+        val indices = ShortArray(meshColumns * meshRows * 6)
         var indexOffset = 0
-        val row = MESH_X + 1
-        for (y in 0 until MESH_Y) {
-            for (x in 0 until MESH_X) {
+        val row = meshColumns + 1
+        for (y in 0 until meshRows) {
+            for (x in 0 until meshColumns) {
                 val topLeft = y * row + x
                 val topRight = topLeft + 1
                 val bottomLeft = topLeft + row
@@ -680,9 +686,6 @@ internal class GpuMaterialPageCurlView(
         private const val FLOATS_PER_VERTEX = 4
         private const val VERTEX_STRIDE_BYTES =
             FLOATS_PER_VERTEX * FLOAT_BYTES
-        private const val MESH_X = 64
-        private const val MESH_Y = 12
-
         fun isSupported(context: Context): Boolean {
             val manager =
                 context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
