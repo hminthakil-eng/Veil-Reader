@@ -195,6 +195,54 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `extreme corner origin is softened but remains directionally faithful`() {
+        val top = materialPageStablePullOrigin(
+            startY = 0f,
+            heightPx = 1_600f
+        )
+        val bottom = materialPageStablePullOrigin(
+            startY = 1_600f,
+            heightPx = 1_600f
+        )
+        val center = materialPageStablePullOrigin(
+            startY = 800f,
+            heightPx = 1_600f
+        )
+
+        assertTrue(top in 0.04f..0.20f)
+        assertTrue(bottom in 0.80f..0.96f)
+        assertEquals(0.5f, center, 0.0001f)
+        assertEquals(
+            0.5f,
+            materialPageStablePullOrigin(Float.NaN, 1_600f),
+            0.0001f
+        )
+    }
+
+    @Test
+    fun `backside ink transmission stays restrained and material specific`() {
+        val glossy = materialPageBacksideContentAlpha(
+            MaterialPageProfiles.Glossy,
+            patina = 0.65f
+        )
+        val matte = materialPageBacksideContentAlpha(
+            MaterialPageProfiles.MatteBook,
+            patina = 0.65f
+        )
+        val manuscript = materialPageBacksideContentAlpha(
+            MaterialPageProfiles.Manuscript,
+            patina = 0.65f
+        )
+
+        assertTrue(glossy in 0.08f..0.32f)
+        assertTrue(matte in 0.08f..0.32f)
+        assertTrue(manuscript in 0.08f..0.32f)
+        assertNotEquals(glossy, matte)
+        assertNotEquals(matte, manuscript)
+        assertTrue(manuscript < glossy)
+    }
+
+    @Test
     fun `geometry stays finite through the full turn and reveals progressively`() {
         val progressValues = listOf(0.02f, 0.12f, 0.35f, 0.62f, 0.88f, 0.99f)
         var previousReveal = -1f
