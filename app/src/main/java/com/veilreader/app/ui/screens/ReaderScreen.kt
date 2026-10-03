@@ -90,6 +90,8 @@ import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReadingContinuitySummary
+import com.veilreader.app.domain.deriveReadingPace
+import com.veilreader.app.domain.estimateBookTimeRemaining
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.readerFocusGuideBand
@@ -605,6 +607,21 @@ fun ReaderScreen(
     val bookPassageVisits by bookPassageVisitsFlow.collectAsStateWithLifecycle(
         initialValue = library.passageVisitsFor(opened.book.id)
     )
+    val readingPaceProfiles by library.readingPaceProfiles.collectAsStateWithLifecycle()
+    val readingPace = remember(readingPaceProfiles, opened.book.id) {
+        deriveReadingPace(readingPaceProfiles[opened.book.id])
+    }
+    val timeRemainingEstimate = remember(
+        opened.book.totalPages,
+        progress,
+        readingPace
+    ) {
+        estimateBookTimeRemaining(
+            totalPages = opened.book.totalPages,
+            progress = progress,
+            pace = readingPace
+        )
+    }
     var readerMessage by remember(readerSessionInstanceId) { mutableStateOf<String?>(null) }
     var footnote by remember(opened.book.id, readerSessionInstanceId) {
         mutableStateOf<ReaderFootnote?>(null)
@@ -1839,6 +1856,19 @@ fun ReaderScreen(
     )
     val progressLabel = formatPercent(progress.coerceIn(0f, 1f))
     val progressDescription = stringResource(R.string.reader_percent_read_text, progressLabel)
+    val etaCenterLabel = timeRemainingEstimate
+        ?.takeIf { it.remainingPages > 0 }
+        ?.let { formatReaderEtaDuration(it.centerMillis) }
+    val etaRangeDescription = timeRemainingEstimate
+        ?.takeIf { it.remainingPages > 0 }
+        ?.let { estimate ->
+            stringResource(
+                R.string.reader_eta_range_description,
+                formatReaderEtaDuration(estimate.lowMillis),
+                formatReaderEtaDuration(estimate.highMillis),
+                readingPace?.observedIntervals ?: 0
+            )
+        }
     val focusGuideVisible =
         focusGuide.mode != ReaderFocusGuideMode.OFF &&
             !selectionModeActive &&
@@ -2033,15 +2063,37 @@ fun ReaderScreen(
                             )
                         }
 
-                        Text(
-                            progressLabel,
+                        Column(
+                            horizontalAlignment = Alignment.End,
+                            verticalArrangement = Arrangement.spacedBy(1.dp),
                             modifier = Modifier.semantics {
-                                contentDescription =
-                                    progressDescription
-                            },
-                            color = readerChromeAccent,
-                            style = MaterialTheme.typography.labelMedium
-                        )
+                                contentDescription = buildString {
+                                    append(progressDescription)
+                                    etaRangeDescription?.let {
+                                        append(". ")
+                                        append(it)
+                                    }
+                                }
+                            }
+                        ) {
+                            Text(
+                                progressLabel,
+                                color = readerChromeAccent,
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                            etaCenterLabel?.let { duration ->
+                                Text(
+                                    stringResource(
+                                        R.string.reader_eta_remaining,
+                                        duration
+                                    ),
+                                    color = readerChromeMuted,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
                     }
 
                     LinearProgressIndicator(
@@ -3259,6 +3311,31 @@ private fun ReaderFragmentHost(
             }
             onDisposePublication()
         }
+    }
+}
+
+@Composable
+private fun formatReaderEtaDuration(millis: Long): String {
+    if (millis <= 0L) {
+        return stringResource(R.string.reader_eta_minutes, 0)
+    }
+
+    val roundedMinutes = ((millis + 30_000L) / 60_000L)
+        .coerceAtLeast(1L)
+    val hours = roundedMinutes / 60L
+    val minutes = roundedMinutes % 60L
+
+    return if (hours > 0L) {
+        stringResource(
+            R.string.reader_eta_hours_minutes,
+            hours,
+            minutes
+        )
+    } else {
+        stringResource(
+            R.string.reader_eta_minutes,
+            minutes
+        )
     }
 }
 
