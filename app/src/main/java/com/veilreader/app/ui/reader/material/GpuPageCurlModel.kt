@@ -26,6 +26,7 @@ internal fun gpuPageCurlFrame(
     progress: Float,
     verticalBias: Float,
     pullOriginY: Float,
+    diagonalPull: Float = 0f,
     profile: MaterialPageProfile,
     side: MaterialPageSide
 ): GpuPageCurlFrame {
@@ -34,6 +35,8 @@ internal fun gpuPageCurlFrame(
         verticalBias.takeIf { it.isFinite() }?.coerceIn(-0.18f, 0.18f) ?: 0f
     val origin =
         pullOriginY.takeIf { it.isFinite() }?.coerceIn(0.04f, 0.96f) ?: 0.5f
+    val diagonal =
+        diagonalPull.takeIf { it.isFinite() }?.coerceIn(-1f, 1f) ?: 0f
 
     val physics = profile.physics
     val optics = profile.optics
@@ -79,10 +82,11 @@ internal fun gpuPageCurlFrame(
     val tiltEnvelope = 0.20f + liftEnvelope * 0.80f
     val cylinderTilt = (
         (
-            cornerSignal * (0.14f + (1f - binding) * 0.08f) +
-                verticalSignal * 0.075f
+            cornerSignal * (0.10f + (1f - binding) * 0.06f) +
+                diagonal * 0.145f +
+                verticalSignal * 0.045f
             ) * tiltEnvelope
-        ).coerceIn(-0.24f, 0.24f)
+        ).coerceIn(-0.26f, 0.26f)
     val shadowStrength = (
         liftEnvelope *
             (0.11f +
