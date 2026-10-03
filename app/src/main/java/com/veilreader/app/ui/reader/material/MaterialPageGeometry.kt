@@ -43,7 +43,7 @@ internal data class MaterialPageFrame(
 internal class MaterialPageMeshBuffer(
     maxSegments: Int = 36
 ) {
-    private val capacity = maxSegments.coerceAtLeast(12)
+    private val capacity = maxSegments.coerceIn(12, 36)
 
     var segmentCount: Int = 0
     var foldX: Float = 0f
