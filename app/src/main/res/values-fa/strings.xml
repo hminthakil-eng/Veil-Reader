@@ -1239,4 +1239,22 @@
     <string name="manga_chapter_language_label">زبان (اختیاری)</string>
     <string name="manga_chapter_language_hint">برچسب BCP-47؛ برای مثال fa، en یا ja.</string>
     <string name="notice_manga_chapter_metadata_updated">جزئیات فصل به‌روزرسانی شد.</string>
+
+    <string name="settings_tap_matrix_title">نقشهٔ لمس</string>
+    <string name="settings_tap_matrix_description">برای هر ۹ ناحیهٔ صفحه رفتار جدا تعیین کن. با لمس هر خانه، عمل آن عوض می‌شود بدون اینکه محتوای کتاب تغییر کند.</string>
+    <string name="settings_tap_matrix_hint">صفحهٔ قبل و بعد همان حرکت فعال Veil را حفظ می‌کنند. «تعامل کتاب» آن ناحیه را به خود کتاب می‌سپارد تا لینک‌ها و رفتارهای اصلی کار کنند.</string>
+    <string name="settings_tap_matrix_reset">بازنشانی نقشهٔ لمس</string>
+    <string name="settings_tap_action_previous">صفحهٔ قبل</string>
+    <string name="settings_tap_action_controls">کنترل‌های خواننده</string>
+    <string name="settings_tap_action_next">صفحهٔ بعد</string>
+    <string name="settings_tap_action_renderer">تعامل کتاب</string>
+    <string name="settings_tap_zone_top_left">بالا چپ</string>
+    <string name="settings_tap_zone_top_center">بالا وسط</string>
+    <string name="settings_tap_zone_top_right">بالا راست</string>
+    <string name="settings_tap_zone_middle_left">وسط چپ</string>
+    <string name="settings_tap_zone_middle_center">مرکز</string>
+    <string name="settings_tap_zone_middle_right">وسط راست</string>
+    <string name="settings_tap_zone_bottom_left">پایین چپ</string>
+    <string name="settings_tap_zone_bottom_center">پایین وسط</string>
+    <string name="settings_tap_zone_bottom_right">پایین راست</string>
 </resources>
