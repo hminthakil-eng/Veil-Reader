@@ -99,7 +99,7 @@ internal fun shouldAnimateDirectionalNavigation(
 @OptIn(ExperimentalReadiumApi::class)
 internal class ReaderInputArbiter(
     private val contentTarget: InputListener?,
-    private val tapZones: InputListener?,
+    private val tapZones: ReaderTapZoneInputListener?,
     private val paper: InputListener?,
     private val slide: InputListener?,
     private val staticPaged: InputListener?,
@@ -138,9 +138,17 @@ internal class ReaderInputArbiter(
             return true
         }
 
-        if (tapZones?.onTap(event) == true) {
-            onTapOwner(ReaderTapOwner.TAP_MATRIX)
-            return true
+        when (tapZones?.routeTap(event)) {
+            ReaderTapZoneDisposition.CONSUMED -> {
+                onTapOwner(ReaderTapOwner.TAP_MATRIX)
+                return true
+            }
+            ReaderTapZoneDisposition.RENDERER -> {
+                onTapOwner(ReaderTapOwner.RENDERER)
+                return false
+            }
+            ReaderTapZoneDisposition.DEFER,
+            null -> Unit
         }
 
         if (paper?.onTap(event) == true) {
