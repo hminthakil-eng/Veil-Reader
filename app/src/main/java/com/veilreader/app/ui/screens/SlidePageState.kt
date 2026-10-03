@@ -134,6 +134,17 @@ internal class SlidePageState {
         active = false
     }
 
+    /** Debug/test inspection hook that exercises the real slide overlay. */
+    internal fun installInspectableFrame(
+        bitmap: Bitmap,
+        offsetFraction: Float
+    ) {
+        snapshot = bitmap
+        width = bitmap.width.toFloat()
+        offsetPx = width * offsetFraction.coerceIn(-1f, 1f)
+        active = true
+    }
+
     fun releaseBufferIfIdle() {
         if (active || snapshot != null) return
         snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
