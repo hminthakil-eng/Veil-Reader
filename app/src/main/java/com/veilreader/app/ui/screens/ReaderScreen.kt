@@ -99,6 +99,7 @@ import com.veilreader.app.ui.reader.readerHardwareAccessibilityActive
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
+import com.veilreader.app.ui.reader.tts.createReadiumReaderTtsSession
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
@@ -796,6 +797,30 @@ fun ReaderScreen(
         }
     }
 
+    val latestTtsCanPlay = rememberUpdatedState {
+        latestReaderSessionReady.value && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+            !closeInFlight && !rendererPreferencesSettling && !selectionModeActive &&
+            !showNotebook && !showAppearance && !showPdfZoom && pendingNoteHighlightId == null &&
+            footnote == null && !imageLoading && imageViewer == null &&
+            !readerHardwareAccessibilityActive(accessibilityManager)
+    }
+    val ttsSession = remember(opened.book.id, readerSessionInstanceId, lifecycle) {
+        val ownerId = readerSessionInstanceId
+        createReadiumReaderTtsSession(activity.applicationContext, opened) {
+            latestReaderSessionInstanceId.value == ownerId && latestTtsCanPlay.value()
+        }
+    }
+    DisposableEffect(ttsSession, lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_PAUSE || event == Lifecycle.Event.ON_STOP) ttsSession?.pause()
+        }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            ttsSession?.close()
+        }
+    }
+
     fun recordLocator(locator: Locator, event: ReaderLocatorEvent) {
         val json = locator.toVeilPersistedJson(opened.format)
         readerViewModel.onLocatorUpdate(
@@ -852,6 +877,7 @@ fun ReaderScreen(
     fun closeReader() {
         if (closeInFlight) return
         closeInFlight = true
+        ttsSession?.close()
 
         // A drag preview can already have moved the live navigator underneath its captured page.
         // Roll it back synchronously before reading currentLocator; otherwise Close can persist the
@@ -887,6 +913,7 @@ fun ReaderScreen(
                     bookId = opened.book.id,
                     sessionId = expectedSessionId
                 )
+                ttsSession?.awaitClosed()
                 awaitDurableReaderClose(
                     finalizeSession = { readerViewModel.closeBook(expectedSessionId) },
                     awaitDurability = library::flushWrites,

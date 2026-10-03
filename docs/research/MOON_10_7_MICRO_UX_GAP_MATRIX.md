@@ -25,7 +25,7 @@ Evidence levels:
 | Edge font-size gesture | right-edge swipe changes text size | Missing | Add opt-in EPUB-only gesture with live preview and accessibility guard |
 | Auto-scroll | auto-scroll controls and speed UI | Missing | Reader-owned velocity engine with pause-on-touch, reduced-motion policy and persistent speed |
 | Reading ruler | ruler controls and tap behavior | **W39 implemented as Veil Focus Guide** | Off/Focus Window/Reading Line, tunable position/height/dimming, quick Reader toggle, renderer-agnostic visual overlay that never owns touch. |
-| Full TTS reader | start/pause/next/prior, filters, notification controls, background guidance | Missing as a reader feature | Android TTS session engine, paragraph queue, media notification, sleep timer, filters |
+| Full TTS reader | start/pause/next/prior, filters, notification controls, background guidance | W42 offline session foundation; user-facing controls still missing | Owned Android backend over Readium content; W43 controls, voice/preferences, navigation, media notification and sleep timer remain; see `docs/handoffs/W42_TTS_FOUNDATION.md` |
 | Dictionary routing | dictionary selection/custom online routing/history | Missing | Selection action with installed-handler routing; optional user-defined URL template |
 | Chapter time remaining | chapter/book minutes remaining strings | Missing | Estimate from personal rolling reading speed; show uncertainty rather than fake precision |
 | TXT chapter regex | regular-expression chapter extraction | TXT not a supported core format | Add only after TXT/HTML ingestion contract; user-editable regex presets |
