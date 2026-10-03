@@ -10,11 +10,15 @@ import android.opengl.GLUtils
 import android.util.Log
 import android.view.View
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -67,6 +71,8 @@ internal class GpuMaterialPageCurlView(
     private var indexCount = 0
     private var viewportWidth = 0
     private var viewportHeight = 0
+    private var maxTextureSize = 0
+    private var failureReported = false
 
     private var aPosition = -1
     private var aTexCoord = -1
@@ -166,14 +172,20 @@ internal class GpuMaterialPageCurlView(
             GLES20.glEnable(GLES20.GL_DEPTH_TEST)
             GLES20.glDepthFunc(GLES20.GL_LEQUAL)
             GLES20.glClearColor(0f, 0f, 0f, 0f)
+            val textureLimit = IntArray(1)
+            GLES20.glGetIntegerv(
+                GLES20.GL_MAX_TEXTURE_SIZE,
+                textureLimit,
+                0
+            )
+            maxTextureSize = textureLimit[0].coerceAtLeast(1)
+            failureReported = false
             synchronized(frameLock) {
                 frontTextureDirty = true
                 backTextureDirty = true
             }
         }.onFailure { error ->
-            rendererFailed = true
-            Log.e(TAG, "GPU page renderer initialization failed", error)
-            post { onRendererFailure() }
+            failRenderer("GPU page renderer initialization failed", error)
         }
     }
 
@@ -193,6 +205,12 @@ internal class GpuMaterialPageCurlView(
         val frame = synchronized(frameLock) { submittedFrame } ?: return
         val bitmap = frame.bitmap ?: return
         if (!frame.active || bitmap.isRecycled) return
+        if (!textureFits(bitmap) || frame.backBitmap?.let { !textureFits(it) } == true) {
+            failRenderer(
+                "GPU page texture exceeds GL_MAX_TEXTURE_SIZE=$maxTextureSize"
+            )
+            return
+        }
         if (
             !materialPageSnapshotScaleIsSafe(
                 snapshotWidth = bitmap.width.toFloat(),
@@ -209,6 +227,11 @@ internal class GpuMaterialPageCurlView(
             frontBitmap = bitmap,
             backBitmap = frame.backBitmap
         )
+        val uploadError = GLES20.glGetError()
+        if (uploadError != GLES20.GL_NO_ERROR) {
+            failRenderer("GPU page texture upload failed: glError=$uploadError")
+            return
+        }
 
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, vertexBufferId)
         GLES20.glEnableVertexAttribArray(aPosition)
@@ -259,6 +282,35 @@ internal class GpuMaterialPageCurlView(
         GLES20.glDisableVertexAttribArray(aTexCoord)
         GLES20.glBindBuffer(GLES20.GL_ARRAY_BUFFER, 0)
         GLES20.glBindBuffer(GLES20.GL_ELEMENT_ARRAY_BUFFER, 0)
+    }
+
+    private fun textureFits(bitmap: Bitmap): Boolean =
+        maxTextureSize > 0 &&
+            bitmap.width <= maxTextureSize &&
+            bitmap.height <= maxTextureSize
+
+    private fun failRenderer(
+        message: String,
+        error: Throwable? = null
+    ) {
+        rendererFailed = true
+        if (error != null) {
+            Log.e(TAG, message, error)
+        } else {
+            Log.e(TAG, message)
+        }
+        if (!failureReported) {
+            failureReported = true
+            post { onRendererFailure() }
+        }
+    }
+
+    fun pauseRenderer() {
+        runCatching { onPause() }
+    }
+
+    fun resumeRenderer() {
+        runCatching { onResume() }
     }
 
     private fun bindFrameUniforms(frame: SubmittedFrame) {
@@ -805,6 +857,25 @@ internal fun GpuMaterialPageOverlay(
     }
 
     val highContrast = LocalVeilHighContrast.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val viewRef = remember { mutableStateOf<GpuMaterialPageCurlView?>(null) }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> viewRef.value?.resumeRenderer()
+                Lifecycle.Event.ON_PAUSE,
+                Lifecycle.Event.ON_STOP -> viewRef.value?.pauseRenderer()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            viewRef.value?.pauseRenderer()
+            viewRef.value = null
+        }
+    }
+
     val bitmap = state.snapshot
     val backBitmap = state.backSnapshot
     val active =
@@ -826,7 +897,9 @@ internal fun GpuMaterialPageOverlay(
                 onRendererFailure = {
                     rendererFailed.value = true
                 }
-            )
+            ).also { created ->
+                viewRef.value = created
+            }
         },
         modifier = modifier,
         update = { view ->
