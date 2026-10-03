@@ -50,9 +50,19 @@ internal class SlideNavigationInputListener(
 
     override fun onTap(event: TapEvent): Boolean {
         if (!slideModeEnabled()) return cancelPendingTurn()
-        if (completionJob != null || state.active || reserved) return true
         val spec = resolveEdgeTurn(event.point.x) ?: return false
-        performDiscreteTurn(spec)
+        return performDiscreteTurn(spec.direction)
+    }
+
+    fun performDiscreteTurn(direction: PaperTurnDirection): Boolean {
+        if (!slideModeEnabled()) return cancelPendingTurn()
+        if (completionJob != null || state.active || reserved) return true
+        performDiscreteTurn(
+            turnSpecFor(
+                direction,
+                navigator.overflow.value.readingProgression
+            )
+        )
         return true
     }
 
