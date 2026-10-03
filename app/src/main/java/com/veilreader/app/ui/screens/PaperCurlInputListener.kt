@@ -134,6 +134,9 @@ internal class PaperCurlInputListener(
                 if (!isReducedMotion()) {
                     delay(VeilMotion.PAGE_REVEAL_MS)
                 }
+                if (state.usingMaterialEngine()) {
+                    state.captureMaterialBack(navigator.publicationView)
+                }
                 state.animateTapTurn()
                 state.clear()
                 resetDrag()
@@ -412,6 +415,18 @@ internal class PaperCurlInputListener(
             navigationJob = scope.launch {
                 delay(VeilMotion.FRAME_SETTLE_MS)
                 previewNavigationSucceeded = navigate(spec.direction)
+                if (
+                    previewNavigationSucceeded &&
+                    state.usingMaterialEngine() &&
+                    !cancellationRequested
+                ) {
+                    // Let the destination compositor settle, then capture a second
+                    // reusable texture for the physical back face of the lifted leaf.
+                    delay(VeilMotion.FRAME_SETTLE_MS)
+                    if (!cancellationRequested) {
+                        state.captureMaterialBack(navigator.publicationView)
+                    }
+                }
             }
         }
         return true
