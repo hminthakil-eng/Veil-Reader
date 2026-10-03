@@ -25,7 +25,7 @@ Evidence levels:
 | Edge font-size gesture | right-edge swipe changes text size | Missing | Add opt-in EPUB-only gesture with live preview and accessibility guard |
 | Auto-scroll | auto-scroll controls and speed UI | Missing | Reader-owned velocity engine with pause-on-touch, reduced-motion policy and persistent speed |
 | Reading ruler | ruler controls and tap behavior | **W39 implemented as Veil Focus Guide** | Off/Focus Window/Reading Line, tunable position/height/dimming, quick Reader toggle, renderer-agnostic visual overlay that never owns touch. |
-| Full TTS reader | start/pause/next/prior, filters, notification controls, background guidance | Missing as a reader feature | Android TTS session engine, paragraph queue, media notification, sleep timer, filters |
+| Full TTS reader | start/pause/next/prior, filters, notification controls, background guidance | **W40 core implemented; background/session polish remains** | Official Readium 3.4 TTS navigator, start from visible text, play/pause/prev/next/stop, speed/pitch, spoken-utterance highlight, visual follow, missing-voice recovery, no manual page-turn credit. Background media service/notification and voice picker remain follow-up work. |
 | Dictionary routing | dictionary selection/custom online routing/history | Missing | Selection action with installed-handler routing; optional user-defined URL template |
 | Chapter time remaining | chapter/book minutes remaining strings | Missing | Estimate from personal rolling reading speed; show uncertainty rather than fake precision |
 | TXT chapter regex | regular-expression chapter extraction | TXT not a supported core format | Add only after TXT/HTML ingestion contract; user-editable regex presets |
@@ -59,7 +59,7 @@ Evidence levels:
 5. PDF annotation capability audit
 
 ### P1 — reading power
-6. TTS engine
+6. TTS engine — **W40 core implemented; background media/voice selection remain**
 7. Auto-scroll
 8. Dictionary routing
 9. Chapter/book time remaining
