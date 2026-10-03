@@ -68,6 +68,10 @@ internal class GpuMaterialPageCurlView(
     private var indexBufferId = 0
     private var frontTextureId = 0
     private var backTextureId = 0
+    private var frontTextureWidth = 1
+    private var frontTextureHeight = 1
+    private var backTextureWidth = 1
+    private var backTextureHeight = 1
     private var indexCount = 0
     private var viewportWidth = 0
     private var viewportHeight = 0
@@ -433,23 +437,58 @@ internal class GpuMaterialPageCurlView(
         }
 
         if (uploadFront) {
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, frontTextureId)
-            GLUtils.texImage2D(
-                GLES20.GL_TEXTURE_2D,
-                0,
-                frontBitmap,
-                0
+            uploadBitmapToTexture(
+                textureId = frontTextureId,
+                bitmap = frontBitmap,
+                front = true
             )
         }
 
         if (uploadBack && backBitmap != null && !backBitmap.isRecycled) {
-            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, backTextureId)
+            uploadBitmapToTexture(
+                textureId = backTextureId,
+                bitmap = backBitmap,
+                front = false
+            )
+        }
+    }
+
+    private fun uploadBitmapToTexture(
+        textureId: Int,
+        bitmap: Bitmap,
+        front: Boolean
+    ) {
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureId)
+        val currentWidth =
+            if (front) frontTextureWidth else backTextureWidth
+        val currentHeight =
+            if (front) frontTextureHeight else backTextureHeight
+
+        if (
+            currentWidth == bitmap.width &&
+            currentHeight == bitmap.height
+        ) {
+            GLUtils.texSubImage2D(
+                GLES20.GL_TEXTURE_2D,
+                0,
+                0,
+                0,
+                bitmap
+            )
+        } else {
             GLUtils.texImage2D(
                 GLES20.GL_TEXTURE_2D,
                 0,
-                backBitmap,
+                bitmap,
                 0
             )
+            if (front) {
+                frontTextureWidth = bitmap.width
+                frontTextureHeight = bitmap.height
+            } else {
+                backTextureWidth = bitmap.width
+                backTextureHeight = bitmap.height
+            }
         }
     }
 
@@ -458,6 +497,10 @@ internal class GpuMaterialPageCurlView(
         GLES20.glGenTextures(2, ids, 0)
         frontTextureId = ids[0]
         backTextureId = ids[1]
+        frontTextureWidth = 1
+        frontTextureHeight = 1
+        backTextureWidth = 1
+        backTextureHeight = 1
         configureTexture(frontTextureId)
         configureTexture(backTextureId)
     }
