@@ -717,7 +717,9 @@ internal fun GpuMaterialPageOverlay(
         GpuMaterialPageCurlView.isSupported(context)
     }
     val rendererFailed = remember { mutableStateOf(false) }
-    if (!supported || rendererFailed.value) {
+    if (!supported || rendererFailed.value || state.reducedMotion) {
+        // Reduced Motion intentionally bypasses geometric curl; the existing
+        // Material fallback renders the restrained flat alpha/edge transition.
         MaterialPageOverlay(state = state, modifier = modifier)
         return
     }
