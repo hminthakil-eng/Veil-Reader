@@ -65,6 +65,8 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderHardwareKeyAction
+import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderTapAction
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTapZone
@@ -85,6 +87,7 @@ fun SettingsScreen(
     onSetHighContrastEnabled: (Boolean) -> Unit,
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
     onSaveReaderTapGrid: (ReaderTapGrid) -> Unit,
+    onSaveReaderHardwareKeys: (ReaderHardwareKeyMap) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
@@ -95,6 +98,8 @@ fun SettingsScreen(
     var pendingAppearance by remember { mutableStateOf<ReaderAppearance?>(null) }
     var tapGridDraft by remember { mutableStateOf(settings.readerTapGrid) }
     var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
+    var hardwareKeysDraft by remember { mutableStateOf(settings.readerHardwareKeys) }
+    var pendingHardwareKeys by remember { mutableStateOf<ReaderHardwareKeyMap?>(null) }
 
     LaunchedEffect(settings.readerAppearance) {
         val persisted = settings.readerAppearance
@@ -116,6 +121,23 @@ fun SettingsScreen(
                 pendingTapGrid = null
             }
         }
+    }
+
+    LaunchedEffect(settings.readerHardwareKeys) {
+        val persisted = settings.readerHardwareKeys
+        when {
+            pendingHardwareKeys == null -> hardwareKeysDraft = persisted
+            persisted == pendingHardwareKeys -> {
+                hardwareKeysDraft = persisted
+                pendingHardwareKeys = null
+            }
+        }
+    }
+
+    fun commitReaderHardwareKeys(value: ReaderHardwareKeyMap) {
+        hardwareKeysDraft = value
+        pendingHardwareKeys = value
+        onSaveReaderHardwareKeys(value)
     }
 
     fun commitReaderTapGrid(value: ReaderTapGrid) {
@@ -483,6 +505,55 @@ fun SettingsScreen(
         }
 
         SettingsSection(
+            title = stringResource(R.string.settings_hardware_keys_title),
+            description = stringResource(R.string.settings_hardware_keys_description)
+        ) {
+            Text(
+                stringResource(R.string.settings_volume_up_key),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ChoiceRow(
+                entries = ReaderHardwareKeyAction.entries,
+                selected = hardwareKeysDraft.volumeUp,
+                label = { localizedHardwareKeyAction(it) },
+                onSelected = { action ->
+                    commitReaderHardwareKeys(
+                        hardwareKeysDraft.copy(volumeUp = action)
+                    )
+                }
+            )
+
+            Text(
+                stringResource(R.string.settings_volume_down_key),
+                style = MaterialTheme.typography.labelLarge
+            )
+            ChoiceRow(
+                entries = ReaderHardwareKeyAction.entries,
+                selected = hardwareKeysDraft.volumeDown,
+                label = { localizedHardwareKeyAction(it) },
+                onSelected = { action ->
+                    commitReaderHardwareKeys(
+                        hardwareKeysDraft.copy(volumeDown = action)
+                    )
+                }
+            )
+
+            Text(
+                stringResource(R.string.settings_hardware_keys_hint),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall
+            )
+            OutlinedButton(
+                onClick = {
+                    commitReaderHardwareKeys(ReaderHardwareKeyMap())
+                },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.settings_hardware_keys_reset))
+            }
+        }
+
+        SettingsSection(
             title = stringResource(R.string.settings_sound_title),
             description = stringResource(R.string.settings_sound_description)
         ) {
@@ -704,6 +775,17 @@ fun SettingsScreen(
         }
     }
 }
+
+@Composable
+private fun localizedHardwareKeyAction(action: ReaderHardwareKeyAction): String =
+    stringResource(
+        when (action) {
+            ReaderHardwareKeyAction.SYSTEM -> R.string.settings_hardware_action_system
+            ReaderHardwareKeyAction.PREVIOUS_PAGE -> R.string.settings_hardware_action_previous
+            ReaderHardwareKeyAction.NEXT_PAGE -> R.string.settings_hardware_action_next
+            ReaderHardwareKeyAction.TOGGLE_CONTROLS -> R.string.settings_hardware_action_controls
+        }
+    )
 
 @Composable
 private fun ReaderTapGridEditor(
