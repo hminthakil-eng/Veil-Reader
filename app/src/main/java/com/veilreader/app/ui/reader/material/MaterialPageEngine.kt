@@ -683,7 +683,14 @@ internal fun MaterialPageOverlay(
                 native.drawPath(scratch.path, scratch.shadePaint)
             }
 
-            val variationUnit = (((index * 37) % 11) - 5) / 5f
+            val sourceCenter =
+                (((sourceLeft + sourceRight) * 0.5f) / pageWidth.coerceAtLeast(1f))
+                    .coerceIn(0f, 1f)
+            val variationUnit =
+                kotlin.math.sin(
+                    sourceCenter * 73.0 +
+                        profile.preset.ordinal * 1.618
+                ).toFloat()
             val tonalAlpha = (
                 kotlin.math.abs(variationUnit) *
                     optics.grain *
@@ -720,17 +727,22 @@ internal fun MaterialPageOverlay(
 
             if (
                 isBackFacing &&
-                optics.directionalFiber > 0.35f &&
-                index % 2 == 0
+                optics.directionalFiber > 0.35f
             ) {
                 val centerTopX = (topLeftX + topRightX) * 0.5f
                 val centerTopY = (topLeftY + topRightY) * 0.5f
                 val centerBottomX = (bottomLeftX + bottomRightX) * 0.5f
                 val centerBottomY = (bottomLeftY + bottomRightY) * 0.5f
                 scratch.detailPaint.color = android.graphics.Color.BLACK
+                val fiberSignal =
+                    (0.45f + 0.55f * kotlin.math.sin(
+                        sourceCenter * 41.0 +
+                            profile.preset.ordinal * 0.73
+                    ).toFloat()).coerceIn(0f, 1f)
                 scratch.detailPaint.alpha = (
                     optics.directionalFiber *
                         mesh.stripLift[index] *
+                        fiberSignal *
                         (8f + patina * optics.patinaResponse * 8f)
                     ).roundToInt().coerceIn(0, 14)
                 scratch.detailPaint.strokeWidth =
