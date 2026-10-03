@@ -191,3 +191,71 @@ Before promotion:
 16. direct GPU v2 vs Canvas v1 vs Slide visual comparison
 
 Until these pass, status is **not device-green**.
+
+
+## Masterpiece hardening pass
+
+The second implementation pass incorporated additional ideas from the benchmark engines while preserving Veil's own reader contracts.
+
+### Dual front/back page textures
+
+Mature curl engines treat the two sides of a physical leaf separately. v2 now captures the Readium preview destination after navigation settles and uploads it into a second reusable GPU texture. The back face samples that destination with corrected horizontal orientation so it reads naturally as the leaf rolls over.
+
+If the destination capture is unavailable, the shader falls back to mirrored source ink-through instead of showing an invalid or blank texture.
+
+The second CPU bitmap is enabled only on non-low-RAM devices with a normal modern memory class. Both CPU buffers are reusable and manual `Bitmap.recycle()` is intentionally avoided so the GL thread can never race a recycled upload source.
+
+### Stable GPU texture storage
+
+Front and back texture objects are created once. When page dimensions remain unchanged, subsequent turns update storage with `texSubImage2D` instead of reallocating with `texImage2D`. A 1×1 transparent image initializes both texture objects so every sampler is complete before the first destination capture.
+
+### Material lighting
+
+The fragment path now uses the deformed surface normal for:
+- diffuse response;
+- roughness-dependent half-vector specular;
+- grazing Fresnel response;
+- back-face transmitted light;
+- curl self-occlusion;
+- material-colored free-edge body.
+
+Papyrus/manuscript fibre and page-coordinate grain remain deterministic rather than screen-space noise.
+
+### Layered shadow
+
+The page mesh is projected three times with increasing offset/falloff before the physical sheet pass. This approximates the contact-to-penumbra behavior used in mature OpenGL curl engines without allocating a blur texture every frame.
+
+### Gesture-directed cylinder
+
+The GPU model now uses an aspect-independent diagonal pull signal derived from the actual finger vector. Pull origin, vertical displacement and diagonal slope jointly drive the cylinder position and tilt. This avoids the weak diagonal response produced by height-normalized vertical bias on tall phones.
+
+### Radius choreography
+
+Material stiffness and apparent mass define the base cylinder radius. Radius breathes while the page is lifted, then tightens during the final 28% of travel so terminal motion clears the viewport instead of reading as a constant plastic roll.
+
+### Adaptive mesh quality
+
+Low-RAM devices use a 48×8 grid. Normal devices use a 72×14 grid. Both are static GPU buffers; no mesh allocation occurs during drag frames.
+
+### Frame delivery
+
+Compose owns lifecycle and accessibility, but high-frequency Material state is streamed to the GL view through `snapshotFlow`. The `AndroidView` itself is not updated on every progress tick, reducing UI-tree work during 90/120Hz drags.
+
+### GPU failure containment
+
+v2 checks:
+- GLES 2.0 availability;
+- `GL_MAX_TEXTURE_SIZE`;
+- texture upload errors;
+- snapshot aspect compatibility after resize/rotation;
+- runtime shader/program initialization.
+
+Any renderer failure switches the review path back to Canvas v1 rather than leaving a blank page.
+
+### Direct A/B review
+
+Debug Settings can now hold Material physics/navigation constant while switching only the renderer between:
+- GPU v2;
+- Canvas v1.
+
+This is the preferred device-review method for identifying whether a defect belongs to navigation/physics or to GPU deformation/shading.
