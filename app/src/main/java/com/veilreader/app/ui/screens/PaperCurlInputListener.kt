@@ -103,7 +103,6 @@ internal class PaperCurlInputListener(
 
     private fun performDiscreteTurn(spec: TurnSpec) {
         state.configureReducedMotion(isReducedMotion())
-        state.configureReducedMotion(isReducedMotion())
         val visualReady =
             shouldCapturePaperTurnSnapshot(isReducedMotion()) &&
                 state.begin(
