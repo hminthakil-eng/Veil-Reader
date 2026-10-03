@@ -27,7 +27,7 @@ Evidence levels:
 | Reading ruler | ruler controls and tap behavior | **W39 implemented as Veil Focus Guide** | Off/Focus Window/Reading Line, tunable position/height/dimming, quick Reader toggle, renderer-agnostic visual overlay that never owns touch. |
 | Full TTS reader | start/pause/next/prior, filters, notification controls, background guidance | **W40 core implemented; background/session polish remains** | Official Readium 3.4 TTS navigator, start from visible text, play/pause/prev/next/stop, speed/pitch, spoken-utterance highlight, visual follow, missing-voice recovery, no manual page-turn credit. Background media service/notification and voice picker remain follow-up work. |
 | Dictionary routing | dictionary selection/custom online routing/history | **W41 system lookup implemented; custom providers/history remain** | Native Readium selection toolbar routes selected text through Android Process Text to installed dictionaries/translators. Lookup never creates a hidden annotation or writes to the library. |
-| Chapter time remaining | chapter/book minutes remaining strings | Missing | Estimate from personal rolling reading speed; show uncertainty rather than fake precision |
+| Chapter time remaining | chapter/book minutes remaining strings | **W42 book ETA implemented; chapter ETA remains** | Learns isolated active-time intervals between validated real page turns, persists only derived aggregate statistics, requires publication page count + minimum evidence, and exposes an uncertainty range instead of fake precision. Chapter ETA awaits reliable per-resource pagination evidence. |
 | TXT chapter regex | regular-expression chapter extraction | TXT not a supported core format | Add only after TXT/HTML ingestion contract; user-editable regex presets |
 | Chapter page counts | chapter pages / chapter list page-number calculation | Missing | Paginated EPUB derived page estimates cached per appearance profile |
 | E-Ink mode | explicit E-Ink screen mode | Missing | Static paged, no translucent animation, high-contrast paper palette, low-refresh invalidation |
@@ -62,7 +62,7 @@ Evidence levels:
 6. TTS engine — **W40 core implemented; background media/voice selection remain**
 7. Auto-scroll
 8. Dictionary routing — **W41 system lookup implemented; custom templates/history remain**
-9. Chapter/book time remaining
+9. Chapter/book time remaining — **W42 book ETA implemented; chapter ETA remains gated on reliable chapter pagination**
 10. Reading calendar + yearly statistics
 
 ### P2 — specialist modes

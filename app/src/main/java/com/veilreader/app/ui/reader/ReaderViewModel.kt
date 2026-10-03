@@ -303,10 +303,16 @@ class ReaderViewModel(
             return null
         }
 
-        creditActive(current.onInteraction(SystemClock.elapsedRealtime()))
+        val nowElapsedMs = SystemClock.elapsedRealtime()
+        creditActive(current.onInteraction(nowElapsedMs))
 
         if (event.countsPageTurn && resumed && game.recordPageTurn(locationKey)) {
-            current.recordPacedPageTurn()
+            current.recordPacedPageTurn()?.let { intervalMillis ->
+                library.recordReadingPaceInterval(
+                    bookId = bookId,
+                    intervalMillis = intervalMillis
+                )
+            }
         }
 
         val safe = (if (progression.isFinite()) progression else _uiState.value.progress.toDouble())

@@ -39,6 +39,69 @@ class ReadingSessionTrackerTest {
     }
 
     @Test
+    fun pagePaceInterval_usesEngagedActiveTime_betweenRealTurns() {
+        val tracker = ReadingSessionTracker(
+            sessionId = "pace",
+            bookId = "book",
+            startedAtEpochMs = 0L,
+            startedAtElapsedMs = 0L
+        )
+        tracker.onResume(0L)
+        tracker.tick(30_000L)
+
+        assertEquals(null, tracker.recordPacedPageTurn())
+
+        tracker.tick(75_000L)
+        assertEquals(45_000L, tracker.recordPacedPageTurn())
+    }
+
+    @Test
+    fun pagePaceInterval_rejectsSegmentsThatCrossIdleCutoff() {
+        val tracker = ReadingSessionTracker(
+            sessionId = "pace-idle",
+            bookId = "book",
+            startedAtEpochMs = 0L,
+            startedAtElapsedMs = 0L,
+            idleTimeoutMs = 60_000L
+        )
+        tracker.onResume(0L)
+        tracker.tick(20_000L)
+        assertEquals(null, tracker.recordPacedPageTurn())
+
+        // The screen is left untouched well beyond the idle cutoff.
+        tracker.tick(180_000L)
+        tracker.onInteraction(180_000L)
+        assertEquals(null, tracker.recordPacedPageTurn())
+
+        // A new uninterrupted foreground segment can produce pace evidence again.
+        tracker.tick(210_000L)
+        assertEquals(30_000L, tracker.recordPacedPageTurn())
+    }
+
+    @Test
+    fun pagePaceInterval_resetsAcrossPauseAndResume() {
+        val tracker = ReadingSessionTracker(
+            sessionId = "pace-reset",
+            bookId = "book",
+            startedAtEpochMs = 0L,
+            startedAtElapsedMs = 0L
+        )
+        tracker.onResume(0L)
+        tracker.tick(20_000L)
+        assertEquals(null, tracker.recordPacedPageTurn())
+
+        tracker.onPause(30_000L)
+        tracker.onResume(300_000L)
+        tracker.tick(330_000L)
+
+        // The first turn after resume establishes a new anchor rather than
+        // including the background gap or the previous foreground segment.
+        assertEquals(null, tracker.recordPacedPageTurn())
+        tracker.tick(360_000L)
+        assertEquals(30_000L, tracker.recordPacedPageTurn())
+    }
+
+    @Test
     fun restore_preservesDurableCounters_andDoesNotRecountKnownNotes() {
         val restored = requireNotNull(
             ReadingSessionTracker.restore(
