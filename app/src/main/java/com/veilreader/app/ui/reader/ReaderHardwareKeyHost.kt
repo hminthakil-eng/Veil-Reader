@@ -45,7 +45,7 @@ internal class ReaderHardwareKeyController(
     private val minimumRepeatIntervalMs: Long = 180L
 ) {
     private val activeConsumedButtons = mutableSetOf<ReaderHardwareButton>()
-    private var lastHandledAtMs: Long = Long.MIN_VALUE
+    private val lastHandledAtMs = mutableMapOf<ReaderHardwareButton, Long>()
 
     fun handle(event: ReaderHardwareButtonEvent): Boolean {
         if (event.phase == ReaderHardwareButtonPhase.UP) {
@@ -55,23 +55,32 @@ internal class ReaderHardwareKeyController(
         }
 
         val action = actionFor(event.button)
+        val alreadyConsumed = event.button in activeConsumedButtons
+
+        // Once a physical press starts as a Reader-owned action, keep the entire press
+        // consumed until key-up. A dialog, TalkBack transition, or settings change may
+        // disable new Reader actions mid-press, but must not leak repeat events to volume.
+        if (
+            alreadyConsumed &&
+            (action == ReaderHardwareKeyAction.SYSTEM || !isEnabled())
+        ) {
+            return true
+        }
+
         if (action == ReaderHardwareKeyAction.SYSTEM || !isEnabled()) {
             return false
         }
 
-        val repeatingSamePress =
-            event.repeatCount > 0 || event.button in activeConsumedButtons
+        val repeatingSamePress = event.repeatCount > 0 || alreadyConsumed
         if (
             repeatingSamePress &&
             !shouldHandleReaderHardwareRepeat(
                 nowElapsedMs = event.eventTimeMs,
-                lastHandledAtMs = lastHandledAtMs,
+                lastHandledAtMs = lastHandledAtMs[event.button] ?: Long.MIN_VALUE,
                 minimumIntervalMs = minimumRepeatIntervalMs
             )
         ) {
-            // The initial press was mapped, so suppress rapid repeat events without
-            // leaking them back to Android volume handling.
-            return event.button in activeConsumedButtons
+            return alreadyConsumed
         }
 
         val handled = when (action) {
@@ -83,7 +92,7 @@ internal class ReaderHardwareKeyController(
 
         if (handled) {
             activeConsumedButtons += event.button
-            lastHandledAtMs = event.eventTimeMs
+            lastHandledAtMs[event.button] = event.eventTimeMs
         }
         return handled
     }
