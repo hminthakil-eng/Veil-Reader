@@ -440,7 +440,6 @@ internal class MaterialPageEngineState(
     suspend fun clear() {
         snapshot = null
         backSnapshot = null
-        dropBackBufferIfCold()
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -459,7 +458,6 @@ internal class MaterialPageEngineState(
     fun clearImmediately() {
         snapshot = null
         backSnapshot = null
-        dropBackBufferIfCold()
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
