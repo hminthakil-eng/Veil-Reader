@@ -7,7 +7,7 @@ Base:
 `alpha/w38-reader-hardware-keys-v1`
 
 Current head:
-`5419f2c0e174f4e59c315234ede1a6c692e7adb4`
+Use the current HEAD of `alpha/w39-focus-guide-v1`; do not rely on a pinned SHA because handoff hardening may advance the branch.
 
 ## Goal
 Continue Veil Reader competitor-informed hardening using independent clean-room implementations. Preserve all existing Reader ownership contracts and do not regress current W36–W38 behavior.
