@@ -49,9 +49,21 @@ internal class PaperCurlInputListener(
 
     override fun onTap(event: TapEvent): Boolean {
         if (!paperModeEnabled()) return false
-        if (state.active) return true
-
         val spec = resolveEdgeTurn(event.point.x) ?: return false
+        return performDiscreteTurn(spec.direction)
+    }
+
+    fun performDiscreteTurn(direction: PaperTurnDirection): Boolean {
+        if (!paperModeEnabled()) return false
+        if (completionJob != null || state.active) return true
+
+        val spec = TurnSpec(
+            direction = direction,
+            side = paperTurnSideFor(
+                direction,
+                navigator.overflow.value.readingProgression
+            )
+        )
         val visualReady = state.begin(
             view = navigator.publicationView,
             side = spec.side,
@@ -60,32 +72,34 @@ internal class PaperCurlInputListener(
 
         onInteraction()
 
-        // Navigation must never depend on the visual layer succeeding.
         val moved = navigate(spec.direction)
         if (!moved) {
             onBoundaryHit(spec.side)
             if (visualReady) {
-                scope.launch {
-                    state.animateBoundaryBounce()
+                completionJob = scope.launch {
+                    if (!isReducedMotion()) state.animateBoundaryBounce()
                     state.clear()
+                    completionJob = null
                 }
             }
             return true
         }
 
-        // The Reader's sensory layer gates feedback with the user's settings.
+        turnCommitted = true
         onCommittedTurn()
 
         if (visualReady) {
-            scope.launch {
-                if (isReducedMotion()) {
-                    state.clear()
-                } else {
+            completionJob = scope.launch {
+                if (!isReducedMotion()) {
                     delay(VeilMotion.PAGE_REVEAL_MS)
                     state.animateTapTurn()
-                    state.clear()
                 }
+                state.clear()
+                turnCommitted = false
+                completionJob = null
             }
+        } else {
+            turnCommitted = false
         }
         return true
     }
