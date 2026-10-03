@@ -277,9 +277,10 @@ internal class SlideNavigationInputListener(
      * This is the only safe path before taking a durable close snapshot.
      */
     suspend fun cancelPendingTurnAndAwait(): Boolean {
+        val existingCompletion = completionJob
         val requested = cancelPendingTurn()
         if (!requested) return false
-        completionJob?.join()
+        (existingCompletion ?: completionJob)?.join()
         return true
     }
 
@@ -296,7 +297,10 @@ internal class SlideNavigationInputListener(
         completionJob?.cancel()
 
         val spec = activeSpec
-        if (spec != null && previewNavigationSucceeded) {
+        if (spec != null && dragStartLocator != null) {
+            // Navigation can complete just before coroutine cancellation but
+            // before previewNavigationSucceeded becomes observable. Restore the
+            // exact origin whenever a preview transaction had a start locator.
             restoreDragStart(spec)
         }
         state.clearImmediately()
@@ -434,7 +438,10 @@ internal class SlideNavigationInputListener(
         }
 
     private fun slideModeEnabled(): Boolean =
-        isEnabled() && !navigator.overflow.value.scroll
+        // ReaderScreen already supplies the accepted SLIDE contract. Do not
+        // re-check Readium's overflow flow here; it can lag preference changes
+        // and create the same visible-mode/input-owner split that broke Paper.
+        isEnabled()
 
     private fun resetDrag() {
         reserved = false
