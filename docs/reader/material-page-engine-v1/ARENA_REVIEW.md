@@ -126,6 +126,19 @@ Arena then ran quality levels 21–30:
 
 Arena also refined Level 21 after testing: meaningful direction reversals receive higher trust than same-direction noise so reverse-cancel stays responsive.
 
+## Polish and debug pass
+
+A dedicated post-Level-30 debug pass found and fixed lifecycle/state-machine issues that visual review alone would not expose:
+
+- committed tap/key Paper animations are now cancelled cleanly during mode handoff instead of continuing to mutate visual progress after the state was cleared;
+- committed drag animations receive the same cancellation treatment during Reader mode changes;
+- force-cancel restores the exact captured start locator whenever one exists, even if cancellation races the preview-navigation result flag;
+- `cancelPendingTurnAndAwait()` keeps a reference to an already-running completion job so durable handoff actually waits for cancelled work to finish;
+- Material review/runtime state now sanitizes display density, inspection progress, vertical bias, pull origin and release velocity against non-finite values;
+- dead Paper commit serialization was removed.
+
+The local execution environment could not clone GitHub because outbound DNS/network access is unavailable. GitHub-hosted workflows remain the authoritative build route, but those jobs are still failing before step execution.
+
 ## Existing protections retained
 
 - Legacy Paper implementation is still present.
