@@ -193,6 +193,13 @@ internal class MaterialPageEngineState(
 
     suspend fun animateTapTurn() {
         if (!active) return
+        sensorySink?.emit(
+            materialPageSensoryCue(
+                profile = profile,
+                action = MaterialPageSensoryAction.COMPLETE
+            )
+        )
+
 
         if (reducedMotion) {
             val alpha = Animatable(visualAlpha)
@@ -216,18 +223,20 @@ internal class MaterialPageEngineState(
             }
         }
 
-        sensorySink?.emit(
-            materialPageSensoryCue(
-                profile = profile,
-                action = MaterialPageSensoryAction.COMPLETE
-            )
-        )
     }
 
     suspend fun animateComplete(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        sensorySink?.emit(
+            materialPageSensoryCue(
+                profile = profile,
+                action = MaterialPageSensoryAction.COMPLETE,
+                velocityDpPerSec = releaseVelocityDpPerSec
+            )
+        )
+
 
         if (reducedMotion) {
             val alpha = Animatable(visualAlpha)
@@ -265,19 +274,19 @@ internal class MaterialPageEngineState(
             }
         }
 
-        sensorySink?.emit(
-            materialPageSensoryCue(
-                profile = profile,
-                action = MaterialPageSensoryAction.COMPLETE,
-                velocityDpPerSec = releaseVelocityDpPerSec
-            )
-        )
     }
 
     suspend fun animateCancel(
         releaseVelocityDpPerSec: Float = 0f
     ) {
         if (!active) return
+        sensorySink?.emit(
+            materialPageSensoryCue(
+                profile = profile,
+                action = MaterialPageSensoryAction.CANCEL
+            )
+        )
+
 
         if (reducedMotion) {
             val alpha = Animatable(visualAlpha)
@@ -308,16 +317,17 @@ internal class MaterialPageEngineState(
             }
         }
 
-        sensorySink?.emit(
-            materialPageSensoryCue(
-                profile = profile,
-                action = MaterialPageSensoryAction.CANCEL
-            )
-        )
     }
 
     suspend fun animateBoundaryBounce() {
         if (!active) return
+        sensorySink?.emit(
+            materialPageSensoryCue(
+                profile = profile,
+                action = MaterialPageSensoryAction.BOUNDARY
+            )
+        )
+
 
         if (reducedMotion) {
             val alpha = Animatable(visualAlpha)
@@ -340,12 +350,6 @@ internal class MaterialPageEngineState(
             }
         }
 
-        sensorySink?.emit(
-            materialPageSensoryCue(
-                profile = profile,
-                action = MaterialPageSensoryAction.BOUNDARY
-            )
-        )
     }
 
     suspend fun clear() {
