@@ -11,6 +11,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,6 +19,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.veilreader.app.BuildConfig
 import com.veilreader.app.ui.reader.material.GpuMaterialPageOverlay
+import com.veilreader.app.ui.reader.material.GpuMaterialPageRendererStatus
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
 import com.veilreader.app.ui.reader.material.MaterialPageSide
@@ -163,20 +165,29 @@ internal fun PaperCurlOverlay(
         state.materialEngine.configureTone(tone)
     }
 
+    var rendererStatus by remember {
+        mutableStateOf(GpuMaterialPageRendererStatus.READY)
+    }
+
     Box(modifier = modifier) {
         GpuMaterialPageOverlay(
             state = state.materialEngine,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            onRendererStatus = { rendererStatus = it }
         )
 
         if (BuildConfig.DEBUG) {
             val label = when {
                 !MaterialPageEngineRollout.isEnabled() ->
                     "PAPER · GPU v2 · DISABLED"
+                rendererStatus == GpuMaterialPageRendererStatus.UNSUPPORTED ->
+                    "PAPER · GPU v2 · GPU UNSUPPORTED · A${state.debugBeginAttempts}"
+                rendererStatus == GpuMaterialPageRendererStatus.FAILED ->
+                    "PAPER · GPU v2 · GPU FAILED · A${state.debugBeginAttempts}"
+                rendererStatus == GpuMaterialPageRendererStatus.REDUCED_MOTION ->
+                    "PAPER · GPU v2 · REDUCED MOTION · A${state.debugBeginAttempts}"
                 state.lastBeginFailed ->
                     "PAPER · GPU v2 · CAPTURE FAILED · A${state.debugBeginAttempts}"
-                state.materialEngine.reducedMotion ->
-                    "PAPER · GPU v2 · REDUCED MOTION · A${state.debugBeginAttempts}"
                 state.active ->
                     "PAPER · GPU v2 · ACTIVE · A${state.debugBeginAttempts}"
                 else ->
