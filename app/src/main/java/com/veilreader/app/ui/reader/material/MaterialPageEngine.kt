@@ -115,7 +115,6 @@ internal class MaterialPageEngineState(
     private var density = 1f
     private var snapshotBuffer: Bitmap? = null
     private var backSnapshotBuffer: Bitmap? = null
-    private var keepBackBufferWarm = true
     private var backSnapshotAllowed = true
     private var liftCueEmitted = false
     private var renderSegmentCount =
@@ -165,16 +164,12 @@ internal class MaterialPageEngineState(
         ) as? ActivityManager
         backSnapshotAllowed =
             memory?.isLowRamDevice != true &&
-                (memory?.memoryClass ?: 256) >= 256
-        keepBackBufferWarm =
-            memory?.isLowRamDevice != true &&
                 (memory?.memoryClass ?: 384) >= 384
         this.side = side
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
         snapshot = bitmap
         backSnapshot = null
-        dropBackBufferIfCold()
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -568,12 +563,6 @@ internal class MaterialPageEngineState(
             view.draw(AndroidCanvas(bitmap))
             bitmap
         }.getOrNull()
-
-    private fun dropBackBufferIfCold() {
-        if (keepBackBufferWarm) return
-        backSnapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
-        backSnapshotBuffer = null
-    }
 
     private fun obtainBackSnapshotBuffer(view: View): Bitmap? =
         obtainReusableBuffer(
