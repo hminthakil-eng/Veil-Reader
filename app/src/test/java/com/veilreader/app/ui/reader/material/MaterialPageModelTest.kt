@@ -9,6 +9,19 @@ import org.junit.Test
 class MaterialPageModelTest {
 
     @Test
+    fun `tap grip begins from lower corner with material variation`() {
+        val glossyOrigin = materialPageTapPullOrigin(MaterialPageProfiles.Glossy)
+        val manuscriptOrigin = materialPageTapPullOrigin(MaterialPageProfiles.Manuscript)
+        val glossyDiagonal = materialPageTapDiagonalPull(MaterialPageProfiles.Glossy)
+        val manuscriptDiagonal = materialPageTapDiagonalPull(MaterialPageProfiles.Manuscript)
+
+        assertTrue(glossyOrigin > 0.75f)
+        assertTrue(manuscriptOrigin >= glossyOrigin)
+        assertTrue(glossyDiagonal < 0f)
+        assertTrue(manuscriptDiagonal <= glossyDiagonal)
+    }
+
+    @Test
     fun `canonical material catalog is complete and structurally distinct`() {
         val profiles = MaterialPageProfiles.all
 
