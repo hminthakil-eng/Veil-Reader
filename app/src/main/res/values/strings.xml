@@ -1239,4 +1239,22 @@
     <string name="manga_chapter_language_label">Language (optional)</string>
     <string name="manga_chapter_language_hint">BCP-47 tag, for example en, fa, ja.</string>
     <string name="notice_manga_chapter_metadata_updated">Chapter details updated.</string>
+
+    <string name="settings_tap_matrix_title">Touch map</string>
+    <string name="settings_tap_matrix_description">Assign all nine reading zones. Tap a cell to cycle its action without changing the book itself.</string>
+    <string name="settings_tap_matrix_hint">Previous and Next keep Veil’s active page motion. Renderer hands that zone back to the publication for links and native interactions.</string>
+    <string name="settings_tap_matrix_reset">Reset touch map</string>
+    <string name="settings_tap_action_previous">Previous page</string>
+    <string name="settings_tap_action_controls">Reader controls</string>
+    <string name="settings_tap_action_next">Next page</string>
+    <string name="settings_tap_action_renderer">Book interaction</string>
+    <string name="settings_tap_zone_top_left">Top left</string>
+    <string name="settings_tap_zone_top_center">Top center</string>
+    <string name="settings_tap_zone_top_right">Top right</string>
+    <string name="settings_tap_zone_middle_left">Middle left</string>
+    <string name="settings_tap_zone_middle_center">Center</string>
+    <string name="settings_tap_zone_middle_right">Middle right</string>
+    <string name="settings_tap_zone_bottom_left">Bottom left</string>
+    <string name="settings_tap_zone_bottom_center">Bottom center</string>
+    <string name="settings_tap_zone_bottom_right">Bottom right</string>
 </resources>
