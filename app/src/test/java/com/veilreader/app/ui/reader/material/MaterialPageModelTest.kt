@@ -165,6 +165,62 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `bend stiffness changes curl geometry at equal progress`() {
+        val glossy = materialPageGeometry(
+            width = 1_000f,
+            height = 1_600f,
+            progress = 0.55f,
+            verticalBias = 0f,
+            profile = MaterialPageProfiles.Glossy
+        )
+        val parchment = materialPageGeometry(
+            width = 1_000f,
+            height = 1_600f,
+            progress = 0.55f,
+            verticalBias = 0f,
+            profile = MaterialPageProfiles.Parchment
+        )
+
+        assertTrue(parchment.foldAngleRadians > glossy.foldAngleRadians)
+    }
+
+    @Test
+    fun `corner pull biases the near edge more than a centered pull`() {
+        val topPull = materialPageGeometry(
+            width = 1_000f,
+            height = 1_600f,
+            progress = 0.50f,
+            verticalBias = 0.10f,
+            profile = MaterialPageProfiles.MatteBook,
+            pullOriginY = 0.08f
+        )
+        val bottomPull = materialPageGeometry(
+            width = 1_000f,
+            height = 1_600f,
+            progress = 0.50f,
+            verticalBias = 0.10f,
+            profile = MaterialPageProfiles.MatteBook,
+            pullOriginY = 0.92f
+        )
+
+        assertTrue(topPull.creaseTop.y == bottomPull.creaseTop.y)
+        val topStrip = topPull.strips.last()
+        val bottomStrip = bottomPull.strips.last()
+        assertTrue(topStrip.topLeft.y > bottomStrip.topLeft.y)
+        assertTrue(bottomStrip.bottomLeft.y > topStrip.bottomLeft.y)
+    }
+
+    @Test
+    fun `dark tone preserves opacity while moving paper into sanctuary luminance`() {
+        val source = MaterialPageProfiles.Parchment.optics.backArgb
+        val dark = materialPageToneAdjustedArgb(source, MaterialPageTone.DARK)
+        val light = materialPageToneAdjustedArgb(source, MaterialPageTone.LIGHT)
+
+        assertEquals((source ushr 24) and 0xFF, (dark ushr 24) and 0xFF)
+        assertTrue((dark and 0x00FFFFFF) < (light and 0x00FFFFFF))
+    }
+
+    @Test
     fun `vertical binding remains constrained under extreme diagonal drags`() {
         val sample = materialPageDragSample(
             inwardDistancePx = 520f,
