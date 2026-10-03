@@ -36,6 +36,12 @@ internal enum class MaterialPageSide {
     RIGHT
 }
 
+internal enum class MaterialPageTone {
+    LIGHT,
+    SEPIA,
+    DARK
+}
+
 /**
  * Controlled rollout gate. Production stays on the proven legacy curl until source
  * verification and real-device judgment explicitly promote Material Page Engine v1.
@@ -92,6 +98,9 @@ internal class MaterialPageEngineState(
     var patina: Float by mutableFloatStateOf(0.35f)
         private set
 
+    var tone: MaterialPageTone by mutableStateOf(MaterialPageTone.LIGHT)
+        private set
+
     var active: Boolean by mutableStateOf(false)
         private set
 
@@ -114,6 +123,10 @@ internal class MaterialPageEngineState(
 
     fun setPatina(value: Float) {
         patina = value.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.35f
+    }
+
+    fun setTone(value: MaterialPageTone) {
+        tone = value
     }
 
     fun begin(
@@ -360,7 +373,8 @@ internal class MaterialPageEngineState(
         side: MaterialPageSide = MaterialPageSide.RIGHT,
         profile: MaterialPageProfile = this.profile,
         reducedMotion: Boolean = false,
-        patina: Float = this.patina
+        patina: Float = this.patina,
+        tone: MaterialPageTone = this.tone
     ) {
         snapshot = bitmap
         width = bitmap.width.toFloat()
@@ -371,6 +385,7 @@ internal class MaterialPageEngineState(
         this.profile = profile
         this.reducedMotion = reducedMotion
         setPatina(patina)
+        setTone(tone)
         visualAlpha = if (reducedMotion) {
             materialPageReducedMotionAlpha(
                 progress = this.progress,
@@ -450,6 +465,7 @@ internal fun MaterialPageOverlay(
     val side = state.side
     val reducedMotion = state.reducedMotion
     val patina = state.patina
+    val tone = state.tone
 
     Canvas(modifier.fillMaxSize()) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
@@ -588,7 +604,9 @@ internal fun MaterialPageOverlay(
             }
 
             if (baseShadeAlpha > 0f) {
-                scratch.shadePaint.color = Color(optics.backArgb).toArgb()
+                scratch.shadePaint.color = Color(
+                    materialPageToneAdjustedArgb(optics.backArgb, tone)
+                ).toArgb()
                 scratch.shadePaint.alpha =
                     (baseShadeAlpha * 255f).roundToInt().coerceIn(0, 255)
                 scratch.shadePaint.style = Paint.Style.FILL
@@ -684,7 +702,9 @@ internal fun MaterialPageOverlay(
             (frame.lift * (0.08f + profile.optics.specularResponse * 0.14f) * 255f)
                 .roundToInt()
                 .coerceIn(0, 46)
-        scratch.detailPaint.color = Color(profile.optics.edgeArgb).toArgb()
+        scratch.detailPaint.color = Color(
+            materialPageToneAdjustedArgb(profile.optics.edgeArgb, tone)
+        ).toArgb()
         scratch.detailPaint.alpha = edgeAlpha
         scratch.detailPaint.strokeWidth = 0.9f + edgeBody * 0.9f
         val edgeOffset =
@@ -699,4 +719,39 @@ internal fun MaterialPageOverlay(
 
         native.restore()
     }
+}
+
+
+internal fun materialPageToneAdjustedArgb(
+    argb: Long,
+    tone: MaterialPageTone
+): Long {
+    val a = ((argb ushr 24) and 0xFF).toInt()
+    val r = ((argb ushr 16) and 0xFF).toInt()
+    val g = ((argb ushr 8) and 0xFF).toInt()
+    val b = (argb and 0xFF).toInt()
+
+    fun channel(value: Int, scale: Float, bias: Int): Int =
+        (value * scale + bias).roundToInt().coerceIn(0, 255)
+
+    val adjusted = when (tone) {
+        MaterialPageTone.LIGHT -> intArrayOf(r, g, b)
+        MaterialPageTone.SEPIA -> intArrayOf(
+            channel(r, 0.98f, 2),
+            channel(g, 0.94f, 1),
+            channel(b, 0.84f, 0)
+        )
+        MaterialPageTone.DARK -> intArrayOf(
+            channel(r, 0.16f, 14),
+            channel(g, 0.15f, 13),
+            channel(b, 0.17f, 16)
+        )
+    }
+
+    return (
+        (a.toLong() shl 24) or
+            (adjusted[0].toLong() shl 16) or
+            (adjusted[1].toLong() shl 8) or
+            adjusted[2].toLong()
+        )
 }
