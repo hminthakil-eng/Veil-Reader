@@ -2417,6 +2417,24 @@ fun ReaderScreen(
 
         if (
             opened.format == BookFormat.EPUB &&
+            !fixedLayoutPublication
+        ) {
+            ReaderPageAtmosphere(
+                theme = presentedReaderAppearance.theme,
+                navigationMode = presentedReaderAppearance.navigationMode,
+                paperPatina = presentedReaderAppearance.paperPatina.toFloat(),
+                progress = progress,
+                progression = (navigator as? OverflowableNavigator)
+                    ?.overflow
+                    ?.value
+                    ?.readingProgression
+                    ?: ReadingProgression.LTR,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        if (
+            opened.format == BookFormat.EPUB &&
             !presentedReaderAppearance.scroll &&
             presentedReaderAppearance.pageTurnStyle == PageTurnStyle.PAPER
         ) {
@@ -2449,24 +2467,6 @@ fun ReaderScreen(
             state = readerModeHandoffState,
             modifier = Modifier.fillMaxSize()
         )
-
-        if (
-            opened.format == BookFormat.EPUB &&
-            !fixedLayoutPublication
-        ) {
-            ReaderPageAtmosphere(
-                theme = presentedReaderAppearance.theme,
-                navigationMode = presentedReaderAppearance.navigationMode,
-                paperPatina = presentedReaderAppearance.paperPatina.toFloat(),
-                progress = progress,
-                progression = (navigator as? OverflowableNavigator)
-                    ?.overflow
-                    ?.value
-                    ?.readingProgression
-                    ?: ReadingProgression.LTR,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
 
         // No exit animation: OFF and blocking UI remove the guide immediately.
         // The Canvas has no input or semantics modifiers; Readium retains ownership.
