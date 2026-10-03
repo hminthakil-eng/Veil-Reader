@@ -81,6 +81,17 @@ internal class PaperCurlState {
     internal fun usingMaterialEngine(): Boolean =
         activeEngine == PaperVisualEngine.MATERIAL
 
+    fun prepareBuffer(view: View): Boolean {
+        if (active || view.width <= 0 || view.height <= 0) return false
+        return if (MaterialPageEngineRollout.isEnabled()) {
+            releaseLegacyBufferIfIdle()
+            materialEngine.prepareBuffer(view)
+        } else {
+            materialEngine.releaseBufferIfIdle()
+            obtainLegacySnapshotBuffer(view) != null
+        }
+    }
+
     fun begin(
         view: View,
         side: PaperCurlSide,
@@ -327,8 +338,7 @@ internal class PaperCurlState {
     fun releaseBufferIfIdle() {
         materialEngine.releaseBufferIfIdle()
         if (active || snapshot != null) return
-        snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
-        snapshotBuffer = null
+        releaseLegacyBufferIfIdle()
     }
 
     fun dispose() {
@@ -381,6 +391,15 @@ internal class PaperCurlState {
         paperTerminalTurnEdge(width = width, height = height)
     private fun capture(view: View): Bitmap? =
         runCatching {
+            val bitmap = obtainLegacySnapshotBuffer(view)
+                ?: return@runCatching null
+            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
+            view.draw(Canvas(bitmap))
+            bitmap
+        }.getOrNull()
+
+    private fun obtainLegacySnapshotBuffer(view: View): Bitmap? =
+        runCatching {
             val targetWidth = max(1, view.width)
             val targetHeight = max(1, view.height)
             val reusable = snapshotBuffer?.takeIf {
@@ -389,8 +408,7 @@ internal class PaperCurlState {
                     it.height == targetHeight &&
                     it.config == Bitmap.Config.ARGB_8888
             }
-
-            val bitmap = reusable ?: Bitmap.createBitmap(
+            reusable ?: Bitmap.createBitmap(
                 targetWidth,
                 targetHeight,
                 Bitmap.Config.ARGB_8888
@@ -398,11 +416,13 @@ internal class PaperCurlState {
                 snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
                 snapshotBuffer = created
             }
-
-            bitmap.eraseColor(android.graphics.Color.TRANSPARENT)
-            view.draw(Canvas(bitmap))
-            bitmap
         }.getOrNull()
+
+    private fun releaseLegacyBufferIfIdle() {
+        if (active || snapshot != null) return
+        snapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+        snapshotBuffer = null
+    }
 }
 
 internal fun paperCurlPageEdge(
