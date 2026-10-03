@@ -118,9 +118,6 @@ fun SettingsScreen(
     var materialPageReviewPreset by remember {
         mutableStateOf(MaterialPageEngineRollout.selectedPreset())
     }
-    var gpuPageRendererEnabled by remember {
-        mutableStateOf(MaterialPageEngineRollout.useGpuRenderer())
-    }
     var tapGridDraft by remember { mutableStateOf(settings.readerTapGrid) }
     var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
     var hardwareKeysDraft by remember { mutableStateOf(settings.readerHardwareKeys) }
@@ -861,8 +858,8 @@ fun SettingsScreen(
                 description = "Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification."
             ) {
                 SettingsSwitchRow(
-                    title = "Use Material Page Engine review",
-                    subtitle = "Forces Paged + Paper. Use the renderer switch below to compare GPU v2 directly against Canvas v1 with identical physics and navigation.",
+                    title = "Use GPU Material Page Engine v2",
+                    subtitle = "Forces Paged + Paper and exercises the only Paper renderer included in this build.",
                     checked = materialPageReviewEnabled,
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
@@ -880,15 +877,6 @@ fun SettingsScreen(
                 )
 
                 if (materialPageReviewEnabled) {
-                    SettingsSwitchRow(
-                        title = "GPU renderer v2",
-                        subtitle = "A/B between the new GPU mesh renderer and the Canvas v1 renderer while keeping the same Paper physics and navigation transaction.",
-                        checked = gpuPageRendererEnabled,
-                        onCheckedChange = { enabled ->
-                            gpuPageRendererEnabled = enabled
-                            MaterialPageEngineRollout.setGpuRendererOverride(enabled)
-                        }
-                    )
                     Text(
                         "Review material",
                         style = MaterialTheme.typography.labelLarge
@@ -911,7 +899,7 @@ fun SettingsScreen(
                         }
                     )
                     Text(
-                        "Review mode forces Paged + Paper so gestures actually exercise the Material engine. The engine toggle itself is process-local and intentionally not persisted.",
+                        "Review mode forces Paged + Paper. This build contains no legacy or Canvas page-curl fallback; Paper review always targets GPU v2.",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         style = MaterialTheme.typography.bodySmall
                     )
