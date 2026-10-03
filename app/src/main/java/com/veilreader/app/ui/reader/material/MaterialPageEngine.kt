@@ -1,5 +1,6 @@
 package com.veilreader.app.ui.reader.material
 
+import android.app.ActivityManager
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
 import android.graphics.Matrix
@@ -114,6 +115,8 @@ internal class MaterialPageEngineState(
     private var density = 1f
     private var snapshotBuffer: Bitmap? = null
     private var backSnapshotBuffer: Bitmap? = null
+    private var keepBackBufferWarm = true
+    private var backSnapshotAllowed = true
     private var liftCueEmitted = false
     private var renderSegmentCount =
         materialPageTurnSegmentCount(initialProfile)
@@ -157,11 +160,21 @@ internal class MaterialPageEngineState(
             .takeIf { it.isFinite() }
             ?.coerceIn(0.75f, 4f)
             ?: 1f
+        val memory = view.context.getSystemService(
+            android.content.Context.ACTIVITY_SERVICE
+        ) as? ActivityManager
+        backSnapshotAllowed =
+            memory?.isLowRamDevice != true &&
+                (memory?.memoryClass ?: 256) >= 256
+        keepBackBufferWarm =
+            memory?.isLowRamDevice != true &&
+                (memory?.memoryClass ?: 384) >= 384
         this.side = side
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
         snapshot = bitmap
         backSnapshot = null
+        dropBackBufferIfCold()
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -220,7 +233,14 @@ internal class MaterialPageEngineState(
      * source snapshot.
      */
     fun captureBack(view: View): Boolean {
-        if (!active || view.width <= 0 || view.height <= 0) return false
+        if (
+            !active ||
+            !backSnapshotAllowed ||
+            view.width <= 0 ||
+            view.height <= 0
+        ) {
+            return false
+        }
         val bitmap = captureBackSnapshot(view) ?: return false
         backSnapshot = bitmap
         return true
@@ -421,6 +441,7 @@ internal class MaterialPageEngineState(
     suspend fun clear() {
         snapshot = null
         backSnapshot = null
+        dropBackBufferIfCold()
         progress = 0f
         verticalBias = 0f
         pullOriginY = 0.5f
@@ -546,6 +567,12 @@ internal class MaterialPageEngineState(
             view.draw(AndroidCanvas(bitmap))
             bitmap
         }.getOrNull()
+
+    private fun dropBackBufferIfCold() {
+        if (keepBackBufferWarm) return
+        backSnapshotBuffer?.takeIf { !it.isRecycled }?.recycle()
+        backSnapshotBuffer = null
+    }
 
     private fun obtainBackSnapshotBuffer(view: View): Bitmap? =
         obtainReusableBuffer(
