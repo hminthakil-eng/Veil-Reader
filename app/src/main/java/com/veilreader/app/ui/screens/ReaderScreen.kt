@@ -569,13 +569,16 @@ fun ReaderScreen(
         navigator,
         readerSessionReady,
         presentedReaderAppearance.navigationMode,
+        reducedMotion,
         readerSessionInstanceId
     ) {
         if (
             !readerSessionReady ||
             opened.format != BookFormat.EPUB ||
-            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL
+            presentedReaderAppearance.navigationMode != ReaderNavigationMode.PAPER_CURL ||
+            !shouldCapturePaperTurnSnapshot(reducedMotion)
         ) {
+            paperCurlState.releaseBufferIfIdle()
             return@LaunchedEffect
         }
         val nav = navigator as? OverflowableNavigator ?: return@LaunchedEffect
