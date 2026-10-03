@@ -1258,4 +1258,15 @@
     <string name="settings_tap_zone_bottom_left">Bottom left</string>
     <string name="settings_tap_zone_bottom_center">Bottom center</string>
     <string name="settings_tap_zone_bottom_right">Bottom right</string>
+
+    <string name="settings_hardware_keys_title">Hardware reading keys</string>
+    <string name="settings_hardware_keys_description">Optionally remap the volume buttons while a book is open. System volume remains the default.</string>
+    <string name="settings_volume_up_key">Volume up</string>
+    <string name="settings_volume_down_key">Volume down</string>
+    <string name="settings_hardware_action_system">System volume</string>
+    <string name="settings_hardware_action_previous">Previous page</string>
+    <string name="settings_hardware_action_next">Next page</string>
+    <string name="settings_hardware_action_controls">Reader controls</string>
+    <string name="settings_hardware_keys_hint">Reader mappings pause during selection, dialogs, touch exploration, and scrolling page actions. Held keys are rate-limited to prevent accidental page bursts.</string>
+    <string name="settings_hardware_keys_reset">Restore system volume</string>
 </resources>
