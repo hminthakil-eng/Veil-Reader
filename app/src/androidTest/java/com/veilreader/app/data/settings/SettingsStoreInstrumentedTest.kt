@@ -120,7 +120,7 @@ class SettingsStoreInstrumentedTest {
             verticalPosition = 0.61,
             bandFraction = 0.24,
             dimStrength = 0.44
-        )
+        ).normalized()
 
         try {
             store.saveReaderFocusGuide(expected)
