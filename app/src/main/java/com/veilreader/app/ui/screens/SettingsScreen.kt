@@ -65,6 +65,8 @@ import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyAction
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderTapAction
@@ -88,6 +90,7 @@ fun SettingsScreen(
     onSaveReaderAppearance: (ReaderAppearance) -> Unit,
     onSaveReaderTapGrid: (ReaderTapGrid) -> Unit,
     onSaveReaderHardwareKeys: (ReaderHardwareKeyMap) -> Unit,
+    onSaveReaderFocusGuide: (ReaderFocusGuideSettings) -> Unit,
     onSaveSensorySettings: (SensorySettings) -> Unit,
     onExportBackup: (Uri) -> Unit,
     onRestoreBackup: (Uri) -> Unit,
@@ -100,6 +103,8 @@ fun SettingsScreen(
     var pendingTapGrid by remember { mutableStateOf<ReaderTapGrid?>(null) }
     var hardwareKeysDraft by remember { mutableStateOf(settings.readerHardwareKeys) }
     var pendingHardwareKeys by remember { mutableStateOf<ReaderHardwareKeyMap?>(null) }
+    var focusGuideDraft by remember { mutableStateOf(settings.readerFocusGuide) }
+    var pendingFocusGuide by remember { mutableStateOf<ReaderFocusGuideSettings?>(null) }
 
     LaunchedEffect(settings.readerAppearance) {
         val persisted = settings.readerAppearance
@@ -132,6 +137,24 @@ fun SettingsScreen(
                 pendingHardwareKeys = null
             }
         }
+    }
+
+    LaunchedEffect(settings.readerFocusGuide) {
+        val persisted = settings.readerFocusGuide
+        when {
+            pendingFocusGuide == null -> focusGuideDraft = persisted
+            persisted == pendingFocusGuide -> {
+                focusGuideDraft = persisted
+                pendingFocusGuide = null
+            }
+        }
+    }
+
+    fun commitReaderFocusGuide(value: ReaderFocusGuideSettings) {
+        val normalized = value.normalized()
+        focusGuideDraft = normalized
+        pendingFocusGuide = normalized
+        onSaveReaderFocusGuide(normalized)
     }
 
     fun commitReaderHardwareKeys(value: ReaderHardwareKeyMap) {
@@ -550,6 +573,77 @@ fun SettingsScreen(
                 modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
             ) {
                 Text(stringResource(R.string.settings_hardware_keys_reset))
+            }
+        }
+
+        SettingsSection(
+            title = stringResource(R.string.settings_focus_guide_title),
+            description = stringResource(R.string.settings_focus_guide_description)
+        ) {
+            ChoiceRow(
+                entries = ReaderFocusGuideMode.entries,
+                selected = focusGuideDraft.mode,
+                label = { mode ->
+                    when (mode) {
+                        ReaderFocusGuideMode.OFF ->
+                            stringResource(R.string.settings_focus_guide_off)
+                        ReaderFocusGuideMode.WINDOW ->
+                            stringResource(R.string.settings_focus_guide_window)
+                        ReaderFocusGuideMode.LINE ->
+                            stringResource(R.string.settings_focus_guide_line)
+                    }
+                },
+                onSelected = { mode ->
+                    commitReaderFocusGuide(focusGuideDraft.copy(mode = mode))
+                }
+            )
+
+            if (focusGuideDraft.mode != ReaderFocusGuideMode.OFF) {
+                ReaderSlider(
+                    label = stringResource(R.string.settings_focus_guide_position),
+                    value = focusGuideDraft.verticalPosition.toFloat(),
+                    valueRange = 0.20f..0.80f,
+                    displayValue = { formatPercent(it) },
+                    onCommit = { value ->
+                        commitReaderFocusGuide(
+                            focusGuideDraft.copy(verticalPosition = value.toDouble())
+                        )
+                    }
+                )
+                ReaderSlider(
+                    label = stringResource(R.string.settings_focus_guide_band),
+                    value = focusGuideDraft.bandFraction.toFloat(),
+                    valueRange = 0.06f..0.36f,
+                    displayValue = { formatPercent(it) },
+                    onCommit = { value ->
+                        commitReaderFocusGuide(
+                            focusGuideDraft.copy(bandFraction = value.toDouble())
+                        )
+                    }
+                )
+                ReaderSlider(
+                    label = stringResource(R.string.settings_focus_guide_dim),
+                    value = focusGuideDraft.dimStrength.toFloat(),
+                    valueRange = 0.08f..0.68f,
+                    displayValue = { formatPercent(it) },
+                    onCommit = { value ->
+                        commitReaderFocusGuide(
+                            focusGuideDraft.copy(dimStrength = value.toDouble())
+                        )
+                    }
+                )
+                Text(
+                    stringResource(R.string.settings_focus_guide_hint),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
+            OutlinedButton(
+                onClick = { commitReaderFocusGuide(ReaderFocusGuideSettings()) },
+                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.settings_focus_guide_reset))
             }
         }
 
