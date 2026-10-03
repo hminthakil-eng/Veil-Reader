@@ -199,6 +199,30 @@ internal fun materialPageSettleDurationMillis(
         .coerceIn(92, 360)
 }
 
+internal fun materialPageTapPullOrigin(
+    profile: MaterialPageProfile
+): Float {
+    val mass = profile.physics.apparentMass.coerceIn(0.6f, 1.5f)
+    val stiffness = profile.physics.bendStiffness.coerceIn(0.35f, 1f)
+    return (
+        0.79f +
+            (mass - 0.6f) * 0.045f +
+            (1f - stiffness) * 0.025f
+        ).coerceIn(0.79f, 0.86f)
+}
+
+internal fun materialPageTapDiagonalPull(
+    profile: MaterialPageProfile
+): Float {
+    val stiffness = profile.physics.bendStiffness.coerceIn(0.35f, 1f)
+    val resistance = profile.physics.dragResistance.coerceIn(0.45f, 1.35f)
+    return (
+        -0.24f -
+            (1f - stiffness) * 0.08f -
+            (resistance - 0.45f) * 0.025f
+        ).coerceIn(-0.34f, -0.24f)
+}
+
 internal fun materialPageTapLiftFraction(
     profile: MaterialPageProfile
 ): Float {
