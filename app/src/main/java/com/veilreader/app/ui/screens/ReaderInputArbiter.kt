@@ -100,7 +100,6 @@ internal fun shouldAnimateDirectionalNavigation(
 internal class ReaderInputArbiter(
     private val contentTarget: InputListener?,
     private val tapZones: ReaderTapZoneInputListener?,
-    private val hardwareKeys: InputListener?,
     private val paper: InputListener?,
     private val slide: InputListener?,
     private val staticPaged: InputListener?,
@@ -192,26 +191,14 @@ internal class ReaderInputArbiter(
     }
 
     override fun onKey(event: KeyEvent): Boolean {
-        val mode = interactionMode()
-        when (mode) {
+        when (interactionMode()) {
             ReaderInteractionMode.RENDERER_SELECTION -> return false
-            ReaderInteractionMode.BLOCKED ->
-                return if (isReaderVolumeKey(event)) false else true
-            ReaderInteractionMode.RENDERER_ACCESSIBILITY -> {
-                // Volume buttons may control accessibility audio. Never remap them while
-                // touch exploration is active, even when the user enabled a Reader mapping.
-                if (isReaderVolumeKey(event)) return false
-            }
+            ReaderInteractionMode.BLOCKED -> return true
+            ReaderInteractionMode.RENDERER_ACCESSIBILITY,
             ReaderInteractionMode.NAVIGATION,
             ReaderInteractionMode.CHROME_PRIORITY -> Unit
         }
 
-        if (
-            mode != ReaderInteractionMode.RENDERER_ACCESSIBILITY &&
-            hardwareKeys?.onKey(event) == true
-        ) {
-            return true
-        }
         if (slide?.onKey(event) == true) return true
         return directional.onKey(event)
     }
