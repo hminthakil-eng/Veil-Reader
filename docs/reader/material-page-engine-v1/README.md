@@ -5,7 +5,7 @@ Status: **parallel implementation / controlled rollout**
 Branch: `reader/material-page-engine-v1`  
 Base: `design/codex-grayfog-masterpiece-v1`
 
-The production Paper mode still defaults to the legacy curl. Material Page Engine v1 is wired behind `MaterialPageEngineRollout.DEFAULT_ENABLED = false`. This is deliberate: source-level work can mature without deleting or destabilizing the proven Reader path.
+The production Paper mode still defaults to the legacy curl. Material Page Engine v1 is wired behind `MaterialPageEngineRollout.DEFAULT_ENABLED = false`. Debug builds expose a process-local A/B review control in Settings so legacy and Material can be compared on the same device without changing release behavior. This is deliberate: source-level work can mature without deleting or destabilizing the proven Reader path.
 
 ## Why the previous Paper mode is not enough
 
