@@ -8,6 +8,7 @@ import android.opengl.GLES20
 import android.opengl.GLSurfaceView
 import android.opengl.GLUtils
 import android.util.Log
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -86,6 +87,9 @@ internal class GpuMaterialPageCurlView(
         setEGLConfigChooser(8, 8, 8, 8, 16, 0)
         holder.setFormat(PixelFormat.TRANSLUCENT)
         setZOrderOnTop(true)
+        isClickable = false
+        isFocusable = false
+        importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         preserveEGLContextOnPause = true
         setRenderer(this)
         renderMode = RENDERMODE_WHEN_DIRTY
@@ -672,7 +676,7 @@ internal class GpuMaterialPageCurlView(
                 color *= 1.0 - edge * uEdgeStrength * 0.16;
 
                 gl_FragColor = vec4(
-                    clamp(color, 0.0, 1.0),
+                    clamp(color, vec3(0.0), vec3(1.0)),
                     ink.a * uVisualAlpha
                 );
             }
