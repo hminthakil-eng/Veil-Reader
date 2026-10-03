@@ -21,6 +21,48 @@ class VeilSensoryFeedbackPolicyTest {
     }
 
     @Test
+    fun `material completion haptics preserve distinct physical identities`() {
+        val glossy = materialHapticFeedbackFor(
+            VeilMaterialPageSensoryCue(
+                material = VeilPageMaterial.GLOSSY,
+                action = VeilMaterialPageAction.COMPLETE,
+                durationMillis = 60,
+                acousticBrightness = 0.9f,
+                acousticDryness = 0.2f,
+                acousticBody = 0.3f,
+                acousticFiber = 0.05f,
+                acousticGain = 0.4f,
+                hapticSharpness = 0.82f,
+                hapticWeight = 0.34f,
+                hapticPulseCount = 1,
+                hapticPulseMillis = 8,
+                hapticGapMillis = 8
+            )
+        )
+        val parchment = materialHapticFeedbackFor(
+            VeilMaterialPageSensoryCue(
+                material = VeilPageMaterial.PARCHMENT,
+                action = VeilMaterialPageAction.COMPLETE,
+                durationMillis = 100,
+                acousticBrightness = 0.3f,
+                acousticDryness = 0.7f,
+                acousticBody = 0.7f,
+                acousticFiber = 0.5f,
+                acousticGain = 0.5f,
+                hapticSharpness = 0.34f,
+                hapticWeight = 0.72f,
+                hapticPulseCount = 1,
+                hapticPulseMillis = 14,
+                hapticGapMillis = 12
+            )
+        )
+
+        assertEquals(HapticFeedbackConstants.KEYBOARD_TAP, glossy)
+        assertEquals(HapticFeedbackConstants.CONTEXT_CLICK, parchment)
+        assertNotEquals(glossy, parchment)
+    }
+
+    @Test
     fun `reader boundary uses a non-commit tactile cue`() {
         assertEquals(
             HapticFeedbackConstants.CONTEXT_CLICK,
