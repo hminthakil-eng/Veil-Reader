@@ -686,6 +686,21 @@ internal fun MaterialPageOverlay(
             scratch.destination[7] =
                 bottomLeftY - bottomDy / bottomLength * leftOverlap
 
+            if (
+                !isRenderableMaterialPageQuad(
+                    topLeftX = scratch.destination[0],
+                    topLeftY = scratch.destination[1],
+                    topRightX = scratch.destination[2],
+                    topRightY = scratch.destination[3],
+                    bottomRightX = scratch.destination[4],
+                    bottomRightY = scratch.destination[5],
+                    bottomLeftX = scratch.destination[6],
+                    bottomLeftY = scratch.destination[7]
+                )
+            ) {
+                continue
+            }
+
             scratch.path.reset()
             scratch.path.moveTo(
                 scratch.destination[0],
