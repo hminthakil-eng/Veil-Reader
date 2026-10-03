@@ -204,10 +204,25 @@ class MaterialPageModelTest {
         )
 
         assertTrue(topPull.creaseTop.y == bottomPull.creaseTop.y)
+        assertTrue(topPull.creaseTop.x < topPull.creaseBottom.x)
+        assertTrue(bottomPull.creaseTop.x > bottomPull.creaseBottom.x)
+
         val topStrip = topPull.strips.last()
         val bottomStrip = bottomPull.strips.last()
         assertTrue(topStrip.topLeft.y > bottomStrip.topLeft.y)
         assertTrue(bottomStrip.bottomLeft.y > topStrip.bottomLeft.y)
+
+        val mirrored = mirrorMaterialPageFrame(topPull, 1_000f)
+        assertEquals(
+            1_000f - topPull.creaseTop.x,
+            mirrored.creaseTop.x,
+            0.0001f
+        )
+        assertEquals(
+            1_000f - topPull.creaseBottom.x,
+            mirrored.creaseBottom.x,
+            0.0001f
+        )
     }
 
     @Test
@@ -218,6 +233,24 @@ class MaterialPageModelTest {
 
         assertEquals((source ushr 24) and 0xFF, (dark ushr 24) and 0xFF)
         assertTrue((dark and 0x00FFFFFF) < (light and 0x00FFFFFF))
+    }
+
+    @Test
+    fun `material settling is never underdamped`() {
+        MaterialPageProfiles.all.forEach { profile ->
+            assertTrue(
+                materialPageSpringDamping(
+                    profile = profile,
+                    cancelling = false
+                ) >= 1f
+            )
+            assertTrue(
+                materialPageSpringDamping(
+                    profile = profile,
+                    cancelling = true
+                ) > 1f
+            )
+        }
     }
 
     @Test
