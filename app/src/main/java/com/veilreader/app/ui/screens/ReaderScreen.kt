@@ -82,6 +82,8 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapGrid
@@ -89,6 +91,7 @@ import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.domain.readerFocusGuideBand
 import com.veilreader.app.ui.reader.ReaderHardwareKeyController
 import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
@@ -164,6 +167,8 @@ fun ReaderScreen(
     readerAppearance: ReaderAppearance,
     readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
+    focusGuide: ReaderFocusGuideSettings = ReaderFocusGuideSettings(),
+    onFocusGuideChange: (ReaderFocusGuideSettings) -> Unit = {},
     fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
     onFixedLayoutSpreadChange: (ReaderFixedLayoutSpread) -> Unit = {},
@@ -310,6 +315,8 @@ fun ReaderScreen(
     val chapterFailedMessage = stringResource(R.string.reader_chapter_failed)
     val externalLinkFailedMessage =
         stringResource(R.string.reader_external_link_failed)
+    val focusGuideOnMessage = stringResource(R.string.reader_focus_on)
+    val focusGuideOffMessage = stringResource(R.string.reader_focus_off)
     val imageViewerFailedMessage =
         stringResource(R.string.reader_image_viewer_failed)
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
@@ -1721,6 +1728,17 @@ fun ReaderScreen(
     )
     val progressLabel = formatPercent(progress.coerceIn(0f, 1f))
     val progressDescription = stringResource(R.string.reader_percent_read_text, progressLabel)
+    val focusGuideVisible =
+        focusGuide.mode != ReaderFocusGuideMode.OFF &&
+            !selectionModeActive &&
+            !entryVisible &&
+            !showNotebook &&
+            !showAppearance &&
+            !showPdfZoom &&
+            pendingNoteHighlightId == null &&
+            footnote == null &&
+            !imageLoading &&
+            imageViewer == null
 
     Box(
         Modifier
@@ -1791,6 +1809,28 @@ fun ReaderScreen(
                     ?.value
                     ?.readingProgression
                     ?: ReadingProgression.LTR,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+
+        AnimatedVisibility(
+            visible = focusGuideVisible,
+            enter = fadeIn(
+                tween(
+                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
+                    else VeilMotion.MICRO_FAST_MS
+                )
+            ),
+            exit = fadeOut(
+                tween(
+                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
+                    else VeilMotion.MICRO_FAST_MS
+                )
+            )
+        ) {
+            ReaderFocusGuideOverlay(
+                settings = focusGuide,
+                theme = presentedReaderAppearance.theme,
                 modifier = Modifier.fillMaxSize()
             )
         }
@@ -1987,6 +2027,27 @@ fun ReaderScreen(
                                 } else {
                                     bookmarkDuplicateMessage
                                 }
+                            }
+                        }
+
+                        ReaderControl(
+                            action = ReaderAction.FOCUS,
+                            label = stringResource(R.string.reader_focus),
+                            modifier = Modifier.weight(1f),
+                            accent = if (focusGuide.mode == ReaderFocusGuideMode.OFF) {
+                                readerChromeAccent.copy(alpha = 0.58f)
+                            } else {
+                                readerChromeAccent
+                            },
+                            foreground = readerChromeForeground
+                        ) {
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            val updated = focusGuide.toggled()
+                            onFocusGuideChange(updated)
+                            readerMessage = if (updated.mode == ReaderFocusGuideMode.OFF) {
+                                focusGuideOffMessage
+                            } else {
+                                focusGuideOnMessage
                             }
                         }
 
@@ -3029,12 +3090,72 @@ private fun ReaderFragmentHost(
     }
 }
 
+@Composable
+private fun ReaderFocusGuideOverlay(
+    settings: ReaderFocusGuideSettings,
+    theme: ReaderTheme,
+    modifier: Modifier = Modifier
+) {
+    val normalized = settings.normalized()
+    val dimBase = when (theme) {
+        ReaderTheme.PAPER,
+        ReaderTheme.SEPIA -> Color(0xFF18130F)
+        ReaderTheme.DUSK,
+        ReaderTheme.OLED -> Color.Black
+    }
+    val edge = when (theme) {
+        ReaderTheme.PAPER,
+        ReaderTheme.SEPIA -> Color(0xFF765C36)
+        ReaderTheme.DUSK,
+        ReaderTheme.OLED -> VeilPalette.Brass
+    }
+
+    Canvas(modifier) {
+        val band = readerFocusGuideBand(size.height, normalized) ?: return@Canvas
+        val alpha = normalized.dimStrength.toFloat()
+
+        if (band.top > 0f) {
+            drawRect(
+                color = dimBase.copy(alpha = alpha),
+                topLeft = Offset.Zero,
+                size = Size(size.width, band.top)
+            )
+        }
+        if (band.bottom < size.height) {
+            drawRect(
+                color = dimBase.copy(alpha = alpha),
+                topLeft = Offset(0f, band.bottom),
+                size = Size(size.width, size.height - band.bottom)
+            )
+        }
+
+        val edgeAlpha =
+            if (normalized.mode == ReaderFocusGuideMode.LINE) 0.34f else 0.16f
+        val edgeWidth =
+            if (normalized.mode == ReaderFocusGuideMode.LINE) 1.25.dp.toPx()
+            else 0.75.dp.toPx()
+
+        drawLine(
+            color = edge.copy(alpha = edgeAlpha),
+            start = Offset(0f, band.top),
+            end = Offset(size.width, band.top),
+            strokeWidth = edgeWidth
+        )
+        drawLine(
+            color = edge.copy(alpha = edgeAlpha),
+            start = Offset(0f, band.bottom),
+            end = Offset(size.width, band.bottom),
+            strokeWidth = edgeWidth
+        )
+    }
+}
+
 private data class ReaderFootnote(
     val title: String?,
     val text: String
 )
 
-private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, APPEARANCE, ZOOM }
+private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
 
 @Composable
 private fun ReaderChromeButton(
@@ -3163,6 +3284,22 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
                     close()
                 }
                 drawPath(path, tint, style = stroke)
+            }
+            ReaderAction.FOCUS -> {
+                drawRoundRect(
+                    color = tint,
+                    topLeft = Offset(w * .14f, h * .22f),
+                    size = Size(w * .72f, h * .56f),
+                    cornerRadius = CornerRadius(2.dp.toPx()),
+                    style = stroke
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .18f, h * .50f),
+                    Offset(w * .82f, h * .50f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
             }
             ReaderAction.APPEARANCE -> Unit
             ReaderAction.ZOOM -> {
