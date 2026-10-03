@@ -123,22 +123,27 @@ fun PathScreen(
             subtitle = "${identity.epithet} · $currentRank"
         )
 
-        AnimatedVisibility(
-            visible = reveal,
-            enter = if (reducedMotion) EnterTransition.None else
-                fadeIn(tween(VeilMotion.SPATIAL_MS)) +
-                    slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
-        ) {
-            PathIdentityPanel(profile)
-        }
-
-        Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
-            SectionHeading(
-                eyebrow = stringResource(R.string.path_progression_eyebrow),
-                title = stringResource(R.string.path_ascent_title)
-            )
-            RankConstellation(profile)
-        }
+        VeilArchitecturalPair(
+            primary = {
+                Column(verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                    SectionHeading(
+                        eyebrow = stringResource(R.string.path_progression_eyebrow),
+                        title = stringResource(R.string.path_ascent_title)
+                    )
+                    RankConstellation(profile)
+                }
+            },
+            secondary = {
+                AnimatedVisibility(
+                    visible = reveal,
+                    enter = if (reducedMotion) EnterTransition.None else
+                        fadeIn(tween(VeilMotion.SPATIAL_MS)) +
+                            slideInVertically(tween(VeilMotion.SPATIAL_MS)) { it / 6 }
+                ) {
+                    PathIdentityPanel(profile)
+                }
+            }
+        )
 
         RitualPanel(
             profile = profile,

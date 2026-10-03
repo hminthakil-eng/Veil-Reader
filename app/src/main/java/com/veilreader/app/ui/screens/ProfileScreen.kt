@@ -32,6 +32,7 @@ import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.domain.effectivePathMastery
 import com.veilreader.app.domain.ReadingCycleRecord
 import com.veilreader.app.domain.ReadingSessionSnapshot
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -279,8 +280,8 @@ private fun ProfileDailyGoalButton(
             onClick = onClick,
             shape = MaterialTheme.shapes.extraSmall,
             colors = ButtonDefaults.buttonColors(
-                containerColor = VeilPalette.Brass,
-                contentColor = Color(0xFF17120A)
+                containerColor = VeilMaterials.ElevatedSurface,
+                contentColor = VeilPalette.Moon
             ),
             modifier = modifier.heightIn(min = 48.dp)
         ) {
@@ -331,12 +332,12 @@ private fun ProfileMasteryPanel(profile: ReaderProfile) {
             modifier = Modifier.padding(VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Bottom
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 Column(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     VeilMicroLabel(
@@ -370,7 +371,7 @@ private fun ProfileMasteryPanel(profile: ReaderProfile) {
                 Text(
                     stringResource(R.string.profile_mastery_dissonance, mastery.dissonance),
                     style = MaterialTheme.typography.labelSmall,
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
             }
         }
@@ -477,7 +478,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
             Text(
                 stringResource(R.string.profile_sessions_count, history.recordedSessionCount),
                 style = MaterialTheme.typography.labelMedium,
-                color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                color = VeilMaterials.TextSecondary
             )
         }
 
@@ -507,7 +508,7 @@ private fun DossierHistoryLedger(history: ReaderDossierHistory) {
         Text(
             stringResource(R.string.profile_ledger_note),
             style = MaterialTheme.typography.bodySmall,
-            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+            color = VeilMaterials.TextSecondary
         )
     }
 }
@@ -525,7 +526,7 @@ private fun DossierLedgerLine(
         VeilMicroLabel(
             text = label,
             modifier = Modifier.weight(1f),
-            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+            color = VeilMaterials.TextSecondary
         )
         Text(
             value,
@@ -699,7 +700,7 @@ private fun ArchivistDossierPanel(
                 Text(
                     stringResource(R.string.profile_sigils_count, profile.earnedSigils.size),
                     style = MaterialTheme.typography.labelSmall,
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
                 Text(
                     stringResource(
@@ -708,12 +709,12 @@ private fun ArchivistDossierPanel(
                         totalDiscoveries
                     ),
                     style = MaterialTheme.typography.labelSmall,
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
                 Text(
                     stringResource(R.string.profile_marks_count, highlightCount),
                     style = MaterialTheme.typography.labelSmall,
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
             }
         }
@@ -822,7 +823,7 @@ private fun DossierFact(label: String, value: String) {
     ) {
         VeilMicroLabel(
             text = label,
-            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
+            color = VeilMaterials.TextSecondary,
             modifier = Modifier.width(82.dp)
         )
         Text(
@@ -914,7 +915,7 @@ private fun DossierStat(
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
-            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
+            color = VeilMaterials.TextSecondary,
             maxLines = 1
         )
     }

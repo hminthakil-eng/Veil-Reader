@@ -3,6 +3,8 @@ package com.veilreader.app.ui.screens
 import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -158,6 +160,36 @@ class GrayfogShellAccessibilityTest(
             assertEquals(1, records)
         }
         capture("archive-index")
+    }
+
+    @Test
+    fun galleryUtilitiesRemainReachableWithoutOpeningTheVolume() {
+        val localized = localizedContext()
+        val book = Book(
+            id = "gallery-review",
+            title = if (language == "fa") "دفتر رصدخانه و خاطره‌های بایگانی" else "The Observatory and Its Preserved Records",
+            author = if (language == "fa") "پژوهشگر بایگانی" else "Archive researcher", progress = 0.42f
+        )
+        var opens = 0
+        var favorites = 0
+        var records = 0
+        present {
+            Box(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                BookLibraryTile(book, null, null, onOpen = { opens++ },
+                    onFavorite = { favorites++ }, onDetails = { records++ })
+            }
+        }
+        compose.onNodeWithContentDescription(localized.getString(R.string.library_book_details_semantics, book.title))
+            .performScrollTo().assertIsDisplayed().assertHeightIsAtLeast(48.dp).performClick()
+        compose.onNodeWithContentDescription(localized.getString(R.string.library_add_favorite_semantics, book.title))
+            .performScrollTo().assertIsDisplayed().assertWidthIsAtLeast(48.dp)
+            .assertHeightIsAtLeast(48.dp).performClick()
+        compose.runOnIdle {
+            assertEquals(0, opens)
+            assertEquals(1, records)
+            assertEquals(1, favorites)
+        }
+        capture("archive-gallery")
     }
 
     private fun capture(surface: String) {

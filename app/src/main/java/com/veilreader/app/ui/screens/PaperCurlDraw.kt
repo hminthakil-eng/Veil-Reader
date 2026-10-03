@@ -46,7 +46,7 @@ internal fun paperCurlMaterialAge(patina: Float): PaperCurlMaterialAge {
         backPageShadeAlpha = 0.13f + age * 0.07f,
         contactShadowAlpha = 0.17f + age * 0.05f,
         edgeThicknessAlpha = 0.16f + age * 0.08f,
-        backsideFiberAlpha = 0.018f + age * 0.047f
+        backsideFiberAlpha = 0.012f + age * 0.026f
     )
 }
 
@@ -58,12 +58,12 @@ internal data class PaperCurlVisualConfig(
     val shadowRadius: Dp = 28.dp,
     val shadowOffset: DpOffset = DpOffset((-5).dp, 2.dp),
     val edgeHighlight: Color = Color.White,
-    val creaseHighlightAlpha: Float = 0.26f,
+    val creaseHighlightAlpha: Float = 0.16f,
     val creaseShadowAlpha: Float = 0.20f,
     val backPageShadeAlpha: Float = 0.16f,
     val contactShadowAlpha: Float = 0.18f,
     val edgeThicknessAlpha: Float = 0.20f,
-    val backsideFiberAlpha: Float = 0.040f
+    val backsideFiberAlpha: Float = 0.028f
 )
 
 internal fun Modifier.paperCurl(

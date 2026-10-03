@@ -30,7 +30,7 @@ The supplied screen boards establish editorial hierarchy, unboxed book objects, 
 
 ## Source review and regression boundary
 
-No changes to Room/database/schema, LibraryRepository, ReaderViewModel, navigation transaction or locator policy, page-effect listeners/states/geometry/drawing, Pdfium adapter, TTS session/backend, focus guide, lookup, ETA statistics, import, backup, sensory configuration or progression calculations. ReaderScreen changes only remove three ornamental Canvas calls and their import. Existing `PAGED/SCROLL` controls remain distinct from `PAPER/SLIDE/NONE` turn controls. Historical branches and main remain untouched.
+No changes to Room/database/schema, LibraryRepository, ReaderViewModel, navigation transaction or locator policy, page-effect listeners/states/geometry, Pdfium adapter, TTS session/backend, focus guide, lookup, ETA statistics, import, backup, sensory configuration or progression calculations. The initial ReaderScreen pass removed three ornamental Canvas calls. The continuation additionally refines Appearance control materials and localized specimens; rendering preferences, navigation and settlement logic remain unchanged. PaperCurlDraw changes only three visual grain/highlight constants. Existing `PAGED/SCROLL` controls remain distinct from `PAPER/SLIDE/NONE` turn controls. Historical branches and main remain untouched.
 
 Source refinements were reviewed twice: first for shared hierarchy/type/material; second for memory-column width, high-contrast image suppression, Sanctuary ornament, literal error behavior, Ritual action reachability, script tracking and wide-layout usable width. This does not substitute for rendered refinement.
 
@@ -38,9 +38,9 @@ Font derivatives retain original copyright/license metadata and use new internal
 
 ## Review facilities
 
-`app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt` exposes ten realm screens across seven preview configurations: compact phone, Persian 130%, compact 150%, Persian 200%, foldable, landscape and tablet. These are native Compose previews of actual screen code, with debug-only fictional fixtures. They have not been rendered/approved in this cloud session. Sanctuary requires actual EPUB/PDF fixtures and is deliberately not replaced with a simulated page.
+`app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt` exposes thirteen native screen/component specimens across seven preview configurations: compact phone, Persian 130%, compact 150%, Persian 200%, foldable, landscape and tablet. These are native Compose previews of actual screen code, with debug-only fictional fixtures. They have not been rendered/approved in this cloud session. Sanctuary requires actual EPUB/PDF fixtures and is deliberately not replaced with a simulated page.
 
-`GrayfogShellAccessibilityTest` is a device harness with 16 parameter sets (English/Persian × 100/130/150/200% × standard/high contrast), three tests per set. It checks Threshold copy separation, resume/empty action reachability, 48dp Archive actions and nested click ownership. It captures entrance, resume, empty and index frames inside the test app's `files/grayfog-review` directory when executed.
+`GrayfogShellAccessibilityTest` is a device harness with 16 parameter sets (English/Persian × 100/130/150/200% × standard/high contrast), four tests per set (64 cases). It checks Threshold copy separation, resume/empty action reachability, 48dp Index/Gallery actions and nested click ownership. It captures entrance, resume, empty, index and gallery frames inside the test app's `files/grayfog-review` directory when executed.
 
 Run on an attached Android device:
 
@@ -65,7 +65,7 @@ The connected runner uses the target debug application; confirm the application 
 | Castle / Ritual / Sanctum | Tablet/foldable room proportions, TalkBack order, chamber targets, skippable Ritual at 200%, earned/locked relics, museum hierarchy |
 | Loading / Errors | Static Reduced Motion progress semantics; TalkBack announcement, long Persian recovery copy, readable dismissal in landscape |
 
-Every major surface still requires actual Android screenshot inspection and iterative visual refinement. Bundled-font metrics can change wrapping beyond the changed screens. No claim of visual fidelity, DEVICE-GREEN, performance-green or release readiness is made from compilation. Physical paper refinements already present in canonical are retained; additional physics/shading tuning must be driven by page-turn captures rather than speculative rewrites. No literary files beyond the four images were attached; no unseen works were reviewed.
+Every major surface still requires actual Android screenshot inspection and iterative visual refinement. Bundled-font metrics can change wrapping beyond the changed screens. No claim of visual fidelity, DEVICE-GREEN, performance-green or release readiness is made from compilation. Canonical paper geometry and ownership are retained. This continuation lowers source-safe material intensity; additional physics/shading tuning must be driven by page-turn captures. The curated literary reference was reviewed; no claim is made to have read unseen EPUB files.
 
 ## Verification
 
@@ -73,4 +73,23 @@ See [VERIFICATION.md](VERIFICATION.md) for final-head commands and evidence. Ver
 
 ## Reversal
 
-Revert the design commit on this new branch or on another review branch. The starting integration branch is unchanged. Do not reset, force-push, delete historical refs, or merge this candidate into main without the outstanding visual/device gates and explicit authorization.
+Revert the relevant design commits on this design branch in reverse order. The starting integration branch is unchanged. Do not reset, force-push, delete historical refs, or merge this candidate into main without the outstanding visual/device gates and explicit authorization.
+
+## Continuation delivered on the same PR / branch
+
+The curated literary reference informs controlled revelation and archival matter. Architecture surrounds the working object; it no longer competes through repeated frames. No new branch, design-system replacement, artwork extraction or engine replacement was introduced.
+
+- **Threshold:** unframed environmental doorway, stronger current cover than recent covers, quiet paper registration, simplified explicit resume affordance. Removes an ungrounded red ornament and nested circular button. References A/B/D.
+- **Archive:** results precede optional history; mode/facet rails wrap independently; Gallery becomes unboxed cover objects, Shelves gains a shallow common datum, Index stays continuously ruled. Search/relevance/filter/sort and nested action ownership retained.
+- **Artifact chamber:** usable-width composition replaces the raw-phone-width breakpoint. Parchment Read/Continue sits with identity before secondary progress/history. Collections wrap; favorite/edit/delete rules remain.
+- **Sanctuary instruments:** Appearance choices use cool working material rather than brown fill; theme specimens use a localized scalable sample. Settings headings are readable literal titles. Publication fonts and capabilities remain independent.
+- **Reading records:** one shared ledger rule replaces perimeter boxes in Archive folios and Notebook records. Book/category and return/edit/delete rails wrap at large text. Stored sources, uncertain history, Echoes/Capsules and atomic Notes remain.
+- **Physical paper:** lower mottle/oxidation/fibre/speck alpha and active age-derived backside grain; lower fallback crease-light/grain defaults. Explicit Reader theme-specific crease-light values are deliberately preserved for device-led tuning. Contact shadows, age integration and faint ink ghosting remain. No fold geometry, gesture threshold, velocity, bitmap lifetime or page settlement change.
+- **Observatory / Castle:** grounded edges become more visible and thinner; selected record is quieter. Castle chambers receive full readable width below the shared usable-width threshold; sufficient widths retain alternating rooms/bridges and memory architecture. No fabricated relationships or unlock rules.
+- **Path / Profile / Sanctum:** journey before statistics; wide adjacency follows the existing composition helper. Mastery labels no longer compete in a rigid row. Ordinary goal/equip actions lose gold fills; permanent-title captions and meters receive better hierarchy/wrapping. Ceremony/dismissal and progression gates retained.
+
+New native review specimens cover Book Detail, Gallery object and Shelves. These supplement the actual Library preview; the Gallery object specimen is not evidence of a complete rendered Library screen. The expanded device harness checks Gallery utility targets and confirms that favorite/details do not open the volume, across English/Persian, 100/130/150/200% and high contrast. Compilation is the only executed harness evidence here.
+
+Remaining weaknesses are deliberately open: Threshold crop/light and entry-to-resume distance; Gallery metadata/action baseline rhythm; continuous shelf depth; compact artifact balance; Persian shaping/wrapping; Castle corridor spatial quality; Observatory node selection; paper fold illumination and long-session texture comfort. Native screenshots are needed to choose further optical corrections responsibly. The PR remains Draft.
+
+The large-library retrieval review adds a direct Series menu to the wrapping filter instruments. It uses existing source-derived series wings and the existing seriesFilter; choosing a series clears the collection exactly as the wing route does. All-series/reset remain immediate. Archive wings may stay below results without making series retrieval depend on scrolling through the entire library. No second filtering pipeline was added.

@@ -116,7 +116,7 @@ distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.0-bin.zip
    MavenCentral dependency, and connects to the library every time, which
    makes it more flexible but also much slower.
 
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:197: Warning: Composable functions with a return type should start with a lowercase letter [ComposableNaming from androidx.compose.runtime]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:199: Warning: Composable functions with a return type should start with a lowercase letter [ComposableNaming from androidx.compose.runtime]
 internal fun VeilBackLabel(destination: String): String =
              ~~~~~~~~~~~~~
 
@@ -130,22 +130,22 @@ internal fun VeilBackLabel(destination: String): String =
    Identifier: androidx.compose.runtime
    Feedback: https://issuetracker.google.com/issues/new?component=612128
 
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt:199: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt:200: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
         LocalConfiguration.current.screenWidthDp.toFloat()
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt:655: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt:656: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
         LocalConfiguration.current.screenWidthDp.toFloat()
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt:130: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt:131: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
         LocalConfiguration.current.screenWidthDp.toFloat()
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt:262: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt:263: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
         LocalConfiguration.current.screenWidthDp.toFloat()
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/MangaHubScreen.kt:93: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
         LocalConfiguration.current.screenWidthDp.toFloat()
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt:86: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt:87: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
         LocalConfiguration.current.screenWidthDp.toFloat()
         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt:71: Warning: Using Configuration.screenWidthDp instead of LocalWindowInfo.current.containerSize [ConfigurationScreenWidthHeight from androidx.compose.ui]
@@ -182,7 +182,7 @@ private fun imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/BookEntryTransition.kt:83: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
     modifier: Modifier = Modifier
     ~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:135: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:137: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
     modifier: Modifier = Modifier,
     ~~~~~~~~
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/MemoryArtifactPresentation.kt:36: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
@@ -191,7 +191,7 @@ private fun imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/PdfZoomControls.kt:68: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
     modifier: Modifier = Modifier,
     ~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt:5238: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt:5239: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
     modifier: Modifier = Modifier
     ~~~~~~~~
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/VeilChrome.kt:620: Warning: Modifier parameter should be the first optional parameter [ModifierParameter from androidx.compose.ui]
@@ -586,10 +586,10 @@ private fun imageModifier(mode: MangaReaderMode): Modifier = when (mode) {
    </lint>
    ```
 
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:395: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:397: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
             val pixel = bitmap.getPixel(x, y)
                         ~~~~~~~~~~~~~~~~~~~~~
-/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:497: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
+/workspace/Veil-Reader/app/src/main/java/com/veilreader/app/ui/screens/Common.kt:499: Warning: Use the KTX extension function Bitmap.get instead? [UseKtx]
             val pixel = bitmap.getPixel(x, y)
                         ~~~~~~~~~~~~~~~~~~~~~
 /workspace/Veil-Reader/app/src/main/java/com/veilreader/app/data/GameRepository.kt:57: Warning: Use the KTX extension function SharedPreferences.edit instead? [UseKtx]

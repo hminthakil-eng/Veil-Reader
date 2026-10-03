@@ -28,6 +28,7 @@ import com.veilreader.app.domain.Highlight
 import com.veilreader.app.domain.PassageVisit
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.usesArabicScript
 import kotlinx.coroutines.CancellationException
@@ -538,13 +539,9 @@ fun ReaderNotebook(
                         }
                         items(bookmarks, key = { it.id }) { bookmark ->
                             Surface(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().veilLedgerRule(),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilPalette.Archive.copy(alpha = 0.68f),
-                                border = BorderStroke(
-                                    1.dp,
-                                    VeilPalette.BorderDark.copy(alpha = 0.72f)
-                                ),
+                                color = VeilMaterials.Surface,
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {
@@ -599,13 +596,9 @@ fun ReaderNotebook(
                                 )
                             }
                             Surface(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().veilLedgerRule(),
                                 shape = MaterialTheme.shapes.extraSmall,
-                                color = VeilPalette.Archive.copy(alpha = 0.72f),
-                                border = BorderStroke(
-                                    1.dp,
-                                    VeilPalette.BorderDark.copy(alpha = 0.72f)
-                                ),
+                                color = VeilMaterials.Surface,
                                 tonalElevation = 0.dp,
                                 shadowElevation = 0.dp
                             ) {
@@ -633,13 +626,13 @@ fun ReaderNotebook(
                                                 }
                                             },
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = VeilPalette.Spirit.copy(alpha = 0.72f)
+                                            color = VeilPalette.Spirit
                                         )
                                     } else if (marginMemory.bookActivityAfterMark) {
                                         Text(
                                             stringResource(R.string.reader_notebook_activity_after_mark),
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = VeilPalette.Mist.copy(alpha = 0.52f)
+                                            color = VeilMaterials.TextSecondary
                                         )
                                     }
                                     MemoryArtifactContent(
@@ -699,7 +692,7 @@ fun ReaderNotebook(
                         }
                         items(bookSearchResults) { locator ->
                             Surface(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().veilLedgerRule(),
                                 shape = MaterialTheme.shapes.extraSmall,
                                 color = VeilPalette.Archive.copy(alpha = 0.64f),
                                 border = BorderStroke(

@@ -84,6 +84,12 @@ object VeilMeasure {
     val NarrowMetadata = 520.dp
 }
 
+/** Readable working width, after accessibility scaling, for architectural adjacency. */
+object VeilComposition {
+    const val ArtifactIdentityMinWidthDp = 600f
+    const val ChamberBridgeMinWidthDp = 440f
+}
+
 /** Semantic shape families: archive plates stay sharp; architectural surfaces can breathe. */
 object VeilShapeLanguage {
     // Plate: metadata, archive rows, precise utility surfaces.

@@ -42,6 +42,7 @@ import com.veilreader.app.domain.MemoryRelationKind
 import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.buildMemoryAtlas
 import com.veilreader.app.ui.books.bookArtifactState as canonicalBookArtifactState
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -154,7 +155,7 @@ fun ObservatoryScreen(
                             )
                         },
                         style = MaterialTheme.typography.labelSmall,
-                        color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                        color = VeilMaterials.TextSecondary
                     )
 
                     selectedNode?.let { node ->
@@ -190,7 +191,7 @@ fun ObservatoryScreen(
         Text(
             stringResource(R.string.observatory_links_disclaimer),
             style = MaterialTheme.typography.bodySmall,
-            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+            color = VeilMaterials.TextSecondary
         )
     }
     }
@@ -228,15 +229,7 @@ private fun ObservatoryAtlasPanel(
             .fillMaxWidth()
             .height(panelHeightDp.dp)
             .clip(MaterialTheme.shapes.small)
-            .background(
-                Brush.radialGradient(
-                    listOf(
-                        Color(0xFF17202A),
-                        VeilPalette.Archive,
-                        VeilPalette.Ink
-                    )
-                )
-            )
+            .background(VeilMaterials.Depth)
             .border(
                 BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.34f)),
                 MaterialTheme.shapes.small
@@ -308,14 +301,14 @@ private fun ObservatoryAtlasPanel(
                 drawLine(
                     color = VeilPalette.Brass.copy(
                         alpha = if (selectedEdge) {
-                            0.20f + edge.strength * 0.025f
+                            0.32f + edge.strength * 0.025f
                         } else {
-                            0.022f + edge.strength * 0.008f
+                            0.09f + edge.strength * 0.008f
                         }
                     ),
                     start = points[fromIndex],
                     end = points[toIndex],
-                    strokeWidth = if (selectedEdge) 1.3.dp.toPx() else 0.7.dp.toPx(),
+                    strokeWidth = if (selectedEdge) 1.dp.toPx() else 0.65.dp.toPx(),
                     cap = StrokeCap.Round
                 )
             }
@@ -402,8 +395,7 @@ private fun ObservatorySelection(
             .fillMaxWidth()
             .heightIn(min = 48.dp),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.62f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.76f)),
+        color = VeilMaterials.Surface,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -435,7 +427,7 @@ private fun ObservatorySelection(
                         node.book.title,
                         style = MaterialTheme.typography.titleLarge,
                         color = VeilPalette.Moon,
-                        maxLines = 2,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
@@ -454,7 +446,7 @@ private fun ObservatorySelection(
                 Text(
                     stringResource(R.string.observatory_standalone_body),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
             } else {
                 connections.take(6).forEach { edge ->
@@ -521,7 +513,7 @@ private fun ObservatoryConnectionRow(edge: MemoryAtlasEdge, other: Book) {
         Text(
             relationLabelsText(edge.reasons),
             style = MaterialTheme.typography.labelSmall,
-            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+            color = VeilMaterials.TextSecondary
         )
         if (MemoryRelationKind.PASSAGE_PATTERN in edge.reasons && edge.sharedPassageTerms.isNotEmpty()) {
             Text(
@@ -530,7 +522,7 @@ private fun ObservatoryConnectionRow(edge: MemoryAtlasEdge, other: Book) {
                     edge.sharedPassageTerms.joinToString(" · ")
                 ),
                 style = MaterialTheme.typography.bodySmall,
-                color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
+                color = VeilMaterials.TextSecondary,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -616,7 +608,7 @@ private fun ObservatorySectionHeading(
                 Text(
                     value,
                     style = MaterialTheme.typography.labelSmall,
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
             }
         }

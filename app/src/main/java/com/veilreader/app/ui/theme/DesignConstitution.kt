@@ -128,31 +128,31 @@ fun thresholdLayoutPolicyFor(
             contentMaxWidthDp = 860f,
             horizontalPaddingDp = 16f,
             headerHeightDp = 252f,
-            heroCoverWidthDp = 96f,
-            heroCoverHeightDp = 142f,
+            heroCoverWidthDp = 118f,
+            heroCoverHeightDp = 174f,
             recentItemWidthDp = 118f,
-            recentCoverWidthDp = 108f,
-            recentCoverHeightDp = 158f
+            recentCoverWidthDp = 96f,
+            recentCoverHeightDp = 142f
         )
         VeilAdaptiveClass.WIDE -> VeilThresholdLayoutPolicy(
             contentMaxWidthDp = 920f,
             horizontalPaddingDp = 20f,
             headerHeightDp = 292f,
-            heroCoverWidthDp = 118f,
-            heroCoverHeightDp = 174f,
+            heroCoverWidthDp = 132f,
+            heroCoverHeightDp = 194f,
             recentItemWidthDp = 132f,
-            recentCoverWidthDp = 120f,
-            recentCoverHeightDp = 176f
+            recentCoverWidthDp = 108f,
+            recentCoverHeightDp = 158f
         )
         VeilAdaptiveClass.LARGE -> VeilThresholdLayoutPolicy(
             contentMaxWidthDp = 980f,
             horizontalPaddingDp = 28f,
             headerHeightDp = 316f,
-            heroCoverWidthDp = 132f,
-            heroCoverHeightDp = 194f,
+            heroCoverWidthDp = 146f,
+            heroCoverHeightDp = 216f,
             recentItemWidthDp = 146f,
-            recentCoverWidthDp = 132f,
-            recentCoverHeightDp = 194f
+            recentCoverWidthDp = 118f,
+            recentCoverHeightDp = 174f
         )
     }
 
@@ -366,11 +366,11 @@ fun sanctuarySurfaceProfileFor(
         pageShadeAlpha = if (dark) 0.075f else 0.022f + 0.050f * p,
         stackEdgeAlpha = if (dark) 0.20f else 0.055f + 0.055f * p,
         sheetLineAlpha = if (dark) 0.018f else 0.025f + 0.022f * p,
-        mottleAlpha = if (dark || p <= 0.04f) 0f else 0.008f + 0.020f * p,
-        edgeOxidationAlpha = if (dark || p <= 0.04f) 0f else 0.012f + 0.040f * p,
-        fibreAlpha = if (dark) 0f else 0.006f + 0.018f * p,
+        mottleAlpha = if (dark || p <= 0.04f) 0f else 0.004f + 0.010f * p,
+        edgeOxidationAlpha = if (dark || p <= 0.04f) 0f else 0.008f + 0.026f * p,
+        fibreAlpha = if (dark) 0f else 0.004f + 0.012f * p,
         fibreCount = if (dark) 0 else 12 + (18f * p).toInt(),
-        speckAlpha = if (dark) 0f else 0.006f + 0.020f * p,
+        speckAlpha = if (dark) 0f else 0.003f + 0.010f * p,
         speckCount = if (dark) 0 else 14 + (22f * p).toInt()
     )
 }

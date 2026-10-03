@@ -1,14 +1,16 @@
 {
   "base": "18fe4ab78b381ba44fbbfc1817a00d3f8253bfcf",
+  "continuation_parent": "5d35d6556a0a70f9f3aa500a718031453267ee3b",
   "branch": "design/codex-grayfog-masterpiece-v1",
-  "gradle": "BUILD SUCCESSFUL in 9m 18s",
+  "gradle": "BUILD SUCCESSFUL in 6m 43s",
   "jvm": {
     "suites": 122,
-    "tests": 682,
+    "tests": 684,
     "failures": 0,
     "errors": 0,
     "skipped": 0
   },
+  "design_system_tests": 31,
   "lint": {
     "Warning": 166,
     "Hint": 1
@@ -16,22 +18,24 @@
   "reading_policy_checks": 39,
   "font_instances_verified": 8,
   "font_notices_packaged": 5,
-  "apk_evidence": {
-    "app-debug.apk": {
-      "bytes": 45993856,
-      "sha256": "b03ca9aee01df450129ca8c24a598a1eee001dc0c37ba8561d7f760dc77dc742"
+  "apk_evidence": [
+    {
+      "path": "app/build/outputs/apk/debug/app-debug.apk",
+      "size_bytes": 49336554,
+      "sha256": "abe7f2050393f57d01cac122d9d0eeeb495a9091ddc06217772cbffe737ba723"
     },
-    "app-debug-androidTest.apk": {
-      "bytes": 1403675,
-      "sha256": "af3543b686a10862abd4aabac942178b8a45d306e543d8717745b27706c7eb5f"
+    {
+      "path": "app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk",
+      "size_bytes": 1444781,
+      "sha256": "ebf3e81464de7acc68eba1ad9b116ce6992c86bdd6410c4e9527d432e1f2dc1b"
     }
-  },
-  "protected_reader_data_sources": "unchanged",
-  "device_tests": "not executed; no device attached",
-  "rendered_visual_review": "pending",
+  ],
+  "protected_reader_data_sources": "Data/domain/Room/schema, Reader owner/TTS/navigation, geometry/listeners/states/input arbiter unchanged from continuation parent. Three PaperCurlDraw material constants changed. ReaderScreen presentation-only Appearance changes.",
+  "device_tests": "64-case shell harness compiled; not executed. adb devices empty.",
+  "rendered_visual_review": "pending; PR #371 remains Draft",
   "source_sha256": {
-    "app/src/androidTest/java/com/veilreader/app/ui/screens/GrayfogShellAccessibilityTest.kt": "759df438e47de810e5de2e1a8a362127d9298b83c5f54030f80b884d4521de95",
-    "app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt": "21651b6575f8cde654727f0a02af32b51de0a068b77a578403503c975771d522",
+    "app/src/androidTest/java/com/veilreader/app/ui/screens/GrayfogShellAccessibilityTest.kt": "55914005b83a324ba7e5c322c4b1d708fa698eadf02ac882594e110f6e7bdb3c",
+    "app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt": "c3acfffaac3d66cf5e5e180d05c2966ce1bd4533324f6459a27b49fed1a50067",
     "app/src/main/assets/font-licenses/PROVENANCE.md": "c9d2fc395103c9730874b1f9ef9e54fd2922920744ada1e5dafcae0ad717fa1a",
     "app/src/main/assets/font-licenses/cormorantgaramond-OFL.txt": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956",
     "app/src/main/assets/font-licenses/playfairdisplay-OFL.txt": "566be814f8e96e93dfa16101331557eb6b5467e9e03f627c0910fe93ca12300e",
@@ -39,19 +43,23 @@
     "app/src/main/assets/font-licenses/vazirmatn-OFL.txt": "17e355067c8284f47743a1ee3b1ef7ff684ff0601eda357f9353b10b3016ab31",
     "app/src/main/java/com/veilreader/app/ui/VeilApp.kt": "fc7ea0233474a226eba899edf3bc6384b88fb1024647c2bbf153da668511e154",
     "app/src/main/java/com/veilreader/app/ui/VeilChrome.kt": "7697475f38cabe60effbd09da67da25fe430e84082b377a41aad3997af0c63c5",
-    "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt": "09bb3ff8a90f19b903f4798994db351ca8fc671415ea3a75b2d4cc8996573885",
-    "app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt": "21e01ea6246932727859d89cf258d9fb55cfa32f4af2024cb621e05caebff33c",
-    "app/src/main/java/com/veilreader/app/ui/screens/Common.kt": "90132ca100cee8145e54cf4e5f751204ad76946fa19c63b986fc0d55e9d5d2e5",
-    "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt": "b20733e25a66f279399ad628faba071e82526ac7b0e66be717b94adabf58efc7",
-    "app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt": "c5f5c8c79ebcdd33585f74f40fac94e4ddcdc14e20667f72508ae852aae0baf4",
-    "app/src/main/java/com/veilreader/app/ui/screens/PathScreen.kt": "95987a08b2adef99556b78c06ab2169ffaabe7707c8eccb5e179ff06e0015da0",
-    "app/src/main/java/com/veilreader/app/ui/screens/ProfileScreen.kt": "e17c0e82d08836812acf4e974d02be31779096be7360db1d6552361835310450",
-    "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt": "3ace0688c15e0ddd6caa925e02857450d9b2c352f25047a58a8024c11e5e1b56",
-    "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt": "19f0055acfb8a1be0b2bd032600fbedc69286ed4f707d1de5c991316d0a2e45d",
+    "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt": "098c7df78f660f855f4cd0c36c278080a73e24e9507b635feebb5064d3f12a05",
+    "app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt": "c6c383b2141a77152c94945984ff1f83da147aff8cca5a59b01a9efbf3128dcb",
+    "app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt": "3dd84d1d9e2d209a67fef6015cdd3d3fe74dceaa5c81192ea4fd342c4f360a29",
+    "app/src/main/java/com/veilreader/app/ui/screens/Common.kt": "fb20be1f7cb20acb626c0999846905f39e746cb05c78e40be9227ea5f0469482",
+    "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt": "3f530083f1edf7d6453b0c90abe151f98d98cfa2811fc4eb4226157697c4d792",
+    "app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt": "d3c9dac4d05519e56dcc34e79da3f9591c8936f9ec3ff2529e4606d28290bd6f",
+    "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlDraw.kt": "772fa31eb6a51d32ff9962d734f279ebd934be8217891c73b03c28cbc877549e",
+    "app/src/main/java/com/veilreader/app/ui/screens/PathScreen.kt": "610aedd09ca62fa6213f8676bdac3537636ccfc5d0f0f0a70599a0ef469f5d3f",
+    "app/src/main/java/com/veilreader/app/ui/screens/ProfileScreen.kt": "59d961a146df6dba7397a04e95eee68d4d25bbcf159253a4d91cee3e1565c3e4",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReaderNotebook.kt": "1c693f06db8f76d8d37610fa98899c88683a2fc9c2f21b3119ab9fdfc137fcc2",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt": "5ebe1a5045bd53044b551aae3c7af88636fa4264c78ef30be560c8cbdbaee022",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt": "501be76a99fde3a433e2da067d33f57e3c2cea2a86ab860d35cc1accc082fcd7",
+    "app/src/main/java/com/veilreader/app/ui/screens/SettingsScreen.kt": "c7814e83c911f36e420fc8d38c7d3f7a78377e58d67627f0c9764d3e328ac8a6",
     "app/src/main/java/com/veilreader/app/ui/theme/ArenaDesignSystem.kt": "4901be909f14f4cae673a70af3d2dd052a6cf99225084647e3f64047b51525c9",
     "app/src/main/java/com/veilreader/app/ui/theme/ArtDirection.kt": "886c3a5eacbdf3d49e2d0c5e8a5a422cd034b0ccc7a9f04f8de04181a7c30e14",
-    "app/src/main/java/com/veilreader/app/ui/theme/DesignConstitution.kt": "e32d9246a900c4304f83d0ec3aadcf0e28e0acc046a2b51519e158df604467ff",
-    "app/src/main/java/com/veilreader/app/ui/theme/DesignSystem.kt": "80a1a8793b3cdca0d3d7fb8407f17c8e20eae5c6b9b4bd6da64872ac0b08645b",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignConstitution.kt": "cd21690a8dec44848ef20e0ee997a72436c16916c65ad6cc225cb45224cb9c19",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignSystem.kt": "75770bb7f49d11047745b658fba7da880eaae03c22eef27eff8ed94304e39b9b",
     "app/src/main/java/com/veilreader/app/ui/theme/Theme.kt": "83a7ed89aef26c4af85eaecebd2fb62a3e113006270785b9023ed2915a26446c",
     "app/src/main/res/font/veil_editorial_regular.ttf": "21136f1a856906435f52618c1ce142f5179267d8861f36af868bfcc653165179",
     "app/src/main/res/font/veil_editorial_semibold.ttf": "a3ac38ebaeeea413b53c4818ee906f2e6f3801e1e5705c79c478bb5f74e85bb2",
@@ -61,863 +69,1255 @@
     "app/src/main/res/font/veil_persian_semibold.ttf": "bd8bcad74b9a89b84b425137f901fedb2a53ee83c6f52004da3ca51228046fd4",
     "app/src/main/res/font/veil_utility_regular.ttf": "c57de3a0eb49ec4e340168b6f3319cdf45b1d8bb3fadb22a78d085f367d951c6",
     "app/src/main/res/font/veil_utility_semibold.ttf": "cbba7e4254407954e9c2232bef8f900ff8820d956a10dc5cd9ae714650cbba3b",
-    "app/src/test/java/com/veilreader/app/ui/theme/DesignConstitutionTest.kt": "4c006f423ef0d46a7bcb531f79668860e6b10c2e7d3a1ff84be2c02e22963b41",
+    "app/src/main/res/values-fa/strings.xml": "74f88d2b80ef4560b3bbbbb5258dc3a666c1d0e579fbb10ea9c0073995ed1b49",
+    "app/src/main/res/values/strings.xml": "853130068ef850c0e3c3ee876c5f476fca5ba1224284cb34cdf0066477742110",
+    "app/src/test/java/com/veilreader/app/ui/screens/BookArtifactTest.kt": "85d99e911962156a6926e2f763f1d4227a8ce682d12bfba70f2bee017ec14499",
+    "app/src/test/java/com/veilreader/app/ui/theme/DesignConstitutionTest.kt": "f1d281eb492067fa4c646fa90f9dd8be0570ed75ef38aabcff809c460ff81317",
     "app/src/test/java/com/veilreader/app/ui/theme/DesignSystemTest.kt": "c3735d981ee2f4a3f76a4b7a9d0bf0ca5d47116bffa289849c4677073ee5adc5"
+  },
+  "source_git_blobs": {
+    "app/src/androidTest/java/com/veilreader/app/ui/screens/GrayfogShellAccessibilityTest.kt": "4308ac334289aae9890d06da42859f3b4c5ff608",
+    "app/src/debug/java/com/veilreader/app/ui/review/GrayfogReviewPreviews.kt": "f52bb436da7f9c72960b3f963eb94de566b216ca",
+    "app/src/main/java/com/veilreader/app/ui/screens/ArchiveScreen.kt": "57a7ebd11507f78f29216ddef64fa4f113defa35",
+    "app/src/main/java/com/veilreader/app/ui/screens/CastleChamberScreen.kt": "cd6eb68215bfd047e81a92e05e7c933b6c4476ee",
+    "app/src/main/java/com/veilreader/app/ui/screens/CastleScreen.kt": "ced40efc4c90f07ddf0586be47b916c86ac42450",
+    "app/src/main/java/com/veilreader/app/ui/screens/Common.kt": "c1966e785ce9ca83c43ce53c3473e462296ce935",
+    "app/src/main/java/com/veilreader/app/ui/screens/LibraryScreen.kt": "aae9f43bbc24ee2f9c49e90d26a49576d654837d",
+    "app/src/main/java/com/veilreader/app/ui/screens/ObservatoryScreen.kt": "7ea1d57d1d347871ed7678477022f6a7373f7b42",
+    "app/src/main/java/com/veilreader/app/ui/screens/PaperCurlDraw.kt": "7bcdbf7bcacacaca42044ab4c5feb4a4827ef5cb",
+    "app/src/main/java/com/veilreader/app/ui/screens/PathScreen.kt": "0f37372e5dad4478b571fdaba7364a5112c6db01",
+    "app/src/main/java/com/veilreader/app/ui/screens/ProfileScreen.kt": "8b3087ca8ffa31fc97cab307a56e1f8f072ddbb9",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReaderNotebook.kt": "6cdf423c717ead0c2e64a36dbebd71c9a99f2762",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReaderScreen.kt": "8f1d107a52126e2054f4b10fd85f96f3eec68f30",
+    "app/src/main/java/com/veilreader/app/ui/screens/ReadingNowScreen.kt": "7b31d3571e8b6e66925dbfe6eb8865e177bcc04a",
+    "app/src/main/java/com/veilreader/app/ui/screens/SettingsScreen.kt": "6ac99219f142c0bacf3bf99c3e883d1f9b77aaaa",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignConstitution.kt": "c8630a7a22f2975b80e0536f4ca1c9c0f58d8d1c",
+    "app/src/main/java/com/veilreader/app/ui/theme/DesignSystem.kt": "9d71d2d0ece5c2a095127570ea8f98a36b519131",
+    "app/src/main/res/values-fa/strings.xml": "a4f70c1e4bb72deacfe27c23705432ede3533743",
+    "app/src/main/res/values/strings.xml": "4329285fd4feb65d8bc3b3789ef7fb4191717d58",
+    "app/src/test/java/com/veilreader/app/ui/screens/BookArtifactTest.kt": "d48c57992ee52db4a0fb0b70c6dcf95b2e3396f8",
+    "app/src/test/java/com/veilreader/app/ui/theme/DesignConstitutionTest.kt": "e4af751f0549716f6e9e77c7f2ada55db25f5f90"
   },
   "test_suites": [
     {
       "name": "com.veilreader.app.data.GameCompletionEvidenceTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:41.935Z",
+      "hostname": "251b4627a937",
+      "time": "0.029"
     },
     {
       "name": "com.veilreader.app.data.GameRepositoryDurabilityTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:42.526Z",
+      "hostname": "251b4627a937",
+      "time": "6.732"
     },
     {
       "name": "com.veilreader.app.data.ReaderProgressWriteOrderTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:49.273Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.data.ReadingPaceStoreCodecTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:49.278Z",
+      "hostname": "251b4627a937",
+      "time": "4.764"
     },
     {
       "name": "com.veilreader.app.data.migration.LegacyLibraryMigratorTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.044Z",
+      "hostname": "251b4627a937",
+      "time": "0.01"
     },
     {
       "name": "com.veilreader.app.data.settings.ReaderFocusGuidePreferencesTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.056Z",
+      "hostname": "251b4627a937",
+      "time": "0.02"
     },
     {
       "name": "com.veilreader.app.data.settings.ReaderTtsPreferencesTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.078Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
     },
     {
       "name": "com.veilreader.app.domain.ArrodesMirrorTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.080Z",
+      "hostname": "251b4627a937",
+      "time": "0.04"
     },
     {
       "name": "com.veilreader.app.domain.BookArtifactMemoryTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.122Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.domain.CastleMemoryStateTest",
       "tests": "10",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.129Z",
+      "hostname": "251b4627a937",
+      "time": "0.079"
     },
     {
       "name": "com.veilreader.app.domain.GamificationEngineTest",
       "tests": "10",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.212Z",
+      "hostname": "251b4627a937",
+      "time": "0.009"
     },
     {
       "name": "com.veilreader.app.domain.HighlightMemoryTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.224Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.domain.HistoricalMemoryTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.231Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.domain.LibraryAtmosphereStateTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.239Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
     },
     {
       "name": "com.veilreader.app.domain.LibraryMemoryTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.253Z",
+      "hostname": "251b4627a937",
+      "time": "0.012"
     },
     {
       "name": "com.veilreader.app.domain.LibraryWingsTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.267Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.domain.MemoryAtlasTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.274Z",
+      "hostname": "251b4627a937",
+      "time": "0.035"
     },
     {
       "name": "com.veilreader.app.domain.NarrativeIdentityTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.313Z",
+      "hostname": "251b4627a937",
+      "time": "0.011"
     },
     {
       "name": "com.veilreader.app.domain.RankWorldMutationTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.326Z",
+      "hostname": "251b4627a937",
+      "time": "0.012"
     },
     {
       "name": "com.veilreader.app.domain.ReaderFocusGuideTest",
       "tests": "7",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.341Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.domain.ReaderTapZonesTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.346Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
     },
     {
       "name": "com.veilreader.app.domain.ReaderTtsSettingsTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.355Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.domain.ReadingMemoryTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.358Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.domain.ReadingPolicyTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.363Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.domain.ReadingSessionTrackerTest",
       "tests": "9",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.367Z",
+      "hostname": "251b4627a937",
+      "time": "0.036"
     },
     {
       "name": "com.veilreader.app.domain.ReadingTimeCapsuleTest",
       "tests": "7",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.406Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.domain.ReadingTimeEstimateTest",
       "tests": "9",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.414Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.domain.ReturnRitualTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.421Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.domain.RitualAftermathTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.429Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.domain.WorldMutationLedgerTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.432Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.domain.WorldProgressionProjectionTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.437Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.manga.challenge.BrowserChallengeCoordinatorTest",
       "tests": "7",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.445Z",
+      "hostname": "251b4627a937",
+      "time": "0.294"
     },
     {
       "name": "com.veilreader.app.manga.health.SourceExecutionHealthIntegrationTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.743Z",
+      "hostname": "251b4627a937",
+      "time": "0.014"
     },
     {
       "name": "com.veilreader.app.manga.health.SourceHealthRankerTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.760Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.manga.health.SourceHealthStoreTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.766Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.manga.importing.MangaCbzIngestorTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.774Z",
+      "hostname": "251b4627a937",
+      "time": "0.04"
     },
     {
       "name": "com.veilreader.app.manga.library.CanonicalMangaTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.817Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.manga.library.MangaChapterMatcherTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.822Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.manga.library.MangaOfflineCacheTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.828Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.manga.library.MangaOfflineChapterLocatorTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.836Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.manga.library.MangaProgressTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.840Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.manga.reader.MangaImageGeometryTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.843Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.manga.reader.MangaReaderControllerTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.848Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.manga.reader.MangaReaderRestoreTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.856Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.manga.reader.image.MangaExtremeImageStrategyTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.865Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.manga.reader.image.MangaLocalPageVerifierTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.871Z",
+      "hostname": "251b4627a937",
+      "time": "0.018"
     },
     {
       "name": "com.veilreader.app.manga.reader.image.MangaRemotePagePolicyTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.892Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.manga.reader.presentation.MangaChapterNavigationTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.899Z",
+      "hostname": "251b4627a937",
+      "time": "0.012"
     },
     {
       "name": "com.veilreader.app.manga.reader.presentation.MangaReaderChapterLoaderTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.915Z",
+      "hostname": "251b4627a937",
+      "time": "0.016"
     },
     {
       "name": "com.veilreader.app.manga.reader.screen.MangaProductSessionAdapterTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.933Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.manga.reader.screen.MangaReaderDurableCloseTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:54.942Z",
+      "hostname": "251b4627a937",
+      "time": "0.312"
     },
     {
       "name": "com.veilreader.app.manga.reader.screen.MangaReaderGestureOwnershipPolicyTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.256Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.manga.reader.screen.MangaReaderProgressMapperTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.261Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.manga.reader.screen.MangaReaderSessionTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.265Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.manga.reader.ui.MangaReaderSavedStateCodecTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.272Z",
+      "hostname": "251b4627a937",
+      "time": "0.037"
     },
     {
       "name": "com.veilreader.app.manga.reader.ui.MangaReaderUiReducerTest",
       "tests": "7",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.312Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.manga.reader.ui.MangaReaderViewportMathTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.317Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.manga.replacement.SourceAlternativeResolverTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.321Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
     },
     {
       "name": "com.veilreader.app.manga.replacement.SourceAlternativeScorerTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.331Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.manga.replacement.SourceReplacementPlannerTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.334Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.manga.source.MangaSourceProviderContractTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.342Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
     },
     {
       "name": "com.veilreader.app.manga.source.SourceExecutionCoordinatorTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.352Z",
+      "hostname": "251b4627a937",
+      "time": "0.118"
     },
     {
       "name": "com.veilreader.app.manga.source.SourceRecoveryPolicyTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.471Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.manga.source.SourceRegistryTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.474Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.ui.CrossRealmAccessibilityTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.479Z",
+      "hostname": "251b4627a937",
+      "time": "0.043"
     },
     {
       "name": "com.veilreader.app.ui.VeilAppAdaptiveLayoutTest",
       "tests": "8",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.524Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
     },
     {
       "name": "com.veilreader.app.ui.books.BookArtifactTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.534Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.ui.navigation.ReaderRestorePolicyTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.539Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.navigation.VeilAppViewModelProcessDeathTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.543Z",
+      "hostname": "251b4627a937",
+      "time": "0.071"
     },
     {
       "name": "com.veilreader.app.ui.navigation.VeilAppViewModelTest",
       "tests": "11",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.616Z",
+      "hostname": "251b4627a937",
+      "time": "0.021"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderCloseDurabilityTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.640Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderHardwareAccessibilityTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.649Z",
+      "hostname": "251b4627a937",
+      "time": "0.119"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderHardwareKeyControllerTest",
       "tests": "10",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.776Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderHardwareKeyDispatcherTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.803Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderLocatorPolicyTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.810Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderNavigationTransactionTest",
       "tests": "24",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.813Z",
+      "hostname": "251b4627a937",
+      "time": "0.007"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderOpenAttemptGateTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.821Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderOpenResourceGuardTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.824Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderSessionOwnershipTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.826Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
     },
     {
       "name": "com.veilreader.app.ui.reader.ReaderStartupHandshakePolicyTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.827Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.reader.tts.ReaderTtsPolicyTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.829Z",
+      "hostname": "251b4627a937",
+      "time": "0.025"
     },
     {
       "name": "com.veilreader.app.ui.reader.tts.ReaderTtsReaderOwnershipTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.855Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.reader.tts.ReaderTtsSessionTest",
       "tests": "11",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:55.863Z",
+      "hostname": "251b4627a937",
+      "time": "0.532"
     },
     {
       "name": "com.veilreader.app.ui.reader.tts.ReadiumTtsContentTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.402Z",
+      "hostname": "251b4627a937",
+      "time": "0.404"
     },
     {
       "name": "com.veilreader.app.ui.screens.BookArtifactTest",
       "tests": "22",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.816Z",
+      "hostname": "251b4627a937",
+      "time": "0.035"
     },
     {
       "name": "com.veilreader.app.ui.screens.BookCoverSampleSizeTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.852Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.screens.BookEntryTransitionTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.858Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.ui.screens.DenseChoiceLayoutPolicyTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.865Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
     },
     {
       "name": "com.veilreader.app.ui.screens.GrandLibraryModelTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.872Z",
+      "hostname": "251b4627a937",
+      "time": "0.009"
     },
     {
       "name": "com.veilreader.app.ui.screens.LibraryCompositionTest",
       "tests": "6",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.883Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.ui.screens.LibrarySearchTest",
       "tests": "11",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.890Z",
+      "hostname": "251b4627a937",
+      "time": "0.006"
     },
     {
       "name": "com.veilreader.app.ui.screens.PaperCurlGeometryTest",
       "tests": "33",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.899Z",
+      "hostname": "251b4627a937",
+      "time": "0.022"
     },
     {
       "name": "com.veilreader.app.ui.screens.PaperReleaseVelocityTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.928Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
     },
     {
       "name": "com.veilreader.app.ui.screens.PathGeometryTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.930Z",
+      "hostname": "251b4627a937",
+      "time": "0.01"
     },
     {
       "name": "com.veilreader.app.ui.screens.PdfZoomControlsTest",
       "tests": "7",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.941Z",
+      "hostname": "251b4627a937",
+      "time": "0.005"
     },
     {
       "name": "com.veilreader.app.ui.screens.PdfZoomPolicyTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.947Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderAsyncOwnershipTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.950Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderChromePolicyTest",
       "tests": "24",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:56.953Z",
+      "hostname": "251b4627a937",
+      "time": "0.05"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderDossierHistoryTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.005Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderFocusGuideStateTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.014Z",
+      "hostname": "251b4627a937",
+      "time": "0.019"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderImageViewerTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.034Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderInputArbiterTest",
       "tests": "19",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.037Z",
+      "hostname": "251b4627a937",
+      "time": "0.018"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderLookupTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.060Z",
+      "hostname": "251b4627a937",
+      "time": "0.08"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderModeHandoffPolicyTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.142Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderPdfInputTest",
       "tests": "8",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.150Z",
+      "hostname": "251b4627a937",
+      "time": "0.182"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderPreferenceMappingTest",
       "tests": "29",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.351Z",
+      "hostname": "251b4627a937",
+      "time": "0.588"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderPreferencesTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.940Z",
+      "hostname": "251b4627a937",
+      "time": "0.004"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderRelayoutContinuityPolicyTest",
       "tests": "5",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.944Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderSelectionNotePolicyTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.946Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderTapOwnershipTest",
       "tests": "4",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:57.955Z",
+      "hostname": "251b4627a937",
+      "time": "0.358"
     },
     {
       "name": "com.veilreader.app.ui.screens.ReaderTtsSettingsStateTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.317Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.screens.RelicHistoryTest",
       "tests": "1",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.319Z",
+      "hostname": "251b4627a937",
+      "time": "0.011"
     },
     {
       "name": "com.veilreader.app.ui.screens.RelicRarityTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.331Z",
+      "hostname": "251b4627a937",
+      "time": "0.0"
     },
     {
       "name": "com.veilreader.app.ui.screens.SlideTurnPolicyTest",
       "tests": "14",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.332Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.ui.screens.ThresholdCompositionTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.336Z",
+      "hostname": "251b4627a937",
+      "time": "0.008"
     },
     {
       "name": "com.veilreader.app.ui.screens.ThresholdModelTest",
       "tests": "7",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.345Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.ui.screens.VeilRevealMotionPolicyTest",
       "tests": "3",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.348Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.sensory.VeilSensoryFeedbackPolicyTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.349Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.theme.ArtDirectionTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.351Z",
+      "hostname": "251b4627a937",
+      "time": "0.001"
     },
     {
       "name": "com.veilreader.app.ui.theme.DesignConstitutionTest",
-      "tests": "14",
+      "tests": "16",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.354Z",
+      "hostname": "251b4627a937",
+      "time": "0.003"
     },
     {
       "name": "com.veilreader.app.ui.theme.DesignSystemTest",
       "tests": "13",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.359Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     },
     {
       "name": "com.veilreader.app.ui.theme.LibraryAtmosphereTimeTest",
       "tests": "2",
+      "skipped": "0",
       "failures": "0",
       "errors": "0",
-      "skipped": "0"
+      "timestamp": "2026-10-03T13:01:58.361Z",
+      "hostname": "251b4627a937",
+      "time": "0.002"
     }
   ]
 }

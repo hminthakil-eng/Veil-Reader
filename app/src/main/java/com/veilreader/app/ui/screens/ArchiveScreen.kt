@@ -41,6 +41,7 @@ import com.veilreader.app.domain.deriveArchiveEchoes
 import com.veilreader.app.domain.deriveHighlightMemory
 import com.veilreader.app.domain.deriveReadingTimeCapsules
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -192,7 +193,7 @@ fun ArchiveScreen(
                     Spacer(Modifier.weight(1f))
                     ArchiveMicroLabel(
                         text = stringResource(R.string.archive_privacy),
-                        color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                        color = VeilMaterials.TextSecondary
                     )
                 }
 
@@ -757,10 +758,9 @@ private fun NotebookHighlightCard(
     echoMode: Boolean = false
 ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().veilLedgerRule(),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.58f),
-        border = BorderStroke(1.dp, VeilPalette.BorderDark.copy(alpha = 0.78f)),
+        color = VeilMaterials.Surface,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -768,12 +768,12 @@ private fun NotebookHighlightCard(
             modifier = Modifier.padding(VeilSpacing.md),
             verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)
         ) {
-            Row(
+            Column(
                 Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 Column(
-                    Modifier.weight(1f),
+                    Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     VeilMicroLabel(
@@ -786,15 +786,15 @@ private fun NotebookHighlightCard(
                         book?.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.common_unknown_book),
                         style = MaterialTheme.typography.titleMedium,
                         color = VeilPalette.Moon,
-                        maxLines = 1,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
                     book?.author?.takeIf { it.isNotBlank() }?.let { author ->
                         Text(
                             author,
                             style = MaterialTheme.typography.labelSmall,
-                            color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary,
-                            maxLines = 1,
+                            color = VeilMaterials.TextSecondary,
+                            maxLines = 3,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
@@ -804,7 +804,7 @@ private fun NotebookHighlightCard(
                     else if (highlight.note.isNotBlank()) stringResource(R.string.archive_annotated)
                     else stringResource(R.string.archive_passage),
                     color = if (echoMode) VeilPalette.Brass
-                    else VeilPalette.Mist.copy(alpha = 0.64f)
+                    else VeilMaterials.TextSecondary
                 )
             }
 
@@ -820,10 +820,10 @@ private fun NotebookHighlightCard(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            Row(
+            FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
             ) {
                 if (onRead != null) {
                     TextButton(
@@ -837,7 +837,6 @@ private fun NotebookHighlightCard(
                 ) {
                     Text(if (highlight.note.isBlank()) stringResource(R.string.archive_annotate) else stringResource(R.string.archive_edit_annotation))
                 }
-                Spacer(Modifier.weight(1f))
                 TextButton(
                     onClick = onDelete,
                     modifier = Modifier.heightIn(min = 48.dp)
@@ -891,7 +890,7 @@ private fun LivingMarginMemoryStrip(
             Text(
                 stringResource(R.string.archive_later_volume_activity),
                 style = MaterialTheme.typography.labelSmall,
-                color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                color = VeilMaterials.TextSecondary
             )
         }
     }
@@ -980,7 +979,7 @@ private fun NotebookBookmarkCard(
                 }
                 VeilMicroLabel(
                     text = stringResource(R.string.archive_bookmark),
-                    color = com.veilreader.app.ui.theme.VeilMaterials.TextSecondary
+                    color = VeilMaterials.TextSecondary
                 )
             }
 

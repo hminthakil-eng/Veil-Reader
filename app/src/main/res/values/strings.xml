@@ -1360,4 +1360,6 @@
     <string name="reader_eta_hours_minutes">%1$d h %2$d min</string>
     <string name="reader_eta_remaining">~%1$s left</string>
     <string name="reader_eta_range_description">Estimated %1$s to %2$s remaining, learned from %3$d real page intervals.</string>
+    <string name="reader_theme_specimen">Aa</string>
+    <string name="library_all_series">All series</string>
 </resources>

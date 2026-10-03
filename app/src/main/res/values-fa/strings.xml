@@ -1360,4 +1360,6 @@
     <string name="reader_eta_hours_minutes">%1$d ساعت و %2$d دقیقه</string>
     <string name="reader_eta_remaining">حدود %1$s مانده</string>
     <string name="reader_eta_range_description">زمان تخمینی باقی‌مانده بین %1$s تا %2$s است؛ بر اساس %3$d فاصلهٔ واقعی بین ورق‌ها.</string>
+    <string name="reader_theme_specimen">کتاب</string>
+    <string name="library_all_series">همهٔ مجموعه‌های دنباله‌دار</string>
 </resources>

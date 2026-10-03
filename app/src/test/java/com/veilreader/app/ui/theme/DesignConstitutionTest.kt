@@ -174,4 +174,26 @@ class DesignConstitutionTest {
         assertFalse(useArchitecturalPair(900f, Float.POSITIVE_INFINITY))
         assertFalse(useArchitecturalPair(900f, 0f))
     }
+    @Test
+    fun `aged paper keeps broad stain and noise below the reading contrast budget`() {
+        listOf(ReaderTheme.PAPER, ReaderTheme.SEPIA).forEach { theme ->
+            listOf(0f, 0.25f, 0.5f, 0.75f, 1f).forEach { age ->
+                val material = sanctuarySurfaceProfileFor(theme, age)
+                assertTrue(material.mottleAlpha in 0f..0.015f)
+                assertTrue(material.fibreAlpha in 0f..0.017f)
+                assertTrue(material.speckAlpha in 0f..0.014f)
+                assertTrue(material.stackEdgeAlpha > material.mottleAlpha)
+            }
+        }
+    }
+
+    @Test
+    fun `current threshold artifact remains larger than recent shelf objects`() {
+        VeilAdaptiveClass.entries.forEach { window ->
+            val layout = thresholdLayoutPolicyFor(window)
+            assertTrue(layout.heroCoverWidthDp > layout.recentCoverWidthDp)
+            assertTrue(layout.heroCoverHeightDp > layout.recentCoverHeightDp)
+        }
+    }
+
 }

@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.sp
 import com.veilreader.app.R
 import com.veilreader.app.domain.ReaderProfile
 import com.veilreader.app.ui.theme.VeilAdaptiveClass
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -461,13 +462,13 @@ private fun SigilRelicRow(
                 Text(
                     stringResource(presentation.nameRes),
                     style = MaterialTheme.typography.titleSmall,
-                    color = if (earned) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.48f)
+                    color = if (earned) VeilPalette.Moon else VeilMaterials.TextSecondary
                 )
                 Text(
                     if (earned) stringResource(presentation.descriptionRes)
                     else stringResource(R.string.treasury_condition_hidden),
                     style = MaterialTheme.typography.bodySmall,
-                    color = VeilPalette.Mist.copy(alpha = if (earned) 0.82f else 0.46f),
+                    color = VeilMaterials.TextSecondary,
                     maxLines = 2
                 )
             }
@@ -478,8 +479,8 @@ private fun SigilRelicRow(
                     enabled = !equipped,
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A),
+                        containerColor = VeilMaterials.ElevatedSurface,
+                        contentColor = VeilPalette.Moon,
                         disabledContainerColor = VeilPalette.DeepBrass.copy(alpha = 0.52f),
                         disabledContentColor = VeilPalette.Moon.copy(alpha = 0.68f)
                     ),
@@ -740,12 +741,12 @@ fun SanctumScreen(
                             color = if (title == castleTitle) {
                                 VeilPalette.Brass
                             } else {
-                                VeilPalette.Mist.copy(alpha = 0.62f)
+                                VeilMaterials.TextSecondary
                             }
                         )
                         Text(
                             localizedCastleTitle(profile, title),
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.titleMedium
                         )
                     }
                 }
@@ -885,13 +886,14 @@ private fun DossierProgressLine(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(3.dp)
     ) {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
         ) {
             VeilMicroLabel(
                 text = label,
-                color = VeilPalette.Mist.copy(alpha = 0.72f)
+                color = VeilMaterials.TextSecondary
             )
             Text(
                 detail,

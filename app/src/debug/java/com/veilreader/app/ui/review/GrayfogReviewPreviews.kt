@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.review
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.tooling.preview.Preview
@@ -115,4 +117,32 @@ private fun TreasuryReview() = ReviewFrame {
 private fun SanctumReview() = ReviewFrame {
     SanctumScreen(SampleData.profile, castleTitle = "Review archive", availableTitles = emptyList(),
         onSelectTitle = {}, onClose = {})
+}
+
+@GrayfogReviewSizes
+@Composable
+private fun BookDetailReview() = ReviewFrame {
+    BookDetailDestination(
+        book = SampleData.books.first(), archiveMemory = null, artifactMemory = null,
+        readingCycles = emptyList(), readingMilestones = emptyList(), preservedHighlights = emptyList(),
+        onDismiss = {}, onOpen = {}, onFavorite = {}, onEditMetadata = {}, onDelete = {}
+    )
+}
+
+@GrayfogReviewSizes
+@Composable
+private fun GalleryObjectReview() = ReviewFrame {
+    androidx.compose.foundation.layout.Box(androidx.compose.ui.Modifier.width(184.dp)) {
+        BookLibraryTile(SampleData.books.first(), null, null, onOpen = {}, onFavorite = {}, onDetails = {})
+    }
+}
+
+@GrayfogReviewSizes
+@Composable
+private fun ShelvesReview() = ReviewFrame {
+    LibraryShelvesView(
+        groups = listOf(LibraryShelfGroup("Review", "A preserved shelf", SampleData.books)),
+        artifactMemoryByBookId = emptyMap(), itemWidthDp = 146f, coverWidthDp = 132f, coverHeightDp = 194f,
+        onOpen = {}, onDetails = {}
+    )
 }

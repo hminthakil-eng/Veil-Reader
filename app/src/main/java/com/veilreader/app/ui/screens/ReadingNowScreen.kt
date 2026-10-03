@@ -240,10 +240,6 @@ private fun ThresholdHeader(
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
             .background(VeilPalette.Ink)
-            .border(
-                BorderStroke(1.dp, VeilPalette.Brass.copy(alpha = 0.28f)),
-                MaterialTheme.shapes.extraSmall
-            )
     ) {
         Image(
             painter = painterResource(R.drawable.grayfog_threshold_v1),
@@ -263,7 +259,6 @@ private fun ThresholdHeader(
             )
         )
         ThresholdDepthField(bookCount = bookCount, modifier = Modifier.matchParentSize())
-        GrayfogOrnamentFrame(modifier = Modifier.matchParentSize(), strength = 0.38f)
 
         // Copy determines height. At 200% the doorway grows instead of painting over the seal.
         Column(
@@ -318,7 +313,7 @@ private fun ThresholdHeader(
                     }
                 ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = VeilPalette.Moon.copy(alpha = 0.90f),
+                color = VeilPalette.Moon,
                 textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                 modifier = Modifier.widthIn(max = 540.dp)
             )
@@ -490,16 +485,7 @@ private fun ContinueReadingHero(
 
         GrayfogOrnamentFrame(
             modifier = Modifier.matchParentSize(),
-            strength = 0.30f
-        )
-
-        Box(
-            Modifier
-                .align(Alignment.TopEnd)
-                .padding(11.dp)
-                .size(7.dp)
-                .rotate(45f)
-                .background(VeilPalette.LightCrimson.copy(alpha = 0.88f))
+            strength = 0.20f
         )
 
         Column(
@@ -525,7 +511,7 @@ private fun ContinueReadingHero(
                     Text(
                         heroProgressLabel(current, progress),
                         style = MaterialTheme.typography.labelMedium,
-                        color = VeilPalette.LightMist.copy(alpha = 0.92f),
+                        color = VeilPalette.LightMist,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -642,28 +628,12 @@ private fun ContinueReadingHero(
                         style = MaterialTheme.typography.labelLarge
                     )
 
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .border(
-                                BorderStroke(
-                                    1.dp,
-                                    VeilPalette.LightBrass.copy(alpha = 0.72f)
-                                ),
-                                RoundedCornerShape(19.dp)
-                            )
-                            .background(
-                                VeilPalette.LightSurface.copy(alpha = 0.54f),
-                                RoundedCornerShape(19.dp)
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            if (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) "‹" else "›",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = VeilPalette.LightBrass
-                        )
-                    }
+                    Text(
+                        if (androidx.compose.ui.platform.LocalLayoutDirection.current == androidx.compose.ui.unit.LayoutDirection.Rtl) "‹" else "›",
+                        modifier = Modifier.padding(horizontal = VeilSpacing.sm),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = VeilPalette.LightInk
+                    )
                 }
             }
         }

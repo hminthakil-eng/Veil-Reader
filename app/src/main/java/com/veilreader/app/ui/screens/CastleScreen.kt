@@ -64,6 +64,7 @@ import com.veilreader.app.domain.ReadingSessionSnapshot
 import com.veilreader.app.domain.deriveCastleMemoryState
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -981,6 +982,16 @@ private fun CastleFloor(
                     )
             )
 
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                if (maxWidth.value / LocalConfiguration.current.fontScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ChamberBridgeMinWidthDp) {
+                    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(VeilSpacing.sm)) {
+                        FloorInscription(floor, unlocked, Modifier.fillMaxWidth())
+                        CastleChamberNode(
+                            id, name, purpose, unlockRank, unlocked, resonance,
+                            chamberMinHeightDp, onOpenRoom, Modifier.fillMaxWidth()
+                        )
+                    }
+                } else {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -1023,6 +1034,8 @@ private fun CastleFloor(
                         onOpenRoom = onOpenRoom,
                         modifier = Modifier.weight(1f)
                     )
+                }
+            }
                 }
             }
         }
@@ -1081,7 +1094,7 @@ private fun FloorInscription(
             color = if (unlocked) {
                 VeilPalette.Brass.copy(alpha = 0.78f)
             } else {
-                VeilPalette.Mist.copy(alpha = 0.50f)
+                VeilMaterials.TextSecondary
             }
         )
         Text(
@@ -1090,9 +1103,9 @@ private fun FloorInscription(
             ),
             style = MaterialTheme.typography.labelSmall,
             color = if (unlocked) {
-                VeilPalette.Moon.copy(alpha = 0.62f)
+                VeilPalette.Moon
             } else {
-                VeilPalette.Mist.copy(alpha = 0.42f)
+                VeilMaterials.TextSecondary
             }
         )
     }
@@ -1120,33 +1133,11 @@ private fun CastleChamberNode(
     val actionLabel = stringResource(
         if (unlocked) R.string.castle_enter else R.string.castle_sealed
     )
-    val edge = if (unlocked) {
-        VeilPalette.Brass.copy(alpha = 0.42f + safeResonance * 0.36f)
-    } else {
-        VeilPalette.BorderDark.copy(alpha = 0.86f)
-    }
-
     Column(
         modifier = modifier
             .heightIn(min = chamberMinHeightDp.dp)
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(
-                Brush.verticalGradient(
-                    if (unlocked) {
-                        listOf(
-                            VeilPalette.DeepBrass.copy(alpha = 0.12f + safeResonance * 0.26f),
-                            VeilPalette.RaisedIron.copy(alpha = 0.24f + safeResonance * 0.14f),
-                            VeilPalette.Archive.copy(alpha = 0.93f)
-                        )
-                    } else {
-                        listOf(
-                            VeilPalette.Iron.copy(alpha = 0.34f),
-                            VeilPalette.Ink.copy(alpha = 0.88f)
-                        )
-                    }
-                )
-            )
-            .border(BorderStroke(1.dp, edge), MaterialTheme.shapes.extraSmall)
+            .background(VeilMaterials.Surface)
             .semantics {
                 contentDescription = chamberDescription
             }
@@ -1210,25 +1201,25 @@ private fun CastleChamberNode(
             name,
             style = MaterialTheme.typography.titleSmall,
             textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis,
-            color = if (unlocked) VeilPalette.Moon else VeilPalette.Mist.copy(alpha = 0.58f)
+            color = if (unlocked) VeilPalette.Moon else VeilMaterials.TextSecondary
         )
 
         Text(
             if (unlocked) purpose else sealedBody,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = 4,
             overflow = TextOverflow.Ellipsis,
-            color = if (unlocked) VeilPalette.Mist else VeilPalette.Mist.copy(alpha = 0.46f)
+            color = VeilMaterials.TextSecondary
         )
 
         Spacer(Modifier.height(5.dp))
 
         VeilMicroLabel(
             text = actionLabel,
-            color = if (unlocked) VeilPalette.Brass else VeilPalette.Mist.copy(alpha = 0.44f)
+            color = if (unlocked) VeilPalette.Brass else VeilMaterials.TextSecondary
         )
     }
 }

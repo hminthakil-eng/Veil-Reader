@@ -81,6 +81,7 @@ import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilHighContrast
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import com.veilreader.app.ui.theme.usesArabicScript
@@ -1135,9 +1136,9 @@ private fun SettingsSection(
             verticalAlignment = Alignment.Bottom
         ) {
             Text(
-                if (usesArabicScript(title)) title else title.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                color = VeilPalette.Brass,
+                title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f)
             )
         }
@@ -1180,7 +1181,7 @@ private fun <T> ChoiceRow(
                 ) { onSelected(entry) },
             shape = MaterialTheme.shapes.extraSmall,
             color = if (active) {
-                VeilPalette.DeepBrass.copy(alpha = 0.78f)
+                VeilMaterials.ElevatedSurface
             } else {
                 MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
             },

@@ -127,6 +127,7 @@ import com.veilreader.app.ui.reader.awaitDurableReaderClose
 import com.veilreader.app.ui.sensory.VeilSensoryEvent
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMotion
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSanctuary
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -4349,7 +4350,7 @@ private fun EpubAppearancePanel(
                         ) { showAdvanced = advanced },
                     shape = MaterialTheme.shapes.extraSmall,
                     color = if (selected) {
-                        VeilPalette.DeepBrass.copy(alpha = 0.78f)
+                        VeilMaterials.ElevatedSurface
                     } else {
                         MaterialTheme.colorScheme.surface.copy(alpha = 0.52f)
                     },
@@ -4984,7 +4985,7 @@ private fun ReaderAppearanceChoice(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.82f)
+            VeilMaterials.ElevatedSurface
         } else {
             VeilPalette.Archive.copy(alpha = 0.66f)
         },
@@ -5750,9 +5751,9 @@ private fun AppearancePreset(
             ),
         shape = MaterialTheme.shapes.extraSmall,
         color = if (selected) {
-            VeilPalette.DeepBrass.copy(alpha = 0.34f)
+            VeilMaterials.ElevatedSurface
         } else {
-            MaterialTheme.colorScheme.surface.copy(alpha = 0.42f)
+            Color.Transparent
         },
         border = BorderStroke(
             1.dp,
@@ -5769,7 +5770,7 @@ private fun AppearancePreset(
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .height(42.dp)
+                    .heightIn(min = 64.dp)
                     .background(paper, MaterialTheme.shapes.extraSmall)
                     .border(
                         1.dp,
@@ -5778,8 +5779,8 @@ private fun AppearancePreset(
                     )
             ) {
                 Text(
-                    "Aa",
-                    modifier = Modifier.align(Alignment.Center),
+                    stringResource(R.string.reader_theme_specimen),
+                    modifier = Modifier.align(Alignment.Center).padding(VeilSpacing.sm),
                     color = ink,
                     style = MaterialTheme.typography.titleLarge
                 )

@@ -85,6 +85,7 @@ import com.veilreader.app.ui.theme.archiveTimePhaseForHour
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.grayfogAtmosphere
 import com.veilreader.app.ui.theme.libraryArchiveAtmosphere
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilSpacing
 import java.text.DateFormat
@@ -281,6 +282,7 @@ fun LibraryScreen(
     var overviewExpanded by rememberSaveable { mutableStateOf(false) }
     var collectionMenu by remember { mutableStateOf(false) }
     var sortMenu by remember { mutableStateOf(false) }
+    var seriesMenu by remember { mutableStateOf(false) }
     var editing by remember { mutableStateOf<Book?>(null) }
     var detailBookId by rememberSaveable { mutableStateOf<String?>(null) }
     var deletingBookId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -504,8 +506,8 @@ fun LibraryScreen(
                 seed = books.size * 31 + collections.size * 7,
                 timePhase = archiveTimePhase
             ),
-        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
-        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+        verticalArrangement = Arrangement.spacedBy(if (viewMode == LibraryViewMode.INDEX) 0.dp else VeilSpacing.md),
         contentPadding = PaddingValues(
             start = archiveLayout.horizontalPaddingDp.dp,
             end = archiveLayout.horizontalPaddingDp.dp,
@@ -521,7 +523,6 @@ fun LibraryScreen(
                     onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
                     onOpenSettings = onOpenSettings
                 )
-                LibraryAtmosphereLedger(atmosphereState)
             }
         }
 
@@ -633,51 +634,18 @@ fun LibraryScreen(
             }
         }
 
-        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
-            MangaLibraryPortal(
-                localComicCount = books.count {
-                    it.format == com.veilreader.app.domain.BookFormat.COMIC
-                },
-                onOpenManga = onOpenManga
-            )
-        }
-
-        item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
-            if (
-                viewMode != LibraryViewMode.SHELVES &&
-                trimmedQuery.isBlank() &&
-                shelf == "All" &&
-                wingState.allWings.isNotEmpty()
-            ) {
-                LibraryArchiveWings(
-                    state = wingState,
-                    selectedCollection = collection,
-                    selectedSeries = seriesFilter,
-                    onCollection = { name ->
-                        collection = if (collection.equals(name, ignoreCase = true)) "" else name
-                        seriesFilter = ""
-                    },
-                    onSeries = { name ->
-                        seriesFilter = if (seriesFilter.equals(name, ignoreCase = true)) "" else name
-                        collection = ""
-                    }
-                )
-            }
-        }
-
         item(key = "library:controls", span = { GridItemSpan(maxLineSpan) }) {
             Column(
                 Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 BrassRule(Modifier.fillMaxWidth())
+                ViewModeToggle(mode = viewMode, onChange = { viewModeName = it.name })
 
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState()),
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                 ) {
                     VeilMicroLabel(
                         text = stringResource(R.string.library_filtered_volume_count, filtered.size),
@@ -715,6 +683,42 @@ fun LibraryScreen(
                                     DropdownMenuItem(
                                         text = { Text(label) },
                                         onClick = { collection = label; collectionMenu = false }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    if (wingState.seriesWings.isNotEmpty()) {
+                        Box {
+                            OutlinedButton(
+                                onClick = { seriesMenu = true },
+                                modifier = Modifier.heightIn(min = 48.dp),
+                                shape = MaterialTheme.shapes.extraSmall,
+                                contentPadding = PaddingValues(horizontal = VeilSpacing.sm),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                            ) {
+                                Text(
+                                    stringResource(R.string.library_group_series),
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = seriesMenu,
+                                onDismissRequest = { seriesMenu = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(stringResource(R.string.library_all_series)) },
+                                    onClick = { seriesFilter = ""; seriesMenu = false }
+                                )
+                                wingState.seriesWings.forEach { wing ->
+                                    DropdownMenuItem(
+                                        text = { Text(wing.name) },
+                                        onClick = {
+                                            seriesFilter = wing.name
+                                            collection = ""
+                                            seriesMenu = false
+                                        }
                                     )
                                 }
                             }
@@ -790,11 +794,6 @@ fun LibraryScreen(
                         }
                     }
 
-                    ViewModeToggle(
-                        mode = viewMode,
-                        onChange = { viewModeName = it.name }
-                    )
-
                     if (
                         trimmedQuery.isNotBlank() ||
                         shelf != "All" ||
@@ -815,6 +814,96 @@ fun LibraryScreen(
                         }
                     }
                 }
+            }
+        }
+
+        if (filtered.isEmpty()) {
+            item(key = "library:empty", span = { GridItemSpan(maxLineSpan) }) {
+                LibraryEmptyState(
+                    hasBooks = books.isNotEmpty(),
+                    isImporting = isImporting,
+                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
+                    onReset = {
+                        query = ""
+                        shelf = "All"
+                        collection = ""
+                        seriesFilter = ""
+                    }
+                )
+            }
+        } else {
+            when (viewMode) {
+                LibraryViewMode.GALLERY -> {
+                    items(filtered, key = { "gallery:${it.id}" }, contentType = { "gallery" }) { book ->
+                        BookLibraryTile(
+                            book = book,
+                            archiveMemory = memoryState.memoryFor(book.id),
+                            artifactMemory = artifactMemoryByBookId[book.id],
+                            onOpen = { onOpenBook(book) },
+                            onFavorite = { onFavorite(book.id) },
+                            onDetails = { detailBookId = book.id }
+                        )
+                    }
+                }
+
+                LibraryViewMode.INDEX -> {
+                    items(filtered, key = { "index:${it.id}" }, contentType = { "index" }) { book ->
+                        BookLibraryRow(
+                            book = book,
+                            archiveMemory = memoryState.memoryFor(book.id),
+                            artifactMemory = artifactMemoryByBookId[book.id],
+                            showMemorySummary = archiveLayout.showIndexMemorySummary,
+                            onOpen = { onOpenBook(book) },
+                            onFavorite = { onFavorite(book.id) },
+                            onDetails = { detailBookId = book.id }
+                        )
+                    }
+                }
+
+                LibraryViewMode.SHELVES -> {
+                    item(key = "library:shelves-mode", span = { GridItemSpan(maxLineSpan) }) {
+                        LibraryShelvesView(
+                            groups = shelfGroups,
+                            artifactMemoryByBookId = artifactMemoryByBookId,
+                            itemWidthDp = archiveLayout.shelfItemWidthDp,
+                            coverWidthDp = archiveLayout.shelfCoverWidthDp,
+                            coverHeightDp = archiveLayout.shelfCoverHeightDp,
+                            onOpen = onOpenBook,
+                            onDetails = { detailBookId = it.id }
+                        )
+                    }
+                }
+            }
+        }
+        item(key = "library:manga-portal", span = { GridItemSpan(maxLineSpan) }) {
+            MangaLibraryPortal(
+                localComicCount = books.count {
+                    it.format == com.veilreader.app.domain.BookFormat.COMIC
+                },
+                onOpenManga = onOpenManga
+            )
+        }
+
+        item(key = "library:wings", span = { GridItemSpan(maxLineSpan) }) {
+            if (
+                viewMode != LibraryViewMode.SHELVES &&
+                trimmedQuery.isBlank() &&
+                shelf == "All" &&
+                wingState.allWings.isNotEmpty()
+            ) {
+                LibraryArchiveWings(
+                    state = wingState,
+                    selectedCollection = collection,
+                    selectedSeries = seriesFilter,
+                    onCollection = { name ->
+                        collection = if (collection.equals(name, ignoreCase = true)) "" else name
+                        seriesFilter = ""
+                    },
+                    onSeries = { name ->
+                        seriesFilter = if (seriesFilter.equals(name, ignoreCase = true)) "" else name
+                        collection = ""
+                    }
+                )
             }
         }
 
@@ -919,63 +1008,9 @@ fun LibraryScreen(
             }
         }
 
-        if (filtered.isEmpty()) {
-            item(key = "library:empty", span = { GridItemSpan(maxLineSpan) }) {
-                LibraryEmptyState(
-                    hasBooks = books.isNotEmpty(),
-                    isImporting = isImporting,
-                    onImport = { launcher.launch(arrayOf("application/epub+zip", "application/pdf", "application/vnd.comicbook+zip", "application/x-cbz", "application/zip")) },
-                    onReset = {
-                        query = ""
-                        shelf = "All"
-                        collection = ""
-                        seriesFilter = ""
-                    }
-                )
-            }
-        } else {
-            when (viewMode) {
-                LibraryViewMode.GALLERY -> {
-                    items(filtered, key = { "gallery:${it.id}" }, contentType = { "gallery" }) { book ->
-                        BookLibraryTile(
-                            book = book,
-                            archiveMemory = memoryState.memoryFor(book.id),
-                            artifactMemory = artifactMemoryByBookId[book.id],
-                            onOpen = { onOpenBook(book) },
-                            onFavorite = { onFavorite(book.id) },
-                            onDetails = { detailBookId = book.id }
-                        )
-                    }
-                }
-
-                LibraryViewMode.INDEX -> {
-                    items(filtered, key = { "index:${it.id}" }, contentType = { "index" }) { book ->
-                        BookLibraryRow(
-                            book = book,
-                            archiveMemory = memoryState.memoryFor(book.id),
-                            artifactMemory = artifactMemoryByBookId[book.id],
-                            showMemorySummary = archiveLayout.showIndexMemorySummary,
-                            onOpen = { onOpenBook(book) },
-                            onFavorite = { onFavorite(book.id) },
-                            onDetails = { detailBookId = book.id }
-                        )
-                    }
-                }
-
-                LibraryViewMode.SHELVES -> {
-                    item(key = "library:shelves-mode", span = { GridItemSpan(maxLineSpan) }) {
-                        LibraryShelvesView(
-                            groups = shelfGroups,
-                            artifactMemoryByBookId = artifactMemoryByBookId,
-                            itemWidthDp = archiveLayout.shelfItemWidthDp,
-                            coverWidthDp = archiveLayout.shelfCoverWidthDp,
-                            coverHeightDp = archiveLayout.shelfCoverHeightDp,
-                            onOpen = onOpenBook,
-                            onDetails = { detailBookId = it.id }
-                        )
-                    }
-                }
-            }
+        item(key = "library:atmosphere-record", span = { GridItemSpan(maxLineSpan) }) {
+            LibraryAtmosphereLedger(atmosphereState)
+        }
         item(key = "library:overview", span = { GridItemSpan(maxLineSpan) }) {
             if (books.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth()) {
@@ -998,8 +1033,6 @@ fun LibraryScreen(
                     }
                 }
             }
-        }
-
         }
     }
 
@@ -1403,7 +1436,7 @@ internal fun bookDetailAdaptivePolicy(
     val safeWidth = widthDp.coerceAtLeast(0)
     val safeScale = if (fontScale.isFinite() && fontScale > 0f) fontScale else 1f
     return BookDetailAdaptivePolicy(
-        compactHero = safeWidth < 360 || safeScale >= 1.60f,
+        compactHero = safeWidth / safeScale.coerceAtLeast(1f) < com.veilreader.app.ui.theme.VeilComposition.ArtifactIdentityMinWidthDp,
         stackUtilityActions = shouldStackDenseChoices(
             widthDp = safeWidth,
             fontScale = safeScale,
@@ -1566,7 +1599,7 @@ internal fun bookDetailArchiveTimeline(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun BookDetailDestination(
+internal fun BookDetailDestination(
     book: Book,
     archiveMemory: BookArchiveMemory?,
     artifactMemory: BookArtifactMemory?,
@@ -1619,6 +1652,24 @@ private fun BookDetailDestination(
             stringResource(R.string.book_detail_publication_unavailable)
     }
 
+    @Composable
+    fun ReadingAction() {
+        Button(
+            onClick = onOpen,
+            enabled = journey.action != BookDetailJourneyAction.UNAVAILABLE,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 54.dp),
+            shape = MaterialTheme.shapes.extraSmall,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = VeilMaterials.Parchment,
+                contentColor = VeilMaterials.Ink
+            )
+        ) {
+            Text(primaryAction)
+        }
+    }
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
@@ -1653,7 +1704,9 @@ private fun BookDetailDestination(
                 ) {
             BoxWithConstraints(
                 Modifier
+                    .widthIn(max = com.veilreader.app.ui.theme.VeilMeasure.ArchiveContent)
                     .fillMaxWidth()
+                    .align(Alignment.CenterHorizontally)
                     .heightIn(min = 356.dp)
             ) {
                 val heroPolicy = bookDetailAdaptivePolicy(
@@ -1745,8 +1798,8 @@ private fun BookDetailDestination(
                                 book = book,
                                 artifactMemory = artifactMemory,
                                 modifier = Modifier
-                                    .width(208.dp)
-                                    .height(294.dp)
+                                    .width(184.dp)
+                                    .height(260.dp)
                             )
                             BookDetailIdentity(
                                 book = book,
@@ -1755,6 +1808,7 @@ private fun BookDetailDestination(
                                     .widthIn(max = 440.dp)
                                     .fillMaxWidth()
                             )
+                            ReadingAction()
                         }
                     } else {
                         Row(
@@ -1769,11 +1823,14 @@ private fun BookDetailDestination(
                                     .width(224.dp)
                                     .height(316.dp)
                             )
-                            BookDetailIdentity(
-                                book = book,
-                                artifactMemory = artifactMemory,
-                                modifier = Modifier.weight(1f)
-                            )
+                            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(VeilSpacing.md)) {
+                                BookDetailIdentity(
+                                    book = book,
+                                    artifactMemory = artifactMemory,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                ReadingAction()
+                            }
                         }
                     }
                 }
@@ -1853,20 +1910,6 @@ private fun BookDetailDestination(
                     }
                 }
 
-                Button(
-                    onClick = onOpen,
-                    enabled = journey.action != BookDetailJourneyAction.UNAVAILABLE,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 54.dp),
-                    shape = MaterialTheme.shapes.extraSmall,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
-                    )
-                ) {
-                    Text(primaryAction)
-                }
 
                 BookDetailUtilityActions(
                     favorite = book.favorite,
@@ -1976,28 +2019,14 @@ private fun BookDetailDestination(
                             text = stringResource(R.string.book_detail_collections)
                         )
 
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .horizontalScroll(rememberScrollState()),
-                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md),
+                            verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
                         ) {
                             book.allCollections.forEach { collection ->
-                                Surface(
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.54f),
-                                    border = BorderStroke(
-                                        1.dp,
-                                        VeilPalette.Brass.copy(alpha = 0.32f)
-                                    )
-                                ) {
-                                    Text(
-                                        collection,
-                                        Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
+                                Text(collection, style = MaterialTheme.typography.bodyMedium,
+                                    color = VeilMaterials.TextSecondary)
                             }
                         }
                     }
@@ -2501,7 +2530,7 @@ private fun LibraryHeader(
             )
     ) {
         val compact = maxWidth < 560.dp
-        val headerHeight = if (compact) 194.dp else 216.dp
+        val headerHeight = if (compact) 144.dp else 172.dp
 
         Box(Modifier.fillMaxWidth().heightIn(min = headerHeight)) {
             Image(
@@ -2537,7 +2566,7 @@ private fun LibraryHeader(
             )
             GrayfogOrnamentFrame(
                 modifier = Modifier.matchParentSize(),
-                strength = 0.64f
+                strength = 0.24f
             )
 
             Column(
@@ -2784,111 +2813,33 @@ private fun LibraryShelfCard(
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val formatNumber = rememberVeilIntegerFormatter()
     Surface(
         onClick = onClick,
-        modifier = Modifier
-            .width(138.dp)
-            .heightIn(min = 56.dp),
+        modifier = Modifier.widthIn(min = 138.dp, max = 200.dp).heightIn(min = 48.dp)
+            .semantics { this.selected = selected },
         shape = MaterialTheme.shapes.extraSmall,
-        color = if (selected) {
-            VeilPalette.MoonCrimson.copy(alpha = 0.34f)
-        } else {
-            VeilPalette.Ink.copy(alpha = 0.58f)
-        },
-        border = BorderStroke(
-            1.dp,
-            if (selected) {
-                VeilPalette.Brass.copy(alpha = 0.92f)
-            } else {
-                VeilPalette.BorderDark.copy(alpha = 0.82f)
-            }
-        ),
+        color = if (selected) VeilPalette.Archive else Color.Transparent,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.horizontalGradient(
-                        listOf(
-                            if (selected) {
-                                VeilPalette.MoonCrimson.copy(alpha = 0.16f)
-                            } else {
-                                VeilPalette.RaisedIron.copy(alpha = 0.18f)
-                            },
-                            Color.Transparent
-                        )
-                    )
-                )
-                .padding(horizontal = 10.dp, vertical = 8.dp)
-        ) {
-            if (selected) {
-                Box(
-                    Modifier
-                        .align(Alignment.CenterStart)
-                        .width(2.dp)
-                        .fillMaxHeight()
-                        .background(VeilPalette.Brass.copy(alpha = 0.84f))
-                )
-            }
-
+        Column {
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = if (selected) 7.dp else 0.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(horizontal = VeilSpacing.sm, vertical = VeilSpacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(VeilSpacing.sm),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(30.dp)
-                        .border(
-                            BorderStroke(
-                                1.dp,
-                                VeilPalette.Brass.copy(
-                                    alpha = if (selected) 0.70f else 0.30f
-                                )
-                            ),
-                            MaterialTheme.shapes.extraSmall
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        count.toString(),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = if (selected) {
-                            VeilPalette.Moon
-                        } else {
-                            VeilPalette.Brass.copy(alpha = 0.82f)
-                        }
-                    )
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(title, style = MaterialTheme.typography.labelLarge, color = VeilPalette.Moon)
+                    Text(subtitle, style = MaterialTheme.typography.labelSmall,
+                        color = VeilMaterials.TextSecondary, maxLines = 2,
+                        overflow = TextOverflow.Ellipsis)
                 }
-
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(1.dp)
-                ) {
-                    Text(
-                        title,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = if (selected) {
-                            VeilPalette.Moon
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                    Text(
-                        subtitle,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Text(formatNumber(count), style = MaterialTheme.typography.labelMedium,
+                    color = VeilMaterials.TextSecondary)
             }
+            Box(Modifier.fillMaxWidth().height(if (selected) 2.dp else 1.dp)
+                .background(if (selected) VeilPalette.Brass else VeilPalette.BorderDark))
         }
     }
 }
@@ -3464,7 +3415,7 @@ private fun formatArchiveSilence(inactiveMillis: Long): String {
 }
 
 @Composable
-private fun BookLibraryTile(
+internal fun BookLibraryTile(
     book: Book,
     archiveMemory: BookArchiveMemory?,
     artifactMemory: BookArtifactMemory?,
@@ -3472,6 +3423,7 @@ private fun BookLibraryTile(
     onFavorite: () -> Unit,
     onDetails: () -> Unit
 ) {
+    val largeText = LocalDensity.current.fontScale >= 1.3f
     val formatPercent = rememberVeilPercentFormatter()
     val artifact = bookArtifactState(book, memory = artifactMemory)
     val readLabel = stringResource(R.string.library_read_book_semantics, book.title)
@@ -3488,22 +3440,12 @@ private fun BookLibraryTile(
         artifact.readingState == BookReadingState.ACTIVE -> VeilPalette.Mist.copy(alpha = 0.72f)
         else -> VeilPalette.BorderDark
     }
-    val borderAlpha = (0.24f + artifact.patina.level * 0.055f).coerceAtMost(0.46f)
-
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(
-                role = Role.Button,
-                onClickLabel = readLabel,
-                onClick = onOpen
-            ),
+            .clickable(role = Role.Button, onClickLabel = readLabel, onClick = onOpen),
         shape = MaterialTheme.shapes.extraSmall,
-        color = VeilPalette.Archive.copy(alpha = 0.50f),
-        border = BorderStroke(
-            1.dp,
-            VeilPalette.Brass.copy(alpha = borderAlpha)
-        ),
+        color = Color.Transparent,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp
     ) {
@@ -3515,7 +3457,7 @@ private fun BookLibraryTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(0.69f)
-                    .padding(7.dp)
+                    .padding(horizontal = VeilSpacing.xs, vertical = VeilSpacing.sm)
             ) {
                 BookCover(
                     title = book.title,
@@ -3525,13 +3467,7 @@ private fun BookLibraryTile(
                     modifier = Modifier.fillMaxSize()
                 )
 
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.CenterStart)
-                        .width(3.dp)
-                        .fillMaxHeight()
-                        .background(registrationColor)
-                )
+
             }
 
             if (artifact.progress > 0f) {
@@ -3559,6 +3495,22 @@ private fun BookLibraryTile(
                 ),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                Text(
+                    book.title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = VeilPalette.Moon,
+                    maxLines = if (largeText) 3 else 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Text(
+                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
+                    color = VeilMaterials.TextSecondary,
+                    style = MaterialTheme.typography.labelMedium,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -3573,7 +3525,7 @@ private fun BookLibraryTile(
                             )
                             else -> stringResource(R.string.library_unopened)
                         },
-                        color = registrationColor,
+                        color = VeilMaterials.TextSecondary,
                         modifier = Modifier.weight(1f)
                     )
 
@@ -3586,22 +3538,6 @@ private fun BookLibraryTile(
                         )
                     }
                 }
-
-                Text(
-                    book.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = VeilPalette.Moon,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Text(
-                    book.author.ifBlank { stringResource(R.string.common_unknown_author) },
-                    color = VeilPalette.Mist.copy(alpha = 0.78f),
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
 
                 ArchiveDepthMark(archiveMemory)
             }
@@ -3620,17 +3556,17 @@ private fun BookLibraryTile(
                     )
             )
 
-            Row(
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 48.dp)
                     .padding(start = 4.dp, end = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
                 TextButton(
                     onClick = onDetails,
                     modifier = Modifier
-                        .weight(1f)
+                        .then(if (largeText) Modifier.fillMaxWidth() else Modifier.widthIn(min = 48.dp))
                         .heightIn(min = 48.dp)
                         .semantics {
                             contentDescription = detailsLabel
@@ -4032,8 +3968,8 @@ private fun LibraryEmptyState(
                     modifier = Modifier.fillMaxWidth().heightIn(min = 50.dp),
                     shape = MaterialTheme.shapes.extraSmall,
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = VeilPalette.Brass,
-                        contentColor = Color(0xFF17120A)
+                        containerColor = VeilMaterials.Parchment,
+                        contentColor = VeilMaterials.Ink
                     )
                 ) {
                     Text(stringResource(
@@ -4047,7 +3983,7 @@ private fun LibraryEmptyState(
 }
 
 @Composable
-private fun LibraryShelvesView(
+internal fun LibraryShelvesView(
     groups: List<LibraryShelfGroup>,
     artifactMemoryByBookId: Map<String, BookArtifactMemory>,
     itemWidthDp: Float,
@@ -4072,7 +4008,6 @@ private fun LibraryShelvesView(
                         title = group.title,
                         trailing = stringResource(R.string.library_group_volume_count, group.books.size)
                     )
-                    BrassRule(Modifier.fillMaxWidth())
                     LazyRow(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(VeilSpacing.md)
@@ -4088,18 +4023,24 @@ private fun LibraryShelvesView(
                                     ) { onOpen(book) },
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                BookCover(
-                                    title = book.title,
-                                    subtitle = book.author,
-                                    imagePath = book.coverCachePath,
-                                    artifact = bookArtifactState(
-                                        book,
-                                        memory = artifactMemoryByBookId[book.id]
-                                    ),
-                                    modifier = Modifier
-                                        .width(coverWidthDp.dp)
-                                        .height(coverHeightDp.dp)
-                                )
+                                Box(Modifier.fillMaxWidth().height((coverHeightDp + 16f).dp)) {
+                                    BookCover(
+                                        title = book.title,
+                                        subtitle = book.author,
+                                        imagePath = book.coverCachePath,
+                                        artifact = bookArtifactState(
+                                            book,
+                                            memory = artifactMemoryByBookId[book.id]
+                                        ),
+                                        modifier = Modifier
+                                            .width(coverWidthDp.dp)
+                                            .height(coverHeightDp.dp)
+                                    )
+                                    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                                        .offset(y = (-6).dp).height(1.dp).background(VeilPalette.StrongBorderDark))
+                                    Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                                        .height(6.dp).background(VeilMaterials.Depth))
+                                }
                                 Text(
                                     book.title,
                                     style = MaterialTheme.typography.titleSmall,
@@ -4114,8 +4055,8 @@ private fun LibraryShelvesView(
                                         else -> localizedBookFormatLabel(book.format)
                                     },
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = VeilPalette.Brass.copy(alpha = 0.82f),
-                                    maxLines = 1
+                                    color = VeilMaterials.TextSecondary,
+                                    maxLines = 2
                                 )
                                 TextButton(
                                     onClick = { onDetails(book) },
@@ -4135,9 +4076,9 @@ private fun LibraryShelvesView(
 
 @Composable
 private fun ViewModeToggle(mode: LibraryViewMode, onChange: (LibraryViewMode) -> Unit) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(VeilSpacing.xs),
+        verticalArrangement = Arrangement.spacedBy(VeilSpacing.xs)
     ) {
         listOf(
             LibraryViewMode.GALLERY to stringResource(R.string.library_view_gallery),

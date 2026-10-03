@@ -443,7 +443,7 @@ class BookArtifactTest {
         val largeText = bookDetailAdaptivePolicy(widthDp = 412, fontScale = 2f)
         val narrow = bookDetailAdaptivePolicy(widthDp = 300, fontScale = 1f)
 
-        assertFalse(normal.compactHero)
+        assertTrue(normal.compactHero)
         assertFalse(normal.stackUtilityActions)
         assertTrue(largeText.compactHero)
         assertTrue(largeText.stackUtilityActions)
@@ -452,9 +452,12 @@ class BookArtifactTest {
     }
 
     @Test
-    fun `book detail adaptive policy uses compact hero only below narrow width boundary`() {
+    fun `book detail hero reserves readable identity width beside the artifact`() {
         assertTrue(bookDetailAdaptivePolicy(widthDp = 359, fontScale = 1f).compactHero)
-        assertFalse(bookDetailAdaptivePolicy(widthDp = 360, fontScale = 1f).compactHero)
+        assertTrue(bookDetailAdaptivePolicy(widthDp = 360, fontScale = 1f).compactHero)
+        assertFalse(bookDetailAdaptivePolicy(widthDp = 600, fontScale = 1f).compactHero)
+        assertTrue(bookDetailAdaptivePolicy(widthDp = 840, fontScale = 1.5f).compactHero)
+        assertFalse(bookDetailAdaptivePolicy(widthDp = 1200, fontScale = 2f).compactHero)
     }
 
     @Test

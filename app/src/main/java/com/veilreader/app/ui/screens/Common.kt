@@ -23,6 +23,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
@@ -55,6 +56,7 @@ import com.veilreader.app.ui.theme.GrayfogOrnamentFrame
 import com.veilreader.app.ui.theme.LocalVeilReducedMotion
 import com.veilreader.app.ui.theme.VeilMeasure
 import com.veilreader.app.ui.theme.VeilMotion
+import com.veilreader.app.ui.theme.VeilMaterials
 import com.veilreader.app.ui.theme.VeilPalette
 import com.veilreader.app.ui.theme.VeilRealm
 import com.veilreader.app.ui.theme.VeilSpacing
@@ -228,12 +230,12 @@ fun ArchivePanel(
 ) {
     val shape = MaterialTheme.shapes.extraSmall
     val highContrast = com.veilreader.app.ui.theme.LocalVeilHighContrast.current
-    val frameColor = if (highContrast) VeilPalette.Brass else com.veilreader.app.ui.theme.VeilMaterials.Frame
+    val frameColor = if (highContrast) VeilPalette.Brass else VeilMaterials.Frame
     Box(
         modifier = modifier
             .animateContentSize(if (LocalVeilReducedMotion.current) snap() else tween(VeilMotion.STANDARD_MS))
             .clip(shape)
-            .background(com.veilreader.app.ui.theme.VeilMaterials.Surface)
+            .background(VeilMaterials.Surface)
             .border(
                 BorderStroke(
                     if (highContrast) com.veilreader.app.ui.theme.VeilStroke.Emphasis else com.veilreader.app.ui.theme.VeilStroke.Hairline,
@@ -792,4 +794,15 @@ internal fun VeilArchitecturalPair(
             }
         }
     }
+}
+
+/** Bottom datum for source records; it adds no hit surface or navigation ownership. */
+internal fun Modifier.veilLedgerRule(): Modifier = drawWithContent {
+    drawContent()
+    drawLine(
+        color = VeilMaterials.Divider,
+        start = androidx.compose.ui.geometry.Offset(0f, size.height),
+        end = androidx.compose.ui.geometry.Offset(size.width, size.height),
+        strokeWidth = com.veilreader.app.ui.theme.ArenaGeometry.Hairline.toPx()
+    )
 }
