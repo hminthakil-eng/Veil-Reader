@@ -108,6 +108,8 @@ internal class MaterialPageEngineState(
     private var density = 1f
     private var snapshotBuffer: Bitmap? = null
     private var liftCueEmitted = false
+    private var renderSegmentCount =
+        materialPageTurnSegmentCount(initialProfile)
 
     fun setProfile(value: MaterialPageProfile) {
         if (!active) profile = value
@@ -147,6 +149,7 @@ internal class MaterialPageEngineState(
         density = view.resources.displayMetrics.density.coerceAtLeast(0.1f)
         this.side = side
         this.profile = profile
+        renderSegmentCount = materialPageTurnSegmentCount(profile)
         snapshot = bitmap
         progress = 0f
         verticalBias = 0f
@@ -195,6 +198,8 @@ internal class MaterialPageEngineState(
     }
 
     fun dragProgress(): Float = progress.coerceIn(0f, 1f)
+
+    internal fun segmentCountForRender(): Int = renderSegmentCount
 
     suspend fun animateTapTurn() {
         if (!active) return
@@ -435,6 +440,7 @@ internal class MaterialPageEngineState(
         this.pullOriginY = pullOriginY.coerceIn(0f, 1f)
         this.side = side
         this.profile = profile
+        renderSegmentCount = materialPageTurnSegmentCount(profile)
         this.reducedMotion = reducedMotion
         setPatina(patina)
         setTone(tone)
@@ -574,7 +580,8 @@ internal fun MaterialPageOverlay(
             progress = progress,
             verticalBias = verticalBias,
             profile = profile,
-            pullOriginY = pullOriginY
+            pullOriginY = pullOriginY,
+            segmentCount = state.segmentCountForRender()
         )
         val mesh = scratch.mesh
         val mirror = side == MaterialPageSide.LEFT
