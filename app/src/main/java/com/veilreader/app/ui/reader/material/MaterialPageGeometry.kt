@@ -83,7 +83,7 @@ internal fun updateMaterialPageMesh(
     verticalBias: Float,
     profile: MaterialPageProfile,
     pullOriginY: Float = 0.5f,
-    segmentCount: Int = 26
+    segmentCount: Int = 0
 ) {
     if (
         !width.isFinite() ||
@@ -124,7 +124,15 @@ internal fun updateMaterialPageMesh(
     val radius = span / thetaMax.coerceAtLeast(0.001f)
     val lift = materialPageLift(p, profile)
 
-    val segments = buffer.clampedSegmentCount(segmentCount)
+    val requestedSegments = if (segmentCount > 0) {
+        segmentCount
+    } else {
+        materialPageAdaptiveSegmentCount(
+            progress = p,
+            profile = profile
+        )
+    }
+    val segments = buffer.clampedSegmentCount(requestedSegments)
     val originY = pullOriginY.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0.5f
     val topOriginInfluence = 0.34f + (1f - originY) * 0.66f
     val bottomOriginInfluence = 0.34f + originY * 0.66f
@@ -259,7 +267,7 @@ internal fun materialPageGeometry(
     verticalBias: Float,
     profile: MaterialPageProfile,
     pullOriginY: Float = 0.5f,
-    segmentCount: Int = 26
+    segmentCount: Int = 0
 ): MaterialPageFrame {
     val buffer = MaterialPageMeshBuffer(maxSegments = segmentCount.coerceAtLeast(12))
     updateMaterialPageMesh(
@@ -374,6 +382,22 @@ internal fun isFiniteMaterialPageFrame(frame: MaterialPageFrame): Boolean {
 
 private fun MaterialPagePoint.isFinite(): Boolean =
     x.isFinite() && y.isFinite()
+
+internal fun materialPageAdaptiveSegmentCount(
+    progress: Float,
+    profile: MaterialPageProfile
+): Int {
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
+    val curvature = sin(p.toDouble() * PI).toFloat().coerceIn(0f, 1f)
+    val opticalDemand =
+        profile.optics.specularResponse.coerceIn(0f, 1f) * 4f +
+            profile.optics.edgeBody.coerceIn(0f, 1f) * 2f
+    val physicalDemand =
+        (1f - profile.physics.bendStiffness.coerceIn(0f, 1f)) * 2f
+    return (18f + curvature * 10f + opticalDemand + physicalDemand)
+        .toInt()
+        .coerceIn(18, 34)
+}
 
 private fun normalizedCurlDepth(theta: Float): Float =
     ((1f - cos(theta)) * 0.5f).coerceIn(0f, 1f)
