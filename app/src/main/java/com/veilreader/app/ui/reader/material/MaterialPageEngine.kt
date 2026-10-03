@@ -789,24 +789,33 @@ internal fun materialPageToneAdjustedArgb(
     fun channel(value: Int, scale: Float, bias: Int): Int =
         (value * scale + bias).roundToInt().coerceIn(0, 255)
 
-    val adjusted = when (tone) {
-        MaterialPageTone.LIGHT -> intArrayOf(r, g, b)
-        MaterialPageTone.SEPIA -> intArrayOf(
-            channel(r, 0.98f, 2),
-            channel(g, 0.94f, 1),
-            channel(b, 0.84f, 0)
-        )
-        MaterialPageTone.DARK -> intArrayOf(
-            channel(r, 0.16f, 14),
-            channel(g, 0.15f, 13),
-            channel(b, 0.17f, 16)
-        )
+    if (tone == MaterialPageTone.LIGHT) return argb
+
+    val adjustedR: Int
+    val adjustedG: Int
+    val adjustedB: Int
+    when (tone) {
+        MaterialPageTone.LIGHT -> {
+            adjustedR = r
+            adjustedG = g
+            adjustedB = b
+        }
+        MaterialPageTone.SEPIA -> {
+            adjustedR = channel(r, 0.98f, 2)
+            adjustedG = channel(g, 0.94f, 1)
+            adjustedB = channel(b, 0.84f, 0)
+        }
+        MaterialPageTone.DARK -> {
+            adjustedR = channel(r, 0.16f, 14)
+            adjustedG = channel(g, 0.15f, 13)
+            adjustedB = channel(b, 0.17f, 16)
+        }
     }
 
     return (
         (a.toLong() shl 24) or
-            (adjusted[0].toLong() shl 16) or
-            (adjusted[1].toLong() shl 8) or
-            adjusted[2].toLong()
+            (adjustedR.toLong() shl 16) or
+            (adjustedG.toLong() shl 8) or
+            adjustedB.toLong()
         )
 }
