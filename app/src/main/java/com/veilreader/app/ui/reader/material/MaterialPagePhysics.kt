@@ -25,7 +25,12 @@ internal fun materialPageDragSample(
     heightPx: Float,
     profile: MaterialPageProfile
 ): MaterialPageDragSample {
-    if (widthPx <= 0f || heightPx <= 0f) {
+    if (
+        !widthPx.isFinite() ||
+        !heightPx.isFinite() ||
+        widthPx <= 0f ||
+        heightPx <= 0f
+    ) {
         return MaterialPageDragSample(
             progress = 0f,
             rawProgress = 0f,
@@ -34,7 +39,11 @@ internal fun materialPageDragSample(
         )
     }
 
-    val raw = (inwardDistancePx / widthPx).coerceIn(0f, 1f)
+    val safeInward =
+        inwardDistancePx.takeIf { it.isFinite() }?.coerceAtLeast(0f) ?: 0f
+    val safeVerticalDistance =
+        verticalDistancePx.takeIf { it.isFinite() } ?: 0f
+    val raw = (safeInward / widthPx).coerceIn(0f, 1f)
     val resistance = profile.physics.dragResistance.coerceIn(0.45f, 1.35f)
     val stiffness = profile.physics.bendStiffness.coerceIn(0.35f, 1.0f)
 
@@ -51,7 +60,7 @@ internal fun materialPageDragSample(
         (0.18f - profile.physics.bindingConstraint * 0.055f)
             .coerceIn(0.09f, 0.16f)
     val rawVertical =
-        (verticalDistancePx / heightPx)
+        (safeVerticalDistance / heightPx)
             .takeIf { it.isFinite() }
             ?.coerceIn(-verticalLimit, verticalLimit)
             ?: 0f
@@ -86,7 +95,7 @@ internal fun materialPageLift(
     progress: Float,
     profile: MaterialPageProfile
 ): Float {
-    val p = progress.coerceIn(0f, 1f)
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     val base = sin(p.toDouble() * PI).toFloat().coerceIn(0f, 1f)
     val stiffness = profile.physics.bendStiffness.coerceIn(0f, 1f)
     val mass = profile.physics.apparentMass.coerceIn(0.6f, 1.5f)
@@ -102,7 +111,7 @@ internal fun materialPageReleaseDecision(
     inwardVelocityDpPerSec: Float,
     profile: MaterialPageProfile
 ): MaterialPageReleaseDecision {
-    val p = progress.coerceIn(0f, 1f)
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     val velocity = inwardVelocityDpPerSec
         .takeIf { it.isFinite() }
         ?.coerceIn(-4_000f, 4_000f)
@@ -150,10 +159,10 @@ internal fun materialPageSettleDurationMillis(
     velocityDpPerSec: Float,
     profile: MaterialPageProfile
 ): Int {
-    val p = progress.coerceIn(0f, 1f)
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     val remaining = if (completing) 1f - p else p
     val mass = profile.physics.apparentMass.coerceIn(0.6f, 1.5f)
-    val speed = abs(velocityDpPerSec)
+    val speed = abs(velocityDpPerSec.takeIf { it.isFinite() } ?: 0f)
 
     val base = when {
         speed >= 2_000f -> 118f
@@ -224,7 +233,7 @@ internal fun materialPageReducedMotionAlpha(
     progress: Float,
     completing: Boolean
 ): Float {
-    val p = progress.coerceIn(0f, 1f)
+    val p = progress.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: 0f
     return if (completing) {
         (1f - p * 0.92f).coerceIn(0.08f, 1f)
     } else {
