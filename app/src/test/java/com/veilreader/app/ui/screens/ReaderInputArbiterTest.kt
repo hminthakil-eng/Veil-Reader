@@ -6,8 +6,73 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.readium.r2.navigator.input.InputListener
+import org.readium.r2.navigator.input.Key
+import org.readium.r2.navigator.input.KeyEvent
+import org.readium.r2.shared.ExperimentalReadiumApi
 
 class ReaderInputArbiterTest {
+
+    @OptIn(ExperimentalReadiumApi::class)
+    @Test
+    fun `blocked reader returns volume keys to Android instead of consuming them`() {
+        var hardwareCalls = 0
+        val hardware = object : InputListener {
+            override fun onKey(event: KeyEvent): Boolean {
+                hardwareCalls += 1
+                return true
+            }
+        }
+        val arbiter = ReaderInputArbiter(
+            contentTarget = null,
+            tapZones = null,
+            hardwareKeys = hardware,
+            paper = null,
+            slide = null,
+            staticPaged = null,
+            directional = object : InputListener {},
+            chromeTap = { true },
+            interactionMode = { ReaderInteractionMode.BLOCKED }
+        )
+
+        assertFalse(arbiter.onKey(volumeKeyEvent(Key.AudioVolumeUp)))
+        assertEquals(0, hardwareCalls)
+    }
+
+    @OptIn(ExperimentalReadiumApi::class)
+    @Test
+    fun `touch exploration never remaps volume keys`() {
+        var hardwareCalls = 0
+        val hardware = object : InputListener {
+            override fun onKey(event: KeyEvent): Boolean {
+                hardwareCalls += 1
+                return true
+            }
+        }
+        val arbiter = ReaderInputArbiter(
+            contentTarget = null,
+            tapZones = null,
+            hardwareKeys = hardware,
+            paper = null,
+            slide = null,
+            staticPaged = null,
+            directional = object : InputListener {},
+            chromeTap = { true },
+            interactionMode = { ReaderInteractionMode.RENDERER_ACCESSIBILITY }
+        )
+
+        assertFalse(arbiter.onKey(volumeKeyEvent(Key.AudioVolumeDown)))
+        assertEquals(0, hardwareCalls)
+    }
+
+    @OptIn(ExperimentalReadiumApi::class)
+    private fun volumeKeyEvent(key: Key): KeyEvent =
+        KeyEvent(
+            type = KeyEvent.Type.Down,
+            key = key,
+            modifiers = emptySet(),
+            characters = null
+        )
 
     @Test
     fun `Veil slide owns only paginated EPUB slide mode`() {
