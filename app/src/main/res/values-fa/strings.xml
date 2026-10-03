@@ -1303,4 +1303,7 @@
     <string name="tts_install_voice">نصب دادهٔ صدا</string>
     <string name="tts_playback_failed">پخش صدا به‌دلیل خطای موتور TTS یا محتوای کتاب متوقف شد.</string>
     <string name="tts_follow_hint">Veil جملهٔ در حال خواندن را دنبال می‌کند، بدون اینکه آن را ورق‌زدن دستی حساب کند.</string>
+
+    <string name="reader_selection_lookup">جست‌وجوی واژه</string>
+    <string name="reader_lookup_failed">هیچ برنامهٔ نصب‌شده‌ای برای جست‌وجوی متن انتخاب‌شده در دسترس نیست.</string>
 </resources>
