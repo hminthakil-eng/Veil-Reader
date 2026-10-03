@@ -83,6 +83,9 @@ internal class MaterialPageEngineState(
     var verticalBias: Float by mutableFloatStateOf(0f)
         private set
 
+    var pullOriginY: Float by mutableFloatStateOf(0.5f)
+        private set
+
     var visualAlpha: Float by mutableFloatStateOf(1f)
         private set
 
@@ -144,6 +147,7 @@ internal class MaterialPageEngineState(
         snapshot = bitmap
         progress = 0f
         verticalBias = 0f
+        pullOriginY = 0.5f
         visualAlpha = 1f
         liftCueEmitted = false
         active = true
@@ -166,6 +170,7 @@ internal class MaterialPageEngineState(
 
         progress = sample.progress
         verticalBias = sample.verticalBias
+        pullOriginY = (start.y / height).coerceIn(0f, 1f)
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -341,6 +346,7 @@ internal class MaterialPageEngineState(
         snapshot = null
         progress = 0f
         verticalBias = 0f
+        pullOriginY = 0.5f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -355,6 +361,7 @@ internal class MaterialPageEngineState(
         snapshot = null
         progress = 0f
         verticalBias = 0f
+        pullOriginY = 0.5f
         visualAlpha = 1f
         width = 0f
         height = 0f
@@ -370,6 +377,7 @@ internal class MaterialPageEngineState(
         bitmap: Bitmap,
         progress: Float,
         verticalBias: Float = 0f,
+        pullOriginY: Float = 0.5f,
         side: MaterialPageSide = MaterialPageSide.RIGHT,
         profile: MaterialPageProfile = this.profile,
         reducedMotion: Boolean = false,
@@ -381,6 +389,7 @@ internal class MaterialPageEngineState(
         height = bitmap.height.toFloat()
         this.progress = progress.coerceIn(0f, 1f)
         this.verticalBias = verticalBias.coerceIn(-0.18f, 0.18f)
+        this.pullOriginY = pullOriginY.coerceIn(0f, 1f)
         this.side = side
         this.profile = profile
         this.reducedMotion = reducedMotion
@@ -460,6 +469,7 @@ internal fun MaterialPageOverlay(
     val scratch = androidx.compose.runtime.remember { MaterialPageRenderScratch() }
     val progress = state.progress
     val verticalBias = state.verticalBias
+    val pullOriginY = state.pullOriginY
     val visualAlpha = state.visualAlpha
     val profile = state.profile
     val side = state.side
@@ -506,7 +516,8 @@ internal fun MaterialPageOverlay(
             height = bitmap.height.toFloat(),
             progress = progress,
             verticalBias = verticalBias,
-            profile = profile
+            profile = profile,
+            pullOriginY = pullOriginY
         )
         val frame = if (side == MaterialPageSide.LEFT) {
             mirrorMaterialPageFrame(canonical, bitmap.width.toFloat())
