@@ -1853,8 +1853,14 @@ fun ReaderScreen(
             )
 
             fun performSemanticReaderTurn(direction: PaperTurnDirection): Boolean {
+                val intendedScroll =
+                    if (opened.format == BookFormat.EPUB) {
+                        latestAppearance.value.scroll
+                    } else {
+                        nav.overflow.value.scroll
+                    }
                 if (
-                    nav.overflow.value.scroll ||
+                    intendedScroll ||
                     !latestReaderSessionReady.value
                 ) {
                     return false
