@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import com.veilreader.app.ui.reader.material.MaterialPageEngineState
-import com.veilreader.app.ui.reader.material.MaterialPageOverlay
+import com.veilreader.app.ui.reader.material.GpuMaterialPageOverlay
 import com.veilreader.app.ui.reader.material.MaterialPageProfile
 import com.veilreader.app.ui.reader.material.MaterialPageProfiles
 import com.veilreader.app.ui.reader.material.MaterialPageSide
@@ -67,7 +67,7 @@ private fun MaterialPageReview(spec: MaterialReviewSpec) {
             .fillMaxSize()
             .background(reviewDestinationColor(spec.tone))
     ) {
-        MaterialPageOverlay(
+        GpuMaterialPageOverlay(
             state = state,
             modifier = Modifier.fillMaxSize()
         )
