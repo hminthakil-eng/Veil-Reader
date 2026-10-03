@@ -66,6 +66,7 @@ import com.veilreader.app.data.settings.AmbientSound
 import com.veilreader.app.data.settings.AppSettings
 import com.veilreader.app.data.settings.SensorySettings
 import com.veilreader.app.domain.AppThemeMode
+import com.veilreader.app.domain.PageTurnStyle
 import com.veilreader.app.domain.ReaderAppearance
 import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
