@@ -92,6 +92,50 @@ class GpuPageCurlModelTest {
         assertEquals(-1f, left.sideSign, 0f)
     }
 
+
+    @Test
+    fun `terminal travel tightens radius while mid turn stays broad`() {
+        val mid = gpuPageCurlFrame(
+            progress = 0.5f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+        val terminal = gpuPageCurlFrame(
+            progress = 0.98f,
+            verticalBias = 0f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.MatteBook,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(terminal.radius < mid.radius)
+    }
+
+    @Test
+    fun `vertical drag moves cylinder grip without escaping page bounds`() {
+        val up = gpuPageCurlFrame(
+            progress = 0.45f,
+            verticalBias = -0.18f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.Parchment,
+            side = MaterialPageSide.RIGHT
+        )
+        val down = gpuPageCurlFrame(
+            progress = 0.45f,
+            verticalBias = 0.18f,
+            pullOriginY = 0.5f,
+            profile = MaterialPageProfiles.Parchment,
+            side = MaterialPageSide.RIGHT
+        )
+
+        assertTrue(up.cylinderY < 0.5f)
+        assertTrue(down.cylinderY > 0.5f)
+        assertTrue(up.cylinderY >= 0.03f)
+        assertTrue(down.cylinderY <= 0.97f)
+    }
+
     @Test
     fun `non finite inspection input collapses to finite safe frame`() {
         val frame = gpuPageCurlFrame(
