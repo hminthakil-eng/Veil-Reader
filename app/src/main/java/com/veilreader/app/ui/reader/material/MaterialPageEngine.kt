@@ -217,14 +217,40 @@ internal class MaterialPageEngineState(
             progress = 1f
         } else {
             val anim = Animatable(progress)
+            val liftTarget =
+                materialPageTapLiftFraction(profile)
+                    .coerceAtLeast(progress)
+            if (progress + 0.001f < liftTarget) {
+                anim.animateTo(
+                    targetValue = liftTarget,
+                    animationSpec = tween(
+                        durationMillis = materialPageTapLiftDurationMillis(profile),
+                        easing = FastOutSlowInEasing
+                    )
+                ) {
+                    progress = value.coerceIn(0f, 1f)
+                }
+            }
+
+            val launchVelocity =
+                (
+                    0.78f /
+                        profile.physics.apparentMass.coerceIn(0.6f, 1.5f)
+                    ).coerceIn(0.52f, 1.10f)
             anim.animateTo(
                 targetValue = 1f,
-                animationSpec = tween(
-                    durationMillis = materialPageTapDurationMillis(profile),
-                    easing = FastOutSlowInEasing
-                )
+                animationSpec = spring(
+                    dampingRatio = materialPageSpringDamping(
+                        profile = profile,
+                        cancelling = false
+                    ),
+                    stiffness =
+                        materialPageSpringStiffness(profile) * 0.94f,
+                    visibilityThreshold = 0.001f
+                ),
+                initialVelocity = launchVelocity
             ) {
-                progress = value
+                progress = value.coerceIn(0f, 1f)
             }
         }
 
