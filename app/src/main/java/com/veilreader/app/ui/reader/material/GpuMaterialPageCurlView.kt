@@ -86,10 +86,12 @@ internal class GpuMaterialPageCurlView(
     private var uSideSign = -1
     private var uFrontTint = -1
     private var uBackTint = -1
+    private var uEdgeTint = -1
     private var uFrontTintAlpha = -1
     private var uGhostAlpha = -1
     private var uRoughness = -1
     private var uSpecular = -1
+    private var uTranslucency = -1
     private var uGrain = -1
     private var uFiber = -1
     private var uMaterialPhase = -1
@@ -256,17 +258,18 @@ internal class GpuMaterialPageCurlView(
 
         bindFrameUniforms(frame)
 
-        // First project a restrained translucent shadow onto the destination page,
-        // then draw the physical sheet. Both use the same deformed mesh so the
-        // shadow follows lift and diagonal corner pulls without per-frame CPU meshes.
-        GLES20.glUniform1f(uShadowPass, 1f)
+        // Layered mesh-projected shadow approximates the drop-shadow penumbra
+        // used by mature GL curl engines without allocating a moving blur texture.
         GLES20.glDisable(GLES20.GL_DEPTH_TEST)
-        GLES20.glDrawElements(
-            GLES20.GL_TRIANGLES,
-            indexCount,
-            GLES20.GL_UNSIGNED_SHORT,
-            0
-        )
+        for (shadowLayer in 1..3) {
+            GLES20.glUniform1f(uShadowPass, shadowLayer.toFloat())
+            GLES20.glDrawElements(
+                GLES20.GL_TRIANGLES,
+                indexCount,
+                GLES20.GL_UNSIGNED_SHORT,
+                0
+            )
+        }
 
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT)
         GLES20.glEnable(GLES20.GL_DEPTH_TEST)
@@ -339,8 +342,10 @@ internal class GpuMaterialPageCurlView(
 
         val front = materialPageToneAdjustedArgb(optics.frontArgb, frame.tone)
         val back = materialPageToneAdjustedArgb(optics.backArgb, frame.tone)
+        val edge = materialPageToneAdjustedArgb(optics.edgeArgb, frame.tone)
         setColorUniform(uFrontTint, front)
         setColorUniform(uBackTint, back)
+        setColorUniform(uEdgeTint, edge)
 
         val frontTintAlpha =
             materialPageFrontSurfaceTintAlpha(frame.profile, frame.patina) *
@@ -355,6 +360,10 @@ internal class GpuMaterialPageCurlView(
         GLES20.glUniform1f(
             uSpecular,
             optics.specularResponse.coerceIn(0f, 1f)
+        )
+        GLES20.glUniform1f(
+            uTranslucency,
+            optics.translucency.coerceIn(0f, 1f)
         )
         GLES20.glUniform1f(
             uGrain,
@@ -549,10 +558,12 @@ internal class GpuMaterialPageCurlView(
         uSideSign = GLES20.glGetUniformLocation(program, "uSideSign")
         uFrontTint = GLES20.glGetUniformLocation(program, "uFrontTint")
         uBackTint = GLES20.glGetUniformLocation(program, "uBackTint")
+        uEdgeTint = GLES20.glGetUniformLocation(program, "uEdgeTint")
         uFrontTintAlpha = GLES20.glGetUniformLocation(program, "uFrontTintAlpha")
         uGhostAlpha = GLES20.glGetUniformLocation(program, "uGhostAlpha")
         uRoughness = GLES20.glGetUniformLocation(program, "uRoughness")
         uSpecular = GLES20.glGetUniformLocation(program, "uSpecular")
+        uTranslucency = GLES20.glGetUniformLocation(program, "uTranslucency")
         uGrain = GLES20.glGetUniformLocation(program, "uGrain")
         uFiber = GLES20.glGetUniformLocation(program, "uFiber")
         uMaterialPhase = GLES20.glGetUniformLocation(program, "uMaterialPhase")
@@ -603,8 +614,8 @@ internal class GpuMaterialPageCurlView(
         private const val FLOATS_PER_VERTEX = 4
         private const val VERTEX_STRIDE_BYTES =
             FLOATS_PER_VERTEX * FLOAT_BYTES
-        private const val MESH_X = 48
-        private const val MESH_Y = 8
+        private const val MESH_X = 64
+        private const val MESH_Y = 12
 
         fun isSupported(context: Context): Boolean {
             val manager =
@@ -643,6 +654,7 @@ internal class GpuMaterialPageCurlView(
             uniform float uPageAspect;
             uniform float uSideSign;
             uniform float uShadowPass;
+            uniform float uSideSign;
 
             varying vec2 vTexCoord;
             varying vec3 vNormal;
@@ -701,7 +713,10 @@ internal class GpuMaterialPageCurlView(
                 );
 
                 if (uShadowPass > 0.5) {
-                    deformed.xy += normal2 * (0.008 + deformed.z * 0.13);
+                    float shadowLayer = uShadowPass - 1.0;
+                    float layerOffset = 0.004 + shadowLayer * 0.006;
+                    float liftOffset = deformed.z * (0.10 + shadowLayer * 0.035);
+                    deformed.xy += normal2 * (layerOffset + liftOffset);
                     deformed.z = 0.0;
                 }
 
@@ -736,10 +751,12 @@ internal class GpuMaterialPageCurlView(
             uniform float uHasBackTexture;
             uniform vec3 uFrontTint;
             uniform vec3 uBackTint;
+            uniform vec3 uEdgeTint;
             uniform float uFrontTintAlpha;
             uniform float uGhostAlpha;
             uniform float uRoughness;
             uniform float uSpecular;
+            uniform float uTranslucency;
             uniform float uGrain;
             uniform float uFiber;
             uniform float uMaterialPhase;
@@ -760,14 +777,16 @@ internal class GpuMaterialPageCurlView(
 
             void main() {
                 if (uShadowPass > 0.5) {
+                    float layer = uShadowPass - 1.0;
                     float shadowEnvelope =
-                        smoothstep(0.02, 0.34, vLift) *
-                        (1.0 - smoothstep(0.82, 1.0, vLift) * 0.35);
+                        smoothstep(0.015, 0.30, vLift) *
+                        (1.0 - smoothstep(0.86, 1.0, vLift) * 0.28);
+                    float penumbra = 1.0 / (1.0 + layer * layer * 0.90);
                     gl_FragColor = vec4(
                         0.0,
                         0.0,
                         0.0,
-                        uShadowStrength * shadowEnvelope
+                        uShadowStrength * shadowEnvelope * penumbra
                     );
                     return;
                 }
@@ -781,18 +800,39 @@ internal class GpuMaterialPageCurlView(
                 float facing = clamp(abs(n.z), 0.0, 1.0);
                 float grazing = 1.0 - facing;
 
+                vec3 faceNormal =
+                    normalize(gl_FrontFacing ? n : -n);
+                vec3 lightDir = normalize(
+                    vec3(-0.32 * uSideSign, -0.18, 0.93)
+                );
+                vec3 viewDir = vec3(0.0, 0.0, 1.0);
+                vec3 halfDir = normalize(lightDir + viewDir);
+                float ndotl = clamp(dot(faceNormal, lightDir), 0.0, 1.0);
+                float ndoth = clamp(dot(faceNormal, halfDir), 0.0, 1.0);
+                float rough = clamp(uRoughness, 0.04, 1.0);
+                float shininess = mix(54.0, 7.0, rough);
+                float materialSpecular =
+                    pow(ndoth, shininess) *
+                    uSpecular *
+                    mix(0.34, 0.08, rough);
+                float selfOcclusion =
+                    grazing *
+                    smoothstep(0.06, 0.72, vLift) *
+                    mix(0.15, 0.06, rough);
+
                 vec3 color;
                 float outputAlpha;
                 if (gl_FrontFacing) {
                     color = mix(frontInk.rgb, uFrontTint, uFrontTintAlpha);
                     outputAlpha = frontInk.a;
-                    float diffuse = 0.82 + facing * 0.18;
-                    float highlight =
-                        grazing * grazing *
+                    float diffuse = 0.78 + ndotl * 0.22;
+                    float fresnel =
+                        grazing * grazing * grazing *
                         uSpecular *
-                        (1.0 - uRoughness) *
-                        0.34;
-                    color = color * diffuse + vec3(highlight);
+                        mix(0.16, 0.035, rough);
+                    color =
+                        color * max(0.58, diffuse - selfOcclusion) +
+                        vec3(materialSpecular + fresnel);
                 } else {
                     vec4 backInk =
                         mix(mirroredFrontInk, destinationInk, uHasBackTexture);
@@ -808,8 +848,12 @@ internal class GpuMaterialPageCurlView(
                         clamp(backContent, 0.08, 0.94)
                     );
                     outputAlpha = backInk.a;
-                    float diffuse = 0.72 + facing * 0.22;
-                    color *= diffuse;
+                    float diffuse = 0.70 + ndotl * 0.24;
+                    float transmitted =
+                        grazing * uTranslucency * 0.12;
+                    color =
+                        color * max(0.54, diffuse - selfOcclusion * 0.72) +
+                        vec3(transmitted + materialSpecular * 0.35);
                 }
 
                 float grain = pageNoise(vTexCoord) * uGrain * 0.022;
@@ -823,12 +867,25 @@ internal class GpuMaterialPageCurlView(
                     0.010;
                 color += vec3(grain - fiber);
 
-                float edgeDistance = min(
+                float freeEdgeDistance =
+                    uSideSign > 0.0
+                        ? 1.0 - vTexCoord.x
+                        : vTexCoord.x;
+                float freeEdge =
+                    1.0 - smoothstep(0.0, 0.010, freeEdgeDistance);
+                float outerEdgeDistance = min(
                     min(vTexCoord.x, 1.0 - vTexCoord.x),
                     min(vTexCoord.y, 1.0 - vTexCoord.y)
                 );
-                float edge = 1.0 - smoothstep(0.0, 0.012, edgeDistance);
-                color *= 1.0 - edge * uEdgeStrength * 0.16;
+                float outerEdge =
+                    1.0 - smoothstep(0.0, 0.008, outerEdgeDistance);
+                color = mix(
+                    color,
+                    uEdgeTint,
+                    freeEdge * uEdgeStrength * 0.46
+                );
+                color *=
+                    1.0 - outerEdge * uEdgeStrength * 0.055;
 
                 gl_FragColor = vec4(
                     clamp(color, vec3(0.0), vec3(1.0)),
