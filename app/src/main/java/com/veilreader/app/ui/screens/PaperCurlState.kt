@@ -71,6 +71,9 @@ internal class PaperCurlState {
     var lastBeginFailed: Boolean by mutableStateOf(false)
         private set
 
+    var debugBeginAttempts: Int by mutableStateOf(0)
+        private set
+
     private var width = 0f
     private var height = 0f
     private var snapshotBuffer: Bitmap? = null
@@ -107,7 +110,13 @@ internal class PaperCurlState {
         side: PaperCurlSide,
         direction: PaperTurnDirection
     ): Boolean {
-        if (active || view.width <= 0 || view.height <= 0) return false
+        if (BuildConfig.DEBUG) {
+            debugBeginAttempts += 1
+        }
+        if (active || view.width <= 0 || view.height <= 0) {
+            lastBeginFailed = true
+            return false
+        }
 
         if (MaterialPageEngineRollout.isEnabled()) {
             releaseLegacyBufferIfIdle()
@@ -497,11 +506,11 @@ internal fun PaperCurlOverlay(
             )
             if (BuildConfig.DEBUG) {
                 val label = when {
-                    state.lastBeginFailed -> "PAPER · GPU v2 · CAPTURE FAILED"
+                    state.lastBeginFailed -> "PAPER · GPU v2 · CAPTURE FAILED · A${state.debugBeginAttempts}"
                     state.materialEngine.reducedMotion ->
-                        "PAPER · GPU v2 · REDUCED MOTION"
-                    state.active -> "PAPER · GPU v2 · ACTIVE"
-                    else -> "PAPER · GPU v2 · READY"
+                        "PAPER · GPU v2 · REDUCED MOTION · A${state.debugBeginAttempts}"
+                    state.active -> "PAPER · GPU v2 · ACTIVE · A${state.debugBeginAttempts}"
+                    else -> "PAPER · GPU v2 · READY · A${state.debugBeginAttempts}"
                 }
                 Text(
                     text = label,
@@ -523,11 +532,11 @@ internal fun PaperCurlOverlay(
             )
             if (BuildConfig.DEBUG) {
                 val label = when {
-                    state.lastBeginFailed -> "PAPER · Canvas v1 · CAPTURE FAILED"
+                    state.lastBeginFailed -> "PAPER · Canvas v1 · CAPTURE FAILED · A${state.debugBeginAttempts}"
                     state.materialEngine.reducedMotion ->
-                        "PAPER · Canvas v1 · REDUCED MOTION"
-                    state.active -> "PAPER · Canvas v1 · ACTIVE"
-                    else -> "PAPER · Canvas v1 · READY"
+                        "PAPER · Canvas v1 · REDUCED MOTION · A${state.debugBeginAttempts}"
+                    state.active -> "PAPER · Canvas v1 · ACTIVE · A${state.debugBeginAttempts}"
+                    else -> "PAPER · Canvas v1 · READY · A${state.debugBeginAttempts}"
                 }
                 Text(
                     text = label,
