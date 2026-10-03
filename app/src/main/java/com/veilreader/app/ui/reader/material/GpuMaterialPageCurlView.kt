@@ -62,6 +62,8 @@ internal class GpuMaterialPageCurlView(
     private var indexBufferId = 0
     private var textureId = 0
     private var indexCount = 0
+    private var viewportWidth = 0
+    private var viewportHeight = 0
 
     private var aPosition = -1
     private var aTexCoord = -1
@@ -163,7 +165,9 @@ internal class GpuMaterialPageCurlView(
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
-        GLES20.glViewport(0, 0, width.coerceAtLeast(1), height.coerceAtLeast(1))
+        viewportWidth = width.coerceAtLeast(1)
+        viewportHeight = height.coerceAtLeast(1)
+        GLES20.glViewport(0, 0, viewportWidth, viewportHeight)
     }
 
     override fun onDrawFrame(gl: GL10?) {
@@ -176,6 +180,16 @@ internal class GpuMaterialPageCurlView(
         val frame = synchronized(frameLock) { submittedFrame } ?: return
         val bitmap = frame.bitmap ?: return
         if (!frame.active || bitmap.isRecycled) return
+        if (
+            !materialPageSnapshotScaleIsSafe(
+                snapshotWidth = bitmap.width.toFloat(),
+                snapshotHeight = bitmap.height.toFloat(),
+                canvasWidth = viewportWidth.toFloat(),
+                canvasHeight = viewportHeight.toFloat()
+            )
+        ) {
+            return
+        }
 
         GLES20.glUseProgram(program)
         uploadTextureIfNeeded(bitmap)
