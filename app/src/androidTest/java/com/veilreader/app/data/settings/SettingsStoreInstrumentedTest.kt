@@ -19,6 +19,7 @@ import com.veilreader.app.domain.ReaderTapAction
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTapZone
 import com.veilreader.app.domain.ReaderTextAlignment
+import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReaderTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -108,6 +109,24 @@ class SettingsStoreInstrumentedTest {
             assertEquals(true, recreated.highContrastEnabled)
         } finally {
             store.setHighContrastEnabled(false)
+        }
+    }
+
+    @Test
+    fun ttsSettings_surviveSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderTtsSettings(
+            speed = 1.45,
+            pitch = 0.88
+        )
+
+        try {
+            store.saveReaderTtsSettings(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerTts)
+        } finally {
+            store.saveReaderTtsSettings(ReaderTtsSettings())
         }
     }
 
