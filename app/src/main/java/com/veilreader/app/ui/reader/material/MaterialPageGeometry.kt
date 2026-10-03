@@ -379,12 +379,42 @@ internal fun mirrorMaterialPageFrame(
     )
 }
 
+internal fun isRenderableMaterialPageQuad(
+    topLeftX: Float,
+    topLeftY: Float,
+    topRightX: Float,
+    topRightY: Float,
+    bottomRightX: Float,
+    bottomRightY: Float,
+    bottomLeftX: Float,
+    bottomLeftY: Float
+): Boolean {
+    val values = floatArrayOf(
+        topLeftX, topLeftY,
+        topRightX, topRightY,
+        bottomRightX, bottomRightY,
+        bottomLeftX, bottomLeftY
+    )
+    if (values.any { !it.isFinite() }) return false
+
+    val twiceArea =
+        topLeftX * topRightY - topRightX * topLeftY +
+            topRightX * bottomRightY - bottomRightX * topRightY +
+            bottomRightX * bottomLeftY - bottomLeftX * bottomRightY +
+            bottomLeftX * topLeftY - topLeftX * bottomLeftY
+    return abs(twiceArea) >= 0.10f
+}
+
 internal fun isFiniteMaterialPageFrame(frame: MaterialPageFrame): Boolean {
     if (
         !frame.foldX.isFinite() ||
+        !frame.flatStartX.isFinite() ||
+        !frame.flatEndX.isFinite() ||
         !frame.revealFraction.isFinite() ||
         !frame.foldAngleRadians.isFinite() ||
-        !frame.lift.isFinite()
+        !frame.lift.isFinite() ||
+        !frame.creaseTop.isFinite() ||
+        !frame.creaseBottom.isFinite()
     ) {
         return false
     }
