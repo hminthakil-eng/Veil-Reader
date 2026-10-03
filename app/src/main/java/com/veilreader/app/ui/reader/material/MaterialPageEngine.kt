@@ -108,6 +108,7 @@ internal class MaterialPageEngineState(
 
     private var width = 0f
     private var height = 0f
+    private var density = 1f
     private var snapshotBuffer: Bitmap? = null
     private var liftCueEmitted = false
 
@@ -141,6 +142,7 @@ internal class MaterialPageEngineState(
 
         width = view.width.toFloat()
         height = view.height.toFloat()
+        density = view.resources.displayMetrics.density.coerceAtLeast(0.1f)
         this.side = side
         this.profile = profile
         snapshot = bitmap
@@ -257,7 +259,10 @@ internal class MaterialPageEngineState(
                     ),
                     stiffness = materialPageSpringStiffness(profile),
                     visibilityThreshold = 0.001f
-                )
+                ),
+                initialVelocity = normalizedReleaseVelocity(
+                    releaseVelocityDpPerSec
+                ).coerceIn(-1f, 5f)
             ) {
                 progress = value.coerceIn(0f, 1f)
             }
@@ -272,7 +277,9 @@ internal class MaterialPageEngineState(
         )
     }
 
-    suspend fun animateCancel() {
+    suspend fun animateCancel(
+        releaseVelocityDpPerSec: Float = 0f
+    ) {
         if (!active) return
 
         if (reducedMotion) {
@@ -295,7 +302,10 @@ internal class MaterialPageEngineState(
                     ),
                     stiffness = materialPageSpringStiffness(profile) * 1.08f,
                     visibilityThreshold = 0.001f
-                )
+                ),
+                initialVelocity = normalizedReleaseVelocity(
+                    releaseVelocityDpPerSec
+                ).coerceIn(-5f, 3f)
             ) {
                 progress = value.coerceIn(0f, 1f)
             }
@@ -349,6 +359,7 @@ internal class MaterialPageEngineState(
         visualAlpha = 1f
         width = 0f
         height = 0f
+        density = 1f
         // Preserve one frame of input lock so the snapshot cannot be reused while
         // Compose is still drawing the previous overlay.
         delay(16L)
@@ -364,6 +375,7 @@ internal class MaterialPageEngineState(
         visualAlpha = 1f
         width = 0f
         height = 0f
+        density = 1f
         active = false
         liftCueEmitted = false
     }
@@ -403,6 +415,14 @@ internal class MaterialPageEngineState(
             1f
         }
         active = true
+    }
+
+    private fun normalizedReleaseVelocity(
+        velocityDpPerSec: Float
+    ): Float {
+        val widthDp = (width / density.coerceAtLeast(0.1f))
+            .coerceAtLeast(1f)
+        return velocityDpPerSec / widthDp
     }
 
     fun releaseBufferIfIdle() {
