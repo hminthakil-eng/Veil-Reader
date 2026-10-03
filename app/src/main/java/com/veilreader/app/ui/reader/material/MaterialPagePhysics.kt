@@ -169,6 +169,27 @@ internal fun materialPageSettleDurationMillis(
         .coerceIn(92, 360)
 }
 
+internal fun materialPageTapLiftFraction(
+    profile: MaterialPageProfile
+): Float {
+    val mass = profile.physics.apparentMass.coerceIn(0.6f, 1.5f)
+    val bend = profile.physics.bendStiffness.coerceIn(0.35f, 1f)
+    return (
+        0.105f +
+            (1.5f - mass) * 0.028f +
+            (1f - bend) * 0.040f
+        ).coerceIn(0.10f, 0.17f)
+}
+
+internal fun materialPageTapLiftDurationMillis(
+    profile: MaterialPageProfile
+): Int =
+    (
+        42f +
+            profile.physics.apparentMass.coerceIn(0.6f, 1.5f) * 18f +
+            profile.physics.dragResistance.coerceIn(0.45f, 1.35f) * 8f
+        ).roundToInt().coerceIn(54, 78)
+
 internal fun materialPageTapDurationMillis(
     profile: MaterialPageProfile
 ): Int =
