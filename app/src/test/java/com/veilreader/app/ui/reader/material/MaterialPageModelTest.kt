@@ -391,6 +391,113 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `non finite physics input collapses safely instead of poisoning renderer state`() {
+        val drag = materialPageDragSample(
+            inwardDistancePx = Float.NaN,
+            verticalDistancePx = Float.POSITIVE_INFINITY,
+            widthPx = 1_000f,
+            heightPx = 1_600f,
+            profile = MaterialPageProfiles.MatteBook
+        )
+
+        assertEquals(0f, drag.progress, 0.0001f)
+        assertEquals(0f, drag.rawProgress, 0.0001f)
+        assertEquals(0f, drag.verticalBias, 0.0001f)
+        assertEquals(
+            MaterialPageReleaseDecision.CANCEL,
+            materialPageReleaseDecision(
+                progress = Float.NaN,
+                inwardVelocityDpPerSec = Float.NaN,
+                profile = MaterialPageProfiles.MatteBook
+            )
+        )
+    }
+
+    @Test
+    fun `collapsed or non finite perspective quads are rejected`() {
+        assertFalse(
+            isRenderableMaterialPageQuad(
+                10f, 10f,
+                10f, 10f,
+                10f, 100f,
+                10f, 100f
+            )
+        )
+        assertFalse(
+            isRenderableMaterialPageQuad(
+                Float.NaN, 0f,
+                10f, 0f,
+                10f, 100f,
+                0f, 100f
+            )
+        )
+        assertTrue(
+            isRenderableMaterialPageQuad(
+                0f, 0f,
+                100f, 0f,
+                100f, 160f,
+                0f, 160f
+            )
+        )
+    }
+
+    @Test
+    fun `production mesh budget is stable per material turn`() {
+        MaterialPageProfiles.all.forEach { profile ->
+            val budget = materialPageTurnSegmentCount(profile)
+            assertTrue(budget in 18..34)
+            assertEquals(
+                materialPageAdaptiveSegmentCount(0.50f, profile),
+                budget
+            )
+        }
+    }
+
+    @Test
+    fun `lifted front tint remains subtle while preserving material identity`() {
+        val glossy = materialPageFrontSurfaceTintAlpha(
+            MaterialPageProfiles.Glossy,
+            patina = 0.7f
+        )
+        val parchment = materialPageFrontSurfaceTintAlpha(
+            MaterialPageProfiles.Parchment,
+            patina = 0.7f
+        )
+
+        assertTrue(glossy in 0.012f..0.072f)
+        assertTrue(parchment in 0.012f..0.072f)
+        assertTrue(parchment > glossy)
+    }
+
+    @Test
+    fun `snapshot scaling rejects rotation warp but permits small layout drift`() {
+        assertTrue(
+            materialPageSnapshotScaleIsSafe(
+                snapshotWidth = 1_080f,
+                snapshotHeight = 1_920f,
+                canvasWidth = 1_070f,
+                canvasHeight = 1_900f
+            )
+        )
+        assertFalse(
+            materialPageSnapshotScaleIsSafe(
+                snapshotWidth = 1_080f,
+                snapshotHeight = 1_920f,
+                canvasWidth = 1_920f,
+                canvasHeight = 1_080f
+            )
+        )
+        assertFalse(
+            materialPageSnapshotScaleIsSafe(
+                snapshotWidth = Float.NaN,
+                snapshotHeight = 1_920f,
+                canvasWidth = 1_080f,
+                canvasHeight = 1_920f
+            )
+        )
+    }
+
+    @Test
     fun `sensory identity differs by material and completion speed`() {
         val glossy = materialPageSensoryCue(
             profile = MaterialPageProfiles.Glossy,
