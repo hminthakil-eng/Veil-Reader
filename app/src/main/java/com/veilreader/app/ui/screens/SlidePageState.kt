@@ -272,7 +272,10 @@ internal fun SlidePageOverlay(
 internal fun slideHorizontalDragResponse(progress: Float): Float {
     val t = progress.coerceIn(0f, 1f)
     val smooth = t * t * (3f - 2f * t)
-    return 0.94f + smooth * 0.06f
+    // Keep Slide immediate but not mechanically glued to the pointer. The small
+    // residual weighting preserves continuity with the settle phase and avoids a
+    // last-pixel snap as the gesture approaches full travel.
+    return 0.82f + smooth * 0.16f
 }
 
 /**
@@ -297,7 +300,7 @@ internal fun slideCompletionDurationMillis(
     }
     // Slide is the low-latency navigation mode: preserve a brief settle without
     // simulating paper weight or a long material release.
-    return (72f + (fullTravelMillis - 72f) * remaining)
+    return (88f + (fullTravelMillis - 88f) * remaining)
         .roundToInt()
-        .coerceIn(72, 168)
+        .coerceIn(88, 168)
 }
