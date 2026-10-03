@@ -8,6 +8,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
+import com.veilreader.app.ui.reader.material.MaterialPageReleaseDecision
+import com.veilreader.app.ui.reader.material.materialPageReleaseDecision
 import com.veilreader.app.ui.theme.VeilMotion
 import org.readium.r2.navigator.OverflowableNavigator
 import org.readium.r2.navigator.input.DragEvent
@@ -207,13 +209,23 @@ internal class PaperCurlInputListener(
         val width = view.width.toFloat()
         val density = view.resources.displayMetrics.density
         val inward = inwardDistance(spec, event)
-        val commit = shouldCommitPaperTurn(
-            inwardDistance = inward,
-            width = width,
-            density = density,
-            curlProgress = state.dragProgress(),
-            releaseVelocityPxPerSec = releaseVelocityPxPerSec
-        )
+        val commit = if (MaterialPageEngineRollout.isEnabled()) {
+            inward > 0f &&
+                materialPageReleaseDecision(
+                    progress = state.dragProgress(),
+                    inwardVelocityDpPerSec =
+                        releaseVelocityPxPerSec / density.coerceAtLeast(0.1f),
+                    profile = state.materialEngine.profile
+                ) == MaterialPageReleaseDecision.COMPLETE
+        } else {
+            shouldCommitPaperTurn(
+                inwardDistance = inward,
+                width = width,
+                density = density,
+                curlProgress = state.dragProgress(),
+                releaseVelocityPxPerSec = releaseVelocityPxPerSec
+            )
+        }
         completionJob = scope.launch {
             navigationJob?.join()
 
