@@ -85,8 +85,8 @@ Source-level verification cannot reliably decide:
 - whether 26 strip mappings are stable at 60/90/120 Hz;
 - whether fold shading is too visible under OLED/very low brightness;
 - whether papyrus fibre is perceptible without becoming noisy;
-- whether material sound is elegant across phone speakers/headphones;
-- whether haptic weights feel distinct across OEM vibration motors;
+- whether the implemented material-specific sound synthesis is elegant across phone speakers/headphones;
+- whether the implemented material-specific system haptic profiles feel distinct across OEM vibration motors;
 - whether rapid alternating turns cause thermal or bitmap-pressure issues.
 
 These are legitimate hands-on judgments. They are the reason the production rollout flag remains off.
