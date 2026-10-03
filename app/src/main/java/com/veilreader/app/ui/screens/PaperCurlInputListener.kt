@@ -31,7 +31,7 @@ import org.readium.r2.shared.publication.Locator
 internal fun shouldCapturePaperTurnSnapshot(
     reducedMotion: Boolean
 ): Boolean =
-    MaterialPageEngineRollout.isEnabled() || !reducedMotion
+    MaterialPageEngineRollout.isEnabled() && !reducedMotion
 
 internal class PaperCurlInputListener(
     private val navigator: OverflowableNavigator,
