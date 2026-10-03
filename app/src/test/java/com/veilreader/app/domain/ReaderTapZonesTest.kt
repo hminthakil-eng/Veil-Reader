@@ -6,6 +6,16 @@ import org.junit.Test
 
 class ReaderTapZonesTest {
     @Test
+    fun `default grid preserves existing Veil tap ownership`() {
+        ReaderTapZone.entries.forEach { zone ->
+            assertEquals(
+                ReaderTapAction.VEIL_DEFAULT,
+                ReaderTapGrid()[zone]
+            )
+        }
+    }
+
+    @Test
     fun `3x3 geometry resolves every zone deterministically`() {
         val width = 900f
         val height = 1200f
@@ -53,7 +63,7 @@ class ReaderTapZonesTest {
             "v1:BOGUS,TOGGLE_CONTROLS,NEXT_PAGE,PREVIOUS_PAGE,TOGGLE_CONTROLS,NEXT_PAGE,PREVIOUS_PAGE,TOGGLE_CONTROLS,NEXT_PAGE"
         )
         assertEquals(
-            ReaderTapAction.PREVIOUS_PAGE,
+            ReaderTapAction.VEIL_DEFAULT,
             mixed[ReaderTapZone.TOP_LEFT]
         )
         assertEquals(
