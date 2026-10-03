@@ -83,6 +83,7 @@ import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
 import com.veilreader.app.domain.ReaderPreferenceToggle
+import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
@@ -158,6 +159,7 @@ fun ReaderScreen(
     library: LocalLibraryRepository,
     game: GameRepository,
     readerAppearance: ReaderAppearance,
+    readerTapGrid: ReaderTapGrid = ReaderTapGrid(),
     fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
     onFixedLayoutSpreadChange: (ReaderFixedLayoutSpread) -> Unit = {},
@@ -422,6 +424,7 @@ fun ReaderScreen(
         }
     }
     val latestAppearance = rememberUpdatedState(presentedReaderAppearance)
+    val latestTapGrid = rememberUpdatedState(readerTapGrid)
     val paperCurlConfig = remember(presentedReaderAppearance.theme) {
         when (presentedReaderAppearance.theme) {
             ReaderTheme.PAPER -> PaperCurlVisualConfig(
@@ -1399,8 +1402,80 @@ fun ReaderScreen(
                 }
             )
 
+            fun performTapMatrixTurn(direction: PaperTurnDirection): Boolean {
+                if (
+                    opened.format != BookFormat.EPUB ||
+                    nav.overflow.value.scroll ||
+                    !latestReaderSessionReady.value
+                ) {
+                    return false
+                }
+
+                return when (latestAppearance.value.navigationMode) {
+                    ReaderNavigationMode.PAPER_CURL ->
+                        paperListener?.performDiscreteTurn(direction) == true
+
+                    ReaderNavigationMode.SLIDE ->
+                        slideListener?.performDiscreteTurn(direction) == true
+
+                    ReaderNavigationMode.PAGED -> {
+                        navigationTransactionGate.reset()
+                        readerViewModel.onUserInteraction(readerSessionInstanceId)
+                        controlsVisible = false
+                        val side = paperTurnSideFor(
+                            direction,
+                            nav.overflow.value.readingProgression
+                        )
+                        val moved = when (direction) {
+                            PaperTurnDirection.FORWARD ->
+                                nav.goForward(animated = false)
+                            PaperTurnDirection.BACKWARD ->
+                                nav.goBackward(animated = false)
+                        }
+                        if (moved) {
+                            onSensoryEvent(VeilSensoryEvent.PAGED_TURN)
+                            nav.currentLocator.value.let { locator ->
+                                recordLocator(
+                                    locator,
+                                    ReaderLocatorEvent.NAVIGATOR_PAGE_TURN
+                                )
+                            }
+                        } else {
+                            emitBoundaryFeedback(side)
+                        }
+                        true
+                    }
+
+                    ReaderNavigationMode.SCROLL -> false
+                }
+            }
+
+            val tapZoneListener = ReaderTapZoneInputListener(
+                navigator = nav,
+                grid = { latestTapGrid.value },
+                isEnabled = {
+                    latestReaderSessionReady.value &&
+                        opened.format == BookFormat.EPUB
+                },
+                canTurnPages = {
+                    !nav.overflow.value.scroll
+                },
+                onPreviousPage = {
+                    performTapMatrixTurn(PaperTurnDirection.BACKWARD)
+                },
+                onNextPage = {
+                    performTapMatrixTurn(PaperTurnDirection.FORWARD)
+                },
+                onToggleControls = {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    controlsVisible = !controlsVisible
+                    true
+                }
+            )
+
             val inputArbiter = ReaderInputArbiter(
                 contentTarget = imageTapListener,
+                tapZones = tapZoneListener,
                 paper = paperListener,
                 slide = slideListener,
                 staticPaged = staticPagedListener,
