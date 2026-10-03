@@ -325,6 +325,19 @@ class MaterialPageModelTest {
     }
 
     @Test
+    fun `tap lift choreography changes with material body`() {
+        val glossyLift = materialPageTapLiftFraction(MaterialPageProfiles.Glossy)
+        val manuscriptLift = materialPageTapLiftFraction(MaterialPageProfiles.Manuscript)
+        val glossyDuration = materialPageTapLiftDurationMillis(MaterialPageProfiles.Glossy)
+        val manuscriptDuration = materialPageTapLiftDurationMillis(MaterialPageProfiles.Manuscript)
+
+        assertTrue(glossyLift in 0.10f..0.17f)
+        assertTrue(manuscriptLift in 0.10f..0.17f)
+        assertTrue(manuscriptDuration > glossyDuration)
+        assertNotEquals(glossyLift, manuscriptLift)
+    }
+
+    @Test
     fun `material settling is never underdamped`() {
         MaterialPageProfiles.all.forEach { profile ->
             assertTrue(
