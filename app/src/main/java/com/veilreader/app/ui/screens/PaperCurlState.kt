@@ -132,6 +132,9 @@ internal class PaperCurlState {
         active = true
         return true
     }
+    fun captureMaterialBack(view: View): Boolean =
+        usingMaterialEngine() && materialEngine.captureBack(view)
+
     fun updateDrag(start: PointF, offset: PointF) {
         if (!active) return
         if (usingMaterialEngine()) {
