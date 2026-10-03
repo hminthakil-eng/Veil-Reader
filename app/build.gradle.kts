@@ -63,6 +63,12 @@ baselineProfile {
     automaticGenerationDuringBuild = false
 }
 
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    // Robolectric's SDK 37 ApplicationSharedMemory bridge uses FileDescriptor
+    // access through this JDK 21 package. Keep the export limited to test JVMs.
+    jvmArgs("--add-exports=java.base/jdk.internal.access=ALL-UNNAMED")
+}
+
 dependencies {
     // Keep AndroidX aligned with the versions used by Readium Kotlin Toolkit 3.4.0.
     implementation("androidx.activity:activity-compose:1.13.0")
@@ -104,6 +110,7 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     debugImplementation("androidx.compose.ui:ui-tooling:1.10.5")
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.10.5")
     testImplementation("junit:junit:4.13.2")
     testImplementation("androidx.lifecycle:lifecycle-viewmodel-testing:2.10.0")
     testImplementation("org.robolectric:robolectric:4.17")
@@ -114,4 +121,5 @@ dependencies {
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     androidTestImplementation("androidx.room:room-testing:2.8.5")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4:1.10.5")
 }

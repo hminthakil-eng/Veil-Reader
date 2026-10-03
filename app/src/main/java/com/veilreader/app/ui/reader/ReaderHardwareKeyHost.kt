@@ -1,5 +1,7 @@
 package com.veilreader.app.ui.reader
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityManager
 import com.veilreader.app.domain.ReaderHardwareKeyAction
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 
@@ -29,6 +31,53 @@ interface ReaderHardwareKeyHost {
     fun clearReaderHardwareKeyHandler(ownerId: String)
 }
 
+internal fun readerHardwareAccessibilityActive(manager: AccessibilityManager?): Boolean =
+    manager?.isTouchExplorationEnabled == true ||
+        manager?.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_SPOKEN)
+            ?.isNotEmpty() == true
+
+/** Activity-scoped press ownership survives Reader handler disposal/replacement. */
+internal class ReaderHardwareKeyDispatcher : ReaderHardwareKeyHost {
+    private var ownerId: String? = null
+    private var handler: ((ReaderHardwareButtonEvent) -> Boolean)? = null
+    private val consumedPresses = mutableMapOf<ReaderHardwareButton, String>()
+
+    override fun installReaderHardwareKeyHandler(
+        ownerId: String,
+        handler: (ReaderHardwareButtonEvent) -> Boolean
+    ) {
+        this.ownerId = ownerId
+        this.handler = handler
+    }
+
+    override fun clearReaderHardwareKeyHandler(ownerId: String) {
+        if (this.ownerId != ownerId) return
+        this.ownerId = null
+        handler = null
+    }
+
+    fun handle(event: ReaderHardwareButtonEvent): Boolean {
+        if (event.phase == ReaderHardwareButtonPhase.DOWN && event.repeatCount == 0) {
+            // Android can route a previous key-up to a dialog. A fresh physical
+            // down starts a new press even if that key-up never reached us.
+            consumedPresses.remove(event.button)
+        }
+        val pressOwner = consumedPresses[event.button]
+        // Do not deliver the tail of an old session's press to a new Reader.
+        val handled = if (pressOwner == null || pressOwner == ownerId) {
+            handler?.invoke(event) == true
+        } else {
+            false
+        }
+        if (event.phase == ReaderHardwareButtonPhase.UP) {
+            consumedPresses.remove(event.button)
+        } else if (handled) {
+            ownerId?.let { consumedPresses[event.button] = it }
+        }
+        return handled || pressOwner != null
+    }
+}
+
 /**
  * Platform-independent policy for optional reader hardware-key actions.
  *
@@ -54,8 +103,13 @@ internal class ReaderHardwareKeyController(
             return activeConsumedButtons.remove(event.button)
         }
 
+        if (event.repeatCount == 0) activeConsumedButtons.remove(event.button)
+
         val action = actionFor(event.button)
         val alreadyConsumed = event.button in activeConsumedButtons
+
+        // A press delegated to Android cannot become a Reader press halfway through.
+        if (event.repeatCount > 0 && !alreadyConsumed) return false
 
         // Once a physical press starts as a Reader-owned action, keep the entire press
         // consumed until key-up. A dialog, TalkBack transition, or settings change may
@@ -94,7 +148,9 @@ internal class ReaderHardwareKeyController(
             activeConsumedButtons += event.button
             lastHandledAtMs[event.button] = event.eventTimeMs
         }
-        return handled
+        // A failed repeat (for example while a page turn is in flight or at the
+        // publication boundary) cannot transfer an already-owned press to Android.
+        return handled || alreadyConsumed
     }
 
     private fun actionFor(button: ReaderHardwareButton): ReaderHardwareKeyAction =

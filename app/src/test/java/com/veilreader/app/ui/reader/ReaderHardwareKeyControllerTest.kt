@@ -157,6 +157,45 @@ class ReaderHardwareKeyControllerTest {
     }
 
     @Test
+    fun `declined repeat stays consumed after reader owns the press`() {
+        var canTurn = true
+        var calls = 0
+        val controller = controller(
+            mapping = ReaderHardwareKeyMap(volumeDown = ReaderHardwareKeyAction.NEXT_PAGE),
+            onNext = { calls += 1; canTurn }
+        )
+
+        assertTrue(controller.handle(down(ReaderHardwareButton.VOLUME_DOWN, 1000L)))
+        canTurn = false
+        assertTrue(controller.handle(down(ReaderHardwareButton.VOLUME_DOWN, 1200L, 1)))
+        assertEquals(2, calls)
+        assertTrue(controller.handle(up(ReaderHardwareButton.VOLUME_DOWN, 1220L)))
+        // A new unhandled press can still fall back to the system.
+        assertFalse(controller.handle(down(ReaderHardwareButton.VOLUME_DOWN, 1250L)))
+        assertFalse(controller.handle(up(ReaderHardwareButton.VOLUME_DOWN, 1260L)))
+    }
+
+    @Test
+    fun `enabling reader actions during a system press does not steal repeats`() {
+        var enabled = false
+        var calls = 0
+        val controller = ReaderHardwareKeyController(
+            mapping = { ReaderHardwareKeyMap(volumeUp = ReaderHardwareKeyAction.NEXT_PAGE) },
+            isEnabled = { enabled },
+            onPreviousPage = { false },
+            onNextPage = { calls += 1; true },
+            onToggleControls = { false }
+        )
+        assertFalse(controller.handle(down(ReaderHardwareButton.VOLUME_UP, 1000L)))
+        enabled = true
+        assertFalse(controller.handle(down(ReaderHardwareButton.VOLUME_UP, 1200L, 1)))
+        assertFalse(controller.handle(up(ReaderHardwareButton.VOLUME_UP, 1220L)))
+        assertEquals(0, calls)
+        assertTrue(controller.handle(down(ReaderHardwareButton.VOLUME_UP, 1250L)))
+        assertEquals(1, calls)
+    }
+
+    @Test
     fun `repeat guard tolerates clock rollback`() {
         assertTrue(shouldHandleReaderHardwareRepeat(900L, 1000L))
         assertFalse(shouldHandleReaderHardwareRepeat(1100L, 1000L))

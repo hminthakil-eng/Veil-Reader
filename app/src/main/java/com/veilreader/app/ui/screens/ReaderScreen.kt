@@ -94,6 +94,7 @@ import com.veilreader.app.domain.ReaderTheme
 import com.veilreader.app.domain.readerFocusGuideBand
 import com.veilreader.app.ui.reader.ReaderHardwareKeyController
 import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
+import com.veilreader.app.ui.reader.readerHardwareAccessibilityActive
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -186,6 +187,13 @@ fun ReaderScreen(
     val scope = rememberCoroutineScope()
     val latestReaderSessionInstanceId = rememberUpdatedState(readerSessionInstanceId)
     val formatPercent = rememberVeilPercentFormatter()
+    val focusGuideState = remember(opened.book.id, readerSessionInstanceId) {
+        ReaderFocusGuideState(focusGuide)
+    }
+    LaunchedEffect(focusGuide, focusGuideState) {
+        focusGuideState.acceptPersisted(focusGuide)
+    }
+    val activeFocusGuide = focusGuideState.value
     var entryVisible by rememberSaveable(opened.book.id, readerSessionInstanceId) { mutableStateOf(true) }
     var navigatorAttached by remember(opened.book.id, readerSessionInstanceId) { mutableStateOf(false) }
     var previousLocationJson by rememberSaveable(opened.book.id, readerSessionInstanceId) {
@@ -317,6 +325,13 @@ fun ReaderScreen(
         stringResource(R.string.reader_external_link_failed)
     val focusGuideOnMessage = stringResource(R.string.reader_focus_on)
     val focusGuideOffMessage = stringResource(R.string.reader_focus_off)
+    val focusGuideStateDescription = stringResource(
+        when (activeFocusGuide.mode) {
+            ReaderFocusGuideMode.OFF -> R.string.settings_focus_guide_off
+            ReaderFocusGuideMode.WINDOW -> R.string.settings_focus_guide_window
+            ReaderFocusGuideMode.LINE -> R.string.settings_focus_guide_line
+        }
+    )
     val imageViewerFailedMessage =
         stringResource(R.string.reader_image_viewer_failed)
     val paperCurlState = remember(opened.book.id, readerSessionInstanceId) { PaperCurlState() }
@@ -1520,10 +1535,12 @@ fun ReaderScreen(
                 isEnabled = {
                     latestReaderSessionReady.value &&
                         (opened.format == BookFormat.EPUB || opened.format == BookFormat.PDF) &&
-                        currentInteractionMode() in setOf(
+                        !readerHardwareAccessibilityActive(accessibilityManager) &&
+                        when (currentInteractionMode()) {
                             ReaderInteractionMode.NAVIGATION,
-                            ReaderInteractionMode.CHROME_PRIORITY
-                        )
+                            ReaderInteractionMode.CHROME_PRIORITY -> true
+                            else -> false
+                        }
                 },
                 onPreviousPage = {
                     performSemanticReaderTurn(PaperTurnDirection.BACKWARD)
@@ -1729,7 +1746,10 @@ fun ReaderScreen(
     val progressLabel = formatPercent(progress.coerceIn(0f, 1f))
     val progressDescription = stringResource(R.string.reader_percent_read_text, progressLabel)
     val focusGuideVisible =
-        focusGuide.mode != ReaderFocusGuideMode.OFF &&
+        activeFocusGuide.mode != ReaderFocusGuideMode.OFF &&
+            readerSessionReady &&
+            !rendererPreferencesSettling &&
+            !closeInFlight &&
             !selectionModeActive &&
             !entryVisible &&
             !showNotebook &&
@@ -1813,23 +1833,11 @@ fun ReaderScreen(
             )
         }
 
-        AnimatedVisibility(
-            visible = focusGuideVisible,
-            enter = fadeIn(
-                tween(
-                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
-                    else VeilMotion.MICRO_FAST_MS
-                )
-            ),
-            exit = fadeOut(
-                tween(
-                    if (reducedMotion) VeilMotion.REDUCED_MOTION_FADE_MS
-                    else VeilMotion.MICRO_FAST_MS
-                )
-            )
-        ) {
+        // No exit animation: OFF and blocking UI remove the guide immediately.
+        // The Canvas has no input or semantics modifiers; Readium retains ownership.
+        if (focusGuideVisible) {
             ReaderFocusGuideOverlay(
-                settings = focusGuide,
+                settings = activeFocusGuide,
                 theme = presentedReaderAppearance.theme,
                 modifier = Modifier.fillMaxSize()
             )
@@ -2033,8 +2041,10 @@ fun ReaderScreen(
                         ReaderControl(
                             action = ReaderAction.FOCUS,
                             label = stringResource(R.string.reader_focus),
-                            modifier = Modifier.weight(1f),
-                            accent = if (focusGuide.mode == ReaderFocusGuideMode.OFF) {
+                            modifier = Modifier.weight(1f).semantics {
+                                stateDescription = focusGuideStateDescription
+                            },
+                            accent = if (activeFocusGuide.mode == ReaderFocusGuideMode.OFF) {
                                 readerChromeAccent.copy(alpha = 0.58f)
                             } else {
                                 readerChromeAccent
@@ -2042,7 +2052,7 @@ fun ReaderScreen(
                             foreground = readerChromeForeground
                         ) {
                             readerViewModel.onUserInteraction(readerSessionInstanceId)
-                            val updated = focusGuide.toggled()
+                            val updated = focusGuideState.toggle()
                             onFocusGuideChange(updated)
                             readerMessage = if (updated.mode == ReaderFocusGuideMode.OFF) {
                                 focusGuideOffMessage
@@ -3091,7 +3101,7 @@ private fun ReaderFragmentHost(
 }
 
 @Composable
-private fun ReaderFocusGuideOverlay(
+internal fun ReaderFocusGuideOverlay(
     settings: ReaderFocusGuideSettings,
     theme: ReaderTheme,
     modifier: Modifier = Modifier

@@ -1,5 +1,6 @@
 package com.veilreader.app
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -17,14 +18,14 @@ import com.veilreader.app.ui.reader.ReaderHardwareButton
 import com.veilreader.app.ui.reader.ReaderHardwareButtonEvent
 import com.veilreader.app.ui.reader.ReaderHardwareButtonPhase
 import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
+import com.veilreader.app.ui.reader.ReaderHardwareKeyDispatcher
 import com.veilreader.app.ui.screens.ReaderFragmentRestoration
 import com.veilreader.app.ui.settings.SettingsViewModel
 import com.veilreader.app.ui.theme.VeilTheme
 
 class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
     private var externalOpenUri by mutableStateOf<Uri?>(null)
-    private var readerHardwareKeyOwnerId: String? = null
-    private var readerHardwareKeyHandler: ((ReaderHardwareButtonEvent) -> Boolean)? = null
+    private val readerHardwareKeys = ReaderHardwareKeyDispatcher()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         // Readium navigator fragments require a custom factory during FragmentManager restore.
@@ -63,16 +64,17 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
         ownerId: String,
         handler: (ReaderHardwareButtonEvent) -> Boolean
     ) {
-        readerHardwareKeyOwnerId = ownerId
-        readerHardwareKeyHandler = handler
+        readerHardwareKeys.installReaderHardwareKeyHandler(ownerId, handler)
     }
 
     override fun clearReaderHardwareKeyHandler(ownerId: String) {
-        if (readerHardwareKeyOwnerId != ownerId) return
-        readerHardwareKeyOwnerId = null
-        readerHardwareKeyHandler = null
+        readerHardwareKeys.clearReaderHardwareKeyHandler(ownerId)
     }
 
+    // This overrides Android Activity's public callback. AndroidX marks its
+    // bridge implementation restricted, but interception must precede child
+    // views/system volume handling. Do not suppress RestrictedApi elsewhere.
+    @SuppressLint("RestrictedApi")
     override fun dispatchKeyEvent(event: AndroidKeyEvent): Boolean {
         val button = when (event.keyCode) {
             AndroidKeyEvent.KEYCODE_VOLUME_UP -> ReaderHardwareButton.VOLUME_UP
@@ -86,14 +88,14 @@ class MainActivity : FragmentActivity(), ReaderHardwareKeyHost {
         }
 
         if (button != null && phase != null) {
-            val handled = readerHardwareKeyHandler?.invoke(
+            val handled = readerHardwareKeys.handle(
                 ReaderHardwareButtonEvent(
                     button = button,
                     phase = phase,
                     eventTimeMs = event.eventTime,
                     repeatCount = event.repeatCount
                 )
-            ) == true
+            )
             if (handled) return true
         }
 

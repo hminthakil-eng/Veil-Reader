@@ -71,3 +71,15 @@ Priority order:
 
 ## Clean-room rule
 Do not copy Moon+ DEX, resources, assets, fonts, native libraries, layouts, identifiers or proprietary implementation code. Reimplement observed behavior independently using Veil/Readium/Android APIs.
+
+## Cloud verification — 2026-10-03
+
+See [W39_CLOUD_VERIFICATION.md](W39_CLOUD_VERIFICATION.md) for reproducible toolchain assumptions,
+fixes, regression coverage, and the exact instrumentation limitation.
+
+- 537 unit tests passed; debug APK, instrumentation APK and lint passed.
+- Official Gradle 9.6.0 wrapper added; JDK 21 is required by Robolectric SDK 37.
+- Focus removal is immediate and rapid toggles acknowledge the latest preference draft.
+- Hardware presses retain ownership through handler disposal/replacement and spoken accessibility.
+- Instrumentation targets compile, but unstable software emulation did not provide a valid runtime pass.
+- PR #364 must remain unmerged; device interaction/visual/process-kill QA is still explicit.

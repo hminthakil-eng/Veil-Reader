@@ -84,6 +84,16 @@ class ReaderFocusGuideTest {
     }
 
     @Test
+    fun `toggle repairs an unnormalized invalid resume mode on its first press`() {
+        val toggled = ReaderFocusGuideSettings(
+            lastActiveMode = ReaderFocusGuideMode.OFF,
+            verticalPosition = Double.NaN
+        ).toggled()
+        assertEquals(ReaderFocusGuideMode.WINDOW, toggled.mode)
+        assertEquals(0.50, toggled.verticalPosition, 0.0)
+    }
+
+    @Test
     fun `invalid resume mode fails calm to window`() {
         val normalized = ReaderFocusGuideSettings(
             mode = ReaderFocusGuideMode.OFF,

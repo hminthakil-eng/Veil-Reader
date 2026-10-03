@@ -71,6 +71,7 @@ internal fun PdfZoomControls(
         }
     }
 
+    val outlineColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
     val scrollLabel = stringResource(R.string.pdf_scroll)
     val pageLabel = stringResource(R.string.pdf_page)
     val scrollSemantics = stringResource(R.string.pdf_continuous_scroll)
@@ -172,7 +173,7 @@ internal fun PdfZoomControls(
                             color = if (selected) {
                                 VeilPalette.Brass
                             } else {
-                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f)
+                                outlineColor
                             },
                             start = Offset(0f, size.height - 1.dp.toPx()),
                             end = Offset(size.width, size.height - 1.dp.toPx()),
@@ -236,7 +237,7 @@ internal fun PdfZoomControls(
                         strokeWidth = 2.dp.toPx()
                     )
                     drawLine(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
+                        color = outlineColor,
                         start = Offset(0f, size.height),
                         end = Offset(size.width, size.height),
                         strokeWidth = 1.dp.toPx()

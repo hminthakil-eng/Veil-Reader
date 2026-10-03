@@ -1,6 +1,7 @@
 package com.veilreader.app.data.settings
 
 import android.content.Context
+import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
@@ -192,21 +193,7 @@ class SettingsStore(private val context: Context) {
                     ReaderHardwareKeyAction.SYSTEM
                 )
             ),
-            readerFocusGuide = ReaderFocusGuideSettings(
-                mode = runCatching {
-                    ReaderFocusGuideMode.valueOf(
-                        prefs[Keys.focusGuideMode] ?: ReaderFocusGuideMode.OFF.name
-                    )
-                }.getOrDefault(ReaderFocusGuideMode.OFF),
-                lastActiveMode = runCatching {
-                    ReaderFocusGuideMode.valueOf(
-                        prefs[Keys.focusGuideLastActiveMode] ?: ReaderFocusGuideMode.WINDOW.name
-                    )
-                }.getOrDefault(ReaderFocusGuideMode.WINDOW),
-                verticalPosition = prefs[Keys.focusGuidePosition] ?: 0.50,
-                bandFraction = prefs[Keys.focusGuideBand] ?: 0.18,
-                dimStrength = prefs[Keys.focusGuideDim] ?: 0.30
-            ).normalized(),
+            readerFocusGuide = decodeReaderFocusGuidePreferences(prefs),
             fixedLayoutSpreads = decodeFixedLayoutSpreadOverrides(
                 prefs[Keys.fixedLayoutSpreads]
             ),
@@ -398,4 +385,21 @@ internal fun encodeFixedLayoutSpreadOverrides(
             }
         }
     return json.toString()
+}
+
+/** Decode independently so malformed legacy types cannot terminate the settings flow. */
+internal fun decodeReaderFocusGuidePreferences(prefs: Preferences): ReaderFocusGuideSettings {
+    val values = prefs.asMap()
+    fun number(key: String): Double? = values[doublePreferencesKey(key)] as? Double
+    fun mode(key: String, fallback: ReaderFocusGuideMode): ReaderFocusGuideMode =
+        runCatching { ReaderFocusGuideMode.valueOf((values[stringPreferencesKey(key)] as? String).orEmpty()) }
+            .getOrDefault(fallback)
+
+    return ReaderFocusGuideSettings(
+        mode = mode("reader_focus_guide_mode", ReaderFocusGuideMode.OFF),
+        lastActiveMode = mode("reader_focus_guide_last_active_mode", ReaderFocusGuideMode.WINDOW),
+        verticalPosition = number("reader_focus_guide_position") ?: 0.50,
+        bandFraction = number("reader_focus_guide_band") ?: 0.18,
+        dimStrength = number("reader_focus_guide_dim") ?: 0.30
+    ).normalized()
 }

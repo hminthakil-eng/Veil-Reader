@@ -132,6 +132,24 @@ class SettingsStoreInstrumentedTest {
     }
 
     @Test
+    fun focusGuide_offRestoresLastActiveModeAfterStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        try {
+            for (mode in listOf(ReaderFocusGuideMode.WINDOW, ReaderFocusGuideMode.LINE)) {
+                val active = ReaderFocusGuideSettings(mode = mode).normalized()
+                store.saveReaderFocusGuide(active.toggled())
+                val restored = SettingsStore(context).settings.first().readerFocusGuide
+                assertEquals(ReaderFocusGuideMode.OFF, restored.mode)
+                assertEquals(mode, restored.lastActiveMode)
+                assertEquals(active, restored.toggled())
+            }
+        } finally {
+            store.saveReaderFocusGuide(ReaderFocusGuideSettings())
+        }
+    }
+
+    @Test
     fun hardwareKeyMapping_survivesSettingsStoreRecreation() = runBlocking {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val store = SettingsStore(context)

@@ -36,15 +36,17 @@ data class ReaderFocusGuideSettings(
         )
     }
 
-    fun toggled(): ReaderFocusGuideSettings =
-        if (mode == ReaderFocusGuideMode.OFF) {
-            copy(mode = lastActiveMode).normalized()
+    fun toggled(): ReaderFocusGuideSettings {
+        val safe = normalized()
+        return if (safe.mode == ReaderFocusGuideMode.OFF) {
+            safe.copy(mode = safe.lastActiveMode)
         } else {
-            copy(
+            safe.copy(
                 mode = ReaderFocusGuideMode.OFF,
-                lastActiveMode = mode
-            ).normalized()
+                lastActiveMode = safe.mode
+            )
         }
+    }
 }
 
 data class ReaderFocusGuideBand(
