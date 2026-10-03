@@ -1283,4 +1283,22 @@
     <string name="reader_focus">Focus</string>
     <string name="reader_focus_on">Focus guide on</string>
     <string name="reader_focus_off">Focus guide off</string>
+
+    <string name="reader_listen">Listen</string>
+    <string name="tts_title">Read aloud</string>
+    <string name="tts_intro">Read the publication with Android voices through Readium’s publication-aware TTS navigator.</string>
+    <string name="tts_start">Start from visible text</string>
+    <string name="tts_play">Play</string>
+    <string name="tts_pause">Pause</string>
+    <string name="tts_stop">Stop</string>
+    <string name="tts_previous">Previous sentence</string>
+    <string name="tts_next">Next sentence</string>
+    <string name="tts_speed">Speech speed</string>
+    <string name="tts_pitch">Voice pitch</string>
+    <string name="tts_current">Now speaking</string>
+    <string name="tts_preparing">Preparing voice…</string>
+    <string name="tts_unsupported">This publication does not expose text content that Readium can speak.</string>
+    <string name="tts_initialization_failed">The device TTS engine could not be initialized. Check installed voice data and try again.</string>
+    <string name="tts_playback_failed">Speech playback stopped because the TTS engine or publication content reported an error.</string>
+    <string name="tts_follow_hint">Veil follows spoken sentences visually without counting them as manual page turns.</string>
 </resources>
