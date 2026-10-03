@@ -91,6 +91,27 @@ internal fun materialPageDragSample(
     )
 }
 
+internal fun materialPageStablePullOrigin(
+    startY: Float,
+    heightPx: Float
+): Float {
+    if (
+        !startY.isFinite() ||
+        !heightPx.isFinite() ||
+        heightPx <= 0f
+    ) {
+        return 0.5f
+    }
+    val raw = (startY / heightPx).coerceIn(0f, 1f)
+    val safe = raw.coerceIn(0.035f, 0.965f)
+    val centered = (safe - 0.5f) * 2f
+    val softened =
+        centered /
+            (1f + kotlin.math.abs(centered) * 0.10f)
+    return (0.5f + softened * 0.5f)
+        .coerceIn(0.04f, 0.96f)
+}
+
 internal fun materialPageLift(
     progress: Float,
     profile: MaterialPageProfile
