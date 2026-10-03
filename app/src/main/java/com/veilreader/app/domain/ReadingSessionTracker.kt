@@ -21,6 +21,7 @@ class ReadingSessionTracker(
     private var resumed = false
     private var lastTickElapsedMs = startedAtElapsedMs
     private var lastInteractionElapsedMs = startedAtElapsedMs
+    private var lastPacedPageActiveMillis: Long? = null
     private val notedHighlightIds = initialNotedHighlightIds.toMutableSet()
 
     var activeMillis: Long = initialActiveMillis.coerceAtLeast(0L)
@@ -37,6 +38,7 @@ class ReadingSessionTracker(
         resumed = true
         lastTickElapsedMs = nowElapsedMs
         lastInteractionElapsedMs = nowElapsedMs
+        lastPacedPageActiveMillis = null
         return accrued
     }
 
@@ -50,13 +52,27 @@ class ReadingSessionTracker(
         val accrued = accrue(nowElapsedMs)
         resumed = false
         lastTickElapsedMs = nowElapsedMs
+        lastPacedPageActiveMillis = null
         return accrued
     }
 
     fun tick(nowElapsedMs: Long): Long = accrue(nowElapsedMs)
 
-    fun recordPacedPageTurn() {
+    /**
+     * Records a real user page turn and returns the engaged-reading interval since the
+     * previous page turn in the same uninterrupted foreground segment.
+     *
+     * The first turn after open/resume establishes an anchor only. This prevents startup,
+     * background time and cross-session gaps from contaminating personal pace analytics.
+     */
+    fun recordPacedPageTurn(): Long? {
         pacedPageTurns += 1
+        val currentActive = activeMillis
+        val previousActive = lastPacedPageActiveMillis
+        lastPacedPageActiveMillis = currentActive
+        return previousActive
+            ?.let { currentActive - it }
+            ?.takeIf { it > 0L }
     }
 
     fun recordHighlight() {
