@@ -865,7 +865,7 @@ internal fun MaterialPageOverlay(
                         (8f + patina * optics.patinaResponse * 8f)
                     ).roundToInt().coerceIn(0, 14)
                 scratch.detailPaint.strokeWidth =
-                    (0.35f + optics.grain * 0.50f)
+                    (0.16f + optics.grain * 0.18f) * renderDensity
                 native.drawLine(
                     centerTopX,
                     centerTopY,
