@@ -2,7 +2,6 @@ package com.veilreader.app.ui.reader.material
 
 import kotlin.math.PI
 import kotlin.math.cos
-import kotlin.math.max
 import kotlin.math.sin
 
 internal data class MaterialPagePoint(
