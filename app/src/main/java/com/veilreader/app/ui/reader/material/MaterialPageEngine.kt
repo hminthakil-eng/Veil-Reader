@@ -176,7 +176,10 @@ internal class MaterialPageEngineState(
 
         progress = sample.progress
         verticalBias = sample.verticalBias
-        pullOriginY = (start.y / height).coerceIn(0f, 1f)
+        pullOriginY = materialPageStablePullOrigin(
+            startY = start.y,
+            heightPx = height
+        )
         visualAlpha = if (reducedMotion) {
             (1f - sample.rawProgress * 0.08f).coerceIn(0.92f, 1f)
         } else {
@@ -440,7 +443,10 @@ internal class MaterialPageEngineState(
         height = bitmap.height.toFloat()
         this.progress = progress.coerceIn(0f, 1f)
         this.verticalBias = verticalBias.coerceIn(-0.18f, 0.18f)
-        this.pullOriginY = pullOriginY.coerceIn(0f, 1f)
+        this.pullOriginY = materialPageStablePullOrigin(
+            startY = pullOriginY.coerceIn(0f, 1f) * height,
+            heightPx = height
+        )
         this.side = side
         this.profile = profile
         renderSegmentCount = materialPageTurnSegmentCount(profile)
