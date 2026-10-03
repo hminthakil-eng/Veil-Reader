@@ -261,13 +261,7 @@ internal class MaterialPageEngineState(
 
 
         if (reducedMotion) {
-            val alpha = Animatable(visualAlpha)
-            alpha.animateTo(
-                targetValue = 0.08f,
-                animationSpec = tween(96)
-            ) {
-                visualAlpha = value
-            }
+            visualAlpha = 0.08f
             progress = 1f
         } else {
             val anim = Animatable(progress)
@@ -324,20 +318,7 @@ internal class MaterialPageEngineState(
 
 
         if (reducedMotion) {
-            val alpha = Animatable(visualAlpha)
-            alpha.animateTo(
-                targetValue = 0.08f,
-                animationSpec = tween(
-                    durationMillis = materialPageSettleDurationMillis(
-                        progress = progress,
-                        completing = true,
-                        velocityDpPerSec = releaseVelocityDpPerSec,
-                        profile = profile
-                    ).coerceAtMost(110)
-                )
-            ) {
-                visualAlpha = value
-            }
+            visualAlpha = 0.08f
             progress = 1f
         } else {
             val anim = Animatable(progress)
@@ -374,13 +355,7 @@ internal class MaterialPageEngineState(
 
 
         if (reducedMotion) {
-            val alpha = Animatable(visualAlpha)
-            alpha.animateTo(
-                targetValue = 1f,
-                animationSpec = tween(72)
-            ) {
-                visualAlpha = value
-            }
+            visualAlpha = 1f
             progress = 0f
         } else {
             val anim = Animatable(progress)
@@ -415,9 +390,8 @@ internal class MaterialPageEngineState(
 
 
         if (reducedMotion) {
-            val alpha = Animatable(visualAlpha)
-            alpha.animateTo(0.94f, tween(52)) { visualAlpha = value }
-            alpha.animateTo(1f, tween(68)) { visualAlpha = value }
+            visualAlpha = 1f
+            progress = 0f
         } else {
             val anim = Animatable(progress)
             anim.animateTo(0.045f, tween(72)) {
