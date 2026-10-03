@@ -913,11 +913,11 @@ fun ReaderScreen(
                     bookId = opened.book.id,
                     sessionId = expectedSessionId
                 )
-                ttsSession?.awaitClosed()
                 awaitDurableReaderClose(
                     finalizeSession = { readerViewModel.closeBook(expectedSessionId) },
                     awaitDurability = library::flushWrites,
-                    clearRoute = onClose
+                    clearRoute = onClose,
+                    awaitOwnerRelease = { ttsSession?.awaitClosed() }
                 )
                 ReaderTrace.event(
                     "reader_close_durable",

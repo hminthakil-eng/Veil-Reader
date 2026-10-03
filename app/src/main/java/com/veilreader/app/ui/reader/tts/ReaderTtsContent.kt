@@ -67,6 +67,13 @@ internal class ReadiumTtsContent private constructor(
 
         fun create(publication: Publication, start: Locator, maximumLength: Int = 1000): ReaderTtsContent? {
             if (!isAvailable(publication)) return null
+            // Readium ignores progression for a mid-resource content start. Current-position
+            // controls must request VisualNavigator.firstVisibleElementLocator(), never silently
+            // feed an ordinary paginated currentLocator and restart the chapter.
+            val selector = start.locations.otherLocations["cssSelector"] as? String
+            val progression = start.locations.progression
+            if (progression != null && (!progression.isFinite() || progression !in 0.0..1.0)) return null
+            if (progression != null && progression > 0.0 && progression < 1.0 && selector.isNullOrBlank()) return null
             return publication.content(start)?.iterator()?.let {
                 ReadiumTtsContent(it, maximumLength.coerceIn(2, 4000))
             }

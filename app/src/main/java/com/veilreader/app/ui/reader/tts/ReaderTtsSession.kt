@@ -3,7 +3,9 @@ package com.veilreader.app.ui.reader.tts
 import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
@@ -13,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.readium.r2.shared.publication.Locator
 
 internal data class ReaderTtsState(
@@ -41,6 +45,8 @@ internal class ReaderTtsSession(
     private var backend: ReaderTtsBackend? = null
     private var content: ReaderTtsContent? = null
     private var current: ReaderTtsUtterance? = null
+    private val sourceMutex = Mutex()
+    private var pendingRead: Deferred<ReaderTtsUtterance?>? = null
     private var preferences = ReaderTtsPreferences()
     private var playJob: Job? = null
     private var monitorJob: Job? = null
@@ -68,10 +74,11 @@ internal class ReaderTtsSession(
         mutableState.value = mutableState.value.copy(phase = ReaderTtsPhase.PREPARING, problem = null)
         playJob = scope.launch {
             try {
-                val first = current ?: content?.next()
+                val first = current ?: nextContent()
                 if (ownerSerial != serial || closed) return@launch
                 if (first == null) { fail(ReaderTtsProblem.UNSUPPORTED); return@launch }
                 current = first
+                pendingRead = null
                 val engine = backend ?: backendFactory().also {
                     backend = it
                     it.onInterruption = ::pause
@@ -80,9 +87,10 @@ internal class ReaderTtsSession(
                 if (problem != null) { fail(problem); return@launch }
                 while (ownerSerial == serial && !closed) {
                     if (!canPlay()) { pause(); return@launch }
-                    val utterance = current ?: content?.next()
+                    val utterance = current ?: nextContent()
                     if (ownerSerial != serial || closed) return@launch
                     current = utterance
+                    pendingRead = null
                     if (utterance == null) {
                         engine.stop()
                         mutableState.value = mutableState.value.copy(phase = ReaderTtsPhase.ENDED)
@@ -136,6 +144,8 @@ internal class ReaderTtsSession(
     fun stop() {
         if (closed) return
         pause()
+        pendingRead?.cancel()
+        pendingRead = null
         content = null
         current = null
         mutableState.value = ReaderTtsState()
@@ -155,6 +165,14 @@ internal class ReaderTtsSession(
 
     suspend fun awaitClosed() {
         scope.coroutineContext[Job]?.join()
+    }
+
+    private suspend fun nextContent(): ReaderTtsUtterance? {
+        val source = content ?: return null
+        // Await cancellation must not discard a chunk already consumed by Readium's iterator.
+        // This single pending read is owned by the session, survives pause, and is joined on close.
+        val read = pendingRead ?: scope.async { sourceMutex.withLock { source.next() } }.also { pendingRead = it }
+        return read.await()
     }
 
     private fun fail(problem: ReaderTtsProblem) {

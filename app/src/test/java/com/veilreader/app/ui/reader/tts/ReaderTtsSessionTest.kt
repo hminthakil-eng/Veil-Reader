@@ -2,6 +2,8 @@ package com.veilreader.app.ui.reader.tts
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -19,6 +21,56 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class ReaderTtsSessionTest {
+    @Test
+    fun replacingAPreparingSourceDoesNotRunConcurrentParsersOrAttachItsOldChunk() = runTest {
+        val releaseOld = CompletableDeferred<Unit>()
+        var factories = 0
+        var newerReads = 0
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({
+            if (factories++ == 0) object : ReaderTtsContent {
+                override suspend fun next(): ReaderTtsUtterance? = withContext(NonCancellable) {
+                    releaseOld.await()
+                    ReaderTtsUtterance("obsolete", "en", locator())
+                }
+            } else object : ReaderTtsContent {
+                override suspend fun next(): ReaderTtsUtterance? {
+                    newerReads += 1
+                    return ReaderTtsUtterance("new source", "en", locator())
+                }
+            }
+        }, { backend }, "en", { true }, StandardTestDispatcher(testScheduler))
+        try {
+            session.start(locator()); runCurrent()
+            session.start(locator()); runCurrent()
+            assertEquals(0, newerReads)
+            releaseOld.complete(Unit); runCurrent()
+            assertEquals(1, newerReads)
+            assertEquals("new source", backend.requests.single().text)
+        } finally { releaseOld.complete(Unit); session.close(); session.awaitClosed() }
+    }
+
+    @Test
+    fun pauseDuringAContentReadRetainsThatChunkAndDoesNotReadPastIt() = runTest {
+        val ready = CompletableDeferred<ReaderTtsUtterance?>()
+        var reads = 0
+        val backend = FakeBackend()
+        val session = ReaderTtsSession({ object : ReaderTtsContent {
+            override suspend fun next(): ReaderTtsUtterance? { reads += 1; return ready.await() }
+        } }, { backend }, "en", { true }, StandardTestDispatcher(testScheduler))
+        try {
+            session.start(locator()); runCurrent()
+            assertEquals(1, reads)
+            session.pause(); runCurrent()
+            ready.complete(ReaderTtsUtterance("retained", "en", locator()))
+            runCurrent()
+            assertTrue(backend.requests.isEmpty())
+            session.resume(); runCurrent()
+            assertEquals(1, reads)
+            assertEquals("retained", backend.requests.single().text)
+        } finally { session.close(); session.awaitClosed() }
+    }
+
     @Test
     fun brokenContentFactoryFailsCalmlyWithoutBindingSpeech() = runTest {
         val backend = FakeBackend()
