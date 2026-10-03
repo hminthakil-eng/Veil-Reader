@@ -74,6 +74,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.veilreader.app.BuildConfig
 import com.veilreader.app.R
 import com.veilreader.app.data.GameRepository
 import com.veilreader.app.data.LocalLibraryRepository
@@ -124,6 +125,7 @@ import com.veilreader.app.ui.reader.shouldCollectReaderLocator
 import com.veilreader.app.ui.reader.shouldFlushStartupLocatorInBackground
 import com.veilreader.app.ui.reader.shouldResumeReaderAfterOpen
 import com.veilreader.app.ui.reader.awaitDurableReaderClose
+import com.veilreader.app.ui.reader.material.MaterialPageEngineRollout
 import com.veilreader.app.ui.reader.material.MaterialPageSensoryAction
 import com.veilreader.app.ui.reader.material.MaterialPageSensorySink
 import com.veilreader.app.ui.reader.material.MaterialPageTone
