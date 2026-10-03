@@ -10,6 +10,8 @@ import com.veilreader.app.domain.ReaderColumnMode
 import com.veilreader.app.domain.ReaderDarkImageTreatment
 import com.veilreader.app.domain.ReaderFontFamily
 import com.veilreader.app.domain.ReaderFixedLayoutSpread
+import com.veilreader.app.domain.ReaderFocusGuideMode
+import com.veilreader.app.domain.ReaderFocusGuideSettings
 import com.veilreader.app.domain.ReaderHardwareKeyAction
 import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
@@ -106,6 +108,26 @@ class SettingsStoreInstrumentedTest {
             assertEquals(true, recreated.highContrastEnabled)
         } finally {
             store.setHighContrastEnabled(false)
+        }
+    }
+
+    @Test
+    fun focusGuide_survivesSettingsStoreRecreation() = runBlocking {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = SettingsStore(context)
+        val expected = ReaderFocusGuideSettings(
+            mode = ReaderFocusGuideMode.LINE,
+            verticalPosition = 0.61,
+            bandFraction = 0.24,
+            dimStrength = 0.44
+        )
+
+        try {
+            store.saveReaderFocusGuide(expected)
+            val recreated = SettingsStore(context).settings.first()
+            assertEquals(expected, recreated.readerFocusGuide)
+        } finally {
+            store.saveReaderFocusGuide(ReaderFocusGuideSettings())
         }
     }
 
