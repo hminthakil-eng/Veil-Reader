@@ -854,12 +854,12 @@ fun SettingsScreen(
 
         if (BuildConfig.DEBUG) {
             SettingsSection(
-                title = "Material Page Engine review",
-                description = "Debug-only A/B controls. Release builds keep the legacy Paper engine until promotion."
+                title = "GPU Material Page Engine v2",
+                description = "Debug review of the triangle-mesh virtual-cylinder renderer. Release builds remain gated until device verification."
             ) {
                 SettingsSwitchRow(
-                    title = "Use Material Page Engine v1",
-                    subtitle = "Switch between legacy Paper and the new physical-material renderer for hands-on review.",
+                    title = "Use GPU Material Page Engine v2",
+                    subtitle = "Forces Paged + Paper and renders the page as a GPU triangle mesh with a virtual cylinder, real front/back faces and material lighting.",
                     checked = materialPageReviewEnabled,
                     onCheckedChange = { enabled ->
                         materialPageReviewEnabled = enabled
