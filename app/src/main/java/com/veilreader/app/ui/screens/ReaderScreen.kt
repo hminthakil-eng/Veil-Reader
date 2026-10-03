@@ -88,6 +88,7 @@ import com.veilreader.app.domain.ReaderHardwareKeyMap
 import com.veilreader.app.domain.ReaderPreferenceToggle
 import com.veilreader.app.domain.ReaderTapGrid
 import com.veilreader.app.domain.ReaderTextAlignment
+import com.veilreader.app.domain.ReaderTtsSettings
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
@@ -96,6 +97,7 @@ import com.veilreader.app.ui.reader.ReaderHardwareKeyController
 import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
+import com.veilreader.app.ui.reader.ReaderTtsController
 import com.veilreader.app.ui.reader.ReaderViewModel
 import com.veilreader.app.ui.reader.navigatorLocatorEvent
 import com.veilreader.app.ui.reader.shouldCollectReaderLocator
@@ -169,6 +171,8 @@ fun ReaderScreen(
     readerHardwareKeys: ReaderHardwareKeyMap = ReaderHardwareKeyMap(),
     focusGuide: ReaderFocusGuideSettings = ReaderFocusGuideSettings(),
     onFocusGuideChange: (ReaderFocusGuideSettings) -> Unit = {},
+    ttsSettings: ReaderTtsSettings = ReaderTtsSettings(),
+    onTtsSettingsChange: (ReaderTtsSettings) -> Unit = {},
     fixedLayoutSpread: ReaderFixedLayoutSpread = ReaderFixedLayoutSpread.AUTO,
     onReaderAppearanceChange: (ReaderAppearance) -> Unit,
     onFixedLayoutSpreadChange: (ReaderFixedLayoutSpread) -> Unit = {},
@@ -224,6 +228,24 @@ fun ReaderScreen(
         key = "veil-reader-state",
         factory = remember(library, game) { ReaderViewModel.factory(library, game) }
     )
+    val ttsController = remember(opened.book.id, readerSessionInstanceId) {
+        ReaderTtsController(
+            application = activity.application,
+            publication = opened.publication,
+            scope = scope
+        )
+    }
+    val ttsState by ttsController.state.collectAsStateWithLifecycle()
+    val ttsUtteranceLocator by ttsController.utteranceLocator.collectAsStateWithLifecycle()
+    var showTtsPanel by rememberSaveable(opened.book.id, readerSessionInstanceId) {
+        mutableStateOf(false)
+    }
+    DisposableEffect(ttsController) {
+        onDispose { ttsController.close() }
+    }
+    LaunchedEffect(ttsSettings, ttsController) {
+        ttsController.submitSettings(ttsSettings)
+    }
     val progressFlow = remember(readerViewModel, opened.book.id, opened.book.progress, readerSessionInstanceId) {
         readerViewModel.uiState
             .map { state ->
@@ -330,11 +352,18 @@ fun ReaderScreen(
     val navigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
         ReaderNavigationTransactionGate()
     }
-    DisposableEffect(navigationTransactionGate) {
-        onDispose { navigationTransactionGate.reset() }
+    val ttsNavigationTransactionGate = remember(opened.book.id, readerSessionInstanceId) {
+        ReaderNavigationTransactionGate()
+    }
+    DisposableEffect(navigationTransactionGate, ttsNavigationTransactionGate) {
+        onDispose {
+            navigationTransactionGate.reset()
+            ttsNavigationTransactionGate.reset()
+        }
     }
 
     fun beginProgrammaticNavigation(originLocatorJson: String?): Long {
+        ttsController.stop()
         paperInputListener?.forceCancelPendingTurn()
         slideInputListener?.forceCancelPendingTurn()
         val transaction = navigationTransactionGate.begin(
@@ -1060,8 +1089,10 @@ fun ReaderScreen(
                             slideInputListener?.forceCancelPendingTurn() == true
                         val cancelledPreview =
                             cancelledPaperPreview || cancelledSlidePreview
+                        val nowElapsed = SystemClock.elapsedRealtime()
                         val navigationJumpInFlight =
-                            navigationTransactionGate.isActive(SystemClock.elapsedRealtime())
+                            navigationTransactionGate.isActive(nowElapsed) ||
+                                ttsNavigationTransactionGate.isActive(nowElapsed)
                         if (
                             shouldTakeFinalNavigatorSnapshot(
                                 format = opened.format,
@@ -1132,9 +1163,18 @@ fun ReaderScreen(
                     sessionId = readerViewModel.traceSessionId(),
                     details = "progress=${locator.locations.totalProgression}"
                 )
-                val settledNavigation = navigationTransactionGate.consumeSettled(
-                    nowElapsedMs = SystemClock.elapsedRealtime()
-                )
+                val nowElapsed = SystemClock.elapsedRealtime()
+                val settledTtsNavigation =
+                    ttsNavigationTransactionGate.consumeSettled(
+                        nowElapsedMs = nowElapsed
+                    )
+                val settledNavigation = if (settledTtsNavigation == null) {
+                    navigationTransactionGate.consumeSettled(
+                        nowElapsedMs = nowElapsed
+                    )
+                } else {
+                    null
+                }
                 if (settledNavigation != null) {
                     previousLocationJson = settledNavigation.originLocatorJson
                         ?.takeIf { origin -> origin != json }
@@ -1148,17 +1188,20 @@ fun ReaderScreen(
 
                 val continuousScroll =
                     (nav as? OverflowableNavigator)?.overflow?.value?.scroll == true
-                val event = if (settledNavigation != null) {
-                    ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
-                } else {
-                    navigatorLocatorEvent(
+                val event = when {
+                    settledTtsNavigation != null ->
+                        ReaderLocatorEvent.TTS_SYNC_COMMIT
+                    settledNavigation != null ->
+                        ReaderLocatorEvent.NAVIGATION_JUMP_COMMIT
+                    else ->
+                        navigatorLocatorEvent(
                         isInitialEmission = initialLocatorPending,
                         isContinuousScroll = continuousScroll,
                         isPaperMode =
                             opened.format == BookFormat.EPUB &&
                                 latestAppearance.value.navigationMode ==
                                     ReaderNavigationMode.PAPER_CURL
-                    )
+                        )
                 }
                 val wasInitialLocator = initialLocatorPending
                 initialLocatorPending = false
@@ -1506,6 +1549,7 @@ fun ReaderScreen(
                             showNotebook ||
                             showAppearance ||
                             showPdfZoom ||
+                            showTtsPanel ||
                             pendingNoteHighlightId != null ||
                             footnote != null ||
                             imageLoading ||
@@ -1704,6 +1748,49 @@ fun ReaderScreen(
         decorable.applyDecorations(decorations, HIGHLIGHT_GROUP)
     }
 
+    LaunchedEffect(
+        ttsUtteranceLocator,
+        navigator,
+        opened.book.id,
+        readerSessionInstanceId,
+        presentedReaderAppearance.theme
+    ) {
+        val nav = navigator
+        val decorable = nav as? DecorableNavigator
+        val locator = ttsUtteranceLocator
+
+        if (locator == null) {
+            decorable?.applyDecorations(emptyList(), TTS_HIGHLIGHT_GROUP)
+            ttsNavigationTransactionGate.reset()
+            return@LaunchedEffect
+        }
+
+        decorable?.applyDecorations(
+            listOf(
+                Decoration(
+                    id = "tts-current-utterance",
+                    locator = locator,
+                    style = Decoration.Style.Highlight(
+                        tint = readerTtsHighlightTint(
+                            presentedReaderAppearance.theme
+                        )
+                    )
+                )
+            ),
+            TTS_HIGHLIGHT_GROUP
+        )
+
+        if (nav != null) {
+            val transaction = ttsNavigationTransactionGate.begin(
+                originLocatorJson = null,
+                nowElapsedMs = SystemClock.elapsedRealtime()
+            )
+            if (!nav.go(locator, animated = false)) {
+                ttsNavigationTransactionGate.cancel(transaction.token)
+            }
+        }
+    }
+
     val readerCanvas = readerCanvasColor(presentedReaderAppearance.theme)
     val lightReaderChrome =
         presentedReaderAppearance.theme == ReaderTheme.PAPER ||
@@ -1735,6 +1822,7 @@ fun ReaderScreen(
             !showNotebook &&
             !showAppearance &&
             !showPdfZoom &&
+            !showTtsPanel &&
             pendingNoteHighlightId == null &&
             footnote == null &&
             !imageLoading &&
@@ -2028,6 +2116,23 @@ fun ReaderScreen(
                                     bookmarkDuplicateMessage
                                 }
                             }
+                        }
+
+                        ReaderControl(
+                            action = ReaderAction.TTS,
+                            label = stringResource(R.string.reader_listen),
+                            modifier = Modifier.weight(1f),
+                            enabled = ttsState.supported,
+                            accent = if (ttsState.active) {
+                                readerChromeAccent
+                            } else {
+                                readerChromeAccent.copy(alpha = 0.68f)
+                            },
+                            foreground = readerChromeForeground
+                        ) {
+                            readerViewModel.onUserInteraction(readerSessionInstanceId)
+                            controlsVisible = false
+                            showTtsPanel = true
                         }
 
                         ReaderControl(
@@ -2596,6 +2701,44 @@ fun ReaderScreen(
         }
     }
 
+    if (showTtsPanel) {
+        ModalBottomSheet(
+            onDismissRequest = { showTtsPanel = false },
+            containerColor = VeilPalette.Ink,
+            dragHandle = {
+                BottomSheetDefaults.DragHandle(
+                    color = VeilPalette.Brass.copy(alpha = 0.48f)
+                )
+            }
+        ) {
+            ReaderTtsControls(
+                state = ttsState,
+                settings = ttsSettings,
+                onStart = {
+                    ttsController.start(
+                        visualNavigator = navigator,
+                        settings = ttsSettings
+                    )
+                },
+                onPlayPause = {
+                    if (ttsState.playing) ttsController.pause()
+                    else ttsController.play()
+                },
+                onPrevious = ttsController::previous,
+                onNext = ttsController::next,
+                onStop = ttsController::stop,
+                onSettingsChange = { updated ->
+                    onTtsSettingsChange(updated)
+                    ttsController.submitSettings(updated)
+                },
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 22.dp)
+                    .padding(bottom = 32.dp)
+            )
+        }
+    }
+
     if (showPdfZoom) {
         ModalBottomSheet(
             onDismissRequest = { showPdfZoom = false },
@@ -3155,7 +3298,7 @@ private data class ReaderFootnote(
     val text: String
 )
 
-private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, FOCUS, APPEARANCE, ZOOM }
+private enum class ReaderAction { BACK, NOTEBOOK, BOOKMARK, TTS, FOCUS, APPEARANCE, ZOOM }
 
 @Composable
 private fun ReaderChromeButton(
@@ -3284,6 +3427,52 @@ private fun ReaderActionIcon(action: ReaderAction, modifier: Modifier, tint: Col
                     close()
                 }
                 drawPath(path, tint, style = stroke)
+            }
+            ReaderAction.TTS -> {
+                drawLine(
+                    tint,
+                    Offset(w * .18f, h * .40f),
+                    Offset(w * .34f, h * .40f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .34f, h * .40f),
+                    Offset(w * .50f, h * .24f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .50f, h * .24f),
+                    Offset(w * .50f, h * .76f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .50f, h * .76f),
+                    Offset(w * .34f, h * .60f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawLine(
+                    tint,
+                    Offset(w * .34f, h * .60f),
+                    Offset(w * .18f, h * .60f),
+                    stroke.width,
+                    StrokeCap.Round
+                )
+                drawArc(
+                    color = tint,
+                    startAngle = -48f,
+                    sweepAngle = 96f,
+                    useCenter = false,
+                    topLeft = Offset(w * .42f, h * .31f),
+                    size = Size(w * .34f, h * .38f),
+                    style = stroke
+                )
             }
             ReaderAction.FOCUS -> {
                 drawRoundRect(
@@ -4682,6 +4871,14 @@ internal fun ReaderFixedLayoutSpread.toReadiumSpread(): Spread? =
         ReaderFixedLayoutSpread.DUAL -> Spread.ALWAYS
     }
 
+internal fun readerTtsHighlightTint(theme: ReaderTheme): Int =
+    when (theme) {
+        ReaderTheme.PAPER -> 0xFF7E9DB6.toInt()
+        ReaderTheme.SEPIA -> 0xFF7891A7.toInt()
+        ReaderTheme.DUSK -> 0xFF86A9C8.toInt()
+        ReaderTheme.OLED -> 0xFF9ABAD4.toInt()
+    }
+
 internal fun readerHighlightTint(theme: ReaderTheme): Int =
     when (theme) {
         ReaderTheme.PAPER -> 0xFFB58A34.toInt()
@@ -4706,4 +4903,5 @@ internal fun ReaderAppearance.toPdfiumPreferences(): PdfiumPreferences = PdfiumP
 )
 
 private const val HIGHLIGHT_GROUP = "veil-highlights"
+private const val TTS_HIGHLIGHT_GROUP = "veil-tts"
 private const val READER_HIGHLIGHT_ALPHA = 0.34
