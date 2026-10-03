@@ -135,6 +135,12 @@ internal class PaperCurlState {
     fun captureMaterialBack(view: View): Boolean =
         usingMaterialEngine() && materialEngine.captureBack(view)
 
+    fun prepareMaterialTapGrip() {
+        if (usingMaterialEngine()) {
+            materialEngine.prepareTapGrip()
+        }
+    }
+
     fun updateDrag(start: PointF, offset: PointF) {
         if (!active) return
         if (usingMaterialEngine()) {
