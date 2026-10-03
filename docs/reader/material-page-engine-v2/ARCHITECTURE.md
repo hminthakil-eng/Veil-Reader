@@ -52,17 +52,17 @@ Useful ideas:
 
 Veil adaptation:
 - GPU overlay sits above Readium only for Paper mode;
-- unsupported devices fall back to Material Page Engine v1 Canvas renderer.
+- v2 ships no legacy/Canvas curl fallback; unsupported GPU/reduced-motion cases keep semantic navigation without a curl visual.
 
 ### oleksandrbalan/pagecurl — Apache-2.0
 
 Useful ideas:
 - Compose-friendly gesture/state separation;
 - clear front/back page semantics;
-- a simple fallback path using clipping/mirroring.
+- Compose-first gesture/state separation remains useful as an architectural reference, not as a runtime fallback.
 
 Veil adaptation:
-- the v1 Canvas renderer remains the fallback; v2 does not duplicate Reader gesture ownership.
+- Veil keeps one Paper renderer in v2: the GPU path. The old Canvas implementation remains only in Git history/PR #372.
 
 ### AlShevelev/PageTurningLib — MIT
 
@@ -163,7 +163,7 @@ When debug Material review is enabled and Reader is in Paper mode, the transpare
 
 - production rollout remains gated;
 - Debug review forces `Paged + Paper`;
-- devices without GLES 2.0 use the v1 Canvas renderer;
+- devices without the required GPU path do not substitute an older curl renderer;
 - Slide remains completely separate;
 - PDF remains unchanged;
 - GPU overlay is non-clickable, non-focusable and accessibility-neutral;
@@ -188,7 +188,7 @@ Before promotion:
 13. light/sepia/dark/OLED
 14. rotation/resizing
 15. repeated turns for texture-buffer reuse and GL lifecycle
-16. direct GPU v2 vs Canvas v1 vs Slide visual comparison
+16. direct GPU v2 vs Slide/Paged separation review
 
 Until these pass, status is **not device-green**.
 
@@ -250,12 +250,24 @@ v2 checks:
 - snapshot aspect compatibility after resize/rotation;
 - runtime shader/program initialization.
 
-Any renderer failure switches the review path back to Canvas v1 rather than leaving a blank page.
+Any renderer failure is explicit: semantic navigation remains available, but v2 does not silently substitute an older curl renderer.
 
-### Direct A/B review
+### Single-renderer review
 
-Debug Settings can now hold Material physics/navigation constant while switching only the renderer between:
-- GPU v2;
-- Canvas v1.
+Debug Settings now targets GPU v2 only. Legacy Paper and Canvas Material v1 were removed from the v2 runtime so a real-device review cannot accidentally judge the wrong renderer. The persistent Reader HUD reports GPU Paper ownership and begin attempts directly.
 
-This is the preferred device-review method for identifying whether a defect belongs to navigation/physics or to GPU deformation/shading.
+
+## GPU-only runtime cleanup
+
+The v2 branch intentionally removes the old runtime renderer files and paths:
+- `PaperCurlDraw.kt`
+- `PaperCurlGeometry.kt`
+- `MaterialPageGeometry.kt`
+- legacy `PaperVisualEngine`
+- Canvas `MaterialPageOverlay`
+- `Matrix.setPolyToPoly` strip deformation
+- GPU/Canvas A/B rollout controls
+
+The rollback source remains Git history and PR #372; it is not bundled into the v2 APK.
+
+The GPU host was also moved from `GLSurfaceView` with an on-top Surface to `GLTextureView`, using the already-present irurueta GL utils dependency. This keeps curl rendering in the normal View hierarchy and removes the separate-surface composition/Z-order ambiguity.
