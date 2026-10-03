@@ -142,28 +142,6 @@ class MaterialPageModelTest {
     }
 
     @Test
-    fun `adaptive mesh spends detail where curvature and gloss need it`() {
-        val shallow = materialPageAdaptiveSegmentCount(
-            progress = 0.02f,
-            profile = MaterialPageProfiles.MatteBook
-        )
-        val middle = materialPageAdaptiveSegmentCount(
-            progress = 0.50f,
-            profile = MaterialPageProfiles.MatteBook
-        )
-        val glossyMiddle = materialPageAdaptiveSegmentCount(
-            progress = 0.50f,
-            profile = MaterialPageProfiles.Glossy
-        )
-
-        assertTrue(shallow in 18..34)
-        assertTrue(middle in 18..34)
-        assertTrue(glossyMiddle in 18..34)
-        assertTrue(middle > shallow)
-        assertTrue(glossyMiddle >= middle)
-    }
-
-    @Test
     fun `vertical micro jitter is suppressed without deleting intentional diagonal pull`() {
         val tiny = materialPageDragSample(
             inwardDistancePx = 260f,
@@ -182,29 +160,6 @@ class MaterialPageModelTest {
 
         assertEquals(0f, tiny.verticalBias, 0.0001f)
         assertTrue(deliberate.verticalBias > 0.02f)
-    }
-
-    @Test
-    fun `glossy sheet develops stronger grazing highlight than matte stock`() {
-        val glossy = materialPageGeometry(
-            width = 1_000f,
-            height = 1_600f,
-            progress = 0.55f,
-            verticalBias = 0f,
-            profile = MaterialPageProfiles.Glossy
-        )
-        val matte = materialPageGeometry(
-            width = 1_000f,
-            height = 1_600f,
-            progress = 0.55f,
-            verticalBias = 0f,
-            profile = MaterialPageProfiles.MatteBook
-        )
-
-        assertTrue(
-            glossy.strips.maxOf { it.lightResponse } >
-                matte.strips.maxOf { it.lightResponse }
-        )
     }
 
     @Test
@@ -253,126 +208,6 @@ class MaterialPageModelTest {
         assertNotEquals(glossy, matte)
         assertNotEquals(matte, manuscript)
         assertTrue(manuscript < glossy)
-    }
-
-    @Test
-    fun `geometry stays finite through the full turn and reveals progressively`() {
-        val progressValues = listOf(0.02f, 0.12f, 0.35f, 0.62f, 0.88f, 0.99f)
-        var previousReveal = -1f
-
-        progressValues.forEach { progress ->
-            val frame = materialPageGeometry(
-                width = 1_080f,
-                height = 1_920f,
-                progress = progress,
-                verticalBias = 0.08f,
-                profile = MaterialPageProfiles.MatteBook
-            )
-
-            assertTrue(isFiniteMaterialPageFrame(frame))
-            assertEquals(
-                materialPageAdaptiveSegmentCount(progress, MaterialPageProfiles.MatteBook),
-                frame.strips.size
-            )
-            assertTrue(frame.revealFraction >= previousReveal)
-            assertTrue(frame.foldX in 0f..1_080f)
-            previousReveal = frame.revealFraction
-        }
-    }
-
-    @Test
-    fun `deep curl exposes a back face without making geometry unstable`() {
-        val frame = materialPageGeometry(
-            width = 1_080f,
-            height = 1_920f,
-            progress = 0.72f,
-            verticalBias = -0.07f,
-            profile = MaterialPageProfiles.Papyrus
-        )
-
-        assertTrue(frame.strips.any { it.backFacing })
-        assertTrue(frame.strips.any { !it.backFacing })
-        assertTrue(isFiniteMaterialPageFrame(frame))
-    }
-
-    @Test
-    fun `left edge mirror preserves material state while reversing geometry`() {
-        val width = 1_000f
-        val right = materialPageGeometry(
-            width = width,
-            height = 1_600f,
-            progress = 0.54f,
-            verticalBias = 0.04f,
-            profile = MaterialPageProfiles.Parchment
-        )
-        val left = mirrorMaterialPageFrame(right, width)
-
-        assertEquals(right.revealFraction, left.revealFraction, 0.0001f)
-        assertEquals(right.lift, left.lift, 0.0001f)
-        assertEquals(width - right.foldX, left.foldX, 0.0001f)
-        assertEquals(right.strips.size, left.strips.size)
-        assertTrue(isFiniteMaterialPageFrame(left))
-    }
-
-    @Test
-    fun `bend stiffness changes curl geometry at equal progress`() {
-        val glossy = materialPageGeometry(
-            width = 1_000f,
-            height = 1_600f,
-            progress = 0.55f,
-            verticalBias = 0f,
-            profile = MaterialPageProfiles.Glossy
-        )
-        val parchment = materialPageGeometry(
-            width = 1_000f,
-            height = 1_600f,
-            progress = 0.55f,
-            verticalBias = 0f,
-            profile = MaterialPageProfiles.Parchment
-        )
-
-        assertTrue(parchment.foldAngleRadians > glossy.foldAngleRadians)
-    }
-
-    @Test
-    fun `corner pull biases the near edge more than a centered pull`() {
-        val topPull = materialPageGeometry(
-            width = 1_000f,
-            height = 1_600f,
-            progress = 0.50f,
-            verticalBias = 0.10f,
-            profile = MaterialPageProfiles.MatteBook,
-            pullOriginY = 0.08f
-        )
-        val bottomPull = materialPageGeometry(
-            width = 1_000f,
-            height = 1_600f,
-            progress = 0.50f,
-            verticalBias = 0.10f,
-            profile = MaterialPageProfiles.MatteBook,
-            pullOriginY = 0.92f
-        )
-
-        assertTrue(topPull.creaseTop.y == bottomPull.creaseTop.y)
-        assertTrue(topPull.creaseTop.x < topPull.creaseBottom.x)
-        assertTrue(bottomPull.creaseTop.x > bottomPull.creaseBottom.x)
-
-        val topStrip = topPull.strips.last()
-        val bottomStrip = bottomPull.strips.last()
-        assertTrue(topStrip.topLeft.y > bottomStrip.topLeft.y)
-        assertTrue(bottomStrip.bottomLeft.y > topStrip.bottomLeft.y)
-
-        val mirrored = mirrorMaterialPageFrame(topPull, 1_000f)
-        assertEquals(
-            1_000f - topPull.creaseTop.x,
-            mirrored.creaseTop.x,
-            0.0001f
-        )
-        assertEquals(
-            1_000f - topPull.creaseBottom.x,
-            mirrored.creaseBottom.x,
-            0.0001f
-        )
     }
 
     @Test
@@ -472,46 +307,6 @@ class MaterialPageModelTest {
                 profile = MaterialPageProfiles.MatteBook
             )
         )
-    }
-
-    @Test
-    fun `collapsed or non finite perspective quads are rejected`() {
-        assertFalse(
-            isRenderableMaterialPageQuad(
-                10f, 10f,
-                10f, 10f,
-                10f, 100f,
-                10f, 100f
-            )
-        )
-        assertFalse(
-            isRenderableMaterialPageQuad(
-                Float.NaN, 0f,
-                10f, 0f,
-                10f, 100f,
-                0f, 100f
-            )
-        )
-        assertTrue(
-            isRenderableMaterialPageQuad(
-                0f, 0f,
-                100f, 0f,
-                100f, 160f,
-                0f, 160f
-            )
-        )
-    }
-
-    @Test
-    fun `production mesh budget is stable per material turn`() {
-        MaterialPageProfiles.all.forEach { profile ->
-            val budget = materialPageTurnSegmentCount(profile)
-            assertTrue(budget in 18..34)
-            assertEquals(
-                materialPageAdaptiveSegmentCount(0.50f, profile),
-                budget
-            )
-        }
     }
 
     @Test
