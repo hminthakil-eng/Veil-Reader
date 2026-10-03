@@ -324,9 +324,12 @@ fun ReaderScreen(
         stringResource(R.string.reader_selection_highlight)
     val selectionNoteLabel =
         stringResource(R.string.reader_selection_note)
+    val selectionLookupLabel =
+        stringResource(R.string.reader_selection_lookup)
     val highlightedMessage = stringResource(R.string.reader_highlighted)
     val alreadyHighlightedMessage = stringResource(R.string.reader_already_highlighted)
     val passageSaveFailedMessage = stringResource(R.string.reader_passage_save_failed)
+    val lookupFailedMessage = stringResource(R.string.reader_lookup_failed)
     val previousLocationFailedMessage = stringResource(R.string.reader_previous_location_failed)
     val closeStorageFailedMessage = stringResource(R.string.reader_close_storage_failed)
     val readerOpenFailedMessage = stringResource(R.string.notice_open_failed)
@@ -658,20 +661,36 @@ fun ReaderScreen(
         scope,
         selectionHighlightLabel,
         selectionNoteLabel,
+        selectionLookupLabel,
         highlightedMessage,
         alreadyHighlightedMessage,
-        passageSaveFailedMessage
+        passageSaveFailedMessage,
+        lookupFailedMessage
     ) {
         ReaderSelectionActionModeCallback(
             coroutineScope = scope,
             navigatorProvider = { navigator as? SelectableNavigator },
             highlightLabel = selectionHighlightLabel,
             noteLabel = selectionNoteLabel,
+            lookupLabel = selectionLookupLabel,
             onModeChanged = { active ->
                 selectionModeActive = active
                 if (active) controlsVisible = true
             },
             onAction = onAction@{ action, locator, quote ->
+                if (action == ReaderSelectionAction.LOOKUP) {
+                    readerViewModel.onUserInteraction(readerSessionInstanceId)
+                    val launched = launchReaderLookup(
+                        activity = activity,
+                        text = quote,
+                        chooserTitle = selectionLookupLabel
+                    )
+                    if (!launched) {
+                        readerMessage = lookupFailedMessage
+                    }
+                    return@onAction
+                }
+
                 try {
                     val locatorJson = locator.toVeilPersistedJson(opened.format)
                     val existing = library.highlightsFor(opened.book.id).firstOrNull {
@@ -707,6 +726,7 @@ fun ReaderScreen(
                             pendingNoteHighlightId = highlight.id
                             pendingNoteText = highlight.note
                         }
+                        ReaderSelectionAction.LOOKUP -> Unit
                     }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
