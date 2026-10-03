@@ -89,6 +89,8 @@ import com.veilreader.app.domain.ReaderTextAlignment
 import com.veilreader.app.domain.ReadingContinuitySummary
 import com.veilreader.app.domain.ReaderNavigationMode
 import com.veilreader.app.domain.ReaderTheme
+import com.veilreader.app.ui.reader.ReaderHardwareKeyController
+import com.veilreader.app.ui.reader.ReaderHardwareKeyHost
 import com.veilreader.app.ui.reader.ReaderLocatorEvent
 import com.veilreader.app.ui.reader.ReaderNavigationTransactionGate
 import com.veilreader.app.ui.reader.ReaderViewModel
@@ -1488,11 +1490,33 @@ fun ReaderScreen(
                 }
             )
 
-            val hardwareKeyListener = ReaderHardwareKeyInputListener(
+            fun currentInteractionMode(): ReaderInteractionMode =
+                readerInteractionMode(
+                    selectionModeActive = selectionModeActive,
+                    overlayVisible =
+                        !latestReaderSessionReady.value ||
+                            rendererPreferencesSettling ||
+                            showNotebook ||
+                            showAppearance ||
+                            showPdfZoom ||
+                            pendingNoteHighlightId != null ||
+                            footnote != null ||
+                            imageLoading ||
+                            imageViewer != null,
+                    closeInFlight = closeInFlight,
+                    controlsVisible = controlsVisible,
+                    touchExplorationEnabled = touchExplorationEnabled
+                )
+
+            val hardwareKeyController = ReaderHardwareKeyController(
                 mapping = { latestHardwareKeys.value },
                 isEnabled = {
                     latestReaderSessionReady.value &&
-                        (opened.format == BookFormat.EPUB || opened.format == BookFormat.PDF)
+                        (opened.format == BookFormat.EPUB || opened.format == BookFormat.PDF) &&
+                        currentInteractionMode() in setOf(
+                            ReaderInteractionMode.NAVIGATION,
+                            ReaderInteractionMode.CHROME_PRIORITY
+                        )
                 },
                 onPreviousPage = {
                     performSemanticReaderTurn(PaperTurnDirection.BACKWARD)
@@ -1506,11 +1530,15 @@ fun ReaderScreen(
                     true
                 }
             )
+            val hardwareKeyHost = activity as? ReaderHardwareKeyHost
+            hardwareKeyHost?.installReaderHardwareKeyHandler(
+                ownerId = readerSessionInstanceId,
+                handler = hardwareKeyController::handle
+            )
 
             val inputArbiter = ReaderInputArbiter(
                 contentTarget = imageTapListener,
                 tapZones = tapZoneListener,
-                hardwareKeys = hardwareKeyListener,
                 paper = paperListener,
                 slide = slideListener,
                 staticPaged = staticPagedListener,
@@ -1520,24 +1548,7 @@ fun ReaderScreen(
                     controlsVisible = !controlsVisible
                     true
                 },
-                interactionMode = {
-                    readerInteractionMode(
-                        selectionModeActive = selectionModeActive,
-                        overlayVisible =
-                            !latestReaderSessionReady.value ||
-                                rendererPreferencesSettling ||
-                                showNotebook ||
-                                showAppearance ||
-                                showPdfZoom ||
-                                pendingNoteHighlightId != null ||
-                                footnote != null ||
-                                imageLoading ||
-                                imageViewer != null,
-                        closeInFlight = closeInFlight,
-                        controlsVisible = controlsVisible,
-                        touchExplorationEnabled = touchExplorationEnabled
-                    )
-                },
+                interactionMode = ::currentInteractionMode,
                 onTapOwner = { owner ->
                     ReaderTrace.event(
                         "gesture_owned",
@@ -1558,6 +1569,7 @@ fun ReaderScreen(
                 imageLoading = false
                 paperListener?.forceCancelPendingTurn()
                 slideListener?.forceCancelPendingTurn()
+                hardwareKeyHost?.clearReaderHardwareKeyHandler(readerSessionInstanceId)
                 nav.removeInputListener(inputArbiter)
                 if (paperInputListener === paperListener) paperInputListener = null
                 if (slideInputListener === slideListener) slideInputListener = null
