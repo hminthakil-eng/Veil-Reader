@@ -40,6 +40,7 @@ internal fun ReaderTtsControls(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onStop: () -> Unit,
+    onInstallVoiceData: () -> Unit,
     onSettingsChange: (ReaderTtsSettings) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -80,10 +81,23 @@ internal fun ReaderTtsControls(
                             stringResource(R.string.tts_unsupported)
                         ReaderTtsError.INITIALIZATION ->
                             stringResource(R.string.tts_initialization_failed)
+                        ReaderTtsError.MISSING_VOICE_DATA ->
+                            stringResource(R.string.tts_missing_voice)
                         ReaderTtsError.PLAYBACK ->
                             stringResource(R.string.tts_playback_failed)
                     }
                 )
+            }
+        }
+
+        if (state.error == ReaderTtsError.MISSING_VOICE_DATA) {
+            OutlinedButton(
+                onClick = onInstallVoiceData,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+            ) {
+                Text(stringResource(R.string.tts_install_voice))
             }
         }
 
